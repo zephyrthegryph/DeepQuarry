@@ -154,7 +154,7 @@ CAPABILITIES(/obj/structure/ladder)
 	return FALSE
 
 /// How long the climb takes: the ladder's time scaled by the climber's species.
-/obj/structure/ladder/proc/climb_wait(datum/act/A)
+/obj/structure/ladder/proc/climb_wait(datum/act/op/A)
 	var/climb_modifier = 1
 	if(ishuman(A.actor))
 		var/mob/living/carbon/human/MS = A.actor

@@ -135,7 +135,7 @@
 	user = person()
 	var/obj/item/clothing/gloves/sterile/thieves/gloves = allocate(/obj/item/clothing/gloves/sterile/thieves, run_loc_floor_bottom_left)
 	user.equip_to_slot(gloves, SLOT_ID_GLOVES)
-	user.a_intent = I_DISARM
+	user.set_use_stance(I_DISARM)
 	var/mob/living/carbon/human/victim = person(get_step(user, NORTH))
 	var/obj/item/pen/loot = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	victim.equip_to_slot(loot, SLOT_ID_POCKET_L)

@@ -327,7 +327,7 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	op("howitzer_charge", ai(), takes("aim", "target_turf", "melee", "arg3", "arg4", "beam", "click_empty"), wait(3 SECONDS), on_interrupt(PROC_REF(howitzer_aborted)), then(PROC_REF(howitzer_charged)))
 
 /// The three-second charge-up before the shot; the click's arguments ride along for the shot that follows.
-/obj/item/gun/energy/maghowitzer/proc/howitzer_charge(mob/living/user, atom/A, turf/target_turf, melee, arg3, arg4, beam, click_empty)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charge(mob/living/user, atom/A, turf/target_turf, melee, arg3, arg4, datum/beam/beam, click_empty)
 	var/datum/op_result/charging = perform_op(user, src, "howitzer_charge", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = A, "target_turf" = target_turf, "melee" = melee, "arg3" = arg3, "arg4" = arg4, "beam" = beam, "click_empty" = click_empty))
 	if(charging.outcome == ACT_REFUSED)
 		if(beam && !QDELETED(beam))

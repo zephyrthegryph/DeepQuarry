@@ -280,7 +280,7 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 	ai_busy_end()
 
 /// 10 seconds for an R-wall, 5 seconds for a normal one.
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_time(datum/act/A)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_time(datum/act/op/A)
 	var/turf/simulated/wall/W = A.arg("wall")
 	return W?.reinf_material ? 10 SECONDS : 5 SECONDS
 
@@ -342,7 +342,7 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 	if(left <= 0)
 		eat_consume(D)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_time(datum/act/A)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_time(datum/act/op/A)
 	var/obj/effect/energy_field/EF = A.arg("field")
 	return EF.get_strength() * 5
 

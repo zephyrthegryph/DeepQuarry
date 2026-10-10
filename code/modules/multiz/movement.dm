@@ -134,7 +134,7 @@
 	return zmove_finish(direction, start, destination)
 
 /// A timed z-move (the "zmove_timed" op of /mob): diving, climbing, swimming or flying from `start` to `destination`.
-/mob/proc/zmove_time(datum/act/A)
+/mob/proc/zmove_time(datum/act/op/A)
 	return A.arg("duration")
 
 /// A timed z-move cancelled: the mob says so.
@@ -890,7 +890,7 @@
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
 	perform_op(L, src, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("duration" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_our_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/turf/simulated/proc/climb_wall_time(datum/act/A)
+/turf/simulated/proc/climb_wall_time(datum/act/op/A)
 	return A.arg("duration")
 
 /turf/simulated/proc/climb_wall_done(datum/act/op/A)

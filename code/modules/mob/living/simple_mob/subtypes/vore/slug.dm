@@ -218,7 +218,7 @@ CAPABILITIES(/obj/effect/slug_glue)
 	perform_op(user, src, "tug_free", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("buckled" = buckled_mob))
 
 /// How long the struggle takes: scaled by the size of whoever is stuck.
-/obj/effect/slug_glue/proc/escape_time_of(datum/act/A)
+/obj/effect/slug_glue/proc/escape_time_of(datum/act/op/A)
 	var/mob/living/buckled_mob = A.arg("buckled")
 	switch(buckled_mob?.size_multiplier)
 		if(RESIZE_TINY - 1 to RESIZE_A_NORMALSMALL) //24% to 75% size scale, 1% below 25% is to account for microcillin sometimes going slightly below 25%

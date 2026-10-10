@@ -229,10 +229,6 @@ CAPABILITIES(/datum/surgical_step/treat/extract_foreign_body)
 /datum/surgical_step/treat/extract_foreign_body/proc/extract_time(datum/act/op/A)
 	return A.arg("duration")
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped
-	var/obj/item/organ/external/part
-	var/atom/movable/removed
-	var/obj/item/tool
 
 /datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/act/op/A)
 	to_chat(A.actor, span_warning("\The [A.arg("removed")] slips back out of your grip."))

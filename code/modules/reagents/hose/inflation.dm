@@ -86,14 +86,6 @@ CAPABILITIES(/datum/hose_connector/inflation)
 /datum/hose_connector/inflation/proc/inflation_failed(datum/act/op/A)
 	to_chat(A.actor, span_warning("You couldn't connect the hose!"))
 
-/datum/hose_connector/inflation/proc/inflation_connected
-	fail_message = span_warning("You couldn't connect the hose!")
-	var/datum/hose_connector/other
-	var/datum/hose_connector/origin
-	var/datum/hose_connector/target_arg
-	var/distancetonode
-	var/obj/item/stack/tubing
-	var/feedback
 
 /datum/hose_connector/inflation/proc/inflation_connected(datum/act/op/A)
 	var/mob/user = A.actor
