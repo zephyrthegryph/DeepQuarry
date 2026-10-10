@@ -60,7 +60,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/gun/energy/modular)
-	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/gun/energy/modular/proc/crowbar_used(datum/act/op/A)

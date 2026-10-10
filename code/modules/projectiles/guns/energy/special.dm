@@ -103,7 +103,7 @@
 	..()
 
 CAPABILITIES(/obj/item/gun/energy/floragun)
-	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
 
 /// Old Select Gene verb.

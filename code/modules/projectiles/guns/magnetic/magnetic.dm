@@ -31,7 +31,7 @@ TRACKED(/obj/item/gun/magnetic, removable_components)
 /obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
 
 CAPABILITIES(/obj/item/gun/magnetic)
-	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
