@@ -14,6 +14,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import Juke from './juke/index.js';
+import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
@@ -67,7 +68,6 @@ import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
-// DQEdit — renamed from 'vorestation'
 export const DME_NAME = 'deepquarry';
 
 function findDreamChecker(): string | null {
@@ -91,6 +91,7 @@ function findDreamChecker(): string | null {
   return null;
 }
 
+assertBuildRoot(import.meta.url);
 Juke.chdir('../..', import.meta.url);
 
 export const DefineParameter = new Juke.Parameter({
