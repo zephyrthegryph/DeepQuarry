@@ -1,5 +1,5 @@
 /*	This code is responsible for the examine tab.  When someone examines something, it shows the examined object's generated
-	mechanics (its declared interactions, from the resolver, and its properties: get_mechanics_info()), description_fluff
+	mechanics (its properties: get_mechanics_info()), description_fluff
 	and description_antag in a new tab. There is no hand-written help text: it could drift from what the code does.
 
 	In this file, some atom and mob stuff is defined here.  It is defined here instead of in the normal files, to keep the whole system self-contained.
@@ -14,8 +14,8 @@
 /**
  * Generated mechanics text: what the atom's properties mean in play (a weapon's
  * damage, armour ratings, a gun's fire modes). Types add lines generated from
- * their vars; what can be *done* with the atom comes from its declared
- * interactions instead (interaction_examine_lines(), screentips).
+ * their vars; what can be *done* with the atom is its ops (the Menu,
+ * screentips).
  * `additional_information` is extra lines from a subtype, listed first.
  */
 /atom/proc/get_mechanics_info(list/additional_information)
@@ -60,10 +60,6 @@
 	var/mechanics = A.get_mechanics_info()
 	if(mechanics)
 		info += mechanics
-	if(mob)
-		var/list/interaction_lines = interaction_examine_lines(mob, A)
-		if(interaction_lines)
-			info += interaction_lines
 	description_holders["info"] = jointext(info, "<br>")
 	description_holders["fluff"] = A.get_description_fluff()
 	description_holders["antag"] = (update_antag_info)? A.get_description_antag() : ""
@@ -92,9 +88,6 @@
 	if(!results || !results.len)
 		results = list("You were unable to examine that. Tell a developer!")
 
-	var/list/interaction_lines = interaction_examine_lines(src, A)
-	if(interaction_lines)
-		results += interaction_lines
 	results += embedded_info(src, A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")

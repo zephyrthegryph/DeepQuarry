@@ -9,8 +9,7 @@
  *	5. consumes resources (tool_use_resources());
  *	6. sends the generated start messages, and failure messages when a check fails.
  *
- * Interactions reach it through /datum/interaction/proc/pay_cost(). Hand-written
- * tool sites (the ones I7 has not turned into interactions yet) call it with an
+ * Hand-written tool sites (the ones not yet ops with wait()) call it with an
  * explicit `delay`:
  *
  *	if(!use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100))
@@ -31,22 +30,11 @@
 /// The last use_tool() call: its unscaled delay, quality, amount and volume. Parity tests read it; only unit tests write it.
 GLOBAL_LIST_EMPTY(dq_tool_last_use)
 
-/proc/use_tool(mob/actor, obj/item/tool, atom/target, datum/interaction/interaction, delay = 0, quality, tier = 1, amount = 0, volume = 50, start_self, start_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params, start_feedback)
+/proc/use_tool(mob/actor, obj/item/tool, atom/target, delay = 0, quality, tier = 1, amount = 0, volume = 50, start_self, start_others, datum/callback/extra_checks, silent = FALSE, datum/receiver, on_done, list/done_args, on_fail, list/fail_args, claims = FALSE, busy, job_type, list/job_params, start_feedback)
 	if(!actor || !target)
 		return FALSE
-	if(interaction)
-		quality = interaction.tool
-		tier = interaction.tool_tier
-		amount = interaction.tool_amount
-		volume = interaction.tool_volume
-		start_feedback = interaction.start_feedback_for(actor, target, tool)
-		if(!start_feedback)
-			var/list/lines = interaction.start_lines(actor, target, tool)
-			if(lines)
-				start_self = lines[1]
-				start_others = lines[2]
 #ifdef UNIT_TESTS
-	GLOB.dq_tool_last_use = list("delay" = interaction ? interaction.base_duration(actor, target) : delay, "quality" = quality, "amount" = amount, "volume" = volume)
+	GLOB.dq_tool_last_use = list("delay" = delay, "quality" = quality, "amount" = amount, "volume" = volume)
 #endif
 
 	// 1. Quality and tier.
@@ -65,12 +53,12 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	if(tool && volume && tool.usesound)
 		playsound(target, tool.usesound, volume, TRUE)
 
-	var/time = interaction ? interaction.duration_for(actor, target, tool) : tool_delay(actor, tool, delay, quality)
+	var/time = tool_delay(actor, tool, delay, quality)
 
-	// 6a. Start messages (an interaction's only when it takes time).
-	if(start_feedback && (!interaction || time > 0))
+	// 6a. Start messages.
+	if(start_feedback)
 		act_message_t(actor, target, start_feedback, tool)
-	else if((start_self || start_others) && (!interaction || time > 0))
+	else if(start_self || start_others)
 		act_message(actor, target, msg_span(start_self, "notice"), msg_span(start_others, "notice"), item = tool)
 
 	// 4. The wait: a tool job task, finished in use_tool_finish().
@@ -159,14 +147,6 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	call_ref(on_behalf_of, fail_proc, fail_args)
 
 // ---- tool jobs with state (use_tool(job_type = ...)): the state is on the task.
-
-/// An interaction's time cost paid by a tool: cost_paid() runs with the held item.
-/datum/task/timed/tool_job/interaction
-	var/obj/item/held
-
-/datum/task/timed/tool_job/interaction/tool_done()
-	var/datum/interaction/I = on_behalf_of
-	I?.cost_paid(actor, target, held)
 
 /// Repairing a flash's bulb with a screwdriver.
 /datum/task/timed/tool_job/flash_repair/tool_done()

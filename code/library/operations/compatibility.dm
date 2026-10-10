@@ -1,8 +1,3 @@
-/datum/operation_compatibility/named(mob/actor, datum/target, key)
-	return op_entry_named(actor, target, key)
-/datum/operation_compatibility/perform(mob/actor, datum/target, key, route, obj/held)
-	return legacy_perform_op(actor, target, key, route, held)
-
 /datum/operation_compatibility/item_specificity(type)
 	if(!ispath(type, /obj/item))
 		return 0

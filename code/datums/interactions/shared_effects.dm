@@ -1,11 +1,5 @@
 // Shared effect procs of ops (doc/rewrite/interactions.md §5a): types point their then() at these instead of writing the same two-line effect each.
 
-/// Leave a fingerprint, then open the target's tgui interface.
-/atom/proc/interaction_open_ui_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
-
 // ---- The shared effects as op handlers ----
 // A converted type's op names one of these in its then() where its legacy interaction named the shared effect above
 // (tools/dx/codemods/interact_declare.py, SHARED_OPS): op_<name> does what interaction_<name> did.

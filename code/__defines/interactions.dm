@@ -1,32 +1,11 @@
-// Interaction framework (doc/rewrite/interactions.md §5-8).
-// Code: code/datums/interactions/.
+// Clicks into the op engine and the input layer's shared defines (doc/rewrite/interactions.md §5-8).
+// Code: code/datums/interactions/clicks.dm.
 
-/// The shared singleton of an interaction type, e.g. INTERACTION(/datum/interaction/machine_panel).
-#define INTERACTION(path) (GLOB.interactions_by_type[path])
-/// The shared singleton with this id.
-#define INTERACTION_BY_ID(id) (interaction_by_id(id))
-
-// What trying an action through the resolver did.
-/// An interaction ran (or started and was interrupted; either way the input was used).
+// What trying an action through the op engine did (try_interaction()).
+/// An op ran (or started; either way the input was used).
 #define INTERACTION_TRY_RAN "ran"
-/// Several interactions tied for the action, so the Menu opened.
-#define INTERACTION_TRY_MENU "menu"
-/// The interaction the player meant is blocked; they were told why.
+/// The op the click reached refused; the actor was told why.
 #define INTERACTION_TRY_BLOCKED "blocked"
-
-// Interaction tags, for filtering and actor adapters.
-/// Can be done remotely (the AI, a cyborg interfacing without an item). Used by I3.
-#define INTERACTION_TAG_REMOTE "remote"
-/// Hostile: attacks and sabotage. Used by combat mode (I6).
-#define INTERACTION_TAG_HOSTILE "hostile"
-/// Observer-only: offered to ghosts and to no one else (I3).
-#define INTERACTION_TAG_OBSERVER "observer"
-/// Telekinesis-only: offered to a telekinetic reach and to no one else (I3).
-#define INTERACTION_TAG_TELEKINESIS "telekinesis"
-/// Silicon-only: offered to the AI and cyborgs and to no one else (I3).
-#define INTERACTION_TAG_SILICON "silicon"
-/// Part of the Maintainable behaviour (panel, anchor, deconstruct, repair).
-#define INTERACTION_TAG_MAINTENANCE "maintenance"
 
 /// The keybinding id of a category key.
 #define INTERACTION_CATEGORY_BINDING(category) "category_[category]"
@@ -46,38 +25,5 @@
 /// A cyborg's empty-gripper Use is the hand's Use when adjacent, and does nothing otherwise.
 #define ROBOT_USE_HAND_ADJACENT (1<<3)
 
-// Legacy input entries (I7). A converted handler's interactions keep the entry
-// point the old proc had, so every caller of that proc still reaches them, in
-// the same order: the most specific type first, then its parents, as an
-// override chain did. Resolver-native interactions have no entry.
-/// Used with an item: /atom/proc/attackby.
-#define INTERACTION_ENTRY_ITEM "item"
-/// Touched with an empty hand (or a silicon's Use through silicon_use): /atom/proc/attack_hand.
-#define INTERACTION_ENTRY_HAND "hand"
-/// The held item used on itself: /obj/item/proc/attack_self.
-#define INTERACTION_ENTRY_SELF "self"
-/// Alt-click: /atom/proc/click_alt.
-#define INTERACTION_ENTRY_ALT "alt"
-/// Something dragged onto the target (held is the dragged atom): /atom/proc/MouseDrop_T.
-#define INTERACTION_ENTRY_DRAG "drag"
-
-/// An entry effect's return: it handled the input but didn't use it up, as an old handler that
-/// returned nothing without calling ..(): attackby's afterattack and drag's defaults still follow.
-#define INTERACTION_HANDLED_PASS "handled_pass"
-
-/// Requirement: in reach. Adjacent, or a silicon the target lets use it remotely (silicon_use),
-/// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
-#define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")
-
-/// Requirement: a held item's self-use. In hand; or already dispatched by attack_self(), whose
-/// callers decided that themselves (a worn item's action button, an anchored item's touch).
-#define REQ_SELF_USE_REACH REQ_PROC(/proc/dq_interaction_self_reach, "not in your hand")
-
-/// use_tool() and pay_cost(): the job is a timed action that has started; its on_done runs later.
+/// use_tool(): the job is a timed action that has started; its on_done runs later.
 #define USE_TOOL_PENDING 2
-/// Internal to /datum/interaction/proc/attempt(): no result yet.
-#define INTERACTION_TRY_PENDING "pending"
-
-/// Requirement: the target is on the actor (held, worn or in their bags), as an old `set src in usr`.
-#define REQ_IN_INVENTORY REQ_PROC(/proc/dq_interaction_in_inventory, "you need to be carrying it")
-

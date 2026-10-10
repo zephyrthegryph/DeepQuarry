@@ -20,9 +20,6 @@
 /atom/movable/place_starting_occupant(atom/holder)
 	return forceMove(holder)
 
-/datum/construction_stage_provider/build_legacy(list/options)
-	return legacy_stage(arglist(options))
-
 /datum/transfer_feedback_provider/send(mob/actor, datum/holder, datum/item, reason, raw = FALSE)
 	if(raw)
 		refuse(actor, reason)
@@ -37,3 +34,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(e1_list_activations, R_DEBUG, "List Activations", "E
 
 /mob/living/timer_clock()
 	return CLOCK_BIO
+
+/// A driver-built href that no native topic op answered goes to the downstream topic table.
+/datum/input_adapter/compatibility_topic(datum/holder, mob/actor, list/href_list)
+	return topic_dispatch(holder, actor, href_list)

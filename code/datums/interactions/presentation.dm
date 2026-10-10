@@ -1,65 +1,8 @@
-/**
- * Generated help (doc/rewrite/interactions.md §8): the keys that reach an
- * interaction, the examine "Interactions" section and screentips. All of it is
- * read from the resolver, so it can't drift from what the code does.
- */
-
-/// The keys that run `interaction` right now, as shown to a player: "Click", "Alt-click", bound category keys.
-/proc/interaction_keys(client/player, datum/interaction_resolution/resolution, datum/interaction/interaction)
-	. = list()
-	if(!(interaction in resolution.available))
-		return
-	if(interaction.default_action)
-		var/list/best = resolution.best_for_action(interaction.default_action)
-		if(length(best) == 1 && best[1] == interaction)
-			if(interaction.default_action == INPUT_ACTION_USE)
-				. += "Click"
-			else if(interaction.default_action == INPUT_ACTION_ALTERNATE)
-				. += "Alt-click"
-				if(player?.right_click_binding() == INPUT_ACTION_ALTERNATE)
-					. += "Right-click"
-	if(interaction.category && player)
-		var/list/best_in_category = resolution.best_in_category(interaction.category)
-		if(length(best_in_category) == 1 && best_in_category[1] == interaction)
-			var/datum/keybinding/binding = GLOB.keybindings[INTERACTION_CATEGORY_BINDING(interaction.category)]
-			if(binding)
-				var/profile = player.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
-				. += keybinding_keys(binding, profile, player.keybinding_overrides())
-
-/// The examine section: what `user` can do to `target` now, with keys, and what they can't, with why. Null if nothing applies.
-/proc/interaction_examine_lines(mob/user, atom/target)
-	var/datum/interaction_resolution/resolution = interactions_for(user, target, user.get_active_hand())
-	if(!length(resolution.available) && !length(resolution.blocked))
-		return null
-	var/list/lines = list(span_bold("Interactions"))
-	for(var/datum/interaction/interaction as anything in resolution.available)
-		var/list/keys = interaction_keys(user.client, resolution, interaction)
-		lines += span_notice("[interaction.display_name(user, target)][length(keys) ? " ([jointext(keys, ", ")])" : ""]")
-	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		lines += span_warning("[interaction.display_name(user, target)]: [resolution.blocked[interaction]]")
-	return lines
-
-/// The screentip for `target`: its name, then what Click and Alt-click would do. Null for nothing to show.
+/// The screentip for `target`: its name. Null for nothing to show.
 /proc/interaction_screentip_text(mob/user, atom/target, obj/item/held)
 	if(!user || !target)
 		return null
-	var/datum/interaction_resolution/resolution = interactions_for(user, target, held)
-	var/list/parts = list()
-	var/list/use = resolution.best_for_action(INPUT_ACTION_USE)
-	if(length(use) == 1)
-		var/datum/interaction/interaction = use[1]
-		parts += "Click: [interaction.display_name(user, target)]"
-	else if(length(use) > 1)
-		parts += "Click: choose"
-	var/list/alternate = resolution.best_for_action(INPUT_ACTION_ALTERNATE)
-	if(length(alternate) == 1)
-		var/datum/interaction/interaction = alternate[1]
-		parts += "Alt-click: [interaction.display_name(user, target)]"
-	else if(length(alternate) > 1)
-		parts += "Alt-click: choose"
-	if(!length(parts))
-		return capitalize(target.name)
-	return "[capitalize(target.name)]\n[jointext(parts, "\n")]"
+	return capitalize(target.name)
 
 // ---------------------------------------------------------------------------
 // Screentips: one screen object per client, updated when the hovered atom or

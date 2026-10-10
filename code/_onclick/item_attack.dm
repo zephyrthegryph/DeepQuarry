@@ -101,11 +101,11 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	. = tool_interaction(user, tool, modifiers, FALSE)
 	if(.)
 		return
-	// Interactions that need no tool quality but answer Use with an item in hand.
+	// Ops that need no tool quality but answer Use with an item in hand.
 	switch(try_interaction(user, src, tool, INPUT_ACTION_USE, null, TRUE))
 		if(INTERACTION_TRY_RAN)
 			return ITEM_INTERACT_SUCCESS
-		if(INTERACTION_TRY_MENU, INTERACTION_TRY_BLOCKED)
+		if(INTERACTION_TRY_BLOCKED)
 			return ITEM_INTERACT_BLOCKING
 	return NONE
 
