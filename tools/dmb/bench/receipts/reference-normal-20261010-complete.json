@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "kind": "complete_historical_normal_reference",
+  "backend": "byond",
+  "compiler": "516.1687",
+  "evidence": {
+    "path": "E:/projects/dq-wt/dmb-review/data/normal-suite/20261010T220517_bb136d789d_normal-batches-0ded9fed-476f-47ac-b707-21f3a3e48585.json",
+    "sha256": "1dcf06504950fa372d5bf4c64aa9573fbda91f9b9757f2ac5bf2ae183c37decb"
+  },
+  "completed_batches": 63,
+  "selected_tests": 2001,
+  "passed": 1941,
+  "failed": 2,
+  "skipped": 58,
+  "automatic_framework_passed": 63,
+  "recorded_runtime_errors": 0,
+  "failures": [
+    "/datum/unit_test/dq_service_real_machine_and_pda_lifecycle: ID card leak",
+    "/datum/unit_test/dq_lifecycle_sandbox/representative: initialization changes refresh queue"
+  ],
+  "final_guardian": {
+    "path": "E:/dq-cache/dmb-native-v2/integration-gates/reference49-strict-20261010-next/receipt.json",
+    "wall_seconds": 1161.1180238000234,
+    "owned_children_reaped": true,
+    "peak_job_commit_bytes": 1887514624,
+    "memory_scope": "owned Windows Job commit accounting; not private-byte peak"
+  },
+  "accepted_runtime_baseline": false,
+  "limitations": [
+    "Historical source/resource closure was not authenticated",
+    "Historical runtime DLL identity was not recorded; current captures now issue and verify it",
+    "Normal tier only; no exhaustive or full-map acceptance",
+    "Native full-game comparison remains pending"
+  ]
+}
