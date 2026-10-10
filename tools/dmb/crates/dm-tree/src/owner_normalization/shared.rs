@@ -8,11 +8,13 @@ type Lease =
 /// Lifetime is the union of current host rosters, not an invented byte budget.
 pub struct SharedNormalizedDeclarations {
     values: Arc<Store>,
+    pub(crate) callables: Arc<crate::owner_callable::CallableStore>,
 }
 impl Default for SharedNormalizedDeclarations {
     fn default() -> Self {
         Self {
             values: Store::shared_current_rosters(),
+            callables: crate::owner_callable::CallableStore::shared_current_rosters(),
         }
     }
 }

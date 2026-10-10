@@ -60,6 +60,9 @@ pub enum NormalizationStorageView<'a> {
 impl RetainedNormalization {
     pub(crate) fn with_shared(owner: Arc<SharedNormalizedDeclarations>) -> Self {
         Self {
+            callables: crate::owner_callable::RetainedCallableOwners::with_shared(Arc::clone(
+                &owner,
+            )),
             values: NormalizedValues::shared(owner),
             ..Self::default()
         }
@@ -67,6 +70,7 @@ impl RetainedNormalization {
     pub(crate) fn fresh(&self) -> Self {
         Self {
             values: self.values.fresh(),
+            callables: self.callables.fresh(),
             ..Self::default()
         }
     }

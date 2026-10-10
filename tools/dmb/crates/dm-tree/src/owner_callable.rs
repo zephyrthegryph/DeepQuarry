@@ -10,19 +10,24 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicUsize, Ordering},
 };
+mod shared;
+#[cfg(test)]
+mod shared_tests;
+use shared::CallableValues;
 pub struct CallableOwner {
     pub anchors: Arc<[(SymbolId, MemberKind)]>,
     pub duplicate: Option<(DeclarationKey, MemberKind)>,
 }
-type Store = ObservedArtifactStore<CallableOwner, SourceQuery, SourceAnswer, SourceDomain>;
+pub(crate) type CallableStore =
+    ObservedArtifactStore<CallableOwner, SourceQuery, SourceAnswer, SourceDomain>;
 pub(crate) struct RetainedCallableOwners {
-    store: Store,
+    store: CallableValues,
     hits: AtomicUsize,
 }
 impl Default for RetainedCallableOwners {
     fn default() -> Self {
         Self {
-            store: Store::current_revision(),
+            store: CallableValues::Local(CallableStore::current_revision()),
             hits: AtomicUsize::new(0),
         }
     }
@@ -33,6 +38,18 @@ fn key(owner: SymbolId) -> Arc<[u8]> {
     bytes.into()
 }
 impl RetainedCallableOwners {
+    pub(crate) fn with_shared(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
+        Self {
+            store: CallableValues::shared(owner),
+            hits: AtomicUsize::new(0),
+        }
+    }
+    pub(crate) fn fresh(&self) -> Self {
+        Self {
+            store: self.store.fresh(),
+            hits: AtomicUsize::new(0),
+        }
+    }
     pub(crate) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }
@@ -103,17 +120,14 @@ impl RetainedCallableOwners {
                 .collect();
             anchors.sort_unstable_by_key(|(name, _)| *name);
             let anchors: Arc<[_]> = anchors.into();
-            self.store.insert_with(
+            let payload = self.store.insert_with_owned(
                 key(*owner),
                 ledger.reads(),
                 ledger.domain_receipts(),
                 0,
-                || CallableOwner {
-                    anchors: Arc::clone(&anchors),
-                    duplicate,
-                },
+                || CallableOwner { anchors, duplicate },
             );
-            owners.insert(*owner, Arc::new(CallableOwner { anchors, duplicate }));
+            owners.insert(*owner, payload.expect("current roster is not budgeted"));
         }
         // Validation retains global authored encounter order even though independent
         // owner contributions were computed in symbol order.
