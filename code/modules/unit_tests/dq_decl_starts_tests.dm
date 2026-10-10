@@ -123,3 +123,27 @@
 	TEST_ASSERT(B.dry_delay > 0, "fresh blood has a drying delay")
 	var/obj/item/research_sample/S = allocate(/obj/item/research_sample, T)
 	TEST_ASSERT(findtext(S.icon_state, "generic_sample") == 1, "a research sample rolls its look (got [S.icon_state])")
+
+/// Guns and magazines load through owns_many(starts =): loose rounds, a magazine, a magazine's rounds, an artifact casing's bullet.
+/datum/unit_test/dq_decl_gun_loads/Run()
+	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, dq_containment_floor())
+	var/obj/item/ammo_magazine/m9mm/M = allocate(/obj/item/ammo_magazine/m9mm, B)
+	TEST_ASSERT_EQUAL(length(M.stored_ammo) + M.latent_rounds, M.max_ammo, "a magazine starts with a full load, real or latent")
+	var/obj/item/gun/projectile/revolver/R = allocate(/obj/item/gun/projectile/revolver, B)
+	TEST_ASSERT_EQUAL(length(R.loaded), R.max_shells, "a revolver starts with a full cylinder")
+	var/obj/item/gun/projectile/artifact/G = allocate(/obj/item/gun/projectile/artifact, B)
+	for(var/obj/item/ammo_casing/artifact/C in G.loaded)
+		TEST_ASSERT(istype(C.BB, G.projectile_type || /obj/item/projectile/bullet/foam_dart_riot), "an artifact casing holds its gun's bullet")
+
+/// A vehicle cage starts with its vehicle and lets it out (not deleted) when taken apart or destroyed.
+/datum/unit_test/dq_decl_vehicle_cage/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/structure/vehiclecage/spacebike/C = allocate(/obj/structure/vehiclecage/spacebike, T)
+	var/obj/vehicle/V = C.my_vehicle
+	TEST_ASSERT(istype(V, /obj/vehicle/bike), "the cage starts with its bike")
+	qdel(C)
+	TEST_ASSERT(!QDELETED(V) && V.loc == T, "a destroyed cage puts its bike out")
+	var/obj/item/integrated_circuit/reagent/storage/S = allocate(/obj/item/integrated_circuit/reagent/storage, T)
+	TEST_ASSERT_EQUAL(S.reagents?.maximum_volume, S.volume, "a reagent storage circuit holds its volume")
+	var/obj/item/integrated_circuit/reagent/pump/P = allocate(/obj/item/integrated_circuit/reagent/pump, T)
+	TEST_ASSERT(isnull(P.reagents), "a pump circuit holds nothing")

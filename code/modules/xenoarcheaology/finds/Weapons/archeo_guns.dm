@@ -35,15 +35,13 @@
 	projectile_type = /obj/item/projectile/bullet/cap //Just a placeholder. Doesn't actually matter what this is. All that matters is what the projecttile_type of our BB is.
 	caseless = TRUE
 
-/obj/item/ammo_casing/artifact/Initialize(mapload) //These should ONLY ever be in artifact weapons. If you spawn outside of artifact weapons, it'll have a riot foam dart inside of it as the bullet.
-	. = ..()
-	// The casing owns BB: replace the default bullet (rel_set deletes it).
-	if(istype(loc, /obj/item/gun/projectile/artifact)) //If we are IN an artifact gun
-		var/obj/item/gun/projectile/artifact/our_gun = loc
-		if(ispath(our_gun.projectile_type))
-			rel_set(src, nameof(BB), new our_gun.projectile_type(src)) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
-		else
-			rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src)) // ALLOW(decl): bullet type comes from the gun's projectile_type, which a declared child cannot name; should never happen
-	else //The bullet was adminspawned in outside of an artifact gun.
-		rel_set(src, nameof(BB), new /obj/item/projectile/bullet/foam_dart_riot(src)) // ALLOW(decl): adminspawned casing outside a gun has no projectile_type to declare from
-	randpixel_xy()
+CAPABILITIES(/obj/item/ammo_casing/artifact)
+	owns_one(nameof(BB), /obj/item/projectile, starts = PROC_REF(make_artifact_bullet))
+
+/// The bullet (owns_one(starts =)): the projectile_type of the artifact gun it is made in. These should ONLY ever be in artifact weapons:
+/// one spawned outside of them (adminspawned) holds a riot foam dart.
+/obj/item/ammo_casing/artifact/proc/make_artifact_bullet(current)
+	var/obj/item/gun/projectile/artifact/our_gun = loc
+	if(istype(our_gun) && ispath(our_gun.projectile_type))
+		return our_gun.projectile_type
+	return /obj/item/projectile/bullet/foam_dart_riot

@@ -41,7 +41,7 @@
 CAPABILITIES(/obj/item/gun/projectile)
 	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
 	ref_one(nameof(chambered))
-	owns_many(nameof(loaded))
+	owns_many(nameof(loaded), starts = PROC_REF(make_loaded))
 	param(nameof(starts_loaded), pos = 1)
 	op("gun_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload"), then(PROC_REF(gun_hand)))
 	// Working the bolt of a manual-chambered gun.
@@ -60,16 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 /obj/item/gun/projectile/Initialize(mapload)
 	. = ..()
 	if(starts_loaded)
-		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
-			for(var/i in 1 to max_shells)
-				rel_add(src, nameof(loaded), new ammo_type(src))
-			if(random_start_ammo)
-				for(var/i in 1 to rand(0, max_shells))
-					if(!length(loaded))
-						break
-					rel_remove(src, nameof(loaded), loaded[1])
-		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			rel_set(src, nameof(ammo_magazine), new magazine_type(src))
+		if(ammo_magazine && (load_method & MAGAZINE))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
@@ -78,6 +69,22 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 
 	if(TYPE_TABLE_GET(src, projectile_initial_transform))
 		update_transform()
+
+/// The starting rounds (owns_many(starts =)): a full load of loose rounds for a gun loaded by hand, some randomly short.
+/obj/item/gun/projectile/proc/make_loaded(current)
+	if(!starts_loaded || !ispath(ammo_type) || !(load_method & (SINGLE_CASING|SPEEDLOADER)))
+		return
+	var/count = max_shells
+	if(random_start_ammo)
+		count -= rand(0, max_shells)
+	if(count > 0)
+		. = list()
+		.[ammo_type] = count
+
+/// The starting magazine (owns(starts =)) of a gun that takes one.
+/obj/item/gun/projectile/proc/make_magazine(current)
+	if(starts_loaded && ispath(magazine_type) && (load_method & MAGAZINE))
+		return magazine_type
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
@@ -740,4 +747,4 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 
 /obj/item/gun/projectile/ownership()
 	. = ..()
-	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
+	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED, starts = PROC_REF(make_magazine))
