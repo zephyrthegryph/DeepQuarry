@@ -1,11 +1,12 @@
 //! Current queried-name receipts in the existing owner artifact store.
+//! Proc, verb, and variable names share one demand lifecycle and issuer.
 //! Only queried ancestor paths are retained, never owner times inherited-name rosters.
 use super::*;
 use std::sync::{Mutex, Weak};
 
 #[derive(Default, Debug)]
 pub struct CallableDemands {
-    tokens: Mutex<BTreeMap<selections::SelectionKey, u128>>,
+    tokens: Mutex<BTreeMap<(SymbolId, SymbolId, u8), u128>>,
 }
 impl CallableDemands {
     pub fn visit_storage(&self, visitor: impl FnOnce(usize, usize)) {
@@ -17,12 +18,12 @@ impl CallableDemands {
     }
 }
 pub(super) type CurrentDemands = Mutex<Weak<CallableDemands>>;
-const PREFIX: &[u8] = b"callable-demand-v1";
-fn key((owner, name, verb): selections::SelectionKey) -> Arc<[u8]> {
+const PREFIX: &[u8] = b"member-name-demand-v2";
+fn key((owner, name, namespace): (SymbolId, SymbolId, u8)) -> Arc<[u8]> {
     let mut bytes = PREFIX.to_vec();
     bytes.extend_from_slice(&owner.bits().to_le_bytes());
     bytes.extend_from_slice(&name.bits().to_le_bytes());
-    bytes.push(u8::from(verb));
+    bytes.push(namespace);
     bytes.into()
 }
 fn member_key(tree: &SemanticTree, id: MemberId) -> Option<(SymbolId, SymbolId, bool, u32)> {
@@ -47,21 +48,21 @@ pub(super) fn inputs(
     tree: &SemanticTree,
     index: usize,
     name: SymbolId,
-    verb: bool,
+    verb: Option<bool>,
     parent_certificate: Option<u128>,
 ) -> Option<Arc<CallableInputs>> {
     let node = &tree.types[index];
-    let kind = if verb {
-        MemberKind::Verb
-    } else {
-        MemberKind::Proc
+    let matches_kind = |kind| match verb {
+        Some(true) => kind == MemberKind::Verb,
+        Some(false) => kind == MemberKind::Proc,
+        None => matches!(kind, MemberKind::Proc | MemberKind::Verb),
     };
     let members = node
         .members
         .iter()
         .filter(|id| {
             let member = &tree.members[id.index()];
-            member.kind == kind && member.name == name
+            matches_kind(member.kind) && member.name == name
         })
         .map(|&id| {
             let member = &tree.members[id.index()];
@@ -84,7 +85,7 @@ pub(super) fn inputs(
             .intrinsic
             .iter()
             .filter(|member| {
-                member.owner == node.path && member.name == name && member.kind == kind
+                member.owner == node.path && member.name == name && matches_kind(member.kind)
             })
             .cloned()
             .collect::<Vec<_>>()
@@ -95,15 +96,10 @@ pub(super) fn inputs(
         hierarchy_certified: tree.inventory.hierarchy_certified,
     }))
 }
-struct Host<'a>(&'a Arc<CallableInputs>);
-impl ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Host<'_> {
-    fn answer(&self, query: &MetadataQuery) -> MetadataAnswer {
-        match query {
-            MetadataQuery::CallableSelection(..) => {
-                MetadataAnswer::CallableLocal(Arc::clone(self.0))
-            }
-            _ => unreachable!("name-specific callable receipt"),
-        }
+struct Host(MetadataAnswer);
+impl ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Host {
+    fn answer(&self, _: &MetadataQuery) -> MetadataAnswer {
+        self.0.clone()
     }
 }
 impl RetainedMetadata {
@@ -129,6 +125,12 @@ impl RetainedMetadata {
             .current_demands
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        if current
+            .upgrade()
+            .is_some_and(|current| Arc::ptr_eq(&current, &tree.owner_callable_demands))
+        {
+            return;
+        }
         let retained = current.upgrade().map_or_else(Vec::new, |current| {
             current
                 .tokens
@@ -157,10 +159,36 @@ impl RetainedMetadata {
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         *current = Arc::downgrade(&tree.owner_callable_demands);
     }
+    pub(crate) fn bind_selection_owner(&self, tree: &SemanticTree) {
+        self.begin_selection_revision(tree);
+    }
     pub(crate) fn demanded_selection(
         &self,
         tree: &SemanticTree,
         selection: selections::SelectionKey,
+    ) -> Option<u128> {
+        self.demanded_name(tree, (selection.0, selection.1, u8::from(selection.2)))
+    }
+    pub(crate) fn demanded_variable(
+        &self,
+        tree: &SemanticTree,
+        owner: SymbolId,
+        name: SymbolId,
+    ) -> Option<u128> {
+        self.demanded_name(tree, (owner, name, 2))
+    }
+    pub(crate) fn demanded_presence(
+        &self,
+        tree: &SemanticTree,
+        owner: SymbolId,
+        name: SymbolId,
+    ) -> Option<u128> {
+        self.demanded_name(tree, (owner, name, 3))
+    }
+    fn demanded_name(
+        &self,
+        tree: &SemanticTree,
+        selection: (SymbolId, SymbolId, u8),
     ) -> Option<u128> {
         if let Some(token) = tree
             .owner_callable_demands
@@ -213,24 +241,56 @@ impl RetainedMetadata {
             let token = if let Some(cached) = cached {
                 cached
             } else {
-                let inputs = inputs(
-                    tree,
-                    index.index(),
-                    selection.1,
-                    selection.2,
-                    parent_certificate,
-                )?;
-                let host = Host(&inputs);
+                let (query, answer) = if selection.2 == 2 {
+                    (
+                        MetadataQuery::VariableLocal(selection.0, selection.1),
+                        MetadataAnswer::VariableLocal(variables::local_inputs(
+                            tree,
+                            index.index(),
+                            selection.1,
+                            parent_certificate,
+                        )?),
+                    )
+                } else {
+                    (
+                        if selection.2 == 3 {
+                            MetadataQuery::CallablePresence(selection.0, selection.1)
+                        } else {
+                            MetadataQuery::CallableSelection(
+                                selection.0,
+                                selection.1,
+                                selection.2 == 1,
+                            )
+                        },
+                        MetadataAnswer::CallableLocal(inputs(
+                            tree,
+                            index.index(),
+                            selection.1,
+                            if selection.2 == 3 {
+                                None
+                            } else {
+                                Some(selection.2 == 1)
+                            },
+                            parent_certificate,
+                        )?),
+                    )
+                };
+                let host = Host(answer);
+                let token_of = |entry: &EffectiveOwner| {
+                    if selection.2 == 2 {
+                        entry.variable.as_ref().map(|(_, token)| *token)
+                    } else {
+                        entry.callable.as_ref().map(|(_, token)| *token)
+                    }
+                };
                 let existing = self
                     .store
                     .lookup(&key(selection), &host)
-                    .and_then(|entry| entry.callable.as_ref().map(|(_, token)| *token));
+                    .and_then(|entry| token_of(&entry));
                 let token = if let Some(token) = existing {
                     token
                 } else {
                     let token = u128::from(callables::issue_token()?);
-                    let query =
-                        MetadataQuery::CallableSelection(selection.0, selection.1, selection.2);
                     let ledger = ObservationLedger::default();
                     ledger.record(query, host.answer(&query), query.domain(), None);
                     let owner = self.store.insert_with_owned(
@@ -238,19 +298,30 @@ impl RetainedMetadata {
                         ledger.reads(),
                         ledger.domain_receipts(),
                         0,
-                        || EffectiveOwner {
-                            selection: Arc::new(crate::HostDeclarationSelection {
-                                callable_names: Arc::from([]),
-                                declared_variable_names: Arc::from([]),
-                                scalar_requests: Arc::from([]),
-                            }),
-                            values: Arc::from([]),
-                            hierarchy: None,
-                            callable: Some((inputs, token)),
-                            variable: None,
+                        || {
+                            let (callable, variable) = match host.0 {
+                                MetadataAnswer::CallableLocal(inputs) => {
+                                    (Some((inputs, token)), None)
+                                }
+                                MetadataAnswer::VariableLocal(inputs) => {
+                                    (None, Some((inputs, token)))
+                                }
+                                _ => unreachable!("name-specific receipt"),
+                            };
+                            EffectiveOwner {
+                                selection: Arc::new(crate::HostDeclarationSelection {
+                                    callable_names: Arc::from([]),
+                                    declared_variable_names: Arc::from([]),
+                                    scalar_requests: Arc::from([]),
+                                }),
+                                values: Arc::from([]),
+                                hierarchy: None,
+                                callable,
+                                variable,
+                            }
                         },
                     )?;
-                    owner.callable.as_ref()?.1
+                    token_of(&owner)?
                 };
                 tree.owner_callable_demands
                     .tokens

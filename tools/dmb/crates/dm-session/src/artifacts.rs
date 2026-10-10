@@ -244,6 +244,17 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
+        self.insert_with_shared(key, reads.into(), versions.into(), weight, create)
+    }
+    /// Admit the issuer's existing immutable ledger without copying its answers.
+    pub fn insert_with_shared(
+        &self,
+        key: Arc<[u8]>,
+        reads: Arc<[Observation<Q, A, D>]>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         // Resident storage evicts before admitting a new value. Results are
@@ -264,8 +275,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             let value = Arc::new(create());
             state.buckets.entry(hash).or_default().push(Variant {
                 key,
-                reads: reads.into(),
-                versions: versions.into(),
+                reads,
+                versions,
                 value: Arc::clone(&value),
                 weight,
             });
@@ -300,8 +311,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 let value = Arc::new(create());
                 bucket.push(Variant {
                     key,
-                    reads: reads.into(),
-                    versions: versions.into(),
+                    reads,
+                    versions,
                     value: Arc::clone(&value),
                     weight,
                 });
@@ -312,8 +323,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let value = Arc::new(create());
         bucket.push(Variant {
             key,
-            reads: reads.into(),
-            versions: versions.into(),
+            reads,
+            versions,
             value: Arc::clone(&value),
             weight,
         });
@@ -350,6 +361,37 @@ mod tests {
         }
     }
     struct Value(Arc<AtomicUsize>);
+    #[test]
+    fn shared_admission_preserves_exact_key_and_ledger_owners() {
+        let store: ArtifactStore<()> = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"shared-receipt".as_slice());
+        let query = ResolveQuery::Ancestry(dm_ir::SymbolId::of("/shared"));
+        let reads: Arc<[ResolverRead]> = vec![ResolverRead {
+            query,
+            domain: query.domain(),
+            answer: ResolvedMeaning::Missing,
+        }]
+        .into();
+        let versions: Arc<[(ReadDomain, u128)]> = vec![(query.domain(), 7)].into();
+        assert!(store
+            .insert_with_shared(
+                Arc::clone(&key),
+                Arc::clone(&reads),
+                Arc::clone(&versions),
+                1,
+                || (),
+            )
+            .is_some());
+        let (accepted, _) = store.visit_receipted(&key, &Host, &mut |_| true);
+        let accepted = accepted.unwrap();
+        assert!(Arc::ptr_eq(&reads, &accepted.reads));
+        assert!(Arc::ptr_eq(&versions, &accepted.versions));
+        store.visit_storage(|view| {
+            if let ObservedArtifactStorageView::Entry { key: stored, .. } = view {
+                assert!(Arc::ptr_eq(&key, stored));
+            }
+        });
+    }
     #[test]
     fn produced_owner_is_shared_and_survives_current_roster_pruning() {
         let store = ArtifactStore::current_revision();

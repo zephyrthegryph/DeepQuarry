@@ -90,6 +90,7 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
             type_values: &types,
             resource_search_context: None,
             source_type_order: &order,
+            source_allocation_roster: None,
         },
         LoweringConfig {
             workers: 2,

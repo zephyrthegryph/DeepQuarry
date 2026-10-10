@@ -96,12 +96,113 @@ impl HeapCensus {
                     }
                 }
                 self.slice("required_parents.versions", versions, true);
-                if self.arc_object("required_parents.map", value) {
-                    self.observe_items("required_parents.entries", value.len());
+                self.required_parent_map(value);
+            }
+        });
+        store.allocations.visit_storage(|view| match view {
+            V::Store { entries, .. } => self.observe_items("required_allocations.index", entries),
+            V::Bucket {
+                address,
+                len,
+                capacity,
+                element_size,
+            } => {
+                self.buffer(
+                    "required_allocations.buckets",
+                    address,
+                    len.saturating_mul(element_size),
+                    capacity.saturating_mul(element_size),
+                );
+            }
+            V::Entry {
+                key,
+                reads,
+                versions,
+                value,
+            } => {
+                self.slice("required_allocations.keys", key, true);
+                if self.slice("required_allocations.reads", reads, true) {
+                    for read in reads.iter() {
+                        if let Some(spelling) = &read.answer {
+                            self.string("required_allocations.spellings", spelling);
+                        }
+                    }
+                }
+                self.slice("required_allocations.versions", versions, true);
+                self.required_allocation_roster(value);
+            }
+        });
+        store.prefixes.visit_storage(|view| match view {
+            V::Store { entries, .. } => self.observe_items("required_prefix.index", entries),
+            V::Bucket { address, len, capacity, element_size } => {
+                self.buffer("required_prefix.buckets", address,
+                    len.saturating_mul(element_size), capacity.saturating_mul(element_size));
+            }
+            V::Entry { key, reads, versions, value } => {
+                self.slice("required_prefix.keys", key, true);
+                if self.slice("required_prefix.reads", reads, true) {
+                    for read in reads.iter() {
+                        self.required_allocation_roster(&read.answer.source);
+                        self.vec_payload("required_prefix.fixed", &read.answer.fixed);
+                        self.required_parent_map(&read.answer.parents);
+                    }
+                }
+                self.slice("required_prefix.versions", versions, true);
+                if self.arc_object("required_prefix.payload", value) {
+                    self.vec_payload("required_prefix.order", &value.order);
+                    self.vec_payload("required_prefix.requests", &value.requests);
+                    self.collection_entries::<dm_ir::SymbolId>("required_prefix.needed",
+                        &value.needed as *const _ as usize, value.needed.len());
+                    self.unknown("required_prefix.needed", "private HashSet bucket/control backing unavailable; logical entry lower bounds only");
+                }
+            }
+        });
+        store.selected.visit_storage(|view| match view {
+            V::Store { entries, .. } => self.observe_items("required_selected.index", entries),
+            V::Bucket { address, len, capacity, element_size } => {
+                self.buffer("required_selected.buckets", address,
+                    len.saturating_mul(element_size), capacity.saturating_mul(element_size));
+            }
+            V::Entry { key, reads, versions, value } => {
+                self.slice("required_selected.keys", key, true);
+                if self.slice("required_selected.reads", reads, true) {
+                    for read in reads.iter() {
+                        self.slice("required_selected.current_types", &read.answer.types, true);
+                        if self.arc_object("required_selected.membership", &read.answer.needed) {
+                            self.collection_entries::<dm_ir::SymbolId>("required_selected.membership",
+                                Arc::as_ptr(&read.answer.needed) as usize, read.answer.needed.len());
+                            self.unknown("required_selected.membership", "private HashSet bucket/control backing unavailable; logical entry lower bounds only");
+                        }
+                    }
+                }
+                self.slice("required_selected.versions", versions, true);
+                if self.arc_object("required_selected.output", value) {
+                    self.slice("required_selected.output_roster", value.as_ref(), true);
                 }
             }
         });
         self.unknown("required_types.index","private BTree nodes and allocator metadata excluded; accessible key/read/closure buffers counted, current-roster retention has no byte admission budget");
+    }
+    fn required_allocation_roster(
+        &mut self,
+        owner: &Arc<crate::type_creation_order::AllocationRoster>,
+    ) {
+        if self.arc_object("required_allocations.roster", owner) {
+            self.slice("required_allocations.order", owner.shared_order(), true);
+        }
+    }
+    fn required_parent_map(
+        &mut self,
+        owner: &Arc<std::collections::BTreeMap<dm_ir::SymbolId, Option<dm_ir::SymbolId>>>,
+    ) {
+        if self.arc_object("required_parents.map", owner) {
+            self.collection_entries::<(dm_ir::SymbolId, Option<dm_ir::SymbolId>)>(
+                "required_parents.entries",
+                Arc::as_ptr(owner) as usize,
+                owner.len(),
+            );
+            self.unknown("required_parents.entries", "private BTree node backing/control capacity unavailable; logical entry lower bounds only");
+        }
     }
 }
 impl crate::lowering_memo::ProcedureMemo {

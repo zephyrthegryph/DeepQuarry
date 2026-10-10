@@ -57,3 +57,91 @@ impl SourceRecipe {
 #[cfg(test)]
 #[path = "source_recipe_tests.rs"]
 mod tests;
+
+/// Wire evidence is not a current descriptor. Only reissue may produce a seed.
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct RecipeWire<'a> {
+    reference: SymRef,
+    #[serde(borrow)]
+    canonical: std::borrow::Cow<'a, [u8]>,
+    runtime_type: SymbolId,
+    lexical_owner: SymbolId,
+    resource_context: Option<u128>,
+    origin: Option<u32>,
+    start: usize,
+    end: usize,
+}
+impl SourceRecipe {
+    pub(crate) fn disk_evidence(&self) -> RecipeWire<'_> {
+        let (reference, canonical, runtime_type, lexical_owner, resource_context, origin) =
+            self.descriptor.evidence();
+        RecipeWire {
+            reference,
+            canonical: std::borrow::Cow::Borrowed(canonical),
+            runtime_type,
+            lexical_owner,
+            resource_context,
+            origin,
+            start: self.relative_span.start,
+            end: self.relative_span.end,
+        }
+    }
+}
+impl RecipeWire<'_> {
+    pub(crate) fn valid(&self) -> bool {
+        matches!(self.reference, SymRef::Instance(_))
+            && !self.canonical.is_empty()
+            && self.origin.is_some()
+            && self.start <= self.end
+    }
+
+    #[cfg(test)]
+    pub(crate) fn corrupt_canonical(&mut self) {
+        self.canonical = std::borrow::Cow::Borrowed(b"not issued descriptor bytes");
+    }
+
+    pub(crate) fn reference(&self) -> SymRef {
+        self.reference
+    }
+    pub(crate) fn runtime_type(&self) -> SymbolId {
+        self.runtime_type
+    }
+    pub(crate) fn reissue(
+        &self,
+        parsed: &dm_tree::frontend::ParsedBody<'_>,
+        resolver: &dyn Resolver,
+        symbols: &SymbolTable,
+        debug: &DebugOrigins,
+        context: Option<u128>,
+        owner: SymbolId,
+    ) -> Option<PreparedSeed> {
+        if self.start > self.end
+            || self.end
+                > parsed
+                    .occurrence()
+                    .expanded_span
+                    .end
+                    .checked_sub(parsed.occurrence().expanded_span.start)?
+            || self.resource_context != context
+            || self.lexical_owner != owner
+            || self
+                .origin
+                .is_none_or(|i| i as usize >= debug.entries.len())
+        {
+            return None;
+        }
+        let descriptor = DescriptorRecipe::from_evidence(
+            self.reference,
+            Arc::from(self.canonical.as_ref()),
+            self.runtime_type,
+            self.lexical_owner,
+            self.resource_context,
+            self.origin,
+        )?;
+        SourceRecipe {
+            descriptor,
+            relative_span: Span::new(self.start, self.end),
+        }
+        .reissue(parsed, resolver, symbols, debug)
+    }
+}

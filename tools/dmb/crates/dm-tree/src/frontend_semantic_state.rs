@@ -217,6 +217,11 @@ impl RetainedSemanticTree {
                 on_error(&error, &adapted.skeletons.to_vec(), &[]);
                 error
             })?;
+            // A failed newer candidate may have replaced the issuer's Weak
+            // current owner. Bind only after current occurrence validation.
+            if let Some(issuer) = tree.owner_certificate_issuer() {
+                issuer.bind_selection_owner(&tree);
+            }
             self.hits += 1;
             return Ok(TreeSnapshot {
                 tree,

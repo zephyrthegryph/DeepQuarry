@@ -4,11 +4,12 @@
 use crate::initializer_policy::DefaultValue;
 mod callbacks;
 mod class_roster;
-mod headers;
 pub(crate) mod header_recipes;
+mod headers;
 pub use header_recipes::HeaderRecipes;
 pub(crate) mod member_contribution;
 mod retained;
+pub(crate) mod type_roster;
 pub(crate) use class_roster::MaterializedClassRoster;
 pub use retained::ClassProjections;
 mod methods;
@@ -228,17 +229,10 @@ fn project_inner(
         return Err(ProjectionError::IncompleteOrder);
     }
     let tree = &source.tree;
-    let types = tree
-        .types()
-        .iter()
-        .map(|node| TypeProjection {
-            path: node.path,
-            parent: node
-                .parent
-                .and_then(|id| tree.type_node(id))
-                .map(|parent| parent.path),
-        })
-        .collect::<Vec<_>>();
+    let types = match artifacts {
+        Some(artifacts) => artifacts.types.obtain(tree),
+        None => type_roster::produce(tree.types()),
+    };
     let mut seen = HashSet::new();
     let mut fields = Vec::new();
     let default_index: HashMap<_, _> = defaults
@@ -371,7 +365,7 @@ fn project_inner(
             .into(),
         tree_identity: tree.identity(),
         occurrence_count: occurrences.len(),
-        types: types.into(),
+        types,
         fields: fields.into(),
         chains: chains.into(),
         procedure_membership: procedure_membership.into(),

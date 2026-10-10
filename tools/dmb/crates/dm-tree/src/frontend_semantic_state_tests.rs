@@ -91,6 +91,16 @@ fn body_edit_shares_semantics_but_issues_new_source_occurrences_and_body() {
         "/proc/p()\n    return 12345\n/proc/q()\n    return 2\n",
     ));
     assert!(Arc::ptr_eq(&first.snapshot.tree, &second.snapshot.tree));
+    let fresh_query = dm_ir::ResolveQuery::HasMemberVar {
+        owner: dm_ir::SymbolId::of("/"),
+        name: dm_ir::SymbolId::of("new_unqueried_name"),
+    };
+    // Exact normalization returns the admitted semantic owner; an unseen query
+    // must still issue a live dependency receipt after current body rebinding.
+    assert!(
+        dm_ir::Resolver::domain_version(second.snapshot.tree.as_ref(), fresh_query.domain())
+            .is_some()
+    );
     assert!(!Arc::ptr_eq(
         &first.snapshot.occurrences,
         &second.snapshot.occurrences
@@ -582,4 +592,26 @@ fn retained_resolution_failure_repeat_shift_and_repair_match_fresh_diagnostics()
         repaired.snapshot.tree.identity()
     );
     assert!(retained.declaration_retention_stats().hits > 0);
+}
+
+#[test]
+fn admitted_reused_tree_restores_demand_issuer_after_abandoned_candidate() {
+    let mut state = RetainedSemanticTree::new();
+    let first = build(&mut state, "/proc/p()\n    return 1\n");
+    let mut abandoned = first.snapshot.tree.as_ref().clone();
+    abandoned.owner_callable_demands = Arc::new(crate::owner_metadata::CallableDemands::default());
+    state
+        .normalization
+        .metadata
+        .bind_selection_owner(&abandoned);
+    drop(abandoned);
+    let reused = build(&mut state, "/proc/p()\n    return 2\n");
+    assert!(Arc::ptr_eq(&first.snapshot.tree, &reused.snapshot.tree));
+    let query = dm_ir::ResolveQuery::HasMemberProc {
+        owner: dm_ir::SymbolId::of("/"),
+        name: dm_ir::SymbolId::of("previously_unqueried"),
+    };
+    assert!(
+        dm_ir::Resolver::domain_version(reused.snapshot.tree.as_ref(), query.domain()).is_some()
+    );
 }

@@ -942,3 +942,10 @@ This is functional validation, not a new DeepQuarry timing or BYOND runtime gate
 Metadata dependency vector backing is now traversed explicitly for census;
 private allocator/control overhead and conservative code-index charges remain
 disclosed limitations. Human DESIGN and REVIEW documents remain untouched.
+
+
+## 2026-10-09 23:35 shared-owner migration
+
+The bounded prototype cohort at commit 9eb5b8f1d5 completed: unchanged 1.07 s, body edit 35.24 s, new proc 34.65 s; independent fresh builds 17.78-20.36 s. All four native DMB/RSC byte oracles passed. This O1/256 + dm-tree O1 profile is not acceptance evidence. Pressure still evicted whole sessions after rich-buffer release. BYOND structural semantic coverage remains incomplete with 1,834,121 baseline discrepancies.
+
+The newer migration batch passes the workspace all-targets check and 44 focused fixtures. It shares variable/signature receipts, allocation/type rosters, selected facts, header membership layers and fresh admission ledgers. Its performance and memory effects are UNMEASURED. See phase0/migration_checkpoint_20261009.json and bench/idle-retention.md. No DreamDaemon or full runtime suite was run. Remaining conservative/static and rich helper paths and concurrency/history acceptance are open.

@@ -9,6 +9,8 @@ pub mod disk;
 mod engine_payload;
 #[path = "runner_host_idle.rs"]
 mod idle;
+#[path = "runner_host_idle_census.rs"]
+mod idle_census;
 #[path = "runner_host_memo.rs"]
 mod memo;
 pub(crate) use engine_payload::EnginePayloads;

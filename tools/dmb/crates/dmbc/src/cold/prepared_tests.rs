@@ -108,6 +108,7 @@ fn prepared_seal_releases_source_before_byte_identical_composition() {
             type_values: &NoTypeDefaults,
             resource_search_context: None,
             source_type_order: &order,
+            source_allocation_roster: None,
         };
         let baseline = compile_captured_classified_program(
             &frontend,

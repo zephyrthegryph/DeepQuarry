@@ -94,6 +94,8 @@ pub struct CapturedDeclarationInputs<'a> {
     /// Complete observable order of fresh source types; excludes retained,
     /// root and world entries. Discovery must capture this order explicitly.
     pub source_type_order: &'a [dm_ir::SymbolId],
+    pub source_allocation_roster:
+        Option<&'a std::sync::Arc<crate::type_creation_order::AllocationRoster>>,
 }
 pub struct CapturedLinkInputs<'a> {
     /// Same pinned bytes used to seed the declaration model.
@@ -732,6 +734,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         projection,
         crate::required_types::PreparedInputs {
             source_order: declarations.source_type_order,
+            source_allocation_roster: declarations.source_allocation_roster,
             body_type_requests: &body_types,
             initializers: &initialization.units,
             maps: &initialization_artifacts,

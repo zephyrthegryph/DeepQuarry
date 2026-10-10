@@ -118,6 +118,7 @@ fn classified_cold_path_emits_real_class_field_and_procedure() {
             type_values: &NoTypeDefaults,
             resource_search_context: None,
             source_type_order: &order,
+            source_allocation_roster: None,
         },
         LoweringConfig {
             workers: 2,
@@ -307,6 +308,7 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
             type_values: &NoTypeDefaults,
             resource_search_context: None,
             source_type_order: &order,
+            source_allocation_roster: None,
         },
         LoweringConfig {
             workers: 2,

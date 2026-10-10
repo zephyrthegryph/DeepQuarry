@@ -81,6 +81,7 @@ fn deferred_default_provenance_failure_does_not_preempt_body_diagnostic() {
             type_values: &Types,
             resource_search_context: None,
             source_type_order: &[],
+            source_allocation_roster: None,
         },
         LoweringConfig::default(),
         Vec::new(),

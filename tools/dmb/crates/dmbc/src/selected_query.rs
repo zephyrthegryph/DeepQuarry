@@ -125,7 +125,7 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
         config,
         Some(startup),
         Some(memo),
-        execution.with_reference_capture(),
+        execution.with_selection_query(),
         false,
         &|input| Ok::<_, std::convert::Infallible>(input.into_selected()),
     );

@@ -54,15 +54,27 @@ impl ReusableProcedureArtifact {
             })
             .collect()
     }
-    pub(crate) fn disk_type_requests(&self) -> Vec<SymbolId> {
-        std::iter::once(self.frozen.as_ref())
-            .chain(self.helpers.iter().map(|h| h.frozen.as_ref()))
-            .flat_map(|code| code.code().relocations())
-            .filter_map(|r| match r.reference {
+    pub(crate) fn disk_type_requests_with_modified(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+    ) -> Vec<SymbolId> {
+        fn append(code: &FrozenProc, out: &mut Vec<SymbolId>) {
+            out.extend(code.code().relocations().filter_map(|r| match r.reference {
                 SymRef::Type(id) => Some(id),
                 _ => None,
-            })
-            .collect()
+            }));
+        }
+        let mut requests = Vec::new();
+        append(&self.frozen, &mut requests);
+        let modified: std::collections::BTreeMap<_, _> = recipes
+            .iter()
+            .map(|r| (r.reference(), r.runtime_type()))
+            .collect();
+        requests.extend(modified.into_values());
+        for helper in &self.helpers {
+            append(&helper.frozen, &mut requests);
+        }
+        requests
     }
 }
 #[derive(Serialize, Deserialize)]
@@ -73,6 +85,14 @@ pub(crate) struct HelperWire<'a> {
 }
 impl<'a> Encoded<'a> {
     fn capture_helper(helper: &'a HelperArtifact) -> Option<Self> {
+        if helper
+            .frozen
+            .code()
+            .relocations()
+            .any(|r| matches!(r.reference, SymRef::Instance(_)))
+        {
+            return None;
+        }
         Self::capture_fields(
             &helper.frozen,
             helper.local_names.len().try_into().ok()?,
@@ -113,13 +133,6 @@ impl<'a> Encoded<'a> {
         slots: &'a Slots,
         content: &'a dm_link::EntryContent,
     ) -> Option<Self> {
-        if frozen
-            .code()
-            .relocations()
-            .any(|r| matches!(r.reference, SymRef::Instance(_)))
-        {
-            return None;
-        }
         let dm_link::EntryContent::Symbolic(content) = content else {
             return None;
         };
@@ -197,8 +210,17 @@ impl Encoded<'_> {
         prepared: &crate::procedure_policy::PreparedUnit,
         bindings: crate::lowering::DiskReplayBindings<'_>,
         debug_count: usize,
+        instances: &std::collections::BTreeSet<SymRef>,
     ) -> Option<Arc<ReusableProcedureArtifact>> {
-        self.restore_mode(frontend, body, prepared, bindings, debug_count, false)
+        self.restore_mode(
+            frontend,
+            body,
+            prepared,
+            bindings,
+            debug_count,
+            false,
+            instances,
+        )
     }
     #[allow(clippy::too_many_arguments)]
     fn restore_mode(
@@ -209,6 +231,7 @@ impl Encoded<'_> {
         bindings: crate::lowering::DiskReplayBindings<'_>,
         debug_count: usize,
         helper: bool,
+        instances: &std::collections::BTreeSet<SymRef>,
     ) -> Option<Arc<ReusableProcedureArtifact>> {
         let source_len = body
             .expanded_span
@@ -275,11 +298,15 @@ impl Encoded<'_> {
         licensed.insert(SymRef::BuiltinGlobalVars);
         licensed.extend(strings.iter().map(|s| SymRef::String(s.id)));
         licensed.extend(slots.iter().map(|s| SymRef::VariableSlot(s.symbol)));
+        let mut selected_instances = std::collections::BTreeSet::new();
         let mut relocations = Vec::with_capacity(self.relocations.0.len());
         for (offset, reference, tag) in self.relocations.0 {
             let valid = match reference {
                 SymRef::SourceFile(at) | SymRef::SourceLine(at) => (at as usize) < debug_count,
-                SymRef::Instance(_) => false,
+                SymRef::Instance(_) => {
+                    selected_instances.insert(reference);
+                    !helper && instances.contains(&reference)
+                }
                 _ => {
                     licensed.contains(&reference)
                         || bindings.source.contains(&reference)
@@ -296,6 +323,11 @@ impl Encoded<'_> {
                     dm_ir::RelocationEncoding::PackedValue24 { tag }
                 }),
             });
+        }
+        // A current recipe licenses exactly the emitted descriptor roster. Extra
+        // recipes would otherwise manufacture unused initializer contributions.
+        if &selected_instances != instances {
+            return None;
         }
         let words = self
             .words
@@ -429,6 +461,7 @@ impl ReusableProcedureArtifact {
                 bindings,
                 debug.entries.len(),
                 true,
+                &std::collections::BTreeSet::new(),
             )?;
             let code = Arc::try_unwrap(code).ok()?;
             restored.push(HelperArtifact {

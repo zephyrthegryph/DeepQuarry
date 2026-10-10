@@ -133,6 +133,8 @@ impl ResolveQuery {
             | Self::VarStorage { .. }
             | Self::StaticVar { .. } => ReadDomain::OwnerVariable(self),
             Self::GlobalProc(_)
+            | Self::Signature(_)
+            | Self::HasMemberProc { .. }
             | Self::Proc { .. }
             | Self::ProcedureValue { .. }
             | Self::MethodProcedureValue { .. }

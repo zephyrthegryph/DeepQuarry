@@ -107,6 +107,48 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
     );
     arena
         .with_parsed(&moved.bodies[0], |parsed| {
+            let wire_bytes = dm_wire::encode(91, &recipe.disk_evidence()).unwrap();
+            let wire: RecipeWire<'_> =
+                dm_wire::decode_borrowed(91, &wire_bytes, wire_bytes.len()).unwrap();
+            let from_wire = wire
+                .reissue(
+                    parsed,
+                    &Host(7),
+                    moved.snapshot.tree.symbols(),
+                    &current_debug,
+                    None,
+                    SymbolId::of("/"),
+                )
+                .unwrap();
+            assert_eq!(
+                from_wire.captured.descriptor.canonical_bytes(),
+                previous.captured.descriptor.canonical_bytes()
+            );
+            assert_eq!(
+                from_wire.captured.source_span.unwrap().start,
+                previous.captured.source_span.unwrap().start + moved.bodies[0].expanded_span.start
+                    - old.bodies[0].expanded_span.start
+            );
+            assert!(wire
+                .reissue(
+                    parsed,
+                    &Host(8),
+                    moved.snapshot.tree.symbols(),
+                    &current_debug,
+                    None,
+                    SymbolId::of("/")
+                )
+                .is_none());
+            assert!(wire
+                .reissue(
+                    parsed,
+                    &Host(7),
+                    moved.snapshot.tree.symbols(),
+                    &current_debug,
+                    Some(17),
+                    SymbolId::of("/")
+                )
+                .is_none());
             let current = recipe
                 .reissue(
                     parsed,

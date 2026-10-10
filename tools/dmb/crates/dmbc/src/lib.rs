@@ -50,6 +50,7 @@ pub mod lowering;
 pub mod lowering_memo;
 mod lowering_memo_wire;
 mod lowering_memo_compact;
+mod lowering_memo_selection;
 pub mod mob_writer;
 mod native_callbacks;
 pub mod native_inputs;

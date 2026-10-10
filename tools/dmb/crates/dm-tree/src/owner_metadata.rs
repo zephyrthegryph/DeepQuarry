@@ -26,6 +26,7 @@ pub enum MetadataQuery {
     Hierarchy(SymbolId),
     CallableLocal(SymbolId),
     CallableSelection(SymbolId, SymbolId, bool),
+    CallablePresence(SymbolId, SymbolId),
     VariableLocal(SymbolId, SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -49,6 +50,7 @@ impl MetadataQuery {
             Self::Hierarchy(_)
             | Self::CallableLocal(_)
             | Self::CallableSelection(..)
+            | Self::CallablePresence(..)
             | Self::VariableLocal(..) => MetadataDomain::Namespace,
         }
     }
@@ -96,6 +98,7 @@ impl<M: Index<usize, Output = MemberNode>>
             }
             MetadataQuery::CallableLocal(_)
             | MetadataQuery::CallableSelection(..)
+            | MetadataQuery::CallablePresence(..)
             | MetadataQuery::VariableLocal(..) => {
                 unreachable!("effective metadata records no callable certificate inputs")
             }
@@ -230,7 +233,6 @@ impl RetainedMetadata {
         keys.extend(tree.types.iter().map(|node| callables::key(node.path)));
         keys.extend(selections::keys(tree, &*members, order));
         keys.extend(self.demanded_keys(tree));
-        keys.extend(variables::keys(tree, &*members, order));
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {

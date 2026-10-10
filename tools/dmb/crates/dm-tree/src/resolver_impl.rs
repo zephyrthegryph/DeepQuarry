@@ -10,6 +10,21 @@ impl dm_ir::Resolver for SemanticTree {
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let selection = match query {
+                dm_ir::ResolveQuery::Signature(path) => {
+                    if matches!(
+                        dm_ir::Resolver::resolve(self, query),
+                        dm_ir::ResolvedMeaning::Unsupported(_)
+                    ) {
+                        return None;
+                    }
+                    self.signature_selection(path)?
+                }
+                dm_ir::ResolveQuery::HasMemberProc { owner, name } => {
+                    return self
+                        .owner_certificate_issuer
+                        .as_ref()
+                        .and_then(|issuer| issuer.demanded_presence(self, owner, name));
+                }
                 dm_ir::ResolveQuery::Proc { owner, name, verb }
                 | dm_ir::ResolveQuery::ProcedureValue {
                     owner, name, verb, ..
@@ -48,7 +63,13 @@ impl dm_ir::Resolver for SemanticTree {
                 | dm_ir::ResolveQuery::StaticVar { owner, name } => (owner, name),
                 _ => return None,
             };
-            return self.owner_variable_selections.get(&(owner, name)).copied();
+            if let Some(token) = self.owner_variable_selections.get(&(owner, name)) {
+                return Some(*token);
+            }
+            return self
+                .owner_certificate_issuer
+                .as_ref()
+                .and_then(|issuer| issuer.demanded_variable(self, owner, name));
         }
         if domain != dm_ir::ReadDomain::Tree {
             return None;
@@ -250,22 +271,16 @@ impl dm_ir::Resolver for SemanticTree {
             // Phase1 adapter must populate typed constant/signature/resource
             // domains before callers may issue these unsupported queries.
             Q::Signature(path) => {
-                let Some(text) = self.symbols.text(path) else {
+                let Some((owner, name, verb)) = self.signature_selection(path) else {
                     return self.complete_answer(query, M::Missing);
                 };
-                let Some((owner, name)) = text
-                    .rsplit_once("/proc/")
-                    .or_else(|| text.rsplit_once("/verb/"))
-                else {
-                    return self.complete_answer(query, M::Missing);
-                };
-                let kind = if text.contains("/verb/") {
+                let kind = if verb {
                     MemberKind::Verb
                 } else {
                     MemberKind::Proc
                 };
-                self.lookup_type(SymbolId::of(if owner.is_empty() { "/" } else { owner }))
-                    .and_then(|id| self.resolve(id, SymbolId::of(name), kind))
+                self.lookup_type(owner)
+                    .and_then(|id| self.resolve(id, name, kind))
                     .map(|id| {
                         let node = &self.members[id.index()];
                         match &node.metadata.procedure {
@@ -325,3 +340,19 @@ impl dm_ir::Resolver for SemanticTree {
 #[cfg(test)]
 #[path = "resolver_method_tests.rs"]
 mod method_tests;
+
+impl SemanticTree {
+    // Both semantic resolution and receipt selection decode the same issued
+    // current spelling. A symbol hash alone is never a procedure path proof.
+    fn signature_selection(&self, path: SymbolId) -> Option<(SymbolId, SymbolId, bool)> {
+        let text = self.symbols.text(path)?;
+        let (owner, name) = text
+            .rsplit_once("/proc/")
+            .or_else(|| text.rsplit_once("/verb/"))?;
+        Some((
+            SymbolId::of(if owner.is_empty() { "/" } else { owner }),
+            SymbolId::of(name),
+            text.contains("/verb/"),
+        ))
+    }
+}

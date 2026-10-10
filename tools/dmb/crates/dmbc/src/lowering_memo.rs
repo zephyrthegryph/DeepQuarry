@@ -1,7 +1,7 @@
 //! Exact lowering variants with retained dependency answers and source replay.
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
-pub const PROCEDURE_VERSION: u32 = 7;
+pub const PROCEDURE_VERSION: u32 = 8;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -340,13 +340,17 @@ impl ProcedureMemo {
                         body: context.body,
                         parsed: context.parsed,
                         bindings: context.bindings,
+                        selections_only: context.selections_only,
+                        modified: context.modified,
                     },
                     host,
                     prepared,
                 )
             };
-            let admitted =
-                result.unit.is_some() || result.prepared.is_some() || result.errors.is_some();
+            let admitted = result.unit.is_some()
+                || result.prepared.is_some()
+                || result.selections.is_some()
+                || result.errors.is_some();
             let mut replay = replay.borrow_mut();
             if admitted || replay.is_none() {
                 *replay = Some(result);
@@ -362,7 +366,10 @@ impl ProcedureMemo {
                 });
         debug_assert_eq!(
             view.is_some(),
-            result.unit.is_some() || result.prepared.is_some() || result.errors.is_some()
+            result.unit.is_some()
+                || result.prepared.is_some()
+                || result.selections.is_some()
+                || result.errors.is_some()
         );
         if self.resident_retention == ResidentRetention::Enabled {
             if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.as_ref()) {
@@ -386,6 +393,35 @@ impl ProcedureMemo {
             }
         }
         result
+    }
+    pub(crate) fn queue_selections(
+        &self,
+        key: &[u8],
+        reads: &[ResolverRead],
+        unit: &crate::lowering::LoweredUnit,
+        versions: &[(ReadDomain, u128)],
+    ) {
+        if self.read_only_disk || self.disk.is_none() {
+            return;
+        }
+        let start = std::time::Instant::now();
+        let bytes = {
+            let _profile = dm_profile::item("lowering.population_encode");
+            crate::lowering_memo_selection::encode(key, reads, versions, unit)
+        };
+        self.counts.encode_ns.fetch_add(
+            start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            Ordering::Relaxed,
+        );
+        match bytes {
+            Some(bytes) => {
+                self.queue_payload(key, bytes);
+                self.counts
+                    .compact_disk_encoded
+                    .fetch_add(1, Ordering::Relaxed);
+            }
+            None => self.wire_error("selected facts cannot be represented by bounded query wire"),
+        }
     }
     pub(crate) fn queue_disk(
         &self,
@@ -525,12 +561,31 @@ impl ProcedureMemo {
         versions: Vec<(ReadDomain, u128)>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
+            return;
+        }
+        self.remember_shared(
+            key.into(),
+            reads.into(),
+            unit,
+            relative_debug,
+            versions.into(),
+        );
+    }
+    pub(crate) fn remember_shared(
+        &self,
+        key: Arc<[u8]>,
+        reads: Arc<[ResolverRead]>,
+        unit: &crate::lowering::LoweredUnit,
+        relative_debug: Vec<usize>,
+        versions: Arc<[(ReadDomain, u128)]>,
+    ) {
+        if self.resident_retention == ResidentRetention::DiskOnly {
             // Avoid weight serialization and RichIR clone for a request-local
             // cache. Disk publication occurred independently before this call.
             return;
         }
         let _profile = dm_profile::item("lowering.resident_store");
-        let Some(weight) = crate::heap_census::resident_weight::procedure(
+        let Some(weight) = crate::heap_census::resident_weight::procedure_shared(
             unit,
             &relative_debug,
             &key,
@@ -540,15 +595,19 @@ impl ProcedureMemo {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
             return;
         };
-        if !self
+        if self
             .values
-            .insert_with(key.into(), reads, versions, weight, || CachedProcedure {
+            .insert_with_shared(key, reads, versions, weight, || CachedProcedure {
                 unit: unit.clone(),
                 relative_debug,
             })
+            .is_none()
         {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
         }
+    }
+    pub(crate) fn retains_resident(&self) -> bool {
+        self.resident_retention == ResidentRetention::Enabled
     }
 }
 

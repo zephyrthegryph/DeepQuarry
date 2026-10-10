@@ -11,16 +11,29 @@ impl dm_preprocess::SourceProvider for Source {
 }
 #[test]
 fn compact_disk_replays_checked_frozen_code_and_declines_changed_receipts_and_abi() {
-    check_replay("/proc/compact_probe(x)\n    return \"hello\"\n", false);
+    check_replay(
+        "/proc/compact_probe(x)\n    return \"hello\"\n",
+        false,
+        false,
+    );
 }
 #[test]
 fn compact_disk_replays_current_abi_companions_and_rejects_changed_helper_order() {
     check_replay(
         "/proc/compact_probe(x in list(1, 2))\n    return \"hello\"\n",
         true,
+        false,
     );
 }
-fn check_replay(source: &'static str, helpers: bool) {
+#[test]
+fn compact_disk_reissues_modified_descriptor_from_current_source() {
+    check_replay(
+        "/obj/base\n    var/amount = 0\n/proc/compact_probe()\n    return (/obj/base{amount=1})\n",
+        false,
+        true,
+    );
+}
+fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
     let engine = crate::engine::EngineSnapshot::from_bytes(
         include_bytes!("../../../fixtures/native_template.bin"),
         1,
@@ -74,6 +87,17 @@ fn check_replay(source: &'static str, helpers: bool) {
     assert_eq!(batch.units.len(), 1);
     let unit = batch.units.pop().unwrap();
     let body = &front.bodies[0];
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        &front,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let issuer = CurrentModifiedIssuer {
+        frontend: &front,
+        body,
+        bodies: &bodies,
+        host: &host,
+        parsed: None,
+    };
     let offsets: Vec<_> = unit
         .debug_origins
         .entries
@@ -114,6 +138,7 @@ fn check_replay(source: &'static str, helpers: bool) {
     let payload = decode(&bytes).unwrap();
     assert!(payload.changed_read(&host).is_none());
     assert_eq!(!payload.helpers.0.is_empty(), helpers);
+    assert_eq!(!payload.recipes.0.is_empty(), modifiers);
     if helpers {
         let mut bad = decode(&bytes).unwrap();
         bad.helpers.0[0].argument = u32::MAX;
@@ -123,7 +148,9 @@ fn check_replay(source: &'static str, helpers: bool) {
                     frontend: &front,
                     body,
                     parsed: None,
-                    bindings: Some(bindings)
+                    bindings: Some(bindings),
+                    selections_only: false,
+                    modified: Some(&issuer),
                 },
                 &abi.prepared.units[0].1
             )
@@ -136,18 +163,32 @@ fn check_replay(source: &'static str, helpers: bool) {
                     frontend: &front,
                     body,
                     parsed: None,
-                    bindings: Some(bindings)
+                    bindings: Some(bindings),
+                    selections_only: false,
+                    modified: Some(&issuer),
                 },
                 &abi.prepared.units[0].1
             )
             .is_err());
     }
     let ready = &abi.prepared.units[0].1;
+    if !modifiers {
+        let extra = std::collections::BTreeSet::from([dm_ir::SymRef::Instance(
+            dm_ir::SymbolId::of("unselected descriptor"),
+        )]);
+        assert!(decode(&bytes)
+            .unwrap()
+            .executable
+            .restore(&front, body, ready, bindings, offsets.len(), &extra)
+            .is_none());
+    }
     let context = || crate::lowering_memo_wire::ProcedureReplayContext {
         frontend: &front,
         body,
         parsed: None,
         bindings: Some(bindings),
+        selections_only: false,
+        modified: Some(&issuer),
     };
     let identity = payload.identity;
     let framed = dm_cache::encode_variants(std::slice::from_ref(&bytes)).unwrap();
@@ -189,7 +230,11 @@ fn check_replay(source: &'static str, helpers: bool) {
     bad.reads.0[0].answer = Cow::Borrowed(b"changed negative answer");
     assert!(bad.changed_read(&host).is_some());
     let mut bad = decode(&bytes).unwrap();
-    bad.executable.corrupt_string();
+    if modifiers {
+        bad.recipes.0[0].corrupt_canonical();
+    } else {
+        bad.executable.corrupt_string();
+    }
     assert!(bad.rebind(context(), ready).is_err());
     let mut tampered = bytes;
     *tampered.last_mut().unwrap() ^= 1;

@@ -7,6 +7,88 @@ use std::{
         Arc,
     },
 };
+/// Immutable membership layers; only names authored at this level are owned here.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct NameMembership(Option<Arc<NameLayer>>);
+#[derive(Debug)]
+pub(crate) struct NameLayer {
+    pub(crate) own: BTreeSet<String>,
+    pub(crate) parent: NameMembership,
+}
+impl NameMembership {
+    fn extend(&self, own: &BTreeSet<String>) -> Self {
+        if own.is_empty() {
+            return self.clone();
+        }
+        Self(Some(Arc::new(NameLayer {
+            own: own.clone(),
+            parent: self.clone(),
+        })))
+    }
+    fn contains(&self, name: &str) -> bool {
+        let mut next = self;
+        while let Some(layer) = &next.0 {
+            if layer.own.contains(name) {
+                return true;
+            }
+            next = &layer.parent;
+        }
+        false
+    }
+    pub(crate) fn layer(&self) -> Option<&Arc<NameLayer>> {
+        self.0.as_ref()
+    }
+}
+impl From<BTreeSet<String>> for NameMembership {
+    fn from(own: BTreeSet<String>) -> Self {
+        if own.is_empty() {
+            Self::default()
+        } else {
+            Self(Some(Arc::new(NameLayer {
+                own,
+                parent: Self::default(),
+            })))
+        }
+    }
+}
+impl PartialEq for NameMembership {
+    fn eq(&self, other: &Self) -> bool {
+        let (mut left, mut right) = (self, other);
+        loop {
+            match (&left.0, &right.0) {
+                (None, None) => return true,
+                (Some(a), Some(b)) => {
+                    if Arc::ptr_eq(a, b) {
+                        return true;
+                    }
+                    if a.own != b.own {
+                        return false;
+                    }
+                    left = &a.parent;
+                    right = &b.parent;
+                }
+                _ => return false,
+            }
+        }
+    }
+}
+impl Eq for NameMembership {}
+
+/// Prune keys on success and error alike; failed revisions cannot accumulate variants.
+pub(crate) struct HeaderRequest<'a> {
+    pub(crate) store: Option<&'a HeaderRecipes>,
+    pub(crate) recipes: Vec<Vec<u8>>,
+    pub(crate) defaults: Vec<Vec<u8>>,
+}
+impl Drop for HeaderRequest<'_> {
+    fn drop(&mut self) {
+        if let Some(store) = self.store {
+            store.retain_current(&self.recipes);
+            store.retain_default_keys(&self.defaults);
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct HeaderRecipe {
     pub owner: Vec<u8>,
@@ -14,8 +96,8 @@ pub(crate) struct HeaderRecipe {
     pub inherited_fields: Vec<String>,
     pub local: BTreeSet<String>,
     pub native_overrides: BTreeSet<Vec<u8>>,
-    pub effective_authored: BTreeSet<String>,
-    pub effective_overrides: BTreeSet<String>,
+    pub effective_authored: NameMembership,
+    pub effective_overrides: NameMembership,
     pub authored_name: bool,
     pub authored_text: bool,
 }
@@ -70,10 +152,8 @@ fn produce(
     native.retain(|name| {
         !std::str::from_utf8(name).is_ok_and(|name| parent.effective_overrides.contains(name))
     });
-    let mut effective_authored = parent.effective_authored.clone();
-    effective_authored.extend(authored.iter().cloned());
-    let mut effective_overrides = parent.effective_overrides.clone();
-    effective_overrides.extend(overrides.iter().cloned());
+    let effective_authored = parent.effective_authored.extend(authored);
+    let effective_overrides = parent.effective_overrides.extend(overrides);
     let mut inherited_fields = Vec::new();
     if !parent.owner.is_empty() {
         for name in [
@@ -228,13 +308,7 @@ impl HeaderRecipes {
     pub(crate) fn visit_storage(
         &self,
         visitor: impl FnMut(
-            dm_session::ObservedArtifactStorageView<
-                '_,
-                HeaderRecipe,
-                (),
-                Arc<HeaderRecipe>,
-                (),
-            >,
+            dm_session::ObservedArtifactStorageView<'_, HeaderRecipe, (), Arc<HeaderRecipe>, ()>,
         ),
     ) {
         self.values.visit_storage(visitor);
@@ -250,6 +324,69 @@ mod tests {
     use super::*;
     fn names(values: &[&str]) -> BTreeSet<String> {
         values.iter().map(|v| (*v).to_owned()).collect()
+    }
+    #[test]
+    fn membership_layers_match_flat_legacy_union_and_share_empty_branches() {
+        let base = NameMembership::from(names(&["name", "desc"]));
+        let left = base.extend(&names(&["density", "desc"]));
+        let right = base.extend(&names(&["icon_state"]));
+        let empty = left.extend(&BTreeSet::new());
+        assert!(Arc::ptr_eq(left.layer().unwrap(), empty.layer().unwrap()));
+        assert!(Arc::ptr_eq(
+            base.layer().unwrap(),
+            left.layer().unwrap().parent.layer().unwrap()
+        ));
+        assert!(Arc::ptr_eq(
+            base.layer().unwrap(),
+            right.layer().unwrap().parent.layer().unwrap()
+        ));
+        let mut legacy_left = names(&["name", "desc"]);
+        legacy_left.extend(names(&["density", "desc"]));
+        let mut legacy_right = names(&["name", "desc"]);
+        legacy_right.extend(names(&["icon_state"]));
+        for name in ["name", "desc", "density", "icon_state", "absent"] {
+            assert_eq!(left.contains(name), legacy_left.contains(name));
+            assert_eq!(right.contains(name), legacy_right.contains(name));
+        }
+        let independent =
+            NameMembership::from(names(&["name", "desc"])).extend(&names(&["density", "desc"]));
+        assert_eq!(left, independent);
+        assert_ne!(left, right);
+    }
+    #[test]
+    fn failed_request_prunes_variant_keys_and_keeps_issued_readers_valid() {
+        let store = HeaderRecipes::default();
+        let parent = Arc::new(HeaderRecipe::default());
+        let (old_key, old) = store.obtain(
+            b"/obj/a",
+            &names(&["desc"]),
+            &BTreeSet::new(),
+            names(&["desc"]),
+            BTreeSet::new(),
+            &parent,
+        );
+        let (new_key, current) = store.obtain(
+            b"/obj/a",
+            &names(&["density"]),
+            &BTreeSet::new(),
+            names(&["density"]),
+            BTreeSet::new(),
+            &parent,
+        );
+        {
+            let _request = HeaderRequest {
+                store: Some(&store),
+                recipes: vec![new_key.clone()],
+                defaults: Vec::new(),
+            };
+            // Scope exit also models a fallible writer returning early.
+        }
+        assert!(store.values.lookup(&old_key, &Parent(&parent)).is_none());
+        assert!(Arc::ptr_eq(
+            &current,
+            &store.values.lookup(&new_key, &Parent(&parent)).unwrap()
+        ));
+        assert!(old.effective_authored.contains("desc"));
     }
     #[test]
     fn inherited_authorship_invalidates_only_exact_parent_decisions() {
@@ -282,8 +419,8 @@ mod tests {
         assert_eq!(*first, *repeated);
         assert!(Arc::ptr_eq(&first, &repeated));
         let changed_parent = Arc::new(HeaderRecipe {
-            effective_authored: names(&["desc"]),
-            effective_overrides: names(&["icon_state"]),
+            effective_authored: names(&["desc"]).into(),
+            effective_overrides: names(&["icon_state"]).into(),
             authored_name: true,
             ..HeaderRecipe::default()
         });

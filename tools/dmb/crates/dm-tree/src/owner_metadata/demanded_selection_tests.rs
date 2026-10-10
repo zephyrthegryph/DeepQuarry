@@ -121,3 +121,192 @@ fn inherited_demands_reuse_only_exact_selected_ancestor_inputs() {
         before
     );
 }
+
+#[test]
+fn inherited_variable_demands_preserve_exact_local_and_parent_storage_facts() {
+    let mut symbols = SymbolTable::default();
+    let base = symbols.intern("/datum/base").unwrap();
+    let child = symbols.intern("/datum/child").unwrap();
+    let name = symbols.intern("value").unwrap();
+    let other = symbols.intern("other").unwrap();
+    let absent_name = symbols.intern("absent").unwrap();
+    let retained = crate::owner_normalization::RetainedNormalization::default();
+    let mut rows = vec![
+        Skeleton::Type {
+            path: base,
+            explicit_parent: None,
+        },
+        Skeleton::Type {
+            path: child,
+            explicit_parent: Some(base),
+        },
+        Skeleton::Member {
+            owner: base,
+            name,
+            kind: MemberKind::Var,
+            mode: DefinitionMode::Declare,
+            metadata: Arc::new(MemberMetadata::default()),
+            content: 1,
+        },
+    ];
+    let build = |rows: &[Skeleton]| {
+        let (index, _) =
+            crate::declaration_contributions::KeyedDeclarations::capture(None, rows).unwrap();
+        crate::build_with_intrinsic_members_indexed(
+            symbols.clone(),
+            rows.into(),
+            &[],
+            &[],
+            false,
+            Some((&index, &retained)),
+        )
+        .unwrap()
+    };
+    let query = ResolveQuery::DeclaredVarType { owner: child, name };
+    let first = build(&rows);
+    let token = first.domain_version(query.domain()).unwrap();
+    rows.push(Skeleton::Member {
+        owner: base,
+        name: other,
+        kind: MemberKind::Var,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 2,
+    });
+    let unrelated = build(&rows);
+    assert_eq!(unrelated.domain_version(query.domain()), Some(token));
+    assert_eq!(
+        Resolver::resolve(&first, query),
+        Resolver::resolve(&unrelated, query)
+    );
+    if let Skeleton::Member { metadata, .. } = &mut rows[2] {
+        Arc::make_mut(metadata).declared_type = Some(base);
+    }
+    let changed = build(&rows);
+    assert_ne!(changed.domain_version(query.domain()), Some(token));
+    let missing = ResolveQuery::HasMemberVar {
+        owner: child,
+        name: absent_name,
+    };
+    let negative = changed.domain_version(missing.domain()).unwrap();
+    rows.push(Skeleton::Member {
+        owner: base,
+        name: absent_name,
+        kind: MemberKind::Var,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 0,
+    });
+    let present = build(&rows);
+    assert_ne!(present.domain_version(missing.domain()), Some(negative));
+    assert_eq!(changed.domain_version(missing.domain()), Some(negative));
+    rows.push(Skeleton::Member {
+        owner: child,
+        name,
+        kind: MemberKind::Var,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 0,
+    });
+    let shadow = build(&rows);
+    assert_ne!(
+        shadow.domain_version(query.domain()),
+        changed.domain_version(query.domain())
+    );
+    rows.pop();
+    rows.remove(2);
+    let removed = build(&rows);
+    assert_ne!(removed.domain_version(query.domain()), Some(token));
+    if let Skeleton::Type {
+        explicit_parent, ..
+    } = &mut rows[1]
+    {
+        *explicit_parent = None;
+    }
+    let reparented = build(&rows);
+    assert_ne!(
+        reparented.domain_version(missing.domain()),
+        present.domain_version(missing.domain())
+    );
+}
+
+#[test]
+fn callable_presence_observes_both_namespaces_and_negative_ancestors() {
+    let mut symbols = SymbolTable::default();
+    let base = symbols.intern("/datum/base").unwrap();
+    let child = symbols.intern("/datum/child").unwrap();
+    let name = symbols.intern("action").unwrap();
+    let other = symbols.intern("other").unwrap();
+    let retained = crate::owner_normalization::RetainedNormalization::default();
+    let mut rows = vec![
+        Skeleton::Type {
+            path: base,
+            explicit_parent: None,
+        },
+        Skeleton::Type {
+            path: child,
+            explicit_parent: Some(base),
+        },
+    ];
+    let build = |rows: &[Skeleton]| {
+        let (index, _) =
+            crate::declaration_contributions::KeyedDeclarations::capture(None, rows).unwrap();
+        crate::build_with_intrinsic_members_indexed(
+            symbols.clone(),
+            rows.into(),
+            &[],
+            &[],
+            false,
+            Some((&index, &retained)),
+        )
+        .unwrap()
+    };
+    let query = ResolveQuery::HasMemberProc { owner: child, name };
+    let absent = build(&rows);
+    let negative = absent.domain_version(query.domain()).unwrap();
+    rows.push(Skeleton::Member {
+        owner: base,
+        name: other,
+        kind: MemberKind::Proc,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 1,
+    });
+    let unrelated = build(&rows);
+    assert_eq!(unrelated.domain_version(query.domain()), Some(negative));
+    rows.push(Skeleton::Member {
+        owner: base,
+        name,
+        kind: MemberKind::Verb,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 2,
+    });
+    let verb = build(&rows);
+    let positive = verb.domain_version(query.domain()).unwrap();
+    assert_ne!(positive, negative);
+    assert_eq!(
+        Resolver::resolve(&verb, query),
+        dm_ir::ResolvedMeaning::Presence(true)
+    );
+    if let Skeleton::Member { content, .. } = &mut rows[3] {
+        *content = 42;
+    }
+    let body = build(&rows);
+    assert_eq!(body.domain_version(query.domain()), Some(positive));
+    rows.pop();
+    rows.push(Skeleton::Member {
+        owner: base,
+        name,
+        kind: MemberKind::Proc,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata::default()),
+        content: 2,
+    });
+    let procedure = build(&rows);
+    assert_ne!(procedure.domain_version(query.domain()), Some(positive));
+    assert_eq!(
+        Resolver::resolve(&procedure, query),
+        dm_ir::ResolvedMeaning::Presence(true)
+    );
+}

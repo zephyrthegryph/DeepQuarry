@@ -4,14 +4,21 @@ use crate::class_projection::header_recipes::HeaderRecipe;
 fn recipe(census: &mut HeapCensus, value: &HeaderRecipe) {
     census.vec_payload("retained.headers.owner", &value.owner);
     census.strings("retained.headers.inherited_fields", &value.inherited_fields);
-    for values in [
-        &value.local,
-        &value.effective_authored,
-        &value.effective_overrides,
-    ] {
-        census.observe_items("retained.headers.sets", values.len());
-        for name in values {
-            census.string("retained.headers.names", name);
+    census.observe_items("retained.headers.sets", value.local.len());
+    for name in &value.local {
+        census.string("retained.headers.names", name);
+    }
+    for membership in [&value.effective_authored, &value.effective_overrides] {
+        let mut next = membership;
+        while let Some(layer) = next.layer() {
+            if !census.arc_object("retained.headers.membership", layer) {
+                break;
+            }
+            census.observe_items("retained.headers.sets", layer.own.len());
+            for name in &layer.own {
+                census.string("retained.headers.names", name);
+            }
+            next = &layer.parent;
         }
     }
     census.observe_items("retained.headers.native", value.native_overrides.len());

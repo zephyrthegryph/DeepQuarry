@@ -14,6 +14,9 @@ impl ObservationHost<SymbolId, Option<Option<SymbolId>>, ()> for Parents<'_> {
     }
 }
 pub struct RequiredTypeArtifacts {
+    pub(crate) selected: super::selected_roster::SelectedRosters,
+    pub(crate) prefixes: super::source_prefix::SourcePrefixes,
+    pub(crate) allocations: crate::type_creation_order::AllocationArtifacts,
     pub(crate) parents: super::parent_index::ParentIndex,
     pub(crate) fields: super::field_requests::FieldRequests,
     values: dm_session::ObservedArtifactStore<Closure, SymbolId, Option<Option<SymbolId>>, ()>,
@@ -24,6 +27,9 @@ impl Default for RequiredTypeArtifacts {
     fn default() -> Self {
         Self {
             fields: Default::default(),
+            selected: Default::default(),
+            prefixes: Default::default(),
+            allocations: Default::default(),
             parents: Default::default(),
             values: dm_session::ObservedArtifactStore::current_revision(),
             hits: AtomicU64::new(0),
@@ -34,6 +40,9 @@ impl Default for RequiredTypeArtifacts {
 impl RequiredTypeArtifacts {
     pub fn clear(&self) {
         self.fields.clear();
+        self.selected.clear();
+        self.prefixes.clear();
+        self.allocations.clear();
         self.parents.clear();
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }

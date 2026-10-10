@@ -85,11 +85,23 @@ impl Shared {
             drop(slots);
             host.release_idle_executor();
             if next >= 2 {
+                let before = transport::private_bytes();
+                let started = Instant::now();
                 host.release_idle_artifacts();
+                super::super::emit_stderr(format_args!(
+                    "dmbd rich release project={} private-before={before:?} private-after={:?} seconds={:.6}",
+                    key.manifest.display(),
+                    transport::private_bytes(),
+                    started.elapsed().as_secs_f64()
+                ));
             }
             super::super::emit_stderr(format_args!(
                 "dmbd idle release tier={} project={} pressure={pressured}",
-                if next >= 2 { "rich-buffers" } else { "executor" },
+                if next >= 2 {
+                    "rich-buffers"
+                } else {
+                    "executor"
+                },
                 key.manifest.display()
             ));
         }

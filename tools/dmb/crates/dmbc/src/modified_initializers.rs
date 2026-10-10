@@ -13,7 +13,7 @@ use std::{
 };
 
 mod source_recipe;
-pub(crate) use source_recipe::SourceRecipe;
+pub(crate) use source_recipe::{RecipeWire, SourceRecipe};
 mod descriptor_recipe;
 mod expression_recipe;
 pub(crate) use expression_recipe::ExpressionRecipe;

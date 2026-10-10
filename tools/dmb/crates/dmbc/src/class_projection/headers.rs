@@ -166,8 +166,11 @@ pub(crate) fn finalize_headers_with_engine(
     let mut authored_name = HashSet::new();
     let mut authored_text = HashSet::new();
     let mut effective_recipes = HashMap::new();
-    let mut recipe_keys = Vec::new();
-    let mut default_keys = Vec::new();
+    let mut retained_request = super::header_recipes::HeaderRequest {
+        store: recipes,
+        recipes: Vec::new(),
+        defaults: Vec::new(),
+    };
 
     for id in order {
         let authored = own.get(&id).cloned().unwrap_or_default();
@@ -244,7 +247,7 @@ pub(crate) fn finalize_headers_with_engine(
                 native_owned,
                 &parent_recipe,
             );
-            recipe_keys.push(key);
+            retained_request.recipes.push(key);
             recipe_native_names = Some(recipe.native_overrides.iter().cloned().collect());
             retained_recipe = Some(recipe);
         } else {
@@ -289,20 +292,22 @@ pub(crate) fn finalize_headers_with_engine(
                 override_own.get(&id).unwrap_or(&HashSet::new()),
                 &native_override_names,
                 recipes.map(|store| (store, owner_path)),
-                &mut default_keys,
+                &mut retained_request.defaults,
             )?;
         }
         if let Some(recipe) = retained_recipe {
             effective_recipes.insert(id, recipe);
         }
-        effective_authored.insert(id, extend_provenance(inherited_authored, &authored));
-        effective_overrides.insert(
-            id,
-            extend_provenance(
-                inherited_overrides,
-                override_own.get(&id).unwrap_or(&HashSet::new()),
-            ),
-        );
+        if recipes.is_none() {
+            effective_authored.insert(id, extend_provenance(inherited_authored, &authored));
+            effective_overrides.insert(
+                id,
+                extend_provenance(
+                    inherited_overrides,
+                    override_own.get(&id).unwrap_or(&HashSet::new()),
+                ),
+            );
+        }
         if authored.contains("name") && dmb.classes[id as usize].name_string_id() == NONE {
             // Native null-name reset restores the type leaf instead of leaving
             // a null display name. Keep this an authored effective name.
@@ -351,10 +356,6 @@ pub(crate) fn finalize_headers_with_engine(
                 None => NONE,
             };
         }
-    }
-    if let Some(store) = recipes {
-        store.retain_current(&recipe_keys);
-        store.retain_default_keys(&default_keys);
     }
     Ok(())
 }

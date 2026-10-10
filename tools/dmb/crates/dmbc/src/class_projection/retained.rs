@@ -8,6 +8,7 @@ use dm_ir::{ResolveQuery, Resolver};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 pub struct ClassProjections {
+    pub(crate) types: super::type_roster::TypeRoster,
     values: dm_session::ArtifactStore<Vec<MemberContribution>>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
@@ -16,6 +17,7 @@ pub struct ClassProjections {
 impl Default for ClassProjections {
     fn default() -> Self {
         Self {
+            types: Default::default(),
             values: dm_session::ArtifactStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),

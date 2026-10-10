@@ -28,37 +28,147 @@
     ]
   },
   "latest_prototype_cohort": {
-    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json",
-    "compiler_commit": "d889b0cac1",
-    "profile": "main crate opt-level 0; dependencies optimized; not revision 6 release acceptance",
-    "fresh_native_dmb_and_rsc_byte_oracles_passed": 8,
-    "retained_end_to_end_seconds": {
-      "initial": 86.8013271,
-      "unchanged": 1.6487348,
-      "body_edit": 69.4849209,
-      "new_proc": 65.6718014,
-      "new_type_and_constant": 68.5424855,
-      "constant_edit": 64.5477635,
-      "shifted_proc_body": 64.7484221,
-      "asset_edit": 72.2342179
+    "status": "passed",
+    "compiler_sha256": "3f791bbbc234243fedfeb0a8371e3e0ac3414e1ba57aff86879e3ee9906f7582",
+    "build_provenance": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261009-230335-70e12998.json",
+      "sha256": "2b00bbab24d7316b098ac3a7eb72c756b8daa68d396a22911a330b03016c6b72",
+      "compiler_sha256": "3f791bbbc234243fedfeb0a8371e3e0ac3414e1ba57aff86879e3ee9906f7582",
+      "commit": "9eb5b8f1d5a689dd7127c35368717fc8bcc03256",
+      "dmbc_opt_level": 1,
+      "dm_tree_opt_level": 1,
+      "dmbc_codegen_units": 256,
+      "lto": false,
+      "declared_acceptance_profile": false,
+      "benchmark_acceptance_admitted": false,
+      "scope": "successful-build receipt matched to exact executable bytes"
     },
-    "fresh_native_end_to_end_seconds": [
-      46.9654475,
-      41.8782306,
-      44.0754947,
-      38.2174932,
-      40.0676746,
-      37.2691415,
-      36.4943155,
-      38.8000703
+    "workers": 2,
+    "source_snapshot_sha256": "17eb62aa3e91e185894e7ab03f5dc28d0cd2aba3e8f6d53413de7b758701768b",
+    "scope": "real-source daemon iteration wall telemetry plus fresh native DMB/RSC byte oracle; not runtime or r6 acceptance",
+    "BYOND_baseline_gate": "open",
+    "total_end_to_end_s": 806.7286692999769,
+    "daemon_cleanup": {
+      "pid": 51960,
+      "tree_error": null,
+      "direct_error": null,
+      "wait_error": null,
+      "returncode": 1,
+      "reaped": true
+    },
+    "full_receipt": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\receipt.json",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_wall_s": 50.2378439999884,
+        "fresh_wall_s": 20.359345700009726,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049",
+            "fresh": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "open",
+          "comparison_scope": "same_captured_source_and_configuration",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834121,
+          "unexplained_discrepancies": 1834121,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\0\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "dd9b9646732fc214fae1841f951c3ec6d3d71e8b0ff9cbac806db8365e1c36e4"
+        }
+      },
+      {
+        "kind": "unchanged",
+        "retained_wall_s": 1.067161000042688,
+        "fresh_wall_s": 18.086787599953823,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049",
+            "fresh": "58e292f8602c4bc0556db9e97f2a77b724ba5484ea4e86f011bcc1407ddc4049"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "open",
+          "comparison_scope": "same_captured_source_and_configuration",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834121,
+          "unexplained_discrepancies": 1834121,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\0\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "dd9b9646732fc214fae1841f951c3ec6d3d71e8b0ff9cbac806db8365e1c36e4"
+        }
+      },
+      {
+        "kind": "body",
+        "retained_wall_s": 35.237285599985626,
+        "fresh_wall_s": 18.38413030002266,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "e8bef41ca5ade373b488c00c18664496f70e08aa6f6f47eaed8ceb73684afa7f",
+            "fresh": "e8bef41ca5ade373b488c00c18664496f70e08aa6f6f47eaed8ceb73684afa7f"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "not_evaluable_cross_revision",
+          "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834122,
+          "unexplained_discrepancies": 1834122,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\2\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "82f370d1cfea210a65c4bf73b82e01c065ee99c5dcbb21b9c1f16c917c08ec6b"
+        }
+      },
+      {
+        "kind": "structural",
+        "retained_wall_s": 34.64886850002222,
+        "fresh_wall_s": 17.78398659999948,
+        "fresh_native_byte_oracle": true,
+        "output_hashes": {
+          "dmb": {
+            "retained": "1a90c61074196a54792647310a8b8ca5bb93253aa4ac070e842caa38582b0c1f",
+            "fresh": "1a90c61074196a54792647310a8b8ca5bb93253aa4ac070e842caa38582b0c1f"
+          },
+          "rsc": {
+            "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+          }
+        },
+        "BYOND_structural": {
+          "baseline_admission": "not_evaluable_cross_revision",
+          "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+          "semantic_coverage": "incomplete",
+          "total_discrepancies": 1834127,
+          "unexplained_discrepancies": 1834127,
+          "complete": false,
+          "report": "E:\\dq-cache\\dmb-native-iterations\\20261009-230836-ce23fe65\\3\\session-0\\structural\\structural-diff.json",
+          "report_sha256": "c6996ba626a0a60935a8e67e575c94daaa312fedfe7d42c99e4ca747d789f4e5"
+        }
+      }
     ],
-    "byond_structural_gate": "open; 1850404 unexplained differences; traversal completion is not semantic parity",
-    "runtime_gate": "deferred to Phase 5",
     "limitations": [
-      "retained edits slower than fresh in this prototype; zero resident hits and approximately 34 seconds memo lookup need confirmed attribution",
-      "latest scalar, engine-provider and frame-metadata migration sources are newer than the measured executable",
-      "external unrelated Cargo activity was sampled; continuous benchmark isolation is not established",
-      "optimized build attempts hit the 300-second watchdog; no current release-profile timings"
+      "Prototype O1/256 compiler and O1 dm-tree profile; not acceptance profile and not directly comparable to previous differently optimized builds.",
+      "All native byte-oracle rows passed; BYOND structural semantic coverage and equivalence remain open.",
+      "Daemon pressure released rich buffers then whole sessions; body/procedure edits used disk replay, not resident procedure reuse.",
+      "Measurements exclude pending source changes after commit 9eb5b8f1d5.",
+      "No DreamDaemon or runtime suite was run."
     ]
   },
   "scalar_and_owner_selection_validation": {
@@ -911,5 +1021,68 @@
     "required_type_checks": 5,
     "owner_metadata_checks": 5,
     "analysis_current_coordinates_and_cache_checks": 2
+  },
+  "previous_latest_prototype_cohort_before_2335": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json",
+    "compiler_commit": "d889b0cac1",
+    "profile": "main crate opt-level 0; dependencies optimized; not revision 6 release acceptance",
+    "fresh_native_dmb_and_rsc_byte_oracles_passed": 8,
+    "retained_end_to_end_seconds": {
+      "initial": 86.8013271,
+      "unchanged": 1.6487348,
+      "body_edit": 69.4849209,
+      "new_proc": 65.6718014,
+      "new_type_and_constant": 68.5424855,
+      "constant_edit": 64.5477635,
+      "shifted_proc_body": 64.7484221,
+      "asset_edit": 72.2342179
+    },
+    "fresh_native_end_to_end_seconds": [
+      46.9654475,
+      41.8782306,
+      44.0754947,
+      38.2174932,
+      40.0676746,
+      37.2691415,
+      36.4943155,
+      38.8000703
+    ],
+    "byond_structural_gate": "open; 1850404 unexplained differences; traversal completion is not semantic parity",
+    "runtime_gate": "deferred to Phase 5",
+    "limitations": [
+      "retained edits slower than fresh in this prototype; zero resident hits and approximately 34 seconds memo lookup need confirmed attribution",
+      "latest scalar, engine-provider and frame-metadata migration sources are newer than the measured executable",
+      "external unrelated Cargo activity was sampled; continuous benchmark isolation is not established",
+      "optimized build attempts hit the 300-second watchdog; no current release-profile timings"
+    ]
+  },
+  "shared_owner_and_compact_migration_validation": {
+    "workspace_all_targets_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233449-7d63e177.json",
+    "metadata_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-232910-c53c5ae7.json",
+    "compact_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233013-9581fedd.json",
+    "additional_focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233421-213d9b5d-focused.json",
+    "shared_admission_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-233437-d1614a37.json",
+    "focused_passed": 44,
+    "frontend_direct_fixtures": [
+      "frontend::semantic_state::tests::admitted_reused_tree_restores_demand_issuer_after_abandoned_candidate",
+      "frontend::semantic_state::tests::body_edit_shares_semantics_but_issues_new_source_occurrences_and_body"
+    ],
+    "implemented": [
+      "shared inherited variable, callable presence and signature receipt issuer",
+      "source allocation and required prefix/selected type roster producers",
+      "compact query facts disk replay and resident promotion",
+      "current modified descriptor replay with exact emitted roster admission",
+      "shared header membership layers with failure-path pruning",
+      "one immutable fresh read/version/key receipt shared by rich and symbolic memo",
+      "opt-in idle owner diagnosis plus ordinary private-memory release boundaries"
+    ],
+    "unmeasured": true,
+    "limitations": [
+      "memory and performance improvements have not yet been measured",
+      "ProcedureStatic and global UniqueStaticVar remain conservative",
+      "plain instance tuples and modified helpers still retain rich replay fallback",
+      "six-worktree acceptance, compile-error corpus and long history replay remain open",
+      "BYOND semantic structural and deferred Phase 5 runtime gates remain open"
+    ]
   }
 }

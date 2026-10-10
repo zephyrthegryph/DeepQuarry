@@ -78,10 +78,10 @@ fn symbolic_census_deduplicates_shared_records_and_counts_pruned_members() {
     .unwrap();
     let identity = contribution.identity();
     let record = Arc::new(super::super::Record {
-        key: vec![1, 2, 3],
+        key: vec![1, 2, 3].into(),
         reads: Arc::from([]),
         versions: Arc::from([]),
-        artifact: contribution.shared_artifact(),
+        value: super::super::RecordValue::Executable(contribution.shared_artifact()),
         relative_debug: vec![0],
         required_types: contribution.required_types().to_vec(),
         modified_recipes: Vec::new(),

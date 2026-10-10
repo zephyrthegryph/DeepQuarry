@@ -87,7 +87,7 @@ impl RetainedMetadata {
                         tree,
                         index,
                         name,
-                        verb,
+                        Some(verb),
                         parent_certificate,
                     ) else {
                         continue;

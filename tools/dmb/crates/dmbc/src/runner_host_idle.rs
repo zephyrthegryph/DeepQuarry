@@ -9,6 +9,7 @@ impl BuildHost {
     }
 
     pub(crate) fn release_idle_artifacts(&mut self) {
+        self.emit_idle_census("before-rich-release");
         // First pressure tier releases rich and physical buffers, retaining the
         // symbolic dependency receipts needed by the next incremental request.
         // Housekeeping samples memory again before escalating to whole-session
@@ -33,6 +34,7 @@ impl BuildHost {
         if let Some((_, generation)) = &self.generation {
             generation.release_wire_images();
         }
+        self.emit_idle_census("after-rich-release");
     }
 }
 

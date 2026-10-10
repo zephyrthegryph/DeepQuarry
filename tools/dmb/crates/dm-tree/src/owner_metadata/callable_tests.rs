@@ -154,7 +154,7 @@ fn callable_certificates_reuse_local_inputs_and_propagate_parent_changes() {
     );
     assert_eq!(
         ResolveQuery::HasMemberProc { owner: child, name }.domain(),
-        ReadDomain::Tree
+        ReadDomain::OwnerCallable(ResolveQuery::HasMemberProc { owner: child, name })
     );
     assert_eq!(
         ResolveQuery::GlobalProc(name).domain(),
@@ -188,6 +188,9 @@ fn global_selection_excludes_body_but_preserves_signature_and_formal_identity() 
     let mut symbols = SymbolTable::default();
     let root = symbols.intern("/").unwrap();
     let name = symbols.intern("global_callback").unwrap();
+    let signature_path = symbols.intern("/proc/global_callback").unwrap();
+    let missing_path = symbols.intern("/proc/absent_callback").unwrap();
+    let malformed_path = symbols.intern("not_a_procedure_path").unwrap();
     let metadata = Arc::new(MemberMetadata {
         procedure: Some(Arc::new(dm_ir::ProcedureMetadata {
             signature: dm_ir::ProcedureSignature {
@@ -224,6 +227,7 @@ fn global_selection_excludes_body_but_preserves_signature_and_formal_identity() 
     let first = build(1, Arc::clone(&metadata));
     let body_changed = build(2, Arc::clone(&metadata));
     for query in [
+        ResolveQuery::Signature(signature_path),
         ResolveQuery::GlobalProc(name),
         ResolveQuery::MethodProcedureValue {
             owner: root,
@@ -245,6 +249,26 @@ fn global_selection_excludes_body_but_preserves_signature_and_formal_identity() 
         .signature
         .variadic = true;
     let signature_changed = build(2, Arc::new(changed));
+    let signature_query = ResolveQuery::Signature(signature_path);
+    assert_ne!(
+        first.domain_version(signature_query.domain()),
+        signature_changed.domain_version(signature_query.domain())
+    );
+    assert_ne!(
+        Resolver::resolve(&first, signature_query),
+        Resolver::resolve(&signature_changed, signature_query)
+    );
+    for query in [
+        ResolveQuery::Signature(missing_path),
+        ResolveQuery::Signature(malformed_path),
+        ResolveQuery::Signature(SymbolId::of("unissued_path")),
+    ] {
+        assert_eq!(signature_changed.domain_version(query.domain()), None);
+        assert!(matches!(
+            Resolver::resolve(&signature_changed, query),
+            dm_ir::ResolvedMeaning::Unsupported(_)
+        ));
+    }
     let query = ResolveQuery::GlobalProc(name);
     assert_ne!(
         first.domain_version(query.domain()),

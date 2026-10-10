@@ -12,6 +12,46 @@ pub(crate) struct DescriptorRecipe {
     origin: Option<u32>,
 }
 impl DescriptorRecipe {
+    pub(super) fn evidence(
+        &self,
+    ) -> (
+        SymRef,
+        &Arc<[u8]>,
+        SymbolId,
+        SymbolId,
+        Option<u128>,
+        Option<u32>,
+    ) {
+        (
+            self.reference,
+            &self.canonical,
+            self.runtime_type,
+            self.lexical_owner,
+            self.resource_context,
+            self.origin,
+        )
+    }
+    pub(super) fn from_evidence(
+        reference: SymRef,
+        canonical: Arc<[u8]>,
+        runtime_type: SymbolId,
+        lexical_owner: SymbolId,
+        resource_context: Option<u128>,
+        origin: Option<u32>,
+    ) -> Option<Self> {
+        if !matches!(reference, SymRef::Instance(_)) || canonical.is_empty() || origin.is_none() {
+            return None;
+        }
+        Some(Self {
+            reference,
+            canonical,
+            runtime_type,
+            lexical_owner,
+            resource_context,
+            origin,
+        })
+    }
+
     pub(super) fn from_capture(
         reference: SymRef,
         captured: &CapturedModifiedInstance,

@@ -65,12 +65,37 @@ fn nodes<K, V>(map: &BTreeMap<K, V>) -> usize {
     map.len()
         .saturating_mul(size_of::<(K, V)>().saturating_mul(16).saturating_add(512))
 }
+#[cfg(test)]
 pub(crate) fn procedure(
     unit: &crate::lowering::LoweredUnit,
     relative: &Vec<usize>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
+) -> Option<usize> {
+    procedure_core(unit, relative, key, reads, |c| {
+        c.vec_payload("resident_reads", reads);
+        c.vec_payload("resident_versions", versions);
+    })
+}
+pub(crate) fn procedure_shared(
+    unit: &crate::lowering::LoweredUnit,
+    relative: &Vec<usize>,
+    key: &[u8],
+    reads: &std::sync::Arc<[ResolverRead]>,
+    versions: &std::sync::Arc<[(ReadDomain, u128)]>,
+) -> Option<usize> {
+    procedure_core(unit, relative, key, reads, |c| {
+        c.slice("resident_reads", reads, true);
+        c.slice("resident_versions", versions, true);
+    })
+}
+fn procedure_core(
+    unit: &crate::lowering::LoweredUnit,
+    relative: &Vec<usize>,
+    key: &[u8],
+    reads: &[ResolverRead],
+    ledger: impl FnOnce(&mut HeapCensus),
 ) -> Option<usize> {
     if !unit.code.modified_instances.is_empty() || !unit.source_helpers.is_empty() {
         return None;
@@ -109,10 +134,7 @@ pub(crate) fn procedure(
         }
     }
     c.vec_payload("resident_relative", relative);
-    // insert_with converts these Vecs into exact Arc slices; original capacities
-    // are conservative and avoid assuming the conversion reuses their backing.
-    c.vec_payload("resident_reads", reads);
-    c.vec_payload("resident_versions", versions);
+    ledger(&mut c);
     for read in reads {
         answer(&mut c, &read.answer)
     }

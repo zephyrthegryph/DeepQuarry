@@ -50,6 +50,7 @@ fn check_resolved(disk: bool) {
         }
         None => crate::lowering_memo::ProcedureMemo::new(123),
     };
+    let mut last_frontend = None;
     for (source, line) in [
         ("/proc/resolved_probe(x)\n    var/y = x\n    return y\n", 3),
         (
@@ -115,6 +116,7 @@ fn check_resolved(disk: bool) {
         assert!(rows.iter().any(|row| row["row"] == "coverage"
             && row["semantic_resolution_complete"] == false
             && row["diagnostics"] == 0));
+        last_frontend = Some(frontend);
     }
     if let Some(cache) = cache {
         let records = memo.take_pending();
@@ -130,12 +132,77 @@ fn check_resolved(disk: bool) {
             "shifted query uses admitted resident selections"
         );
         cache.publish(&records).unwrap();
+        let frontend = last_frontend.unwrap();
+        let (host, _) = prepare(&frontend, &engine.snapshot).unwrap();
+        let links = engine.link_overlay().unwrap();
+        let mut disk_memo =
+            crate::lowering_memo::ProcedureMemo::with_disk_only(123, cache.snapshot().unwrap());
+        disk_memo.symbolic = Some(std::sync::Arc::new(Default::default()));
+        let mut bytes = Vec::new();
+        assert_eq!(
+            crate::analysis_export::write_resolved(
+                &frontend,
+                &engine.snapshot,
+                &host,
+                &links.inventory.spellings,
+                &executor,
+                &disk_memo,
+                &mut bytes
+            )
+            .unwrap(),
+            1
+        );
+        assert!(
+            disk_memo
+                .counts
+                .compact_disk_hits
+                .load(std::sync::atomic::Ordering::Relaxed)
+                > 0,
+            "fresh query facade directly admits selected-only disk facts"
+        );
+        assert_eq!(
+            disk_memo
+                .counts
+                .recomputed
+                .load(std::sync::atomic::Ordering::Relaxed),
+            0
+        );
+        let first_disk_hits = disk_memo
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed);
+        let mut repeated = Vec::new();
+        crate::analysis_export::write_resolved(
+            &frontend,
+            &engine.snapshot,
+            &host,
+            &links.inventory.spellings,
+            &executor,
+            &disk_memo,
+            &mut repeated,
+        )
+        .unwrap();
+        assert_eq!(bytes, repeated);
+        assert_eq!(
+            disk_memo
+                .counts
+                .disk_hits
+                .load(std::sync::atomic::Ordering::Relaxed),
+            first_disk_hits
+        );
+        assert!(
+            disk_memo
+                .counts
+                .resident_hits
+                .load(std::sync::atomic::Ordering::Relaxed)
+                > 0
+        );
         assert_eq!(
             memo.counts
                 .compact_disk_encoded
                 .load(std::sync::atomic::Ordering::Relaxed),
-            0,
-            "capture retains safe rich disk format"
+            1,
+            "query capture publishes bounded selected-only facts"
         );
     }
 }

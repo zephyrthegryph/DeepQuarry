@@ -338,6 +338,7 @@ pub struct LoweringExecution<'a, 'frontend> {
     pub executor: &'a dm_exec::BuildExecutor,
     pub bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
     pub capture_references: bool,
+    pub(crate) selections_only: bool,
     /// Analysis query selection; compilation uses the complete issued roster.
     pub selected_bodies: Option<&'a [&'frontend BodyOccurrence]>,
     pub disk_replay_bindings: Option<DiskReplayBindings<'a>>,
@@ -351,6 +352,7 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
             executor,
             bodies,
             capture_references: false,
+            selections_only: false,
             selected_bodies: None,
             disk_replay_bindings: None,
         }
@@ -361,6 +363,11 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
     }
     /// Explicit analysis clients pay for typed-node selection recording.
     /// Ordinary builds keep the existing no-capture lowering path.
+    pub(crate) fn with_selection_query(mut self) -> Self {
+        self.capture_references = true;
+        self.selections_only = true;
+        self
+    }
     pub fn with_reference_capture(mut self) -> Self {
         self.capture_references = true;
         self

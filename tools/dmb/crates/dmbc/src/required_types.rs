@@ -8,6 +8,8 @@ use std::collections::{BTreeMap, HashSet};
 pub(crate) mod ancestry;
 pub(crate) mod field_requests;
 pub(crate) mod parent_index;
+pub(crate) mod selected_roster;
+pub(crate) mod source_prefix;
 pub use ancestry::RequiredTypeArtifacts;
 
 pub struct Inputs<'a> {
@@ -20,6 +22,8 @@ pub struct Inputs<'a> {
     pub non_text_types: &'a [SymbolId],
 }
 pub struct PreparedInputs<'a> {
+    pub source_allocation_roster:
+        Option<&'a std::sync::Arc<crate::type_creation_order::AllocationRoster>>,
     pub source_order: &'a [SymbolId],
     pub body_type_requests: &'a [SymbolId],
     pub initializers: &'a [crate::initializer_lowering::LoweredInitializerUnit],
@@ -33,6 +37,8 @@ enum BodyRequirements<'a> {
     Prepared(&'a [SymbolId]),
 }
 struct CommonInputs<'a> {
+    source_allocation_roster:
+        Option<&'a std::sync::Arc<crate::type_creation_order::AllocationRoster>>,
     source_order: &'a [SymbolId],
     bodies: BodyRequirements<'a>,
     initializers: &'a [crate::initializer_lowering::LoweredInitializerUnit],
@@ -50,6 +56,7 @@ pub fn admit(
         CommonInputs {
             source_order: inputs.source_order,
             bodies: BodyRequirements::Rich(inputs.bodies),
+            source_allocation_roster: None,
             initializers: inputs.initializers,
             maps: inputs.maps,
             inventory: inputs.inventory,
@@ -68,6 +75,7 @@ pub fn admit_prepared(
         CommonInputs {
             source_order: inputs.source_order,
             bodies: BodyRequirements::Prepared(inputs.body_type_requests),
+            source_allocation_roster: inputs.source_allocation_roster,
             initializers: inputs.initializers,
             maps: inputs.maps,
             inventory: inputs.inventory,
@@ -87,6 +95,7 @@ pub fn admit_prepared_retained(
         CommonInputs {
             source_order: inputs.source_order,
             bodies: BodyRequirements::Prepared(inputs.body_type_requests),
+            source_allocation_roster: inputs.source_allocation_roster,
             initializers: inputs.initializers,
             maps: inputs.maps,
             inventory: inputs.inventory,
@@ -103,6 +112,7 @@ fn admit_common(
 ) -> Result<(ClassProjection, Vec<SymbolId>), String> {
     let CommonInputs {
         source_order,
+        source_allocation_roster,
         bodies,
         initializers,
         maps,
@@ -127,42 +137,27 @@ fn admit_common(
             _ => None,
         })
         .collect();
-    let mut needed = retained.clone();
-    needed.insert(SymbolId::of("/"));
-    needed.insert(SymbolId::of("/world"));
-    let mut order = Vec::new();
     let mut ancestry = ancestry::Request::new(artifacts);
-    let mut requests = Vec::new();
-    let mut source_seen = HashSet::new();
-    for &path in source_order {
-        if !source_seen.insert(path) {
-            return Err("duplicate explicit source class order".into());
+    // Compatibility callers may supply only a slice. An issued owner must also
+    // match that slice; neither public argument can override the current roster.
+    let prefix = match (
+        artifacts,
+        source_allocation_roster,
+        retained_parents.as_ref(),
+    ) {
+        (Some(artifacts), Some(source), Some(parents)) if source.order() == source_order => {
+            (*artifacts
+                .prefixes
+                .obtain(source, &retained, parents, &mut ancestry)?)
+            .clone()
         }
-        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
-            // Semantic declarations remain in the projection. Any actual
-            // callable/instance dependency below still requires an explicit ABI.
-            continue;
-        }
-        if !needed.contains(&path) {
-            if !parents.contains_key(&path) {
-                return Err("source allocation class absent from semantic skeleton".into());
-            }
-            needed.insert(path);
-            order.push(path);
-        }
-        requests.push(path);
-    }
-    // Preserve the certified source allocation order verbatim. Dependency
-    // closure can append unseen parents; it must not reorder a forward parent
-    // assignment that was encountered after the child's allocation.
-    for &path in source_order {
-        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
-            continue;
-        }
-        if let Some(Some(parent)) = parents.get(&path) {
-            ancestry.require(*parent, parents, &mut needed, &mut order)?;
-        }
-    }
+        _ => source_prefix::produce(source_order, &retained, parents, &mut ancestry)?,
+    };
+    let source_prefix::Prefix {
+        mut needed,
+        mut order,
+        mut requests,
+    } = prefix;
     fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) {
         match value {
             SemanticValue::Type(path)
@@ -229,13 +224,10 @@ fn admit_common(
     for path in requests {
         ancestry.require(path, parents, &mut needed, &mut order)?;
     }
-    projection.types = projection
-        .types
-        .iter()
-        .filter(|ty| needed.contains(&ty.path))
-        .cloned()
-        .collect::<Vec<_>>()
-        .into();
+    projection.types = match artifacts {
+        Some(artifacts) => artifacts.selected.obtain(&projection.types, needed),
+        None => selected_roster::produce(&projection.types, &needed),
+    };
     ancestry.finish();
     Ok((projection, order))
 }

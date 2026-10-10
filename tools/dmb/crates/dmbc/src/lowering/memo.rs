@@ -11,6 +11,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     symbolic: bool,
     capture_references: bool,
+    selections_only: bool,
     disk_replay_bindings: Option<DiskReplayBindings<'_>>,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
@@ -60,6 +61,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     if capture_references {
         key.push(0);
         key.extend_from_slice(dm_ir::SELECTED_REFERENCES_POLICY);
+    }
+    if selections_only {
+        key.extend_from_slice(b"selected-facts-only-v1");
     }
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
@@ -144,9 +148,17 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         });
     };
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
-    if symbolic {
+    if symbolic || selections_only {
         if let Some(store) = &memo.symbolic {
-            if let Some(input) = store.lookup(&key, host, frontend, body, &prepared, bodies) {
+            if let Some(input) = store.lookup(
+                &key,
+                host,
+                frontend,
+                body,
+                &prepared,
+                bodies,
+                selections_only,
+            ) {
                 bodies
                     .discard_parsed(body)
                     .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
@@ -223,7 +235,15 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         }
         miss = MemoMissReason::UnrebasablePrivateSidecar;
     }
-    let lookup_disk = |parsed: Option<crate::argument_sources::ProcedureHeader<'_>>| {
+    let lookup_disk = |parsed: Option<crate::argument_sources::ProcedureHeader<'_>>,
+                       active: Option<&dm_tree::frontend::ParsedBody<'_>>| {
+        let modified_issuer = crate::lowering_memo_compact::CurrentModifiedIssuer {
+            frontend,
+            body,
+            bodies,
+            host,
+            parsed: active,
+        };
         memo.lookup_procedure(
             &key,
             identity,
@@ -232,6 +252,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 body,
                 parsed,
                 bindings: symbolic.then_some(disk_replay_bindings).flatten(),
+                selections_only,
+                modified: Some(&modified_issuer),
             },
             host,
             &prepared,
@@ -239,7 +261,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     };
     let disk = if needs_parsed {
         bodies
-            .with_parsed(body, |parsed| lookup_disk(Some(parsed.item().into())))
+            .with_parsed(body, |parsed| {
+                lookup_disk(Some(parsed.item().into()), Some(parsed))
+            })
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?
     } else {
         let header = (!prepared
@@ -248,7 +272,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .is_none_or(|abi| abi.source_helpers.is_empty()))
         .then(|| frontend.compact_body(body).ok())
         .flatten();
-        lookup_disk(header.map(Into::into))
+        lookup_disk(header.map(Into::into), None)
     };
     if let Some(errors) = disk
         .errors
@@ -262,6 +286,43 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
         return Err(errors);
+    }
+    if let Some(facts) = disk.selections {
+        memo.counts
+            .disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        memo.counts
+            .compact_disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        bodies
+            .discard_parsed(body)
+            .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
+        note(MemoOutcome::DiskHit, None, None);
+        let current = source_unit_identity(frontend, body).map_err(|message| {
+            vec![LoweringDiagnostic {
+                kind: dm_tree::frontend::DiagnosticKind::Internal,
+                identity: None,
+                origin: body.source.clone(),
+                message,
+            }]
+        })?;
+        if let Some(promotion) = &disk.resident {
+            symbolic_input::remember_selections(
+                memo,
+                key.clone(),
+                host,
+                promotion,
+                current.identity,
+                &prepared,
+                &facts,
+            );
+        }
+        return Ok(CompletedInput::selections(
+            current.identity,
+            current.effective,
+            body.clone(),
+            facts,
+        ));
     }
     if let Some(value) = disk.prepared {
         let admission = disk.resident.as_ref().and_then(|promotion| {
@@ -337,7 +398,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     );
     let mut admission = None;
     if let Ok(unit) = &result {
-        let reads = recording.reads();
+        let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
+        let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
         let relative_debug = capture.borrow().debug.clone();
         if relative_debug.len() == unit.debug_origins.entries.len()
             && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
@@ -350,8 +412,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             if symbolic {
                 admission = symbolic_input::admission(
                     memo,
-                    key.clone(),
-                    &recording,
+                    Arc::from(key.as_slice()),
+                    Arc::clone(&reads),
+                    Arc::clone(&versions),
                     relative_debug.clone(),
                     compact,
                 );
@@ -362,21 +425,19 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                         .compact_fallback_ineligible
                         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 }
-                memo.queue_disk(
-                    &key,
-                    &reads,
-                    unit,
-                    &relative_debug,
-                    &recording.domain_receipts(),
-                );
+                if selections_only {
+                    memo.queue_selections(&key, &reads, unit, &versions);
+                } else {
+                    memo.queue_disk(&key, &reads, unit, &relative_debug, &versions);
+                }
             }
-            memo.remember(
-                key,
-                reads,
-                unit,
-                relative_debug,
-                recording.domain_receipts(),
-            );
+            if memo.retains_resident() {
+                let retained_key = admission.as_ref().map_or_else(
+                    || Arc::from(key.as_slice()),
+                    |admission| admission.shared_key(),
+                );
+                memo.remember_shared(retained_key, reads, unit, relative_debug, versions);
+            }
         }
     } else if let Some(errors) = &capture.borrow().errors {
         memo.remember_failure(

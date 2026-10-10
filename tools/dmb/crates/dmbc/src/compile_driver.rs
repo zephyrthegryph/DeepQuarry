@@ -395,11 +395,13 @@ fn prepare_observed_input<R: Resolver>(
             &owned_executor
         }
     };
-    let order = crate::type_creation_order::collect(
+    let order = crate::type_creation_order::collect_retained(
         &frontend.allocation_ledger,
         &frontend.expanded.text,
         frontend.snapshot.tree.symbols(),
         &links.inventory,
+        memo.and_then(|memo| memo.required_types.as_deref())
+            .map(|store| &store.allocations),
     )
     .map_err(cold::ColdError::Initializer)?;
     let calls =
@@ -423,7 +425,8 @@ fn prepare_observed_input<R: Resolver>(
             initializers: &evaluator,
             type_values: values,
             resource_search_context: resource_context,
-            source_type_order: &order,
+            source_type_order: order.order(),
+            source_allocation_roster: Some(&order),
         },
         LoweringConfig {
             workers,

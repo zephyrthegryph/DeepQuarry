@@ -218,6 +218,10 @@ impl SemanticTree {
     pub fn types(&self) -> &[TypeNode] {
         &self.types
     }
+    /// Share the immutable current type roster, without issuing source authority.
+    pub fn shared_types(&self) -> Arc<[TypeNode]> {
+        Arc::clone(&self.types)
+    }
     pub fn members(&self) -> &MemberArena {
         &self.members
     }

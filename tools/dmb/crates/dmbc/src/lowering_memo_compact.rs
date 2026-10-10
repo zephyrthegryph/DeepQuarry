@@ -3,7 +3,7 @@ use crate::lowering_memo::{ReplayDecline, ResolverRead};
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
-pub(crate) const SCHEMA: u32 = 0x0206_0007;
+pub(crate) const SCHEMA: u32 = 0x0206_0009;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]
@@ -13,11 +13,7 @@ pub(crate) fn eligible(
     unit: &crate::lowering::LoweredUnit,
     bindings: crate::lowering::DiskReplayBindings<'_>,
 ) -> bool {
-    if unit.abi.is_none()
-        || unit.selected_references.is_some()
-        || !unit.code.instances.is_empty()
-        || !unit.code.modified_instances.is_empty()
-    {
+    if unit.abi.is_none() || unit.selected_references.is_some() || !unit.code.instances.is_empty() {
         return false;
     }
     if unit
@@ -27,6 +23,20 @@ pub(crate) fn eligible(
     {
         return false;
     }
+    if unit
+        .code
+        .modified_instances
+        .iter()
+        .any(|(reference, value)| {
+            crate::modified_initializers::prepare_seed(*reference, value, &unit.debug_origins)
+                .ok()
+                .and_then(|seed| seed.source_recipe(unit.origin.expanded_span))
+                .is_none()
+        })
+    {
+        return false;
+    }
+    let mut selected_instances = std::collections::BTreeSet::new();
     let mut licensed = std::collections::BTreeSet::new();
     licensed.insert(dm_ir::SymRef::BuiltinGlobalVars);
     licensed.extend(
@@ -48,6 +58,10 @@ pub(crate) fn eligible(
             dm_ir::SymRef::SourceFile(at) | dm_ir::SymRef::SourceLine(at) => {
                 (at as usize) < unit.debug_origins.entries.len()
             }
+            dm_ir::SymRef::Instance(_) => {
+                selected_instances.insert(reference);
+                unit.code.modified_instances.contains_key(&reference)
+            }
             _ => {
                 licensed.contains(&reference)
                     || bindings.source.contains(&reference)
@@ -56,6 +70,11 @@ pub(crate) fn eligible(
         };
     });
     valid
+        && unit
+            .code
+            .modified_instances
+            .keys()
+            .all(|r| selected_instances.contains(r))
         && unit.source_helpers.iter().all(|helper| {
             let mut licensed = std::collections::BTreeSet::from([dm_ir::SymRef::BuiltinGlobalVars]);
             licensed.extend(
@@ -150,6 +169,8 @@ pub(crate) struct Payload<'a> {
     executable: crate::symbolic::procedure_artifact::disk::Encoded<'a>,
     #[serde(borrow)]
     helpers: BoundedVec<crate::symbolic::procedure_artifact::disk::HelperWire<'a>>,
+    #[serde(borrow)]
+    recipes: BoundedVec<crate::modified_initializers::RecipeWire<'a>>,
 }
 pub(crate) fn encode(
     key: &[u8],
@@ -158,11 +179,14 @@ pub(crate) fn encode(
     value: &crate::symbolic::PreparedContribution,
     debug: &[usize],
 ) -> Option<Vec<u8>> {
-    if !value.modified_seeds().is_empty() {
-        return None;
-    }
+    let recipes = value.modified_recipes()?;
     let artifact = value.shared_artifact();
-    let requests = artifact.disk_type_requests();
+    let requests = artifact.disk_type_requests_with_modified(
+        &recipes
+            .iter()
+            .map(|r| r.disk_evidence())
+            .collect::<Vec<_>>(),
+    );
     if requests != value.required_types() {
         return None;
     }
@@ -197,12 +221,22 @@ pub(crate) fn encode(
         abi: Cow::Owned(artifact.disk_abi()?),
         executable,
         helpers: BoundedVec(artifact.disk_helpers()?),
+        recipes: BoundedVec(recipes.iter().map(|r| r.disk_evidence()).collect()),
     };
     dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD).ok()
 }
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     let value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
     crate::lowering_memo_wire::validate_versions(&value.versions.0)?;
+    let mut references = std::collections::BTreeSet::new();
+    if value
+        .recipes
+        .0
+        .iter()
+        .any(|recipe| !recipe.valid() || !references.insert(recipe.reference()))
+    {
+        return Err("malformed/duplicate compact modifier recipe".into());
+    }
     Ok(value)
 }
 impl Payload<'_> {
@@ -237,6 +271,16 @@ impl Payload<'_> {
         let debug =
             crate::lowering_memo::rebase_debug(context.frontend, context.body, &self.debug.0)
                 .ok_or(ReplayDecline::DebugOrigins)?;
+        let modified = if self.recipes.0.is_empty() {
+            Vec::new()
+        } else {
+            context
+                .modified
+                .ok_or(ReplayDecline::ExecutableIssuer)?
+                .reissue(&self.recipes.0, &debug, prepared)
+                .ok_or(ReplayDecline::ExecutableIssuer)?
+        };
+        let instances = self.recipes.0.iter().map(|r| r.reference()).collect();
         let mut artifact = self
             .executable
             .restore(
@@ -245,6 +289,7 @@ impl Payload<'_> {
                 prepared,
                 bindings,
                 debug.entries.len(),
+                &instances,
             )
             .ok_or(ReplayDecline::ExecutableIssuer)?;
         crate::symbolic::ReusableProcedureArtifact::disk_bind_helpers(
@@ -256,7 +301,7 @@ impl Payload<'_> {
             bindings,
         )
         .ok_or(ReplayDecline::ExecutableIssuer)?;
-        let requests = artifact.disk_type_requests();
+        let requests = artifact.disk_type_requests_with_modified(&self.recipes.0);
         if requests != self.required_types.0
             || requests
                 .iter()
@@ -271,8 +316,57 @@ impl Payload<'_> {
             prepared,
             debug,
             &self.required_types.0,
-            Vec::new(),
+            modified,
         )
         .ok_or(ReplayDecline::ExecutableIssuer)
+    }
+}
+
+pub(crate) trait ModifiedIssuer {
+    fn reissue(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+        debug: &crate::debug_sources::DebugOrigins,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Option<Vec<crate::modified_initializers::PreparedSeed>>;
+}
+pub(crate) struct CurrentModifiedIssuer<'a, 'f, 'p, R: Resolver> {
+    pub frontend: &'a dm_tree::frontend::ColdFrontend,
+    pub body: &'a dm_tree::frontend::BodyOccurrence,
+    pub bodies: &'a dm_tree::frontend::BodyArena<'f>,
+    pub host: &'a R,
+    pub parsed: Option<&'a dm_tree::frontend::ParsedBody<'p>>,
+}
+impl<R: Resolver> ModifiedIssuer for CurrentModifiedIssuer<'_, '_, '_, R> {
+    fn reissue(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+        debug: &crate::debug_sources::DebugOrigins,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Option<Vec<crate::modified_initializers::PreparedSeed>> {
+        let owner = crate::lowering::source_unit_identity(self.frontend, self.body)
+            .ok()?
+            .identity
+            .owner;
+        let reissue = |parsed: &dm_tree::frontend::ParsedBody<'_>| {
+            recipes
+                .iter()
+                .map(|recipe| {
+                    recipe.reissue(
+                        parsed,
+                        self.host,
+                        self.frontend.snapshot.tree.symbols(),
+                        debug,
+                        prepared.inputs.resource_search_context,
+                        owner,
+                    )
+                })
+                .collect::<Option<Vec<_>>>()
+        };
+        if let Some(parsed) = self.parsed {
+            reissue(parsed)
+        } else {
+            self.bodies.with_parsed(self.body, reissue).ok().flatten()
+        }
     }
 }

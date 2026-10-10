@@ -56,12 +56,27 @@ impl SessionSymbolicMemo {
             if !census.arc_object("session_symbolic.records", record) {
                 continue;
             }
-            census.vec_payload("session_symbolic.keys", &record.key);
+            census.slice("session_symbolic.keys", &record.key, true);
             census.retained_symbolic_ledger(&record.reads, &record.versions);
-            crate::symbolic::ReusableProcedureArtifact::retained_census(
-                &record.artifact,
-                &mut census,
-            );
+            match &record.value {
+                super::RecordValue::Executable(artifact) => {
+                    crate::symbolic::ReusableProcedureArtifact::retained_census(
+                        artifact,
+                        &mut census,
+                    );
+                }
+                super::RecordValue::Selections { facts, abi } => {
+                    census.vec_payload("session_symbolic.selection_abi", abi);
+                    if census.arc_object("session_symbolic.selections", facts)
+                        && census
+                            .vec_payload("session_symbolic.selection_references", &facts.references)
+                    {
+                        for reference in &facts.references {
+                            census.vec_payload("session_symbolic.selection_paths", &reference.path);
+                        }
+                    }
+                }
+            }
             census.vec_payload("session_symbolic.debug_offsets", &record.relative_debug);
             census.vec_payload("session_symbolic.required_types", &record.required_types);
             if census.vec_payload(

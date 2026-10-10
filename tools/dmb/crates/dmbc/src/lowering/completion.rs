@@ -142,6 +142,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                             execution.bodies,
                                             symbolic,
                                             execution.capture_references,
+                                            execution.selections_only,
                                             execution.disk_replay_bindings,
                                         )
                                         .map(|unit| {

@@ -73,7 +73,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.buffer("retained_effective_metadata.values", address, size, size);
             for read in reads.iter() {
                 match read.query {
-                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) | MetadataQuery::CallableSelection(..) | MetadataQuery::VariableLocal(..) => (),
+                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) | MetadataQuery::CallableSelection(..) | MetadataQuery::CallablePresence(..) | MetadataQuery::VariableLocal(..) => (),
                 }
                 match read.domain {
                     MetadataDomain::Namespace | MetadataDomain::EffectiveMembers => (),

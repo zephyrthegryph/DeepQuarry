@@ -1,6 +1,6 @@
 //! Trusted completion handoff; symbolic reuse never reuses output certificates.
 use super::*;
-use crate::lowering_memo::{RecordingResolver, ResolverRead};
+use crate::lowering_memo::ResolverRead;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
@@ -30,21 +30,33 @@ struct DeclineCounters {
     nonreusable_completion: AtomicU64,
 }
 struct Record {
-    key: Vec<u8>,
+    key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
-    artifact: Arc<crate::symbolic::ReusableProcedureArtifact>,
+    value: RecordValue,
     relative_debug: Vec<usize>,
     required_types: Vec<dm_ir::SymbolId>,
     modified_recipes: Vec<crate::modified_initializers::SourceRecipe>,
 }
+enum RecordValue {
+    Executable(Arc<crate::symbolic::ReusableProcedureArtifact>),
+    Selections {
+        facts: Arc<dm_ir::SelectedReferences>,
+        abi: Vec<u8>,
+    },
+}
 pub(crate) struct Admission {
     store: Option<Arc<SessionSymbolicMemo>>,
     disk: Option<crate::lowering_memo::DiskWriter>,
-    key: Vec<u8>,
+    key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<usize>,
+}
+impl Admission {
+    pub(super) fn shared_key(&self) -> Arc<[u8]> {
+        Arc::clone(&self.key)
+    }
 }
 /// Fields are private: only the ordinary lowerer or exact memo validator issues it.
 pub struct CompletedInput {
@@ -52,6 +64,12 @@ pub struct CompletedInput {
     admission: Option<Admission>,
 }
 enum Input {
+    Selections(
+        UnitIdentity,
+        bool,
+        BodyOccurrence,
+        Arc<dm_ir::SelectedReferences>,
+    ),
     Lowered(Box<LoweredUnit>),
     Reused(crate::symbolic::PreparedContribution),
 }
@@ -75,13 +93,27 @@ impl ProcedureSelections {
     }
 }
 impl CompletedInput {
+    pub(super) fn selections(
+        identity: UnitIdentity,
+        effective: bool,
+        body: BodyOccurrence,
+        facts: Arc<dm_ir::SelectedReferences>,
+    ) -> Self {
+        Self {
+            inner: Input::Selections(identity, effective, body, facts),
+            admission: None,
+        }
+    }
+
     pub fn into_selected(self) -> ProcedureSelections {
         let identity = self.identity();
         let source = match &self.inner {
+            Input::Selections(_, _, body, _) => body.source.clone(),
             Input::Lowered(unit) => unit.origin.source.clone(),
             Input::Reused(value) => value.current_source().clone(),
         };
         let facts = match self.inner {
+            Input::Selections(_, _, _, facts) => Some(facts),
             Input::Lowered(unit) => unit.selected_references,
             Input::Reused(value) => value.selected_facts().cloned(),
         };
@@ -110,18 +142,23 @@ impl CompletedInput {
     }
     pub fn identity(&self) -> UnitIdentity {
         match &self.inner {
+            Input::Selections(identity, _, _, _) => *identity,
             Input::Lowered(unit) => unit.identity,
             Input::Reused(value) => value.identity(),
         }
     }
     pub fn effective(&self) -> bool {
         match &self.inner {
+            Input::Selections(_, effective, _, _) => *effective,
             Input::Lowered(unit) => unit.effective,
             Input::Reused(value) => value.effective(),
         }
     }
     pub(super) fn into_lowered(self) -> LoweredUnit {
         match self.inner {
+            Input::Selections(_, _, _, _) => {
+                unreachable!("query-only facts cannot become executable IR")
+            }
             Input::Lowered(unit) => *unit,
             Input::Reused(_) => unreachable!("compatibility requests disable symbolic replay"),
         }
@@ -134,6 +171,9 @@ impl CompletedInput {
         detail: bool,
     ) -> Result<crate::symbolic::PreparedContribution, crate::cold::ColdError> {
         let value = match self.inner {
+            Input::Selections(_, _, _, _) => {
+                unreachable!("query-only facts cannot become executable contribution")
+            }
             Input::Reused(value) => value,
             Input::Lowered(unit) => {
                 unit.require_production_abi()
@@ -158,7 +198,7 @@ impl CompletedInput {
                         key: admission.key,
                         reads: admission.reads,
                         versions: admission.versions,
-                        artifact: value.shared_artifact(),
+                        value: RecordValue::Executable(value.shared_artifact()),
                         relative_debug: admission.relative_debug,
                         required_types: value.required_types().to_vec(),
                         modified_recipes: value
@@ -189,7 +229,10 @@ impl SessionSymbolicMemo {
     pub(crate) fn release_bound_images(&self) -> usize {
         let records = self.records.lock().unwrap_or_else(|e| e.into_inner());
         records.values().fold(0usize, |released, record| {
-            released.saturating_add(record.artifact.release_bound_images())
+            released.saturating_add(match &record.value {
+                RecordValue::Executable(artifact) => artifact.release_bound_images(),
+                RecordValue::Selections { .. } => 0,
+            })
         })
     }
     pub(super) fn capture_excluded(&self) {
@@ -213,6 +256,7 @@ impl SessionSymbolicMemo {
         self.pruned
             .fetch_add((before - records.len()) as u64, Ordering::Relaxed);
     }
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn lookup<R: Resolver>(
         &self,
         key: &[u8],
@@ -221,6 +265,7 @@ impl SessionSymbolicMemo {
         body: &BodyOccurrence,
         prepared: &PreparedUnit,
         bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
     ) -> Option<CompletedInput> {
         let identity = source_unit_identity(frontend, body)
             .map_err(|_| {
@@ -240,7 +285,7 @@ impl SessionSymbolicMemo {
                 self.declines.record_absent.fetch_add(1, Ordering::Relaxed);
                 None
             })?;
-        if record.key != key {
+        if record.key.as_ref() != key {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
@@ -252,6 +297,26 @@ impl SessionSymbolicMemo {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
+        let artifact = match &record.value {
+            RecordValue::Selections { facts, abi } => {
+                if !selections_only
+                    || prepared.require_production_abi().is_err()
+                    || prepared.abi.as_ref()?.canonical_bytes().as_slice() != abi.as_slice()
+                {
+                    return None;
+                }
+                self.reused.fetch_add(1, Ordering::Relaxed);
+                let current = source_unit_identity(frontend, body).ok()?;
+                return Some(CompletedInput::selections(
+                    current.identity,
+                    current.effective,
+                    body.clone(),
+                    Arc::clone(facts),
+                ));
+            }
+            RecordValue::Executable(artifact) if !selections_only => artifact,
+            RecordValue::Executable(_) => return None,
+        };
         let debug = crate::lowering_memo::rebase_debug(frontend, body, &record.relative_debug)
             .or_else(|| {
                 self.declines.debug_rebase.fetch_add(1, Ordering::Relaxed);
@@ -280,7 +345,7 @@ impl SessionSymbolicMemo {
                 })?
         };
         let contribution = crate::symbolic::PreparedContribution::rebind_with_modified(
-            &record.artifact,
+            artifact,
             frontend,
             body,
             prepared,
@@ -311,8 +376,9 @@ fn same_meaning(current: &dm_ir::ResolvedMeaning, previous: &dm_ir::ResolvedMean
 }
 pub(super) fn admission(
     memo: &crate::lowering_memo::ProcedureMemo,
-    key: Vec<u8>,
-    recording: &RecordingResolver<'_, impl Resolver>,
+    key: Arc<[u8]>,
+    reads: Arc<[ResolverRead]>,
+    versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<usize>,
     write_compact: bool,
 ) -> Option<Admission> {
@@ -325,8 +391,8 @@ pub(super) fn admission(
         store,
         disk,
         key,
-        reads: recording.reads().into(),
-        versions: recording.domain_receipts().into(),
+        reads,
+        versions,
         relative_debug,
     })
 }
@@ -339,7 +405,7 @@ pub(super) fn disk_admission<R: Resolver>(
     Some(Admission {
         store: Some(Arc::clone(memo.symbolic.as_ref()?)),
         disk: None,
-        key,
+        key: key.into(),
         reads: promotion
             .queries
             .iter()
@@ -354,6 +420,43 @@ pub(super) fn disk_admission<R: Resolver>(
         relative_debug: promotion.relative_debug.clone(),
     })
 }
+pub(super) fn remember_selections<R: Resolver>(
+    memo: &crate::lowering_memo::ProcedureMemo,
+    key: Vec<u8>,
+    host: &R,
+    promotion: &crate::lowering_memo_wire::ResidentPromotion,
+    identity: UnitIdentity,
+    prepared: &PreparedUnit,
+    facts: &Arc<dm_ir::SelectedReferences>,
+) {
+    let Some(abi) = prepared.abi.as_ref() else {
+        return;
+    };
+    let Some(admission) = disk_admission(memo, key, host, promotion) else {
+        return;
+    };
+    let Some(store) = admission.store else {
+        return;
+    };
+    let record = Record {
+        key: admission.key,
+        reads: admission.reads,
+        versions: admission.versions,
+        value: RecordValue::Selections {
+            facts: Arc::clone(facts),
+            abi: abi.canonical_bytes(),
+        },
+        relative_debug: Vec::new(),
+        required_types: Vec::new(),
+        modified_recipes: Vec::new(),
+    };
+    store
+        .records
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .insert(identity, Arc::new(record));
+    store.admitted.fetch_add(1, Ordering::Relaxed);
+}
 pub(super) fn accepted_admission(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Vec<u8>,
@@ -362,7 +465,7 @@ pub(super) fn accepted_admission(
     Some(Admission {
         store: Some(Arc::clone(memo.symbolic.as_ref()?)),
         disk: None,
-        key,
+        key: key.into(),
         reads: Arc::clone(&accepted.reads),
         versions: Arc::clone(&accepted.versions),
         relative_debug: accepted.value.relative_debug.clone(),

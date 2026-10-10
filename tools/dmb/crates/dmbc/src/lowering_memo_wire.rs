@@ -295,6 +295,16 @@ fn read_mismatch<R: Resolver>(
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
     if bytes.get(8..12)
         == Some(
+            crate::lowering_memo_selection::SCHEMA
+                .to_le_bytes()
+                .as_slice(),
+        )
+    {
+        crate::lowering_memo_selection::decode(bytes)?;
+        return Ok(());
+    }
+    if bytes.get(8..12)
+        == Some(
             crate::lowering_memo_compact::SCHEMA
                 .to_le_bytes()
                 .as_slice(),
@@ -586,6 +596,7 @@ pub(crate) struct Candidates<'a>(Vec<Candidate<'a>>);
 enum Candidate<'a> {
     Executable(Box<Payload>),
     Compact(Box<crate::lowering_memo_compact::Payload<'a>>),
+    Selections(Box<crate::lowering_memo_selection::Payload<'a>>),
     Failure(FailurePayload<'a>),
 }
 /// Current source occurrence used when rebasing a persisted procedure result.
@@ -594,6 +605,8 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub body: &'a dm_tree::frontend::BodyOccurrence,
     pub parsed: Option<crate::argument_sources::ProcedureHeader<'a>>,
     pub bindings: Option<crate::lowering::DiskReplayBindings<'a>>,
+    pub selections_only: bool,
+    pub modified: Option<&'a dyn crate::lowering_memo_compact::ModifiedIssuer>,
 }
 #[derive(Default)]
 pub(crate) struct ResidentPromotion {
@@ -604,6 +617,7 @@ pub(crate) struct ResidentPromotion {
 #[derive(Default)]
 pub(crate) struct ProcedureLookup {
     pub unit: Option<LoweredUnit>,
+    pub selections: Option<Arc<dm_ir::SelectedReferences>>,
     pub prepared: Option<crate::symbolic::PreparedContribution>,
     pub resident: Option<ResidentPromotion>,
     pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
@@ -626,6 +640,16 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
                 return Err("uncacheable failure candidate".into());
             }
             values.push(Candidate::Failure(value));
+        } else if bytes.get(8..12)
+            == Some(
+                crate::lowering_memo_selection::SCHEMA
+                    .to_le_bytes()
+                    .as_slice(),
+            )
+        {
+            values.push(Candidate::Selections(Box::new(
+                crate::lowering_memo_selection::decode(bytes)?,
+            )));
         } else if bytes.get(8..12)
             == Some(
                 crate::lowering_memo_compact::SCHEMA
@@ -673,7 +697,7 @@ impl Candidates<'_> {
                     }
                 }
                 Candidate::Executable(value) => executables.push(value),
-                Candidate::Compact(_) => (),
+                Candidate::Compact(_) | Candidate::Selections(_) => (),
             }
         }
         for value in executables {
@@ -708,6 +732,35 @@ impl Candidates<'_> {
             ..Default::default()
         };
         for value in self.0.into_iter().rev() {
+            if let Candidate::Selections(v) = value {
+                if !context.selections_only || !v.matches(key, identity) {
+                    continue;
+                }
+                if let Some(query) = v.changed_read(host) {
+                    result.changed_query.get_or_insert(query);
+                    continue;
+                }
+                let promotion = v.promotion();
+                let rebound = v.bind(
+                    ProcedureReplayContext {
+                        frontend: context.frontend,
+                        body: context.body,
+                        parsed: context.parsed,
+                        bindings: context.bindings,
+                        selections_only: true,
+                        modified: context.modified,
+                    },
+                    prepared,
+                );
+                if let Some(facts) = rebound {
+                    return ProcedureLookup {
+                        selections: Some(facts),
+                        resident: Some(promotion),
+                        ..Default::default()
+                    };
+                }
+                continue;
+            }
             if let Candidate::Compact(v) = value {
                 if v.key.as_ref() != key || v.identity != identity {
                     continue;
@@ -723,6 +776,8 @@ impl Candidates<'_> {
                         body: context.body,
                         parsed: context.parsed,
                         bindings: context.bindings,
+                        selections_only: context.selections_only,
+                        modified: context.modified,
                     },
                     prepared,
                 ) {
@@ -742,7 +797,7 @@ impl Candidates<'_> {
             let (candidate, owner, reads, versions) = match &value {
                 Candidate::Executable(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
                 Candidate::Failure(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
-                Candidate::Compact(_) => unreachable!(),
+                Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
             if candidate != key || owner != Some(identity) {
                 continue;
@@ -753,7 +808,7 @@ impl Candidates<'_> {
                 continue;
             }
             match value {
-                Candidate::Compact(_) => unreachable!(),
+                Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
                 Candidate::Failure(v) => {
                     result.errors = Some(v.errors.into_iter().map(ErrorWire::rehydrate).collect());
                     return result;

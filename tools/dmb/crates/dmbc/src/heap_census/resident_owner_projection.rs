@@ -114,6 +114,49 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
             }
         }
     });
+    store.types.visit_storage(|view| match view {
+        dm_session::ObservedArtifactStorageView::Store { entries, .. } => {
+            census.observe_items("owner_projection.types_index", entries);
+        }
+        dm_session::ObservedArtifactStorageView::Bucket {
+            address,
+            len,
+            capacity,
+            element_size,
+        } => {
+            census.buffer(
+                "owner_projection.types_buckets",
+                address,
+                len.saturating_mul(element_size),
+                capacity.saturating_mul(element_size),
+            );
+        }
+        dm_session::ObservedArtifactStorageView::Entry {
+            key,
+            reads,
+            versions,
+            value,
+        } => {
+            census.slice("owner_projection.types_keys", key, true);
+            if census.slice("owner_projection.types_reads", reads, true) {
+                for read in reads.iter() {
+                    if census.slice("semantic_tree", &read.answer.0, true) {
+                        for node in read.answer.0.iter() {
+                            census.slice("semantic_tree", &node.members, true);
+                        }
+                    }
+                }
+            }
+            census.slice("owner_projection.types_versions", versions, true);
+            if census.arc_object("owner_projection.projected_types_owner", value) {
+                census.slice("owner_projection.projected_types", value.as_ref(), true);
+            }
+        }
+    });
+    census.unknown(
+        "owner_projection.types_index",
+        "private observed-store BTree nodes and allocator metadata excluded",
+    );
     census.finish()
 }
 

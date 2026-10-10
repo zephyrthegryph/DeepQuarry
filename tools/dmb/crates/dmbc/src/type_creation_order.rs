@@ -5,12 +5,25 @@ use dm_ir::{SymbolId, SymbolTable};
 use dm_link::{Key, LinkInventory};
 use dm_tree::allocation_ledger::{AllocationKind, AllocationLedger};
 use std::collections::BTreeSet;
+use std::sync::Arc;
+#[path = "type_creation_order/retained.rs"]
+pub(crate) mod retained;
+pub use retained::{collect_retained, AllocationArtifacts, AllocationRoster};
 
 pub fn collect(
     ledger: &AllocationLedger,
     expanded_source: &str,
     symbols: &SymbolTable,
     retained: &LinkInventory,
+) -> Result<Vec<SymbolId>, String> {
+    collect_recorded(ledger, expanded_source, symbols, retained, None)
+}
+fn collect_recorded(
+    ledger: &AllocationLedger,
+    expanded_source: &str,
+    symbols: &SymbolTable,
+    retained: &LinkInventory,
+    mut reads: Option<&mut Vec<dm_session::Observation<SymbolId, Option<String>, ()>>>,
 ) -> Result<Vec<SymbolId>, String> {
     let mut seen: BTreeSet<_> = retained
         .fixed
@@ -36,7 +49,7 @@ pub fn collect(
             | AllocationKind::Procedure { owner, .. }
             | AllocationKind::Parent { owner, .. } => owner,
         };
-        allocate(owner, symbols, &mut seen, &mut order)?;
+        allocate(owner, symbols, &mut seen, &mut order, reads.as_deref_mut())?;
         if let AllocationKind::Parent { value, .. } = event.kind {
             let source = expanded_source
                 .get(value.start..value.end)
@@ -52,12 +65,13 @@ pub fn collect(
             match expression.kind {
                 dm_syntax::ExprKind::TypePath(path) => {
                     let symbol = SymbolId::of(&path);
+                    observe(symbol, symbols, reads.as_deref_mut());
                     if symbols.text(symbol) != Some(path.as_str()) {
                         return Err(
                             "parent path not captured in collision-checked symbol table".into()
                         );
                     }
-                    allocate(symbol, symbols, &mut seen, &mut order)?;
+                    allocate(symbol, symbols, &mut seen, &mut order, reads.as_deref_mut())?;
                 }
                 dm_syntax::ExprKind::Literal(value) if value == "null" => (),
                 _ => {
@@ -75,10 +89,12 @@ fn allocate(
     symbols: &SymbolTable,
     seen: &mut BTreeSet<SymbolId>,
     order: &mut Vec<SymbolId>,
+    mut reads: Option<&mut Vec<dm_session::Observation<SymbolId, Option<String>, ()>>>,
 ) -> Result<(), String> {
     if seen.contains(&path) {
         return Ok(());
     }
+    observe(path, symbols, reads.as_deref_mut());
     let text = symbols
         .text(path)
         .ok_or("allocation type spelling missing")?;
@@ -88,14 +104,30 @@ fn allocate(
     let slash = text.rfind('/').ok_or("allocation lexical parent absent")?;
     let parent = if slash == 0 { "/" } else { &text[..slash] };
     let parent_symbol = SymbolId::of(parent);
+    if !seen.contains(&parent_symbol) {
+        observe(parent_symbol, symbols, reads.as_deref_mut());
+    }
     if !seen.contains(&parent_symbol) && symbols.text(parent_symbol) != Some(parent) {
         return Err("allocation lexical parent is not a captured declaration".into());
     }
-    allocate(parent_symbol, symbols, seen, order)?;
+    allocate(parent_symbol, symbols, seen, order, reads)?;
     if seen.insert(path) {
         order.push(path);
     }
     Ok(())
+}
+fn observe(
+    path: SymbolId,
+    symbols: &SymbolTable,
+    reads: Option<&mut Vec<dm_session::Observation<SymbolId, Option<String>, ()>>>,
+) {
+    if let Some(reads) = reads {
+        reads.push(dm_session::Observation {
+            domain: (),
+            query: path,
+            answer: symbols.text(path).map(str::to_owned),
+        });
+    }
 }
 #[cfg(test)]
 mod tests {

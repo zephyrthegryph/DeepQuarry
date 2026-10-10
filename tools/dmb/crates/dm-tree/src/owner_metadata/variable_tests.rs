@@ -36,6 +36,22 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
         },
     ];
     let first = build(&rows);
+    let mut local_receipts = 0;
+    retained.metadata.store.visit_storage(|view| {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+            for read in reads.iter() {
+                if let MetadataAnswer::VariableLocal(inputs) = &read.answer {
+                    local_receipts += 1;
+                    assert_eq!(inputs.ancestors.len(), 1);
+                    assert!(inputs
+                        .members
+                        .iter()
+                        .all(|member| member.owner == inputs.ancestors[0]));
+                }
+            }
+        }
+    });
+    assert!(local_receipts > 0);
     let queries = [
         ResolveQuery::HasMemberVar { owner, name },
         ResolveQuery::DeclaredVarType { owner, name },
@@ -84,6 +100,6 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
         owner,
         name: SymbolId::of("unknown"),
     };
-    assert_eq!(changed.domain_version(missing.domain()), None);
+    assert!(changed.domain_version(missing.domain()).is_some());
     assert!(!queries[0].domain().persistent_version());
 }
