@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import { compareEvidence } from './compare_normal_suites';
+import { compareEvidence, comparisonExitCode } from './compare_normal_suites';
 
 // Synthetic receipts test the admission contract, not compiler/runtime parity.
 const name = '/datum/unit_test/example';
@@ -120,6 +120,8 @@ test('equal test and automatic failures match but do not pass', () => {
     native.plan.sha256 = sha(bytes);
     const result = compareEvidence(referenceFile, sha(bytes), nativeFile, write());
     expect(result.matches).toBe(true);
+    expect(comparisonExitCode(result)).toBe(0);
+    expect(comparisonExitCode(result, true)).toBe(1);
     expect(result.referenceAllTestsPassed).toBe(false); expect(result.nativeAllTestsPassed).toBe(false);
     expect(result.referenceClean).toBe(false); expect(result.nativeClean).toBe(false);
     expect(result.generationIdentityAuthenticated).toBe(false);

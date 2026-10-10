@@ -1,5 +1,7 @@
 /** Preliminary result comparison. Evidence hashes authenticate receipt bytes,
- * never a complete compiler source/resource closure or runtime baseline. */
+ * never a complete compiler source/resource closure or runtime baseline.
+ * Default exit status reports equivalence, including identical failures.
+ * --require-clean additionally requires clean runs with every selected row passed. */
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -136,8 +138,14 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
       native: { path: path.resolve(nativeFile), sha256: nativeSha256 },
     }, observedOrderDiffers: { reference: reference.plan.observedOrderDiffers, native: native.plan.observedOrderDiffers },
     ...comparison,
+    referenceAllNonSkippedTestsPassed: referenceClean && comparison.referenceAllNonSkippedTestsPassed,
+    nativeAllNonSkippedTestsPassed: nativeClean && comparison.nativeAllNonSkippedTestsPassed,
     referenceAllTestsPassed: referenceClean && comparison.referenceAllTestsPassed,
     nativeAllTestsPassed: nativeClean && comparison.nativeAllTestsPassed };
+}
+
+export function comparisonExitCode(result: ReturnType<typeof compareEvidence>, requireClean = false): number {
+  return result.matches && (!requireClean || result.referenceAllTestsPassed && result.nativeAllTestsPassed) ? 0 : 1;
 }
 
 if (import.meta.main) {
@@ -145,14 +153,20 @@ if (import.meta.main) {
     const args = process.argv.slice(2);
     const flags = ['--reference', '--reference-sha256', '--native', '--native-sha256'];
     const values = new Map<string, string>();
-    for (let index = 0; index < args.length; index += 2) {
+    let requireClean = false;
+    for (let index = 0; index < args.length;) {
+      if (args[index] === '--require-clean') {
+        if (requireClean) throw new Error('duplicate --require-clean');
+        requireClean = true; index++; continue;
+      }
       if (!flags.includes(args[index]) || values.has(args[index]) || !args[index + 1]) throw new Error('invalid/duplicate CLI argument');
       values.set(args[index], args[index + 1]);
+      index += 2;
     }
     if (values.size !== flags.length) throw new Error('required: --reference PATH --reference-sha256 HEX --native PATH --native-sha256 HEX');
     const result = compareEvidence(...flags.map(flag => values.get(flag)!) as [string, string, string, string]);
     console.log(JSON.stringify(result, null, 2));
-    process.exitCode = result.matches ? 0 : 1;
+    process.exitCode = comparisonExitCode(result, requireClean);
   } catch (error) {
     console.error(JSON.stringify({ schema: 1, kind: 'preliminary_normal_suite_comparison',
       inputClosureAuthenticated: false, acceptedRuntimeBaseline: false, error: String(error) }));

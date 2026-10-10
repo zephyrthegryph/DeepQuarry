@@ -31,4 +31,29 @@ test('framework failures cannot be hidden by identical test results', () => {
   expect(result.matches).toBe(false);
   expect(result.differences).toHaveLength(0);
   expect(result.frameworkDifferences).toHaveLength(1);
+  expect(result.frameworkDifferences[0].batchIndex).toBe(0);
+  expect(result.frameworkDifferences[0].name).toBe('ownership_framework_checks');
+});
+
+test('identical skipped rows match but are not all passed', () => {
+  const skipped: ComparableNormalSuite = { ...suite, batches: [{ requested: [name], results: { [name]: { ...row, status: 2 } } }] };
+  const result = compareNormalSuiteResults(skipped, skipped);
+  expect(result.matches).toBe(true);
+  expect(result.nativeSelectedCounts).toEqual({ passed: 0, failed: 0, skipped: 1 });
+  expect(result.nativeAllTestsPassed).toBe(false);
+  expect(result.nativeAllNonSkippedTestsPassed).toBe(true);
+});
+
+test('runtime descriptions are semantic evidence even at identical error locations', () => {
+  const error = { name: 'error', file: 'probe.dm', line: 2, description: 'missing value' };
+  const baseline: ComparableNormalSuite = { ...suite, batches: [{ requested: [name], results: { [name]: {
+    ...row, status: 1, runtimes: 1, runtime_errors: [error],
+  } } }] };
+  const changed: ComparableNormalSuite = { ...baseline, batches: [{ requested: [name], results: { [name]: {
+    ...baseline.batches[0].results![name], runtime_errors: [{ ...error, description: 'wrong type' }],
+  } } }] };
+  const result = compareNormalSuiteResults(baseline, changed);
+  expect(result.matches).toBe(false);
+  expect(result.differences[0].reference.runtime_errors![0].description).toBe('missing value');
+  expect(result.differences[0].native.runtime_errors![0].description).toBe('wrong type');
 });
