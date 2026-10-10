@@ -281,20 +281,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/boda)
 	center_of_mass_y = 8
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/bodaplus)
+	rolls(nameof(flavouring), pick_one(list(REAGENT_ID_APPLEJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_WATERMELONJUICE, REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_PINEAPPLEJUICE)))
+	configure(reagents(contents_from = PROC_REF(flavouring_contents)))
 	configure(reagents(add = list(REAGENT_ID_SODAWATER = 15)))
 
-// ALLOW(init/INSTANCE_STATE): rolls which juice this can holds
-/obj/item/reagent_containers/food/drinks/cans/bodaplus/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(pick(list(
-				REAGENT_ID_APPLEJUICE,
-				REAGENT_ID_GRAPEJUICE,
-				REAGENT_ID_LEMONJUICE,
-				REAGENT_ID_LIMEJUICE,
-				REAGENT_ID_WATERMELONJUICE,
-				REAGENT_ID_BANANA,
-				REAGENT_ID_BERRYJUICE,
-				REAGENT_ID_PINEAPPLEJUICE)), 15)
+/obj/item/reagent_containers/food/drinks/cans/bodaplus
+	/// The surplus flavouring it rolled (rolls()): 15 units.
+	var/flavouring
+
+/obj/item/reagent_containers/food/drinks/cans/bodaplus/proc/flavouring_contents()
+	return flavouring ? list("[flavouring]" = 15) : null
 
 /obj/item/reagent_containers/food/drinks/cans/redarmy
 	name = "\improper Red Army Twist"

@@ -22,17 +22,15 @@
 	var/list/filled_reagents
 	var/hyposound	// What sound do we play on use?
 
-/obj/item/reagent_containers/hypospray/Initialize(mapload)
-	. = ..()
-	if(filled)
-		if(filled_reagents)
-			for(var/r in filled_reagents)
-				reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
+/// A filled hypospray starts with its filled_reagents.
+/obj/item/reagent_containers/hypospray/proc/filled_contents()
+	return filled ? filled_reagents : null
 
 // A hypospray is a holder of its volume that is poured into like any open container, and that puts one transfer into the blood of a person by a click
 // (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
 // resists in combat mode. Armour does not stop it. The sound, the transfer and the log are do_injection(), which a type may extend.
 CAPABILITIES(/obj/item/reagent_containers/hypospray)
+	configure(reagents(contents_from = PROC_REF(filled_contents)))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

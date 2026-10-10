@@ -360,6 +360,7 @@ TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 	cups = 10
 
 CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
+	configure(reagents(add = list(REAGENT_ID_WATER = PROC_REF(bottle_water))))
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
@@ -368,10 +369,12 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 
+/// A cooler with its bottle starts full (reagents()).
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()
+	return bottle ? 2000 : 0
+
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
 	. = ..()
-	if(bottle)
-		reagents.add_reagent(REAGENT_ID_WATER,2000)
 	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
@@ -554,10 +557,14 @@ CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
 
 CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
 	climb()
+	configure(reagents(add = list(REAGENT_ID_BLOOD = 1000), data = list(REAGENT_ID_BLOOD = PROC_REF(stock_blood_data))))
 
-/obj/structure/reagent_dispensers/bloodbarrel/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+TYPE_TABLE_DECLARE(/obj/structure/reagent_dispensers/bloodbarrel, bloodbarrel_stock_data, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+
+/// The barrel's O- stock blood data: a copy, since the reagent keeps and edits it.
+/obj/structure/reagent_dispensers/bloodbarrel/proc/stock_blood_data()
+	var/list/stock = TYPE_TABLE_GET(src, bloodbarrel_stock_data)
+	return stock.Copy()
 
 
 /obj/structure/reagent_dispensers/space_cleaner
