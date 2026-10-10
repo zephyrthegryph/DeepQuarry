@@ -89,6 +89,7 @@ impl HeapCensus {
                 classification,
             )
         });
+        super::initializer_prepared_keys::inspect(self, store);
         store.visit_modifier_storage(|view| {
             storage(self, "initializer_modifiers.store", view, |c, value| {
                 c.arc_object("initializer_modifiers.payload", value);

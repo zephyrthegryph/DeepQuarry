@@ -24,6 +24,7 @@ pub struct InitializerArtifacts {
         crate::initializer_policy::modifier_facts::ModifierArtifacts,
     values: dm_session::ArtifactStore<SemanticClassification>,
     bounded: bool,
+    pub(super) prepared_keys: Option<super::prepared_keys::PreparedKeys>,
     pub(super) roster: super::token_roster::CurrentRoster,
     pub(super) roster_enabled: bool,
     pub hits: AtomicU64,
@@ -35,6 +36,7 @@ impl Default for InitializerArtifacts {
         Self {
             values: dm_session::ArtifactStore::current_revision(),
             bounded: false,
+            prepared_keys: Some(Default::default()),
             modifiers: Default::default(),
             roster: Default::default(),
             roster_enabled: true,
@@ -50,6 +52,22 @@ impl InitializerArtifacts {
         visitor: impl FnMut(dm_session::ArtifactStorageView<'_, SemanticClassification>),
     ) {
         self.values.visit_storage(visitor);
+    }
+    pub(crate) fn visit_prepared_key_storage(
+        &self,
+        visitor: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                Vec<Arc<[u8]>>,
+                (),
+                Arc<super::prepared_keys::Inputs>,
+                (),
+            >,
+        ),
+    ) {
+        if let Some(keys) = &self.prepared_keys {
+            keys.visit_storage(visitor);
+        }
     }
     pub(crate) fn visit_modifier_storage(
         &self,
@@ -105,6 +123,7 @@ impl InitializerArtifacts {
         Self {
             values: dm_session::ArtifactStore::with_limit(bytes),
             bounded: true,
+            prepared_keys: None,
             // Preserve the explicit compatibility budget; the new full-current
             // modifier owner is enabled only by retained-session defaults.
             modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
@@ -138,7 +157,7 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v2\0".to_vec();
+    let mut key = b"dmbc-initializer-classification-v3\0".to_vec();
     key.extend_from_slice(&reuse.policy.to_le_bytes());
     key.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {

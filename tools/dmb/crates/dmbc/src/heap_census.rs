@@ -943,3 +943,6 @@ mod static_plan;
 mod body_arena;
 
 mod generation;
+
+#[path = "heap_census/initializer_prepared_keys.rs"]
+mod initializer_prepared_keys;

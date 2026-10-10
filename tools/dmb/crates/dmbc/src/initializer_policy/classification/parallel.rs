@@ -83,6 +83,9 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     if factory_policy.is_none() {
         if let Some(reuse) = reuse {
             artifact::retain_roster(reuse, &[]);
+            if let Some(keys) = &reuse.store.prepared_keys {
+                keys.clear();
+            }
             reuse.store.roster.clear();
             reuse.store.modifiers.retain_keys(&[]);
             reuse
@@ -139,21 +142,33 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         return Err(ClassificationError { issues });
     }
     let prepared_keys = reuse.map(|reuse| {
-        let mut keys = vec![None; writes.len()];
+        let mut ordered_facts = vec![None; writes.len()];
         for (bucket, facts) in buckets.iter().zip(&admitted) {
             for (&ordinal, &fact) in bucket.ordinals.iter().zip(facts) {
-                keys[ordinal] = Some(Arc::<[u8]>::from(artifact::key(
-                    &writes[ordinal],
-                    fact,
-                    reuse,
-                    factory_policy.expect("certified reuse policy"),
-                )));
+                ordered_facts[ordinal] = Some(fact);
             }
         }
-        let keys: Vec<_> = keys
+        let ordered_facts: Vec<_> = ordered_facts
             .into_iter()
-            .map(|key| key.expect("modifier buckets cover the write roster"))
+            .map(|fact| fact.expect("modifier buckets cover the write roster"))
             .collect();
+        let policy = factory_policy.expect("certified reuse policy");
+        let keys = reuse
+            .store
+            .prepared_keys
+            .as_ref()
+            .and_then(|owner| owner.prepare(writes, &ordered_facts, reuse, policy))
+            .unwrap_or_else(|| {
+                Arc::new(
+                    writes
+                        .iter()
+                        .zip(&ordered_facts)
+                        .map(|(write, &fact)| {
+                            Arc::<[u8]>::from(artifact::key(write, fact, reuse, policy))
+                        })
+                        .collect(),
+                )
+            });
         artifact::retain_roster(reuse, &keys);
         keys
     });
