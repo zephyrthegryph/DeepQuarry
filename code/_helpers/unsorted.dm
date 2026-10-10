@@ -343,8 +343,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	var/oldname = real_name
 	if(cmptext("ai",role))
-		if(isAI(src))
-			var/mob/living/silicon/ai/A = src
+		var/mob/living/silicon/ai/A = src
+		if(istype(A))
 			oldname = null//don't bother with the records update crap
 			play_simple_announcement(world, ANNOUNCER_MSG_NEW_AI)
 			// Set eyeobj name

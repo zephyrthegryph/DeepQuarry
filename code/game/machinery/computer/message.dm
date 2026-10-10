@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
 	op("deauth", ui_act("deauth"), then(PROC_REF(ui_act_deauth)))
 	op("find", ui_act("find"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Select a server.", "question" = "Please select a server.", "choices" = computed(PROC_REF(server_prompt_choices)), "timeout" = 0), when = PROC_REF(multiple_servers)), then(PROC_REF(ui_act_find)))
-	op("hack", ui_act("hack"), then(PROC_REF(ui_act_hack)))
+	op("hack", ui_act("hack"), needs(req_actor_kind(list(/mob/living/silicon/ai, /mob/living/silicon/robot), because = /datum/msg/req_silent)), then(PROC_REF(ui_act_hack)))
 	op("active", ui_act("active"), then(PROC_REF(ui_act_active)))
 	op("del_pda", ui_act("del_pda"), then(PROC_REF(ui_act_del_pda)))
 	op("del_rc", ui_act("del_rc"), then(PROC_REF(ui_act_del_rc)))
@@ -152,7 +152,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 			sendPDAs["[P.name]"] = "\ref[P]"
 		data["possibleRecipients"] = sendPDAs
 	var/mob/living/original = user.mind.original_character
-	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
+	data["isMalfAI"] = ((A.authority & AUTH_REMOTE_ACCESS) && (user.mind.special_role && (original && original == user)))
 
 	return data
 
@@ -218,7 +218,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 /obj/machinery/computer/message_monitor/proc/ui_act_hack(datum/act/op/A)
 	var/mob/living/original = A.actor.mind.original_character
-	if((isAI(A.actor) || isrobot(A.actor)) && (A.actor.mind.special_role && (original && original == A.actor)))
+	if((A.actor.mind.special_role && (original && original == A.actor)))
 		hacking = 1
 		//Time it takes to bruteforce is dependant on the password length.
 		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(A.actor))

@@ -118,3 +118,13 @@
 
 /mob/living/silicon/robot/records_login_rank()
 	return "[modtype] [braintype]"
+
+// ---- letting go of a held thing ----
+
+/// Can this mob let go of what it holds (set it down, put it in a container)? A cyborg's held things are modules mounted on it: it lets go of
+/// nothing (its gripper sets down what it carries, through the gripper's own ops).
+/mob/proc/lets_go_of_held()
+	return TRUE
+
+/mob/living/silicon/robot/lets_go_of_held()
+	return FALSE

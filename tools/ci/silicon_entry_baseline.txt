@@ -1,42 +1,5 @@
 # silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.
 # Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.
-handler_actor_check	code/_helpers/unsorted.dm	if(isAI(src))
-handler_actor_check	code/game/machinery/computer/message.dm	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
-handler_actor_check	code/game/machinery/computer/message.dm	if((isAI(A.actor) || isrobot(A.actor)) && (A.actor.mind.special_role && (original && original == A.actor)))
-handler_actor_check	code/game/machinery/computer/robot.dm	if(isrobot(A.actor))
-handler_actor_check	code/game/machinery/fire_alarm.dm	data["scrambled"] = !(ishuman(user) || isAI(user))
-handler_actor_check	code/game/machinery/nuclear_bomb.dm	return get_dist(src, user) <= 1 || isAI(user)
-handler_actor_check	code/game/objects/items/devices/flash.dm	if(user && isrobot(user))
-handler_actor_check	code/game/objects/items/devices/scanners/health.dm	if(issilicon(A.actor))
-handler_actor_check	code/game/objects/items/devices/vacpack.dm	if(isrobot(user))
-handler_actor_check	code/game/objects/items/devices/vacpack.dm	if(isrobot(user))
-handler_actor_check	code/game/objects/items/toys/toys.dm	if(!M.stat && !isAI(M)) // Checks to make sure whoever's getting shaken is alive/not the AI
-handler_actor_check	code/game/objects/items/weapons/storage/storage.dm	return holds_good_bulb() && !isrobot(A.actor)
-handler_actor_check	code/game/objects/structures/crates_lockers/__closets.dm	return !isrobot(A.actor) && A.held.loc == A.actor // ALLOW(reads): where the held item is read when it is put down; the click asks again
-handler_actor_check	code/game/objects/structures/crates_lockers/closets/walllocker.dm	return !isAI(A.actor)
-handler_actor_check	code/library/containers/storage.dm	return istype(W) && W != A.holder && !isrobot(A.actor)
-handler_actor_check	code/library/containers/storage.dm	return istype(bag) && bag != A.holder && !isrobot(A.actor) && bag.use_to_pickup
-handler_actor_check	code/modules/admin/edit_player_panel.dm	data["is_ai"] = !!isAI(target())
-handler_actor_check	code/modules/admin/modify_robot.dm	.["isAI"] = isAI(target())
-handler_actor_check	code/modules/admin/modify_robot.dm	if(isAI(target()))
-handler_actor_check	code/modules/client/ui_style.dm	if(!ishuman(user) && !isrobot(user))
-handler_actor_check	code/modules/client/ui_style.dm	if(!ishuman(user) && !isrobot(user))
-handler_actor_check	code/modules/food/food.dm	return user.stat != DEAD && (ishuman(user) || isrobot(user))
-handler_actor_check	code/modules/mob/living/silicon/pai/software_modules.dm	return ispAI(A.actor)
-handler_actor_check	code/modules/power/apc.dm	if(!istype(held) || !user || issilicon(user))
-handler_actor_check	code/modules/projectiles/guns/projectile/shotgun.dm	if(issilicon(user))
-handler_actor_check	code/modules/tables/flipping.dm	return !isAI(user)
-handler_actor_check	code/modules/tables/interactions.dm	if(isrobot(user))
-handler_actor_check	code/modules/tables/interactions.dm	if(isrobot(user))
-handler_actor_check	code/modules/tgui/modules/alarm.dm	return isAI(A.actor)
-handler_actor_check	code/modules/tgui/modules/alarm.dm	if(isAI(user))
-handler_actor_check	code/modules/tgui/modules/communications.dm	data["is_ai"] = isAI(user) || isrobot(user)
-handler_actor_check	code/modules/tgui/modules/communications.dm	if(isAI(user) || isrobot(user))
-handler_actor_check	code/modules/tgui/modules/crew_monitor.dm	if(isAI(user))
-handler_actor_check	code/modules/tgui/modules/crew_monitor.dm	data["isAI"] = isAI(user)
-handler_actor_check	code/modules/tgui/modules/law_manager.dm	if(isAI(owner()))
-handler_actor_check	code/modules/tgui/modules/law_manager.dm	data["isAI"] = isAI(owner())
-handler_actor_check	code/modules/tgui/modules/overmap.dm	if(user && !isAI(user))
 siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
 legacy_entry	code/ATMOSPHERICS/components/tvalve.dm	silicon_use = NONE
 legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = NONE

@@ -298,7 +298,7 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	var/area/here = get_area(src)
 	data["party_on"] = !!here?.party
 	data["timing"] = !!timing
-	data["scrambled"] = !(ishuman(user) || isAI(user))
+	data["scrambled"] = !(ishuman(user) || istype(user, /mob/living/silicon/ai))
 	data["time"] = time
 	return data
 
