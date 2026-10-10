@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "scope": "focused correctness and retained incremental regression gates; not full DeepQuarry runtime acceptance or benchmark",
+  "compiler": {
+    "commit": "27ab4c9848e7b045d5be7c36467a39bccca62583",
+    "sha256": "85580314d8ab55d06cd1d52ff2180254191312055d9b8b0f58695cdd1372a955",
+    "receipt": "E:/dq-cache/dmb-native-v2/frozen-build/20261010-160724-48186128.json",
+    "acceptance_profile": false
+  },
+  "focused_rust_tests_passed": 26,
+  "runtime_contract": {
+    "receipt": "E:\\dq-cache\\dmb-incremental-runtime-contract\\0d9445b82aa54850952cb8f4a0243dc3\\receipt.json",
+    "sha256": "fe568eb877d0cc27aeaafe6fafb69b0f51081581d5ed36b2819f759538a114e1",
+    "complete": true,
+    "matches": true,
+    "revision_count": 9,
+    "retained_fresh_dmb_rsc_byte_identical": true,
+    "matches_independent_expected_values_and_byond": true
+  },
+  "lexical_classification": {
+    "receipt": "E:/dq-cache/dmb-native-v2/lexical-shadowing-20261010-1612/receipt.json",
+    "duplicate_local_native_exit": 2,
+    "previous_definition_secondary_diagnostic_parity": false
+  },
+  "open_gates": [
+    "full normal/exhaustive DeepQuarry runtime comparison",
+    "same captured source closure authentication",
+    "real six-worktree sessions and daemon upgrade",
+    "release-profile throughput and memory acceptance",
+    "whole-program structural parity and compile-error parity"
+  ]
+}
