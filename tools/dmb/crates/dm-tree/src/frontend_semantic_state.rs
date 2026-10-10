@@ -151,9 +151,17 @@ impl RetainedSemanticTree {
     pub fn new() -> Self {
         Self::default()
     }
+    pub fn with_shared_normalized(
+        owner: Arc<crate::owner_normalization::SharedNormalizedDeclarations>,
+    ) -> Self {
+        Self {
+            normalization: crate::owner_normalization::RetainedNormalization::with_shared(owner),
+            ..Self::default()
+        }
+    }
     pub fn clear(&mut self) {
         self.entry = None;
-        self.normalization = crate::owner_normalization::RetainedNormalization::default();
+        self.normalization = self.normalization.fresh();
         self.declarations.clear();
     }
     pub fn hits(&self) -> u64 {

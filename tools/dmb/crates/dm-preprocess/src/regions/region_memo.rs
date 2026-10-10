@@ -1,6 +1,7 @@
 //! Expansion reuse after a fresh, ordered directive plan. Conditional/include
 //! interpretation and effects remain authoritative in that plan; this memo never
 //! speculates a different directive state or parses a region as a standalone AST.
+mod control;
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
@@ -373,24 +374,8 @@ fn context(plan: &DirectivePlan, index: usize) -> Option<(crate::SourceText, Arc
     let owner = plan.source_texts.get(path.as_ref())?;
     owner.get(region.source_span.range())?;
     let source = owner.view(region.source_span.range());
-    let mut control = EXPANSION_VERSION.to_le_bytes().to_vec();
-    for (segment, line) in plan.regions[index]
-        .segments
-        .iter()
-        .enumerate()
-        .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)))
-    {
-        control.extend_from_slice(&(segment as u64).to_le_bytes());
-        control.extend_from_slice(
-            &(line
-                .source_span
-                .start
-                .checked_sub(region.source_span.start)? as u64)
-                .to_le_bytes(),
-        );
-        control.extend_from_slice(&(line.text.len() as u64).to_le_bytes());
-        control.extend_from_slice(line.text.as_bytes());
-    }
+    let mut control = Vec::new();
+    control::write(plan, index, |bytes| control.extend_from_slice(bytes))?;
     let identity = framed_key(&source, &control);
     Some((source, control.into(), identity))
 }
@@ -679,6 +664,34 @@ mod tests {
                 .or_default()
                 .push(r);
         }
+    }
+    #[test]
+    fn streamed_control_matches_legacy_bytes_and_rejects_extra_or_missing_bytes() {
+        let plan = plan("/proc/probe()\n    return 7\n", &[]);
+        let memo = Memo::default();
+        let output = expand(&plan, 0, &memo);
+        let record = output.receipt.as_ref().unwrap();
+        let region = &plan.regions[0];
+        let mut legacy = EXPANSION_VERSION.to_le_bytes().to_vec();
+        for (segment, value) in region.segments.iter().enumerate() {
+            for line in &value.lines {
+                legacy.extend_from_slice(&(segment as u64).to_le_bytes());
+                legacy.extend_from_slice(
+                    &((line.source_span.start - region.source_span.start) as u64).to_le_bytes(),
+                );
+                legacy.extend_from_slice(&(line.text.len() as u64).to_le_bytes());
+                legacy.extend_from_slice(line.text.as_bytes());
+            }
+        }
+        assert_eq!(record.control.as_ref(), legacy.as_slice());
+        assert!(record.matches_current_input(&plan, 0));
+        let mut malformed = record.as_ref().clone();
+        legacy.push(0);
+        malformed.control = legacy.clone().into();
+        assert!(!malformed.matches_current_input(&plan, 0));
+        legacy.truncate(legacy.len() - 2);
+        malformed.control = legacy.into();
+        assert!(!malformed.matches_current_input(&plan, 0));
     }
     #[test]
     fn fresh_and_retained_region_outputs_share_the_certified_text_backing() {

@@ -34,7 +34,7 @@ impl RetainedMetadata {
                 let owner = node.path;
                 let key = key(owner);
                 if let Some(value) = self.store.lookup(&key, &host) {
-                    if let Some((_, version)) = &value.hierarchy {
+                    if let EffectiveOwner::Hierarchy { version, .. } = value.as_ref() {
                         return Some((owner, *version));
                     }
                 }
@@ -60,17 +60,7 @@ impl RetainedMetadata {
                 let paths = Arc::clone(paths);
                 self.store
                     .insert_with(key, ledger.reads(), ledger.domain_receipts(), 0, || {
-                        EffectiveOwner {
-                            values: Arc::from([]),
-                            selection: Arc::new(crate::HostDeclarationSelection {
-                                callable_names: Arc::from([]),
-                                declared_variable_names: Arc::from([]),
-                                scalar_requests: Arc::from([]),
-                            }),
-                            hierarchy: Some((paths, version)),
-                            callable: None,
-                            variable: None,
-                        }
+                        EffectiveOwner::Hierarchy { paths, version }
                     });
                 Some((owner, version))
             })

@@ -7,6 +7,11 @@ use crate::{
 };
 use dm_session::{observations::ObservationLedger, ObservedArtifactStore};
 use std::collections::{HashMap, HashSet};
+mod shared;
+#[cfg(test)]
+mod shared_tests;
+use shared::NormalizedValues;
+pub use shared::SharedNormalizedDeclarations;
 type Ledger = ObservationLedger<SourceQuery, SourceAnswer, SourceDomain>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResolvedMember {
@@ -20,7 +25,7 @@ struct ResolvedOwner {
     members: Arc<[ResolvedMember]>,
 }
 pub(crate) struct RetainedNormalization {
-    values: ObservedArtifactStore<ResolvedOwner, SourceQuery, SourceAnswer, SourceDomain>,
+    values: NormalizedValues,
     hits: std::sync::atomic::AtomicUsize,
     pub(crate) metadata: Arc<crate::owner_metadata::RetainedMetadata>,
     pub(crate) storage: crate::resolver::storage_inventory::RetainedStorage,
@@ -53,6 +58,18 @@ pub enum NormalizationStorageView<'a> {
     },
 }
 impl RetainedNormalization {
+    pub(crate) fn with_shared(owner: Arc<SharedNormalizedDeclarations>) -> Self {
+        Self {
+            values: NormalizedValues::shared(owner),
+            ..Self::default()
+        }
+    }
+    pub(crate) fn fresh(&self) -> Self {
+        Self {
+            values: self.values.fresh(),
+            ..Self::default()
+        }
+    }
     pub(crate) fn visit_storage(&self, mut visit: impl FnMut(NormalizationStorageView<'_>)) {
         use dm_session::ObservedArtifactStorageView as View;
         self.values.visit_storage(|view| match view {
@@ -109,7 +126,7 @@ impl RetainedNormalization {
 impl Default for RetainedNormalization {
     fn default() -> Self {
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values: NormalizedValues::Local(ObservedArtifactStore::current_revision()),
             hits: std::sync::atomic::AtomicUsize::new(0),
             metadata: Arc::new(crate::owner_metadata::RetainedMetadata::default()),
             storage: crate::resolver::storage_inventory::RetainedStorage::default(),
@@ -337,14 +354,17 @@ impl RetainedNormalization {
             // Current-roster mode does not use a byte budget. Zero is not a
             // fabricated heap estimate; borrowed census must report its owners.
             let payload: Arc<[ResolvedMember]> = payload.into();
-            current.insert(*owner, Arc::clone(&payload));
-            self.values.insert_with(
-                key(*owner),
-                ledger.reads(),
-                ledger.domain_receipts(),
-                0,
-                || ResolvedOwner { members: payload },
-            );
+            let retained = self
+                .values
+                .insert_with_owned(
+                    key(*owner),
+                    ledger.reads(),
+                    ledger.domain_receipts(),
+                    0,
+                    || ResolvedOwner { members: payload },
+                )
+                .expect("current-roster admission is not budgeted");
+            current.insert(*owner, Arc::clone(&retained.members));
         }
         Ok(Some(current))
     }

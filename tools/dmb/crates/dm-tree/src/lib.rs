@@ -26,7 +26,9 @@ pub mod owner_local_shape;
 pub mod owner_metadata;
 mod owner_normalization;
 pub use member_arena::MemberArena;
-pub use owner_normalization::{NormalizationStorageView, ResolvedMember};
+pub use owner_normalization::{
+    NormalizationStorageView, ResolvedMember, SharedNormalizedDeclarations,
+};
 pub mod non_text;
 mod normalize;
 mod procedure;

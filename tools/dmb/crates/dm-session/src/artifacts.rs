@@ -10,12 +10,15 @@ use std::{
     collections::BTreeMap,
     sync::{Arc, Mutex},
 };
+mod leased;
+pub use leased::ObservedArtifactLease;
 pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
 /// Exact key/read acceptance issued by this store; the ledger shares its backing.
 pub struct ObservedArtifact<T, Q, A, D> {
     pub value: Arc<T>,
     pub reads: Arc<[Observation<Q, A, D>]>,
     pub versions: Arc<[(D, u128)]>,
+    weight: usize,
 }
 
 /// Diagnostic-only borrowed storage. Bucket bytes are exposed Vec allocations;
@@ -49,6 +52,9 @@ struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
 struct Resident<T, Q, A, D> {
     buckets: BTreeMap<u128, Vec<Variant<T, Q, A, D>>>,
     bytes: usize,
+    leases: BTreeMap<u64, BTreeMap<Arc<[u8]>, usize>>,
+    next_lease: u64,
+    claims: BTreeMap<usize, (u128, usize)>,
 }
 
 /// Hashes choose buckets only; exact key bytes and all semantic answers authorize
@@ -64,6 +70,7 @@ enum Retention {
     /// The caller supplies the complete current key roster before worker use.
     /// One value per exact key; history is replaced rather than accumulated.
     RetainedCurrentRevision,
+    SharedCurrentRosters,
 }
 impl<T, Q, A, D> Default for ObservedArtifactStore<T, Q, A, D> {
     fn default() -> Self {
@@ -104,6 +111,9 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             state: Mutex::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
+                leases: BTreeMap::new(),
+                next_lease: 0,
+                claims: BTreeMap::new(),
             }),
             retention: Retention::Budgeted(limit),
         }
@@ -113,6 +123,9 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             state: Mutex::new(Resident {
                 buckets: BTreeMap::new(),
                 bytes: 0,
+                leases: BTreeMap::new(),
+                next_lease: 0,
+                claims: BTreeMap::new(),
             }),
             retention: Retention::RetainedCurrentRevision,
         }
@@ -145,7 +158,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     pub fn available_bytes(&self) -> usize {
         match self.retention {
             Retention::Budgeted(limit) => limit.saturating_sub(self.admitted_bytes()),
-            Retention::RetainedCurrentRevision => 0,
+            Retention::RetainedCurrentRevision | Retention::SharedCurrentRosters => 0,
         }
     }
 }
@@ -193,12 +206,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                         Arc::clone(&entry.reads),
                         Arc::clone(&entry.versions),
                         Arc::clone(&entry.value),
+                        entry.weight,
                     )
                 })
                 .collect::<Vec<_>>()
         };
         let mut changed = None;
-        for (reads, versions, value) in candidates.into_iter().rev() {
+        for (reads, versions, value, weight) in candidates.into_iter().rev() {
             let matching = crate::observations::certified_domains(&versions, |domain| {
                 resolver.version(domain)
             });
@@ -216,6 +230,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                         value,
                         reads,
                         versions,
+                        weight,
                     }),
                     None,
                 );

@@ -1,7 +1,7 @@
 //! Process-local expansion input admission. Locator hashes never certify inputs.
 //! Dependencies are adapted from the existing expansion recorder's issued record.
 use super::{DirectivePlan, ExpansionRecord};
-use crate::{Macro, SourceText};
+use crate::Macro;
 use dm_session::{
     observations::{Observation, ObservationHost, ObservationLedger},
     ObservedArtifactStore,
@@ -19,16 +19,9 @@ enum Answer {
     Location(Option<String>),
 }
 type Reads = Vec<Observation<Query, Answer, ()>>;
-struct PreparedLine {
-    segment: usize,
-    relative_start: usize,
-    text: SourceText,
-}
 /// Only the ordinary expansion validator can issue this receipt. No mutable
 /// fields or external constructor grant admission from an arbitrary record.
 struct ExpansionInputReceipt {
-    source: SourceText,
-    lines: Vec<PreparedLine>,
     segments: usize,
     record: Arc<ExpansionRecord>,
 }
@@ -39,26 +32,9 @@ impl ExpansionInputReceipt {
         record: Arc<ExpansionRecord>,
     ) -> Option<(Self, Reads)> {
         let region = plan.regions.get(index)?;
-        let path = &plan.occurrences.get(region.occurrence)?.path;
-        let owner = plan.source_texts.get(path.as_ref())?;
-        owner.get(region.source_span.range())?;
-        let source = owner.view(region.source_span.range());
-        let lines = region
-            .segments
-            .iter()
-            .enumerate()
-            .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)))
-            .map(|(segment, line)| {
-                Some(PreparedLine {
-                    segment,
-                    relative_start: line
-                        .source_span
-                        .start
-                        .checked_sub(region.source_span.start)?,
-                    text: line.text.clone(),
-                })
-            })
-            .collect::<Option<Vec<_>>>()?;
+        if !record.matches_current_input(plan, index) {
+            return None;
+        }
         let ledger = ObservationLedger::default();
         for read in record.reads() {
             ledger.record(
@@ -84,8 +60,6 @@ impl ExpansionInputReceipt {
         }
         Some((
             Self {
-                source,
-                lines,
                 segments: region.segments.len(),
                 record,
             },
@@ -101,41 +75,9 @@ impl ExpansionInputReceipt {
         if region.segments.len() != self.segments {
             return false;
         }
-        let Some(occurrence) = plan.occurrences.get(region.occurrence) else {
-            return false;
-        };
-        let Some(owner) = plan.source_texts.get(occurrence.path.as_ref()) else {
-            return false;
-        };
-        if owner.get(region.source_span.range()).is_none() {
-            return false;
-        }
-        let source = owner.view(region.source_span.range());
-        if !(self.source.same_view(&source) || self.source == source) {
-            return false;
-        }
-        let mut current = region
-            .segments
-            .iter()
-            .enumerate()
-            .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)));
-        for previous in &self.lines {
-            let Some((segment, line)) = current.next() else {
-                return false;
-            };
-            if previous.segment != segment
-                || Some(previous.relative_start)
-                    != line.source_span.start.checked_sub(region.source_span.start)
-                || !(previous.text.same_view(&line.text) || previous.text == line.text)
-            {
-                return false;
-            }
-        }
-        if current.next().is_some() {
-            return false;
-        }
-        true
+        self.record.matches_current_input(plan, index)
     }
+
     fn record(&self) -> &Arc<ExpansionRecord> {
         &self.record
     }
@@ -186,9 +128,7 @@ impl Default for ExpansionInputs {
 impl ExpansionInputs {
     /// Explicit borrowed owner census; callbacks must not re-enter this store.
     pub fn visit_storage(&self, mut visit: impl FnMut(super::ExpansionStorageView<'_>)) {
-        use super::region_memo::storage::{
-            arc_storage, slice_storage, string_storage, vector_storage,
-        };
+        use super::region_memo::storage::{arc_storage, slice_storage, string_storage};
         use super::ExpansionStorageView as View;
         use dm_session::ObservedArtifactStorageView as Store;
         self.joined.visit_storage(&mut visit);
@@ -224,11 +164,6 @@ impl ExpansionInputs {
                     }
                 }
                 visit(arc_storage(value));
-                visit(View::Source(&value.source));
-                visit(vector_storage(&value.lines));
-                for line in &value.lines {
-                    visit(View::Source(&line.text));
-                }
                 visit(arc_storage(&value.record));
                 value.record.visit_storage(&mut visit);
             }

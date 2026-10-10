@@ -112,8 +112,8 @@ impl RetainedMetadata {
             );
             let host = Host(&inputs);
             if let Some(value) = self.store.lookup(&key(node.path), &host) {
-                if let Some((_, version)) = &value.callable {
-                    certificates.insert(node.path, *version);
+                if let Some(version) = value.callable_token() {
+                    certificates.insert(node.path, version);
                     continue;
                 }
             }
@@ -129,16 +129,9 @@ impl RetainedMetadata {
                 ledger.reads(),
                 ledger.domain_receipts(),
                 0,
-                || EffectiveOwner {
-                    values: Arc::from([]),
-                    selection: Arc::new(crate::HostDeclarationSelection {
-                        callable_names: Arc::from([]),
-                        declared_variable_names: Arc::from([]),
-                        scalar_requests: Arc::from([]),
-                    }),
-                    hierarchy: None,
-                    callable: Some((Arc::clone(&inputs[&node.path]), version)),
-                    variable: None,
+                || EffectiveOwner::Callable {
+                    inputs: Arc::clone(&inputs[&node.path]),
+                    version,
                 },
             );
             certificates.insert(node.path, version);

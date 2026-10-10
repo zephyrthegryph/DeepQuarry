@@ -3,7 +3,7 @@
 mod artifacts;
 mod reads;
 pub use artifacts::{
-    AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact,
+    AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact, ObservedArtifactLease,
     ObservedArtifactStorageView, ObservedArtifactStore, DEFAULT_RESIDENT_BYTES,
 };
 pub use reads::{matching_domains, RecordingResolver, ResolverRead};

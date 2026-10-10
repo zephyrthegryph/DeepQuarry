@@ -5,6 +5,8 @@ mod demanded_selections;
 mod hierarchy;
 mod selections;
 pub use demanded_selections::CallableDemands;
+#[cfg(test)]
+mod sparse_tests;
 mod variables;
 use crate::{declaration_contributions::DeclarationKey, owner_normalization::ResolvedMember, *};
 pub use callables::{CallableFact, CallableInputs};
@@ -55,12 +57,39 @@ impl MetadataQuery {
         }
     }
 }
-struct EffectiveOwner {
-    selection: Arc<crate::HostDeclarationSelection>,
-    values: Arc<[(DeclarationKey, Arc<MemberMetadata>)]>,
-    hierarchy: Option<(Arc<[SymbolId]>, u128)>,
-    callable: Option<(Arc<CallableInputs>, u128)>,
-    variable: Option<(Arc<VariableInputs>, u128)>,
+enum EffectiveOwner {
+    Members {
+        selection: Arc<crate::HostDeclarationSelection>,
+        // Only fields changed by the ordinary inheritance resolver. The exact
+        // normalized local roster remains in this entry's observation receipt.
+        values: Arc<[(DeclarationKey, Arc<MemberMetadata>)]>,
+    },
+    Hierarchy {
+        paths: Arc<[SymbolId]>,
+        version: u128,
+    },
+    Callable {
+        inputs: Arc<CallableInputs>,
+        version: u128,
+    },
+    Variable {
+        inputs: Arc<VariableInputs>,
+        version: u128,
+    },
+}
+impl EffectiveOwner {
+    fn callable_token(&self) -> Option<u128> {
+        match self {
+            Self::Callable { version, .. } => Some(*version),
+            _ => None,
+        }
+    }
+    fn variable_token(&self) -> Option<u128> {
+        match self {
+            Self::Variable { version, .. } => Some(*version),
+            _ => None,
+        }
+    }
 }
 type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
 pub struct RetainedMetadata {
@@ -167,16 +196,20 @@ impl RetainedMetadata {
                     address: Arc::as_ptr(value) as usize,
                     size: std::mem::size_of::<EffectiveOwner>(),
                 });
-                visit(MetadataStorageView::Values(&value.values));
-                visit(MetadataStorageView::Selection(&value.selection));
-                if let Some((inputs, _)) = &value.callable {
-                    visit(MetadataStorageView::CallableLocal(inputs));
-                }
-                if let Some((inputs, _)) = &value.variable {
-                    visit(MetadataStorageView::VariableLocal(inputs));
-                }
-                if let Some((paths, _)) = &value.hierarchy {
-                    visit(MetadataStorageView::Hierarchy(paths));
+                match value.as_ref() {
+                    EffectiveOwner::Members { values, selection } => {
+                        visit(MetadataStorageView::Values(values));
+                        visit(MetadataStorageView::Selection(selection));
+                    }
+                    EffectiveOwner::Callable { inputs, .. } => {
+                        visit(MetadataStorageView::CallableLocal(inputs))
+                    }
+                    EffectiveOwner::Variable { inputs, .. } => {
+                        visit(MetadataStorageView::VariableLocal(inputs))
+                    }
+                    EffectiveOwner::Hierarchy { paths, .. } => {
+                        visit(MetadataStorageView::Hierarchy(paths))
+                    }
                 }
             }
         });
@@ -250,7 +283,15 @@ impl RetainedMetadata {
                     members: &*members,
                     projection: &projection,
                 };
-                let accepted = self.store.lookup(&key(owner), &host);
+                let accepted = self
+                    .store
+                    .visit_explained(&key(owner), &host, &mut |value| match value.as_ref() {
+                        EffectiveOwner::Members { values, .. } => values
+                            .iter()
+                            .all(|(key, _)| key.owner == owner && projection.contains_key(key)),
+                        _ => false,
+                    })
+                    .0;
                 let ledger = ObservationLedger::default();
                 if accepted.is_none() {
                     let query = MetadataQuery::NormalizedOwner(owner);
@@ -272,16 +313,28 @@ impl RetainedMetadata {
                 (accepted, ledger.reads(), ledger.domain_receipts())
             };
             if let Some(value) = accepted {
+                let EffectiveOwner::Members { selection, values } = value.as_ref() else {
+                    unreachable!("member payload admitted above")
+                };
                 self.hits.fetch_add(1, Ordering::Relaxed);
-                selections.insert(owner, Arc::clone(&value.selection));
-                for (key, metadata) in value.values.iter() {
+                selections.insert(owner, Arc::clone(selection));
+                // Current exact normalized observations, not old dense IDs,
+                // supply every unchanged local field before applying deltas.
+                for input in normalized[&owner].iter() {
+                    members[projection[&input.key].index()].metadata = Arc::clone(&input.metadata);
+                }
+                for (key, metadata) in values.iter() {
                     members[projection[key].index()].metadata = Arc::clone(metadata);
                 }
             } else {
                 crate::metadata_update::resolve_metadata(tree, members, ids);
-                let values: Arc<[_]> = ids
+                let values: Arc<[_]> = normalized[&owner]
                     .iter()
-                    .map(|&id| (keys_by_id[&id], Arc::clone(&members[id.index()].metadata)))
+                    .filter_map(|input| {
+                        let effective = &members[projection[&input.key].index()].metadata;
+                        (!(Arc::ptr_eq(effective, &input.metadata) || effective == &input.metadata))
+                            .then(|| (input.key, Arc::clone(effective)))
+                    })
                     .collect::<Vec<_>>()
                     .into();
                 // Full-current-roster retention has no fabricated byte weight;
@@ -289,14 +342,9 @@ impl RetainedMetadata {
                 let selection =
                     crate::host_declaration_selection::select(owner, members, ids.iter().copied());
                 selections.insert(owner, Arc::clone(&selection));
-                self.store
-                    .insert_with(key(owner), reads, versions, 0, || EffectiveOwner {
-                        values,
-                        selection,
-                        hierarchy: None,
-                        callable: None,
-                        variable: None,
-                    });
+                self.store.insert_with(key(owner), reads, versions, 0, || {
+                    EffectiveOwner::Members { values, selection }
+                });
             }
         }
         selections

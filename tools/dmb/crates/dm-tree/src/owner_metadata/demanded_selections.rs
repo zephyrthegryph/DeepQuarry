@@ -278,9 +278,9 @@ impl RetainedMetadata {
                 let host = Host(answer);
                 let token_of = |entry: &EffectiveOwner| {
                     if selection.2 == 2 {
-                        entry.variable.as_ref().map(|(_, token)| *token)
+                        entry.variable_token()
                     } else {
-                        entry.callable.as_ref().map(|(_, token)| *token)
+                        entry.callable_token()
                     }
                 };
                 let existing = self
@@ -298,27 +298,16 @@ impl RetainedMetadata {
                         ledger.reads(),
                         ledger.domain_receipts(),
                         0,
-                        || {
-                            let (callable, variable) = match host.0 {
-                                MetadataAnswer::CallableLocal(inputs) => {
-                                    (Some((inputs, token)), None)
-                                }
-                                MetadataAnswer::VariableLocal(inputs) => {
-                                    (None, Some((inputs, token)))
-                                }
-                                _ => unreachable!("name-specific receipt"),
-                            };
-                            EffectiveOwner {
-                                selection: Arc::new(crate::HostDeclarationSelection {
-                                    callable_names: Arc::from([]),
-                                    declared_variable_names: Arc::from([]),
-                                    scalar_requests: Arc::from([]),
-                                }),
-                                values: Arc::from([]),
-                                hierarchy: None,
-                                callable,
-                                variable,
-                            }
+                        || match host.0 {
+                            MetadataAnswer::CallableLocal(inputs) => EffectiveOwner::Callable {
+                                inputs,
+                                version: token,
+                            },
+                            MetadataAnswer::VariableLocal(inputs) => EffectiveOwner::Variable {
+                                inputs,
+                                version: token,
+                            },
+                            _ => unreachable!("name-specific receipt"),
                         },
                     )?;
                     token_of(&owner)?

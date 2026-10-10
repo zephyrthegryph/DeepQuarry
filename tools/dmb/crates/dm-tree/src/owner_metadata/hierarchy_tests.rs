@@ -2,6 +2,37 @@ use super::*;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
 
 #[test]
+fn hierarchy_payload_storage_has_no_dummy_member_or_selection_owners() {
+    let retained = RetainedMetadata::default();
+    retained.store.insert_with(
+        Arc::from(b"test".as_slice()),
+        Vec::new(),
+        Vec::new(),
+        0,
+        || EffectiveOwner::Hierarchy {
+            paths: Arc::from([SymbolId::of("/")]),
+            version: 17,
+        },
+    );
+    let mut hierarchy = 0;
+    retained.visit_storage(|view| match view {
+        MetadataStorageView::Hierarchy(_) => hierarchy += 1,
+        MetadataStorageView::Values(_)
+        | MetadataStorageView::Selection(_)
+        | MetadataStorageView::CallableLocal(_)
+        | MetadataStorageView::VariableLocal(_) => panic!("certificate retained unrelated payload"),
+        _ => (),
+    });
+    assert_eq!(hierarchy, 1);
+    let value = EffectiveOwner::Hierarchy {
+        paths: Arc::from([]),
+        version: 17,
+    };
+    assert_eq!(value.callable_token(), None);
+    assert_eq!(value.variable_token(), None);
+}
+
+#[test]
 fn hierarchy_receipts_reuse_only_exact_current_ancestry_and_qualify_completeness() {
     let mut symbols = SymbolTable::default();
     let root = symbols.intern("/").unwrap();

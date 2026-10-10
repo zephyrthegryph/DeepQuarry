@@ -259,12 +259,18 @@ pub(crate) fn apply_opaque_base(tree: &SemanticTree, member: &mut crate::MemberN
             .intrinsic_fields
             .get(&(tree.types[current.index()].path, member.name))
         {
-            let metadata = std::sync::Arc::make_mut(&mut member.metadata);
-            metadata.declared_type = match opaque.declared_type {
+            let declared_type = match opaque.declared_type {
                 dm_ir::DeclaredTypeKnowledge::Known(path) => Some(path),
                 dm_ir::DeclaredTypeKnowledge::Unsupported
                 | dm_ir::DeclaredTypeKnowledge::KnownUntyped => None,
             };
+            if member.metadata.declared_type == declared_type
+                && member.metadata.inherited_opaque.as_ref() == Some(opaque)
+            {
+                break;
+            }
+            let metadata = std::sync::Arc::make_mut(&mut member.metadata);
+            metadata.declared_type = declared_type;
             metadata.inherited_opaque = Some(opaque.clone());
             break;
         }
@@ -284,6 +290,16 @@ pub(crate) fn resolve_metadata<
         if members[i].definition == DefinitionMode::Override && members[i].kind == MemberKind::Var {
             if let Some(previous) = members[i].previous {
                 let inherited = members[previous.index()].metadata.clone();
+                let current = &members[i].metadata;
+                if current.inherited_opaque == inherited.inherited_opaque
+                    && current.declared_type == inherited.declared_type
+                    && current.list_element_type == inherited.list_element_type
+                    && current.flags == inherited.flags
+                    && current.array == inherited.array
+                    && current.declared_initializer == inherited.declared_initializer
+                {
+                    continue;
+                }
                 let metadata = std::sync::Arc::make_mut(&mut members[i].metadata);
                 metadata.inherited_opaque = inherited.inherited_opaque.clone();
                 metadata.declared_type = inherited.declared_type;
