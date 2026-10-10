@@ -65,8 +65,11 @@
 
 /// Resolves a starts spec entry for holder D into a type path (or a list of paths) and the constructor arguments.
 /proc/starts_resolve(datum/D, datum/entry/spec)
-	var/value = spec.args["value"]
-	var/list/ctor_args = spec.args["args"]
+	var/value = spec
+	var/list/ctor_args = null
+	if(spec.kind == "starts") // owns_one()/owns_many() wrap the spec with its starts_args; a legacy owns(starts = when()/pick_one()) passes it bare
+		value = spec.args["value"]
+		ctor_args = spec.args["args"]
 	if(istype(value, /datum/entry))
 		var/datum/entry/inner = value
 		switch(inner.kind)
