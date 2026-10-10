@@ -245,9 +245,9 @@ CAPABILITIES(/obj/machinery/thing)
 	op("toggle", hand(), label("Toggle"), then(PROC_REF(toggle)))
 ```
 
-**Bespoke entries** [built]:
+**Bespoke entries** [retired with the interaction bridge, ix-r2: write `op(...)` in the CAPABILITIES block]:
 
-```dm
+```dm before
 cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE,
 	works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
 cap_tool(name, quality, handler, delay, ...same gating...)          // works_broken/unpowered default TRUE
@@ -622,7 +622,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	. += cap_slot(nameof(diode), /obj/item/stock_parts/micro_laser, eject_tool = TOOL_SCREWDRIVER)
 ```
 
-```dm
+```dm before
 // BEFORE: door_control.dm:36-48 (an interaction datum per action)
 /datum/interaction/machine_hand/remote_toggle
 	id = "remote_toggle"  name = "Toggle"  category = INTERACTION_CAT_TOGGLE
@@ -1342,7 +1342,7 @@ every(2 SECONDS, then(PROC_REF(recharge_step)), when = nameof(recharging))
 
 **After:**
 
-```dm
+```dm before
 /obj/item/laser_pointer
 	...
 	var/cooldown = 1 SECOND
@@ -1403,11 +1403,11 @@ TRACKED(/obj/item/laser_pointer, pointing, CHANGE_EFFECTS)
 - direct `icon_state` writes and the reset timer (a timed var plus `draw`);
 - `set_recharging`, `OM_FIELD(recharging)` and `DECLARE_PERIODIC_WHILE` (`should_run()` derives it from `energy`).
 
-## A15. Construction primitives [built: `rewrite/f-look`]
+## A15. Construction primitives [retired with the legacy ladder, ix-r2: `construction(GRAPH_X | stage(STAGE_X, ...))`, code/engine/declare/graph.dm]
 
 A ladder is what the player does, not stages with hand-written undo, refund, message, icon and delay:
 
-```dm
+```dm before
 . += cap_construction(
 	ladder_options(sprite = "frame", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
 	stage("frame", desc = "A bare frame."),
