@@ -58,7 +58,7 @@ impl InitializerArtifacts {
         visitor: impl FnMut(
             dm_session::ObservedArtifactStorageView<
                 '_,
-                Vec<Arc<[u8]>>,
+                super::prepared_keys::PreparedKey,
                 (),
                 Arc<super::prepared_keys::Inputs>,
                 (),

@@ -57,27 +57,13 @@ impl RetainedMetadata {
         &self,
         tree: &SemanticTree,
     ) -> BTreeMap<(SymbolId, SymbolId), u128> {
-        // Publish immutable compatibility tokens from the sole name-demand core.
-        // Register this actual source owner even when metadata refresh calls the
-        // variable stage before callable certificates.
+        // Register the current immutable issuer without eagerly materializing
+        // every local name and its negative ancestor receipts. Resolver queries
+        // use the same demanded_variable core, including the complete parent
+        // chain. Previously issued old-snapshot tokens remain readable; an
+        // unqueried old snapshot declines instead of minting current authority.
         self.begin_selection_revision(tree);
-        let mut certificates = BTreeMap::new();
-        for node in tree.types.iter() {
-            let names = node
-                .members
-                .iter()
-                .filter_map(|id| {
-                    let member = &tree.members[id.index()];
-                    (member.kind == MemberKind::Var).then_some(member.name)
-                })
-                .collect::<std::collections::BTreeSet<_>>();
-            for name in names {
-                if let Some(token) = self.demanded_variable(tree, node.path, name) {
-                    certificates.insert((node.path, name), token);
-                }
-            }
-        }
-        certificates
+        BTreeMap::new()
     }
 }
 

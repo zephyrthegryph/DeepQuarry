@@ -36,6 +36,29 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
         },
     ];
     let first = build(&rows);
+    let queries = [
+        ResolveQuery::HasMemberVar { owner, name },
+        ResolveQuery::DeclaredVarType { owner, name },
+        ResolveQuery::VarStorage { owner, name },
+        ResolveQuery::StaticVar { owner, name },
+    ];
+    let mut before_demand = 0;
+    retained.metadata.store.visit_storage(|view| {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+            before_demand += reads
+                .iter()
+                .filter(|read| matches!(read.answer, MetadataAnswer::VariableLocal(_)))
+                .count();
+        }
+    });
+    assert_eq!(
+        before_demand, 0,
+        "unused names must not allocate variable receipts"
+    );
+    for query in queries {
+        assert!(first.domain_version(query.domain()).is_some());
+    }
+
     let mut local_receipts = 0;
     retained.metadata.store.visit_storage(|view| {
         if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
@@ -52,12 +75,6 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
         }
     });
     assert!(local_receipts > 0);
-    let queries = [
-        ResolveQuery::HasMemberVar { owner, name },
-        ResolveQuery::DeclaredVarType { owner, name },
-        ResolveQuery::VarStorage { owner, name },
-        ResolveQuery::StaticVar { owner, name },
-    ];
     rows.push(Skeleton::Member {
         owner,
         name: callback,
@@ -67,6 +84,18 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
         content: 17,
     });
     let second = build(&rows);
+    let unqueried_old = ResolveQuery::HasMemberVar {
+        owner,
+        name: SymbolId::of("never_requested"),
+    };
+    assert_eq!(first.domain_version(unqueried_old.domain()), None);
+    assert!(second.domain_version(unqueried_old.domain()).is_some());
+    assert_eq!(
+        first.domain_version(unqueried_old.domain()),
+        None,
+        "old snapshots cannot adopt current negative receipts"
+    );
+
     for query in queries {
         assert!(first.domain_version(query.domain()).is_some());
         assert_eq!(

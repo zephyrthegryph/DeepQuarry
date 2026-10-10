@@ -37,30 +37,22 @@ pub(super) fn inspect(c: &mut HeapCensus, store: &crate::initializer_policy::Ini
             if c.slice(owner, reads, true) {
                 for read in reads.iter() {
                     if c.arc_object(owner, &read.answer) {
-                        c.vec_payload(owner, &read.answer.facts);
-                        if c.vec_payload(owner, &read.answer.writes) {
-                            for write in &read.answer.writes {
-                                match &write.value {
-                                    dm_ir::InitializerValue::Expression(expr) => {
-                                        c.expression(owner, expr)
-                                    }
-                                    dm_ir::InitializerValue::ArrayAllocation(array) => {
-                                        c.array(owner, array)
-                                    }
-                                    dm_ir::InitializerValue::NoAuthoredValue => (),
-                                }
-                                if let Some(array) = &write.declared_array {
-                                    c.array(owner, array);
-                                }
+                        let write = &read.answer.write;
+                        match &write.value {
+                            dm_ir::InitializerValue::Expression(expr) => c.expression(owner, expr),
+                            dm_ir::InitializerValue::ArrayAllocation(array) => {
+                                c.array(owner, array)
                             }
+                            dm_ir::InitializerValue::NoAuthoredValue => (),
+                        }
+                        if let Some(array) = &write.declared_array {
+                            c.array(owner, array);
                         }
                     }
                 }
             }
-            if c.arc_object(owner, value) && c.vec_payload(owner, value) {
-                for key in value.iter() {
-                    c.slice(owner, key, true);
-                }
+            if c.arc_object(owner, value) {
+                c.slice(owner, &value.bytes, true);
             }
         }
     });
