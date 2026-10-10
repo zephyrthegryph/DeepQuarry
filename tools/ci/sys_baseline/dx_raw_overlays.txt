@@ -367,7 +367,6 @@ dx_raw_overlays	code/modules/mob/living/carbon/human/emote.dm	cut_overlay(pose_i
 dx_raw_overlays	code/modules/mob/living/carbon/human/human_helpers.dm	add_overlay(hud_list)
 dx_raw_overlays	code/modules/mob/living/carbon/human/life.dm	healths_ma.add_overlay(health_images)
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	src.overlays += coolanimation
-dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	src.overlays += coolanimation
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_abilities.dm	overlays -= coolanimation
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	thing.overlays += coolanimation
 dx_raw_overlays	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	H.cut_overlays()

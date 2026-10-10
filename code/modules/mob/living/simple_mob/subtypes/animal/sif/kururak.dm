@@ -95,6 +95,8 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
+	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.
+	op("rend_hatch", ai(), takes("mech"), wait(1 SECOND), then(PROC_REF(rending_strike_kururak_done)))
 
 /// Rolled before init (rolls()): one in five is a natural leader.
 /mob/living/simple_mob/animal/sif/kururak/proc/roll_instinct(datum/roller/R)
@@ -306,12 +308,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 		M.take_damage(damage_to_apply)
 		if(prob(3))
 			act_message(src, M, null, MSG_OTHERS(span_critical("%U% begins digging its claws into %T%'s hatch!")))
-			task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
+			perform_op(src, src, "rend_hatch", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("mech" = M))
 
 	else
 		generic_hit(A, src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
 
-/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(obj/mecha/M)
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(datum/act/op/A)
+	var/obj/mecha/M = A.arg("mech")
+	if(QDELETED(M) || !Adjacent(M))
+		return
 	act_message(src, M, null, MSG_OTHERS(span_critical("%U% rips %T%'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!")))
 	M.go_out()
 

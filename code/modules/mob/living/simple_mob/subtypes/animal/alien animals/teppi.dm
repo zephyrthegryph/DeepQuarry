@@ -665,7 +665,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 				src.adjust_nutrition(-rand(250,500))
 				src.set_teppi_wool(TRUE)
 				src.breedable = TRUE
-				src.meat_amount += rand(0,2)
+				src.set_meat_amount(src.meat_amount + rand(0,2))
 		else if (not_hungy)
 			var/nutrition_cost = 500 + (src.nutrition / 2)
 			src.adjust_nutrition(-nutrition_cost)

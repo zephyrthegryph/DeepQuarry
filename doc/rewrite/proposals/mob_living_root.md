@@ -1,6 +1,6 @@
 # Proposal: where do `/mob/living` ops live? (K23)
 
-Status: proposal, needs the user's approval. Nothing here changes `code/modules/combat_ai/`.
+Status: option B approved and landed (rewrite/living): one `living_abilities()` line in the block, the entries in `code/library/mob/living_abilities.dm`. Option C is still the end state.
 
 ## The problem
 

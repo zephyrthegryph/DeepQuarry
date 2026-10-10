@@ -84,18 +84,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 //If you just update icon_living it should still work with vore states and dying, you'll just need to make and label the sprites appropriately.
 //Make sure you un-comment the variables above too.
 
-//Add op("shear", item(/obj/item), stance(I_HELP), label("Shear"), then(PROC_REF(sheep_interaction_shear))) to the sheep's CAPABILITIES block when re-enabling.
-/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O)
-	if(!istype(O, /obj/item/material/knife) && !O.has_tool_quality(TOOL_WIRECUTTER))
-		return FALSE
-	if(!harvestable_wool)
-		return FALSE
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
-	return TRUE
+//Add op("shear", item(/obj/item), stance(I_HELP), when(PROC_REF(sheep_shearable)), label("Shear"), wait(3 SECONDS), then(PROC_REF(shear_done))) to the sheep's CAPABILITIES block when re-enabling.
+/mob/living/simple_mob/vore/sheep/proc/sheep_shearable(datum/act/op/A)
+	var/obj/item/O = A.held
+	return harvestable_wool && (istype(O, /obj/item/material/knife) || O.has_tool_quality(TOOL_WIRECUTTER))
 
-/mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
+/mob/living/simple_mob/vore/sheep/proc/shear_done(datum/act/op/A)
 	if(!harvestable_wool)
 		return
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = O)
 	new /obj/item/stack/material/fur/wool(get_turf(user))
 	harvestable_wool = FALSE

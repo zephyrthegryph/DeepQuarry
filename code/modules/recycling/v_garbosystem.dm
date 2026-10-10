@@ -160,7 +160,7 @@ CAPABILITIES(/obj/machinery/button/garbosystem)
 								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
 									transfer_reagent_to_tank(meat.reagents,1)
 								consumed(meat, src)
-								L.meat_amount--
+								L.set_meat_amount(L.meat_amount - 1)
 						L.gib()
 						items_taken++
 						if(ishuman(L))

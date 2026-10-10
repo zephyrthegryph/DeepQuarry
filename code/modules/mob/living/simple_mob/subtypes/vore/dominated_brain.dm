@@ -362,28 +362,26 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))
-	task_start(/datum/task/timed/mob_dominate_predator_mob, prey, pred, receiver = src)
+	perform_op(prey, prey, "dominate_predator", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("pred" = pred, "from" = pred.loc))
 	return TRUE
 
-/datum/task/timed/mob_dominate_predator_mob
-	duration = 10 SECONDS
-	complete_proc = /mob/proc/dominate_predator_mob_done
-	cancel_proc = /mob/proc/dominate_predator_mob_failed
-
-/mob/proc/dominate_predator_mob_done(datum/task/timed/mob_dominate_predator_mob/task)
-	var/mob/living/pred = task.target
-	var/mob/living/prey = task.actor
+/mob/proc/dominate_predator_mob_done(datum/act/op/A)
+	var/mob/living/pred = A.arg("pred")
+	var/mob/living/prey = src
+	if(QDELETED(pred) || pred.loc != A.arg("from"))
+		dominate_predator_mob_failed(A)
+		return
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you are pushed to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "prey domination")
 
-/mob/proc/dominate_predator_mob_failed(datum/task/timed/mob_dominate_predator_mob/task)
-	var/mob/living/pred = task.target
-	var/mob/living/prey = task.actor
+/mob/proc/dominate_predator_mob_failed(datum/act/op/A)
+	var/mob/living/pred = A.arg("pred")
+	var/mob/living/prey = src
 	to_chat(prey, span_notice("Your attempt to regain control has been interrupted..."))
-	to_chat(pred, span_notice("The dominant sensation fades away..."))
-	return
+	if(!QDELETED(pred))
+		to_chat(pred, span_notice("The dominant sensation fades away..."))
 
 /mob/proc/release_predator()
 	set category = VERB_CAT_ABILITIES_VORE
@@ -524,18 +522,14 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 
 	if(istype(G) && M == G?.grab_target())
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking increasingly drowsy with every passing moment!")))
-	task_start(/datum/task/timed/living_dominate_prey_living, src, M, G = G)
+	perform_op(src, src, "dominate_prey", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = M, "grab" = G))
 	return TRUE
 
-/datum/task/timed/living_dominate_prey_living
-	duration = 10 SECONDS
-	complete_proc = /mob/living/proc/dominate_prey_living_done
-	cancel_proc = /mob/living/proc/dominate_prey_living_failed
-	var/obj/item/grab/G
-
-/mob/living/proc/dominate_prey_living_done(datum/task/timed/living_dominate_prey_living/task)
-	var/obj/item/grab/G = task.G
-	var/mob/living/M = task.target
+/mob/living/proc/dominate_prey_living_done(datum/act/op/A)
+	var/obj/item/grab/G = A.arg("grab")
+	var/mob/living/M = A.arg("prey")
+	if(QDELETED(M))
+		return
 	if(!isbelly(M.loc) && !(istype(G) && M == G?.grab_target() && G.state == GRAB_NECK)) // Let dominate prey work on grabbed people
 		to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
 		to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
@@ -547,8 +541,10 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	if(istype(G) && M == G?.grab_target())
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to finish whatever they were doing to %T%.")))
 
-/mob/living/proc/dominate_prey_living_failed(datum/task/timed/living_dominate_prey_living/task)
-	var/mob/living/M = task.target
+/mob/living/proc/dominate_prey_living_failed(datum/act/op/A)
+	var/mob/living/M = A.arg("prey")
+	if(QDELETED(M))
+		return
 	to_chat(M, span_notice("The alien presence fades, and you are left along in your body..."))
 	to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
 	return
@@ -662,27 +658,25 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))
-	task_start(/datum/task/timed/living_lend_prey_control_living, pred, prey, receiver = src)
+	perform_op(pred, pred, "lend_prey_control", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = prey, "from" = prey.loc))
 
-/datum/task/timed/living_lend_prey_control_living
-	duration = 10 SECONDS
-	complete_proc = /mob/living/proc/lend_prey_control_living_done
-	cancel_proc = /mob/living/proc/lend_prey_control_living_failed
-
-/mob/living/proc/lend_prey_control_living_done(datum/task/timed/living_lend_prey_control_living/task)
-	var/mob/living/prey = task.target
-	var/mob/living/pred = task.actor
+/mob/living/proc/lend_prey_control_living_done(datum/act/op/A)
+	var/mob/living/prey = A.arg("prey")
+	var/mob/living/pred = src
+	if(QDELETED(prey) || prey.loc != A.arg("from"))
+		lend_prey_control_living_failed(A)
+		return
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you move to the background, and an alien consciousness displaces yours."))
 	take_over_predator(prey, pred, "pred submission")
 
-/mob/living/proc/lend_prey_control_living_failed(datum/task/timed/living_lend_prey_control_living/task)
-	var/mob/living/prey = task.target
-	var/mob/living/pred = task.actor
+/mob/living/proc/lend_prey_control_living_failed(datum/act/op/A)
+	var/mob/living/prey = A.arg("prey")
+	var/mob/living/pred = src
 	to_chat(pred, span_notice("Your attempt to share control has been interrupted..."))
-	to_chat(prey, span_notice("The dominant sensation fades away..."))
-	return
+	if(!QDELETED(prey))
+		to_chat(prey, span_notice("The dominant sensation fades away..."))
 
 /// The mind-move half of prey domination and pred submission: `prey`'s mind
 /// takes `pred`'s body and the predator's mind (if any) moves into a back seat.

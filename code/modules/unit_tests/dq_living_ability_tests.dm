@@ -105,3 +105,140 @@
 	V.forceMove(get_step(get_turf(V), NORTH))
 	test_time(1 SECOND)
 	TEST_ASSERT_NULL(op_pending_of(H), "the one asked at moved: the charge ended")
+
+// ---- The abilities of the human block: what a prompt chose comes with the call ----
+
+/// A hand game reads its partner and the winner from the call, and ends with the players cancelling when the one who started walks off.
+/datum/unit_test/dq_living_ability/hand_game_runs_and_cancels
+
+/datum/unit_test/dq_living_ability/hand_game_runs_and_cancels/exercise()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/P = person(get_step(get_turf(H), NORTH))
+	var/datum/op_result/result = use(H, "game_thumbwars", list("partner" = P, "from" = P.loc))
+	TEST_ASSERT_NULL(result?.outcome, "the thumb war takes its five seconds")
+	test_time(6 SECONDS)
+	TEST_ASSERT_EQUAL(result.outcome, ACT_COMMITTED, "and then it is played")
+	var/datum/op_result/second = use(H, "game_armwrestle", list("partner" = P, "from" = P.loc, "competition" = H))
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "an arm wrestle waits")
+	H.forceMove(get_step(get_turf(H), WEST))
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(op_pending_of(H), "the one who started walked off: it is over")
+	TEST_ASSERT(second.outcome != ACT_COMMITTED, "and it was not played")
+
+/// Popping a joint back is the subject's op performed by someone else, who has to stay beside them.
+/datum/unit_test/dq_living_ability/relocate_joint_works_on_another
+
+/datum/unit_test/dq_living_ability/relocate_joint_works_on_another/exercise()
+	var/mob/living/carbon/human/S = person()
+	var/mob/living/carbon/human/U = person(get_step(get_turf(S), NORTH))
+	var/obj/item/organ/external/limb = S.organs_by_name[BP_L_ARM]
+	limb.dislocate()
+	TEST_ASSERT(limb.dislocated > 0, "the arm is out of its joint")
+	var/datum/op_result/result = perform_op(U, S, "relocate_joint", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = limb))
+	TEST_ASSERT_NULL(result?.outcome, "the relocation takes its three seconds")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(result.outcome, ACT_COMMITTED, "it was done")
+	TEST_ASSERT_EQUAL(limb.dislocated, 0, "the joint is back in")
+
+/// A drain through a grab runs one stage a lap and ends when a stage says so.
+/datum/unit_test/dq_living_ability/grab_drain_runs_stage_by_stage
+
+/datum/unit_test/dq_living_ability/grab_drain_runs_stage_by_stage/exercise()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/V = person(get_step(get_turf(H), NORTH))
+	H.zone_sel = allocate(/atom/movable/screen/zone_sel) // a hud-less human has none, and a grab's step reads the aimed zone
+	var/obj/item/grab/G = new /obj/item/grab(H, V)
+	H.put_in_active_hand(G)
+	G.state = GRAB_NECK
+	GLOB.grab_drain_test_stages = list()
+	H.grab_drain_step(V, G, 1, TYPE_PROC_REF(/mob/living/carbon/human, grab_drain_test_stage), GRAB_NECK, "draining")
+	TEST_ASSERT_EQUAL(length(GLOB.grab_drain_test_stages), 1, "the first stage ran at once")
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "the hold goes on")
+	test_time(5.5 SECONDS)
+	TEST_ASSERT_EQUAL(length(GLOB.grab_drain_test_stages), 2, "a lap later the second stage ran")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(length(GLOB.grab_drain_test_stages), 3, "and the third")
+	TEST_ASSERT_NULL(op_pending_of(H), "the third said it was done")
+	TEST_ASSERT_EQUAL(jointext(GLOB.grab_drain_test_stages, ","), "1,2,3", "in order")
+
+/// The stages the test drain has run.
+GLOBAL_LIST_EMPTY(grab_drain_test_stages)
+
+/mob/living/carbon/human/proc/grab_drain_test_stage(mob/living/carbon/human/T, stage)
+	GLOB.grab_drain_test_stages += stage
+	return stage >= 3 ? 0 : stage
+
+/// Butchering is two ops in a row: a lap per cut of meat, then the butchering, and nobody else works on the carcass meanwhile.
+/datum/unit_test/dq_living_ability/harvest_cuts_every_piece_then_butchers
+
+/datum/unit_test/dq_living_ability/harvest_cuts_every_piece_then_butchers/exercise()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/simple_mob/e0_fixture/carcass = allocate(/mob/living/simple_mob/e0_fixture, get_step(get_turf(H), NORTH))
+	carcass.meat_type = /obj/item/reagent_containers/food/snacks/meat
+	carcass.meat_amount = 2
+	carcass.name_the_meat = FALSE
+	carcass.gib_on_butchery = FALSE
+	carcass.mob_size = MOB_SMALL // a cut takes half a second per ten of size
+	carcass.stat = DEAD
+	carcass.harvest(H, null)
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "the first cut is under way")
+	TEST_ASSERT(op_claimed(carcass), "nobody else may work on the carcass")
+	test_time(0.6 SECONDS)
+	TEST_ASSERT_EQUAL(carcass.meat_amount, 1, "a lap later one cut was made")
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "and the next is under way")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT_EQUAL(carcass.meat_amount, 0, "the second cut was made")
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "the butchering follows the last cut")
+	test_time(2.1 SECONDS)
+	TEST_ASSERT_NULL(op_pending_of(H), "and it ends")
+	var/meat = 0
+	for(var/obj/item/reagent_containers/food/snacks/meat/M in get_turf(carcass))
+		meat++
+		own(M)
+	for(var/obj/effect/decal/cleanable/blood/splatter/S in get_turf(carcass))
+		own(S)
+	TEST_ASSERT_EQUAL(meat, 2, "both pieces lie on the carcass's tile")
+
+/// A spin turns a quarter every lap, however long it was asked to go on, and holds nothing of the one spinning.
+/datum/unit_test/dq_living_ability/spin_turns_a_quarter_a_lap
+
+/datum/unit_test/dq_living_ability/spin_turns_a_quarter_a_lap/exercise()
+	var/mob/living/carbon/human/H = person()
+	H.set_dir(NORTH)
+	H.spin(1 SECOND, 0.2 SECONDS)
+	test_time(0.3 SECONDS)
+	TEST_ASSERT_EQUAL(H.dir, EAST, "the first quarter turn")
+	test_time(0.2 SECONDS)
+	TEST_ASSERT_EQUAL(H.dir, SOUTH, "the second")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(H.dir, EAST, "five quarters in all: it ends facing east")
+	TEST_ASSERT_NULL(op_pending_of(H), "and it is over")
+	H.spin(0.1 SECONDS, 0.2 SECONDS)
+	TEST_ASSERT_NULL(op_pending_of(H), "a spin shorter than one turn starts nothing")
+
+/// A protean power is an op of the power datum (the actor is the protean): folding into the control cluster waits two seconds, and walking off breaks it.
+/datum/unit_test/dq_living_ability/protean_power_op_runs_on_the_power
+
+/datum/unit_test/dq_living_ability/protean_power_op_runs_on_the_power/exercise()
+	var/mob/living/carbon/human/H = make_protean_with_rig()
+	H.enable_godmode()
+	var/datum/forms/protean/F = H.get_protean_forms()
+	TEST_ASSERT(!F.in_rig(), "it starts outside its cluster")
+	TEST_ASSERT(H.activate_protean_power(/datum/protean_power/hardsuit), "the power can be used")
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "the condensing waits")
+	TEST_ASSERT(!F.in_rig(), "and has not happened yet")
+	test_time(2.5 SECONDS)
+	TEST_ASSERT_NULL(op_pending_of(H), "it ended")
+	TEST_ASSERT(F.in_rig(), "and the protean is folded into its cluster")
+
+/datum/unit_test/dq_living_ability/protean_power_op_breaks_when_moved
+
+/datum/unit_test/dq_living_ability/protean_power_op_breaks_when_moved/exercise()
+	var/mob/living/carbon/human/H = make_protean_with_rig()
+	H.enable_godmode()
+	var/datum/forms/protean/F = H.get_protean_forms()
+	H.activate_protean_power(/datum/protean_power/hardsuit)
+	H.forceMove(get_step(get_turf(H), NORTH))
+	test_time(2.5 SECONDS)
+	TEST_ASSERT(!F.in_rig(), "walking off stopped the condensing")
+	TEST_ASSERT_NULL(op_pending_of(H), "nothing is pending")

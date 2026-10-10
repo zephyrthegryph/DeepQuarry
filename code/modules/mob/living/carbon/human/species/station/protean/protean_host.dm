@@ -17,25 +17,20 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	task_start(/datum/task/timed/hardsuit_activate_hardsuit, H, H, receiver = src, F = F)
+	perform_op(H, src, "hardsuit_condense", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("forms" = F))
 	return TRUE
 
-/datum/task/timed/hardsuit_activate_hardsuit
-	duration = 2 SECONDS
-	complete_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_done
-	cancel_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_failed
-	var/datum/forms/protean/F
+CAPABILITIES(/datum/protean_power/hardsuit)
+	op("hardsuit_condense", ai(), needs(req_capable()), takes("forms"), wait(2 SECONDS), on_interrupt(PROC_REF(activate_hardsuit_failed)), then(PROC_REF(activate_hardsuit_done)))
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/task/timed/hardsuit_activate_hardsuit/task)
-	var/mob/living/carbon/human/H = task.actor
-	var/datum/forms/protean/F = task.F
-	if(can_use(H, F) && F.form_control_check())
+/datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	var/datum/forms/protean/F = A.arg("forms")
+	if(!QDELETED(F) && can_use(H, F) && F.form_control_check())
 		F.enter_rig()
 
-/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/task/timed/hardsuit_activate_hardsuit/task)
-	var/mob/living/carbon/human/H = task.actor
-	to_chat(H, span_warning("You must remain still to condense!"))
-	return
+/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("You must remain still to condense!"))
 
 /mob/living/carbon/human/proc/nano_rig_transform()
 	set name = "Modify Form - Hardsuit"
@@ -74,21 +69,18 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	act_message(H, target, MSG_SELF(span_danger("You attempt to latch onto %T%!")), MSG_OTHERS(span_warning("%U% is attempting to latch onto %T%!")))
-	task_start(/datum/task/timed/latch_host_activate_latch_host, H, target, receiver = src, F = F, G = G)
+	perform_op(H, src, "latch_host", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("forms" = F, "grab" = G, "host" = target))
 	return TRUE
 
-/datum/task/timed/latch_host_activate_latch_host
-	duration = 5 SECONDS
-	complete_proc = /datum/protean_power/latch_host/proc/activate_latch_host_done2
-	var/datum/forms/protean/F
-	var/obj/item/grab/G
+CAPABILITIES(/datum/protean_power/latch_host)
+	op("latch_host", ai(), needs(req_capable()), takes("forms", "grab", "host"), wait(5 SECONDS), then(PROC_REF(activate_latch_host_done2)))
 
-/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/task/timed/latch_host_activate_latch_host/task)
-	var/mob/living/carbon/human/H = task.actor
-	var/datum/forms/protean/F = task.F
-	var/obj/item/grab/G = task.G
-	var/mob/living/carbon/human/target = task.target
-	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
+/datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	var/datum/forms/protean/F = A.arg("forms")
+	var/obj/item/grab/G = A.arg("grab")
+	var/mob/living/carbon/human/target = A.arg("host")
+	if(QDELETED(G) || QDELETED(F) || QDELETED(target) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
 		return
 	if(target.get_equipped_item(SLOT_ID_BACK))
 		target.drop_from_inventory(target.get_equipped_item(SLOT_ID_BACK))

@@ -198,6 +198,8 @@ CAPABILITIES(/obj/item/grab)
 	op("inspect_organ", ai(), begins(PROC_REF(inspect_organ_text)), wait(1 SECOND), on_interrupt(PROC_REF(inspect_organ_grab_failed)), then(PROC_REF(inspect_organ_grab_done)))
 	op("inspect_bones", ai(), wait(2 SECONDS), on_interrupt(PROC_REF(inspect_bones_failed)), then(PROC_REF(inspect_bones_done)))
 	op("inspect_skin", ai(), wait(1 SECOND), on_interrupt(PROC_REF(inspect_skin_failed)), then(PROC_REF(inspect_skin_done)))
+	// Forcing the grabbed one to the ground (mob_grab_specials.dm): two seconds, the victim staying where they were.
+	op("pin_down", ai(), takes("victim", "from"), wait(2 SECONDS), then(PROC_REF(pin_down_grab_done)))
 	op("inspect_internal", ai(), wait(5 SECONDS), on_interrupt(PROC_REF(inspect_internal_failed)), then(PROC_REF(inspect_internal_done)))
 	owns_one(nameof(hud), starts = /atom/movable/screen/grab)
 	param(nameof(victim_at_make), pos = 1, apply = PROC_REF(grab_made), keep = FALSE)

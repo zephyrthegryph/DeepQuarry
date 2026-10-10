@@ -157,19 +157,14 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	task_start(/datum/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
+	perform_op(src, src, "bloodsuck", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = B, "noise" = noise, "bleed" = bleed, "from" = B.loc))
 
-/datum/task/timed/human_bloodsuck_human
-	duration = 30 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
-	var/noise
-	var/bleed
-
-/mob/living/carbon/human/proc/bloodsuck_human_done(datum/task/timed/human_bloodsuck_human/task)
-	var/mob/living/carbon/human/B = task.target
-	var/noise = task.noise
-	var/bleed = task.bleed
-	if(!Adjacent(B)) return
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/act/op/A)
+	var/mob/living/carbon/human/B = A.arg("victim")
+	var/noise = A.arg("noise")
+	var/bleed = A.arg("bleed")
+	if(QDELETED(B) || B.loc != A.arg("from") || !Adjacent(B))
+		return
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
 	else
@@ -194,37 +189,31 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 		after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 
-/// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
-/// the target, then the next stage.
-/datum/task/timed/grab_drain
-	duration = 5 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
-	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
-	var/obj/item/grab/grab
-	var/stage
-	/// A proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done.
-	var/stage_proc
-	/// The grab state the drain needs (0: any grab).
-	var/needed_grab = 0
-	/// "draining", "feeding": for the interruption message.
-	var/what
-
-/// Runs stage `stage` of a drain, and holds the grab for the next one.
+/// A drain through a grab (succubus_drain(), slime_feed()) runs in stages, five seconds of holding the target between one and the next: the "grab_drain"
+/// op is one repeating wait whose laps run the stages (code/library/mob/hands.dm).
+/// Runs stage `stage` of a drain now, and holds the grab for the next ones.
 /mob/living/carbon/human/proc/grab_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage, stage_proc, needed_grab, what)
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	task_start(/datum/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
+	perform_op(src, src, "grab_drain", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
 
-/mob/living/carbon/human/proc/grab_drain_held(datum/task/timed/grab_drain/task)
-	var/obj/item/grab/G = task.grab
-	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
-		grab_drain_interrupted(task)
+/// A lap of five seconds is over: the grab must still be the one the drain needs, and the next stage runs. A stage that returns 0 ends the series.
+/mob/living/carbon/human/proc/grab_drain_lap(datum/act/op/A)
+	var/obj/item/grab/G = A.arg("grab")
+	var/needed_grab = A.arg("needed_grab")
+	if(QDELETED(G) || (needed_grab ? G.state != needed_grab : !G.state))
+		grab_drain_interrupted(A)
+		LAZYSET(A.args, "stage", 0)
 		return
-	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
+	LAZYSET(A.args, "stage", call(src, A.arg("stage_proc"))(A.arg("victim"), A.arg("stage") + 1))
 
-/mob/living/carbon/human/proc/grab_drain_interrupted(datum/task/timed/grab_drain/task)
-	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
+/// Another lap follows while the last stage named one.
+/mob/living/carbon/human/proc/grab_drain_more(datum/act/op/A)
+	return !!A.arg("stage")
+
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
 	absorbing_prey = FALSE
 
 //Welcome to the adapted changeling absorb code.

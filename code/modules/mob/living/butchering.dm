@@ -11,29 +11,38 @@
 	var/list/butchery_loot				// Associated list, path = number.
 
 
-// Harvest an animal's delicious byproducts
+TRACKED(/mob/living, meat_amount)
+
+// Harvest an animal's delicious byproducts: one cut of meat per lap of the "harvest" op, then the "butcher" op (code/library/mob/living_abilities.dm).
 /mob/living/proc/harvest(mob/user, obj/item/I)
-	if(meat_type && meat_amount>0 && (stat == DEAD) && !task_in_use(src))
-		harvest_step(user, I)
+	if(op_claimed(src))
+		return
+	if(meat_type && meat_amount > 0 && stat == DEAD)
+		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
-	if(!meat_amount && !task_in_use(src))
+	if(!meat_amount)
 		handle_butcher(user, I)
 
-/// Carves one cut of meat per timed action until none is left, then butchers.
-/mob/living/proc/harvest_step(mob/user, obj/item/I)
-	if(meat_amount > 0)
-		task_timed(user, 0.5 SECONDS * (mob_size / 10), target = src, receiver = src, on_done = PROC_REF(harvest_cut), done_args = list(user, I), claims = TRUE)
-		return
-	handle_butcher(user, I)
+/// A cut takes as long as the animal is big.
+/mob/living/proc/harvest_time(datum/act/op/A)
+	return 0.5 SECONDS * (mob_size / 10)
 
-/mob/living/proc/harvest_cut(mob/user, obj/item/I)
+/// One cut of meat.
+/mob/living/proc/harvest_cut(datum/act/op/A)
 	var/obj/item/meat = new meat_type(get_turf(src))
 	if(name_the_meat)
 		meat.name = "[src.name] [meat.name]"
 	new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-	meat_amount--
-	harvest_step(user, I)
+	set_meat_amount(meat_amount - 1)
+
+/// Another cut while there is meat left.
+/mob/living/proc/harvest_more(datum/act/op/A)
+	return meat_amount > 0
+
+/// The last cut is made: the carcass is butchered.
+/mob/living/proc/harvest_finished(datum/act/op/A)
+	handle_butcher(A.actor, A.held)
 
 /mob/living/proc/can_butcher(mob/user, obj/item/I)	// Override for special butchering checks.
 	if(((meat_type && meat_amount) || LAZYLEN(butchery_loot)) && stat == DEAD)
@@ -42,14 +51,22 @@
 	return FALSE
 
 /mob/living/proc/handle_butcher(mob/user, obj/item/I)
-	if(task_in_use(src))
+	if(op_claimed(src))
 		return
 	if(!user)
-		butcher_done(user, I)
+		butcher_loot(user, I)
 		return
-	task_timed(user, 2 SECONDS * mob_size / 10, target = src, receiver = src, on_done = PROC_REF(butcher_done), done_args = list(user, I), claims = TRUE)
+	perform_op(user, src, "butcher", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/mob/living/proc/butcher_done(mob/user, obj/item/I)
+/// Butchering takes as long as the animal is big.
+/mob/living/proc/butcher_time(datum/act/op/A)
+	return 2 SECONDS * mob_size / 10
+
+/mob/living/proc/butcher_finished(datum/act/op/A)
+	butcher_loot(A.actor, A.held)
+
+/// What a butchered carcass gives: its loot and organs, and the mess.
+/mob/living/proc/butcher_loot(mob/user, obj/item/I)
 	if(LAZYLEN(butchery_loot))
 		if(LAZYLEN(butchery_loot))
 			for(var/path in butchery_loot)

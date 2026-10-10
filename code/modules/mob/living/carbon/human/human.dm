@@ -1760,6 +1760,28 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		drop_both_hands()
 		return TRUE
 
+/// A yanked object tears the limb it was in: shock, a cut, maybe bleeding inside, and the puller's hands get bloody.
+/mob/living/carbon/human/yank_out_tear(obj/item/selection, mob/U)
+	var/obj/item/organ/external/affected
+
+	for(var/obj/item/organ/external/organ in organs) //Grab the organ holding the implant.
+		for(var/obj/item/O in organ.implants)
+			if(O == selection)
+				affected = organ
+
+	rel_remove(affected, nameof(affected.implants), selection)
+	adjust_shock(20, "implant extraction")
+	injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
+
+	if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
+		affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
+		affected.update_damages()
+		custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
+
+	if (ishuman(U))
+		var/mob/living/carbon/human/human_user = U
+		human_user.bloody_hands(src)
+
 /mob/living/carbon/human/proc/relocate()
 	set category = VERB_CAT_OBJECT
 	set name = "Relocate Joint"
@@ -1821,22 +1843,16 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	task_start(/datum/task/timed/human_relocate_human, U, src, receiver = src, S = S, self = self, current_limb = current_limb)
+	// The subject's op: the one relocating (the actor) works on them (the holder) for three seconds, next to them.
+	perform_op(U, src, "relocate_joint", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = current_limb))
 	return TRUE
 
-/datum/task/timed/human_relocate_human
-	duration = 3 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/relocate_human_done
-	var/mob/S
-	var/self
-	var/obj/item/organ/external/current_limb
-
-/mob/living/carbon/human/proc/relocate_human_done(datum/task/timed/human_relocate_human/task)
-	var/mob/S = task.S
-	var/mob/U = task.actor
-	var/self = task.self
-	var/obj/item/organ/external/current_limb = task.current_limb
-	if(!current_limb || !S || !U)
+/mob/living/carbon/human/proc/relocate_human_done(datum/act/op/A)
+	var/mob/S = src
+	var/mob/U = A.actor
+	var/self = (U == src)
+	var/obj/item/organ/external/current_limb = A.arg("limb")
+	if(QDELETED(current_limb) || QDELETED(U))
 		return
 
 	if(self)

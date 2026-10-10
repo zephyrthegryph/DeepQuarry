@@ -20,6 +20,27 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("underwater_devour", ai(), asks(/datum/prompt/choice/victim/underwater, fields = list("choices" = computed(PROC_REF(underwater_devour_choices))), step = "victim", keeps_answer = TRUE),
 		starts(PROC_REF(underwater_devour_started)), wait(5 SECONDS, keeps = STAY | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(underwater_devour_escaped)), then(PROC_REF(underwater_devour_human_done)))
 	op("lleill_ring_spawn", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_ring_interrupted)), then(PROC_REF(lleill_ring_spawn_done)))
+	// The lleill powers (lleill_abilities.dm): what the prompts chose comes with the call, and the ten seconds are the glamour working.
+	op("lleill_transmute", ai(), needs(req_capable()), takes("item", "product", "cost"), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_transmute_human_failed)), then(PROC_REF(lleill_transmute_human_done)))
+	op("lleill_alchemy", ai(), needs(req_capable()), takes("item", "product", "cost"), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_alchemy_stopped)), then(PROC_REF(lleill_alchemy_done)))
+	op("lleill_contact", ai(), needs(req_capable()), takes("partner", "from"), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_contact_broken)), then(PROC_REF(lleill_contact_done)))
+	op("lleill_beast_form", ai(), needs(req_capable()), takes("beast", "options", "cost"), wait(10 SECONDS), on_interrupt(PROC_REF(lleill_beast_form_human_failed)), then(PROC_REF(lleill_beast_form_human_done)))
+	// The shapeshifter reforms (species_shapeshift.dm): the answers about flavour text and OOC notes come with the call, and the body stays still for four seconds.
+	op("shapeshifter_regenerate", ai(), needs(req_capable()), takes("flavour", "oocnotes"), wait(4 SECONDS), then(PROC_REF(shapeshifter_regenerate_human_done)))
+	op("shapeshifter_reassemble", ai(), needs(req_capable()), takes("flavour", "oocnotes"), wait(4 SECONDS), then(PROC_REF(shapeshifter_reassemble_human_done)))
+	op("shapeshifter_copy_body", ai(), needs(req_capable()), takes("victim", "flavour", "from"), wait(4 SECONDS), then(PROC_REF(copy_body_done)))
+	// A bite for blood (station_special_abilities.dm), and a drain through a grab: one lap of five seconds per stage until a stage says it is done.
+	op("bloodsuck", ai(), needs(req_capable()), takes("victim", "noise", "bleed", "from"), wait(30 SECONDS), then(PROC_REF(bloodsuck_human_done)))
+	op("grab_drain", ai(), needs(req_capable()), takes("victim", "grab", "stage", "stage_proc", "needed_grab", "what"), wait(5 SECONDS, repeats = PROC_REF(grab_drain_more), after_step = PROC_REF(grab_drain_lap)), on_interrupt(PROC_REF(grab_drain_interrupted)))
+	// Modular limbs (human_modular_limbs.dm): the limb is the one the verb checked.
+	op("attach_limb", ai(), needs(req_capable()), takes("limb"), wait(2 SECONDS), then(PROC_REF(attach_limb_verb_human_done)))
+	op("detach_limb", ai(), needs(req_capable()), takes("limb"), wait(2 SECONDS), then(PROC_REF(detach_limb_verb_human_done)))
+	// The hand games (human_powers.dm): the partner agreed, and the winner of a rolled game comes with the call.
+	op("game_thumbwars", ai(), needs(req_capable()), takes("partner", "from"), wait(5 SECONDS), on_interrupt(PROC_REF(game_thumbwars_human_failed)), then(PROC_REF(game_thumbwars_human_done)))
+	op("game_armwrestle", ai(), needs(req_capable()), takes("partner", "from", "competition"), wait(5 SECONDS), on_interrupt(PROC_REF(game_armwrestle_human_failed)), then(PROC_REF(game_armwrestle_human_done)))
+	op("game_slaphands", ai(), needs(req_capable()), takes("partner", "from", "competition"), wait(1 SECOND), on_interrupt(PROC_REF(game_slaphands_human_failed)), then(PROC_REF(game_slaphands_human_done)))
+	// Popping a dislocated joint back (human.dm): performed by the one relocating (the actor) on the one whose joint it is (the holder), next to them.
+	op("relocate_joint", ai(), needs(req_capable()), takes("limb"), wait(3 SECONDS), then(PROC_REF(relocate_human_done)))
 	hands()
 	body_clock(STAT_BODY_CLOCK_ACTIVE)
 	limb_clock(STAT_LIMB_TROUBLE)
@@ -83,6 +104,8 @@ CAPABILITIES(/mob/living/silicon/robot)
 		priority(OP_PRIORITY_TAKE_OUT), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, power_part_taken)))
 	// a cyborg clicking itself drops its hat; breaking its restraining bolt is the resist verb's work and ignores a stun, so it is not a physical binding
 	op("drop_hat", hand(), label("Drop hat"), priority(OP_PRIORITY_PART), when(PROC_REF(hat_droppable)), starts(PROC_REF(hat_drop_started)), wait(3 SECONDS), then(PROC_REF(hat_dropped)))
+	// Levering the brain out of a stripped chassis (robot.dm): the one doing it stays next to the robot for three seconds.
+	op("extract_mmi", ai(), needs(req_capable()), wait(3 SECONDS), then(TYPE_PROC_REF(/mob/living/silicon/robot, extract_mmi_robot_done)))
 	op("break_bolt", menu(), when(PROC_REF(bolt_breakable)), begins(PROC_REF(bolt_break_text)), wait(1.5 MINUTES), then(PROC_REF(bolt_broken)))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	owns_one(nameof(communicator), /obj/item/communicator/integrated)

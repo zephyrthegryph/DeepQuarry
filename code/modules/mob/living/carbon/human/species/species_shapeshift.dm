@@ -761,21 +761,12 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_regenerate_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	task_start(/datum/task/timed/human_shapeshifter_regenerate_human, src, src, receiver = src, flavour = flavour, oocnotes = oocnotes)
+	perform_op(src, src, "shapeshifter_regenerate", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
 
-/datum/task/timed/human_shapeshifter_regenerate_human
-	duration = 4 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/shapeshifter_regenerate_human_done
-	var/flavour
-	var/oocnotes
-
-/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/task/timed/human_shapeshifter_regenerate_human/task)
-	var/mob/living/character = task.actor
-	var/flavour = task.flavour
-	var/oocnotes = task.oocnotes
-	if(character.client.prefs)	//Make sure we didn't d/c
-		character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
-		act_message(character, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
+/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(datum/act/op/A)
+	if(client?.prefs)	//Make sure we didn't d/c
+		client.prefs.vanity_copy_to(src, FALSE, A.arg("flavour"), A.arg("oocnotes"), FALSE, FALSE)
+		act_message(src, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /mob/living/carbon/human/proc/shapeshifter_copy_body()
 	set name = "Copy Form"
@@ -918,9 +909,13 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 
 	to_chat(src, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	act_message(src, victim, MSG_SELF(span_danger("You begin to reassemble into %T%.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	task_timed(src, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
+	perform_op(src, src, "shapeshifter_copy_body", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = victim, "flavour" = flavour, "from" = victim.loc))
 
-/mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
+/mob/living/carbon/human/proc/copy_body_done(datum/act/op/A)
+	var/mob/living/carbon/human/victim = A.arg("victim")
+	var/flavour = A.arg("flavour")
+	if(QDELETED(victim) || victim.loc != A.arg("from"))
+		return
 	if (!copy_body_gripping(victim))
 		to_chat(src, span_warning("You lost your grip on [victim]!"))
 		return
@@ -944,11 +939,11 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 /mob/living/carbon/human/proc/shapeshifter_reassemble_answered(flavour, oocnotes)
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	act_message(src, null, MSG_SELF(span_danger("You begin to reform.")), MSG_OTHERS(span_notify("%U% rapidly contorts and shifts!")))
-	task_timed(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
+	perform_op(src, src, "shapeshifter_reassemble", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("flavour" = flavour, "oocnotes" = oocnotes))
 
-/mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(flavour, oocnotes)
+/mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(datum/act/op/A)
 	if (client?.prefs)
-		client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
+		client.prefs.vanity_copy_to(src, FALSE, A.arg("flavour"), A.arg("oocnotes"), FALSE)
 		act_message(src, null, MSG_SELF(span_danger("You have reformed.")), MSG_OTHERS(span_notify("%U% adopts a new form!")))
 
 /// Sets one colour channel set of an ears/tail/wings accessory. `slot` is "" / "2" / "3"; `rgb` is a hex2rgb() list.
