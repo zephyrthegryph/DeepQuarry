@@ -13,9 +13,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 CAPABILITIES(/obj/structure/blob/node)
 	every(2 SECONDS, then(PROC_REF(node_step)))
 
-/obj/structure/blob/node/Initialize(mapload, new_overmind)
-	. = ..()
-
 /// A node draws no colour of its own: the blob body under it is tinted by its overmind, and the node overlay sits on top.
 /obj/structure/blob/node/look_parts(datum/look/look)
 	look.overlay(look_appearance('icons/mob/blob.dmi', "blob", color = look_tint))

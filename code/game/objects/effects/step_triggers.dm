@@ -354,10 +354,12 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 	var/destroyprob = 99
 	var/teleprob = 1
 
-/obj/effect/step_trigger/teleporter/randomspawn/Initialize(mapload)
-	. = ..()
-	if(destroyprob && prob(destroyprob))
-		return INITIALIZE_HINT_QDEL
+/// Most random spawn points don't survive the round start: kept unless the destroy roll succeeds (keeps_if()).
+/obj/effect/step_trigger/teleporter/randomspawn/proc/survives_destroy_roll()
+	return !(destroyprob && prob(destroyprob))
+
+CAPABILITIES(/obj/effect/step_trigger/teleporter/randomspawn)
+	keeps_if(PROC_REF(survives_destroy_roll))
 
 /obj/effect/step_trigger/teleporter/randomspawn/Trigger()
 	if(teleprob && !prob(teleprob))

@@ -67,13 +67,16 @@
 	var/obj/structure/stairs/top/top = null
 	var/obj/structure/stairs/middle/middle = null
 
-/obj/structure/stairs/bottom/Initialize(mapload)
-	. = ..()
-	if(!GetAbove(src))
-		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+/// A bottom or middle stair needs a level above it (keeps_if()): a condition.
+/obj/structure/stairs/proc/has_level_above()
+	return !!GetAbove(src)
+
+/// A top stair needs a level below it (keeps_if()): a condition.
+/obj/structure/stairs/proc/has_level_below()
+	return !!GetBelow(src)
 
 CAPABILITIES(/obj/structure/stairs/bottom)
+	keeps_if(PROC_REF(has_level_above), warn = "Stair created without level above")
 	links(/obj/structure/stairs/bottom::top, /obj/structure/stairs/top::bottom)
 	links(/obj/structure/stairs/bottom::middle, /obj/structure/stairs/middle::bottom)
 
@@ -239,15 +242,10 @@ CAPABILITIES(/obj/structure/stairs/bottom)
 	var/obj/structure/stairs/bottom/bottom = null
 
 CAPABILITIES(/obj/structure/stairs/middle)
+	keeps_if(PROC_REF(has_level_above), warn = "Stair created without level above")
 	links(/obj/structure/stairs/middle::top, /obj/structure/stairs/top::middle)
 	climb()
 	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_drag)))
-
-/obj/structure/stairs/middle/Initialize(mapload)
-	. = ..()
-	if(!GetAbove(src))
-		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
 
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
@@ -320,11 +318,8 @@ CAPABILITIES(/obj/structure/stairs/middle)
 	var/obj/structure/stairs/middle/middle = null
 	var/obj/structure/stairs/bottom/bottom = null
 
-/obj/structure/stairs/top/Initialize(mapload)
-	. = ..()
-	if(!GetBelow(src))
-		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/structure/stairs/top)
+	keeps_if(PROC_REF(has_level_below), warn = "Stair created without level below")
 
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit

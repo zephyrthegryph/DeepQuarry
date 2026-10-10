@@ -194,9 +194,6 @@ CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
 		return 1
 	return 0
 
-/obj/vehicle/train/trolley/trailer/Initialize(mapload)
-	. = ..()
-
 /obj/vehicle/train/trolley/trailer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	if(lead())

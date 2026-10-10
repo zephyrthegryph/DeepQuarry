@@ -168,6 +168,8 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 		param_given -= holder
 	if(param_drop_pending)
 		param_drop_pending -= holder
+	if(init_discard_pending)
+		init_discard_pending -= holder
 
 // ---- scopes ----
 

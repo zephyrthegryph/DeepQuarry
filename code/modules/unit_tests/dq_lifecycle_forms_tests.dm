@@ -91,6 +91,25 @@ CAPABILITIES(/obj/item/dq_forms_flask/tinted)
 CAPABILITIES(/obj/item/dq_forms_flask/from_var)
 	configure(reagents(volume = 30, starts = list(), starts_from = list(nameof(reagent_id) = nameof(reagent_amount))))
 
+/// Computed amounts and data: a var-read amount summed with a subtype's number, data from a var and from a proc.
+/obj/item/dq_forms_flask/computed
+	var/units = 4
+	var/list/taste = list("forms" = 1)
+
+/obj/item/dq_forms_flask/computed/proc/blood_units()
+	return 6
+
+/obj/item/dq_forms_flask/computed/proc/blood_data()
+	return list("blood_type" = "O-")
+
+CAPABILITIES(/obj/item/dq_forms_flask/computed)
+	configure(reagents(starts = list(REAGENT_ID_NUTRIMENT = nameof(units), REAGENT_ID_BLOOD = PROC_REF(blood_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(taste), REAGENT_ID_BLOOD = PROC_REF(blood_data))))
+
+/obj/item/dq_forms_flask/computed/more
+
+CAPABILITIES(/obj/item/dq_forms_flask/computed/more)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 2)))
+
 /// A holder of a /datum/reagents subtype.
 CAPABILITIES(/obj/item/dq_forms_flask/distilling)
 	configure(reagents(holder = /datum/reagents/distilling))
@@ -227,6 +246,13 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	var/obj/item/dq_forms_flask/from_var/V = allocate(/obj/item/dq_forms_flask/from_var, T)
 	TEST_ASSERT_EQUAL(V.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 7, "starts_from reads the id and amount vars")
 	TEST_ASSERT_EQUAL(V.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "starts = list() empties the inherited contents")
+	var/obj/item/dq_forms_flask/computed/C = allocate(/obj/item/dq_forms_flask/computed, T)
+	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 4, "an amount named by nameof() reads the var")
+	TEST_ASSERT_EQUAL(C.reagents.get_reagent_amount(REAGENT_ID_BLOOD), 6, "an amount named by PROC_REF() asks the holder")
+	var/list/blood = C.reagents.get_data(REAGENT_ID_BLOOD)
+	TEST_ASSERT_EQUAL(blood?["blood_type"], "O-", "data = gives the reagent the proc's data")
+	var/obj/item/dq_forms_flask/computed/more/CM = allocate(/obj/item/dq_forms_flask/computed/more, T)
+	TEST_ASSERT_EQUAL(CM.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 6, "a subtype's add sums with an inherited computed amount")
 	var/obj/item/dq_forms_flask/distilling/DS = allocate(/obj/item/dq_forms_flask/distilling, T)
 	TEST_ASSERT(istype(DS.reagents, /datum/reagents/distilling), "holder = picks the holder type")
 	// Memory: one shared capability per declaration, nothing per instance but the holder itself.
@@ -362,3 +388,22 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 
 #undef REGISTRY_DQ_FORMS_PLAIN
 #undef REGISTRY_DQ_FORMS_COND
+
+/// keeps_if(): an atom whose condition fails at init is discarded (INITIALIZE_HINT_QDEL); one whose condition holds is kept.
+/obj/item/dq_forms_keeps
+	name = "forms keeps"
+
+/obj/item/dq_forms_keeps/proc/on_a_mob()
+	return ismob(loc)
+
+CAPABILITIES(/obj/item/dq_forms_keeps)
+	keeps_if(PROC_REF(on_a_mob))
+
+/datum/unit_test/dq_forms_keeps_if/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_forms_keeps/loose = new(T)
+	TEST_ASSERT(QDELETED(loose), "a failed keeps_if() discards the atom at init")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/dq_forms_keeps/held = allocate(/obj/item/dq_forms_keeps, H)
+	TEST_ASSERT(!QDELETED(held), "a holding keeps_if() keeps it")
+	TEST_ASSERT(!init_discard_pending?[held], "and leaves no mark")

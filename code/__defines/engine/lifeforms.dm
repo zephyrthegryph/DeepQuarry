@@ -21,6 +21,7 @@
 #define ENTRY_ON_ENDING "on_ending"
 #define ENTRY_INPUT "input_action"
 #define ENTRY_TOOLTIP "tooltip"
+#define ENTRY_KEEPS_IF "keeps_if"
 
 // ---- lifecycle hook bits of a compiled table (beside ENGINE_HOOK_* of declare.dm) ----
 /// The type declares a lifecycle form: the engine's lifeform plan runs at preinit, init and destroy (code/engine/lifeforms/forms.dm).

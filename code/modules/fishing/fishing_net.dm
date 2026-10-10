@@ -25,9 +25,6 @@
 
 TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/passive/fish))
 
-/obj/item/material/fishing_net/Initialize(mapload)
-	. = ..()
-
 /obj/item/material/fishing_net/afterattack(atom/A, mob/user, proximity)
 	if(get_dist(get_turf(src), A) > reach)
 		return
