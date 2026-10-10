@@ -1269,6 +1269,7 @@
 #include "dq_requirement_protocol_pin.dm"
 #include "dq_requirement_protocol_tests.dm"
 #include "dq_requirement_machine_selection_tests.dm"
+#include "dq_medical_native_slot_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

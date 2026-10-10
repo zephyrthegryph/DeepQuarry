@@ -4068,3 +4068,13 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
 ### Generic silicon module Equip preservation (requirements re-land, 2026-10-09)
 
 The native `/obj/item` module Equip conversion preserves its old stable key `gen_silicon_item_silicon_equip_module` and silicon menu availability. An item outside a robot module retains the disabled Equip row with `not possible right now` for both robots and AI. Module containment is a null-or-reason requirement, not a selector that hides refusal rows. A module-contained item still equips for a robot; an AI retains its old successful no-op. The native remote binding and DEFAULT - 50 priority remain. This restores the pre-conversion behavior; no requirement snapshot rows are re-blessed. The resolver explanation's key spelling is updated to match that preserved key.
+
+## Medical records capability bridge retirement (2026-10-09)
+
+## /obj/machinery/computer/med_data
+
+Retire the local capabilities()/cap_slot()/cap_op() declarations in favor of a single native CAPABILITIES block. The native owned scan var remains the same one-occupant physical slot, with unchanged checked transfer, physical insertion/ejection while broken or unpowered, records-opening effect, and full-hands floor fallback. Plain clicks retain Ui open for an empty hand and Use item for a held ID; screwdriver still selects Disconnect. The named Open records menu action remains usable while carrying an ID or other item.
+
+The old bridge advertised duplicate menu provider entries. One refused Open records row for every held-item sample disappears when its old empty-hand provider entry is replaced by an origin-aware native hand op, while its usable menu entry is retained. The held-ID sample also loses its duplicate refused Insert ID card provider row; the usable insertion menu entry remains. Keys are renamed from bridge-generated interaction IDs to explicit native operation keys: hand:Open records:interaction_open_ui_fingerprint -> open_records; slot_insert_scan -> insert_scan; slot_eject_scan_8 -> eject_scan_menu. No click ranking or gameplay behavior is intentionally changed.
+
+The inherited `/obj/machinery/computer/med_data/laptop` receives the same native operations; its derived look-key metadata changes with that declaration, with no laptop-specific appearance or click change and no new laptop conversion snapshot. Physical slot requirements retain the console's declared remote silicon reach. Records menu rows retain the old AI/robot no-provider and ghost reach refusals verbatim.
