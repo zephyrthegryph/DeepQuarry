@@ -87,3 +87,27 @@ fn color_radius_absence_is_covered_only_for_proved_shapes() {
         assert!(!contextual_fixed_word_is_scalar(opcode, 1, &words));
     }
 }
+
+#[test]
+fn omitted_file_and_anything_shapes_match_authenticated_native_capture() {
+    let native = include_bytes!("../fixtures/translation/input_remaining_shapes/input_shapes.native.bin");
+    for (name, expected) in [
+        (b"/proc/omitted_prompt".as_slice(), [0, 0, 0]),
+        (b"/proc/omitted_choices".as_slice(), [0, 0, 64]),
+        (b"/proc/file_prompt".as_slice(), [16, 0, 0]),
+        (b"/proc/file_choices".as_slice(), [16, 0, 64]),
+        (b"/proc/anything_prompt".as_slice(), [4096, 0, 0]),
+        (b"/proc/anything_choices".as_slice(), [4096, 0, 64]),
+    ] {
+        let actual = input_words(native, name, 0xc1);
+        assert_eq!(actual, expected);
+        assert!(contextual_fixed_word_is_scalar(0xc1, 1, &actual));
+        let mut unproved = actual.clone();
+        unproved[1] = 1;
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &unproved));
+        unproved[1] = 0;
+        unproved[2] = 32;
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &unproved));
+    }
+    assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[8192, 0, 0]));
+}
