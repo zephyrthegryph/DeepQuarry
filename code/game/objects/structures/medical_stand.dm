@@ -31,6 +31,11 @@ CAPABILITIES(/obj/structure/medical_stand)
 	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
 	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	// What a drag of a patient onto the stand (and the choice it asks) starts; the patient comes with the call.
+	op("remove_mask", ai(), takes("patient"), wait(3 SECONDS), then(PROC_REF(mask_removed)))
+	op("place_mask", ai(), takes("patient"), wait(10 SECONDS), then(PROC_REF(mask_placed)))
+	op("remove_needle", ai(), takes("patient"), wait(2 SECONDS), then(PROC_REF(needle_removed)))
+	op("insert_needle", ai(), takes("patient"), wait(5 SECONDS), on_interrupt(PROC_REF(needle_slipped)), then(PROC_REF(needle_inserted)))
 
 MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 
@@ -136,51 +141,53 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				return
 			if (breather())
 				src.add_fingerprint(user)
-				task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(target, user))
+				perform_op(user, src, "remove_mask", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = target))
 				return
 			act_message(user, target, MSG_SELF(span_notice("You begin carefully placing the mask onto %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins carefully placing the mask onto %T%.")))
-			task_timed(user, 10 SECONDS, target = target, receiver = src, on_done = PROC_REF(MouseDrop_timed_done2), done_args = list(target, user))
+			perform_op(user, src, "place_mask", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = target))
 			return
 		if("Drip needle")
 			if(attached())
-				task_timed(user, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(needle_removed))
+				perform_op(user, src, "remove_needle", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = target))
 			else if(ishuman(target))
 				act_message(user, target, MSG_SELF(span_notice("You begin inserting needle into %T%'s vein.")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins inserting needle into %T%'s vein.")))
-				task_start(/datum/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
+				perform_op(user, src, "insert_needle", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = target))
 
-/obj/structure/medical_stand/proc/needle_removed()
+/obj/structure/medical_stand/proc/needle_removed(datum/act/op/A)
 	if(!attached())
-		return
+		return OP_OK
 	visible_message("\The [attached()] is taken off \the [src]")
 	rel_clear(src, nameof(attached))
+	return OP_OK
 
-/obj/structure/medical_stand/proc/needle_slipped(datum/task/timed/medical_stand_needle_inserted/task)
-	var/mob/living/carbon/human/target = task.target
-	var/mob/user = task.actor
+/// The hand slipped: the user moved, or the patient did, before the needle was in.
+/obj/structure/medical_stand/proc/needle_slipped(datum/act/op/A)
+	var/mob/living/carbon/human/target = A.arg("patient")
+	var/mob/user = A.actor
 	if(!target || !user)
 		return
 	act_message(user, target, MSG_SELF(span_notice("Your hand slips and pricks %T%.")), MSG_OTHERS(span_notice("%U%'s hand slips and pricks %T%.")))
 	target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 
-/datum/task/timed/medical_stand_needle_inserted
-	duration = 5 SECONDS
-	complete_proc = /obj/structure/medical_stand/proc/needle_inserted
-	cancel_proc = /obj/structure/medical_stand/proc/needle_slipped
-
-/obj/structure/medical_stand/proc/needle_inserted(datum/task/timed/medical_stand_needle_inserted/task)
-	var/mob/living/carbon/human/target = task.target
-	var/mob/user = task.actor
+/obj/structure/medical_stand/proc/needle_inserted(datum/act/op/A)
+	var/mob/living/carbon/human/target = A.arg("patient")
+	var/mob/user = A.actor
+	if(QDELETED(target) || !Adjacent(target))
+		needle_slipped(A)
+		return OP_OK
 	if(attached())
-		return
+		return OP_OK
 	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
 	rel_set(src, nameof(attached), target)
+	return OP_OK
 
-/obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
-	if(!can_apply_to_target(target, user))
-		return
+/obj/structure/medical_stand/proc/mask_removed(datum/act/op/A)
+	var/mob/living/carbon/human/target = A.arg("patient")
+	if(!can_apply_to_target(target, A.actor))
+		return OP_OK
 	if(tank)
 		tank.forceMove(src)
 	if (breather().get_equipped_item(SLOT_ID_MASK) == contained)
@@ -191,16 +198,19 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		rel_set(src, nameof(contained), new mask_type(src))
 	rel_clear(src, nameof(breather))
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
-	return
-/obj/structure/medical_stand/proc/MouseDrop_timed_done2(mob/living/carbon/human/target, mob/user)
+	return OP_OK
+
+/obj/structure/medical_stand/proc/mask_placed(datum/act/op/A)
+	var/mob/living/carbon/human/target = A.arg("patient")
+	var/mob/user = A.actor
 	if(!can_apply_to_target(target, user))
-		return
+		return OP_OK
 	// place mask and add fingerprints
 	act_message(user, target, MSG_SELF(span_notice("You have placed \the mask on %T%'s mouth.")), \
 		MSG_OTHERS(span_notice("%U% has placed \the mask on %T%'s mouth.")))
 	if(attach_mask(target))
 		src.add_fingerprint(user)
-	return
+	return OP_OK
 
 /// Old attack_hand (it never reached the structure gate).
 /obj/structure/medical_stand/proc/medical_stand_interaction_hand(datum/act/op/A)

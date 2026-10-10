@@ -22,6 +22,12 @@
 	interface_name = "PAT system"
 	interface_desc = "For opening doors ahead of you, in advance. Override notifies command staff."
 
+CAPABILITIES(/obj/item/rig_module/pat_module)
+	// The wearer's override of the airlock they face: six seconds, and walking off ends it. engage() starts it with the airlock as "door".
+	op("override", ai(), takes("door"), begins(MSG(pat_module/overriding)), wait(6 SECONDS), then(PROC_REF(override_done)))
+
+MSG_DEF(pat_module/overriding, span_notice("You begin overriding the airlock!"), span_warning("%U% begins overriding the airlock!"))
+
 /obj/item/rig_module/pat_module/activate(skip_engage = 0, mob/user)
 	if(!..(TRUE, user)) //Skip the engage() call, that's for the override and is 'spensive.
 		return 0
@@ -62,9 +68,11 @@
 		if(A.allowed(user) && A.operable())
 			A.open()
 
-/obj/item/rig_module/pat_module/proc/override_done(obj/machinery/door/airlock/A)
-	if(A.density)
-		A.open()
+/obj/item/rig_module/pat_module/proc/override_done(datum/act/op/A)
+	var/obj/machinery/door/airlock/door = A.arg("door")
+	if(!QDELETED(door) && door.density)
+		door.open()
+	return OP_OK
 
 /obj/item/rig_module/pat_module/engage(atom/target, notify_ai, mob/user)
 	var/mob/living/carbon/human/H = holder.wearer()
@@ -78,8 +86,7 @@
 		to_chat(H,span_warning("Unable to comply! Energy too low, or not facing a working airlock!"))
 		return 0
 
-	act_message(H, null, MSG_SELF(span_notice("You begin overriding the airlock!")), MSG_OTHERS(span_warning("%U% begins overriding the airlock!")))
-	task_timed(H, 6 SECONDS, A, src, PROC_REF(override_done), list(A))
+	perform_op(H, src, "override", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = A))
 
 	var/username = FindNameFromID(H) || "Unknown"
 	var/message = "[username] has overridden [A] (airlock) in \the [get_area(A)] at [A.x],[A.y],[A.z] with \the [src]."

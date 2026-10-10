@@ -140,6 +140,9 @@ CAPABILITIES(/obj/structure/girder)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// Plating or reinforcing, once interaction_item() has checked the sheets; the girder is claimed while it works.
+	op("construct_wall_wait", ai(), claims(), takes("amount_to_use", "material", "wall_fake"), wait(PROC_REF(wall_wait)), then(PROC_REF(construct_wall_timed_done)))
+	op("reinforce_wait", ai(), claims(), takes("material"), wait(4 SECONDS), then(PROC_REF(reinforce_with_material_timed_done)))
 	girder_construction()
 	op("slice", item(/obj/item/pickaxe/plasmacutter), label("Slice apart"), begins(MSG(girder/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(sliced)))
 	op("hulk_smash", hand(), label("Smash"), when(req_mutation(HULK)), then(PROC_REF(interaction_hulk_smash)))
@@ -204,9 +207,6 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 
 /obj/structure/girder/proc/construct_wall(obj/item/stack/material/S, mob/user)
 	var/amount_to_use = reinf_material ? 1 : 2
-	var/time_to_reinforce = 4 SECONDS
-	if(isrobot(user)) //Robots get a speed boost.
-		time_to_reinforce = 1.5 SECONDS
 	if(S.get_amount() < amount_to_use)
 		to_chat(user, span_notice("There isn't enough material here to construct a wall."))
 		return FALSE
@@ -224,24 +224,21 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	task_start(/datum/task/timed/girder_construct_wall, user, src, duration = time_to_reinforce, S = S, amount_to_use = amount_to_use, M = M, wall_fake = wall_fake)
+	perform_op(user, src, "construct_wall_wait", S, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("amount_to_use" = amount_to_use, "material" = M, "wall_fake" = wall_fake))
 	return TRUE
 
-/datum/task/timed/girder_construct_wall
-	complete_proc = /obj/structure/girder/proc/construct_wall_timed_done
-	var/obj/item/stack/material/S
-	var/amount_to_use
-	var/datum/material/M
-	var/wall_fake
+/// How long adding the plating takes: robots get a speed boost.
+/obj/structure/girder/proc/wall_wait(datum/act/op/A)
+	return isrobot(A.actor) ? 1.5 SECONDS : 4 SECONDS
 
-/obj/structure/girder/proc/construct_wall_timed_done(datum/task/timed/girder_construct_wall/task)
-	var/obj/item/stack/material/S = task.S
-	var/mob/user = task.actor
-	var/amount_to_use = task.amount_to_use
-	var/datum/material/M = task.M
-	var/wall_fake = task.wall_fake
-	if(!S.use(amount_to_use))
-		return
+/obj/structure/girder/proc/construct_wall_timed_done(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	var/mob/user = A.actor
+	var/amount_to_use = A.arg("amount_to_use")
+	var/datum/material/M = A.arg("material")
+	var/wall_fake = A.arg("wall_fake")
+	if(QDELETED(S) || !S.use(amount_to_use))
+		return OP_REFUSED
 
 	if(anchored)
 		to_chat(user, span_notice("You added the plating!"))
@@ -257,7 +254,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 		T.can_open = 1
 	T.add_hiddenprint(user)
 	spent(src)
-	return TRUE
+	return OP_OK
 
 /obj/structure/girder/proc/reinforce_with_material(obj/item/stack/material/S, mob/user) //if the verb is removed this can be renamed.
 	if(reinf_material)
@@ -274,26 +271,20 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	task_start(/datum/task/timed/girder_reinforce_with_material, user, src, S = S, M = M)
+	perform_op(user, src, "reinforce_wait", S, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("material" = M))
 	return TRUE
 
-/datum/task/timed/girder_reinforce_with_material
-	duration = 4 SECONDS
-	complete_proc = /obj/structure/girder/proc/reinforce_with_material_timed_done
-	var/obj/item/stack/material/S
-	var/datum/material/M
-
-/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/task/timed/girder_reinforce_with_material/task)
-	var/obj/item/stack/material/S = task.S
-	var/mob/user = task.actor
-	var/datum/material/M = task.M
-	if(!S.use(1))
-		return
+/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	var/mob/user = A.actor
+	var/datum/material/M = A.arg("material")
+	if(QDELETED(S) || !S.use(1))
+		return OP_REFUSED
 	to_chat(user, span_notice("You added reinforcement!"))
 
 	reinf_material = M
 	reinforce_girder()
-	return 1
+	return OP_OK
 
 /// Shielding derived from the frame material plus any reinforcement.
 /obj/structure/girder/proc/update_rad_insulation()

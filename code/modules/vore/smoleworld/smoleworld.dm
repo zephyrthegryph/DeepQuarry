@@ -223,6 +223,10 @@ CAPABILITIES(/obj/structure/smoletrack)
 	return OP_OK
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
 CAPABILITIES(/obj/structure/smolebuilding)
+	// The micro waits of a micro-enterable object (micro_interact(), code/game/objects/micro_structures.dm).
+	op("micro_reach_wait", ai(), takes("contained_mobs"), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(micro_reach_done)))
+	op("micro_move_wait", ai(), takes("contained_mobs", "choice"), wait(10 SECONDS), then(PROC_REF(micro_interact_timed_done)))
+	op("micro_climb_wait", ai(), takes("contained_mobs"), wait(10 SECONDS), on_interrupt(PROC_REF(micro_interact_timed_failed2)), then(PROC_REF(micro_interact_timed_done2)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smolebuilding_shot))))
 	// Declared before the hand ops: a held item answers first, and a click not on harm intent is refused (never the bare-hand op).
 	op("smolebuilding_item", item(/obj/item), answers(INTENT_ATTACK, INTENT_USE), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(smolebuilding_item)))
