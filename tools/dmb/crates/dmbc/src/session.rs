@@ -9,7 +9,9 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-const SCHEMA: u32 = 2;
+// Schema 3 carries exact generated-output membership-proof policy. Older
+// immutable records remain on disk and are rejected as disposable cache hints.
+const SCHEMA: u32 = 3;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -426,6 +428,22 @@ impl SessionRecords {
         now_ns: u128,
         observer: impl FnOnce(&Record),
     ) -> io::Result<Option<ValidatedRecord>> {
+        self.validate_filesystem_observed_with_generated_outputs(
+            id,
+            exact,
+            now_ns,
+            &std::collections::BTreeSet::new(),
+            observer,
+        )
+    }
+    pub fn validate_filesystem_observed_with_generated_outputs(
+        &self,
+        id: u128,
+        exact: bool,
+        now_ns: u128,
+        generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+        observer: impl FnOnce(&Record),
+    ) -> io::Result<Option<ValidatedRecord>> {
         let started = std::time::Instant::now();
         let Some(mut record) = self.prior(id)? else {
             return Ok(None);
@@ -440,7 +458,13 @@ impl SessionRecords {
             crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&record.inputs)?;
         timings.bulk_capture = started.elapsed();
         let started = std::time::Instant::now();
-        let validated = record.inputs.validate_for_reuse(&proofs, exact, now_ns)?;
+        let generated = crate::input_snapshot::GeneratedOutputInputs::new(
+            &proofs,
+            generated_outputs.iter().cloned(),
+        );
+        let validated = record
+            .inputs
+            .validate_for_reuse(&generated, exact, now_ns)?;
         timings.input_validate = started.elapsed();
         timings.proofs = proofs.counts();
         let Some((validation, inputs)) = validated else {

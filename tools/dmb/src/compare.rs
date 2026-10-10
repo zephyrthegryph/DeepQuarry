@@ -148,6 +148,24 @@ fn proc_index(dmb: &Dmb, options: &CompareOptions) -> BTreeMap<Vec<u8>, Vec<usiz
     result
 }
 
+/// Resolve the exact duplicate rank used by structural reports, without decoding code.
+/// Explicit /proc/ and /verb/ path markers use the comparator's canonical spelling.
+pub fn ranked_proc_by_path(dmb: &Dmb, path: &[u8], rank: usize) -> Option<usize> {
+    let wanted = canonical_proc_path(path.to_vec());
+    let mut group: Vec<_> = dmb
+        .procs
+        .iter()
+        .enumerate()
+        .filter_map(|(id, procedure)| {
+            optional_proc_string(dmb, procedure.strings[0])
+                .filter(|name| canonical_proc_path(name.clone()) == wanted)
+                .map(|_| id)
+        })
+        .collect();
+    order_proc_group_by_binding(dmb, &mut group);
+    group.get(rank).copied()
+}
+
 fn canonical_proc_path(mut path: Vec<u8>) -> Vec<u8> {
     for marker in [b"/proc/".as_slice(), b"/verb/".as_slice()] {
         if let Some(at) = path.windows(marker.len()).position(|part| part == marker) {

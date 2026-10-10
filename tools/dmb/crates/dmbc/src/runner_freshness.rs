@@ -72,25 +72,38 @@ pub(super) fn admit(
     }
 }
 
-pub(super) fn admit_live(inputs: &InputSnapshot, allow_moving: bool) -> Result<(), Box<dyn Error>> {
+pub(super) fn admit_live(
+    inputs: &InputSnapshot,
+    allow_moving: bool,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+) -> Result<(), Box<dyn Error>> {
     let current = crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(inputs)?;
+    let current = crate::input_snapshot::GeneratedOutputInputs::new(
+        &current,
+        generated_outputs.iter().cloned(),
+    );
     admit(inputs, &current, allow_moving)
 }
 
-pub(super) fn admit_captured(
-    capture: &crate::input_snapshot::RecordingInputs<&crate::frozen_inputs::Inputs>,
+pub(super) fn admit_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
     retained: Option<&InputSnapshot>,
     provider: &crate::frozen_inputs::Inputs,
     allow_moving: bool,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
 ) -> Result<InputSnapshot, Box<dyn Error>> {
     let mut inputs = capture.snapshot()?;
     if let Some(retained) = retained {
         inputs.merge(retained)?;
     }
     if matches!(provider, crate::frozen_inputs::Inputs::Replay(_)) {
-        admit(&inputs, provider, false)?;
+        let current = crate::input_snapshot::GeneratedOutputInputs::new(
+            provider,
+            generated_outputs.iter().cloned(),
+        );
+        admit(&inputs, &current, false)?;
     } else {
-        admit_live(&inputs, allow_moving)?;
+        admit_live(&inputs, allow_moving, generated_outputs)?;
     }
     Ok(inputs)
 }

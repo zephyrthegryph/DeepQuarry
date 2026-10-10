@@ -79,7 +79,7 @@ const COMMANDS: &[CommandSpec] = &[
     CommandSpec::fixed("opcode-audit", "FILE.dmb", 1),
     CommandSpec::fixed("value-tags", "FILE.dmb", 1),
     CommandSpec::fixed("value-tag-context", "FILE.dmb TAG", 2),
-    CommandSpec::fixed("proc-code", "FILE.dmb PROC_ID", 2),
+    CommandSpec::fixed("proc-code", "FILE.dmb PROC_ID|PATH|PATH#RANK", 2),
     CommandSpec::fixed("list-code", "FILE.dmb LIST_ID", 2),
     CommandSpec::fixed("opcode-context", "FILE.dmb OPCODE", 2),
     CommandSpec::fixed("string", "FILE.dmb STRING_ID", 2),

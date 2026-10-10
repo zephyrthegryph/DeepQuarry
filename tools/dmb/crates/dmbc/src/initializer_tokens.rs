@@ -250,6 +250,11 @@ fn construction(
                         new_key(path, &[], source, write, symbols, evaluator, output)?;
                     }
                 }
+                "file" | "icon" if evaluator.initializer_intrinsic_constructor(write, name) => {
+                    output.push(3);
+                    framed(output, name.as_bytes());
+                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                }
                 "sound" | "matrix" => {
                     output.push(3);
                     framed(output, name.as_bytes());
@@ -266,7 +271,86 @@ fn construction(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dm_ir::SymbolId;
     struct Host;
+    #[test]
+    fn oracle_file_and_icon_defaults_keep_markers_and_runtime_assignments() {
+        struct Constructors;
+        impl dm_ir::Resolver for Constructors {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                match query {
+                    dm_ir::ResolveQuery::Proc { .. } | dm_ir::ResolveQuery::GlobalProc(_) => {
+                        dm_ir::ResolvedMeaning::Missing
+                    }
+                    dm_ir::ResolveQuery::ResourceIn {
+                        path,
+                        search_context: 1,
+                    } => dm_ir::ResolvedMeaning::Resource { path, content: 9 },
+                    _ => dm_ir::ResolvedMeaning::Unsupported(query),
+                }
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/datum/marker_probe").unwrap();
+        let writes: Vec<_> = [
+            ("assets", "list(\"payload\"=file(\"payload.txt\"))"),
+            ("flat_template", "icon('probe.dmi',\"\")"),
+        ]
+        .into_iter()
+        .map(|(name, source)| InitializerWrite {
+            target: dm_ir::InitializerTarget::Shared {
+                slot: SymbolId::of(name),
+                owner,
+                name: SymbolId::of(name),
+            },
+            lexical_owner: owner,
+            lexical_procedure: None,
+            value: dm_ir::InitializerValue::Expression(expression(source, &mut symbols)),
+            declared_array: None,
+            declaration_flags: Some(8),
+        })
+        .collect();
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: Some(1),
+            resolver: &Constructors,
+            symbols: &symbols,
+        };
+        let classified =
+            crate::initializer_policy::classify(&writes, &symbols, &evaluator).unwrap();
+        assert!(classified.writes.iter().all(|write| matches!(
+            write.default,
+            crate::initializer_policy::DefaultValue::InitializerExpression { .. }
+        )));
+        assert!(classified
+            .writes
+            .iter()
+            .all(|write| write.phase.is_some() && write.runtime_value.is_some()));
+        assert_eq!(
+            classified
+                .groups
+                .iter()
+                .map(|group| group.writes.len())
+                .sum::<usize>(),
+            2
+        );
+        let ast = dm_syntax::parse_expression("icon('probe.dmi',\"\")")
+            .expr
+            .unwrap();
+        let opaque = crate::driver_facts::DriverEvaluator {
+            resolver: &Host,
+            ..evaluator
+        };
+        assert!(construction_key(
+            &ast,
+            "icon('probe.dmi',\"\")",
+            &writes[1],
+            &symbols,
+            &opaque
+        )
+        .unwrap()
+        .is_none());
+    }
     impl dm_ir::Resolver for Host {
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
             match query {

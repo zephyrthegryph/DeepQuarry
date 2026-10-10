@@ -89,6 +89,11 @@ pub trait CapturedInitializerEvaluator {
         }
         Ok(value.canonical_bytes())
     }
+    /// Admit only the pinned intrinsic constructor after current callable lookup.
+    /// Compatibility evaluators decline rather than treating a spelling as proof.
+    fn initializer_intrinsic_constructor(&self, _write: &InitializerWrite, _name: &str) -> bool {
+        false
+    }
     fn initializer_constructor_type(
         &self,
         _write: &InitializerWrite,
@@ -161,6 +166,10 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
     }
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
         self.evaluator.initializer_token_scalar(value)
+    }
+    fn initializer_intrinsic_constructor(&self, write: &InitializerWrite, name: &str) -> bool {
+        self.evaluator
+            .initializer_intrinsic_constructor(write, name)
     }
     fn initializer_constructor_type(
         &self,

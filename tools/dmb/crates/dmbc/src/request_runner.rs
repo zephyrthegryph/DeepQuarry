@@ -13,8 +13,13 @@ mod runner_report;
 #[path = "runner_resources.rs"]
 mod runner_resources;
 use runner_resources::{OutputResourceSink, ResourceOutputs};
+#[path = "runner_cache_records.rs"]
+mod runner_cache_records;
 #[path = "runner_freshness.rs"]
 mod runner_freshness;
+#[path = "runner_generated_paths.rs"]
+mod runner_generated_paths;
+use runner_cache_records::publish_cache_records;
 
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -94,7 +99,7 @@ fn run_build_attempt(
         replay_inputs,
         artifact_directory,
         no_daemon: _,
-        trace_path: _,
+        trace_path,
     } = request;
     let project = std::fs::canonicalize(project)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
@@ -138,7 +143,23 @@ fn run_build_attempt(
         (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
-    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns())
+    let generated_provider = dmbc::input_snapshot::GeneratedOutputInputs::new(
+        &input_provider,
+        runner_generated_paths::paths(
+            &project,
+            &output_project,
+            command,
+            output_store.as_deref(),
+            artifact_directory.as_deref(),
+            record_inputs.as_deref(),
+            cache_root.as_deref(),
+            trace_path.as_deref(),
+        )?,
+    );
+    let generated_paths =
+        dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
+            .expect("explicit generated output policy");
+    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(host.prepared_sources());
     drop(request_profile);
@@ -219,17 +240,23 @@ fn run_build_attempt(
                 .unwrap_or_else(|| dmbc::publish::default_store_path(&project))?,
         )?;
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
-            if let Some(mut validated) =
-                configured.validate_filesystem_observed(id, exact_inputs, now_ns(), |record| {
-                    if prior_outputs.is_none() {
-                        prior_outputs = record.outputs.clone();
-                    }
-                    if resource_prior.is_none() {
-                        if let Some(manifest) = &record.resource_manifest {
-                            resource_prior = Some((record.pair, manifest.clone()));
+            if let Some(mut validated) = configured
+                .validate_filesystem_observed_with_generated_outputs(
+                    id,
+                    exact_inputs,
+                    now_ns(),
+                    generated_paths,
+                    |record| {
+                        if prior_outputs.is_none() {
+                            prior_outputs = record.outputs.clone();
                         }
-                    }
-                })?
+                        if resource_prior.is_none() {
+                            if let Some(manifest) = &record.resource_manifest {
+                                resource_prior = Some((record.pair, manifest.clone()));
+                            }
+                        }
+                    },
+                )?
             {
                 let pair_verification_started = Instant::now();
                 if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
@@ -242,7 +269,11 @@ fn run_build_attempt(
                         exact_inputs,
                         now_ns(),
                     )?;
-                    runner_freshness::admit_live(&validated.record().inputs, allow_moving)?;
+                    runner_freshness::admit_live(
+                        &validated.record().inputs,
+                        allow_moving,
+                        generated_paths,
+                    )?;
                     dmbc::daemon::control::begin_publication()?;
                     if !outputs_match {
                         store.install_exact(
@@ -539,7 +570,8 @@ fn run_build_attempt(
             };
             let proof_started = std::time::Instant::now();
             let proof_profile = dm_profile::stage("resources.filesystem_proofs");
-            let proofs = manifest.filesystem_proofs().map_err(|error| error.to_string())?;
+            let raw_proofs = manifest.filesystem_proofs().map_err(|error| error.to_string())?;
+            let proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_proofs, generated_paths.iter().cloned());
             drop(proof_profile);
             dmbc::daemon_eprintln!(
                 "native resource FilesystemProofCapture: {:.3}s",
@@ -786,7 +818,7 @@ fn run_build_attempt(
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
-        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, allow_moving)?;
+        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, allow_moving, generated_paths)?;
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
         dmbc::daemon::control::begin_publication()?;
@@ -840,7 +872,8 @@ fn run_build_attempt(
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
             let inputs = publication_inputs;
-            let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
+            let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
+            let publication_proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_publication_proofs, generated_paths.iter().cloned());
             if inputs.restat(&publication_proofs)?.unchanged() {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                 installation.record_outputs(&mut outputs)?;
@@ -959,22 +992,4 @@ fn capture_output_digest(
     use dmbc::input_snapshot::{FileSystemInputs, SnapshotProvider};
     let (stamp, content) = FileSystemInputs.digest(path)?;
     snapshot.record_verified_digest(path, stamp, content)
-}
-
-fn publish_cache_records(
-    cache: &dmbc::runner_disk::LazyDisk,
-    records: Vec<dm_cache::Record>,
-) -> Result<std::collections::BTreeSet<dm_cache::RecordKey>, String> {
-    if records.is_empty() {
-        return Ok(std::collections::BTreeSet::new());
-    }
-    let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
-    for record in records {
-        sink.push(record)
-            .map_err(|error| format!("cache population failed: {error}"))?;
-    }
-    match sink.finish() {
-        Ok(report) => Ok(report.keys),
-        Err(error) => Err(format!("cache population failed: {error}")),
-    }
 }

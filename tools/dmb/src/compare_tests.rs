@@ -669,3 +669,21 @@ fn format_string_ids_are_resolved() {
 
 #[path = "compare_code_map_tests.rs"]
 mod code_maps;
+
+#[test]
+fn explicit_procedure_rank_matches_structural_duplicate_roster() {
+    let dmb = Dmb::from_bytes(include_bytes!(
+        "../fixtures/translation/procedure_membership_order.native.bin"
+    ))
+    .unwrap();
+    let index = proc_index(&dmb, &CompareOptions::default());
+    let (path, group) = index.iter().find(|(_, ids)| ids.len() > 1).unwrap();
+    for (rank, &id) in group.iter().enumerate() {
+        assert_eq!(ranked_proc_by_path(&dmb, path, rank), Some(id));
+    }
+    assert_eq!(ranked_proc_by_path(&dmb, path, group.len()), None);
+    assert_eq!(
+        ranked_proc_by_path(&dmb, b"/definitely_missing/proc/check", 0),
+        None
+    );
+}

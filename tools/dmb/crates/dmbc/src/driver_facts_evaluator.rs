@@ -516,6 +516,26 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     }
 }
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn initializer_intrinsic_constructor(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        name: &str,
+    ) -> bool {
+        matches!(name, "file" | "icon")
+            && matches!(
+                self.resolver.resolve(ResolveQuery::Proc {
+                    owner: write.lexical_owner,
+                    name: SymbolId::of(name),
+                    verb: false,
+                }),
+                ResolvedMeaning::Missing
+            )
+            && matches!(
+                self.resolver
+                    .resolve(ResolveQuery::GlobalProc(SymbolId::of(name))),
+                ResolvedMeaning::Missing
+            )
+    }
     fn parallel_evaluator(&self) -> Option<crate::initializer_policy::ParallelEvaluator<'_>> {
         Some(crate::initializer_policy::ParallelEvaluator {
             factory: self,

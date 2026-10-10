@@ -499,6 +499,13 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
     fn initializer_token_scalar(&self, value: &dm_ir::SemanticValue) -> Result<Vec<u8>, String> {
         self.ordinary.initializer_token_scalar(value)
     }
+    fn initializer_intrinsic_constructor(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        name: &str,
+    ) -> bool {
+        self.ordinary.initializer_intrinsic_constructor(write, name)
+    }
     fn initializer_constructor_type(
         &self,
         write: &dm_ir::InitializerWrite,

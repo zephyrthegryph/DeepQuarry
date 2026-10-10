@@ -618,6 +618,19 @@ fn proc_code(args: &[String]) -> io::Result<()> {
     let dmb = load_dmb(&args[2])?;
     let index: usize = if let Ok(index) = args[3].parse() {
         index
+    } else if let Some((path, rank)) = args[3].rsplit_once('#') {
+        let rank = rank.parse::<usize>().map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid structural procedure rank",
+            )
+        })?;
+        byond_dmb::compare::ranked_proc_by_path(&dmb, path.as_bytes(), rank).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "structural procedure path/rank not found",
+            )
+        })?
     } else {
         dmb.procs
             .iter()

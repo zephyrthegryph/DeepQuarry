@@ -50,7 +50,57 @@ impl<'a, R: Resolver + ?Sized> MemoResolver<'a, R> {
         }
     }
 }
+// Bounds cover newly copied sequence descriptors, not shared metadata payloads
+// already admitted by the original fixed-answer policy.
+const SEQUENCE_BYTES: usize = 4096;
+const SEQUENCE_NODES: usize = 64;
+const SEQUENCE_DEPTH: usize = 16;
 fn retainable(meaning: &ResolvedMeaning) -> bool {
+    fn sequence(
+        value: &ResolvedMeaning,
+        bytes: &mut usize,
+        nodes: &mut usize,
+        depth: usize,
+    ) -> bool {
+        if depth > SEQUENCE_DEPTH || *nodes == 0 {
+            return false;
+        }
+        *nodes -= 1;
+        match value {
+            ResolvedMeaning::Symbols(values) => {
+                let Some(charge) = values
+                    .len()
+                    .checked_mul(std::mem::size_of::<crate::SymbolId>())
+                else {
+                    return false;
+                };
+                let Some(left) = bytes.checked_sub(charge) else {
+                    return false;
+                };
+                *bytes = left;
+                true
+            }
+            ResolvedMeaning::Members(values) => {
+                let Some(charge) = values
+                    .len()
+                    .checked_mul(std::mem::size_of::<ResolvedMeaning>())
+                else {
+                    return false;
+                };
+                let Some(left) = bytes.checked_sub(charge) else {
+                    return false;
+                };
+                *bytes = left;
+                values.iter().all(|v| sequence(v, bytes, nodes, depth + 1))
+            }
+            _ => fixed_retainable(value),
+        }
+    }
+    let mut bytes = SEQUENCE_BYTES;
+    let mut nodes = SEQUENCE_NODES;
+    sequence(meaning, &mut bytes, &mut nodes, 0)
+}
+fn fixed_retainable(meaning: &ResolvedMeaning) -> bool {
     matches!(
         meaning,
         ResolvedMeaning::Missing
@@ -60,6 +110,7 @@ fn retainable(meaning: &ResolvedMeaning) -> bool {
             | ResolvedMeaning::Slot { .. }
             | ResolvedMeaning::Symbol(_)
             | ResolvedMeaning::IntrinsicProc { .. }
+            | ResolvedMeaning::RetainedProc { .. }
             | ResolvedMeaning::Resource { .. }
             | ResolvedMeaning::Member { .. }
             | ResolvedMeaning::ProcedureStatic(_)
@@ -136,6 +187,63 @@ mod tests {
         );
     }
     struct Host(Mutex<Vec<ResolveQuery>>);
+    #[test]
+    fn bounded_sequence_answers_reuse_exact_meanings_and_decline_oversized_payloads() {
+        struct Answer(ResolvedMeaning, AtomicUsize);
+        impl Resolver for Answer {
+            fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+                self.1.fetch_add(1, Ordering::Relaxed);
+                self.0.clone()
+            }
+        }
+        let id = SymbolId::of("/probe");
+        let retained = ResolvedMeaning::RetainedProc {
+            declaring_owner: id,
+            name: SymbolId::of("work"),
+            verb: true,
+            engine_identity: 123,
+            wire_proc: 9,
+        };
+        let mut deep = ResolvedMeaning::Missing;
+        for _ in 0..=SEQUENCE_DEPTH {
+            deep = ResolvedMeaning::Members(vec![deep]);
+        }
+        for (answer, admitted) in [
+            (ResolvedMeaning::Symbols(vec![id; 4]), true),
+            (retained.clone(), true),
+            (
+                ResolvedMeaning::Members(vec![ResolvedMeaning::Symbols(vec![id]), retained]),
+                true,
+            ),
+            (
+                ResolvedMeaning::Symbols(vec![
+                    id;
+                    SEQUENCE_BYTES / std::mem::size_of::<SymbolId>() + 1
+                ]),
+                false,
+            ),
+            (
+                ResolvedMeaning::Members(vec![ResolvedMeaning::Missing; SEQUENCE_NODES]),
+                false,
+            ),
+            (deep, false),
+            (
+                ResolvedMeaning::Members(vec![ResolvedMeaning::Value(SemanticValue::Text(
+                    std::sync::Arc::from(&b"opaque"[..]),
+                ))]),
+                false,
+            ),
+        ] {
+            let host = Answer(answer.clone(), AtomicUsize::new(0));
+            let memo = MemoResolver::new(&host, 8);
+            let query = ResolveQuery::Ancestry(id);
+            // Outer consumers still receive/record every exact query answer.
+            let observations: Vec<_> = (0..2).map(|_| (query, memo.resolve(query))).collect();
+            assert_eq!(observations, vec![(query, answer.clone()), (query, answer)]);
+            assert_eq!(host.1.load(Ordering::Relaxed), if admitted { 1 } else { 2 });
+            assert_eq!(memo.stats().retained_entries, usize::from(admitted));
+        }
+    }
     impl Resolver for Host {
         fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
             self.0.lock().unwrap().push(query);
@@ -261,7 +369,6 @@ mod tests {
         let name = SymbolId::of("name");
         for query in [
             ResolveQuery::Signature(name),
-            ResolveQuery::Ancestry(name),
             ResolveQuery::PredefinedConstant(name),
         ] {
             assert_eq!(memo.resolve(query), memo.resolve(query));
@@ -270,7 +377,7 @@ mod tests {
             memo.stats(),
             MemoStats {
                 hits: 0,
-                misses: 6,
+                misses: 4,
                 retained_entries: 0
             }
         );

@@ -1,5 +1,32 @@
 {
   "scope": "native compiler migration; not performance admission",
+  "targeted_correctness_and_freshness_wave": {
+    "compile_oracle_receipt": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2044/receipt.json",
+    "typed_parameter_evidence": "E:/dq-cache/dmb-native-v2/typed-parameter-probes-20261009-2110/receipt.json",
+    "implemented": [
+      "file and icon intrinsic construction gets explicit initializer markers, retaining emitted-write coverage checks",
+      "directory membership proofs exclude only caller-issued exact generated paths; direct file and negative probes remain checked",
+      "current generated-path policy participates in session, resource and publication validation",
+      "session schema 3 invalidates old disposable proof records without deleting outputs",
+      "bounded sequence answers reuse the existing request resolver memo",
+      "ranked procedure inspection uses the structural comparator's existing duplicate ordering"
+    ],
+    "focused_passed": {
+      "output_membership_policy": 1,
+      "initializer_marker_classification": 1,
+      "freshness_retry_policy": 2,
+      "session_validation": 4,
+      "bounded_resolver_sequences": 1,
+      "ranked_procedure_selector": 1
+    },
+    "driver_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-205530-2b3c3a43.json",
+    "resolver_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-205801-bd4778d4.json",
+    "remaining": [
+      "new binary compile-only oracle and real DeepQuarry benchmark pending",
+      "leading-slash parameter spelling is a BYOND type declaration with zero arguments; full shared declaration support is in progress",
+      "whole-program BYOND structural differences and runtime baseline remain open"
+    ]
+  },
   "latest_prototype_cohort": {
     "receipt": "E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json",
     "compiler_commit": "d889b0cac1",
