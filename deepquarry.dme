@@ -952,7 +952,7 @@
 #include "code\datums\om\scheduler.dm"
 #include "code\modules\client\dx_exec.dm"
 #include "code\engine\time\native_wakes.dm"
-#include "code\datums\om\world_watch.dm"
+#include "code\engine\time\world_watches.dm"
 #include "code\datums\ownership\audit.dm"
 #include "code\engine\refs\clone.dm"
 #include "code\engine\refs\flyweights.dm"

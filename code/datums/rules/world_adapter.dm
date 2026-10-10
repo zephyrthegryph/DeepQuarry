@@ -1,9 +1,9 @@
-// The one coupling point between rules and the Rust world (om_world_* in
-// code/datums/om/world_watch.dm, object_model_core.md §4.8).
+// The one coupling point between rules and the Rust world (the native watches of
+// code/engine/time/world_watches.dm, object_model_core.md §4.8).
 //
 // Rules call only the dq_rx_* procs below and receive wakes as
-// rule_wake(reason, source). Nothing else in code/datums/rules/ uses an
-// om_world_* proc, a vg_* bind or a world constant. Every subscription is a
+// rule_wake(reason, source). Nothing else in code/datums/rules/ uses a
+// world_watch_* proc, a vg_* bind or a world constant. Every subscription is a
 // /datum/native_watch (its own token): dq_rx_cancel() qdels it, and
 // dq_rx_clear() qdels every watch the binding still holds.
 //
@@ -11,11 +11,10 @@
 //   dq_rx_when_band(D, node, ch, levels)                     native heat watch
 //   dq_rx_on_change(D, node, ch)                             native heat watch (body appears)
 //   dq_rx_on_key(D, kind) / dq_rx_publish(thing, kind)       DM-owned keys: the binding hears dq_rules_publish()
-//   (rate models are om_rate_* directly)                     om_rate_*
-//   dq_rx_on_rate                                            om_world_on_rate
+//   hold_for is a keyed kernel timer of the binding (key "hold:N"), not a world watch.
 //   dq_rx_cancel(D, token), dq_rx_clear(D)                   qdel / every watch
 //
-// DM-owned keys and timers live in DM only (the kernel's after()): there is no om_world_at, no key published into Rust and no
+// DM-owned keys and timers live in DM only (the kernel's after()): there is no world-side timer, no key published into Rust and no
 // Rust reactor key table. A key trigger is a text token ("key:<kind>") in the binding's key table; a publication re-evaluates
 // the binding once per tick (merged), as the Rust key wake did.
 //
@@ -74,10 +73,6 @@
 		dq_rx_cancel(D, W)
 	rel_clear(D, nameof(D.world_watches))
 	D.key_subs = null
-
-/// Wake D when `model` reaches `level` (above) or falls to it; at once if it already has.
-/proc/dq_rx_on_rate(datum/rule_binding/D, model, above, level)
-	return D.keep_watch(om_world_on_rate(D, model, above ? WORLD_CMP_ABOVE : WORLD_CMP_BELOW, level, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
 
 // ---- Heat nodes ----
 

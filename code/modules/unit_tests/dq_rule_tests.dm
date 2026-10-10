@@ -59,7 +59,7 @@
 
 /// Let `ds` deciseconds of reactor time pass, then dispatch. This has to be a
 /// real sleep: the reactor's clock is world.time, fed by the scheduler's
-/// vg_world_step(tick) (world_watch.dm), and vg_world_run_steps() doesn't
+/// vg_world_step(tick) (world_watches.dm), and vg_world_run_steps() doesn't
 /// advance it, so rate models (a rule's hold_for) only move with real ticks.
 /proc/dq_rx_test_advance(ds)
 	sleep(ds)

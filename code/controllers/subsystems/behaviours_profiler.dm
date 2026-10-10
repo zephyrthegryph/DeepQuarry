@@ -72,7 +72,7 @@ CAPABILITIES(/datum/system/behaviours)
 			))
 	data["behaviours"] = behaviours
 	data["shared_bucket"] = shared_bucket
-	var/list/world_diag = sched ? om_world_diagnostics(sched) : null
+	var/list/world_diag = sched ? world_diagnostics(sched) : null
 	var/list/world_queued = world_diag?["queued"]
 	var/list/lanes = list()
 	for(var/i in 1 to OM_LANE_COUNT)

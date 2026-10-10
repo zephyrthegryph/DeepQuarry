@@ -5,7 +5,7 @@
 // usage for budgets, and scheduler_advance(seconds).
 //
 // Per run, in order:
-//   0. the Rust world step (world_watch.dm), once per tick: its wakes queue on their lanes
+//   0. the Rust world step (world_watches.dm), once per tick: its wakes queue on their lanes
 //   1. deadlines (bucketed wheel, guaranteed OM_DEADLINE_SHARE of the budget)
 //   2. borrow pass: rings about to breach their max_interval, from the whole budget
 //   3. each lane in order with its guaranteed share: eager derived values

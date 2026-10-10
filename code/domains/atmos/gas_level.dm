@@ -11,7 +11,7 @@
 // resting on the level does not chatter. `air` names the holder var holding the mixture; null is the air of the turf the holder stands on, and the
 // holder calls gas_level_rearm_all() when it moves. A holder with several levels gives each its own `into`.
 //
-// The edge is found in Rust. The level is a threshold watch on the mixture's cell (om_world_when(), verdigris/ffi/src/sched.rs): Rust compares the
+// The edge is found in Rust. The level is a threshold watch on the mixture's cell (world_watch_when(), verdigris/ffi/src/sched.rs): Rust compares the
 // reading with the level on every change it sees, wherever the write came from (a heat exchanger or a pipe device writing a region reaches it the
 // same as a gas write: the mirror of a watched pipe region is refreshed from the network's own revision), and DM hears only the crossing, on the
 // lane (urgent by default). A burst of crossings in one tick reaches DM as one wake (Rust merges them per watch), the tracked setter ignores a
@@ -40,10 +40,9 @@ CAPABILITY_TYPE(gas_level, CAP_GAS_LEVEL, /datum/capability/lib/gas_level, key =
 	var/atom/holder
 	var/into_var
 
-/datum/cap_data/gas_level/relations()
-	. = ..()
-	. += rel_one(nameof(watch), /datum/native_watch/world, kind = RELK_OWNED, policy = OWN_DELETE)
-	. += rel_one(nameof(holder), /atom)
+CAPABILITIES(/datum/cap_data/gas_level)
+	owns_one(nameof(watch), /datum/native_watch/world)
+	ref_one(nameof(holder), /atom)
 
 /datum/capability/lib/gas_level/on_holder_init(datum/act/eval/A)
 	gas_level_arm(A.holder, src)
@@ -137,7 +136,7 @@ CAPABILITY_TYPE(gas_level, CAP_GAS_LEVEL, /datum/capability/lib/gas_level, key =
 	data.armed_id = id
 	if(!isnull(id))
 		var/condition = list(WORLD_COND_THRESHOLD, WORLD_GAS_HANDLE(mixture), def.reading, isnull(def.above) ? WORLD_CMP_BELOW : WORLD_CMP_ABOVE, def.limit_value(), def.hysteresis_value(), TRUE)
-		rel_set(data, nameof(data.watch), om_world_when(data, condition, TYPE_PROC_REF(/datum/cap_data/gas_level, crossed), def.lane))
+		rel_set(data, nameof(data.watch), world_watch_when(data, condition, TYPE_PROC_REF(/datum/cap_data/gas_level, crossed), def.lane))
 	def.settle(holder, mixture)
 
 /// Re-arms every level of `holder` (it moved, or its air was pointed at another mixture).

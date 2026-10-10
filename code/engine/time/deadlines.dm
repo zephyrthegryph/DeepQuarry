@@ -1,5 +1,5 @@
-// Object-model core: deadlines (doc/rewrite/object_model_core.md section A.5). Rates live in
-// the Rust world (om_rate_linear() and friends, world_watch.dm).
+// Object-model core: deadlines (doc/rewrite/object_model_core.md section A.5). Hold times are
+// deadlines too (a rule's hold_for is a keyed after() of its binding); the Rust world keeps the watches (world_watches.dm).
 //
 // A deadline is three numbers in a wheel bucket and three in the entity's
 // record: no datum per timer, no signal registration, no FFI call. One

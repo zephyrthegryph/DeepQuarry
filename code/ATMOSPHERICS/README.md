@@ -99,7 +99,7 @@ commands applied in order.
   one call (`GAS_READ_*` layout); `get_gases()` is one call too.
 - **Reactions** run in DM. The field's `local` step checks registered reaction
   requirements per cell and reports `GasEvent::CellReactionReady`.
-- **Watches.** Gas is a Rust world domain: `om_world_on_change()` / `om_world_when()` on
+- **Watches.** Gas is a Rust world domain: `world_watch_changed()` / `world_watch_when()` on
   `WORLD_GAS_HANDLE(mixture)` (a turf's air or a main-owned mixture) with the
   `CH_GAS_*` channels.
 
