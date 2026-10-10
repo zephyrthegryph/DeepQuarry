@@ -45,9 +45,9 @@ impl dm_ir::Resolver for SemanticTree {
                 }
             }
             if let Some(issuer) = &self.owner_certificate_issuer {
-                if let Some(token) = issuer.demanded_selection(self, selection) {
-                    return Some(token);
-                }
+                // Demand-owned revisions may read old issued tokens, but an
+                // unqueried old snapshot cannot substitute a whole-owner token.
+                return issuer.demanded_selection(self, selection);
             }
             return self
                 .owner_callable_selections
@@ -125,6 +125,9 @@ impl dm_ir::Resolver for SemanticTree {
                 .map(|id| M::Symbol(self.types[id.index()].path))
                 .unwrap_or(M::Missing),
             Q::Ancestry(path) => {
+                if let Some(paths) = self.owner_ancestry.get(&path) {
+                    return self.complete_answer(query, M::Symbols(Arc::clone(paths)));
+                }
                 let Some(mut id) = self.lookup_type(path) else {
                     return self.complete_answer(query, M::Missing);
                 };
@@ -136,7 +139,7 @@ impl dm_ir::Resolver for SemanticTree {
                         None => break,
                     }
                 }
-                M::Symbols(paths)
+                M::Symbols(paths.into())
             }
             Q::Var { owner, name } => member(owner, name, MemberKind::Var),
             Q::Proc { owner, name, verb } => member(

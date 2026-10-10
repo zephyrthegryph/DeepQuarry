@@ -36,7 +36,7 @@ fn storage<T>(
             value,
         } => {
             c.slice(prefix, key, true);
-            if c.slice(prefix, reads, true) {
+            if c.receipt(prefix, reads) {
                 for read in reads.iter() {
                     super::resident_weight::answer(c, &read.answer);
                 }

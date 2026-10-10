@@ -16,7 +16,7 @@ pub(crate) fn inspect(store: &crate::input_snapshot::PreparedInputArtifacts) -> 
         }
         View::Entry { key, reads, versions, value } => {
             census.slice("prepared_inputs.key",key,true);
-            census.slice("prepared_inputs.reads",reads,true);
+            census.receipt("prepared_inputs.reads", reads);
             census.slice("prepared_inputs.versions",versions,true);
             if census.arc_object("prepared_inputs.payload",value) {
                 let source=value.source();

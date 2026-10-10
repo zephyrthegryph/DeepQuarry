@@ -76,19 +76,19 @@ impl NormalizedValues {
             Self::Shared { lease, .. } => lease.visit_explained(key, host, accept),
         }
     }
-    pub(super) fn insert_with_owned(
+    pub(super) fn insert_with_receipt(
         &self,
         key: Arc<[u8]>,
-        reads: Vec<dm_session::Observation<SourceQuery, SourceAnswer, SourceDomain>>,
+        reads: dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
         versions: Vec<(SourceDomain, u128)>,
         weight: usize,
         create: impl FnOnce() -> ResolvedOwner,
     ) -> Option<Arc<ResolvedOwner>> {
         match self {
-            Self::Local(store) => store.insert_with_owned(key, reads, versions, weight, create),
-            Self::Shared { lease, .. } => {
-                lease.insert_with_owned(key, reads, versions, weight, create)
+            Self::Local(store) => {
+                store.insert_with_receipt(key, reads, versions.into(), weight, create)
             }
+            Self::Shared { lease, .. } => lease.insert_with_receipt(key, reads, weight, create),
         }
     }
 }

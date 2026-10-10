@@ -11,7 +11,7 @@ mod variables;
 use crate::{declaration_contributions::DeclarationKey, owner_normalization::ResolvedMember, *};
 pub use callables::{CallableFact, CallableInputs};
 use dm_session::{
-    observations::{Observation, ObservationHost, ObservationLedger},
+    observations::{ObservationHost, ObservationLedger},
     ObservedArtifactStore,
 };
 use std::{
@@ -154,7 +154,7 @@ pub enum MetadataStorageView<'a> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[Observation<MetadataQuery, MetadataAnswer, MetadataDomain>]>,
+        reads: &'a dm_session::Receipt<MetadataQuery, MetadataAnswer, MetadataDomain>,
         versions: &'a Arc<[(MetadataDomain, u128)]>,
         address: usize,
         size: usize,

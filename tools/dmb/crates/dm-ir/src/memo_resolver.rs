@@ -186,6 +186,35 @@ mod tests {
             None
         );
     }
+    #[test]
+    fn shared_override_sequence_survives_memo_hits_without_backing_copies() {
+        struct Host(AtomicUsize);
+        impl Resolver for Host {
+            fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+                self.0.fetch_add(1, Ordering::Relaxed);
+                ResolvedMeaning::Members(
+                    vec![ResolvedMeaning::Symbol(SymbolId::of("/datum"))].into(),
+                )
+            }
+        }
+        let host = Host(AtomicUsize::new(0));
+        let memo = MemoResolver::new(&host, 1);
+        let query = ResolveQuery::OverrideChain {
+            owner: SymbolId::of("/datum"),
+            name: SymbolId::of("read"),
+            verb: false,
+        };
+        let ResolvedMeaning::Members(first) = memo.resolve(query) else {
+            panic!()
+        };
+        let ResolvedMeaning::Members(second) = memo.resolve(query) else {
+            panic!()
+        };
+        assert!(std::sync::Arc::ptr_eq(&first, &second));
+        assert_eq!(host.0.load(Ordering::Relaxed), 1);
+        drop(memo);
+        assert_eq!(first, second);
+    }
     struct Host(Mutex<Vec<ResolveQuery>>);
     #[test]
     fn bounded_sequence_answers_reuse_exact_meanings_and_decline_oversized_payloads() {
@@ -206,31 +235,35 @@ mod tests {
         };
         let mut deep = ResolvedMeaning::Missing;
         for _ in 0..=SEQUENCE_DEPTH {
-            deep = ResolvedMeaning::Members(vec![deep]);
+            deep = ResolvedMeaning::Members(vec![deep].into());
         }
         for (answer, admitted) in [
-            (ResolvedMeaning::Symbols(vec![id; 4]), true),
+            (ResolvedMeaning::Symbols(vec![id; 4].into()), true),
             (retained.clone(), true),
             (
-                ResolvedMeaning::Members(vec![ResolvedMeaning::Symbols(vec![id]), retained]),
+                ResolvedMeaning::Members(
+                    vec![ResolvedMeaning::Symbols(vec![id].into()), retained].into(),
+                ),
                 true,
             ),
             (
-                ResolvedMeaning::Symbols(vec![
-                    id;
-                    SEQUENCE_BYTES / std::mem::size_of::<SymbolId>() + 1
-                ]),
+                ResolvedMeaning::Symbols(
+                    vec![id; SEQUENCE_BYTES / std::mem::size_of::<SymbolId>() + 1].into(),
+                ),
                 false,
             ),
             (
-                ResolvedMeaning::Members(vec![ResolvedMeaning::Missing; SEQUENCE_NODES]),
+                ResolvedMeaning::Members(vec![ResolvedMeaning::Missing; SEQUENCE_NODES].into()),
                 false,
             ),
             (deep, false),
             (
-                ResolvedMeaning::Members(vec![ResolvedMeaning::Value(SemanticValue::Text(
-                    std::sync::Arc::from(&b"opaque"[..]),
-                ))]),
+                ResolvedMeaning::Members(
+                    vec![ResolvedMeaning::Value(SemanticValue::Text(
+                        std::sync::Arc::from(&b"opaque"[..]),
+                    ))]
+                    .into(),
+                ),
                 false,
             ),
         ] {
@@ -261,7 +294,7 @@ mod tests {
                 }
                 ResolveQuery::Type(id) => ResolvedMeaning::Symbol(id),
                 ResolveQuery::Parent(_) => ResolvedMeaning::Missing,
-                ResolveQuery::Ancestry(id) => ResolvedMeaning::Symbols(vec![id]),
+                ResolveQuery::Ancestry(id) => ResolvedMeaning::Symbols(vec![id].into()),
                 ResolveQuery::PredefinedConstant(_) => {
                     ResolvedMeaning::Value(SemanticValue::Text(std::sync::Arc::from(&b"text"[..])))
                 }

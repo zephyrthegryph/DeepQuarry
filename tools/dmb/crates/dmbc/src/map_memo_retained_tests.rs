@@ -6,8 +6,8 @@ impl Resolver for Host {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         match query {
             ResolveQuery::Type(path) => ResolvedMeaning::Symbol(path),
-            ResolveQuery::Ancestry(path) => {
-                ResolvedMeaning::Symbols(if path == SymbolId::of("/datum/widget") {
+            ResolveQuery::Ancestry(path) => ResolvedMeaning::Symbols(
+                (if path == SymbolId::of("/datum/widget") {
                     vec![
                         SymbolId::of(if self.0 { "/mob" } else { "/obj" }),
                         SymbolId::of("/datum"),
@@ -15,7 +15,8 @@ impl Resolver for Host {
                 } else {
                     vec![SymbolId::of("/datum")]
                 })
-            }
+                .into(),
+            ),
             _ => ResolvedMeaning::Unsupported(query),
         }
     }

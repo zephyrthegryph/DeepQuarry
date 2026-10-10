@@ -1,5 +1,9 @@
 //! Generic exact observations shared by authored and resolved semantic queries.
 //! Ordering is canonical by query; absent answers are ordinary recorded values.
+mod receipt;
+mod receipt_pool;
+pub use receipt::{Receipt, ReceiptIter, ReceiptStorageView};
+pub use receipt_pool::ReceiptGroupPool;
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Mutex,
@@ -96,11 +100,20 @@ pub fn certified_domains<D: Ord + Clone>(
 pub fn first_changed<'a, Q, A, D: Ord>(
     reads: &'a [Observation<Q, A, D>],
     certified: &BTreeSet<D>,
+    resolve: impl FnMut(&Q) -> A,
+    equivalent: impl FnMut(&A, &A) -> bool,
+) -> Option<&'a Q> {
+    first_changed_iter(reads.iter(), certified, resolve, equivalent)
+}
+/// Replay the same exact admission rule over flat or shared canonical leaves.
+pub fn first_changed_iter<'a, Q: 'a, A: 'a, D: Ord + 'a>(
+    reads: impl IntoIterator<Item = &'a Observation<Q, A, D>>,
+    certified: &BTreeSet<D>,
     mut resolve: impl FnMut(&Q) -> A,
     mut equivalent: impl FnMut(&A, &A) -> bool,
 ) -> Option<&'a Q> {
     reads
-        .iter()
+        .into_iter()
         .find(|read| {
             !certified.contains(&read.domain) && !equivalent(&resolve(&read.query), &read.answer)
         })

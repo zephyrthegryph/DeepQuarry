@@ -13,10 +13,9 @@ fn borrowed_failure_is_legacy_byte_identical_and_points_inside_frame() {
         ResolverRead {
             query,
             domain: query.domain(),
-            answer: dm_ir::ResolvedMeaning::Symbols(vec![
-                SymbolId::of("/datum"),
-                SymbolId::of("/datum/Ω"),
-            ]),
+            answer: dm_ir::ResolvedMeaning::Symbols(
+                vec![SymbolId::of("/datum"), SymbolId::of("/datum/Ω")].into(),
+            ),
         },
         ResolverRead {
             query: ResolveQuery::GlobalVar(SymbolId::of("missing")),

@@ -31,7 +31,7 @@ struct DeclineCounters {
 }
 struct Record {
     key: Arc<[u8]>,
-    reads: Arc<[ResolverRead]>,
+    reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
     relative_debug: Vec<usize>,
@@ -49,7 +49,7 @@ pub(crate) struct Admission {
     store: Option<Arc<SessionSymbolicMemo>>,
     disk: Option<crate::lowering_memo::DiskWriter>,
     key: Arc<[u8]>,
-    reads: Arc<[ResolverRead]>,
+    reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<usize>,
 }
@@ -398,7 +398,7 @@ pub(super) fn admission(
         store,
         disk,
         key,
-        reads,
+        reads: reads.into(),
         versions,
         relative_debug,
     })
@@ -473,7 +473,7 @@ pub(super) fn accepted_admission(
         store: Some(Arc::clone(memo.symbolic.as_ref()?)),
         disk: None,
         key: key.into(),
-        reads: Arc::clone(&accepted.reads),
+        reads: accepted.reads.clone(),
         versions: Arc::clone(&accepted.versions),
         relative_debug: accepted.value.relative_debug.clone(),
     })

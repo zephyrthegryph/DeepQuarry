@@ -16,7 +16,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         View::Entry { key, reads, versions, value } => {
             census.slice("retained_grammar.keys", key, true);
-            census.slice("retained_grammar.reads", reads, true);
+            census.receipt("retained_grammar.reads", reads);
             census.slice("retained_grammar.versions", versions, true);
             if census.arc_object("retained_grammar.descriptors", value) {
                 census.vec_payload("retained_grammar.descriptors", value.spans());

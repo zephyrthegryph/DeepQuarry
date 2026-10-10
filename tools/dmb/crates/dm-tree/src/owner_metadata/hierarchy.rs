@@ -26,7 +26,13 @@ impl ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Hierarch
     }
 }
 impl RetainedMetadata {
-    pub(crate) fn certify_hierarchy(&self, tree: &SemanticTree) -> BTreeMap<SymbolId, u128> {
+    pub(crate) fn certify_hierarchy(
+        &self,
+        tree: &SemanticTree,
+    ) -> (
+        BTreeMap<SymbolId, u128>,
+        BTreeMap<SymbolId, Arc<[SymbolId]>>,
+    ) {
         let host = HierarchyHost(tree);
         tree.types
             .iter()
@@ -34,8 +40,8 @@ impl RetainedMetadata {
                 let owner = node.path;
                 let key = key(owner);
                 if let Some(value) = self.store.lookup(&key, &host) {
-                    if let EffectiveOwner::Hierarchy { version, .. } = value.as_ref() {
-                        return Some((owner, *version));
+                    if let EffectiveOwner::Hierarchy { version, paths } = value.as_ref() {
+                        return Some(((owner, *version), (owner, Arc::clone(paths))));
                     }
                 }
                 let query = MetadataQuery::Hierarchy(owner);
@@ -58,13 +64,14 @@ impl RetainedMetadata {
                 let ledger = ObservationLedger::default();
                 ledger.record(query, answer.clone(), query.domain(), None);
                 let paths = Arc::clone(paths);
+                let stored_paths = Arc::clone(&paths);
                 self.store
                     .insert_with(key, ledger.reads(), ledger.domain_receipts(), 0, || {
                         EffectiveOwner::Hierarchy { paths, version }
                     });
-                Some((owner, version))
+                Some(((owner, version), (owner, stored_paths)))
             })
-            .collect()
+            .unzip()
     }
 }
 

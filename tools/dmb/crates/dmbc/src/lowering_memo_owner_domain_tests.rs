@@ -6,7 +6,7 @@ fn process_local_owner_versions_are_omitted_from_disk_but_queries_remain() {
     let query = dm_ir::ResolveQuery::Ancestry(owner);
     let read = ResolverRead {
         query,
-        answer: dm_ir::ResolvedMeaning::Symbols(vec![owner]),
+        answer: dm_ir::ResolvedMeaning::Symbols(vec![owner].into()),
         domain: query.domain(),
     };
     let versions = [

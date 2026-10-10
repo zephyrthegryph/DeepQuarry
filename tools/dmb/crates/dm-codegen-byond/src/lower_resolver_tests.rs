@@ -103,7 +103,7 @@ fn typed_list_contexts_query_container_runtime_type() {
         reads: Mutex::new(Vec::new()),
         answer: |query| match query {
             Q::RuntimeType(id) if id == SymbolId::of("/list") => M::Symbol(id),
-            Q::Ancestry(id) if id == SymbolId::of("/list") => M::Symbols(vec![id]),
+            Q::Ancestry(id) if id == SymbolId::of("/list") => M::Symbols(vec![id].into()),
             other => M::Unsupported(other),
         },
     };
@@ -344,9 +344,9 @@ fn modified_alias_is_issued_as_instance_and_ordinary_type_stays_class() {
                 M::Symbol(SymbolId::of("/datum"))
             }
             Q::RuntimeType(id) if id == SymbolId::of("/datum/ordinary") => M::Symbol(id),
-            Q::Ancestry(id) if id == SymbolId::of("/datum") => M::Symbols(vec![id]),
+            Q::Ancestry(id) if id == SymbolId::of("/datum") => M::Symbols(vec![id].into()),
             Q::Ancestry(id) if id == SymbolId::of("/datum/ordinary") => {
-                M::Symbols(vec![id, SymbolId::of("/datum")])
+                M::Symbols(vec![id, SymbolId::of("/datum")].into())
             }
             _ => M::Unsupported(query),
         },
@@ -631,7 +631,7 @@ fn modified_literal_captures_ordered_assignments_and_emits_instance_reference() 
         answer: |query| match query {
             Q::RuntimeType(id) if id == SymbolId::of("/obj/base") => M::Symbol(id),
             Q::Ancestry(id) if id == SymbolId::of("/obj/base") => {
-                M::Symbols(vec![id, SymbolId::of("/obj")])
+                M::Symbols(vec![id, SymbolId::of("/obj")].into())
             }
             other => M::Unsupported(other),
         },

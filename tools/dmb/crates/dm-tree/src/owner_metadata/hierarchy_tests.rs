@@ -84,10 +84,44 @@ fn hierarchy_receipts_reuse_only_exact_current_ancestry_and_qualify_completeness
     let second = build(&unrelated_edit);
     assert_ne!(first.identity(), second.identity());
     assert_eq!(second.domain_version(domain), Some(first_version));
+    let query = ResolveQuery::Ancestry(child);
     assert_eq!(
-        Resolver::resolve(&first, ResolveQuery::Type(child)),
-        Resolver::resolve(&second, ResolveQuery::Type(child))
+        Resolver::resolve(&first, query),
+        dm_ir::ResolvedMeaning::Unsupported(query)
     );
+    let admit = |tree: &SemanticTree| {
+        let hierarchy = crate::EngineHierarchy {
+            schema: 19,
+            parents: tree
+                .types()
+                .iter()
+                .map(|node| {
+                    (
+                        node.path,
+                        node.parent.map(|id| tree.types()[id.index()].path),
+                    )
+                })
+                .collect(),
+        };
+        tree.clone()
+            .with_complete_intrinsics(hierarchy, Vec::new())
+            .unwrap()
+    };
+    let first_admitted = admit(&first);
+    let second_admitted = admit(&second);
+    let dm_ir::ResolvedMeaning::Symbols(first_paths) = Resolver::resolve(&first_admitted, query)
+    else {
+        panic!()
+    };
+    let dm_ir::ResolvedMeaning::Symbols(second_paths) = Resolver::resolve(&second_admitted, query)
+    else {
+        panic!()
+    };
+    assert!(Arc::ptr_eq(&first_paths, &second_paths));
+    assert!(Arc::ptr_eq(
+        &first_paths,
+        first.owner_ancestry.get(&child).unwrap()
+    ));
     let mut reparented = unrelated_edit.clone();
     reparented[2] = Skeleton::Type {
         path: child,
@@ -95,6 +129,14 @@ fn hierarchy_receipts_reuse_only_exact_current_ancestry_and_qualify_completeness
     };
     let third = build(&reparented);
     assert_ne!(third.domain_version(domain), Some(first_version));
+    let dm_ir::ResolvedMeaning::Symbols(third_paths) = Resolver::resolve(&admit(&third), query)
+    else {
+        panic!()
+    };
+    assert!(!Arc::ptr_eq(&first_paths, &third_paths));
+    assert_eq!(third_paths.as_ref(), &[child, datum, root]);
+    assert_eq!(first_paths.as_ref(), &[child, base, datum, root]);
+
     let mut parent_deleted = vec![initial[0].clone(), reparented[2].clone()];
     parent_deleted.push(Skeleton::Type {
         path: missing,
@@ -170,7 +212,7 @@ fn hierarchy_receipts_reuse_only_exact_current_ancestry_and_qualify_completeness
     assert_ne!(complete.domain_version(domain), Some(first_version));
     assert_eq!(
         Resolver::resolve(&complete, ResolveQuery::Ancestry(child)),
-        dm_ir::ResolvedMeaning::Symbols(vec![child, base, datum, root])
+        dm_ir::ResolvedMeaning::Symbols(vec![child, base, datum, root].into())
     );
     assert_eq!(
         ResolveQuery::Var {

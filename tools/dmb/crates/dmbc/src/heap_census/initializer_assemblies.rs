@@ -17,7 +17,7 @@ pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
         }
         View::Entry { key, reads, versions, value } => {
             census.slice("initializer_assemblies.keys", key, true);
-            census.slice("initializer_assemblies.reads", reads, true);
+            census.receipt("initializer_assemblies.reads", reads);
             census.slice("initializer_assemblies.versions", versions, true);
             for read in reads.iter() {
                 match &read.answer {

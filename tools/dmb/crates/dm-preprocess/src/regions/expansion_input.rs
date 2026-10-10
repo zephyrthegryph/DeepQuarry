@@ -151,7 +151,10 @@ impl ExpansionInputs {
                 value,
             } => {
                 visit(slice_storage(key));
-                visit(slice_storage(reads));
+                reads.visit_storage(|storage| match storage {
+                    dm_session::ReceiptStorageView::Flat(values) => visit(slice_storage(values)),
+                    dm_session::ReceiptStorageView::Groups(groups) => visit(slice_storage(groups)),
+                });
                 visit(slice_storage(versions));
                 for read in reads.iter() {
                     if let Query::Macro { name, .. } = &read.query {

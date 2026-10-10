@@ -24,7 +24,7 @@ impl Compiler<'_> {
         match self.semantic(lookup.answer(query))? {
             dm_ir::ResolvedMeaning::Missing => Ok(None),
             dm_ir::ResolvedMeaning::Symbols(ancestors) => {
-                for ancestor in ancestors {
+                for &ancestor in ancestors.iter() {
                     let name = self.semantic(lookup.text(query, ancestor))?;
                     if name.trim_start_matches('/').contains('/') {
                         continue;

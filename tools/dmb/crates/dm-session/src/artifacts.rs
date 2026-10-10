@@ -1,6 +1,6 @@
 //! Immutable result ownership with budgeted or current-revision retention.
 use crate::{
-    observations::{Observation, ObservationHost},
+    observations::{Observation, ObservationHost, Receipt},
     ResolverRead,
 };
 #[cfg(test)]
@@ -16,7 +16,7 @@ pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
 /// Exact key/read acceptance issued by this store; the ledger shares its backing.
 pub struct ObservedArtifact<T, Q, A, D> {
     pub value: Arc<T>,
-    pub reads: Arc<[Observation<Q, A, D>]>,
+    pub reads: Receipt<Q, A, D>,
     pub versions: Arc<[(D, u128)]>,
     weight: usize,
 }
@@ -36,7 +36,7 @@ pub enum ObservedArtifactStorageView<'a, T, Q, A, D> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[Observation<Q, A, D>]>,
+        reads: &'a Receipt<Q, A, D>,
         versions: &'a Arc<[(D, u128)]>,
         value: &'a Arc<T>,
     },
@@ -44,7 +44,7 @@ pub enum ObservedArtifactStorageView<'a, T, Q, A, D> {
 #[derive(Clone)]
 struct Variant<T, Q = ResolveQuery, A = ResolvedMeaning, D = ReadDomain> {
     key: Arc<[u8]>,
-    reads: Arc<[Observation<Q, A, D>]>,
+    reads: Receipt<Q, A, D>,
     versions: Arc<[(D, u128)]>,
     value: Arc<T>,
     weight: usize,
@@ -203,7 +203,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 .filter(|entry| entry.key.as_ref() == key)
                 .map(|entry| {
                     (
-                        Arc::clone(&entry.reads),
+                        entry.reads.clone(),
                         Arc::clone(&entry.versions),
                         Arc::clone(&entry.value),
                         entry.weight,
@@ -216,8 +216,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             let matching = crate::observations::certified_domains(&versions, |domain| {
                 resolver.version(domain)
             });
-            let mismatch = crate::observations::first_changed(
-                &reads,
+            let mismatch = crate::observations::first_changed_iter(
+                reads.iter(),
                 &matching,
                 |query| resolver.answer(query),
                 |current, previous| resolver.equivalent(current, previous),
@@ -266,6 +266,17 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         &self,
         key: Arc<[u8]>,
         reads: Arc<[Observation<Q, A, D>]>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
+        self.insert_with_receipt(key, reads.into(), versions, weight, create)
+    }
+    /// Share existing canonical receipt leaves without flattening or reminting.
+    pub fn insert_with_receipt(
+        &self,
+        key: Arc<[u8]>,
+        reads: Receipt<Q, A, D>,
         versions: Arc<[(D, u128)]>,
         weight: usize,
         create: impl FnOnce() -> T,
@@ -425,7 +436,7 @@ mod tests {
             .is_some());
         let (accepted, _) = store.visit_receipted(&key, &Host, &mut |_| true);
         let accepted = accepted.unwrap();
-        assert!(Arc::ptr_eq(&reads, &accepted.reads));
+        assert!(Arc::ptr_eq(&reads, accepted.reads.flat().unwrap()));
         assert!(Arc::ptr_eq(&versions, &accepted.versions));
         store.visit_storage(|view| {
             if let ObservedArtifactStorageView::Entry { key: stored, .. } = view {
@@ -546,7 +557,7 @@ mod tests {
             .unwrap()
             .push(Variant {
                 key: Arc::from(b"b".as_slice()),
-                reads: Arc::from([]),
+                reads: Vec::new().into(),
                 versions: Arc::from([]),
                 value: Arc::new(9),
                 weight: 3,
@@ -658,7 +669,10 @@ mod tests {
         let accepted = accepted.unwrap();
         let state = store.state.lock().unwrap();
         let original = &state.buckets[&xxhash_rust::xxh3::xxh3_128(b"a")][0];
-        assert!(Arc::ptr_eq(&accepted.reads, &original.reads));
+        assert!(Arc::ptr_eq(
+            accepted.reads.flat().unwrap(),
+            original.reads.flat().unwrap()
+        ));
         assert!(Arc::ptr_eq(&accepted.versions, &original.versions));
         drop(state);
         store.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 1, || 8u32);

@@ -194,9 +194,9 @@ pub(crate) struct Payload<'a> {
     recipes: BoundedVec<crate::modified_initializers::RecipeWire<'a>>,
     instances: BoundedVec<(SymbolId, SymbolId)>,
 }
-pub(crate) fn encode(
+pub(crate) fn encode<'a>(
     key: &[u8],
-    reads: &[ResolverRead],
+    reads: impl IntoIterator<Item = &'a ResolverRead>,
     versions: &[(ReadDomain, u128)],
     value: &crate::symbolic::PreparedContribution,
     debug: &[usize],
@@ -224,7 +224,7 @@ pub(crate) fn encode(
         },
         reads: BoundedVec(
             reads
-                .iter()
+                .into_iter()
                 .map(|r| ReadWire {
                     query: r.query,
                     answer: Cow::Owned(r.answer.canonical_bytes()),

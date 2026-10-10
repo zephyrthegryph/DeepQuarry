@@ -98,7 +98,7 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
             value,
         } => {
             census.slice("owner_projection.keys", key, true);
-            census.slice("owner_projection.reads", reads, true);
+            census.receipt("owner_projection.reads", reads);
             census.slice("owner_projection.versions", versions, true);
             for read in reads.iter() {
                 super::resident_weight::answer(&mut census, &read.answer);
@@ -138,7 +138,7 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
             value,
         } => {
             census.slice("owner_projection.types_keys", key, true);
-            if census.slice("owner_projection.types_reads", reads, true) {
+            if census.receipt("owner_projection.types_reads", reads) {
                 for read in reads.iter() {
                     if census.slice("semantic_tree", &read.answer.0, true) {
                         for node in read.answer.0.iter() {

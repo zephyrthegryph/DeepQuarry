@@ -74,7 +74,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         View::Entry { key, reads, versions, value } => {
             census.slice("retained_authored.keys", key, true);
-            census.slice("retained_authored.reads", reads, true);
+            census.receipt("retained_authored.reads", reads);
             census.slice("retained_authored.versions", versions, true);
             contribution(census, value);
             for read in reads.iter() {
@@ -102,7 +102,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         NormalizationStorageView::Entry { key, reads, versions, address, size } => {
             census.slice("retained_normalization.keys", key, true);
-            census.slice("retained_normalization.reads", reads, true);
+            census.receipt("retained_normalization.reads", reads);
             census.slice("retained_normalization.versions", versions, true);
             census.buffer("retained_normalization.values", address, size, size);
             for read in reads.iter() {

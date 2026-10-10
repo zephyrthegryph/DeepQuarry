@@ -54,7 +54,7 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
             ..
         } => {
             census.slice("startup.artifact_keys", key, true);
-            census.slice("startup.artifact_reads", reads, true);
+            census.receipt("startup.artifact_reads", reads);
             census.slice("startup.artifact_versions", versions, true);
             for read in reads.iter() {
                 declarations(census, &read.answer);

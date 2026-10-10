@@ -52,7 +52,7 @@ pub enum LocalShapeStorageView<'a> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[dm_session::Observation<SourceQuery, SourceAnswer, SourceDomain>]>,
+        reads: &'a dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
         versions: &'a Arc<[(SourceDomain, u128)]>,
         address: usize,
         size: usize,

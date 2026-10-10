@@ -68,7 +68,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         MetadataStorageView::Entry { key, reads, versions, address, size } => {
             census.slice("retained_effective_metadata.keys", key, true);
-            census.slice("retained_effective_metadata.reads", reads, true);
+            census.receipt("retained_effective_metadata.reads", reads);
             census.slice("retained_effective_metadata.versions", versions, true);
             census.buffer("retained_effective_metadata.values", address, size, size);
             for read in reads.iter() {
@@ -141,6 +141,17 @@ pub(super) fn selections(census: &mut HeapCensus, tree: &dm_tree::SemanticTree) 
             "owner_callable.index",
             "private BTree node backing excluded",
         );
+    }
+    let ancestry = tree.owner_ancestry_storage();
+    if census.arc_object("owner_ancestry.index", ancestry) {
+        census.observe_items("owner_ancestry.index", ancestry.len());
+        census.unknown(
+            "owner_ancestry.index",
+            "private BTree node backing excluded",
+        );
+        for paths in ancestry.values() {
+            census.slice("owner_ancestry.paths", paths, true);
+        }
     }
     let hierarchy = tree.owner_hierarchy_certificates();
     if census.arc_object("owner_hierarchy.index", hierarchy) {

@@ -225,6 +225,18 @@ fn global_selection_excludes_body_but_preserves_signature_and_formal_identity() 
         .unwrap()
     };
     let first = build(1, Arc::clone(&metadata));
+    for query in [
+        ResolveQuery::Signature(signature_path),
+        ResolveQuery::GlobalProc(name),
+        ResolveQuery::MethodProcedureValue {
+            owner: root,
+            name,
+            verb: false,
+        },
+    ] {
+        assert!(first.domain_version(query.domain()).is_some());
+    }
+
     let body_changed = build(2, Arc::clone(&metadata));
     for query in [
         ResolveQuery::Signature(signature_path),

@@ -53,7 +53,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("retained.headers.keys", key, true);
-                if self.slice("retained.headers.reads", reads, true) {
+                if self.receipt("retained.headers.reads", reads) {
                     for read in reads.iter() {
                         if self.arc_object("retained.headers.parent", &read.answer) {
                             recipe(self, &read.answer);
@@ -90,7 +90,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("retained.header_defaults.keys", key, true);
-                self.slice("retained.header_defaults.reads", reads, true);
+                self.receipt("retained.header_defaults.reads", reads);
                 self.slice("retained.header_defaults.versions", versions, true);
                 if self.arc_object("retained.header_defaults.values", value)
                     && self.vec_payload("retained.header_defaults.rows", value)

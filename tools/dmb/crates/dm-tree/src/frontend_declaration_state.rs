@@ -83,7 +83,7 @@ pub enum DeclarationStorageView<'a> {
     },
     SharedEntry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[dm_session::Observation<(), ChunkSourceAnswer, ()>]>,
+        reads: &'a dm_session::Receipt<(), ChunkSourceAnswer, ()>,
         versions: &'a Arc<[((), u128)]>,
         contribution: DeclarationContributionView<'a>,
     },
@@ -104,7 +104,8 @@ pub enum DeclarationStorageView<'a> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<[dm_session::ResolverRead]>,
+        reads:
+            &'a dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
         versions: &'a Arc<[(dm_ir::ReadDomain, u128)]>,
         contribution: DeclarationContributionView<'a>,
     },

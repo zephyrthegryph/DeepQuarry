@@ -62,7 +62,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         View::Entry { key, reads, versions, value } => {
             census.slice("retained_storage.keys", key, true);
-            census.slice("retained_storage.reads", reads, true);
+            census.receipt("retained_storage.reads", reads);
             census.slice("retained_storage.versions", versions, true);
             if census.arc_object("retained_storage.values", value) {
                 let StorageOwner { facts, unique_token: _ } = value.as_ref();

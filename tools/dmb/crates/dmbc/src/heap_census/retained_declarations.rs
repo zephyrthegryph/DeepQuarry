@@ -55,7 +55,7 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
         DeclarationStorageView::SharedEntry { key, reads, versions, contribution } => {
             let owner = "retained_declarations.payload";
             census.slice(owner, key, true);
-            census.slice(owner, reads, true);
+            census.receipt(owner, reads);
             census.slice(owner, versions, true);
             for read in reads.iter() {
                 match &read.answer {
@@ -69,7 +69,7 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
             let owner = "retained_declarations.payload";
             census.arc_text(owner, contribution.source);
             census.slice(owner, key, true);
-            census.slice(owner, reads, true);
+            census.receipt(owner, reads);
             census.slice(owner, versions, true);
             for read in reads.iter() {
                 super::resident_weight::answer(&mut census, &read.answer);

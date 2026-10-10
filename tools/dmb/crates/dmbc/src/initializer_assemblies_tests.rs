@@ -8,7 +8,7 @@ impl Resolver for Host {
     }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         match query {
-            ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner]),
+            ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner].into()),
             ResolveQuery::VarStorage { owner, name } => ResolvedMeaning::Slot {
                 symbol: name,
                 owner,
@@ -48,7 +48,7 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
     let first = Host(11);
     let roots = [AssignmentView {
         source_site: dm_ir::InitializerSite::Declaration,
-                target: &target,
+        target: &target,
         lexical_owner: SymbolId::of("/"),
         value: &root,
         occurrence: dm_syntax::Span::new(0, 0),
@@ -82,7 +82,7 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
     root.span = dm_syntax::Span::new(500, 511);
     let current = [AssignmentView {
         source_site: dm_ir::InitializerSite::Declaration,
-                target: &target,
+        target: &target,
         lexical_owner: SymbolId::of("/"),
         value: &root,
         occurrence: dm_syntax::Span::new(0, 0),

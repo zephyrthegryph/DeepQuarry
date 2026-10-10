@@ -130,6 +130,7 @@ pub struct SemanticTree {
     members: MemberArena,
     host_selections: Arc<host_declaration_selection::Selections>,
     owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
+    owner_ancestry: Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>>,
     owner_callables: Arc<std::collections::BTreeMap<SymbolId, u128>>,
     owner_callable_demands: Arc<owner_metadata::CallableDemands>,
     owner_callable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>>,
@@ -210,6 +211,12 @@ impl SemanticTree {
     }
     pub fn owner_callable_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
         &self.owner_callables
+    }
+    /// Exact hierarchy payload owners admitted by the existing retained issuer.
+    pub fn owner_ancestry_storage(
+        &self,
+    ) -> &Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>> {
+        &self.owner_ancestry
     }
     pub fn owner_hierarchy_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
         &self.owner_hierarchy
@@ -530,6 +537,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         members: MemberArena::default(),
         host_selections: Arc::new(Default::default()),
         owner_hierarchy: Arc::new(Default::default()),
+        owner_ancestry: Arc::new(Default::default()),
         owner_callables: Arc::new(Default::default()),
         owner_callable_demands: Arc::new(Default::default()),
         owner_callable_selections: Arc::new(Default::default()),
@@ -750,7 +758,9 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     drop(identity_profile);
     if let Some((_, retained)) = normalization {
         tree.owner_certificate_issuer = Some(Arc::clone(&retained.metadata));
-        tree.owner_hierarchy = Arc::new(retained.metadata.certify_hierarchy(&tree));
+        let (versions, paths) = retained.metadata.certify_hierarchy(&tree);
+        tree.owner_hierarchy = Arc::new(versions);
+        tree.owner_ancestry = Arc::new(paths);
         tree.owner_callables = Arc::new(retained.metadata.certify_callables(&tree));
         tree.owner_callable_selections = Arc::new(retained.metadata.certify_selections(&tree));
         tree.owner_variable_selections = Arc::new(retained.metadata.certify_variables(&tree));

@@ -20,11 +20,11 @@ pub(super) fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
     let owner = "resident_reads";
     match value {
         ResolvedMeaning::Symbols(values) => {
-            c.vec_payload(owner, values);
+            c.slice(owner, values, true);
         }
         ResolvedMeaning::Members(values) => {
-            if c.vec_payload(owner, values) {
-                for value in values {
+            if c.slice(owner, values, true) {
+                for value in values.iter() {
                     answer(c, value)
                 }
             }

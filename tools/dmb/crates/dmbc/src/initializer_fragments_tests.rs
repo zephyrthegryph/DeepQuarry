@@ -10,7 +10,7 @@ struct Host {
 impl Resolver for Host {
     fn resolve(&self, q: ResolveQuery) -> ResolvedMeaning {
         match q {
-            ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner]),
+            ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner].into()),
             ResolveQuery::VarStorage { owner, name } => ResolvedMeaning::Slot {
                 symbol: name,
                 owner,
@@ -55,7 +55,7 @@ fn write(source: &str, symbols: &mut SymbolTable) -> InitializerWrite {
     };
     InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Shared {
+        target: InitializerTarget::Shared {
             slot: SymbolId::of("value"),
             owner: SymbolId::of("/"),
             name: SymbolId::of("value"),
@@ -81,7 +81,7 @@ fn resource_read_change_invalidates_only_its_retained_continuation_and_matches_c
     store.retain_keys(&HashMap::from([(0, key.clone())]));
     let views = [AssignmentView {
         source_site: dm_ir::InitializerSite::Declaration,
-                target: &write.target,
+        target: &write.target,
         lexical_owner: write.lexical_owner,
         value: &value,
         occurrence: dm_syntax::Span::new(0, 0),
@@ -184,7 +184,7 @@ fn retained_modifier_reissues_current_ast_after_old_source_is_dropped() {
         store.retain_keys(&HashMap::from([(0, key.clone())]));
         let views = [AssignmentView {
             source_site: dm_ir::InitializerSite::Declaration,
-                target: &write.target,
+            target: &write.target,
             lexical_owner: write.lexical_owner,
             value: &value,
             occurrence: dm_syntax::Span::new(start, start + 30),
@@ -279,7 +279,7 @@ fn retained_modifier_binds_current_group_debug_ordinal_after_an_inserted_write()
         let index = views.len();
         views.push(AssignmentView {
             source_site: dm_ir::InitializerSite::Declaration,
-                target: &write.target,
+            target: &write.target,
             lexical_owner: write.lexical_owner,
             value: &value,
             occurrence: dm_syntax::Span::new(index, index),
@@ -415,7 +415,7 @@ fn earlier_unrelated_write_preserves_fragment_locator_and_real_hit() {
     let host = Host { resource: 11 };
     let roots = [AssignmentView {
         source_site: dm_ir::InitializerSite::Declaration,
-                target: &target.target,
+        target: &target.target,
         lexical_owner: target.lexical_owner,
         value: &expression,
         occurrence: dm_syntax::Span::new(0, 0),

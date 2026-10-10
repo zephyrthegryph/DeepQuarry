@@ -172,13 +172,14 @@ impl Resolver for GeometryHost {
         self.calls.fetch_add(1, Ordering::Relaxed);
         match query {
             ResolveQuery::Type(path) => dm_ir::ResolvedMeaning::Symbol(path),
-            ResolveQuery::Ancestry(path) => {
-                dm_ir::ResolvedMeaning::Symbols(if path == dm_ir::SymbolId::of("/datum/widget") {
+            ResolveQuery::Ancestry(path) => dm_ir::ResolvedMeaning::Symbols(
+                (if path == dm_ir::SymbolId::of("/datum/widget") {
                     vec![dm_ir::SymbolId::of(if self.mob { "/mob" } else { "/obj" })]
                 } else {
                     Vec::new()
                 })
-            }
+                .into(),
+            ),
             _ => dm_ir::ResolvedMeaning::Unsupported(query),
         }
     }

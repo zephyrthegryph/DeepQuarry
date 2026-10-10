@@ -29,7 +29,7 @@ pub(super) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
             ..
         } => {
             census.slice("startup.callable_keys", key, true);
-            census.slice("startup.callable_reads", reads, true);
+            census.receipt("startup.callable_reads", reads);
             census.slice("startup.callable_versions", versions, true);
             for read in reads.iter() {
                 census.callable_roster(&read.answer);

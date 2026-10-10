@@ -306,7 +306,7 @@ impl<R: dm_ir::Resolver> InstanceClassifier for ResolverClassifier<'_, R> {
             ResolvedMeaning::Unsupported(_) => return Err("map ancestry is not certified".into()),
             _ => return Err("map ancestry is absent or inconsistent".into()),
         };
-        for ancestor in std::iter::once(path).chain(chain) {
+        for ancestor in std::iter::once(path).chain(chain.iter().copied()) {
             for (root, kind) in [
                 ("/turf", InstanceKind::Turf),
                 ("/area", InstanceKind::Area),

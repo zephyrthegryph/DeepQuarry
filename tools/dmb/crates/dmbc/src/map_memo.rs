@@ -518,8 +518,8 @@ mod tests {
         fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
             match query {
                 ResolveQuery::Type(path) => ResolvedMeaning::Symbol(path),
-                ResolveQuery::Ancestry(path) => {
-                    ResolvedMeaning::Symbols(if path == SymbolId::of("/datum/widget") {
+                ResolveQuery::Ancestry(path) => ResolvedMeaning::Symbols(
+                    (if path == SymbolId::of("/datum/widget") {
                         vec![
                             SymbolId::of(if self.mob { "/mob" } else { "/obj" }),
                             SymbolId::of("/datum"),
@@ -527,7 +527,8 @@ mod tests {
                     } else {
                         vec![SymbolId::of("/datum")]
                     })
-                }
+                    .into(),
+                ),
                 _ => ResolvedMeaning::Unsupported(query),
             }
         }

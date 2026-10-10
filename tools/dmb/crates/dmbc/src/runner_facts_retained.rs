@@ -229,7 +229,7 @@ impl RetainedHostFacts {
                 value,
             } => {
                 census.slice("host.facts.keys", key, true);
-                census.slice("host.facts.reads", reads, true);
+                census.receipt("host.facts.reads", reads);
                 for read in reads.iter() {
                     if let Answer::Scalar(answer) = &read.answer {
                         scalars::inspect_answer(answer, &mut census);

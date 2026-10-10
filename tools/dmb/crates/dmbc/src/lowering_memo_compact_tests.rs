@@ -170,6 +170,34 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         &offsets,
     )
     .unwrap();
+    let reads = recorder.reads();
+    assert!(
+        !reads.is_empty(),
+        "ordinary producer must record dependencies"
+    );
+    let groups: std::sync::Arc<[std::sync::Arc<[ResolverRead]>]> = reads
+        .iter()
+        .cloned()
+        .map(|read| std::sync::Arc::from([read]))
+        .collect();
+    let grouped = dm_session::Receipt::from_groups(groups).unwrap();
+    assert!(grouped.flat().is_none());
+    let grouped_bytes = encode(
+        b"exact-source-and-policy",
+        grouped.iter(),
+        &[],
+        &value,
+        &offsets,
+    )
+    .unwrap();
+    assert_eq!(
+        grouped_bytes, bytes,
+        "group boundaries cannot change canonical disk wire"
+    );
+    assert!(
+        grouped.flat().is_none(),
+        "encoding must not flatten receipt storage"
+    );
     let payload = decode(&bytes).unwrap();
     assert!(payload.changed_read(&host).is_none());
     assert_eq!(!payload.helpers.0.is_empty(), helpers);

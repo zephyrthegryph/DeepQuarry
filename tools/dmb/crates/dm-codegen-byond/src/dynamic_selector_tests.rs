@@ -106,7 +106,7 @@ fn computed_receiver_with_proven_instance_storage_skips_global_uniqueness() {
             self.0.lock().unwrap().push(query);
             match query {
                 Q::RuntimeType(path) => M::Symbol(path),
-                Q::Ancestry(path) => M::Symbols(vec![path, dm_ir::SymbolId::of("/obj")]),
+                Q::Ancestry(path) => M::Symbols(vec![path, dm_ir::SymbolId::of("/obj")].into()),
                 Q::VarStorage { owner, name } => M::InstanceField {
                     declaring_owner: owner,
                     name,
@@ -186,7 +186,7 @@ fn authored_call_return_annotation_types_nested_field_context() {
             self.reads.lock().unwrap().push(query);
             match query {
                 Q::RuntimeType(path) => M::Symbol(path),
-                Q::Ancestry(path) => M::Symbols(vec![path, SymbolId::of("/datum")]),
+                Q::Ancestry(path) => M::Symbols(vec![path, SymbolId::of("/datum")].into()),
                 Q::HasMemberProc { name, .. } if name == SymbolId::of("current_message") => {
                     M::Presence(true)
                 }

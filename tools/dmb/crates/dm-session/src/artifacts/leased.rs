@@ -207,8 +207,16 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        // No domain version is portable across unrelated host issuers.
-        let reads: Arc<[_]> = reads.into();
+        self.insert_with_receipt(key, reads.into(), weight, create)
+    }
+    /// Exact replay across host issuers deliberately ignores domain versions.
+    pub fn insert_with_receipt(
+        &self,
+        key: Arc<[u8]>,
+        reads: crate::observations::Receipt<Q, A, D>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self
             .store

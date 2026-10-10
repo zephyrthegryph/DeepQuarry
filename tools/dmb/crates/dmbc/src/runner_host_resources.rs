@@ -86,7 +86,7 @@ impl Resources {
                 value,
             } => {
                 c.slice("resources.key", key, true);
-                c.slice("resources.reads", reads, true);
+                c.receipt("resources.reads", reads);
                 c.slice("resources.versions", versions, true);
                 for read in reads.iter() {
                     let a = &read.answer;

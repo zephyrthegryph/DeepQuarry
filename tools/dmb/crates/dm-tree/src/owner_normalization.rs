@@ -8,6 +8,7 @@ use crate::{
 use dm_session::{observations::ObservationLedger, ObservedArtifactStore};
 use std::collections::{HashMap, HashSet};
 mod shared;
+mod receipts;
 #[cfg(test)]
 mod shared_tests;
 use shared::NormalizedValues;
@@ -46,9 +47,7 @@ pub enum NormalizationStorageView<'a> {
     },
     Entry {
         key: &'a Arc<[u8]>,
-        reads: &'a Arc<
-            [dm_session::observations::Observation<SourceQuery, SourceAnswer, SourceDomain>],
-        >,
+        reads: &'a dm_session::Receipt<SourceQuery, SourceAnswer, SourceDomain>,
         versions: &'a Arc<[(SourceDomain, u128)]>,
         address: usize,
         size: usize,
@@ -335,6 +334,8 @@ impl RetainedNormalization {
             callable_kinds,
             (0..count).filter(|index| !reused.contains(index)),
         )?;
+        let receipt_pool = receipts::Pool::default();
+        let branching_paths = receipts::branching_paths(tree);
         for (owner, _) in declarations.owners() {
             let Some(indices) = owners.get(owner) else {
                 continue;
@@ -360,9 +361,9 @@ impl RetainedNormalization {
             let payload: Arc<[ResolvedMember]> = payload.into();
             let retained = self
                 .values
-                .insert_with_owned(
+                .insert_with_receipt(
                     key(*owner),
-                    ledger.reads(),
+                    receipts::share(ledger.reads(), &receipt_pool, &branching_paths),
                     ledger.domain_receipts(),
                     0,
                     || ResolvedOwner { members: payload },

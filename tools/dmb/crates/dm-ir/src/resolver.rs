@@ -183,8 +183,8 @@ pub enum ResolvedMeaning {
         name: SymbolId,
     },
     Symbol(SymbolId),
-    Symbols(Vec<SymbolId>),
-    Members(Vec<ResolvedMeaning>),
+    Symbols(Arc<[SymbolId]>),
+    Members(Arc<[ResolvedMeaning]>),
     /// Pinned engine receiver method selected dynamically by name. This is
     /// positive presence, not a source procedure image or an invented ABI.
     IntrinsicProc {
@@ -271,14 +271,14 @@ impl ResolvedMeaning {
             Self::Symbols(values) => {
                 out.push(8);
                 out.extend_from_slice(&(values.len() as u64).to_le_bytes());
-                for value in values {
+                for value in values.iter() {
                     symbol(&mut out, *value);
                 }
             }
             Self::Members(values) => {
                 out.push(9);
                 out.extend_from_slice(&(values.len() as u64).to_le_bytes());
-                for value in values {
+                for value in values.iter() {
                     frame(&mut out, &value.canonical_bytes());
                 }
             }
@@ -386,8 +386,8 @@ mod tests {
             ResolvedMeaning::Unsupported(query).canonical_bytes()
         );
         assert_ne!(
-            ResolvedMeaning::Symbols(vec![owner, name]).canonical_bytes(),
-            ResolvedMeaning::Symbols(vec![name, owner]).canonical_bytes()
+            ResolvedMeaning::Symbols(vec![owner, name].into()).canonical_bytes(),
+            ResolvedMeaning::Symbols(vec![name, owner].into()).canonical_bytes()
         );
         let retained = |wire_proc, engine_identity| ResolvedMeaning::RetainedProc {
             declaring_owner: owner,
@@ -428,3 +428,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "resolver_sequence_tests.rs"]
+mod sequence_tests;

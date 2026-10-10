@@ -10,7 +10,7 @@ fn engine_wrapper_hierarchy_domain_tracks_current_delegated_source_only() {
         fn resolve(&self, query: Q) -> M {
             match query {
                 Q::Type(owner) => M::Symbol(owner),
-                Q::Ancestry(owner) => M::Symbols(vec![owner]),
+                Q::Ancestry(owner) => M::Symbols(vec![owner].into()),
                 Q::Parent(_) => M::Missing,
                 _ => M::Unsupported(query),
             }

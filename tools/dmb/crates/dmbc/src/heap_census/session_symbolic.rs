@@ -25,10 +25,10 @@ impl HeapCensus {
     }
     pub(crate) fn retained_symbolic_ledger(
         &mut self,
-        reads: &Arc<[crate::lowering_memo::ResolverRead]>,
+        reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
         versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
     ) {
-        if self.slice("session_symbolic.reads", reads, true) {
+        if self.receipt("session_symbolic.reads", reads) {
             for read in reads.iter() {
                 super::resident_weight::answer(self, &read.answer);
             }

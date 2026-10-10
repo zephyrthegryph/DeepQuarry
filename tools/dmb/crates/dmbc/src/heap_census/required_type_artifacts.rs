@@ -28,7 +28,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("required_types.keys", key, true);
-                self.slice("required_types.reads", reads, true);
+                self.receipt("required_types.reads", reads);
                 self.slice("required_types.versions", versions, true);
                 if self.arc_object("required_types.closure", value) {
                     self.vec_payload("required_types.ordered", &value.ordered);
@@ -57,7 +57,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("required_fields.keys", key, true);
-                if self.slice("required_fields.reads", reads, true) {
+                if self.receipt("required_fields.reads", reads) {
                     for read in reads.iter() {
                         super::resident_owner_projection::inspect_field(self, &read.answer);
                     }
@@ -90,7 +90,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("required_parents.keys", key, true);
-                if self.slice("required_parents.reads", reads, true) {
+                if self.receipt("required_parents.reads", reads) {
                     for read in reads.iter() {
                         self.slice("required_parents.type_roster", &read.answer, true);
                     }
@@ -121,7 +121,7 @@ impl HeapCensus {
                 value,
             } => {
                 self.slice("required_allocations.keys", key, true);
-                if self.slice("required_allocations.reads", reads, true) {
+                if self.receipt("required_allocations.reads", reads) {
                     for read in reads.iter() {
                         if let Some(spelling) = &read.answer {
                             self.string("required_allocations.spellings", spelling);
@@ -140,7 +140,7 @@ impl HeapCensus {
             }
             V::Entry { key, reads, versions, value } => {
                 self.slice("required_prefix.keys", key, true);
-                if self.slice("required_prefix.reads", reads, true) {
+                if self.receipt("required_prefix.reads", reads) {
                     for read in reads.iter() {
                         self.required_allocation_roster(&read.answer.source);
                         self.vec_payload("required_prefix.fixed", &read.answer.fixed);
@@ -165,7 +165,7 @@ impl HeapCensus {
             }
             V::Entry { key, reads, versions, value } => {
                 self.slice("required_selected.keys", key, true);
-                if self.slice("required_selected.reads", reads, true) {
+                if self.receipt("required_selected.reads", reads) {
                     for read in reads.iter() {
                         self.slice("required_selected.current_types", &read.answer.types, true);
                         if self.arc_object("required_selected.membership", &read.answer.needed) {

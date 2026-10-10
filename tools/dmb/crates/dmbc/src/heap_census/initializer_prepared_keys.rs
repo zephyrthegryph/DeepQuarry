@@ -34,7 +34,7 @@ pub(super) fn inspect(c: &mut HeapCensus, store: &crate::initializer_policy::Ini
         } => {
             c.slice(owner, key, true);
             c.slice(owner, versions, true);
-            if c.slice(owner, reads, true) {
+            if c.receipt(owner, reads) {
                 for read in reads.iter() {
                     if c.arc_object(owner, &read.answer) {
                         let write = &read.answer.write;
