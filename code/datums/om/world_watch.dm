@@ -36,7 +36,7 @@
 	return 1
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
-/proc/om_world_tick_of(time)
+/proc/world_tick_of(time)
 	return CEILING(time / world.tick_lag, 1)
 
 /proc/om_world_new_watch(datum/owner, callback, lane)
@@ -158,5 +158,3 @@
 			sched.world_traced = null
 #endif
 
-/proc/om_world_dropped()
-	return world_wake_dropped()

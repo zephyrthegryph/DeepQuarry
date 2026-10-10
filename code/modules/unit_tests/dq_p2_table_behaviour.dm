@@ -89,7 +89,9 @@
 
 /// The number of overlay images the table draws now (its layers: frame, plating, reinforcement, carpet).
 /proc/p2_table_layers(obj/structure/table/T)
-	return length(T.appearance_overlays())
+	// The table draws its layers in draw(look) at the end of the frame: flush the refresh, then count what it put on.
+	refresh_flush()
+	return length(T.overlays)
 
 /// The actor takes a grab on `victim` and holds it at `state`.
 /proc/p2_table_grab(mob/living/carbon/human/grabber, mob/living/victim, state)

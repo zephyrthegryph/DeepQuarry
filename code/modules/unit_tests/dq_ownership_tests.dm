@@ -334,14 +334,14 @@ CAPABILITIES(/datum/own_test_child)
 	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
-	om_handle_forward(B, C)
-	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward re-points views to the successor")
+	rel_forward_identity(B, C)
+	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity re-points views to the successor")
 	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and hands it the handle slot")
 	// A successor of another family (an airlock torn down into an assembly) is a new thing:
 	// the views and handle stay with the original and end with it.
 	var/datum/own_test_holder/other = new
-	om_handle_forward(C, other)
-	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward leaves views on the original for a successor of another family")
+	rel_forward_identity(C, other)
+	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity leaves views on the original for a successor of another family")
 	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and keeps the handle slot")
 	qdel(other)
 	qdel(B)
