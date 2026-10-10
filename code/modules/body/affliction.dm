@@ -200,7 +200,7 @@
 // --- Severity -------------------------------------------------------------------
 
 /// The sole runtime boundary for severity changes. Listeners (contracts,
-/// telemetry) hear /datum/om/event/affliction_severity_changed on the owning mob.
+/// telemetry) hear /datum/definition_event/affliction_severity_changed on the owning mob.
 /datum/affliction/proc/set_severity(new_severity)
 	var/old_severity = severity
 	severity = clamp(new_severity, 0, AFFLICTION_SEVERITY_TERMINAL)

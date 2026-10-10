@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).
-/datum/om/relation/slot/occupant/cryopod
+/datum/relation_definition/slot/occupant/cryopod
 	holder = /obj/machinery/cryopod
 	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"

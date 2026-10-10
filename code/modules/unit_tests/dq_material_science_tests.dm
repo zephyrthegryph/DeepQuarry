@@ -559,7 +559,7 @@
 /datum/unit_test/dq_material_service_due_heap
 
 /datum/unit_test/dq_material_service_due_heap/Run()
-	// Exposure work is one core deadline per service (om_after): scheduling again only ever moves
+	// Exposure work is one core deadline per service (after()): scheduling again only ever moves
 	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
 	var/datum/material_service/a_service = material_service_of(a)

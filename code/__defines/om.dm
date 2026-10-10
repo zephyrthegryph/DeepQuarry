@@ -76,7 +76,7 @@
 #define OM_REL_REPLACE 1
 #define OM_REL_REFUSE 2
 
-// Relation shapes (/datum/om/relation/var/shape, doc/rewrite/ownership.md §4.2).
+// Relation shapes (/datum/relation_definition/var/shape, doc/rewrite/ownership.md §4.2).
 /// A source has one target and a target one source.
 #define REL_ONE_TO_ONE 1
 /// A source has many targets; a target has one source.
@@ -86,7 +86,7 @@
 /// Membership with no direction (atmos node topology): either end may be the source.
 #define REL_SYMMETRIC 4
 
-// Unlink reasons (/datum/om/edge/var/unlink_reason, read in on_unlink()).
+// Unlink reasons (/datum/relation_edge/var/unlink_reason, read in on_unlink()).
 #define RELATION_UNLINKED "unlinked"
 #define RELATION_DESTROYING "destroying"
 #define RELATION_BROKEN "broken"
@@ -106,7 +106,7 @@
 #define AGG_MAX 6
 #define AGG_CUSTOM 7
 
-/// A parameterised check spec: CHECK(/datum/om/check/in_range, 1). `path` must be a literal type path.
+/// A parameterised check spec: CHECK(/datum/requirement_definition/in_range, 1). `path` must be a literal type path.
 #define CHECK(path, arg) list(path = arg)
 
 #define DERIVE(name, expr, channel) list("derive" = "check", "name" = name, "expr" = expr, "channel" = channel)
@@ -136,8 +136,8 @@
 /// idles already decided.
 #define OM_ABORT_FRAME 1
 /// A frame fact in a run_if spec: FACT("alive"), NOT_OF(FACT("in_stasis")).
-#define FACT(name) list(/datum/om/check/fact = name)
-/// /datum/om/pipeline/var/run_mode bits (compiled at boot).
+#define FACT(name) list(/datum/requirement_definition/fact = name)
+/// /datum/work_pipeline/var/run_mode bits (compiled at boot).
 #define OM_PIPE_MODE_HOOKS (1<<0)
 #define OM_PIPE_MODE_FACTS (1<<1)
 #define OM_PIPE_MODE_PROFILING (1<<2)
@@ -179,12 +179,12 @@
 #define OM_STAT_MISSED 12
 #define OM_STAT_LEN 12
 
-// Cadence loops in /datum/om/scheduler/proc/run_slot().
+// Cadence loops in /datum/time_scheduler/proc/run_slot().
 #define OM_SLOT_FAST 1
 #define OM_SLOT_STEP 2
 #define OM_SLOT_SLOW 3
 
-// Hook kinds for /datum/om/scheduler/proc/call_hook().
+// Hook kinds for /datum/time_scheduler/proc/call_hook().
 #define OM_HOOK_TICK 1
 #define OM_HOOK_WAKE 2
 #define OM_HOOK_DEADLINE 3
@@ -197,7 +197,7 @@
 #define OM_HOOK_DESTROY 9
 
 /// One entity's step taking more than this (percent of a tick) is noted as the tick's slow step
-/// (/datum/om/scheduler/proc/note_slow_step()), named in the MC's overrun record.
+/// (/datum/time_scheduler/proc/note_slow_step()), named in the MC's overrun record.
 #define OM_SLOW_STEP_USAGE 100
 
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
@@ -266,7 +266,7 @@
 /// own channel). Its channel is the union of the inputs' channels, resolved once per
 /// type (scheduler_field_field_table()), so every input setter raises it: nothing refreshes a derived field by
 /// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_DATUM_A))`
-#define OM_DERIVE_FIELD(T, F, INPUTS) /datum/om/field_def##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
+#define OM_DERIVE_FIELD(T, F, INPUTS) /datum/scheduler_field_definition##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
 // ---------------------------------------------------------------- om_prompt requires (prompt.dm)
 // Common re-checks for an answer: actor = the user, target = the spec's target, else E.

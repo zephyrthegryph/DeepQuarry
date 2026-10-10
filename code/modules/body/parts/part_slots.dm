@@ -9,7 +9,7 @@
 //   limb                ORGAN_SLOT_IMPLANTS (implant_site, organ_external.dm),
 //                       embedded / cavity / splint / tourniquet
 //
-// Each slot is a /datum/om/relation/slot decl with a declared `holder`, so a
+// Each slot is a /datum/relation_definition/slot decl with a declared `holder`, so a
 // part in a slot is also linked to its holder by that relation. Moves into and
 // out of the three tree slots are what attach and detach a part (attach.dm,
 // through the ledger's J6 on_slotted()/on_unslotted() commit hooks on the
@@ -20,8 +20,8 @@
 // (the ledger resolves nested holders before their parents); shrapnel and
 // tourniquets fall out.
 
-/datum/om/relation/slot/part
-	abstract_type = /datum/om/relation/slot/part
+/datum/relation_definition/slot/part
+	abstract_type = /datum/relation_definition/slot/part
 	holder = /obj/item/organ/external
 	name = "body part"
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -35,7 +35,7 @@
 /// A humanoid's root part: the one limb with no parent_organ. Declared on the
 /// humanoid plan after its equipment and before its interior, which is the
 /// order a deleted mob releases them in.
-/datum/om/relation/slot/part/root
+/datum/relation_definition/slot/part/root
 	holder = /datum/body/humanoid
 	slot_id = SLOT_ID_PART_ROOT
 	name = "body"
@@ -43,7 +43,7 @@
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 1
 
-/datum/om/relation/slot/part/root/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/part/root/refusal(atom/holder, atom/movable/thing, mob/actor)
 	var/obj/item/organ/external/E = thing
 	if(!istype(E))
 		return "that isn't a body part"
@@ -52,13 +52,13 @@
 	return ..()
 
 /// A limb's child limbs: external organs whose parent_organ is this limb's tag.
-/datum/om/relation/slot/part/child
+/datum/relation_definition/slot/part/child
 	slot_id = SLOT_ID_PART_CHILD
 	name = "limbs"
 	order = 1
 	keyed = TRUE
 
-/datum/om/relation/slot/part/child/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/part/child/refusal(atom/holder, atom/movable/thing, mob/actor)
 	var/obj/item/organ/external/E = thing
 	var/obj/item/organ/external/parent = holder
 	if(!istype(E) || !istype(parent))
@@ -69,13 +69,13 @@
 
 /// A limb's internal organs. Any internal organ may sit in any limb (surgery
 /// and horror modifiers relocate organs), keyed by organ_tag.
-/datum/om/relation/slot/part/organs
+/datum/relation_definition/slot/part/organs
 	slot_id = SLOT_ID_PART_ORGANS
 	name = "organs"
 	order = 2
 	keyed = TRUE
 
-/datum/om/relation/slot/part/organs/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/part/organs/refusal(atom/holder, atom/movable/thing, mob/actor)
 	if(!istype(thing, /obj/item/organ) || istype(thing, /obj/item/organ/external))
 		return "that isn't an organ"
 	return ..()
@@ -84,13 +84,13 @@
 /// non-part into a limb lands here, never among its parts. Surgery enforces
 /// the cavity size (surgical_cavity_capacity()) until the ledger has a
 /// custom capacity model for it.
-/datum/om/relation/slot/part/cavity
+/datum/relation_definition/slot/part/cavity
 	slot_id = SLOT_ID_PART_CAVITY
 	name = "cavity"
 	order = 4
 	is_default = TRUE
 
-/datum/om/relation/slot/part/splint
+/datum/relation_definition/slot/part/splint
 	slot_id = SLOT_ID_PART_SPLINT
 	name = "splint"
 	order = 5
@@ -98,13 +98,13 @@
 	capacity = 1
 
 /// Shrapnel and thrown weapons: they fall out when the limb goes.
-/datum/om/relation/slot/part/embedded
+/datum/relation_definition/slot/part/embedded
 	slot_id = SLOT_ID_PART_EMBEDDED
 	name = "embedded objects"
 	order = 6
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/om/relation/slot/part/tourniquet
+/datum/relation_definition/slot/part/tourniquet
 	slot_id = SLOT_ID_PART_TOURNIQUET
 	name = "tourniquet"
 	order = 7

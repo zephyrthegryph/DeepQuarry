@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
 /// their own typed vars -- only the person hiding inside is a slot.
-/datum/om/relation/slot/occupant/suit_storage
+/datum/relation_definition/slot/occupant/suit_storage
 	holder = /obj/machinery/suit_storage_unit
 	slot_id = OCCUPANT_SLOT_SUIT_STORAGE
 	name = "suit storage unit"

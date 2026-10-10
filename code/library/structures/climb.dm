@@ -1,5 +1,5 @@
 // climb(delay, vaulting, landing, delay_by, gate, climbed) (doc/rewrite/final_api.html, section 11 "The library", Structures; section 16): a structure a mob
-// climbs onto, a table, a railing, a crate, a machine. It replaced make_climbable() and /datum/om/behaviour/climbable. One op, "climb.climb", reached by
+// climbs onto, a table, a railing, a crate, a machine. It replaced make_climbable() and /datum/scheduled_behaviour/climbable. One op, "climb.climb", reached by
 // a mob dragging itself onto the structure (by(0): a mouse has no hands) or by the context menu's "Climb" ("climb.climb_menu", the same effect):
 //
 //   CAPABILITIES(/obj/structure/table)

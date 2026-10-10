@@ -919,7 +919,7 @@ GLOBAL_VAR_INIT(om_audit_first_wake_skips, 0)
 // ---------------------------------------------------------------- sleepers
 
 /// A reactive behaviour for an entity that sleeps between wakes it armed itself: entity_watch()es on
-/// other entities' channels (CHANGE_RELATED arrives here) and om_after() timers. Subtypes do the
+/// other entities' channels (CHANGE_RELATED arrives here) and after() timers. Subtypes do the
 /// work in on_wake(). Entities carrying one are sampled by the missed-wake audit, which asks the
 /// entity's pipeline_sleep_violation() whether it sleeps through work.
 /datum/scheduled_behaviour/sleeper
@@ -972,7 +972,7 @@ GLOBAL_LIST_EMPTY(om_sleepers)
 #endif
 	return findings
 
-/// A sleeper that waits only on its own om_after() timers: attached so the audit samples it.
+/// A sleeper that waits only on its own after() timers: attached so the audit samples it.
 /datum/scheduled_behaviour/sleeper/timed
 	name = "timed sleeper"
 	wake_on = 0
@@ -984,7 +984,7 @@ GLOBAL_LIST_EMPTY(om_traced)
 /// Tests: entity -> union of the change bits its traced wakes arrived with.
 GLOBAL_LIST_EMPTY(om_traced_bits)
 
-/// Counts behaviour wakes (on_wake) and om_after() calls delivered to `E` from now on.
+/// Counts behaviour wakes (on_wake) and after() calls delivered to `E` from now on.
 /proc/pipeline_trace(datum/E)
 	if(!GLOB.om_traced[E])
 		GLOB.om_traced[E] = 1

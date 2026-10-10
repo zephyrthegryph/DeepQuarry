@@ -273,7 +273,7 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	dq_test_ticks(10)
 	var/list/missed = pipeline_pipeline_audit(null, 100000, 100000, TRUE)
 	var/list/names = list()
-	for(var/datum/om/stage/T as anything in missed)
+	for(var/datum/work_stage/T as anything in missed)
 		names |= "[T.type]"
 	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
 	var/list/woken = sleep_audit(100000, FALSE)

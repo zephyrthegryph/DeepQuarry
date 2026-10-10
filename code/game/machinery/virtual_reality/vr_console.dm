@@ -48,7 +48,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	perfect_replica = TRUE
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/vr_pod
+/datum/relation_definition/slot/occupant/vr_pod
 	holder = /obj/machinery/vr_sleeper
 	slot_id = OCCUPANT_SLOT_VR_POD
 	name = "VR pod"

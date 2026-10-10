@@ -42,7 +42,7 @@
 	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/om/relation/slot/occupant/recharge_station
+/datum/relation_definition/slot/occupant/recharge_station
 	holder = /obj/machinery/recharge_station
 	slot_id = OCCUPANT_SLOT_RECHARGE_STATION
 	name = "recharge station"

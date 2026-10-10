@@ -34,11 +34,11 @@
 /// Puts the kernel on an injected clock at 0 and makes a fresh test scheduler current, so that entities created from here
 /// on read it (and test_time() advances them). Returns the scheduler. A second call while active returns the same one.
 /proc/kernel_test_begin()
-	RETURN_TYPE(/datum/om/scheduler)
+	RETURN_TYPE(/datum/time_scheduler)
 	var/datum/controller/kernel/K = kernel()
 	if(!isnull(K.test_now))
 		return time_scheduler()
-	var/datum/om/scheduler/sched = scheduler_test_begin()
+	var/datum/time_scheduler/sched = scheduler_test_begin()
 	K.test_now = 0
 	K.test_slots = 0
 	// The kernel's own infrastructure systems (the inbox, requests, jobs) and the Life sweep run in the test graph while the test owns the
@@ -150,7 +150,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 
 /// The scheduler the injected clock moves: the current test scheduler, started on first use.
 /datum/controller/kernel/proc/test_sched()
-	var/datum/om/scheduler/S = time_scheduler()
+	var/datum/time_scheduler/S = time_scheduler()
 	if(isnull(S.manual_time))
 		S = kernel_test_begin()
 	return S
@@ -183,8 +183,8 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 
 /// Runs the scheduler-backed phases of one slot under a pass: the OM scheduler's own pieces sit inside N..R.
 /datum/controller/kernel/proc/test_slot(now)
-	var/datum/om/scheduler/S = test_sched()
-	var/datum/om/scheduler/saved = sched
+	var/datum/time_scheduler/S = test_sched()
+	var/datum/time_scheduler/saved = sched
 	sched = S // ALLOW(ownership): the test clock lends the kernel its scheduler for one slot and puts the live one back
 	S.manual_time = now
 	test_slots++
@@ -205,7 +205,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 /// Advances the kernel clock by `t` deciseconds, a slot at a time (OM_SLOT_DS), running every phase and every drain that falls due.
 /proc/kernel_time_advance(t)
 	var/datum/controller/kernel/K = kernel()
-	var/datum/om/scheduler/S = K.test_sched()
+	var/datum/time_scheduler/S = K.test_sched()
 	if(isnull(K.test_now))
 		K.test_now = S.manual_time || 0
 	K.test_arm(K.test_now)
@@ -221,11 +221,11 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 /// Runs one kernel phase once at the current kernel time and moves no clock, so a timer that is not yet due stays pending.
 /proc/kernel_phase_run(phase)
 	var/datum/controller/kernel/K = kernel()
-	var/datum/om/scheduler/S = K.test_sched()
+	var/datum/time_scheduler/S = K.test_sched()
 	if(isnull(K.test_now))
 		K.test_now = S.manual_time || 0
 	K.test_arm(K.test_now)
-	var/datum/om/scheduler/saved = K.sched
+	var/datum/time_scheduler/saved = K.sched
 	K.sched = S // ALLOW(ownership): the test clock lends the kernel its scheduler for one phase and puts the live one back
 	S.manual_time = K.test_now
 	var/scheduled = phase >= KERNEL_PHASE_N && phase <= KERNEL_PHASE_R

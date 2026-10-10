@@ -95,7 +95,7 @@ CAPABILITIES(/datum/dna2/record)
 /// contents phase, now running before any Destroy() code, would already
 /// have done, silently skipping all of it. Same finding as mecha_pilot
 /// above; same follow-up (an on_unslotted() hook migration, not this pass).
-/datum/om/relation/slot/occupant/dna_scanner
+/datum/relation_definition/slot/occupant/dna_scanner
 	holder = /obj/machinery/dna_scannernew
 	slot_id = OCCUPANT_SLOT_DNA_SCANNER
 	name = "DNA scanner"

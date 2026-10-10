@@ -7,8 +7,8 @@
 //
 // A datum source releases its grants when it is deleted, like any contribution. A text
 // source key is a /datum/trait_source singleton (trait_source()), so it lives for the round.
-// The first grant of a trait emits /datum/om/event/trait_gained, the last release
-// /datum/om/event/trait_lost.
+// The first grant of a trait emits /datum/definition_event/trait_gained, the last release
+// /datum/definition_event/trait_lost.
 
 GLOBAL_LIST_EMPTY(trait_source_singletons)
 

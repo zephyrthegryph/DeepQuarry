@@ -550,31 +550,31 @@
 // the generated set_<name>() setters; stages that read them wake on them.
 
 /// Technomancer instability.
-/mob/living/var/instability = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/instability = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, instability)
 /// Gross boolean for keeping VR mobs in VR.
-/mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, virtual_reality_mob)
 /// If they're glowing!
-/mob/living/var/glow_toggle = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/glow_toggle = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, glow_toggle)
 /// Ignore the manual toggle.
-/mob/living/var/glow_override = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/glow_override = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, glow_override)
-/mob/living/var/glow_range = 2 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/glow_range = 2 // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, glow_range)
-/mob/living/var/glow_intensity = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/glow_intensity = null // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, glow_intensity)
 /// The color they're glowing!
-/mob/living/var/glow_color = "#FFFFFF" // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/glow_color = "#FFFFFF" // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, glow_color)
 /// The mob this one was transformed from (vore/mob_tf.dm).
-/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob/living, tf_mob_holder)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
-/mob/var/sdisabilities = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/var/sdisabilities = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob, sdisabilities)
-/mob/var/ear_damage = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/var/ear_damage = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob, ear_damage)
 /// Cult stuff.
 /mob/living/simple_mob/var/purge = 0

@@ -429,7 +429,7 @@
 	life_radiation_irradiate_organ(damage * rad_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Induced Cancerous Growth")
 
 /mob/living/carbon/human/proc/life_radiation_vomit()
-	src.vomit() // vomit() schedules the retch itself (om_after); it doesn't sleep.
+	src.vomit() // vomit() schedules the retch itself (after()); it doesn't sleep.
 
 /mob/living/carbon/human/proc/life_radiation_seizure()
 	to_chat(src, span_critical("You have a seizure!"))

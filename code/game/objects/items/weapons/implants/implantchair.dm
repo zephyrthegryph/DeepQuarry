@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 	add_implants()
 
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/om/relation/slot/occupant/implant_chair
+/datum/relation_definition/slot/occupant/implant_chair
 	holder = /obj/machinery/implantchair
 	slot_id = OCCUPANT_SLOT_IMPLANT_CHAIR
 	name = "implant chair"

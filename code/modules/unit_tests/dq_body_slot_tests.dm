@@ -4,14 +4,14 @@
 /// The slot ids a holder declares, in order, joined for comparison.
 /proc/dq_test_slot_ids(atom/holder)
 	var/list/ids = list()
-	for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(holder))
+	for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(holder))
 		ids += def.slot_id
 	return jointext(ids, ",")
 
 /// The slot ids the group declared for holder key `key`, joined.
 /proc/dq_test_slot_group_ids(key)
 	var/list/ids = list()
-	for(var/datum/om/relation/slot/def as anything in (definition_registry().slot_group_for(key) || list()))
+	for(var/datum/relation_definition/slot/def as anything in (definition_registry().slot_group_for(key) || list()))
 		ids += def.slot_id
 	return jointext(ids, ",")
 

@@ -1,6 +1,6 @@
 // Storage items (doc/rewrite/containment.md section 8; doc/rewrite/final_api.html section 11 "Containers and slots").
 //
-// A storage item is a holder with one internal slot (/datum/om/relation/slot/storage) and the storage() capability (code/library/containers/storage.dm)
+// A storage item is a holder with one internal slot (/datum/relation_definition/slot/storage) and the storage() capability (code/library/containers/storage.dm)
 // that says what the slot takes and what a person can do with the item: its ops, its rules and the settings below. Everything goes in and out
 // through the containment ledger (C1):
 //

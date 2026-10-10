@@ -21,7 +21,7 @@
 	var/last_tick = 0
 	var/ticks = 0
 	/// The live OM scheduler, or null before SSbehaviours initialized it.
-	var/datum/om/scheduler/sched
+	var/datum/time_scheduler/sched
 	/// world.time phase G last got its floor slice (KERNEL_GARBAGE_FLOOR percent of a tick, once a second).
 	var/last_g_floor = 0
 	/// world.time of the last native frame (deciseconds elapsed feed native_frame()).

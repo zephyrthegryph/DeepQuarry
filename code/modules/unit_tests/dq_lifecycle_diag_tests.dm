@@ -63,7 +63,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 		CRASH("dq_diag direct")
 	catch(var/exception/e)
 		dq_report_caught(e, "dq_diag direct catch")
-	var/datum/om/scheduler/sched = time_scheduler()
+	var/datum/time_scheduler/sched = time_scheduler()
 	set_var(sched, "expect_errors", FALSE)
 	try
 		CRASH("dq_diag scheduler")
@@ -201,7 +201,7 @@ GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 	var/datum/dq_diag_aborted_plain/D = new
 	var/id = after(D, 1 SECONDS, TYPE_PROC_REF(/datum/dq_diag_aborted_plain, never_fires))
 	TEST_ASSERT(id, "the fixture has an OM timer")
-	var/datum/om/rec/rec = D.om_rec
+	var/datum/scheduler_record/rec = D.om_rec
 	TEST_ASSERT(rec && length(rec.timers), "the timer lives on the datum's record")
 	set_global("dq_caught_capture", list())
 	qdel(D)

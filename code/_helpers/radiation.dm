@@ -112,7 +112,7 @@ SETTER(/atom, rad_insulation)
 		else
 			return PERCEIVED_RADIATION_DANGER_LOW
 
-/// A common proc used to emit /datum/om/event/atom_propagate_rad_pulse on adjacent atoms
+/// A common proc used to emit /datum/definition_event/atom_propagate_rad_pulse on adjacent atoms
 /// Only used for uranium (false/tram)walls to spread their radiation pulses
 /atom/proc/propagate_radiation_pulse()
 	for(var/atom/atom in orange(1,src))

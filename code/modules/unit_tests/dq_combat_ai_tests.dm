@@ -335,7 +335,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 
 // --- runtime: on_holder_login adds the player dispatcher verb --------
 // The Use-Combat-Move verb is added lazily when a client takes over the mob
-// (via /datum/om/event/mob_login). Test the handler directly — calling it adds the
+// (via /datum/definition_event/mob_login). Test the handler directly — calling it adds the
 // verb. If the wiring breaks, possessed mobs silently lose their moves.
 
 /datum/unit_test/dq_combat_ai_login_adds_player_verb

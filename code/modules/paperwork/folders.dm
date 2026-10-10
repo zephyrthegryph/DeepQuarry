@@ -15,7 +15,7 @@
 // destroys its pages, as before. C2: the pages are inside the cover, and a
 // stab goes straight through it. ----
 
-/datum/om/relation/slot/folder_pages
+/datum/relation_definition/slot/folder_pages
 	holder = /obj/item/folder
 	slot_id = CONTAINER_SLOT_PAGES
 	name = "pages"

@@ -121,7 +121,7 @@
 /// plus a hand-managed forceMove(). Keyed by implant type, so re-implanting
 /// the same kind refuses rather than stacking duplicates. Deleted with the
 /// organ, same as the raw contents this slot replaces.
-/datum/om/relation/slot/implant_site
+/datum/relation_definition/slot/implant_site
 	holder = /obj/item/organ/external
 	slot_id = ORGAN_SLOT_IMPLANTS
 	name = "implant site"
@@ -144,13 +144,13 @@
 /// including `imp_in`, which used to only get cleared by the organ's
 /// Destroy() -- so directly hard-deleting the host mob without going through
 /// organ removal left `imp_in` dangling.
-/datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+/datum/relation_definition/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/relation_edge/edge)
 	if(istype(source) && istype(target))
 		rel_set(source, nameof(source.part), target)
 		rel_add(target, nameof(target.implants), source)
 		rel_set(source, nameof(source.imp_in), target.owner)
 
-/datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+/datum/relation_definition/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/relation_edge/edge)
 	if(istype(source) && source.part == target)
 		rel_clear(source, nameof(source.part))
 	if(istype(target))

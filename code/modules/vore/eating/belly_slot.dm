@@ -27,7 +27,7 @@
 /// The inside of a belly: sealed (its own air and temperature), and it reaches the
 /// mobs inside it. Outside effects don't pass the predator's body into it; the
 /// belly's own modes are what act on its contents.
-/datum/om/relation/slot/belly_interior
+/datum/relation_definition/slot/belly_interior
 	holder = /obj/belly
 	slot_id = BELLY_SLOT_INTERIOR
 	name = "belly"

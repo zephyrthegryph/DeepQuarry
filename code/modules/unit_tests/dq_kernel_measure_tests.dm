@@ -21,7 +21,7 @@
 /datum/unit_test/dq_km_every_behaviour_has_a_system
 
 /datum/unit_test/dq_km_every_behaviour_has_a_system/Run()
-	var/datum/om/registry/reg = definition_registry()
+	var/datum/definition_registry/reg = definition_registry()
 	var/datum/km_systems/systems = km_systems()
 	TEST_ASSERT(length(reg.behaviours) > 0, "the registry has behaviours")
 	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)

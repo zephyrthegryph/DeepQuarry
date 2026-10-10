@@ -177,7 +177,7 @@
 /// Entries on the OM scheduler's deadline wheel right now.
 /proc/benchmark_om_deadline_count()
 	. = 0
-	var/datum/om/scheduler/sched = time_scheduler()
+	var/datum/time_scheduler/sched = time_scheduler()
 	for(var/list/L as anything in sched?.buckets)
 		. += length(L) / 4
 

@@ -29,7 +29,7 @@
 	name = "containment test box"
 	w_class = ITEMSIZE_NORMAL
 
-/datum/om/relation/slot/dq_test_main
+/datum/relation_definition/slot/dq_test_main
 	holder = /obj/item/dq_containment_box
 	slot_id = "main"
 	capacity_model = SLOT_CAPACITY_COUNT
@@ -37,7 +37,7 @@
 	accepts = /datum/predicate/dq_test_sharp_only
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/om/relation/slot/dq_test_pocket
+/datum/relation_definition/slot/dq_test_pocket
 	holder = /obj/item/dq_containment_box
 	slot_id = "pocket"
 	drop_policy = SLOT_DROP_TRANSFER
@@ -271,7 +271,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	var/atom/drop = H.drop_location()
 	var/atom/parent = H.loc
 	var/list/expected = list()
-	for(var/datum/om/relation/slot/def as anything in L.defs)
+	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		for(var/atom/movable/T as anything in H.slot_contents(def.slot_id))
 			expected[T] = def.drop_policy
 	rel_remove(src, nameof(holders), H)
@@ -574,7 +574,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	name = "keyring"
 	w_class = ITEMSIZE_NORMAL
 
-/datum/om/relation/slot/dq_test_keyed
+/datum/relation_definition/slot/dq_test_keyed
 	holder = /obj/item/dq_containment_keyring
 	slot_id = "keyed"
 	is_default = TRUE

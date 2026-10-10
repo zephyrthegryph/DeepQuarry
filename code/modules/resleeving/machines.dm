@@ -342,7 +342,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.
-/datum/om/relation/slot/occupant/resleever
+/datum/relation_definition/slot/occupant/resleever
 	holder = /obj/machinery/transhuman/resleever
 	slot_id = OCCUPANT_SLOT_RESLEEVER
 	name = "resleever"

@@ -34,3 +34,6 @@
 /// The admin verb "List Activations": every activation on an entity with its source, scope and contributions.
 ADMIN_VERB_AND_CONTEXT_MENU(e1_list_activations, R_DEBUG, "List Activations", "Every activation on a thing, with its source, scope and contributions.", ADMIN_CATEGORY_DEBUG, atom/target in world)
 	to_chat(user, "<b>Activations of [target] ([target.type])</b><br>[replacetext(explain_activations(target) || "none", "\n", "<br>")]")
+
+/mob/living/timer_clock()
+	return CLOCK_BIO

@@ -419,7 +419,7 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 
 /// Runs the queued refreshes within the lane budget. TRUE when the queue is empty. Refreshes raised
 /// by a refresh join the same pass.
-/proc/appearance_drain(datum/om/scheduler/sched)
+/proc/appearance_drain(datum/time_scheduler/sched)
 	// The refresh engine shares the presentation lane (code/datums/capabilities/refresh.dm).
 	if(!refresh_drain(sched))
 		return FALSE

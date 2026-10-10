@@ -81,16 +81,16 @@ TRACKED(/obj/machinery/clonepod, mess)
 /// resleever, this machine already tracked its occupant through an OM handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
-/datum/om/relation/slot/occupant/clonepod
+/datum/relation_definition/slot/occupant/clonepod
 	holder = /obj/machinery/clonepod
 	slot_id = OCCUPANT_SLOT_CLONEPOD
 	name = "cloning pod"
 
-/datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
 	..()
 	target.set_occupant(source)
 
-/datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
 	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)

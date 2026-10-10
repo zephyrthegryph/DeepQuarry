@@ -66,7 +66,7 @@
 	lolli.spitout(0)
 	var/obj/belly/B = pred.vore_selected
 	TEST_ASSERT_EQUAL(prey.loc, B, "the lollipop's captive should end up in the belly")
-	var/datum/om/relation/slot/prey_slot = dq_path_slot_of(B, prey)
+	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the captive should hold a belly interior slot entry")
 	TEST_ASSERT(B.cycle_token, "the belly should cycle once the captive is inside")
 	B.release_all_contents(TRUE, TRUE)

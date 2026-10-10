@@ -11,7 +11,7 @@
 	..()
 
 /// Camera and senses follow the stat change (set_stat()); modules react to
-/// /datum/om/event/mob_death (the belly component ejects its sleeper).
+/// /datum/definition_event/mob_death (the belly component ejects its sleeper).
 /mob/living/silicon/robot/on_death(gibbed)
 	. = ..()
 	if(module)

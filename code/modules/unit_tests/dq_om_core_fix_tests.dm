@@ -4,9 +4,9 @@
 
 // ---------------------------------------------------------------- fixtures
 
-/datum/om/event/before/cf_outer
+/datum/definition_event/before/cf_outer
 
-/datum/om/event/before/cf_inner
+/datum/definition_event/before/cf_inner
 
 /proc/dq_cf_global_hit(datum/om_test_entity/L)
 	LAZYADD(L.log, "global")
@@ -26,7 +26,7 @@
 	var/late = after(E, 5 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("late"))
 	var/soon = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("soon"))
 	var/mid = after(E, 3 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("mid"))
-	var/datum/om/rec/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.om_rec
 	TEST_ASSERT_EQUAL(timer_index(rec, mid), 2 * OM_TIMER_STRIDE + 1, "binary search finds the third timer")
 	TEST_ASSERT_EQUAL(timer_index(rec, 999), 0, "and nothing for an unknown id")
 	TEST_ASSERT(timer_cancel(E, soon), "cancel the soonest")
@@ -98,7 +98,7 @@
 			var/list/pb = kept[b]
 			if(pb[1] < pa[1] || (pb[1] == pa[1] && pb[2] < pa[2]))
 				kept.Swap(a, b)
-	var/datum/om/rec/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.om_rec
 	TEST_ASSERT_EQUAL(rec.timer_soonest, timer_local(rec) + kept[1][1], "the soonest follows the heap root once the cancelled ones are gone")
 	scheduler_advance(30)
 	TEST_ASSERT_EQUAL(length(E.log), length(kept), "every uncancelled timer fired once, no cancelled one did")
@@ -117,7 +117,7 @@
 		var/id = after(E, 50 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("x"))
 		timer_cancel(E, id)
 	after(E, 2 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("one"))
-	var/datum/om/rec/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.om_rec
 	TEST_ASSERT(length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE <= 2 + OM_TIMER_HEAP_SLACK + 2, "cancelled entries do not pile up in the heap ([length(rec.timer_heap) / OM_TIMER_HEAP_STRIDE])")
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(E.log?.len, 1, "the one live timer fired")

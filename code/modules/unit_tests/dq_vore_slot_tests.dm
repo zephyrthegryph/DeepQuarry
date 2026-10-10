@@ -66,7 +66,7 @@
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom should succeed")
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be in the belly")
 	TEST_ASSERT_EQUAL(B.slot_entry_id(prey) ? TRUE : FALSE, TRUE, "prey should hold an entry in the belly's slot")
-	var/datum/om/relation/slot/def = dq_path_slot_of(B, prey)
+	var/datum/relation_definition/slot/def = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(def?.slot_id, BELLY_SLOT_INTERIOR, "prey should be in the belly interior slot")
 	TEST_ASSERT_EQUAL(def?.exposure, SLOT_EXPOSURE_SEALED, "a belly is sealed")
 	TEST_ASSERT(def?.reaches_mobs, "a belly reaches the mobs inside")
@@ -83,7 +83,7 @@
 	B.transferlocation = B2.name
 	B.relay_resist(prey)
 	TEST_ASSERT_EQUAL(prey.loc, B2, "a sure transfer should move the prey to the second belly")
-	var/datum/om/relation/slot/prey_slot = dq_path_slot_of(B2, prey)
+	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B2, prey)
 	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the transfer should land in the second belly's slot")
 	TEST_ASSERT_NULL(B.cycle_token, "the emptied belly should stop cycling")
 	TEST_ASSERT(B2.cycle_token, "the occupied second belly should cycle")

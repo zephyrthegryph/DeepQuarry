@@ -36,7 +36,7 @@
 /// TRUE while `D` has a wake queued or pending delivery, or an after() timer already due
 /// (a spawn-time materialize_wakes(), say): work raised before now that hasn't landed yet.
 /proc/dq_wakes_pending(datum/D)
-	var/datum/om/rec/rec = D.om_rec
+	var/datum/scheduler_record/rec = D.om_rec
 	if(!rec)
 		return FALSE
 	if(rec.queued)

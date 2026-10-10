@@ -103,7 +103,7 @@
 
 /// The test clock: the kernel on its injected clock (test_time()), the OM test scheduler current; the Life sweep runs on it.
 /proc/life_test_clock_begin()
-	RETURN_TYPE(/datum/om/scheduler)
+	RETURN_TYPE(/datum/time_scheduler)
 	test_driver_begin()
 	return time_scheduler()
 
@@ -182,7 +182,7 @@
 
 /datum/unit_test/life_om
 	abstract_type = /datum/unit_test/life_om
-	var/datum/om/scheduler/sched
+	var/datum/time_scheduler/sched
 
 /datum/unit_test/life_om/Run()
 	rel_set(src, nameof(sched), life_test_clock_begin())
