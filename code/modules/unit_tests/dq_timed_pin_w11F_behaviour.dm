@@ -80,6 +80,8 @@
 	TEST_ASSERT(!said(prey, "plunges them down"), "nothing is bitten before thirty seconds")
 	test_time(2 SECONDS)
 	TEST_ASSERT(said(prey, "plunges them down") || said(biter, "plunges them down"), "the fangs go in at the end")
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right)) // the bite bleeds
+		own_turf_contents(T)
 
 // ---- Bloodsuck: the prey stepping away cancels the bite ----
 

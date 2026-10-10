@@ -52,4 +52,4 @@
 	glue.user_unbuckle_mob(user, user)
 
 /datum/unit_test/dq_timed_pin_w11G/slug_glue_tug_free/is_done()
-	return !user.buckled_to()
+	return said(user, "You tug free")

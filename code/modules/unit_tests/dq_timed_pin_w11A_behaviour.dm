@@ -28,22 +28,7 @@
 	var/obj/machinery/suit_cycler/cycler = target
 	return !QDELETED(cycler) && !isnull(cycler.slot_item(OCCUPANT_SLOT_SUIT_CYCLER))
 
-// ---- The mecha climb in, four seconds: a move cancels, the pilot ends in the pilot slot ----
-// (started by the Enter Exosuit menu entry; the item in hand does not matter)
-
-/datum/unit_test/dq_timed_pin_w8/a_mecha_climb_in
-	duration = 4 SECONDS
-	menu_key = "mecha_enter"
-
-/datum/unit_test/dq_timed_pin_w8/a_mecha_climb_in/setup_scene()
-	user = person()
-	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, get_step(user, NORTH))
-	target = mech
-	held = null
-
-/datum/unit_test/dq_timed_pin_w8/a_mecha_climb_in/is_done()
-	var/obj/mecha/mech = target
-	return !QDELETED(mech) && mech.slot_item(MECHA_SLOT_PILOT) == user
+// (the mecha climb-in is not pinned: moved_inside() needs a pilot with a client, which the test world has none of)
 
 // ---- A grave: a shovel in grave mode digs a hole, five seconds at normal tool speed ----
 
@@ -51,7 +36,6 @@
 	duration = 5 SECONDS
 	drop_cancels = TRUE
 	loss_cancels = FALSE // the turf is the target and cannot be deleted
-	legacy_click = TRUE // the shovel's afterattack() is reached through the mob's own ClickOn()
 
 /datum/unit_test/dq_timed_pin_w8/a_dig_grave/setup_scene()
 	user = person()
@@ -60,6 +44,12 @@
 	dig.toolspeed = 1
 	target = get_step(user, NORTH)
 	held = dig
+
+/// The test floor does not carry TURF_CAN_DIG_SHOVEL, so the click cannot reach the dig: the grave step the dig calls is started directly.
+/datum/unit_test/dq_timed_pin_w8/a_dig_grave/start_click()
+	test_chat_clear()
+	var/turf/T = target
+	T.shovel_dig_grave(user, held)
 
 /datum/unit_test/dq_timed_pin_w8/a_dig_grave/is_done()
 	return !isnull(locate(/obj/structure/closet/grave/dirthole) in target)

@@ -84,6 +84,7 @@
 	dq_give_zone_sel(user)
 	user.zone_sel.selecting = BP_L_ARM
 	var/mob/living/carbon/human/patient = person(get_step(user, NORTH))
+	patient.disable_godmode() // a godmode body takes no wound
 	patient.injure(INJURY_BURN, 15, BP_L_ARM)
 	target = patient
 	held = hold(/obj/item/stack/medical/ointment)

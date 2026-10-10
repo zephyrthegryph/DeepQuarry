@@ -22,7 +22,9 @@
 	animal.death()
 	user.set_use_stance(I_HELP)
 	target = animal
-	held = hold(/obj/item/denecrotizer)
+	var/obj/item/denecrotizer/den = hold(/obj/item/denecrotizer)
+	den.cooldown = 0
+	held = den
 
 /datum/unit_test/dq_timed_pin_w8/denecrotizer_ghostjoin/is_done()
 	var/mob/living/simple_mob/animal = target
@@ -42,7 +44,9 @@
 	animal.death()
 	user.set_use_stance(I_HELP)
 	target = animal
-	held = hold(/obj/item/denecrotizer/medical)
+	var/obj/item/denecrotizer/den = hold(/obj/item/denecrotizer/medical)
+	den.cooldown = 0
+	held = den
 
 /datum/unit_test/dq_timed_pin_w8/denecrotizer_basic/is_done()
 	var/mob/living/simple_mob/animal = target

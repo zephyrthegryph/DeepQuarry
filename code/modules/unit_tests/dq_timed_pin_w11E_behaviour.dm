@@ -14,6 +14,8 @@
 	user = person()
 	var/obj/item/stack/animalhide/hide = allocate(/obj/item/stack/animalhide, user.loc)
 	hide.set_amount(1)
+	for(var/obj/item/stack/hairlesshide/old in user.loc) // the last scene's product
+		qdel(old)
 	target = hide
 	held = hold(/obj/item/material/knife)
 

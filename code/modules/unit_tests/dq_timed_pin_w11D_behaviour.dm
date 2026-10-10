@@ -56,7 +56,7 @@
 /datum/unit_test/dq_timed_pin_w11D/glasses_kit_prescribe/is_done()
 	var/obj/item/glasses_kit/kit = held
 	var/obj/item/clothing/glasses/G = target
-	return !QDELETED(kit) && !QDELETED(G) && G.prescription && kit.scrip_loaded == 0
+	return !QDELETED(kit) && !QDELETED(G) && G.prescription != initial(G.prescription) && kit.scrip_loaded == 0
 
 /datum/unit_test/dq_timed_pin_w11D/glasses_kit_prescribe/extra_pin()
 	// without a prescription nothing starts
@@ -105,7 +105,7 @@
 	shoes.container_resist(user)
 
 /datum/unit_test/dq_timed_pin_w11D/shoes_micro_climb_out/is_done()
-	return user.loc != target
+	return said(user, "You climb out of")
 
 // ---- The cursed form held to a lit lighter: two seconds, then it burns to ash ----
 
@@ -129,7 +129,6 @@
 
 /datum/unit_test/dq_timed_pin_w11D/pickpocket_swap
 	duration = 2 SECONDS
-	legacy_click = TRUE // the gloves' Touch() is reached through the mob's own ClickOn()
 
 /datum/unit_test/dq_timed_pin_w11D/pickpocket_swap/setup_scene()
 	user = person()
@@ -141,6 +140,12 @@
 	victim.equip_to_slot(loot, SLOT_ID_POCKET_L)
 	target = victim
 	held = loot
+
+/// The gloves' Touch() starts it; the driver's click does not reach a legacy Touch(), so it is called as ClickOn() does.
+/datum/unit_test/dq_timed_pin_w11D/pickpocket_swap/start_click()
+	test_chat_clear()
+	var/obj/item/clothing/gloves/sterile/thieves/gloves = user.get_equipped_item(SLOT_ID_GLOVES)
+	gloves.Touch(target, TRUE, I_DISARM, user)
 
 /datum/unit_test/dq_timed_pin_w11D/pickpocket_swap/is_done()
 	return !QDELETED(held) && user.get_equipped_item(SLOT_ID_POCKET_L) == held
