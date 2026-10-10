@@ -62,9 +62,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
 	return OP_OK
 
-/obj/machinery/navbeacon
-	silicon_use = SILICON_USE_UI
-
 /obj/machinery/navbeacon/proc/togglelock(mob/user)
 	if(!open)
 		to_chat(user, span_warning("You must open the cover first!"))
@@ -79,6 +76,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	return FALSE
 
 CAPABILITIES(/obj/machinery/navbeacon)
+	silicon_ui()
 	interface("NavBeacon")
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 	op("loc_edit", ui_act("loc_edit", arg("new_loc", schema_text(4096))), then(PROC_REF(ui_act_loc_edit)))

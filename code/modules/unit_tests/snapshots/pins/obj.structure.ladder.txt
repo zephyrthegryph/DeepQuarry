@@ -58,5 +58,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: climb_ladder, deconstruct, drag_buckle, hand, ladder_ghost_climb, melee_hit
+keys: climb_ladder, deconstruct, drag_buckle, hand, ladder_ghost_climb, melee_hit, silicon_hand
 

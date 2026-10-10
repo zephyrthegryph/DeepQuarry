@@ -9,7 +9,8 @@ robot|none menu: Force Eject
 robot|none menu: Toggle flush
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Force Eject (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Alt-click
@@ -97,5 +98,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle flush
 human|/obj/item menu: Use
 human|/obj/item click: Click: Insert
-keys: disengageHandle, disposal_drag_insert, disposal_dunk, disposal_flush, disposal_force_eject, disposal_insert, disposal_stuff_mob, disposal_use, drag_buckle, eject, engageHandle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pumpOff, pumpOn, robot_remote_blocked, swallow, use_multitool, use_screwdriver, use_welder
+keys: disengageHandle, disposal_drag_insert, disposal_dunk, disposal_flush, disposal_force_eject, disposal_insert, disposal_stuff_mob, disposal_use, drag_buckle, eject, engageHandle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pumpOff, pumpOn, robot_remote_blocked, silicon_ui, swallow, use_multitool, use_screwdriver, use_welder
 

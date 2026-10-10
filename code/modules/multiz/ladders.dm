@@ -30,6 +30,7 @@
 				break
 
 CAPABILITIES(/obj/structure/ladder)
+	silicon_hand(robots = TRUE)
 	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
 	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
@@ -101,9 +102,6 @@ CAPABILITIES(/obj/structure/ladder)
 	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
 		return FALSE
 	return TRUE
-
-/obj/structure/ladder
-	silicon_use = ROBOT_USE_HAND
 
 /// The ladder to climb to, given the answer to the up-or-down question (null when it was not asked).
 /obj/structure/ladder/proc/getTargetLadder(mob/M, direction)

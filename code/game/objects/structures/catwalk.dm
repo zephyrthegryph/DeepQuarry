@@ -53,9 +53,6 @@ TRACKED(/obj/structure/catwalk, plating_color)
 	if(plating_color)
 		look.overlay(look_overlay_image(icon, "plated", color = plating_color))
 
-/obj/structure/catwalk
-	silicon_use = ROBOT_USE_HAND_ADJACENT
-
 /// `leave_lattice`: sliced outside combat mode, so over open space the lattice stays.
 /obj/structure/catwalk/atom_deconstruct(disassembled = TRUE, mob/user, leave_lattice = FALSE)
 	play_sfx(src, SFX_ITEMS_WELDER)
@@ -97,6 +94,7 @@ TRACKED(/obj/structure/catwalk, plated_tile)
 MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
 
 CAPABILITIES(/obj/structure/catwalk)
+	silicon_hand(adjacent = TRUE)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))
 	op("slice", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Slice apart"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice)))

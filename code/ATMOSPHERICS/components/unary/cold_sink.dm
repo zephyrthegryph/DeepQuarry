@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/freezer, cooling)
 TRACKED(/obj/machinery/atmospherics/unary/freezer, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	silicon_ui()
 	reagents(120)
 	// A heat pump from its pipeline's gas into the room around it, toward the thermostat: the room takes the heat plus the work, at a
 	// Carnot-bounded COP that better parts and coolant raise.
@@ -83,9 +84,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 /obj/machinery/atmospherics/unary/freezer/derived()
 	. = ..()
 	. += drawn_from(nameof(use_power), nameof(cooling))
-
-/obj/machinery/atmospherics/unary/freezer
-	silicon_use = SILICON_USE_UI
 
 /obj/machinery/atmospherics/unary/freezer/ui_data(datum/act/eval/A)
 	var/list/data = list()

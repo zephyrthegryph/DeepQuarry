@@ -64,6 +64,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
+	silicon_hand(adjacent = TRUE)
 	blast_contents(shield = 1) // a closet shields its contents a step
 	after_init(0, then(PROC_REF(closet_after_init)))
 	space(SPACE_INTERIOR, door = nameof(opened))
@@ -411,9 +412,6 @@ CAPABILITIES(/obj/structure/closet)
 	if(victim && stuffable(A.actor, victim))
 		stuff_in(A.actor, victim)
 	return OP_OK
-
-/obj/structure/closet
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/closet/relaymove(mob/user as mob)
 	if(user.stat || !isturf(loc))

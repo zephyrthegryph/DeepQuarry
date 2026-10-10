@@ -17,8 +17,10 @@ robot|none menu: Shove
 robot|none menu: Take hold
 robot|none menu: Tip over
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Open controls
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Disarm
 ghost|none menu: Grab
@@ -188,5 +190,5 @@ human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You c
 human|/obj/item/reagent_containers/glass menu: Ui open
 human|/obj/item/reagent_containers/glass menu: Use on
 human|/obj/item/reagent_containers/glass click: Click: Feed
-keys: absorb_devour, adj_inject, adj_urgency, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, declaretreatment, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, medbot_hand_disarm, medbot_hand_grab, medbot_hand_help, medbot_hand_hurt, medbot_item, medbot_right, medbot_tip, melee_swing, polymorph, power, revert_beast_form, shred_limb, spin, succubus_bite, togglevoice, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, use_beaker, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, adj_inject, adj_urgency, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, declaretreatment, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, medbot_hand_disarm, medbot_hand_grab, medbot_hand_help, medbot_hand_hurt, medbot_item, medbot_right, medbot_tip, melee_swing, polymorph, power, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, togglevoice, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, use_beaker, ventcrawl_in, vertical_nom, work, yank_out, zmove
 

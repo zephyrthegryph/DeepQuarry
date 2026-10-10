@@ -3,7 +3,6 @@
 	icon = 'icons/obj/medical_stand.dmi'
 	desc = "Medical stand used to hang reagents for transfusion and to hold anesthetic tank."
 	icon_state = "medical_stand_empty"
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 	//gas stuff
 	var/obj/item/tank/tank
@@ -20,6 +19,7 @@
 	var/transfer_amount = 1
 
 CAPABILITIES(/obj/structure/medical_stand)
+	silicon_hand(adjacent = TRUE)
 	ref_one(nameof(attached))
 	ref_one(nameof(breather))
 	every(2 SECONDS, then(PROC_REF(medical_stand_step)), when = cond_any(nameof(valve_opened), nameof(breather), nameof(attached)))

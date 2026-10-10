@@ -4,7 +4,8 @@ human|none click: Click: Use
 robot|none menu: Hammer on it
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: View
 ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Hammer on it
@@ -79,5 +80,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Interaction item
-keys: drag_buckle, emergency_stop, hammer, hand, interact, interaction_item, melee_hit, move_to_floor, toggle_doors
+keys: drag_buckle, emergency_stop, hammer, hand, interact, interaction_item, melee_hit, move_to_floor, silicon_hand, toggle_doors
 

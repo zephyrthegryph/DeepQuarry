@@ -76,12 +76,12 @@ CAPABILITIES(/obj/structure/ghost_pod)
 
 // This type is triggered manually by a player discovering the pod and deciding to open it.
 /obj/structure/ghost_pod/manual
-	silicon_use = ROBOT_USE_HAND_ADJACENT // borgs can open pods
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
 
 TRACKED(/obj/structure/ghost_pod/manual, confirm_before_open)
 
 CAPABILITIES(/obj/structure/ghost_pod/manual)
+	silicon_hand(adjacent = TRUE) // borgs can open pods
 	op("open", hand(), label("Open"), needs(req_is(nameof(used), FALSE, because = /datum/msg/req_silent)),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = computed(PROC_REF(touch_question)), "timeout" = 0), when = nameof(confirm_before_open)),
 		then(PROC_REF(interaction_open)))

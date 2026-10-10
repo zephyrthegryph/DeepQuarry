@@ -13,7 +13,6 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 */
 
 /obj/structure/loot_pile
-	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "base loot pile"
 	desc = "If you can read me, this is bugged"
 	icon = 'icons/obj/loot_piles.dmi'
@@ -26,6 +25,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 MSG_DEF(loot_pile/searching, "You search through %T%.", "%U% searches through %T%.")
 
 CAPABILITIES(/obj/structure/loot_pile)
+	silicon_hand(adjacent = TRUE)
 	op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), loot_rolls())
 
 /// How long a search takes, drawn when it starts.

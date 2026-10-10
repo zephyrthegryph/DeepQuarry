@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
 TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	silicon_ui()
 	reagents(120)
 	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
 	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
@@ -107,9 +108,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	. = ..()
 	if(.)
 		reconsider()
-
-/obj/machinery/atmospherics/unary/heater
-	silicon_use = SILICON_USE_UI
 
 /obj/machinery/atmospherics/unary/heater/ui_data(datum/act/eval/A)
 	var/list/data = list()

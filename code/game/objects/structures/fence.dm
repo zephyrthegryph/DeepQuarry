@@ -160,7 +160,6 @@ CAPABILITIES(/obj/structure/fence)
 //FENCE DOORS
 
 /obj/structure/fence/door
-	silicon_use = ROBOT_USE_HAND_ADJACENT // cyborgs open it from next to it; the AI can't
 	name = "fence door"
 	desc = "Not very useful without a real lock."
 	icon_state = "door_closed"
@@ -175,6 +174,7 @@ CAPABILITIES(/obj/structure/fence)
 
 // the fence door is never electrified: its own Use replaces the fence's
 CAPABILITIES(/obj/structure/fence/door)
+	silicon_hand(adjacent = TRUE) // cyborgs open it from next to it; the AI can't
 	without("touch")
 	without("item")
 	op("door_hand", hand(), label("Use"), then(PROC_REF(interaction_door_hand)))

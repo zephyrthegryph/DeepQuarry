@@ -21,6 +21,7 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	silicon_hand()
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
 		needs(req(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
 		then(PROC_REF(cell_inserted)))
@@ -107,9 +108,6 @@ CAPABILITIES(/obj/machinery/pump)
 			message = span_notice("\The [src] shuts down.")
 		visible_message(message)
 	return TRUE
-
-/obj/machinery/pump
-	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
 
 /// Old attack_ai: the AI toggles the pump. Cyborgs never reached it (ROBOT_USE_HAND sends
 /// their Use to attack_hand), so they fall through to that default.

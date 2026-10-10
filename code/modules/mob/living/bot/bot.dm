@@ -172,9 +172,6 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/proc/remove_pai(datum/act/op/A)
 	ejectpai(A.actor)
 
-/mob/living/bot
-	silicon_use = SILICON_USE_HAND
-
 /mob/living/bot/say_quote(message, datum/language/speaking = null)
 	return "beeps"
 
@@ -687,6 +684,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	can_be_drop_pred = FALSE
 
 CAPABILITIES(/mob/living/bot)
+	silicon_hand()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
 	ref_many(nameof(ignore_list))
 	owns_one(nameof(botcard), starts = /obj/item/card/id)

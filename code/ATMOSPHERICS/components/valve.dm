@@ -172,7 +172,6 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 	return null
 
 /obj/machinery/atmospherics/valve/digital		// can be controlled by AI
-	silicon_use = SILICON_USE_HAND
 	name = "digital valve"
 	desc = "A digitally controlled valve."
 	icon = 'icons/atmos/digital_valve.dmi'
@@ -184,6 +183,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 
 /// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
 CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
+	silicon_hand()
 	extend("toggle", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied)), req(PROC_REF(has_power), because = MSG(valve/unpowered))))
 	extend("unwrench", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied))))
 

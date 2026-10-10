@@ -92,9 +92,14 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// op_call() with the extra arguments as a list.
 /proc/op_call_list(datum/act/op/A, handler, list/extra)
-	if(!istext(handler))
+	if(isnull(handler))
 		return null
 	var/list/call_args = list(A) + (extra || list()) // ALLOW(handlers): the engine builds the argument list of a call it is making: A is passed on, not kept
+	// A library form's handler is a global proc taking the act (GLOBAL_PROC_REF, a /proc path): A.holder is its holder.
+	if(!istext(handler))
+		if(!IS_GLOBAL_PROC_REF(handler) || QDELETED(A.holder))
+			return null
+		return call(handler)(arglist(call_args))
 	if(copytext(handler, 1, 5) == "cap:")
 		var/datum/capability/def = A.cap
 		if(!def)

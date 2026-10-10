@@ -483,8 +483,8 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	if(!lighthack)
 		icon_state = "nuclearbomb3"
 	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
-	if(SSticker && SSticker.mode)
-		SSticker.mode.explosion_in_progress = 1
+	if(SSticker && round_mode())
+		round_mode().explosion_in_progress = 1
 	after(src, 10 SECONDS, PROC_REF(detonate))
 
 /// Ten seconds after the alarm: the blast, the cinematic and the round outcome.
@@ -499,23 +499,23 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 		off_station = 2
 
 	if(SSticker)
-		if(SSticker.mode && SSticker.mode.name == "Mercenary")
+		if(round_mode() && round_mode().name == "Mercenary")
 			var/obj/machinery/computer/shuttle_control/multi/syndicate/syndie_location = locate(/obj/machinery/computer/shuttle_control/multi/syndicate)
 			if(syndie_location)
-				SSticker.mode:syndies_didnt_escape = (syndie_location.z > 1 ? 0 : 1)	//muskets will make me change this, but it will do for now
-			SSticker.mode:nuke_off_station = off_station
+				round_mode():syndies_didnt_escape = (syndie_location.z > 1 ? 0 : 1)	//muskets will make me change this, but it will do for now
+			round_mode():nuke_off_station = off_station
 
 		var/datum/cinematic/cinematic_type
 		switch(off_station)
 			if(0)
-				cinematic_type = SSticker.mode.name == "mercenary" ? /datum/cinematic/nuke/ops_victory : /datum/cinematic/nuke/self_destruct
+				cinematic_type = round_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_victory : /datum/cinematic/nuke/self_destruct
 			if(1)
-				cinematic_type = SSticker.mode.name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
+				cinematic_type = round_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
 			if(2)
 				cinematic_type = /datum/cinematic/nuke/far_explosion
 		play_cinematic(cinematic_type)
 		// The rest happens at the blast, once the intro has played (it slept through it before S10b).
-		after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), with = list(off_station, SSticker.mode.name == "mercenary"))
+		after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), with = list(off_station, round_mode().name == "mercenary"))
 
 /// A nuke's blast, after its cinematic's intro: kills the station for a self-destruct hit,
 /// then settles the round.
@@ -531,14 +531,14 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 				if(1)	//on a z-level 1 turf.
 					M.set_stat(DEAD)
 
-	if(SSticker?.mode)
-		SSticker.mode.explosion_in_progress = 0
+	if(round_mode())
+		round_mode().explosion_in_progress = 0
 		to_chat(world, span_boldannounce("The station was destoyed by the nuclear blast!"))
 
-		SSticker.mode.station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
+		round_mode().station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
 														//kinda shit but I couldn't  get permission to do what I wanted to do.
 
-		if(!SSticker.mode.check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
+		if(!round_mode().check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
 			to_chat(world, span_boldannounce("Resetting in 30 seconds!"))
 
 			feedback_set_details("end_error","nuke - unhandled ending")

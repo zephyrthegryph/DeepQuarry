@@ -368,6 +368,7 @@ MSG_DEF_SELF(dna_console/not_standing, "You need to stand at the console.")
 // of a block injector) are asks() steps of the bufferOption op, shown as the window's modal. Every button wants the scanner connected, the
 // console not irradiating and the user standing on a tile; opening it wants a connected scanner and a user outside it.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	silicon_ui()
 	after_init(25 SECONDS, then(PROC_REF(injector_cooldown_finish)))
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
@@ -438,9 +439,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	I.block = id
 	rel_set(I, nameof(I.buf), buffer)
 	return 1
-
-/obj/machinery/computer/scan_consolenew
-	silicon_use = SILICON_USE_UI
 
 // ---- the window's requirements ----
 

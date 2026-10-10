@@ -8,9 +8,6 @@
 	circuit = /obj/item/circuitboard/robotics
 	var/safety = 1
 
-/obj/machinery/computer/robotics
-	silicon_use = SILICON_USE_UI
-
 MSG_DEF_SELF(robotics/access_denied, "Access denied.")
 MSG_DEF_SELF(robotics/cannot_hack, "You cannot hack that.")
 MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
