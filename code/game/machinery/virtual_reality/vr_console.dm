@@ -60,9 +60,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 
 /// Watches its occupant (death, power loss) while it has one.
-/obj/machinery/vr_sleeper/Initialize(mapload)
-	. = ..()
-
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
