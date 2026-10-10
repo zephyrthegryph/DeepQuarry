@@ -2,6 +2,8 @@
 use super::*;
 #[path = "typed_delete.rs"]
 mod deletion;
+#[path = "local_array_initializers.rs"]
+mod local_array_initializers;
 
 impl Compiler<'_> {
     pub(super) fn typed_statements_inner(
@@ -189,17 +191,20 @@ impl Compiler<'_> {
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
                     if let Some(dimensions) = local_array_dimensions(declaration) {
-                        if value.is_some() {
-                            return Err(error(
-                                &statement.raw_header,
-                                "array declaration cannot have an initializer",
-                            ));
-                        }
-                        self.local_array(&dimensions, &statement.raw_header)?;
-                        self.emit(
-                            opcode::SET_VAR,
-                            vec![Word::Variable(VariableWord::Local(slot))],
-                        );
+                        self.local_array_declaration(
+                            &dimensions,
+                            slot,
+                            &statement.raw_header,
+                            value.as_ref().map(|value| {
+                                |compiler: &mut Self| {
+                                    compiler.local_declaration_initializer(
+                                        value,
+                                        declaration,
+                                        &statement.raw_header,
+                                    )
+                                }
+                            }),
+                        )?;
                         continue;
                     }
                     if let Some((path, _)) = declaration
@@ -212,7 +217,11 @@ impl Compiler<'_> {
                         self.local_types.insert(name.into(), "/list".into());
                     }
                     if let Some(value) = value {
-                        self.local_initializer(value, declaration, &statement.raw_header)?;
+                        self.local_declaration_initializer(
+                            value,
+                            declaration,
+                            &statement.raw_header,
+                        )?;
                         self.emit(
                             opcode::SET_VAR,
                             vec![Word::Variable(VariableWord::Local(slot))],

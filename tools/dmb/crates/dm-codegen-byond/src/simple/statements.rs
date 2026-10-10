@@ -369,14 +369,23 @@ impl Compiler<'_> {
             self.locals.push(name.into());
             self.local_slots.insert(name.into(), slot);
             if let Some(dimensions) = local_array_dimensions(declaration) {
-                if initial.is_some() {
-                    return Err(error(text, "array declaration cannot have an initializer"));
-                }
-                self.local_array(&dimensions, text)?;
-                self.emit(
-                    opcode::SET_VAR,
-                    vec![Word::Variable(VariableWord::Local(slot))],
-                );
+                self.local_array_declaration(
+                    &dimensions,
+                    slot,
+                    text,
+                    initial.map(|initial| {
+                        |compiler: &mut Self| {
+                            let parsed = parse_expression(initial);
+                            if !parsed.diagnostics.is_empty() {
+                                return Err(error(text, "expression syntax is unsupported"));
+                            }
+                            let value = parsed
+                                .expr
+                                .ok_or_else(|| error(text, "missing expression"))?;
+                            compiler.local_declaration_initializer(&value, declaration, text)
+                        }
+                    }),
+                )?;
                 return Ok(());
             }
             if let Some(initial) = initial {
