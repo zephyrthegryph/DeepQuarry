@@ -44,7 +44,12 @@ pub struct PreparedAbi {
     pub argument_sources: Vec<ArgumentSource>,
     pub source_helpers: Vec<ArgumentSourceHelper>,
 }
+#[path = "procedure_canonical.rs"]
+mod canonical;
+pub(crate) use canonical::PreparedCanonical;
+
 pub struct PreparedUnit {
+    pub(crate) canonical: Option<Arc<PreparedCanonical>>,
     pub inputs: ProcedureInputs,
     pub executable_body: Vec<Item>,
     /// None supports existing local-only lowering tests, not a production DMB.
@@ -57,15 +62,21 @@ pub struct PreparedUnit {
 pub struct PreparedReplay {
     inputs: ProcedureInputs,
     abi: Arc<PreparedAbi>,
+    canonical: Option<Arc<PreparedCanonical>>,
 }
 impl PreparedReplay {
     /// Only the frozen captured policy may issue this after validating its
     /// current body, metadata, symbol lineage and source occurrence.
-    pub(crate) fn from_frozen(inputs: ProcedureInputs, abi: Arc<PreparedAbi>) -> Option<Self> {
-        Some(Self { inputs, abi })
+    pub(crate) fn from_unit(unit: &PreparedUnit) -> Option<Self> {
+        Some(Self {
+            inputs: unit.inputs.clone(),
+            abi: Arc::clone(unit.abi.as_ref()?),
+            canonical: unit.canonical.clone(),
+        })
     }
     pub(crate) fn into_view(self) -> PreparedUnit {
         PreparedUnit {
+            canonical: self.canonical,
             inputs: self.inputs,
             executable_body: Vec::new(),
             abi: Some(self.abi),
@@ -74,8 +85,20 @@ impl PreparedReplay {
     pub(crate) const TRANSFORM: &'static [u8] = b"captured-setting-strip-v1";
 }
 impl PreparedUnit {
+    pub(crate) fn canonical_metadata(&self) -> Option<Arc<[u8]>> {
+        if let Some(canonical) = &self.canonical {
+            if canonical.matches(&self.inputs, self.abi.as_ref()) {
+                return Some(Arc::clone(&canonical.bytes));
+            }
+        }
+        canonical::encode(&self.inputs, self.abi.as_deref()).map(Arc::from)
+    }
+    pub(crate) fn issue_canonical(&mut self) {
+        self.canonical = PreparedCanonical::capture(&self.inputs, self.abi.as_ref()).map(Arc::new);
+    }
     pub fn local_only(inputs: ProcedureInputs, parsed: &Item) -> Self {
         Self {
+            canonical: None,
             inputs,
             executable_body: parsed.children.clone(),
             abi: None,
@@ -163,6 +186,7 @@ impl CapturedProcedurePolicy<'_> {
             |expression| self.evaluator.evaluate(expression, context),
         )?;
         Ok(PreparedUnit {
+            canonical: None,
             inputs: prepared.inputs,
             executable_body: prepared.executable_body,
             abi: Some(Arc::new(PreparedAbi {

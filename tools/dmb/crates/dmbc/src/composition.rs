@@ -550,11 +550,17 @@ fn compose_records_access(
         .iter()
         .map(|helper| crate::symbolic::helper_key(helper.owner, helper.argument))
         .collect::<Vec<_>>();
-    let source_references = dm_link::ArgumentSourceReferences::assign(
-        &batch.tables,
-        dmb.proc_references.len(),
-        &helper_order,
-    )
+    let source_references = match generation {
+        Some(generation) => {
+            generation.argument_sources(&batch.tables, dmb.proc_references.len(), &helper_order)
+        }
+        None => dm_link::ArgumentSourceReferences::assign(
+            &batch.tables,
+            dmb.proc_references.len(),
+            &helper_order,
+        )
+        .map(std::sync::Arc::new),
+    }
     .map_err(|e| unsupported(format!("argument references {e:?}")))?;
     for key in &helper_order {
         dmb.proc_references.push(

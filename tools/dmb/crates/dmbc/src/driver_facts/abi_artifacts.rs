@@ -7,9 +7,10 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Mutex,
 };
-struct Artifact {
-    inputs: ProcedureInputs,
-    abi: Arc<PreparedAbi>,
+pub(crate) struct Artifact {
+    pub(crate) canonical: Option<Arc<crate::procedure_policy::PreparedCanonical>>,
+    pub(crate) inputs: ProcedureInputs,
+    pub(crate) abi: Arc<PreparedAbi>,
 }
 pub struct AbiArtifacts {
     store: dm_session::ArtifactStore<Artifact>,
@@ -26,6 +27,12 @@ impl Default for AbiArtifacts {
     }
 }
 impl AbiArtifacts {
+    pub(crate) fn visit_storage(
+        &self,
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, Artifact>),
+    ) {
+        self.store.visit_storage(visitor);
+    }
     pub fn totals(&self) -> (usize, usize) {
         (
             self.reused.load(Ordering::Relaxed),
@@ -169,6 +176,7 @@ pub(super) fn prepare(
         if let Some(artifact) = store.store.lookup(&key, &base) {
             store.reused.fetch_add(1, Ordering::Relaxed);
             return Ok(PreparedUnit {
+                canonical: artifact.canonical.clone(),
                 inputs: artifact.inputs.clone(),
                 abi: Some(Arc::clone(&artifact.abi)),
                 executable_body: Vec::new(),
@@ -205,6 +213,7 @@ pub(super) fn prepare(
     };
     let mut unit = policy.prepare_view(metadata, parsed, &recorded_context)?;
     store.recomputed.fetch_add(1, Ordering::Relaxed);
+    unit.issue_canonical();
     if reusable {
         let abi = Arc::clone(
             unit.abi
@@ -219,7 +228,11 @@ pub(super) fn prepare(
         {
             store
                 .store
-                .insert_with(key, reads, versions, weight, || Artifact { inputs, abi });
+                .insert_with(key, reads, versions, weight, || Artifact {
+                    inputs,
+                    abi,
+                    canonical: unit.canonical.clone(),
+                });
         }
     }
     unit.executable_body = Vec::new();

@@ -570,6 +570,9 @@ fn prepare_source_abi_mode_on_executor(
                         // lowering consumes its independently authenticated current body;
                         // retaining this temporary copy would duplicate every cold unit.
                         unit.executable_body = Vec::new();
+                        if unit.canonical.is_none() {
+                            unit.issue_canonical();
+                        }
                         let abi = Arc::clone(unit.abi.as_ref().expect("validated production ABI"));
                         layouts.insert(frontend.bodies[ordinal].member, abi);
                         results[ordinal] = Some(unit);
@@ -789,10 +792,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
             .validate_body_input(input, body)
             .map_err(|error| error.message)?;
         let unit = self.unit(context.identity)?;
-        Ok(crate::procedure_policy::PreparedReplay::from_frozen(
-            unit.inputs.clone(),
-            Arc::clone(unit.abi.as_ref().ok_or("prepared production ABI missing")?),
-        ))
+        Ok(crate::procedure_policy::PreparedReplay::from_unit(unit))
     }
     fn prepare_captured(
         &self,
@@ -806,6 +806,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
             .map_err(|error| error.message)?;
         let unit = self.unit(context.identity)?;
         Ok(crate::procedure_policy::PreparedUnit {
+            canonical: unit.canonical.clone(),
             inputs: unit.inputs.clone(),
             executable_body: dm_tree::settings::strip_setting_items(parsed.item().children.clone()),
             abi: unit.abi.clone(),
@@ -834,6 +835,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
             dm_tree::settings::strip_setting_items(std::mem::take(&mut header.children));
         Ok((
             crate::procedure_policy::PreparedUnit {
+                canonical: unit.canonical.clone(),
                 inputs: unit.inputs.clone(),
                 executable_body,
                 abi: unit.abi.clone(),
@@ -868,6 +870,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         }
         let unit = self.unit(context.identity)?;
         Ok(crate::procedure_policy::PreparedUnit {
+            canonical: unit.canonical.clone(),
             inputs: unit.inputs.clone(),
             executable_body: dm_tree::settings::strip_setting_items(parsed.children.clone()),
             abi: unit.abi.clone(),

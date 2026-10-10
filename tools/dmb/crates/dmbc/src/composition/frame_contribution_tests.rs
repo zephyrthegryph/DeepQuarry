@@ -394,3 +394,48 @@ fn retained_frame_shares_immutable_payload_and_checks_distinct_values() {
     ));
     assert_ne!(changed, expected);
 }
+
+#[test]
+fn frame_metadata_admits_shared_and_equal_abi_owners_but_rejects_changed_layout() {
+    use std::sync::Arc;
+    let (mut batch, symbols) = ownership_fixture_source("/proc/abi_owner_probe()\n    return 1\n");
+    let baseline =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let mut model = baseline.clone();
+    let mut index = StringIndex::build(&model).unwrap();
+    frame_contribution::emit(
+        &mut model,
+        &mut index,
+        &batch.units[0],
+        Arc::new(vec![1]),
+        procedure_plan::ProcedureMetadata {
+            declared: Some(true),
+            path: batch.units[0].metadata_recipe.path(&symbols, true),
+            default_display: batch.units[0].metadata_recipe.display(&symbols),
+            value_sources: Vec::new(),
+        },
+        true,
+    )
+    .unwrap();
+    let owner = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    let tables = dm_link::LinkTables::build(Default::default()).unwrap();
+    let references = dm_link::ArgumentSourceReferences::assign(&tables, 0, &[]).unwrap();
+    let original = Arc::clone(batch.units[0].lowered.abi.as_ref().unwrap());
+    assert!(owner.admit_current_metadata(&batch.units[0], None, &symbols, &references));
+    let equal = Arc::new(original.as_ref().clone());
+    assert!(!Arc::ptr_eq(&original, &equal));
+    batch.units[0].lowered.abi = Some(equal);
+    assert!(owner.admit_current_metadata(&batch.units[0], None, &symbols, &references));
+    Arc::make_mut(batch.units[0].lowered.abi.as_mut().unwrap())
+        .layout
+        .flags ^= 1;
+    assert!(!owner.admit_current_metadata(&batch.units[0], None, &symbols, &references));
+    batch.units[0].lowered.abi = None;
+    assert!(!owner.admit_current_metadata(&batch.units[0], None, &symbols, &references));
+}

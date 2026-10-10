@@ -109,8 +109,31 @@ pub(super) struct CachedPlan {
     procedures: std::sync::Arc<Vec<Slot<UnitIdentity>>>,
     helper_rows: std::sync::Arc<Vec<Slot<Key>>>,
     initializer_rows: std::sync::Arc<Vec<Slot<dm_link::InitializerIdentity>>>,
+    argument_sources: Option<(usize, std::sync::Arc<dm_link::ArgumentSourceReferences>)>,
 }
 impl CachedPlan {
+    pub(super) fn argument_sources(
+        &mut self,
+        tables: &dm_link::LinkTables,
+        start: usize,
+        order: &[Key],
+    ) -> Result<std::sync::Arc<dm_link::ArgumentSourceReferences>, dm_link::LinkError> {
+        let current = self.bindings.same_owner(&tables.binding_tables()) && self.helpers == order;
+        if current {
+            if let Some((previous_start, owner)) = &self.argument_sources {
+                if *previous_start == start {
+                    return Ok(std::sync::Arc::clone(owner));
+                }
+            }
+        }
+        let owner = std::sync::Arc::new(dm_link::ArgumentSourceReferences::assign(
+            tables, start, order,
+        )?);
+        if current {
+            self.argument_sources = Some((start, std::sync::Arc::clone(&owner)));
+        }
+        Ok(owner)
+    }
     pub fn admit(
         &self,
         raw: &CompositionPlan,
@@ -172,6 +195,7 @@ impl CachedPlan {
             procedures: std::sync::Arc::clone(bound.procedures.as_ref().ok()?),
             helper_rows: std::sync::Arc::clone(bound.helpers.as_ref().ok()?),
             initializer_rows: std::sync::Arc::clone(bound.initializers.as_ref().ok()?),
+            argument_sources: None,
         })
     }
     pub fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -190,6 +214,13 @@ impl CachedPlan {
         }
         if census.arc_object(name, &self.initializer_rows) {
             census.vec_payload(name, &self.initializer_rows);
+        }
+        if let Some((_, owner)) = &self.argument_sources {
+            census.arc_object("composition.argument_sources", owner);
+            census.unknown(
+                "composition.argument_sources",
+                "private BTreeMap backing and Arc control layout are unavailable",
+            );
         }
         census.unknown(
             name,
@@ -363,3 +394,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "argument_sources_tests.rs"]
+mod argument_sources_tests;

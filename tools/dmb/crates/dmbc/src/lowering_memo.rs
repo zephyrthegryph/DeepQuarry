@@ -622,35 +622,8 @@ fn prepared_metadata_key(
     key: &mut Vec<u8>,
     prepared: &crate::procedure_policy::PreparedUnit,
 ) -> Option<()> {
-    let inputs = &prepared.inputs;
-    let types = inputs.parameter_types.iter().collect::<BTreeMap<_, _>>();
-    let bytes = dm_wire::encode(
-        0x0204_0004,
-        &(
-            inputs.procedure_identity,
-            &inputs.current_proc_path,
-            &inputs.current_type_path,
-            &inputs.parameters,
-            &inputs.parameter_type_flags,
-            &inputs.parameter_value_sources,
-            &inputs.parameter_defaults,
-            types,
-            &inputs.readonly_parameters,
-            inputs.resource_search_context,
-        ),
-    )
-    .ok()?;
-    key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+    let bytes = prepared.canonical_metadata()?;
     key.extend_from_slice(&bytes);
-    match &prepared.abi {
-        None => key.push(0),
-        Some(abi) => {
-            key.push(1);
-            let bytes = abi.canonical_bytes();
-            key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-            key.extend_from_slice(&bytes);
-        }
-    }
     Some(())
 }
 

@@ -71,7 +71,7 @@ impl FrameContribution {
             || symbols.text(unit.lowered.identity.name).is_none()
             || self.identity != unit.lowered.identity
             || !(Arc::ptr_eq(&self.frame, frame) || self.frame.as_ref() == frame.as_ref())
-            || **abi != *self.abi
+            || !(Arc::ptr_eq(abi, &self.abi) || abi.as_ref() == self.abi.as_ref())
             || frame.argument_names.len() != frame.argument_type_flags.len()
             || frame.argument_names.len() != abi.argument_sources.len()
             || frame.local_count as usize != frame.local_names.len()
@@ -157,11 +157,9 @@ impl FrameContribution {
         if metadata.declared != Some(self.declared)
             || self.identity != unit.lowered.identity
             || !(Arc::ptr_eq(&self.frame, frame) || self.frame.as_ref() == frame.as_ref())
-            || unit
-                .lowered
-                .abi
-                .as_ref()
-                .is_none_or(|abi| **abi != *self.abi)
+            || unit.lowered.abi.as_ref().is_none_or(|abi| {
+                !(Arc::ptr_eq(abi, &self.abi) || abi.as_ref() == self.abi.as_ref())
+            })
             || !metadata
                 .path
                 .as_ref()

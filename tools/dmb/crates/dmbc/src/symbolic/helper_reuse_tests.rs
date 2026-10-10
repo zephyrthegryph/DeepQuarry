@@ -72,6 +72,7 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
     let old_unit = old_batch.units.remove(0);
     let current = moved_batch.units.remove(0);
     let prepared = crate::procedure_policy::PreparedUnit {
+        canonical: None,
         inputs: dm_codegen_byond::ProcedureInputs {
             parameters: vec!["value".into()],
             ..Default::default()
@@ -113,6 +114,7 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
         current.source_helpers[0].debug_origins
     );
     let wrong = crate::procedure_policy::PreparedUnit {
+        canonical: None,
         inputs: Default::default(),
         executable_body: Vec::new(),
         abi: prepared.abi.clone(),

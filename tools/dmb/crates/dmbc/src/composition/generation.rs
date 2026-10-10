@@ -82,6 +82,19 @@ impl RetainedGeneration {
         *cached = procedure_plan::CachedPlan::capture(captured, batch, &bound);
         bound
     }
+    pub(super) fn argument_sources(
+        &self,
+        tables: &dm_link::LinkTables,
+        start: usize,
+        order: &[Key],
+    ) -> Result<std::sync::Arc<dm_link::ArgumentSourceReferences>, dm_link::LinkError> {
+        let mut plan = self.plan.lock().unwrap_or_else(|error| error.into_inner());
+        match plan.as_mut() {
+            Some(plan) => plan.argument_sources(tables, start, order),
+            None => dm_link::ArgumentSourceReferences::assign(tables, start, order)
+                .map(std::sync::Arc::new),
+        }
+    }
     pub(crate) fn census_plan(&self, census: &mut crate::heap_census::HeapCensus) {
         if let Some(plan) = self
             .plan
