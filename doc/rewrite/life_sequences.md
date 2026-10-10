@@ -21,7 +21,7 @@ the shared graph validator and the spread sweep.
 
 `/datum/sequence` is a definition (one per type, `sequence_def()`): `interval`, `step` (fixed step in seconds, 0 for
 variable), `max_catchup`, `clock` (`CLOCK_BIO` for Life), `lane`, `runlevels`, `park_after`, `min_relevance`,
-`wake_all`, `table_proc`, `frame_type`, `profile_stride`, and the procs `anchors()`, `conditions()`, `admit(E)`.
+`wake_all`, `wake_keys`, `table_proc`, `frame_type`, `profile_stride`, and the procs `anchors()`, `conditions()`, `admit(E)`.
 
 One work item per sequence, `/datum/work_item/sequence` (phase P, the sequence's lane, clock and run levels), sweeps
 the sequence's **membership**. Its sweep is spread over the interval like a cadence's (`run_item_spread()`), so a
@@ -42,7 +42,7 @@ composed like `reactions()`:
 /mob/living/life_steps()
 	. = ..()
 	. += seq_step(PROC_REF(life_breathing), after = LIFE_INPUT, when = list("placed", "alive"),
-		reads = list(CHANGE_MOB_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due),
+		reads = list(MOB_KEY_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due),
 		rewake = BREATH_STEADY_RESAMPLE, woken_by = "Moved; equipping internals")
 ```
 
@@ -90,7 +90,7 @@ every run (FALSE: the step sleeps) and **before** a woken step runs (FALSE: back
 predicate with one polarity, as `work_item.runnable()`. Contract: cheap, read-only, correct for an entity that isn't
 running (the audit asks it of sleeping steps).
 
-A step's `reads` are `publish_change()` keys (text; `native()` specs give their keys) and change channels (numbers).
+A step's `reads` are `publish_change()` keys (text; `native()` specs give their keys): the mob's `MOB_KEY_*` facts, the names of tracked vars, `nameof(/mob::stat)`. Mob Life reads no change channel any more (the `CHANGE_MOB_*` names are banned); the only channel left on a sequence is `wake_all = CHANGE_EXPLICIT`, the catch-all the dispatched-call mark raises, and `wake_keys` (the stat key, `MOB_KEY_CLIENT`) wake every step.
 Wakes:
 
 - **Keys.** A table registers its keys with `READERS` on the entity's type (`seq_register_reads()`), so TRACKED
@@ -134,7 +134,7 @@ pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `ad
   `park_after` frames in a row with every step asleep it leaves (`member_leave`, O(1) swap-remove) and joins the
   sequence's parked list (the audit's sample); a wake rejoins. Its execution token goes with it, so it comes back
   with one interval, not a catch-up.
-- **Relevance.** Below `min_relevance` (`om_observe()`) a member is out of the sweep; `CHANGE_RELEVANCE` puts it back
+- **Relevance.** Below `min_relevance` (`om_observe()`) a member is out of the sweep; `SEQ_KEY_RELEVANCE`, published when the member's relevance stat moves, puts it back
   unless it is parked. Life: `RELEVANCE_NEAR` (a low-priority mob on a z-level with no living player).
 - **Time.** A member's elapsed time is read on the sequence's clock (`work_clock_now()`): with `CLOCK_BIO` stasis
   stretches the frames (at rate 0.1 a frame every ten cycles, at 0 none). Outside its run levels nothing runs and

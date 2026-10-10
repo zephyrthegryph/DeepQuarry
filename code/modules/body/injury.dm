@@ -116,7 +116,6 @@
 	if(!.)
 		return
 	flag_hud_update(HEALTH_HUD)
-	changed(src, CHANGE_MOB_HEALTH)
 	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
@@ -229,7 +228,6 @@
 	. = body.mend(tag, amount, target)
 	if(.)
 		flag_hud_update(HEALTH_HUD)
-		changed(src, CHANGE_MOB_HEALTH)
 		PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 
 /// B14 / P2-S12: the one writer that takes radiation OUT of a mob — acute
@@ -269,7 +267,6 @@
 	body?.clear_afflictions()
 	body?.restore()
 	flag_hud_update(HEALTH_HUD)
-	changed(src, CHANGE_MOB_HEALTH)
 	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 
 

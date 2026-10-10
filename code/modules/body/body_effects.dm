@@ -285,7 +285,6 @@
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	hold(src, STAT_BODY_EFFECT_COUNTS, stacks, src, key = path)
 	invalidate_factors()
-	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
@@ -381,7 +380,6 @@
 	if(!release(src, STAT_BODY_EFFECT_COUNTS, src, path))
 		return
 	invalidate_factors()
-	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)

@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Mob Life steps, the Life frame conditions and the sequence wake set read change keys instead of CHANGE_MOB_* channels; thirteen unused or migrated change channels are deleted and banned."
+  - code_imp: "Sequences follow a member's relevance through a published key, and watch_mob_chunks() takes its own masks."

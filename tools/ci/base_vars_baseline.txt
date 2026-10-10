@@ -91,7 +91,6 @@ base_var	code/datums/sparse_vars/update_on_z.dm	var/tmp/list/image/z_update_imag
 base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
 base_var	code/datums/sys/appearance.dm	var/tmp/list/appearance_proc_overlays
 base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
-base_var	code/datums/sys/appearance.dm	var/tmp/appearance_neighbour_key
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
 base_var	code/game/atom/_atom.dm	var/level = 2
 base_var	code/game/atom/_atom.dm	var/flags = NONE

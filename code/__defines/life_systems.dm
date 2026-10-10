@@ -12,9 +12,15 @@
 #define LIFE_TAIL "LIFE_TAIL"
 
 // --- Wakes (doc/rewrite/life_on_om.md §5) ----------------------------------------------------
-/// Channels that wake every Life step: set_stat, Login and Logout, explicit wakes (the old
-/// "wake all"). Steps list only the channels specific to them in `reads`.
-#define LIFE_WAKE_ALL (CHANGE_MOB_STAT | CHANGE_MOB_CLIENT | CHANGE_EXPLICIT)
+/// Channels that wake every Life step: explicit wakes (the old "wake all"). Steps list only the keys specific to them in `reads`.
+#define LIFE_WAKE_ALL CHANGE_EXPLICIT
+/// Keys that wake every Life step: set_stat() and a client logging in or out.
+#define LIFE_WAKE_KEYS list(nameof(/mob::stat), MOB_KEY_CLIENT)
+
+/// What wakes a Life step that reads a mob's status: the status fact and the tracked vars Life's status steps follow.
+#define LIFE_STATUS_READS list(MOB_KEY_STATUS, nameof(/mob::sdisabilities), nameof(/mob::ear_damage), nameof(/mob/living/simple_mob::purge))
+/// What wakes a Life step that reads a mob's long-running conditions: the condition fact and the tracked vars the condition steps follow.
+#define LIFE_CONDITION_READS list(MOB_KEY_CONDITIONS, nameof(/mob/living::instability), nameof(/mob/living::virtual_reality_mob), 	nameof(/mob/living::glow_toggle), nameof(/mob/living::glow_override), nameof(/mob/living::glow_range), 	nameof(/mob/living::glow_intensity), nameof(/mob/living::glow_color), nameof(/mob/living::tf_mob_holder))
 
 // ---- change keys a mob publishes (PUBLISH_CHANGE) for the facts that are not one tracked var ----
 // Read by on_change() reactions (the Life presentation reactions, living_systems.dm). A mob's stat is the tracked

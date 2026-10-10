@@ -18,7 +18,7 @@
 /// Breathing can't stop, but in steady air a breath changes nothing: the physiology holds the
 /// last breath quality between breaths. Idle while the last breath was full quality from the
 /// turf's air (no internals, no losebreath, not critical, no breath alerts). Moving and
-/// equipment (masks, internals) wake it (CHANGE_MOB_LOC, CHANGE_MOB_EQUIPMENT); air that
+/// equipment (masks, internals) wake it (MOB_KEY_LOC, MOB_KEY_EQUIPMENT); air that
 /// changes in place is re-sampled by the rewake.
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())

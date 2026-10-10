@@ -20,6 +20,7 @@
 	park_after = LIFE_PARK_AFTER
 	min_relevance = RELEVANCE_NEAR
 	wake_all = LIFE_WAKE_ALL
+	wake_keys = LIFE_WAKE_KEYS
 	table_proc = TYPE_PROC_REF(/mob/living, life_steps)
 	frame_type = /datum/seq_frame/life
 	profile_stride = LIFE_PROFILE_STRIDE
@@ -46,8 +47,8 @@
 /datum/sequence/life/conditions()
 	return list(
 		seq_condition("placed", TYPE_PROC_REF(/datum/seq_frame/life, placed)),
-		seq_condition("alive", TYPE_PROC_REF(/datum/seq_frame/life, alive), CHANGE_MOB_STAT),
-		seq_condition("status_ok", TYPE_PROC_REF(/datum/seq_frame/life, status_passed), CHANGE_MOB_STAT),
+		seq_condition("alive", TYPE_PROC_REF(/datum/seq_frame/life, alive), nameof(/mob::stat)),
+		seq_condition("status_ok", TYPE_PROC_REF(/datum/seq_frame/life, status_passed), nameof(/mob::stat)),
 		seq_condition("in_stasis", TYPE_PROC_REF(/datum/seq_frame/life, in_stasis)),
 	)
 

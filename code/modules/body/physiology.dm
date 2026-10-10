@@ -565,7 +565,7 @@ CAPABILITIES(/datum/body)
 	src.body?.physiology_tick(F.dt)
 
 /// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a
-/// validity check. Woken by CHANGE_MOB_HEALTH through the body's invalidate() (factors, organs,
+/// validity check. Woken by MOB_KEY_HEALTH through the body's invalidate() (factors, organs,
 /// breath quality, blood volume, supports); a timed support's expiry is the rewake.
 /mob/living/proc/life_physiology_due()
 	var/datum/body/B = src.body

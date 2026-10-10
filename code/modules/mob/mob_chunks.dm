@@ -1,7 +1,7 @@
 // Mob chunks (roadmap S3: mob chunk keys).
 //
 // A 16x16 chunk that something waits on is a /datum/mob_chunk. A mob entering, leaving or moving in
-// it raises its bits -- CHANGE_CHUNK_ANY_MOB for any mob, CHANGE_CHUNK_PLAYER for a mob with a
+// it raises its bits -- MOB_CHUNK_WATCH_ANY_MOB for any mob, MOB_CHUNK_WATCH_PLAYER for a mob with a
 // client -- and whatever sleeps on it (a calm AI brain, a dormant looping sound, a proximity-gated
 // object) is called back: watch_mob_chunks(watcher, chunks, mask, PROC_REF(x)) runs
 // watcher.x(chunk, bits). Watchers are held by REF text, so a deleted watcher is dropped at the
@@ -112,9 +112,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	var/key = REF(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
 		LAZYSET(C.watchers, key, list(mask, handler))
-	if(mask & CHANGE_CHUNK_ANY_MOB)
+	if(mask & MOB_CHUNK_WATCH_ANY_MOB)
 		GLOB.mob_chunk_watches += length(chunks)
-	if(mask & CHANGE_CHUNK_PLAYER)
+	if(mask & MOB_CHUNK_WATCH_PLAYER)
 		GLOB.player_chunk_watches += length(chunks)
 	return chunks
 
@@ -123,9 +123,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	var/key = REF(watcher)
 	for(var/datum/mob_chunk/C as anything in chunks)
 		LAZYREMOVE(C.watchers, key)
-	if(mask & CHANGE_CHUNK_ANY_MOB)
+	if(mask & MOB_CHUNK_WATCH_ANY_MOB)
 		GLOB.mob_chunk_watches = max(GLOB.mob_chunk_watches - length(chunks), 0)
-	if(mask & CHANGE_CHUNK_PLAYER)
+	if(mask & MOB_CHUNK_WATCH_PLAYER)
 		GLOB.player_chunk_watches = max(GLOB.player_chunk_watches - length(chunks), 0)
 	return null
 
@@ -134,17 +134,17 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	if(isliving(location) && !isnull(entered))
 		living_chunk_note(location, mob_chunk_id(location), entered)
 	if(GLOB.mob_chunk_watches)
-		mob_chunk_changed(mob_chunk_id(location), CHANGE_CHUNK_ANY_MOB)
+		mob_chunk_changed(mob_chunk_id(location), MOB_CHUNK_WATCH_ANY_MOB)
 
 /// A player is in `T`'s chunk.
 /proc/publish_player_chunk(turf/T)
 	if(T)
-		mob_chunk_changed(mob_chunk_id(T), CHANGE_CHUNK_PLAYER)
+		mob_chunk_changed(mob_chunk_id(T), MOB_CHUNK_WATCH_PLAYER)
 
 /**
- * /mob/Moved()'s one publish. The new chunk hears CHANGE_CHUNK_ANY_MOB (while anything watches
- * chunks) plus CHANGE_CHUNK_PLAYER for a player (while anything watches players). The old chunk
- * hears CHANGE_CHUNK_ANY_MOB only when the step crossed a chunk edge. Callers gate on the two
+ * /mob/Moved()'s one publish. The new chunk hears MOB_CHUNK_WATCH_ANY_MOB (while anything watches
+ * chunks) plus MOB_CHUNK_WATCH_PLAYER for a player (while anything watches players). The old chunk
+ * hears MOB_CHUNK_WATCH_ANY_MOB only when the step crossed a chunk edge. Callers gate on the two
  * counters first.
  */
 /proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
@@ -154,17 +154,17 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		if(living_old_id != living_new_id)
 			living_chunk_note(mover, living_old_id, FALSE)
 			living_chunk_note(mover, living_new_id, TRUE)
-	var/bits = GLOB.mob_chunk_watches ? CHANGE_CHUNK_ANY_MOB : 0
+	var/bits = GLOB.mob_chunk_watches ? MOB_CHUNK_WATCH_ANY_MOB : 0
 	if(player && GLOB.player_chunk_watches)
-		bits |= CHANGE_CHUNK_PLAYER
+		bits |= MOB_CHUNK_WATCH_PLAYER
 	if(!bits)
 		return
 	var/new_id = mob_chunk_id(mover)
 	mob_chunk_changed(new_id, bits)
-	if(bits & CHANGE_CHUNK_ANY_MOB)
+	if(bits & MOB_CHUNK_WATCH_ANY_MOB)
 		var/old_id = mob_chunk_id(old_loc)
 		if(old_id != new_id)
-			mob_chunk_changed(old_id, CHANGE_CHUNK_ANY_MOB)
+			mob_chunk_changed(old_id, MOB_CHUNK_WATCH_ANY_MOB)
 
 // ---------------------------------------------------------------- proximity gate
 

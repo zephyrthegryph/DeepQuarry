@@ -18,7 +18,6 @@
 		return
 	LAZYADD(mutations, mut)
 	update_mutation_immunities(mut)
-	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(mut == TK)
 		tk_refresh()
@@ -29,7 +28,6 @@
 		return
 	LAZYREMOVE(mutations, mut)
 	update_mutation_immunities(mut)
-	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(mut == TK)
 		tk_refresh()

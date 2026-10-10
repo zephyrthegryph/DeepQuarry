@@ -959,15 +959,11 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		else
 			D.inputs |= D.compiled_expr.depends_on
 	if(D.aggregate)
-		if(islist(D.over) && length(D.over) == 2 && D.over[1] == "slot")
-			D.over_slot = D.over[2]
-			D.inputs |= CHANGE_CONTENTS
+		var/datum/relation_definition/R = relation_by_type[D.over]
+		if(!R)
+			error("derived [D.name]: over names unknown relation [D.over]")
 		else
-			var/datum/relation_definition/R = relation_by_type[D.over]
-			if(!R)
-				error("derived [D.name]: over names unknown relation [D.over]")
-			else
-				D.over_rel_id = R.id
+			D.over_rel_id = R.id
 		if(islist(D.reader) && D.reader[1] == "derived")
 			var/datum/derived_definition/src_d = derived_by_name[D.reader[2]]
 			if(!src_d)

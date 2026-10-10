@@ -8,7 +8,6 @@
 //   APPEARANCE_TEMPLATE(/obj/machinery/recharger, "recharger{on}{operable}")
 //   APPEARANCE_LEVEL(/obj/item/cell, "percent", 4, "{initial(icon_state)}_%p")
 //   APPEARANCE_EMISSIVE(/obj/machinery/recharger, "on", list("1" = "recharger-glow"))
-//   APPEARANCE_SLOT(/obj/machinery/recharger, SLOT_CHARGING, "recharger-cell")
 //   APPEARANCE_WATCH(/obj/machinery, list("stat", "on"))
 //
 // Names. A name in a template token, a level, an emissive or a DECLARE_APPEARANCE layer is a var of
@@ -23,8 +22,7 @@
 //   {initial(name)}   the concrete type's initial value of var name (resolved per subtype)
 //
 // Refresh is automatic. Every name that is a declared OM field (OM_FIELD, OM_FLAG_FIELD, a
-// registered setter, a derived field) adds its channel to the type's appearance watch mask, slots
-// add CHANGE_CONTENTS, and APPEARANCE_WATCH adds the channels of fields a procedural update_icon()
+// registered setter, a derived field) adds its channel to the type's appearance watch mask, and APPEARANCE_WATCH adds the channels of fields a procedural update_icon()
 // reads. A raise of any of those channels queues the atom once; the presentation lane runs
 // update_icon() on it at most once per frame (so a field setter is never followed by a manual
 // update_icon()). A name that is not a declared field is read, but its writer still calls
@@ -44,8 +42,6 @@
 /// An emissive overlay keyed on FIELD: ROWS is list("value" = "icon_state", ...) (text keys); a
 /// value with no row draws nothing, the "*" row is the fallback.
 #define APPEARANCE_EMISSIVE(PATH, FIELD, ROWS) _LIFECYCLE_DECL(PATH, add_appearance_emissive(FIELD, ROWS))
-/// An overlay of STATE while slot SLOT holds something (slots raise CHANGE_CONTENTS).
-#define APPEARANCE_SLOT(PATH, SLOT, STATE) _LIFECYCLE_DECL(PATH, add_appearance_slot(SLOT, STATE))
 /// The declared fields a procedural update_icon() reads (a list of names): their channels join the
 /// watch mask, so a change re-runs update_icon() without a manual call.
 #define APPEARANCE_WATCH(PATH, FIELDS) _LIFECYCLE_DECL(PATH, add_appearance_watch(FIELDS))

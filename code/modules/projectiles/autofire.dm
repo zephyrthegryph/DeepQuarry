@@ -35,7 +35,7 @@
 
 /// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
 /mob/living/var/tmp/autofire_on = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
-TRACKED_BRIDGED(/mob/living, autofire_on, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living, autofire_on)
 
 /// The every() interval of autofire_tick(): the wait the last tick set.
 /mob/living/proc/autofire_interval(datum/act/A)

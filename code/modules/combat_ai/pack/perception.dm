@@ -254,7 +254,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 		return
 	drop_chunk_watches()
 	covered_ids = ids
-	chunk_tokens = watch_mob_chunks(src, chunks, CHANGE_CHUNK_ANY_MOB, PROC_REF(chunk_stirred))
+	chunk_tokens = watch_mob_chunks(src, chunks, MOB_CHUNK_WATCH_ANY_MOB, PROC_REF(chunk_stirred))
 	trace("watching [length(ids)] chunk(s)")
 
 /// TRUE when the two id lists differ (as sets).
@@ -268,7 +268,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
 /datum/ai_pack/proc/drop_chunk_watches()
 	if(chunk_tokens)
-		chunk_tokens = unwatch_mob_chunks(src, chunk_tokens, CHANGE_CHUNK_ANY_MOB)
+		chunk_tokens = unwatch_mob_chunks(src, chunk_tokens, MOB_CHUNK_WATCH_ANY_MOB)
 	covered_ids = null
 
 /// A mob moved or appeared in a chunk the pack watches.

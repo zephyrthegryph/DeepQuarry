@@ -1,6 +1,4 @@
 #define BP_MAX_ROOM_SIZE 300
-/// Blueprint prompts: the creator is still standing where they started (the prompt's target turf) and able.
-#define BLUEPRINT_PROMPT_REQUIRES list(CHECK(/datum/om/check/in_range, 0), /datum/om/check/not_incapacitated)
 
 // WARNING: ESOTERIC BULLSHIT INSIDE OF THIS FILE.
 // This is a port of /tg/'s blueprints that also have Virgo modifications as well.

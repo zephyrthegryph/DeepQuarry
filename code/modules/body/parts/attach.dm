@@ -24,7 +24,7 @@
 // children first, so a tree is released leaves first. When the holder itself
 // is being destroyed (dq_part_holder_destroying()), the release clears the
 // derived state (owner, caches, afflictions moved to the part) but skips every
-// re-derivation: no invalidate (so no CHANGE_MOB_HEALTH), no verbs, no death check. The
+// re-derivation: no invalidate (so no MOB_KEY_HEALTH), no verbs, no death check. The
 // topmost detach, from a holder that survives, does that once for the whole
 // subtree. O4 replaces the stub below with the destroy transaction's flag
 // (doc/rewrite/lifecycle.md §2-3) and moves the remaining organ Destroy()

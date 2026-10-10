@@ -25,7 +25,7 @@
 
 /**
  * A looping sound runs on object-model wakes (Q5): each loop is an after() timer, and a
- * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, CHANGE_CHUNK_PLAYER) around it until a player
+ * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, MOB_CHUNK_WATCH_PLAYER) around it until a player
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
@@ -176,14 +176,14 @@
 		seen[source_turf] = TRUE
 		tokens |= mob_chunks_around(source_turf, max_distance)
 	sleep_audit_join(src)
-	dormant_chunk_tokens = watch_mob_chunks(src, tokens, CHANGE_CHUNK_PLAYER, PROC_REF(chunk_woke))
+	dormant_chunk_tokens = watch_mob_chunks(src, tokens, MOB_CHUNK_WATCH_PLAYER, PROC_REF(chunk_woke))
 	set_loop_timer(LOOPING_SOUND_DORMANT_RECHECK)
 
 /// Drops the chunk keys. TRUE if the loop was dormant.
 /datum/looping_sound/proc/leave_dormancy()
 	if(isnull(dormant_chunk_tokens))
 		return FALSE
-	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, CHANGE_CHUNK_PLAYER)
+	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, MOB_CHUNK_WATCH_PLAYER)
 	return TRUE
 
 /// A player moved nearby, or the recheck fired. A chunk wake with still nobody in range

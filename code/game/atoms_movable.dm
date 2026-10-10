@@ -329,9 +329,6 @@
 	if(blocks_light)
 		light_blocking_moved(old_loc)
 	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
-	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
-	if(om_listen && !ismob(src))
-		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
@@ -554,7 +551,7 @@
 
 /// Anchors or frees it. Anchored is a tracked base var (G8): this is its only writer. A change publishes
 /// nameof(anchored) and, as a bridge, raises the channel of the type's declared field (a machine
-/// CHANGE_MACHINE_ANCHORED, a mob CHANGE_MOB_CAN_MOVE; machinery_fields.dm).
+/// CHANGE_MACHINE_ANCHORED; machinery_fields.dm).
 /atom/movable/proc/set_anchored(state)
 	if(anchored == state)
 		return FALSE

@@ -123,15 +123,15 @@
 /datum/unit_test/dq_retired_mob_chunk_watch_calls_back/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/datum/dq_chunk_watch_probe/probe = allocate(/datum/dq_chunk_watch_probe)
-	var/list/chunks = watch_mob_chunks(probe, mob_chunks_around(start, 1), CHANGE_CHUNK_ANY_MOB, TYPE_PROC_REF(/datum/dq_chunk_watch_probe, heard_chunk))
+	var/list/chunks = watch_mob_chunks(probe, mob_chunks_around(start, 1), MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/dq_chunk_watch_probe, heard_chunk))
 	TEST_ASSERT(length(chunks), "a watch covers the chunks around a turf")
-	mob_chunk_changed(mob_chunk_id(start), CHANGE_CHUNK_PLAYER)
+	mob_chunk_changed(mob_chunk_id(start), MOB_CHUNK_WATCH_PLAYER)
 	TEST_ASSERT_EQUAL(probe.heard, 0, "a bit outside the mask is not heard")
-	mob_chunk_changed(mob_chunk_id(start), CHANGE_CHUNK_ANY_MOB)
+	mob_chunk_changed(mob_chunk_id(start), MOB_CHUNK_WATCH_ANY_MOB)
 	TEST_ASSERT_EQUAL(probe.heard, 1, "the watched bit calls the watcher back")
-	TEST_ASSERT_EQUAL(probe.last_bits, CHANGE_CHUNK_ANY_MOB, "with the bits raised")
-	unwatch_mob_chunks(probe, chunks, CHANGE_CHUNK_ANY_MOB)
-	mob_chunk_changed(mob_chunk_id(start), CHANGE_CHUNK_ANY_MOB)
+	TEST_ASSERT_EQUAL(probe.last_bits, MOB_CHUNK_WATCH_ANY_MOB, "with the bits raised")
+	unwatch_mob_chunks(probe, chunks, MOB_CHUNK_WATCH_ANY_MOB)
+	mob_chunk_changed(mob_chunk_id(start), MOB_CHUNK_WATCH_ANY_MOB)
 	TEST_ASSERT_EQUAL(probe.heard, 1, "an unwatched chunk calls nobody")
 
 #endif
