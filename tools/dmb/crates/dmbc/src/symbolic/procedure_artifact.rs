@@ -1,6 +1,6 @@
 //! Reusable immutable symbolic ownership and current-generation provenance.
 //! Table assignments and CurrentImage certificates are always issued later.
-use super::parallel::{BoundContribution, HelperContribution, OwnedStrings, Slots};
+use super::parallel::BoundContribution;
 use super::*;
 pub(crate) mod disk;
 #[path = "retained_census.rs"]
@@ -17,10 +17,8 @@ pub struct ReusableProcedureArtifact {
     features: BytecodeFeatures,
     frame: Arc<FrozenFrame>,
     abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
-    strings: OwnedStrings,
-    slots: Slots,
+    inventory: Arc<dm_link::InventoryContribution>,
     instances: Vec<(SymbolId, SymbolId)>,
-    content: dm_link::EntryContent,
     helpers: Vec<HelperArtifact>,
 }
 struct HelperArtifact {
@@ -30,10 +28,8 @@ struct HelperArtifact {
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     local_names: Arc<Vec<String>>,
-    strings: OwnedStrings,
-    slots: Slots,
+    inventory: Arc<dm_link::InventoryContribution>,
     instances: Vec<(SymbolId, SymbolId)>,
-    content: dm_link::EntryContent,
 }
 /// Current source occurrence, kept outside the reusable payload. Fields remain
 /// private; this is not a caller-supplied proof of a different source revision.
@@ -94,6 +90,10 @@ impl ReusableProcedureArtifact {
                 .saturating_add(self.metadata_recipe.release_numeric_caches()),
             |released, helper| released.saturating_add(helper.image_owner.release_bound_images()),
         )
+    }
+    #[cfg(test)]
+    pub(super) fn inventory_owner(&self) -> &Arc<dm_link::InventoryContribution> {
+        &self.inventory
     }
     pub fn identity(&self) -> UnitIdentity {
         self.identity
@@ -161,10 +161,8 @@ impl Clone for HelperArtifact {
             image_owner: Arc::clone(&self.image_owner),
             features: self.features,
             local_names: self.local_names.clone(),
-            strings: self.strings.clone(),
-            slots: self.slots.clone(),
+            inventory: self.inventory.clone(),
             instances: self.instances.clone(),
-            content: self.content.clone(),
         }
     }
 }
@@ -180,9 +178,7 @@ impl Clone for ReusableProcedureArtifact {
             frame: Arc::clone(&self.frame),
             instances: self.instances.clone(),
             abi: self.abi.clone(),
-            strings: self.strings.clone(),
-            slots: self.slots.clone(),
-            content: self.content.clone(),
+            inventory: self.inventory.clone(),
             helpers: self.helpers.clone(),
         }
     }
@@ -250,10 +246,15 @@ impl Contribution {
                 image_owner,
                 features,
                 local_names,
-                strings: entry.strings,
-                slots: entry.slots,
+                inventory: Arc::new(
+                    dm_link::InventoryContribution::new(
+                        helper_key(identity, argument),
+                        entry.content,
+                        entry.slots.0,
+                    )
+                    .with_strings(entry.strings.0),
+                ),
                 instances: entry.instances,
-                content: entry.content,
             });
         }
         let artifact_abi = abi.clone();
@@ -267,10 +268,15 @@ impl Contribution {
                 features,
                 frame,
                 abi,
-                strings: bound.strings,
-                slots: bound.slots,
+                inventory: Arc::new(
+                    dm_link::InventoryContribution::new(
+                        unit_key(identity),
+                        bound.content,
+                        bound.slots.0,
+                    )
+                    .with_strings(bound.strings.0),
+                ),
                 instances: bound.instances,
-                content: bound.content,
                 helpers: helper_artifacts,
             }),
             binding: ProcedureRevisionBinding {
@@ -284,59 +290,6 @@ impl Contribution {
     pub(super) fn shared_artifact(&self) -> Arc<ReusableProcedureArtifact> {
         self.artifact.clone()
     }
-    fn bind_owned(
-        artifact: ReusableProcedureArtifact,
-        binding: ProcedureRevisionBinding,
-    ) -> BoundContribution {
-        // Ordinary CLI emission moves all payloads. Retained consumers share
-        // immutable code/content/string bytes and copy only output descriptors.
-        let identity = artifact.identity;
-        let unit = FrozenUnit {
-            lowered: FrozenUnitMetadata {
-                warnings: artifact.warnings,
-                identity,
-                origin: binding.origin,
-                abi: binding.abi,
-                debug_origins: binding.debug,
-                frame: artifact.frame,
-            },
-            frozen: artifact.frozen,
-            metadata_recipe: artifact.metadata_recipe,
-            image_owner: artifact.image_owner,
-            features: artifact.features,
-            current_image: None,
-        };
-        let helpers = artifact
-            .helpers
-            .into_iter()
-            .zip(binding.helpers)
-            .map(|(helper, debug_origins)| HelperContribution {
-                helper: FrozenHelper {
-                    warnings: helper.warnings,
-                    owner: identity,
-                    argument: helper.argument,
-                    frozen: helper.frozen,
-                    image_owner: helper.image_owner,
-                    features: helper.features,
-                    current_image: None,
-                    debug_origins,
-                    local_names: helper.local_names,
-                },
-                strings: helper.strings,
-                slots: helper.slots,
-                instances: helper.instances,
-                content: helper.content,
-            })
-            .collect();
-        BoundContribution {
-            unit,
-            helpers,
-            strings: artifact.strings,
-            slots: artifact.slots,
-            content: artifact.content,
-            instances: artifact.instances,
-        }
-    }
     pub(super) fn replay(
         self,
         inventory: &mut LinkInventory,
@@ -346,58 +299,48 @@ impl Contribution {
         helpers: &mut Vec<FrozenHelper>,
     ) {
         let Self { artifact, binding } = self;
-        match Arc::try_unwrap(artifact) {
-            Ok(artifact) => Self::bind_owned(artifact, binding)
-                .replay(inventory, strings, symbols, units, helpers),
-            Err(artifact) => {
-                let unit = FrozenUnit {
-                    lowered: FrozenUnitMetadata {
-                        warnings: artifact.warnings.clone(),
-                        identity: artifact.identity,
-                        origin: binding.origin,
-                        abi: binding.abi,
-                        debug_origins: binding.debug,
-                        frame: artifact.frame.clone(),
-                    },
-                    frozen: artifact.frozen.clone(),
-                    metadata_recipe: artifact.metadata_recipe.clone(),
-                    image_owner: artifact.image_owner.clone(),
-                    features: artifact.features,
-                    current_image: None,
-                };
-                super::parallel::replay_unit(
-                    &unit,
-                    &artifact.strings,
-                    artifact.slots.0.iter().cloned(),
-                    artifact.content.clone(),
-                    inventory,
-                    strings,
-                    symbols,
-                );
-                units.push(unit);
-                for (retained, debug_origins) in artifact.helpers.iter().zip(binding.helpers) {
-                    let helper = FrozenHelper {
-                        warnings: retained.warnings.clone(),
-                        owner: artifact.identity,
-                        argument: retained.argument,
-                        frozen: retained.frozen.clone(),
-                        image_owner: retained.image_owner.clone(),
-                        features: retained.features,
-                        current_image: None,
-                        debug_origins,
-                        local_names: retained.local_names.clone(),
-                    };
-                    super::parallel::replay_helper(
-                        &helper,
-                        &retained.strings,
-                        retained.slots.0.iter().cloned(),
-                        retained.content.clone(),
-                        inventory,
-                        strings,
-                    );
-                    helpers.push(helper);
-                }
-            }
+        let unit = FrozenUnit {
+            lowered: FrozenUnitMetadata {
+                warnings: artifact.warnings.clone(),
+                identity: artifact.identity,
+                origin: binding.origin,
+                abi: binding.abi,
+                debug_origins: binding.debug,
+                frame: artifact.frame.clone(),
+            },
+            frozen: artifact.frozen.clone(),
+            metadata_recipe: artifact.metadata_recipe.clone(),
+            image_owner: artifact.image_owner.clone(),
+            features: artifact.features,
+            current_image: None,
+        };
+        super::parallel::replay_shared_unit(
+            &unit,
+            Arc::clone(&artifact.inventory),
+            inventory,
+            strings,
+            symbols,
+        );
+        units.push(unit);
+        for (retained, debug_origins) in artifact.helpers.iter().zip(binding.helpers) {
+            let helper = FrozenHelper {
+                warnings: retained.warnings.clone(),
+                owner: artifact.identity,
+                argument: retained.argument,
+                frozen: retained.frozen.clone(),
+                image_owner: retained.image_owner.clone(),
+                features: retained.features,
+                current_image: None,
+                debug_origins,
+                local_names: retained.local_names.clone(),
+            };
+            super::parallel::replay_shared_helper(
+                &helper,
+                Arc::clone(&retained.inventory),
+                inventory,
+                strings,
+            );
+            helpers.push(helper);
         }
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -411,15 +354,11 @@ impl Contribution {
             &self.binding.origin,
             &self.binding.debug,
         );
-        census.prepared_strings(&self.artifact.strings.0);
-        census.vec_payload("prepared_inventory.slots", &self.artifact.slots.0);
-        census.prepared_entry_bytes(&self.artifact.content);
+        census.prepared_inventory_contribution(&self.artifact.inventory);
         census.vec_payload("prepared_helpers", &self.artifact.helpers);
         for (helper, debug) in self.artifact.helpers.iter().zip(&self.binding.helpers) {
             census.prepared_helper_parts(&helper.frozen, &helper.local_names, debug);
-            census.prepared_strings(&helper.strings.0);
-            census.vec_payload("prepared_inventory.slots", &helper.slots.0);
-            census.prepared_entry_bytes(&helper.content);
+            census.prepared_inventory_contribution(&helper.inventory);
         }
     }
 }

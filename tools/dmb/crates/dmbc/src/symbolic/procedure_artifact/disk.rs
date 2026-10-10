@@ -55,9 +55,9 @@ impl ReusableProcedureArtifact {
             &self.warnings,
             &self.frozen,
             &self.frame,
-            &self.strings,
-            &self.slots,
-            &self.content,
+            self.inventory.strings(),
+            self.inventory.slots(),
+            &self.inventory.entry().content,
         )
     }
     pub(crate) fn disk_helpers(&self) -> Option<Vec<HelperWire<'_>>> {
@@ -139,17 +139,17 @@ impl<'a> Encoded<'a> {
             &helper.local_names,
             &[],
             &[],
-            &helper.strings,
-            &helper.slots,
-            &helper.content,
+            helper.inventory.strings(),
+            helper.inventory.slots(),
+            &helper.inventory.entry().content,
         )
     }
     fn capture(
         warnings: &[dm_codegen_byond::ProcedureWarning],
         frozen: &'a FrozenProc,
         frame: &'a FrozenFrame,
-        strings: &'a OwnedStrings,
-        slots: &'a Slots,
+        strings: &'a [dm_ir::StringPayload],
+        slots: &'a [SlotAlias],
         content: &'a dm_link::EntryContent,
     ) -> Option<Self> {
         Self::capture_fields(
@@ -172,8 +172,8 @@ impl<'a> Encoded<'a> {
         locals: &'a [String],
         arguments: &'a [String],
         flags: &[u32],
-        strings: &'a OwnedStrings,
-        slots: &'a Slots,
+        strings: &'a [dm_ir::StringPayload],
+        slots: &'a [SlotAlias],
         content: &'a dm_link::EntryContent,
     ) -> Option<Self> {
         let dm_link::EntryContent::Symbolic(content) = content else {
@@ -222,7 +222,6 @@ impl<'a> Encoded<'a> {
             flags: crate::lowering_memo_compact::BoundedVec(flags.to_vec()),
             strings: crate::lowering_memo_compact::BoundedVec(
                 strings
-                    .0
                     .iter()
                     .map(|s| StringWire {
                         id: s.id,
@@ -231,11 +230,7 @@ impl<'a> Encoded<'a> {
                     .collect(),
             ),
             slots: crate::lowering_memo_compact::BoundedVec(
-                slots
-                    .0
-                    .iter()
-                    .map(|s| (s.symbol, s.owner, s.name))
-                    .collect(),
+                slots.iter().map(|s| (s.symbol, s.owner, s.name)).collect(),
             ),
             prefix: Cow::Borrowed(prefix),
             suffix: Cow::Borrowed(suffix),
@@ -469,10 +464,11 @@ impl Encoded<'_> {
             features,
             frame: Arc::new(frame),
             abi: prepared.abi.clone(),
-            strings: OwnedStrings(strings),
-            slots: Slots(slots),
+            inventory: Arc::new(
+                dm_link::InventoryContribution::new(unit_key(identity), expected, slots)
+                    .with_strings(strings),
+            ),
             instances: plain.to_vec(),
-            content: expected,
             helpers: Vec::new(),
         }))
     }
@@ -536,10 +532,18 @@ impl ReusableProcedureArtifact {
                 image_owner: code.image_owner,
                 features: code.features,
                 local_names: Arc::new(Arc::try_unwrap(code.frame).ok()?.local_names),
-                strings: code.strings,
-                slots: code.slots,
+                inventory: {
+                    let (entry, slots, strings) = Arc::unwrap_or_clone(code.inventory).into_parts();
+                    Arc::new(
+                        dm_link::InventoryContribution::new(
+                            helper_key(identity, helper.argument),
+                            entry.content,
+                            slots,
+                        )
+                        .with_strings(strings),
+                    )
+                },
                 instances: code.instances,
-                content: code.content,
             });
         }
         Arc::get_mut(artifact)?.helpers = restored;

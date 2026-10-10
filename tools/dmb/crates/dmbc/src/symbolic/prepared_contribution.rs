@@ -320,7 +320,7 @@ fn link_prepared_execution(
     let mut helpers = Vec::new();
     let mut source_bindings = std::collections::BTreeSet::new();
     let mut string_inventory = StringInventory::new(&inventory);
-    for entry in &inventory.entries {
+    for entry in inventory.entry_iter() {
         if let Key::Type(id) = entry.key {
             let path = symbols
                 .text(id)

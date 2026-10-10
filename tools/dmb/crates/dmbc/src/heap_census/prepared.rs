@@ -2,6 +2,17 @@
 use super::*;
 
 impl HeapCensus {
+    pub(crate) fn prepared_inventory_contribution(
+        &mut self,
+        owner: &Arc<dm_link::InventoryContribution>,
+    ) {
+        if self.arc_object("symbolic.inventory", owner) {
+            self.vec_payload("symbolic.inventory.slots", owner.slots());
+            self.prepared_strings(owner.strings());
+            self.prepared_entry_bytes(&owner.entry().content);
+        }
+    }
+
     pub(crate) fn frozen_frame(
         &mut self,
         owner: &'static str,

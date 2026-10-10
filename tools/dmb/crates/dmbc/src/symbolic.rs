@@ -450,7 +450,7 @@ pub fn freeze_artifact_tables_with_executor(
     let mut helpers = Vec::new();
     let mut source_bindings = std::collections::BTreeSet::new();
     let mut string_inventory = StringInventory::new(&inventory);
-    for entry in &inventory.entries {
+    for entry in inventory.entry_iter() {
         if let Key::Type(id) = entry.key {
             let path = symbols
                 .text(id)
@@ -753,13 +753,11 @@ impl StringInventory {
     fn new(inventory: &LinkInventory) -> Self {
         Self {
             spellings: inventory
-                .spellings
-                .iter()
-                .map(|(id, bytes)| (*id, Arc::clone(bytes)))
+                .spelling_iter()
+                .map(|(id, bytes)| (id, Arc::clone(bytes)))
                 .collect(),
             content: inventory
-                .entries
-                .iter()
+                .entry_iter()
                 .filter_map(|entry| match entry.key {
                     Key::String(id) => Some((id, entry.content.shared_bytes())),
                     _ => None,

@@ -117,6 +117,48 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
         Vec::new(),
     )
     .unwrap();
+    let replay = super::procedure_artifact::Contribution::rebind(
+        &artifact,
+        moved.bodies[0].clone(),
+        current.debug_origins.clone(),
+        prepared.abi.clone(),
+        artifact
+            .helper_origins(&moved, &moved.bodies[0], &prepared)
+            .unwrap(),
+    );
+    let mut inventory = LinkInventory::default();
+    let mut strings = StringInventory::new(&inventory);
+    replay.replay(
+        &mut inventory,
+        &mut strings,
+        moved.snapshot.tree.symbols(),
+        &mut Vec::new(),
+        &mut Vec::new(),
+    );
+    assert!(Arc::ptr_eq(
+        &inventory.shared[0].owner,
+        artifact.inventory_owner()
+    ));
+    assert_eq!(
+        inventory
+            .shared
+            .iter()
+            .filter(|chunk| !chunk.strings)
+            .count(),
+        2,
+        "procedure and helper stay immutable chunks"
+    );
+    assert!(inventory
+        .entries
+        .iter()
+        .all(|entry| entry.key.table() != dm_link::Table::Procedure));
+    assert_eq!(
+        inventory
+            .entry_iter()
+            .filter(|entry| entry.key.table() == dm_link::Table::Procedure)
+            .count(),
+        2
+    );
     let mut early = link_prepared_artifact_tables(
         vec![rebound],
         moved.snapshot.tree.symbols(),

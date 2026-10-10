@@ -10,8 +10,7 @@ pub(super) fn complete(inventory: &mut LinkInventory) -> Result<(), String> {
     };
     let fixed: BTreeSet<_> = inventory.fixed.iter().map(|(key, _)| *key).collect();
     let fresh: BTreeSet<_> = inventory
-        .entries
-        .iter()
+        .entry_iter()
         .map(|entry| entry.key)
         .filter(|key| key.table() == Table::Procedure && !fixed.contains(key))
         .collect();
@@ -24,7 +23,7 @@ pub(super) fn complete(inventory: &mut LinkInventory) -> Result<(), String> {
             return Err("invalid current procedure declaration allocation roster".into());
         }
     }
-    for entry in &inventory.entries {
+    for entry in inventory.entry_iter() {
         let key = entry.key;
         if key.table() != Table::Procedure || fixed.contains(&key) || seen.contains(&key) {
             continue;
@@ -66,7 +65,9 @@ mod tests {
         let generated = Key::Initializer(InitializerIdentity::Global);
         let mut inventory = LinkInventory::default();
         for name in ["/datum/order", "zebra", "alpha", "middle"] {
-            inventory.spellings.push((SymbolId::of(name), std::sync::Arc::from(name.as_bytes())));
+            inventory
+                .spellings
+                .push((SymbolId::of(name), std::sync::Arc::from(name.as_bytes())));
         }
         inventory.entries = vec![
             entry(keys[2]),

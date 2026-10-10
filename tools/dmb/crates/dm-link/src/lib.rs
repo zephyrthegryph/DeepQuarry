@@ -121,6 +121,7 @@ pub struct SlotAlias {
 }
 #[derive(Clone, Debug, Default)]
 pub struct LinkInventory {
+    pub shared: Vec<SharedContribution>,
     pub entries: Vec<Entry>,
     /// Exact spellings validate hashed SymbolId identity across all inventories.
     pub spellings: Vec<(SymbolId, Arc<[u8]>)>,
@@ -138,6 +139,7 @@ pub struct LinkInventory {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkError {
+    InvalidContributionOrder,
     SymbolCollision(SymbolId),
     InvalidSymbol(SymbolId),
     MissingSpelling(SymbolId),
@@ -161,6 +163,8 @@ pub enum LinkError {
 }
 mod relocation_binding;
 pub use relocation_binding::{BindingAnswers, BoundRelocations, SourceBindingAccess};
+mod inventory_contribution;
+pub use inventory_contribution::{InventoryContribution, SharedContribution};
 mod bindings;
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
@@ -192,34 +196,36 @@ impl LinkTables {
         inventory: LinkInventory,
         previous: Option<&BindingTables>,
     ) -> Result<Self, LinkError> {
+        inventory.validate_shared()?;
         let mut spellings = BTreeMap::new();
-        for (id, bytes) in inventory.spellings {
+        for (id, bytes) in inventory.spelling_iter() {
             if SymbolId::of_bytes(&bytes) != id {
                 return Err(LinkError::InvalidSymbol(id));
             }
             if spellings
-                .insert(id, Arc::clone(&bytes))
-                .is_some_and(|previous| previous != bytes)
+                .insert(id, Arc::clone(bytes))
+                .is_some_and(|previous| previous != *bytes)
             {
                 return Err(LinkError::SymbolCollision(id));
             }
         }
         let mut content = BTreeMap::new();
-        for entry in inventory.entries {
+        for entry in inventory.entry_iter() {
             for symbol in symbols(entry.key) {
                 if !spellings.contains_key(&symbol) {
                     return Err(LinkError::MissingSpelling(symbol));
                 }
             }
             if content
-                .insert(entry.key, entry.content.clone())
-                .is_some_and(|previous| previous != entry.content)
+                .get(&entry.key)
+                .is_some_and(|previous| previous != &entry.content)
             {
                 return Err(LinkError::ContentCollision(entry.key));
             }
+            content.insert(entry.key, entry.content);
         }
         let mut slots = BTreeMap::new();
-        for slot in inventory.slots {
+        for slot in inventory.slot_iter() {
             let tuple = (slot.owner, slot.name);
             if slots
                 .insert(slot.symbol, tuple)
