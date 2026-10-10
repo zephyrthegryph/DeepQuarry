@@ -51,5 +51,5 @@ human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, kit_customize, kit_customize_last, manage_mind, move_to_top, pick_up_item, toggle_digestable
+keys: bodyscan_wait, collect_item, drag_buckle, emag.subvert, emag.use, equip_module, kit_customize, kit_customize_last, manage_mind, mindscan_wait, mindsteal_wait, mindupload_wait, move_to_top, pick_up_item, toggle_digestable
 

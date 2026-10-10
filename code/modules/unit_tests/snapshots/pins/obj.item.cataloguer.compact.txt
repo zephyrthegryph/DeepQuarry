@@ -91,5 +91,5 @@ human|/obj/item menu: Toggle Cataloguer (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: alt, back_to_list, collect_item, compact_toggle_effect, controls, debug_unlock, drag_buckle, equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pulse_scan, refresh, show_data, toggle_digestable
+keys: alt, back_to_list, collect_item, compact_toggle_effect, controls, debug_unlock, drag_buckle, equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pulse_scan, refresh, scan, show_data, toggle_digestable
 

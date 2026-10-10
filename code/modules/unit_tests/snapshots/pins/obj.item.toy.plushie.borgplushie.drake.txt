@@ -91,5 +91,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Name Plushie (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item
-keys: alt, collect_item, drag_buckle, equip_module, hug, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, poke, punch, rename, strangle, toggle_digestable
+keys: alt, collect_item, drag_buckle, equip_module, find_inside, hug, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, poke, punch, rename, strangle, toggle_digestable
 

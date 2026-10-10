@@ -58,5 +58,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Pick up
-keys: collect_item, drag_buckle, eat, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, warn
+keys: collect_item, drag_buckle, eat, eat_wait, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, warn
 

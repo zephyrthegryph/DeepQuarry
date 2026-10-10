@@ -97,5 +97,5 @@ human|/obj/item/flashlight/pen menu: Nickname
 human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/flashlight/pen menu: Use
 human|/obj/item/flashlight/pen click: Click: Nickname
-keys: collect_item, drag_buckle, equip_module, handle, insert_cell, item, kit_customize, kit_customize_last, move_to_top, nickname, pick_up_item, toggle_digestable, use_screwdriver
+keys: collect_item, drag_buckle, equip_module, handle, insert_cell, item, kit_customize, kit_customize_last, move_to_top, nickname, pick_up_item, repack, toggle_digestable, use_screwdriver
 

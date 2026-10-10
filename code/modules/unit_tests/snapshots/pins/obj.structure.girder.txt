@@ -63,5 +63,5 @@ human|/obj/item/pickaxe/plasmacutter menu: Slice apart
 human|/obj/item/pickaxe/plasmacutter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pickaxe/plasmacutter menu: Use
 human|/obj/item/pickaxe/plasmacutter click: Click: Slice apart
-keys: disassemble, dislodge, drag_buckle, hulk_smash, item, melee_hit, remove_struts, secure, slice, toggle_reinforcing, unsecure_struts
+keys: construct_wall_wait, disassemble, dislodge, drag_buckle, hulk_smash, item, melee_hit, reinforce_wait, remove_struts, secure, slice, toggle_reinforcing, unsecure_struts
 

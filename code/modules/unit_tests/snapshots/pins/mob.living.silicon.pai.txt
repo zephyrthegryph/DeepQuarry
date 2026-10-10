@@ -155,5 +155,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item menu: Use on
 human|/obj/item click: Click: Pat
-keys: attack_variants.disarm, attack_variants.grab, drag_buckle, hit_disarm, hit_grab, hit_help, hit_hurt, image, pai_access, pai_access_closed, pai_boop_disarm, pai_hit, pai_pat_help, purchase, software, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, image, injection, lend_prey_control, melee_swing, pai_access, pai_access_closed, pai_boop_disarm, pai_hit, pai_pat_help, polymorph, purchase, revert_beast_form, shred_limb, software, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, ventcrawl_in, vertical_nom, yank_out, zmove
 

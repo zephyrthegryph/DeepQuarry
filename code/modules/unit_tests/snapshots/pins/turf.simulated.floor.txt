@@ -109,5 +109,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Floor item help
-keys: cut_plating, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, pry_covering, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
+keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, graffiti, lay_flooring, pry_covering, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
 

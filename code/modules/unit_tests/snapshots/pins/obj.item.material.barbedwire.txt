@@ -75,5 +75,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Repair
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Barbedwire hit
-keys: barbedwire_hit, collect, collect_item, deploy, drag_buckle, equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, toggle_digestable, use_wirecutter
+keys: barbedwire_hit, collect, collect_item, deploy, drag_buckle, equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable, use_wirecutter
 

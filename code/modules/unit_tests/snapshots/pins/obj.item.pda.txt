@@ -131,5 +131,5 @@ human|/obj/item menu: Remove pen (refused: You can't do that.)
 human|/obj/item menu: Reset PDA (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item
-keys: alt, Authenticate, collect_item, drag_buckle, Eject, equip_module, Home, item, kit_customize, kit_customize_last, move_to_top, pda_self, pda_verb_remove_cartridge, pda_verb_remove_id, pda_verb_remove_pen, pda_verb_reset, pick_up_item, Retro, Ringtone, StartProgram, toggle_digestable, TouchSounds
+keys: alt, Authenticate, collect_item, drag_buckle, Eject, equip_module, Home, item, kit_customize, kit_customize_last, move_to_top, pda_self, pda_verb_remove_cartridge, pda_verb_remove_id, pda_verb_remove_pen, pda_verb_reset, pick_up_item, Retro, Ringtone, StartProgram, threaten_eat, toggle_digestable, TouchSounds
 

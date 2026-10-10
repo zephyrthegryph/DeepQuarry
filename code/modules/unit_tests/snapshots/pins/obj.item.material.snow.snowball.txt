@@ -62,5 +62,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Repair
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Repair
-keys: collect_item, compact, drag_buckle, equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, smash, toggle_digestable
+keys: collect_item, compact, drag_buckle, equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, smash, toggle_digestable
 

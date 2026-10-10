@@ -4193,23 +4193,6 @@ Group D: the timed actions of girders, the medical stand, the stasis cage, trans
   * Spinning (`/mob/proc/spin`) is a chain of `after()` calls, not a task: same turns at the same times.
 
 
-## Timed actions round 3 (rewrite/timed3-F)
-
-Classes: (a) held-item and incapacitation keeps become the `ai()` op defaults, (b) a message that named a runtime value is generic, (c) several parallel timers become one repeating wait.
-
-* Cyborg brain extraction (`robot_extract_mmi` op on the crowbar): the start line no longer names the brain ("begin levering its brain" instead of the MMI's name). (b)
-* Dogborg and cyborg self repair (`self_repair_system`, op `self`): the refusals "can't repair destroyed [component]'s plating" and "no damage detected [in component]" no longer name the component; the old code ran one independent timer per component, the op runs one repeating wait that heals every damaged component each lap and pays power for each component each lap, and ends when none is damaged, the cell cannot pay, or the cyborg moves. The "Repair of [C] completed" line is said at the lap the component is whole. (b) (c)
-* Lleill transmute and alchemy: a dropped or swapped item ends the wait through the HELD keep, and the item being deleted ends the action silently at the end of the wait. (a)
-* Protean, shapeshifter, bloodsuck, shred limb, injection, succubus bite, rainbows, relocate joint, hand games, modular limbs, lleill contact: the old task cancelled on any change of the actor's active hand or a stun; the `ai()` op keeps the actor in place, the target present and the actor alive. A swapped hand item no longer cancels these waits. (a)
-* Hand games and rainbows: the old task cancelled when the other party took a single step; the ops keep the other party within 2 tiles (7 for rainbows) instead. (a)
-* Left on the legacy form (KF1): butchering, melee swing windup, revert beast form, egg laying, underwater absorb devour.
-## Timed actions round 3 (rewrite/timed3-G)
-
-| Class | Site | Change |
-|---|---|---|
-| (b) target no longer cancels | stardog eating weather, kururak hatch rending, worm eating a wall / object / field / door, Nikki hat warp, slug glue | The old task also ended when the target (event, mech, wall, door, guided mob) moved; the self-target `ai()` op ends only when the actor moves. Kururak and the hat re-check adjacency at the end; the worm and stardog rely on the target being fixed. |
-| (b) dead check dropped | grab pin down | `pin_down_grab_done` reads `grab_target()` when the wait ends instead of the old `target` argument. |
-| (c) vertical nom, holo nom, dominate/lend control, beacon insert, body writing, eat minerals, climb down | converted in rewrite/timed3-I | See the timed3-I section below and KG1 in framework_gaps.md. |
 ## Timed actions round 3 (rewrite/timed3-H)
 
 Group H: projectiles, hose inflation, disposal holder, experisci handler, sleevecard, research samples, NTSL, spells, cavity surgery, ventcrawl, artifact blade. The classes:
@@ -4220,14 +4203,15 @@ Group H: projectiles, hose inflation, disposal holder, experisci handler, sleeve
 * **NTSL.** A script that sleeps resumes from `after(src, yield_for, PROC_REF(script_step), key = "script")` on the compiler; the busy test is `after_pending(src, "script")`. Deleting the compiler drops the timer, a deleted signal drops the script as before.
 * **Ventcrawl.** The entry op lives on `/obj/machinery/atmospherics` (the `/mob/living` root cannot take an op); it claims the crawler, replacing the `busy = src` of the old task.
 
-## Timed actions round 3 (rewrite/timed3-I)
+## Timed actions round 3: the last callers and the ban (rewrite/timed3)
 
-Group I: the `/mob/living` abilities. `CAPABILITIES(/mob/living)` names `living_abilities()` (K23, option B of `proposals/mob_living_root.md`) and the ops are in `code/library/mob/living_abilities.dm`. All are `ai()` ops started by the old entry procs with `perform_op(..., ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)`. The classes:
-* **The op is declared on the mob the work is done to.** Butchering, harvest cuts, devouring from inside a belly, vertical nom, holo nom, beacon insert, body writing, eat minerals and the three control transfers (dominate predator, dominate prey, lend prey control) are ops of the victim / carcass / prey / eater; the one who acts is `A.actor`. The handlers read `A.actor` and `src` is the target; the player sees the same messages.
-* **(b) Hand changes.** An op started without a held item cannot keep the hand: swapping the active hand no longer cancels the control transfers, the body writing, the absorb devour, the vertical nom, the holo nom and the eat minerals (the old tasks cancelled on "hands changed"). The beacon insert, harvest cuts, carcass butchering and the melee swing pass the item as `held`, so dropping it still cancels. The beacon insert still re-checks the active hand when the wait ends.
-* **(b) Adjacency.** The control transfers, devouring from inside a belly, holo nom and vertical nom keep `TARGET_PRESENT | STAY` (and `ALIVE` except holo nom, whose actor is the AI eye) and not adjacency, as the old tasks did not either; body writing and the beacon insert use `reach(REACH_RANGE(1))`, so the `ADJACENT` keep is "within one tile of the target" (the old body writing used `max_distance = 1`; the beacon insert checked adjacency only in the prompts).
-* **(b) Eat minerals.** The feeder may walk (`STAY` is dropped, as `IGNORE_USER_LOC_CHANGE` did), the eater is claimed (`claims(CLAIM_TARGET)`) so nobody is fed twice at once, and a stun or sleep of the feeder (`ALIVE`) cancels as before. Deleting the item mid-chew now fails the op instead of running the done proc on a deleted item.
-* **Harvest.** The cuts are the laps of one repeating wait (`wait(repeats =)`), not a new task per cut; the whole series claims the carcass, and walking away or dropping the knife ends it with the cuts made so far. When the last cut is made the carcass is butchered by a second op, started from `then()` after the claim ended. The wait time of a cut is `max(1 TICK, ...)` so a tiny animal does not make a zero wait.
-* **Melee swing.** `begin_melee_swing` returns FALSE (and clears `is_swinging`) when the op is refused; the windup is a `silent_wait()` (no bar, no cog, the old `hidden = TRUE`) and the swinger keeps the weapon, the place and consciousness (`HELD | ALIVE | STAY`); a dodging victim does not cancel it. The old `interaction_key` limit on parallel windups is gone (the `is_swinging` flag was the real gate).
-* **Climb down.** The wait keeps the default keeps; the fall after the grace time is the `on_interrupt()` handler as before.
-* **Left on the legacy form.** The cataloguer scan (KD1 in framework_gaps.md: the distance keep exists, but an op on a held item cannot aim at a distant target yet).
+Every `task_timed()`, `task_start()`, `task_busy()` and `task_in_use()` caller outside the engine is gone, and the four names are a hard ban (`banned` in `tools/ci/lint_scopes.toml`; `timed_forms_converted` and its lint part are deleted). Classes, beyond the per-group sections above:
+
+* **The mob abilities were already ops.** `rewrite/living` (K23, `living_abilities()`) converted the `/mob/living` and human ability sites while this lane ran; for those files (butchering, melee swing, the human powers, lleill, protean, shapeshifter, vore, climbing, ventcrawl, level moves) the merge took master's versions, and the group F, G and I conversions of them were dropped. Their behaviour is that lane's.
+* **A start handler that ends its own op.** A `starts()` handler whose write stunned the actor (the suit cycler's shock) re-checked the op's keeps and ended it before the workflow suspended it; `advance()` now returns when the op is no longer active after a start handler.
+* **Soap on a machine.** The soap's generic `clean` op is below a target's own ops (`OP_PRIORITY_DEFAULT - 5`), so a dirty microwave still takes its own cleaning (it was the target's `attackby` before the soap's `afterattack`).
+* **The cataloguer scan** is a `scan` op on the cataloguer (`claims()`, `keeps = HELD | ALIVE`): walking about during the scan no longer matters, the range is judged where the scan ends (a target further than `scan_range` fails it like an interruption), and the scanned atom is no longer a kept target (a deleted one fails at the end).
+* **The denecrotizer and the grave shovel** keep their held item (`perform_op(..., src/our_shovel, ...)`): dropping it still cancels, as before.
+* **The leash offer** is an `asks()` step of the `leash_on` op with the pet as `answerer`; a pet that is already leashed is told so by `starts()`.
+* **The cult construct's mark** is an `/obj/effect/overlay/spell_target` instead of a raw overlay write, deleted when the charge ends.
+* **Menu and click pins.** `dq_conversion_pin` is blessed: the ability keys of the living lane that master's snapshots lacked on every `/mob/living` type, the soap rows (`Clean`, `Scrub out`), the broken gun's `Repair` (replacing `Use`), the plushie `find_inside` key, and the bonfire/tape rows of the earlier groups.

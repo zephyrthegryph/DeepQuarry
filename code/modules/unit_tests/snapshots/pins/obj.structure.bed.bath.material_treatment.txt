@@ -84,5 +84,5 @@ human|/obj/item/stack/material/processed_alloy menu: Pad (refused: You cannot pa
 human|/obj/item/stack/material/processed_alloy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/processed_alloy menu: Treat alloy
 human|/obj/item/stack/material/processed_alloy click: Click: Pad
-keys: bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, melee_hit, pad, tuck_disk, tuck_plushie, unpad
+keys: bath_buckle, bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, melee_hit, pad, tuck_disk, tuck_plushie, unpad
 

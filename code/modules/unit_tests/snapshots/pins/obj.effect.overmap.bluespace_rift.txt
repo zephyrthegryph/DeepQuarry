@@ -36,6 +36,7 @@ human|/obj/item/mop_deploy menu: Insert a mop
 human|/obj/item/mop_deploy menu: Move To Top
 human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Clean
 human|/obj/item/soap menu: Insert a soap
 human|/obj/item/soap menu: Move To Top
 human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
