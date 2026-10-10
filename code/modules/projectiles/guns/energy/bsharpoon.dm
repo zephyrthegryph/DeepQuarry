@@ -35,26 +35,29 @@
 	else
 		failure_chance = 75 // You can't even use it if there's no scanmod, but why not.
 
-/obj/item/bluespace_harpoon/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/item/bluespace_harpoon/proc/screwdriver_used(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(!scanmod)
 		to_chat(user, span_warning("There's no scanner module installed!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	var/turf/T = get_turf(src)
 	to_chat(user, span_notice("You remove [scanmod] from [src]."))
 	playsound(src, tool.usesound, 75, 1)
 	scanmod.forceMove(T)
 	rel_take(src, nameof(scanmod))
 	update_fail_chance()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/item/bluespace_harpoon)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("fire_mode", in_hand(), label("Change fire mode"), then(PROC_REF(interaction_fire_mode)))
 	op("harpoon_verb_fire_mode", menu(), label("Change Fire Mode"), needs(carried()), then(PROC_REF(harpoon_verb_fire_mode_op)))
 	op("harpoon_verb_dropnom_mode", menu(), label("Toggle Spatial Rearrangement"), needs(carried()), then(PROC_REF(harpoon_verb_dropnom_mode)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The harpoon_verb_fire_mode op: the verb's effect, as the old resolver ran it.
 /obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode_op(datum/act/op/A)

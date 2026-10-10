@@ -242,6 +242,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
 /mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)
@@ -280,9 +281,10 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 		request_player()
 	return TRUE
 
-/mob/living/silicon/robot/drone/crowbar_act(mob/user, obj/item/tool)
+/mob/living/silicon/robot/drone/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 /mob/living/silicon/robot/drone/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!client || stat == DEAD)

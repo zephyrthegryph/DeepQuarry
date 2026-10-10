@@ -22,6 +22,7 @@ CAPABILITIES(/obj/item/strangerock)
 	rolls(nameof(pixel_x), range_of(-8, 8))
 	rolls(nameof(pixel_y), range_of(-8, 0))
 	op("strangerock_item", item(/obj/item), label("Use"), then(PROC_REF(strangerock_item)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// The find the rock holds (its constructor param), or 0 for a research sample at most.
 /obj/item/strangerock/var/inside_item_type = 0
@@ -86,16 +87,18 @@ CAPABILITIES(/obj/item/strangerock)
 		consume(src, user)
 	return gathered ? OP_OK : OP_PASS
 
-/obj/item/strangerock/welder_act(mob/user, obj/item/tool)
+/obj/item/strangerock/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.isOn())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(welder.get_fuel() < 2)
 		visible_message(span_info("A few sparks fly off \the [src], but nothing else happens."))
 		welder.remove_fuel(1)
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(loc?.release_refusal(src, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/inside = locate_within(src, /obj/item)
 	if(inside)
 		inside.forceMove(get_turf(src))
@@ -104,5 +107,5 @@ CAPABILITIES(/obj/item/strangerock)
 		visible_message(span_info("\The [src] burns away into nothing."))
 	welder.remove_fuel(2)
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 

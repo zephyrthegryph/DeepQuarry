@@ -60,6 +60,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
 	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb_op(datum/act/op/A)
@@ -118,7 +121,8 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/clothing/mask/gas/sechailer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(aggressiveness)
 		if(1)
 			to_chat(user, span_notice("You set the aggressiveness restrictor to the second position."))
@@ -138,21 +142,24 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 			phrase = 1
 		if(5)
 			to_chat(user, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/clothing/mask/gas/sechailer/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(aggressiveness == 5)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_warning("You broke it!"))
 	aggressiveness = 5
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/crowbar_act(mob/user, obj/item/tool)
+/obj/item/clothing/mask/gas/sechailer/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!hailer())
 		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(loc?.release_refusal(src, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
 	playsound(src, tool.usesound, 50, TRUE)
 	transfer_blooddna_to(mask)
@@ -164,7 +171,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	else
 		hailer().forceMove(mask.loc)
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old verb "HALT!".
 /obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held)

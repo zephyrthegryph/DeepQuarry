@@ -22,6 +22,7 @@ CAPABILITIES(/obj/structure/window/maintenance_panel)
 	op("weld_toggle", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Weld or cut"), priority(OP_PRIORITY_PART + 10), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
 	op("weld_toggle_help", tool(TOOL_WELDER), stance(I_HELP), when(cond_not(PROC_REF(is_damaged))), label("Weld or cut"), priority(OP_PRIORITY_TAKE_OUT), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
 	op("swallow", observer(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attackby.
 /obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(datum/act/op/A)
@@ -29,8 +30,8 @@ CAPABILITIES(/obj/structure/window/maintenance_panel)
 		return OP_PASS
 	return OP_DECLINE
 
-/obj/structure/window/maintenance_panel/screwdriver_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/window/maintenance_panel/proc/screwdriver_used(datum/act/op/A)
+	return OP_OK
 
 /obj/structure/window/maintenance_panel/proc/weld_begins(datum/act/op/A)
 	return msg_text(span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))

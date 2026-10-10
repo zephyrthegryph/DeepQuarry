@@ -37,9 +37,11 @@ CAPABILITIES(/obj/structure/cable/ender)
 	else
 		return OP_DECLINE
 
-/obj/structure/cable/ender/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/cable/ender/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 // Because they cannot be rebuilt, they are hard to destroy
 

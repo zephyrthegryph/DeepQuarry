@@ -81,6 +81,9 @@ TRACKED(/obj/item/modular_computer, bsod)
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 
 CAPABILITIES(/obj/item/modular_computer)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0),
+		asks(/datum/prompt/choice, fields = list("question" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = computed(PROC_REF(component_names))), step = "component", when = PROC_REF(has_components)),
+		then(PROC_REF(screwdriver_used)))
 	ref_many(nameof(paired_uavs))
 	owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit)
 	owns_one(nameof(network_card), /obj/item/computer_hardware/network_card)
@@ -116,6 +119,7 @@ CAPABILITIES(/obj/item/modular_computer)
 	op("computer_verb_eject_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject ID"), when(req_bool(PROC_REF(pred_computer_has_card_slot))), needs(req_adjacent(), req_bool(PROC_REF(pred_computer_hands_on), because = PROC_REF(pred_computer_hands_on_refusal))), then(PROC_REF(computer_verb_eject_id)))
 	op("computer_verb_eject_usb", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Portable Storage"), when(req_bool(PROC_REF(pred_computer_has_drive))), needs(req_adjacent(), req_bool(PROC_REF(pred_computer_hands_on), because = PROC_REF(pred_computer_hands_on_refusal))), then(PROC_REF(computer_verb_eject_usb)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp_damage)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 
 /// Whether the computer is turned on. its every() runs its programs while it is.

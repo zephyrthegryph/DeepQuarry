@@ -101,6 +101,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 	op("use", in_hand(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("question" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left", "Right"), "buttons" = TRUE, "timeout" = 0), step = "side", when = PROC_REF(asks_side)),
 		then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attack_hand: notify the parts before falling through (never handled the click itself).
 /obj/item/assembly_holder/proc/interaction_hand(datum/act/op/A)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
@@ -113,15 +114,16 @@ CAPABILITIES(/obj/item/assembly_holder)
 /obj/item/assembly_holder/proc/asks_side(datum/act/op/A)
 	return secured && a_left && a_right && istype(a_left, a_right.type)
 
-/obj/item/assembly_holder/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/assembly_holder/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!a_left || !a_right)
 		to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	a_left.toggle_secure()
 	a_right.toggle_secure()
 	set_secured(!secured)
 	to_chat(user, span_notice(secured ? "\The [src] is ready!" : "\The [src] can now be taken apart!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_self: split assembly (unsecured) or use the parts (secured).
 /obj/item/assembly_holder/proc/interaction_self(datum/act/op/A)

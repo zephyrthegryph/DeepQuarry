@@ -129,6 +129,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
 	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req_bool(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
 		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -185,8 +186,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	icon_state = "barrel3"
 	modded = FALSE
 
-/obj/structure/reagent_dispensers/fueltank/barrel/wrench_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING // Open barrels have no closable faucet.
+/obj/structure/reagent_dispensers/fueltank/barrel/wrench_used(datum/act/op/A)
+	return OP_OK // Open barrels have no closable faucet.
 
 /obj/structure/reagent_dispensers/fueltank/examine(mob/user)
 	. = ..()
@@ -237,7 +238,9 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	test.Shift(EAST,6)
 	add_overlay(test)
 
-/obj/structure/reagent_dispensers/fueltank/wrench_act(mob/user, obj/item/tool)
+/obj/structure/reagent_dispensers/fueltank/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You wrench %T%'s faucet [modded ? "closed" : "open"]"), \
 		MSG_OTHERS("%U% wrenches %T%'s faucet [modded ? "closed" : "open"]."))
@@ -247,7 +250,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
 		leak_fuel(amount_per_transfer_from_this)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/reagent_dispensers/fueltank/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -364,6 +367,8 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
 	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// A cooler with its bottle starts full (reagents()).
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()
@@ -429,10 +434,12 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	reagents.clear_reagents()
 	set_bottle(FALSE)
 
-/obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
+/obj/structure/reagent_dispensers/water_cooler/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
@@ -440,7 +447,9 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/reagent_dispensers/water_cooler/screwdriver_act(mob/user, obj/item/tool)
+/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(cupholder)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You take the cup dispenser off."))
@@ -449,11 +458,11 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
 		cups = 0
 		set_cupholder(FALSE)
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(bottle)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)
 	if(bottle || cupholder)

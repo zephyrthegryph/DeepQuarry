@@ -64,12 +64,16 @@
 
 	return ..()
 
-/obj/vehicle/train/trolley/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/vehicle/train/trolley)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+
+/obj/vehicle/train/trolley/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!open || passenger_allowed)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	passenger_allowed = TRUE
 	act_message(user, src, MSG_SELF(span_notice("You cut the load limiter cable.")), MSG_OTHERS(span_notice("%U% cuts a cable in %T%.")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/vehicle/train/engine)
 	op("engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Insert key"), then(PROC_REF(interaction_engine_key)))

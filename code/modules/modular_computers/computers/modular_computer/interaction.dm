@@ -131,14 +131,15 @@
 			to_chat(user, "This component is too large for \the [src].")
 	return OP_DECLINE
 
-/obj/item/modular_computer/wrench_act(mob/user, obj/item/tool)
+/obj/item/modular_computer/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/components = get_all_components()
 	if(length(components))
 		to_chat(user, "Remove all components from \the [src] before disassembling it.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(src, user, others = "%U% has been disassembled by %T%.")
 	replace_with(src, /obj/item/stack/material/steel, steel_sheet_cost)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 MSG_DEF_SELF(modular_computer/no_repairs, "%T% does not require repairs.")
 MSG_DEF_SELF(modular_computer/welding, "You begin repairing damage to %T%...")
@@ -157,24 +158,31 @@ MSG_DEF_SELF(modular_computer/welded, "You repair %T%.")
 /obj/item/modular_computer/proc/weld_repair_done(datum/act/op/A)
 	repair_damage(max_integrity)
 
-/obj/item/modular_computer/screwdriver_act(mob/user, obj/item/tool)
-	var/list/all_components = get_all_components()
-	if(!length(all_components))
+/// The screwdriver's question asks only when a component is installed.
+/obj/item/modular_computer/proc/has_components(datum/act/op/A)
+	return length(get_all_components()) > 0
+
+/// The installed components the screwdriver can take out, by name.
+/obj/item/modular_computer/proc/component_names(datum/act/op/A)
+	var/list/names = list()
+	for(var/obj/item/computer_hardware/hardware in get_all_components())
+		names += hardware.name
+	return names
+
+/// The chosen component is uninstalled.
+/obj/item/modular_computer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!length(get_all_components()))
 		to_chat(user, "This device doesn't have any components installed.")
-		return ITEM_INTERACT_BLOCKING
-	var/list/component_names = list()
-	for(var/obj/item/computer_hardware/hardware in all_components)
-		component_names += hardware.name
-	var/choice = rerun_ask(user, "k196", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/prompt/choice, question = "Which component do you want to uninstall?", title = "Computer maintenance", choices = component_names)
-	if(isnull(choice))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	var/choice = A.step_value("component")
 	if(!choice || !Adjacent(user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/computer_hardware/hardware = find_hardware_by_name(choice)
 	if(!hardware)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	uninstall_component(user, hardware)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/modular_computer/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	if(!card_slot?.stored_card()?.dna_hash || !user.master_dna)

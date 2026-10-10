@@ -11,12 +11,14 @@
 CAPABILITIES(/obj/item/assembly/shock_kit)
 	owns_one(nameof(part1), /obj/item/clothing/head/helmet)
 	owns_one(nameof(part2), /obj/item/radio/electropack)
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 
-/obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
+/obj/item/assembly/shock_kit/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!status)
 		if(loc?.release_refusal(src, user))
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 		var/turf/T = loc
 		if(ismob(T))
 			T = T.loc
@@ -27,15 +29,17 @@ CAPABILITIES(/obj/item/assembly/shock_kit)
 		rel_take(src, nameof(part1))
 		rel_take(src, nameof(part2))
 		consume(src, user)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	return OP_OK
 
-/obj/item/assembly/shock_kit/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/assembly/shock_kit/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	status = !status
 	to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
 	playsound(src, tool.usesound, 50, 1)
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Overrides assembly's interaction_self(): trigger both shock kit parts instead of opening the UI.
 /obj/item/assembly/shock_kit/interaction_self(datum/act/op/A)

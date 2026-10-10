@@ -33,6 +33,9 @@
 
 CAPABILITIES(/obj/structure/disposaloutlet)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 /// Old attackby.
 /obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)
@@ -45,17 +48,21 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 		return OP_DECLINE
 	return OP_PASS
 
-/obj/structure/disposaloutlet/screwdriver_act(mob/user, obj/item/I)
+/obj/structure/disposaloutlet/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED
 	to_chat(user, "You [mode == OUTLET_UNSCREWED ? "remove" : "attach"] the screws around the power connection.")
 	playsound(src, I.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposaloutlet/welder_act(mob/user, obj/item/I)
+/obj/structure/disposaloutlet/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(mode != OUTLET_UNSCREWED)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/disposaloutlet/proc/welder_act_tool_done(mob/user)
 	if(!src)
@@ -71,11 +78,17 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	C.set_density(TRUE)
 	replace_with(src, C)
 
-/obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
+/obj/structure/disposaloutlet/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(mode == OUTLET_SCREWED)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	ask_outlet_range(user, I)
+	return OP_OK
+
+/// Asks for the ejection range; the answer is refused if the outlet was closed or the tool went away (outlet_range_answered()).
+/obj/structure/disposaloutlet/proc/ask_outlet_range(mob/user, obj/item/I)
 	open_request(src, /datum/prompt/number/disposal_outlet_range, PROC_REF(outlet_range_answered), answerer = user, subject = I, tool_expected = !isnull(I))
-	return ITEM_INTERACT_BLOCKING
 
 /datum/prompt/number/disposal_outlet_range
 	question = "Input a new ejection distance"

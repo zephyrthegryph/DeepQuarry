@@ -53,23 +53,30 @@
 		manipulator_rating += MA.rating
 	FireModeModify()
 
-/obj/item/gun/energy/modular/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/gun/energy/modular/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
 	assembled = !assembled
 	playsound(src, tool.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/gun/energy/modular/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/gun/energy/modular)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/item/gun/energy/modular/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(assembled == 1)
 		to_chat(user, span_warning("Disassemble the [src] first!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
 		playsound(src, tool.usesound, 50, 1)
 		rel_take(src, nameof(guncomponents), I)
 		I.forceMove(get_turf(src))
 		CheckParts()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby: the parent's first, then fitting a component.
 /obj/item/gun/energy/modular/gun_item(datum/act/op/A)

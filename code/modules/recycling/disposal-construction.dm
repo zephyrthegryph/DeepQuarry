@@ -24,6 +24,8 @@ CAPABILITIES(/obj/structure/disposalconstruct)
 	param(nameof(flipped_at_make), pos = 3)
 	param(nameof(subtype_at_make), pos = 4)
 	op("flip", menu(), label("Flip Pipe"), needs(req_adjacent(), req_capable(), req_is(nameof(anchored), FALSE, because = MSG(disposalconstruct/unfasten_first))), then(PROC_REF(disposalconstruct_verb_flip)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe before flipping it")
 
@@ -226,14 +228,16 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 			nicetype = "partial tagging pipe"
 	return nicetype
 
-/obj/structure/disposalconstruct/wrench_act(mob/user, obj/item/I)
+/obj/structure/disposalconstruct/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/nicetype = construction_name()
 	var/ispipe = is_pipe()
 	add_fingerprint(user)
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	var/obj/structure/disposalpipe/CP = locate_on(T, /obj/structure/disposalpipe)
 
@@ -249,7 +253,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		if(!ispipe)
 			if(!istype(CP, /obj/structure/disposalpipe/trunk))
 				to_chat(user, "The [nicetype] requires a trunk underneath it in order to work.")
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 		else if(CP)
 			update()
 			var/pdir = CP.dpdir
@@ -257,7 +261,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 				pdir = CP.dir
 			if(pdir & dpdir)
 				to_chat(user, "There is already a [nicetype] at that location.")
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 
 		set_anchored(TRUE)
 		if(ispipe)
@@ -268,21 +272,23 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		to_chat(user, "You attach the [nicetype] to the underfloor.")
 	playsound(src, I.usesound, 100, 1)
 	update()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposalconstruct/welder_act(mob/user, obj/item/I)
+/obj/structure/disposalconstruct/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/nicetype = construction_name()
 	var/ispipe = is_pipe()
 	add_fingerprint(user)
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!anchored)
 		to_chat(user, "You need to attach it to the plating first!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "Welding the [nicetype] in place.", receiver = src, job_type = /datum/task/timed/tool_job/disposal_weld, job_params = list("nicetype" = nicetype, "ispipe" = ispipe))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/disposalconstruct/proc/welder_act_tool_done(mob/user, nicetype, ispipe)
 	if(!src)

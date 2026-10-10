@@ -21,9 +21,10 @@
 		weight_die(A.actor)
 	return OP_PASS
 
-/obj/item/dice/welder_act(mob/user, obj/item/tool)
+/obj/item/dice/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
 	weight_die(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/dice/proc/weight_die(mob/user)
 	return dice_weight_stage(user)
@@ -123,6 +124,7 @@ CAPABILITIES(/obj/item/dice)
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
 	op("dice_verb_set_face", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set Face"), then(PROC_REF(dice_verb_set_face)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/dice/proc/dice_roll_requested(datum/act/op/A)
 	rollDice(A.actor, 0)

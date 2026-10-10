@@ -11,6 +11,7 @@
 CAPABILITIES(/obj/structure/musician)
 	owns_one(nameof(song), /datum/song/stationary)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/musician/Initialize(mapload)
 	. = ..()
@@ -69,9 +70,11 @@ CAPABILITIES(/obj/structure/musician/piano)
 	icon_state = "minimoog"
 	broken_icon_state = "minimoogbroken"
 
-/obj/structure/musician/wrench_act(mob/user, obj/item/tool)
+/obj/structure/musician/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, start_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", start_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/musician/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))

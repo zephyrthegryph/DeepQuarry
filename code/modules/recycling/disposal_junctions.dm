@@ -116,23 +116,27 @@ TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 			updatedesc()
 	return OP_PASS
 
-/obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
+/obj/structure/disposalpipe/sortjunction/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	set_panel_open(!panel_open)
 	playsound(src, I.usesound, 100, 1)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)
+/obj/structure/disposalpipe/sortjunction/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposalpipe/sortjunction/wirecutter_act(mob/user, obj/item/I)
+/obj/structure/disposalpipe/sortjunction/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/disposalpipe/sortjunction/proc/divert_check(checkTag)
 	return sortType == checkTag
@@ -271,6 +275,9 @@ CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
 	on_wire(WIRE_SORT_FORWARD, pulse = PROC_REF(forward_wire_pulsed))
 	on_wire(WIRE_SORT_SIDE, pulse = PROC_REF(side_wire_pulsed))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 
 /obj/structure/disposalpipe/sortjunction/proc/wire_lights()

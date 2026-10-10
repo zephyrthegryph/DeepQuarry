@@ -23,6 +23,7 @@
 
 CAPABILITIES(/obj/structure/generic_structure)
 	op("interaction_hand", hand(), wait(PROC_REF(use_delay)), then(PROC_REF(interaction_hand)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /// How long using it takes: its delay_time while using it would change something, else nothing.
 /obj/structure/generic_structure/proc/use_delay(datum/act/A)
@@ -100,13 +101,14 @@ CAPABILITIES(/obj/structure/generic_structure)
 			src.visible_message(span_notice("[text_deactivated]"))
 	return OP_DECLINE
 
-/obj/structure/generic_structure/wrench_act(mob/user, obj/item/tool)
+/obj/structure/generic_structure/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!wrenchable)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	add_fingerprint(user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
 	set_anchored(!anchored)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a customisable structure with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	return generic_setup_stage(user, list())

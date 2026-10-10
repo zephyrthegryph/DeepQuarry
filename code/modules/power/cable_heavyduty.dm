@@ -12,19 +12,23 @@
 	color = null
 	var/static/allow_cutting = TRUE // Allows heavy cables to be cut by welder, up to server preference or admin vv during round. Changing it on one changes them all!
 
-/obj/structure/cable/heavyduty/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/cable/heavyduty/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
-/obj/structure/cable/heavyduty/welder_act(mob/user, obj/item/W)
+/obj/structure/cable/heavyduty/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/turf/T = src.loc
 	if(!T.is_plating() || !allow_cutting)
 		if(!allow_cutting)
 			to_chat(user, span_warning("Something in these cables make them too strong to cut!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	use_tool(user, W, src, delay = 25 SECONDS, quality = TOOL_WELDER, amount = 2, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, T))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/cable/heavyduty/proc/welder_act_tool_done(mob/user, turf/T)
 	var/obj/item/stack/cable_coil/heavyduty/CC
@@ -44,6 +48,7 @@ MSG_DEF_SELF(heavy_cable/needs_heavier, "you will need heavier cables to connect
 
 CAPABILITIES(/obj/structure/cable/heavyduty)
 	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req_bool(PROC_REF(heavy_coil_holds), because = MSG(heavy_cable/needs_heavier))), then(PROC_REF(heavyduty_interaction_item)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
 /obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(datum/act/op/A)

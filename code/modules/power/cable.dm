@@ -294,6 +294,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 CAPABILITIES(/obj/structure/cable)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 /// Old attackby.
 /obj/structure/cable/proc/interaction_item(datum/act/op/A)
@@ -313,22 +315,23 @@ CAPABILITIES(/obj/structure/cable)
 	add_fingerprint(user)
 	return OP_PASS
 
-/obj/structure/cable/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/cable/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	var/obj/item/stack/cable_coil/CC
 	if(d1 == UP || d2 == UP)
 		to_chat(user, span_warning("You must cut this cable from above."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(breaker_box())
 		to_chat(user, span_warning("This cable is connected to nearby breaker box. Use breaker box to interact with it."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(shock(user, 50))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
 		CC = recover_coil(T, 2)
@@ -351,12 +354,13 @@ CAPABILITIES(/obj/structure/cable)
 	investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
 
 	destroyed(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/cable/multitool_act(mob/user, obj/item/W)
+/obj/structure/cable/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/avail = power_avail(get_power_region())
 	if(avail > 0)
 		to_chat(user, span_warning("[DisplayPower(avail)] in power network."))
@@ -364,7 +368,7 @@ CAPABILITIES(/obj/structure/cable)
 		to_chat(user, span_warning("The cable is not powered."))
 	shock(user, 5, 0.2)
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // shock the user with probability prb
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1.0)
@@ -569,14 +573,19 @@ CAPABILITIES(/obj/structure/cable)
 	else
 		w_class = ITEMSIZE_SMALL
 
-/obj/item/stack/cable_coil/multitool_act(mob/user, obj/item/W)
-	var/selected_type = rerun_ask(user, "k530", TYPE_PROC_REF(/atom, multitool_act), args, /datum/prompt/choice, question = "Pick new colour.", title = "Cable Colour", choices = GLOB.possible_cable_coil_colours)
+/// A multitool recolours the coil to the picked colour.
+/obj/item/stack/cable_coil/proc/multitool_used(datum/act/op/A)
+	var/selected_type = A.step_value("colour")
 	if(isnull(selected_type))
-		return ITEM_INTERACT_BLOCKING
-	set_cable_color(selected_type, user)
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	set_cable_color(selected_type, A.actor)
+	return OP_OK
+
+/obj/item/stack/cable_coil/proc/colour_choices(datum/act/op/A)
+	return GLOB.possible_cable_coil_colours
 
 CAPABILITIES(/obj/item/stack/cable_coil)
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), asks(/datum/prompt/choice, fields = list("question" = "Pick new colour.", "title" = "Cable Colour", "choices" = computed(PROC_REF(colour_choices))), step = "colour"), then(PROC_REF(multitool_used)))
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 	param(nameof(color), pos = 2)
 	param(nameof(material_id), pos = 3)

@@ -25,6 +25,7 @@
 CAPABILITIES(/obj/item/gun/energy/sizegun)
 	verb_entry(/obj/item/gun/energy/sizegun/proc/select_size)
 	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
 /obj/item/gun/energy/sizegun/gun_operate(datum/act/op/A, callback)
@@ -181,7 +182,8 @@ TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 		return ..()
 
 
-/obj/item/gun/energy/sizegun/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/gun/energy/sizegun/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(backfire)
 		to_chat(user, span_warning("You repair the damage to \the [src]."))
 		backfire = FALSE
@@ -190,7 +192,7 @@ TRACKED(/obj/item/gun/energy/sizegun, size_set_to)
 		to_chat(user, span_warning("You snip a wire on \the [src], making it less reliable."))
 		backfire = TRUE
 		name = "unstable size gun"
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/energy/sizegun/backfire
 	name = "unstable size gun"

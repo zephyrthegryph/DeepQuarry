@@ -93,8 +93,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /**
  * Modern item interaction entry point: every quality offered by a multi-purpose
  * tool, in order, then the interactions that answer Use without a tool
- * (doc/rewrite/interactions.md §7). The base *_act procs below end in the
- * resolver too, so tool interactions run there. Returning no flags falls
+ * (doc/rewrite/interactions.md §7). Each quality runs the ops that name it. Returning no flags falls
  * through to the legacy attackby path in resolve_attackby().
  */
 /atom/proc/item_interaction(mob/user, obj/item/tool, list/modifiers)
@@ -154,29 +153,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		// interactions for this quality whose default action is Alternate
 		// (doc/rewrite/interactions.md §9).
 		return interaction_tool_act(user, tool, tool_quality, TRUE)
-	switch(tool_quality)
-		if(TOOL_SCREWDRIVER) return screwdriver_act(user, tool)
-		if(TOOL_CROWBAR) return crowbar_act(user, tool)
-		if(TOOL_WRENCH) return wrench_act(user, tool)
-		if(TOOL_WIRECUTTER) return wirecutter_act(user, tool)
-		if(TOOL_MULTITOOL) return multitool_act(user, tool)
-		if(TOOL_WELDER) return welder_act(user, tool)
-	// Every other TOOL_* quality has no focused hook: it goes straight to the
-	// interactions that name it (doc/rewrite/interactions.md §9).
+	// Every quality goes to the ops that name it (op("use_x", tool(TOOL_X), ...)); there are no per-quality hook procs.
 	return interaction_tool_act(user, tool, tool_quality)
-
-/atom/proc/screwdriver_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_SCREWDRIVER)
-/atom/proc/crowbar_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_CROWBAR)
-/atom/proc/wrench_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_WRENCH)
-/atom/proc/wirecutter_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_WIRECUTTER)
-/atom/proc/multitool_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_MULTITOOL)
-/atom/proc/welder_act(mob/user, obj/item/tool)
-	return interaction_tool_act(user, tool, TOOL_WELDER)
 
 /**
  * Used with an item: the ops answered it first (item_interaction()); what is left is the gate every item use passes. Returns TRUE when the input

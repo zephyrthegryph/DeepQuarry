@@ -94,40 +94,48 @@
 			return OP_PASS
 	return OP_DECLINE
 
-/obj/item/rig/welder_act(mob/user, obj/item/tool)
+/// A welder on the rig patches its chest piece.
+/obj/item/rig/proc/welder_used(datum/act/op/A)
 	if(!chest)
-		return ITEM_INTERACT_BLOCKING
-	return chest.welder_act(user, tool)
+		return OP_OK
+	return chest.welder_used(A)
 
-/obj/item/rig/crowbar_act(mob/user, obj/item/tool)
+/obj/item/rig/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!open && locked)
 		to_chat(user, "The access panel is locked shut.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	open = !open
 	to_chat(user, "You [open ? "open" : "close"] the access panel.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/rig/wirecutter_act(mob/user, obj/item/tool)
+/// A wirecutter or a multitool on the open rig opens its wires.
+/obj/item/rig/proc/wiring_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!open)
 		to_chat(user, "You can't reach the wiring.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/rig/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
-
-/obj/item/rig/wrench_act(mob/user, obj/item/tool)
+/obj/item/rig/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!open || !air_supply)
 		to_chat(user, open ? "There is no tank to remove." : "You can't reach the tank mount.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/tank/removed_tank = air_supply
 	user.put_in_hands(removed_tank)
 	rel_take(src, nameof(air_supply))
 	to_chat(user, "You detach and remove \the [removed_tank].")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/rig/screwdriver_act(mob/user, obj/item/tool, answered_mount = null, answered_module = null)
+/// A screwdriver on the open rig asks which mount to work, then which module to remove (maintenance_step()).
+/obj/item/rig/proc/screwdriver_used(datum/act/op/A)
+	maintenance_step(A.actor, A.held)
+	return OP_OK
+
+/// One step of the screwdriver's maintenance: asks for the mount, then the module, and removes it once both are answered.
+/obj/item/rig/proc/maintenance_step(mob/user, obj/item/tool, answered_mount = null, answered_module = null)
 	if(!open)
 		return ITEM_INTERACT_BLOCKING
 	var/list/current_mounts = list()
@@ -219,8 +227,8 @@
 		return
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
 	if(isnull(request.mount_choice))
-		return screwdriver_act(user, request.captured_tool, A.answer.value)
-	return screwdriver_act(user, request.captured_tool, request.mount_choice, A.answer.value)
+		return maintenance_step(user, request.captured_tool, A.answer.value)
+	return maintenance_step(user, request.captured_tool, request.mount_choice, A.answer.value)
 
 /datum/prompt/choice/rig_maintenance
 	title = "Removal Choice"

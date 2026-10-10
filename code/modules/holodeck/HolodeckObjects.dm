@@ -183,6 +183,9 @@ CAPABILITIES(/turf/simulated/floor/holofloor)
 
 CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	op("holowindow_interaction_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(holowindow_interaction_item)))   // ahead of the window's own item use, which its pass goes on to
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attackby: slam a grabbed mob against it, or take a hit; then the window's own handling.
 /obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(datum/act/op/A)
@@ -225,17 +228,20 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	return OP_DECLINE
 
-/obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
+/obj/structure/window/reinforced/holowindow/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
-/obj/structure/window/reinforced/holowindow/crowbar_act(mob/user, obj/item/tool)
+/obj/structure/window/reinforced/holowindow/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("It's a holowindow, you can't pry it!"))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
-/obj/structure/window/reinforced/holowindow/wrench_act(mob/user, obj/item/tool)
+/obj/structure/window/reinforced/holowindow/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("It's a holowindow, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 /obj/structure/window/reinforced/holowindow/shatter(display_message = 1)
 	play_sfx(src, SFX_SHATTER)

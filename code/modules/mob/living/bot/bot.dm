@@ -139,23 +139,27 @@
 		return OP_OK
 	return OP_DECLINE
 
-/mob/living/bot/screwdriver_act(mob/user, obj/item/tool)
+/mob/living/bot/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(locked)
 		to_chat(user, span_notice("You need to unlock the controls first."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/mob/living/bot/welder_act(mob/user, obj/item/tool)
+/mob/living/bot/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!is_injured() || !open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	mend(TREAT_PLATING_REPAIR, 10)
 	mend(TREAT_WIRING_REPAIR, 10)
 	act_message(user, src, MSG_SELF(span_notice("You repair %T%.")), MSG_OTHERS(span_notice("%U% repairs %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
 
@@ -703,6 +707,8 @@ CAPABILITIES(/mob/living/bot)
 	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req_bool(PROC_REF(never_allowed), silent = TRUE)))
 	op("eject_pai", tool(TOOL_CROWBAR), label("Remove the pAI"), when(PROC_REF(pai_removable)), begins(MSG(bot/removing_pai)), wait(1 SECOND), then(PROC_REF(remove_pai)))
 	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 /mob/living/bot/ownership()
 	. = ..()
 	. += owns(nameof(paicard), policy = OWN_CONTAINED)

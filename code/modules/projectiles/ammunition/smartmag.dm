@@ -38,6 +38,7 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 	op("smart_cell_out", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), label("Remove the cell"), when(req_bool(PROC_REF(cell_removable))),
 		starts(PROC_REF(realize_rounds)), begins(PROC_REF(struggle_text)), wait(4 SECONDS), then(PROC_REF(cell_removed)))
 	op("clear_data", menu(), label("Clear Ammo Data"), needs(carried(), req_empty(nameof(stored_ammo), because = MSG(smartmag/not_empty))), then(PROC_REF(smartmag_verb_clear_data)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 MSG_DEF_SELF(smartmag/not_empty, "you can't reset it unless it's empty")
 MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
@@ -106,13 +107,15 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 	return OP_DECLINE
 
-/obj/item/ammo_magazine/smart/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/ammo_magazine/smart/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!attached_cell())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/cell/device/removed_cell = attached_cell()
 	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
 	use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, removed_cell))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
 	removed_cell.forceMove(get_turf(src))

@@ -369,21 +369,22 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	mod.installed(src) // pair: installed_modules gains mod
 	return 1
 
-/obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
+/obj/item/rig/protean/wrench_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(get_dormancy())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/tank/removed_tank = rel_take(src, nameof(air_supply))
 	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		removed_tank.forceMove(get_turf(user))
 	else
 		user.put_in_hands(removed_tank)
 	to_chat(user, "You detach and remove \the [removed_tank].")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/item/rig/protean/maintenance_step(mob/living/user, obj/item/tool, answered_mount = null, answered_module = null)
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
 		if(dormancy.revival_step != DORMANCY_SEALED)

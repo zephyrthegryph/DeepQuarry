@@ -28,6 +28,9 @@ CAPABILITIES(/obj/structure/AIcore)
 	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(PROC_REF(reinforced_panel)), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req_bool(PROC_REF(reinforced_panel), because = MSG(ai_core/reinforced_glass))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	owns_one(nameof(laws), /datum/ai_laws)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 // ALLOW(init/INSTANCE_STATE): a map-placed core starts with the map's default law set
 /obj/structure/AIcore/Initialize(mapload)
@@ -150,7 +153,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 	to_chat(user, span_notice("You deconstruct the frame."))
 	replace_with(src, /obj/item/stack/material/plasteel, 4)
 
-/obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
+/// The board is screwed in or out, or the finished frame becomes the AI (or an empty core).
+/obj/structure/AIcore/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	switch(state)
 		if(1)
 			if(circuit)
@@ -158,14 +164,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				to_chat(user, span_notice("You screw the circuit board into place."))
 				set_state(2)
 				icon_state = "2"
-				return ITEM_INTERACT_SUCCESS
+				return OP_OK
 		if(2)
 			if(circuit)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You unfasten the circuit board."))
 				set_state(1)
 				icon_state = "1"
-				return ITEM_INTERACT_SUCCESS
+				return OP_OK
 		if(4)
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You connect the monitor."))
@@ -174,22 +180,24 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				perform_op(user, D, "latejoin_offer", origin = ORIGIN_SYSTEM)
 			else
 				var/datum/ai_laws/handed_laws = rel_take(src, nameof(laws)) // the new AI adopts them
-				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
-				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
-					A.rename_self("ai", 1)
-					for(var/datum/language/L in A.identity().languages)
-						A.add_language(L.name)
+				var/mob/living/silicon/ai/new_ai = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
+				if(new_ai) //if there's no brain, the mob is deleted and a structure/AIcore is created
+					new_ai.rename_self("ai", 1)
+					for(var/datum/language/L in new_ai.identity().languages)
+						new_ai.add_language(L.name)
 			feedback_inc("cyborg_ais_created",1)
 			destroyed(src, user, "deconstructed")
-			return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+			return OP_OK
+	return OP_OK
 
 /obj/structure/AIcore/deactivated/proc/latejoin_answered(datum/act/op/A)
 	if(!A.step_value("latejoin"))
 		return
 	registry_join(REGISTRY_EMPTY_AI_CORES, src)
 
-/obj/structure/AIcore/crowbar_act(mob/user, obj/item/tool)
+/obj/structure/AIcore/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	switch(state)
 		if(1)
 			if(circuit)
@@ -199,7 +207,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				icon_state = "0"
 				circuit.forceMove(loc)
 				rel_take(src, nameof(circuit))
-				return ITEM_INTERACT_SUCCESS
+				return OP_OK
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
@@ -207,7 +215,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				brain.forceMove(loc)
 				rel_take(src, nameof(brain))
 				icon_state = "3"
-				return ITEM_INTERACT_SUCCESS
+				return OP_OK
 		if(4)
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You remove the glass panel."))
@@ -217,12 +225,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 			else
 				icon_state = "3"
 			new /obj/item/stack/material/glass/reinforced( loc, 2 )
-			return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+			return OP_OK
+	return OP_OK
 
-/obj/structure/AIcore/wirecutter_act(mob/user, obj/item/tool)
+/obj/structure/AIcore/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(state != 3)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if (brain)
 		to_chat(user, "Get that brain out of there first")
 	else
@@ -231,7 +241,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 		set_state(2)
 		icon_state = "2"
 		new /obj/item/stack/cable_coil(loc, 5)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIVATED)
 

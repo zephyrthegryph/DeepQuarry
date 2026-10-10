@@ -135,17 +135,19 @@ CAPABILITIES(/obj/item/gun/magnetic)
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
-/obj/item/gun/magnetic/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/gun/magnetic/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!removable_components)
-		return NONE
+		return OP_DECLINE
 	if(!capacitor)
 		to_chat(user, span_warning("\The [src] has no capacitor installed."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	rel_take(src, nameof(capacitor))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby.
 /obj/item/gun/magnetic/gun_item(datum/act/op/A)

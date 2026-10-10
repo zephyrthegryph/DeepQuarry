@@ -16,6 +16,7 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
 	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
 	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
@@ -73,20 +74,22 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	else
 		return span_warning("It\'s out of [ammo_material]!")
 
-/obj/item/gun/magnetic/matfed/crowbar_act(mob/user, obj/item/tool)
+/obj/item/gun/magnetic/matfed/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	update_rating_mod()
 	if(!removable_components)
-		return NONE
+		return OP_DECLINE
 	if(!manipulator)
 		to_chat(user, span_warning("\The [src] has no manipulator installed."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	user.put_in_hands(manipulator)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
 	rel_take(src, nameof(manipulator))
 	update_rating_mod()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/magnetic/matfed/proc/can_load_sheet(obj/item/stack/material/M)
 	return mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M?.get_amount()

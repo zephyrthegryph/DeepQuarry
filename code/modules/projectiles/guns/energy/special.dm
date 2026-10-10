@@ -64,7 +64,9 @@
 	if(Adjacent(user))
 		. += "It has [emitter ? emitter : "no micro laser"] installed."
 
-/obj/item/gun/energy/floragun/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/gun/energy/floragun/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(emitter)
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
@@ -72,7 +74,7 @@
 		rel_take(src, nameof(emitter))
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/energy/floragun/gun_item(datum/act/op/A)

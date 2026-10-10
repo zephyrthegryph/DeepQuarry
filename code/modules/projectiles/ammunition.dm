@@ -21,6 +21,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
@@ -91,8 +92,10 @@ CAPABILITIES(/obj/item/ammo_casing)
 		return OP_DECLINE
 	return OP_PASS
 
-/obj/item/ammo_casing/screwdriver_act(mob/user, obj/item/tool)
-	return weapon_label_inscription_stage(user, tool)
+/// A screwdriver inscribes the bullet (it asks for the text).
+/obj/item/ammo_casing/proc/screwdriver_used(datum/act/op/A)
+	weapon_label_inscription_stage(A.actor, A.held)
+	return OP_OK
 
 /obj/item/ammo_casing/proc/weapon_label_inscription_stage(mob/user, obj/item/tool, weapon_answer, weapon_answer_ready = FALSE)
 	if(!BB)

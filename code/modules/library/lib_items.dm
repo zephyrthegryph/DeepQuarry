@@ -30,6 +30,8 @@ CAPABILITIES(/obj/structure/bookcase)
 	op("title_shelf", item(/obj/item/pen),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 // ALLOW(init/INSTANCE_STATE): gathers the books the map placed on its tile
 /obj/structure/bookcase/Initialize(mapload)
@@ -52,15 +54,19 @@ CAPABILITIES(/obj/structure/bookcase)
 		name = ("bookcase ([newname])")
 	return OP_PASS
 
-/obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
+/obj/structure/bookcase/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 100, 1)
 	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
 	set_anchored(!anchored)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
+/obj/structure/bookcase/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, start_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You dismantle \the [src]."))

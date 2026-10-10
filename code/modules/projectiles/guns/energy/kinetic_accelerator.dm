@@ -101,7 +101,12 @@
 		var/obj/item/borg/upgrade/modkit/M = AM
 		M.uninstall(src, FALSE)
 
-/obj/item/gun/energy/kinetic_accelerator/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/item/gun/energy/kinetic_accelerator/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(length(modkits))
 		to_chat(user, span_notice("You pry the modifications out."))
 		playsound(loc, tool.usesound, 100, 1)
@@ -109,7 +114,7 @@
 			M.uninstall(src)
 	else
 		to_chat(user, span_notice("There are no modifications currently installed."))
-	return NONE
+	return OP_DECLINE
 
 /// Old attackby.
 /obj/item/gun/energy/kinetic_accelerator/gun_item(datum/act/op/A)

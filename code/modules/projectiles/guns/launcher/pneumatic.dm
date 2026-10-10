@@ -192,7 +192,9 @@ TRACKED(/obj/item/cannonframe, buildstate)
 		if(5)
 			. += "It has a transfer valve installed."
 
-/obj/item/cannonframe/welder_act(mob/user, obj/item/tool)
+/obj/item/cannonframe/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/T = tool.get_welder()
 	if(buildstate == 1)
 		if(T.remove_fuel(0,user))
@@ -212,10 +214,11 @@ TRACKED(/obj/item/cannonframe, buildstate)
 			playsound(src, tool.usesound, 100, 1)
 			to_chat(user, span_notice("You weld the valve into place."))
 			replace_with(src, /obj/item/gun/launcher/pneumatic)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/item/cannonframe)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby.
 /obj/item/cannonframe/proc/interaction_item(datum/act/op/A)

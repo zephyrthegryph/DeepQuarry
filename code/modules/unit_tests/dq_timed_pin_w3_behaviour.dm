@@ -143,9 +143,9 @@
 	if(!isnull(running(user)))
 		return
 	if(tool.has_tool_quality(TOOL_MULTITOOL))
-		N.multitool_act(user, tool)
+		N.interaction_tool_act(user, tool, TOOL_MULTITOOL)
 	else
-		N.screwdriver_act(user, tool)
+		N.interaction_tool_act(user, tool, TOOL_SCREWDRIVER)
 
 /datum/unit_test/dq_timed_pin_w3/nif_pry_open
 

@@ -131,6 +131,7 @@ CAPABILITIES(/obj/item/gun)
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
 	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
@@ -329,12 +330,14 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	return OP_DECLINE
 
-/obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/gun/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
 		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))

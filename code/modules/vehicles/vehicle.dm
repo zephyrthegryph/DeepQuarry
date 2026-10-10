@@ -60,6 +60,9 @@ CAPABILITIES(/obj/vehicle)
 	emp_disable(PROC_REF(emp_outage))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 //-------------------------------------------
 // Standard procs
@@ -133,37 +136,42 @@ CAPABILITIES(/obj/vehicle)
 		return OP_PASS
 	return OP_DECLINE
 
-/obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(locked)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/vehicle/crowbar_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(!cell || !open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	remove_cell(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/vehicle/welder_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(!open || get_integrity() >= max_integrity)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	repair_damage(10)
 	user.setClickCooldown(user.get_attack_speed(tool))
 	playsound(src, welder.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_blue("You repair %T%!")), MSG_OTHERS(span_red("%U% repairs %T%!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/vehicle/proc/adjust_health(amount)
 	if(amount < 0)

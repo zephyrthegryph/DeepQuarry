@@ -164,19 +164,21 @@ CAPABILITIES(/obj/item/coin/uranium)
 	else
 		return OP_DECLINE
 
-/obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/coin/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!string_attached)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
+		return OP_DECLINE
 	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
 	cut_overlays()
 	string_attached = null
 	balloon_alert(user, "string detached")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/item/coin)
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /obj/item/coin/proc/coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor

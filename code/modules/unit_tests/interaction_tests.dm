@@ -10,16 +10,22 @@
 	var/crowbar_result = NONE
 	var/wrench_result = ITEM_INTERACT_SUCCESS
 
-/atom/movable/unit_test_interaction_target/crowbar_act(mob/user, obj/item/tool)
-	primary_crowbar_calls++
-	return crowbar_result
+/// The fixture's tool ops answer as their *_result says: SUCCESS commits, BLOCKING refuses (the handler never runs), anything else declines.
+/atom/movable/unit_test_interaction_target/proc/crowbar_refusal(datum/act/op/A)
+	return crowbar_result == ITEM_INTERACT_BLOCKING ? "blocked" : null // ALLOW(reads): the fixture flag is set by the test before each click and never changes during one
 
-/atom/movable/unit_test_interaction_target/wrench_act(mob/user, obj/item/tool)
+/atom/movable/unit_test_interaction_target/proc/crowbar_used(datum/act/op/A)
+	primary_crowbar_calls++
+	return crowbar_result == ITEM_INTERACT_SUCCESS ? OP_OK : OP_DECLINE
+
+/atom/movable/unit_test_interaction_target/proc/wrench_used(datum/act/op/A)
 	primary_wrench_calls++
-	return wrench_result
+	return wrench_result == ITEM_INTERACT_SUCCESS ? OP_OK : OP_DECLINE
 
 /// Secondary tool use reaches the declared ops pinned to the right-click gesture.
 CAPABILITIES(/atom/movable/unit_test_interaction_target)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), needs(req(PROC_REF(crowbar_refusal))), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("unit_test_secondary_wrench", tool(TOOL_WRENCH), gesture(GESTURE_RIGHT), wait(0), label("Test secondary wrench"), then(PROC_REF(note_secondary_wrench)))
 
 /atom/movable/unit_test_interaction_target/proc/note_secondary_wrench(datum/act/op/A)
@@ -53,7 +59,10 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	observe(tool, /datum/notice/item_tool_acted, src, then(PROC_REF(on_tool_acted)))
 	observe(tool, /datum/notice/tool_atom_acted, src, then(PROC_REF(on_quality_acted)))
 
-	var/primary_result = target.item_interaction(null, tool, list())
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	target.forceMove(user.loc)
+	user.put_in_hands(tool)
+	var/primary_result = target.item_interaction(user, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
 	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 1, "The first quality was not attempted exactly once.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "A later quality was not attempted after the first declined.")
@@ -62,9 +71,6 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	TEST_ASSERT_EQUAL(quality_acted_calls, 1, "A successful tool interaction did not emit its quality-specific success signal exactly once.")
 	TEST_ASSERT_EQUAL(last_acted_quality, TOOL_WRENCH, "The generic tool success signal reported the wrong successful quality.")
 
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	target.forceMove(user.loc)
-	user.put_in_hands(tool)
 	var/secondary_result = target.item_interaction_secondary(user, tool, list())
 	TEST_ASSERT(secondary_result & ITEM_INTERACT_SUCCESS, "Secondary tool use did not run the declared right-click op.")
 	TEST_ASSERT_EQUAL(target.secondary_wrench_calls, 1, "Secondary dispatch did not reach the declared op.")
@@ -73,27 +79,27 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	target.primary_crowbar_calls = 0
 	target.primary_wrench_calls = 0
 	target.crowbar_result = ITEM_INTERACT_BLOCKING
-	var/blocking_result = tool.resolve_attackby(target, null)
+	var/blocking_result = tool.resolve_attackby(target, user)
 	TEST_ASSERT(blocking_result & ITEM_INTERACT_BLOCKING, "A blocking focused hook did not propagate its result.")
-	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 1, "Blocking dispatch did not invoke the first declared quality exactly once.")
+	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 0, "A refused tool op ran its handler.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 0, "Dispatcher continued to a later tool quality after a blocking result.")
 	TEST_ASSERT_EQUAL(target.attackby_calls, 0, "A blocking focused interaction incorrectly fell through to attackby().")
 
 	target.primary_crowbar_calls = 0
 	target.crowbar_result = ITEM_INTERACT_SUCCESS
-	var/success_result = tool.resolve_attackby(target, null)
+	var/success_result = tool.resolve_attackby(target, user)
 	TEST_ASSERT(success_result & ITEM_INTERACT_SUCCESS, "A successful first-quality hook did not propagate its result.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 0, "Dispatcher continued to a later tool quality after success.")
 	TEST_ASSERT_EQUAL(target.attackby_calls, 0, "A successful first-quality interaction incorrectly fell through to attackby().")
 
 	target.crowbar_result = NONE
 	target.wrench_result = NONE
-	tool.resolve_attackby(target, null)
+	tool.resolve_attackby(target, user)
 	TEST_ASSERT_EQUAL(target.attackby_calls, 1, "An entirely declined modern interaction did not fall through to attackby exactly once.")
 
 	target.crowbar_result = ITEM_INTERACT_SKIP_TO_ATTACK
 	var/previous_attackby_calls = target.attackby_calls
-	var/skip_result = tool.resolve_attackby(target, null)
+	var/skip_result = tool.resolve_attackby(target, user)
 	TEST_ASSERT_EQUAL(target.attackby_calls, previous_attackby_calls + 1, "SKIP_TO_ATTACK did not enter the attackby fallback exactly once.")
 	TEST_ASSERT(!(skip_result & ITEM_INTERACT_SKIP_TO_ATTACK), "SKIP_TO_ATTACK leaked past the attackby fallback instead of returning attackby's result.")
 

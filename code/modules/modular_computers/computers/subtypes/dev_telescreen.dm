@@ -19,7 +19,13 @@
 	integrity_failure = 0.5 // Stops working below 150 integrity.
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/modular_computer/telescreen/crowbar_act(mob/user, obj/item/tool)
+/// The crowbar asks where to mount a loose telescreen; a mounted one comes off at once.
+/obj/item/modular_computer/telescreen/proc/telescreen_loose(datum/act/op/A)
+	return !anchored
+
+/// A mounted telescreen is taken down; a loose one is mounted where the answer says.
+/obj/item/modular_computer/telescreen/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(anchored)
 		shutdown_computer()
 		set_anchored(FALSE)
@@ -27,11 +33,8 @@
 		pixel_x = 0
 		pixel_y = 0
 		to_chat(user, "You unsecure \the [src].")
-		return ITEM_INTERACT_SUCCESS
-	var/choice = rerun_ask(user, "k31", TYPE_PROC_REF(/atom, crowbar_act), args, /datum/prompt/choice, question = "Where do you want to place \the [src]?", title = "Offset selection", choices = list("North", "South", "West", "East", "This tile", "Cancel"))
-	if(isnull(choice))
-		return ITEM_INTERACT_BLOCKING
-	switch(choice)
+		return OP_OK
+	switch(A.step_value("offset"))
 		if("North")
 			pixel_y = 32
 		if("South")
@@ -44,8 +47,13 @@
 			pixel_x = 0
 			pixel_y = 0
 		else
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 	set_anchored(TRUE)
 	screen_on = TRUE
 	to_chat(user, "You secure \the [src].")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
+
+CAPABILITIES(/obj/item/modular_computer/telescreen)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0),
+		asks(/datum/prompt/choice, fields = list("question" = "Where do you want to place \the [src]?", "title" = "Offset selection", "choices" = list("North", "South", "West", "East", "This tile", "Cancel")), step = "offset", when = PROC_REF(telescreen_loose)),
+		then(PROC_REF(crowbar_used)))

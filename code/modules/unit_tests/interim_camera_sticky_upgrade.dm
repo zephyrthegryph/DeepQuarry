@@ -25,7 +25,7 @@
 	TEST_ASSERT_NULL(user.get_active_hand(), "the checked upgrade clears the original source hand")
 	TEST_ASSERT_EQUAL(assembly.state, original_state, "upgrade insertion preserves the construction stage")
 	TEST_ASSERT(user.put_in_active_hand(crowbar), "the actor holds the real upgrade-removal tool")
-	TEST_ASSERT(assembly.crowbar_act(user, crowbar), "the public crowbar action removes the original upgrade")
+	TEST_ASSERT(assembly.interaction_tool_act(user, crowbar, TOOL_CROWBAR), "the public crowbar action removes the original upgrade")
 	TEST_ASSERT_EQUAL(upgrade.loc, T, "actual crowbar removal returns the original sensor to the floor")
 	TEST_ASSERT_EQUAL(LAZYLEN(assembly.upgrades), 0, "actual crowbar removal empties the recorded upgrade list")
 	TEST_ASSERT_NULL(owner_of(upgrade), "actual crowbar removal clears the upgrade ownership stamp")
