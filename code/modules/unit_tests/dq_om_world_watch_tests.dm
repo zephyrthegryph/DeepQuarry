@@ -6,23 +6,23 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// Waits `ticks` MC ticks (SSbehaviours runs the scheduler, and so the world step, every tick).
-/proc/om_test_ticks(ticks)
+/proc/dq_test_ticks(ticks)
 	sleep(world.tick_lag * ticks)
 
 /**
  * Waits, a tick at a time and for at most `max_ticks`, until `D.vars[var_name]` is truthy (a non-empty list
  * counts). A world watch's wake is delivered by the kernel's urgent phase, which a loaded world (sharded test
  * boots, overrun ticks) can skip for several ticks, so a positive assertion waits for the delivery itself
- * instead of guessing a tick count with om_test_ticks(). Returns whether it arrived.
+ * instead of guessing a tick count with dq_test_ticks(). Returns whether it arrived.
  */
-/proc/om_test_wait_for(datum/D, var_name, max_ticks = 60)
+/proc/dq_test_wait_for(datum/D, var_name, max_ticks = 60)
 	for(var/attempt in 1 to max_ticks)
-		if(om_test_has_arrived(D.vars[var_name]))
+		if(dq_test_has_arrived(D.vars[var_name]))
 			return TRUE
 		sleep(world.tick_lag)
-	return om_test_has_arrived(D.vars[var_name])
+	return dq_test_has_arrived(D.vars[var_name])
 
-/proc/om_test_has_arrived(value)
+/proc/dq_test_has_arrived(value)
 	return islist(value) ? length(value) > 0 : !!value
 
 /// A test probe entity (a Probe component, verdigris/ffi/src/sched.rs) by a test's own
@@ -50,9 +50,9 @@
  */
 /proc/world_wake_test(datum/D, list/change, ticks = 4)
 	world_wake_trace(D)
-	om_test_ticks(ticks)
+	dq_test_ticks(ticks)
 	var/before = world_wake_traced(D)
-	om_test_ticks(ticks)
+	dq_test_ticks(ticks)
 	if(world_wake_traced(D) != before)
 		world_wake_untrace(D)
 		return "[D.type] woke while its input held steady"
@@ -66,7 +66,7 @@
 	return null
 
 /// Whether every subscriber in `subs` has been woken at least once.
-/proc/om_test_all_woken(list/subs)
+/proc/dq_test_all_woken(list/subs)
 	for(var/datum/world_test_subscriber/S as anything in subs)
 		if(!length(S.wakes))
 			return FALSE
@@ -91,15 +91,15 @@
 
 /datum/unit_test/dq_world_wakes_merge/Run()
 	world_test_probe_set(70, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(70), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	world_test_probe_set(70, 110, 293)
 	world_test_probe_set(70, 120, 293)
 	world_test_probe_set(70, 130, 293)
 	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
-	om_test_ticks(3) // a wake that failed to merge would be a second one
+	dq_test_ticks(3) // a wake that failed to merge would be a second one
 	TEST_ASSERT_EQUAL(length(S.wakes), 1, "merged wakes")
 	var/list/wake = S.wakes[1]
 	TEST_ASSERT(wake[1] & CH_BIT(CH_PROBE_PRESSURE), "merged reason lacks the pressure bit")
@@ -110,15 +110,15 @@
 
 /datum/unit_test/dq_world_once_per_tick/Run()
 	world_test_probe_set(71, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	S.republish = 3
 	S.republish_cell = 71
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(71), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	world_test_probe_set(71, 200, 293)
 	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 4, 80)
-	om_test_ticks(3) // a fifth wake would be a double wake
+	dq_test_ticks(3) // a fifth wake would be a double wake
 	TEST_ASSERT_EQUAL(length(S.wakes), 4, "one wake per change round")
 	var/list/ticks = list()
 	for(var/list/wake as anything in S.wakes)
@@ -131,7 +131,7 @@
 
 /datum/unit_test/dq_world_cancel/Run()
 	world_test_probe_set(72, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(72), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
 	var/handle = W.handle
@@ -139,7 +139,7 @@
 	qdel(W)
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(handle), 0, "a cancelled watch kept its subscription")
 	world_test_probe_set(72, 200, 293)
-	om_test_ticks(4)
+	dq_test_ticks(4)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "woke after cancelling")
 
 /// A deleted owner is never called: its watch is dropped (and freed) at its next wake.
@@ -147,15 +147,15 @@
 
 /datum/unit_test/dq_world_owner_deleted/Run()
 	world_test_probe_set(73, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/datum/world_test_subscriber/S = new
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(73), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
 	var/handle = W.handle
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	qdel(S)
 	world_test_probe_set(73, 200, 293)
 	OM_TEST_WAIT_UNTIL(!W.handle, 60) // the watch is dropped when its wake is delivered
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "a deleted owner was woken")
 	TEST_ASSERT(!W.handle, "a watch whose owner is gone was kept")
 	TEST_ASSERT_EQUAL(vg_world_subscriptions(handle), 0, "a dropped watch left its subscription in Rust")
@@ -166,7 +166,7 @@
 /datum/unit_test/dq_world_lanes_and_budget/Run()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	world_test_probe_set(74, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/old_budget = sched.world_budget
 	sched.world_budget = 2
 	var/list/watches = list()
@@ -180,10 +180,10 @@
 		var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 		watches += world_watch_changed(S, WORLD_PROBE(74), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE, LANE_URGENT)
 		urgent += S
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	world_test_probe_set(74, 200, 293)
 	// Six normal wakes at two per tick take three ticks; wait for all ten deliveries (bounded).
-	OM_TEST_WAIT_UNTIL(om_test_all_woken(normal) && om_test_all_woken(urgent), 80)
+	OM_TEST_WAIT_UNTIL(dq_test_all_woken(normal) && dq_test_all_woken(urgent), 80)
 	sched.world_budget = old_budget
 	var/first_urgent_tick
 	for(var/datum/world_test_subscriber/S as anything in urgent)
@@ -216,7 +216,7 @@
 /datum/unit_test/dq_world_probe_watches/Run()
 	for(var/cell in 50 to 54)
 		world_test_probe_set(cell, 100, 293)
-	om_test_ticks(2) // settle the new cells; nothing is asserted on it
+	dq_test_ticks(2) // settle the new cells; nothing is asserted on it
 	var/datum/world_test_subscriber/changed = allocate(/datum/world_test_subscriber)
 	var/datum/world_test_subscriber/hot = allocate(/datum/world_test_subscriber)
 	var/datum/world_test_subscriber/band = allocate(/datum/world_test_subscriber)
@@ -228,13 +228,13 @@
 		world_watch_when(door, COND_DIFFERENCE(WORLD_PROBE(53), WORLD_PROBE(54), CH_PROBE_PRESSURE, 50), WORLD_TEST_WAKE),
 	)
 	OM_TEST_WAIT_UNTIL(length(band.wakes) >= 1, 60) // the starting band is the delivery to wait for
-	om_test_ticks(3) // the others must stay quiet over the same span
+	dq_test_ticks(3) // the others must stay quiet over the same span
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired at registration")
 	TEST_ASSERT_EQUAL(length(hot.wakes), 0, "Threshold fired while below")
 	TEST_ASSERT_EQUAL(length(band.wakes), 1, "Band reports its starting band once")
 	TEST_ASSERT_EQUAL(length(door.wakes), 0, "Difference fired with no difference")
 	world_test_probe_set(50, 100.2, 293) // inside the 0.5 kPa hysteresis
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired inside its hysteresis")
 	world_test_probe_set(50, 110, 293)
 	world_test_probe_set(51, 100, 500)
@@ -251,7 +251,7 @@
 	TEST_ASSERT_EQUAL(length(band.wakes), 2, "Band wakes on a new band")
 	TEST_ASSERT_EQUAL(length(door.wakes), 1, "Difference wakes")
 	// Holding steady: nothing more.
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(changed.wakes) + length(hot.wakes) + length(band.wakes) + length(door.wakes), 5, "woke while holding steady")
 	// Rust rejects a bad channel at registration.
 	var/rejected = FALSE
@@ -270,9 +270,9 @@
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	world_test_probe_set(75, 100, 293)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(75), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
-	om_test_ticks(2)
+	dq_test_ticks(2)
 	world_test_probe_set(75, 200, 293)
 	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
 	qdel(W)
@@ -353,7 +353,7 @@ CAPABILITIES(/datum/world_test_gauge)
 	var/datum/native_watch/world/turf_watch = world_watch_when(turf_sub, COND_ABOVE(WORLD_GAS_HANDLE(T.air), CH_GAS_PRESSURE, limit), WORLD_TEST_WAKE, LANE_URGENT)
 	var/datum/native_watch/world/tank_watch = world_watch_changed(tank_sub, WORLD_GAS_HANDLE(tank), CH_BIT(CH_GAS_PRESSURE), WORLD_TEST_WAKE, LANE_URGENT)
 	SSair.run_gas_frames(2)
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(length(turf_sub.wakes), 0, "turf gas threshold fired while below")
 	TEST_ASSERT_EQUAL(length(tank_sub.wakes), 0, "Changed on a tank fired at registration")
 
@@ -363,8 +363,8 @@ CAPABILITIES(/datum/world_test_gauge)
 	T.assume_air(donor)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	SSair.run_gas_frames(1)
-	om_test_wait_for(turf_sub, nameof(turf_sub.wakes))
-	om_test_wait_for(tank_sub, nameof(tank_sub.wakes))
+	dq_test_wait_for(turf_sub, nameof(turf_sub.wakes))
+	dq_test_wait_for(tank_sub, nameof(tank_sub.wakes))
 	TEST_ASSERT(length(turf_sub.wakes) >= 1, "turf gas pressure crossed [limit] kPa ([T.air.return_pressure()]) but the watch did not wake")
 	if(length(turf_sub.wakes))
 		var/list/wake = turf_sub.wakes[1]

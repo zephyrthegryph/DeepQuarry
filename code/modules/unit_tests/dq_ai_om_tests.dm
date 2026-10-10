@@ -93,7 +93,7 @@
 		// finished move behaviour. Ask for it each round the hunter is adjacent instead of assuming it landed.
 		if(hunter.Adjacent(target))
 			B.invalidate_selection()
-		om_test_ticks(3)
+		dq_test_ticks(3)
 	TEST_ASSERT(closest < start_dist, "the brain did not move toward its target (distance stayed [start_dist])")
 	TEST_ASSERT(target.injury_load(INJURY_CATEGORY_PHYSICAL) > initial_injuries, "the brain reached its target but dealt no physical injury (diag: dist=[get_dist(hunter, target)] closest=[closest] adjacent=[hunter.Adjacent(target)] threat=[B.primary_threat] target_stat=[target.stat] cooldown_ok=[hunter.checkClickCooldown()] last_attack=[B.last_attack_at] hunter=[AREACOORD(hunter)] target=[AREACOORD(target)] behaviour=[B.active_behavior_type])")
 

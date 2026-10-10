@@ -78,7 +78,7 @@
 	for(var/i in 1 to 12)
 		S.next_click = 0
 		TEST_ASSERT_EQUAL(M.start(B, H, null), DQ_BEHAVIOR_DONE, "melee_attack is a single-tick action")
-		om_test_ticks(3)
+		dq_test_ticks(3)
 		if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before)
 			break
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "melee_attack dealt no physical injury in twelve swings")
@@ -143,7 +143,7 @@
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/datum/op_result/slam = perform_op(S, H, "mob_attacks.slam", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(slam?.outcome, ACT_COMMITTED, "the slam op was refused: [reason_text(slam?.reason)]")
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "the slam dealt no injury")
 	var/datum/op_result/special = perform_op(S, H, "mob_attacks.special", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(special?.outcome, ACT_COMMITTED, "the special-attack op was refused")
@@ -169,7 +169,7 @@
 		S.next_move = 0
 		if(A.tick(B, H, null) != DQ_BEHAVIOR_CONTINUE)
 			break
-		om_test_ticks(3)
+		dq_test_ticks(3)
 	TEST_ASSERT(get_dist(S, H) < start_dist, "approach_threat did not close the distance (stayed at [start_dist])")
 	H.forceMove(ai_floor(S.x - run_loc_floor_bottom_left.x + 1))
 	if(S.Adjacent(H))
@@ -454,7 +454,7 @@
 		S.next_move = 0
 		if(W.tick(B, goal, null) == DQ_BEHAVIOR_DONE)
 			break
-		om_test_ticks(3)
+		dq_test_ticks(3)
 	TEST_ASSERT(get_dist(S, goal) < start_dist, "walk_to_destination did not move the mob")
 	S.forceMove(goal)
 	TEST_ASSERT_EQUAL(W.tick(B, goal, null), DQ_BEHAVIOR_DONE, "walk_to_destination did not finish on arrival")

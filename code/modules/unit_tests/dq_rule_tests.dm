@@ -40,7 +40,7 @@
 /proc/dq_rx_flush()
 	vg_world_run_steps(1)
 	native_system().drain()
-	om_test_ticks(2)
+	dq_test_ticks(2)
 
 /// Flushes until `rule` has fired `count` times on `thing`, for at most
 /// `max_flushes` (a key wake can take a few reactor ticks under load).
@@ -50,7 +50,7 @@
 		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count)
 			return
 	// A DM key's wake is a one-tick kernel timer (key_published()); a loaded run (overrun ticks after a long test list) can hold it for
-	// many ticks, so a positive assertion waits for that delivery itself (om_test_wait_for()'s rule), not a fixed number of flushes.
+	// many ticks, so a positive assertion waits for that delivery itself (dq_test_wait_for()'s rule), not a fixed number of flushes.
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	for(var/attempt in 1 to 300)
 		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count || !binding?.key_wake_pending)

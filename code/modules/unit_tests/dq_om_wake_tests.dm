@@ -8,14 +8,14 @@
  * The wake test for any sleeper (a sleeper behaviour, after() timers): with its input held steady `D` must stay asleep,
  * and after `change` runs it must wake within `ticks`. Returns null on success or the failure.
  */
-/proc/om_wake_test(datum/D, list/change, ticks = 4)
+/proc/dq_wake_test(datum/D, list/change, ticks = 4)
 	pipeline_trace(D)
-	om_test_ticks(ticks)
+	dq_test_ticks(ticks)
 	// Settle first: a wake already queued before the steady window (the test's own setup) lands
 	// on the scheduler's next pass, which a busy test world can push past `ticks`.
-	om_settle(D, ticks * 10)
+	dq_settle(D, ticks * 10)
 	var/before = pipeline_traced_count(D)
-	om_test_ticks(ticks)
+	dq_test_ticks(ticks)
 	if(pipeline_traced_count(D) != before)
 		pipeline_untrace(D)
 		return "[D.type] woke while its input held steady"
@@ -24,7 +24,7 @@
 	// little longer than `ticks` before calling one lost.
 	var/after = before
 	for(var/i in 1 to ticks * 10)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		after = pipeline_traced_count(D)
 		if(after != before)
 			break
@@ -35,7 +35,7 @@
 
 /// TRUE while `D` has a wake queued or pending delivery, or an after() timer already due
 /// (a spawn-time materialize_wakes(), say): work raised before now that hasn't landed yet.
-/proc/om_wakes_pending(datum/D)
+/proc/dq_wakes_pending(datum/D)
 	var/datum/om/rec/rec = D.om_rec
 	if(!rec)
 		return FALSE
@@ -53,18 +53,18 @@
 	return FALSE
 
 /// Waits (a tick at a time, up to `max_ticks`) until nothing raised for `D` is still in flight.
-/proc/om_settle(datum/D, max_ticks = 40)
+/proc/dq_settle(datum/D, max_ticks = 40)
 	for(var/i in 1 to max_ticks)
-		if(!om_wakes_pending(D))
+		if(!dq_wakes_pending(D))
 			return TRUE
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	return FALSE
 
 /// Waits (a tick at a time, up to `max_ticks`) until `D` has been woken more than `count` times.
 /// Wakes ride the scheduler's lanes: a busy test world can take a few ticks longer.
-/proc/om_wait_for_wake(datum/D, count = 0, max_ticks = 40)
+/proc/dq_wait_for_wake(datum/D, count = 0, max_ticks = 40)
 	for(var/i in 1 to max_ticks)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		if(pipeline_traced_count(D) > count)
 			return TRUE
 	return FALSE
@@ -95,7 +95,7 @@
 	for(var/i in 1 to 200)
 		if(!A.electrified)
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT(!A.electrified, "the electrification did not run out")
 	TEST_ASSERT(!A.autoclose_pending(), "an airlock with no deadline kept a timer")
 
@@ -104,7 +104,7 @@
 	for(var/i in 1 to 200)
 		if(!A.main_power_out)
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT(!A.main_power_out, "main power did not return when its hold ran out")
 
 
@@ -115,7 +115,7 @@
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
 	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.sleep_violation(), "an idle camera is not asleep")
-	var/failure = om_wake_test(C, deferred_call(src, PROC_REF(emp_camera_briefly), C), 20)
+	var/failure = dq_wake_test(C, deferred_call(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
 	OM_TEST_WAIT_UNTIL(!C.emp_held(), 80)
 	TEST_ASSERT(!C.emp_held(), "the camera did not recover at the end of its EMP")
@@ -201,7 +201,7 @@
 	var/datum/looping_sound/dq_test/loop = new(list(source))
 	loop.start()
 	for(var/i in 1 to 60)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		if(loop.dormant_chunk_tokens || loop.has_listener())
 			break
 	if(loop.has_listener())
@@ -212,7 +212,7 @@
 	TEST_ASSERT_NULL(loop.sleep_violation(), "a dormant loop's audit failed")
 	// The chunk watch calls the loop's chunk_woke() (watch_mob_chunks() takes a proc, not an OM behaviour).
 	publish_player_chunk(T)
-	om_test_ticks(4)
+	dq_test_ticks(4)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
 	TEST_ASSERT(!loop.dormant_chunk_tokens && !after_pending(loop, "loop_token"), "stop() left the loop subscribed")

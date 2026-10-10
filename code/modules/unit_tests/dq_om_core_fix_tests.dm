@@ -8,7 +8,7 @@
 
 /datum/om/event/before/cf_inner
 
-/proc/om_cf_global_hit(datum/om_test_entity/L)
+/proc/dq_cf_global_hit(datum/om_test_entity/L)
 	LAZYADD(L.log, "global")
 
 // ---------------------------------------------------------------- events
@@ -47,7 +47,7 @@
 
 /datum/unit_test/om/core_fix_timer_global_flag/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	after(E, 1 SECONDS, /proc/om_cf_global_hit, with = list(E))
+	after(E, 1 SECONDS, /proc/dq_cf_global_hit, with = list(E))
 	after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("typed"))
 	var/list/T = E.om_rec.timers
 	TEST_ASSERT(T[6] & OM_TIMER_GLOBAL, "a /proc/ timer is flagged global")
