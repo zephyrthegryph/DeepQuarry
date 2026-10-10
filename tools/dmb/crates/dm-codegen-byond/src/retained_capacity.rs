@@ -29,6 +29,7 @@ impl SimpleProc {
     /// Immutable literal backing and every semantic field remain unchanged.
     pub fn compact_retained(&mut self) {
         self.code.compact_retained();
+        compact(&mut self.warnings);
         compact(&mut self.strings);
         compact(&mut self.class_paths);
         compact(&mut self.instance_paths);

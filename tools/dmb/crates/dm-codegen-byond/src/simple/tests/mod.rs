@@ -18,6 +18,7 @@ mod strings;
 mod typed_delete_native;
 mod typed_native_control;
 mod local_sized_arrays_native;
+mod input_warnings_native;
 
 // Explicit identities for these small standalone fixture declaration tables.
 // Production lowering receives resolver-issued references instead.

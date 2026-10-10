@@ -46,8 +46,18 @@ impl LowerError {
     }
 }
 
+/// Successful diagnostic recipe; ordinal is rebound through the current body origin.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProcedureWarning {
+    pub code: dm_ir::WarningCode,
+    pub name: Option<SymbolId>,
+    pub source_ordinal: Option<u32>,
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SimpleProc {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<ProcedureWarning>,
     pub code: SymbolicProc,
     /// Every literal/field string referenced by `code`, in first-use order.
     pub strings: Vec<StringPayload>,

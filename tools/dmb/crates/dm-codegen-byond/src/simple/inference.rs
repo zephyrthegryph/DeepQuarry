@@ -1,5 +1,7 @@
 //! Inference lowering over the shared compiler context.
 use super::*;
+#[path = "input_warnings.rs"]
+mod input_warnings;
 
 impl Compiler<'_> {
     pub(super) fn inferred_expression_type(
@@ -155,6 +157,7 @@ impl Compiler<'_> {
                 "input() accepts at most four prompt arguments",
             ));
         }
+        let source_ordinal = self.debug_current;
         let mut mask = 0u32;
         let mut special = 0u32;
         for ty in types {
@@ -213,6 +216,7 @@ impl Compiler<'_> {
             ],
         );
         self.emit(0xba, vec![]);
+        self.input_filter_warning(!types.is_empty(), choices.is_some(), mask, source_ordinal);
         Ok(())
     }
 

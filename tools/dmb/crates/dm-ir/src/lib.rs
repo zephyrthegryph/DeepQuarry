@@ -5,6 +5,9 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
+mod warnings;
+pub use warnings::WarningCode;
+
 mod symbols;
 pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;

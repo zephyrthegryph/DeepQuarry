@@ -32,7 +32,7 @@ pub use simple::{
     compile_typed_statements_with_resolver, decode_constant_string_literal, nameof_reference,
     typed_statement_view_supported, typed_statements_supported,
     typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider, LowerBindings,
-    LowerError, LowerErrorKind, LowerSpan, SharedLowerBindings, SimpleProc,
+    LowerError, LowerErrorKind, LowerSpan, ProcedureWarning, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

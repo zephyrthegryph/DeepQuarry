@@ -27,6 +27,17 @@ fn local_sized_array_initializers_match_native_complete_words() {
         };
         let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings)
             .unwrap_or_else(|errors| panic!("{case}: {errors:?}"));
+        let explicit = !matches!(case, "implicit" | "multidim_implicit");
+        assert_eq!(compiled.warnings.len(), usize::from(explicit), "{case}");
+        if explicit {
+            assert_eq!(
+                compiled.warnings[0].code,
+                dm_ir::WarningCode::ListDoubleInit
+            );
+            assert_eq!(compiled.warnings[0].code.name(), "list_double_init");
+            assert_eq!(compiled.warnings[0].name, Some(SymbolId::of("L")));
+            assert_eq!(compiled.warnings[0].source_ordinal, None);
+        }
         let proc_id = native
             .procs
             .iter()
@@ -92,4 +103,32 @@ fn local_sized_array_initializers_match_native_complete_words() {
             );
         }
     }
+}
+
+#[test]
+fn local_sized_warning_uses_current_statement_debug_ordinal() {
+    struct Debug;
+    impl DebugSourceProvider for Debug {
+        fn entry_ordinal(&self) -> Result<u32, String> {
+            Ok(9)
+        }
+        fn ordinal(&self, offset: usize) -> Result<u32, String> {
+            u32::try_from(offset).map_err(|error| error.to_string())
+        }
+    }
+    let ast = dm_syntax::parse("/proc/probe()\n    var/list/L[3] = null\n    return L\n");
+    let compiled = compile_with_lookup(
+        &ast.items[0].children,
+        None,
+        &LowerBindings::default(),
+        None,
+        Some(&Debug),
+    )
+    .unwrap();
+    assert_eq!(compiled.warnings.len(), 1);
+    assert_eq!(compiled.warnings[0].name, Some(SymbolId::of("L")));
+    assert_eq!(
+        compiled.warnings[0].source_ordinal,
+        Some(ast.items[0].children[0].header_span.start as u32)
+    );
 }

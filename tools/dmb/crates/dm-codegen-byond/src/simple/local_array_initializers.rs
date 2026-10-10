@@ -28,6 +28,7 @@ impl Compiler<'_> {
         initializer: Option<impl FnOnce(&mut Self) -> Result<(), LowerError>>,
     ) -> Result<(), LowerError> {
         let explicit = initializer.is_some();
+        let source_ordinal = self.debug_current;
         if let Some(initializer) = initializer {
             initializer(self)?;
             self.emit(
@@ -41,6 +42,17 @@ impl Compiler<'_> {
                 opcode::SET_VAR,
                 vec![Word::Variable(VariableWord::Local(slot))],
             );
+        }
+        if explicit {
+            let name = self
+                .locals
+                .get(slot as usize)
+                .ok_or_else(|| error(statement, "local warning slot is unavailable"))?;
+            self.result.warnings.push(ProcedureWarning {
+                code: dm_ir::WarningCode::ListDoubleInit,
+                name: Some(SymbolId::of(name)),
+                source_ordinal,
+            });
         }
         // Native explicit declarations leave the allocation unassigned; no Pop.
         Ok(())
