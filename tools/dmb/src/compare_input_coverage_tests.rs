@@ -17,6 +17,22 @@ fn input_words(bytes: &[u8], name: &[u8], opcode: u32) -> Vec<u32> {
 }
 
 #[test]
+fn numeric_and_file_prompt_absence_matches_captured_native_forms() {
+    let native = include_bytes!("../fixtures/translation/input_numeric_file/input_numeric_file.native.bin");
+    for (name, expected) in [
+        (b"/proc/number_prompt".as_slice(), [136, 0, 0]),
+        (b"/proc/file_prompt".as_slice(), [144, 0, 0]),
+    ] {
+        let actual = input_words(native, name, 0xc1);
+        assert_eq!(actual, expected);
+        assert!(contextual_fixed_word_is_scalar(0xc1, 1, &actual));
+        let mut unknown_radius = actual;
+        unknown_radius[1] = 1;
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &unknown_radius));
+    }
+}
+
+#[test]
 fn ordinary_prompt_and_generic_choice_metadata_matches_pinned_native_forms() {
     let native =
         include_bytes!("../fixtures/translation/input_uncovered/input_uncovered.native.bin");
