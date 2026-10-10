@@ -382,7 +382,7 @@ export const VerdigrisTarget = new Juke.Target({
   executes: async () => {
     await Juke.exec(
       'cargo',
-      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
+      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET, '--package', 'verdigris', '--lib'],
       { cwd: 'verdigris' },
     );
     fs.copyFileSync(
