@@ -37,6 +37,13 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 	GLOB.total_runtimes++
 
 #ifdef UNIT_TESTS
+	// Capture before error suppression and cache initialization. The fixed bound
+	// keeps a failing test from retaining unbounded exception descriptions.
+	if(GLOB.unit_test_runtime_capture)
+		if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
+			LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = E?.name, "file" = E?.file, "line" = E?.line, "description" = E?.desc)))
+		else
+			GLOB.unit_test_runtime_events_truncated = TRUE
 	// Preserve even very-early runtimes that occur before the normal error cache
 	// is initialized; CI treats any runtime as fatal and needs an actionable file.
 	var/runtime_log_directory = GLOB?.log_directory || "data/logs/ci"

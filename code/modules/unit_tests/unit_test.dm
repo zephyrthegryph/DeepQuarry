@@ -13,6 +13,10 @@ You can use the run_loc_floor_bottom_left and run_loc_floor_top_right to get tur
 
 GLOBAL_DATUM(current_test, /datum/unit_test)
 GLOBAL_VAR_INIT(failed_any_test, FALSE)
+/// Structured exceptions for the current test, including construction and cleanup.
+GLOBAL_LIST_EMPTY(unit_test_runtime_events)
+GLOBAL_VAR_INIT(unit_test_runtime_capture, FALSE)
+GLOBAL_VAR_INIT(unit_test_runtime_events_truncated, FALSE)
 /// When unit testing, all logs sent to log_mapping are stored here and retrieved in log_mapping unit test.
 GLOBAL_LIST_EMPTY(unit_test_mapping_logs)
 /// Global assoc list of required mapping items, [item typepath] to [required item datum].
@@ -769,12 +773,15 @@ GLOBAL_VAR(dq_test_select_names)
 	if(dq_test_ineligibility(test_path))
 		return
 
+	var/runtimes_before = GLOB.total_runtimes
+	GLOB.unit_test_runtime_events = null
+	GLOB.unit_test_runtime_events_truncated = FALSE
+	GLOB.unit_test_runtime_capture = TRUE
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
 	var/duration = 0
 	var/tick_start_index = 0
-	var/runtimes_before = GLOB.total_runtimes
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -863,7 +870,8 @@ GLOBAL_VAR(dq_test_select_names)
 		message = message ? "[message]\n\t[leak]" : "\t[leak]"
 		log_test("\t[leak]")
 
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
+	GLOB.unit_test_runtime_capture = FALSE
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "runtime_errors" = GLOB.unit_test_runtime_events || list(), "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = tick_stats)
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.
 /// It is appreciated to add the reason why the atom shouldn't be initialized if you add it to this list.
@@ -1105,9 +1113,11 @@ GLOBAL_VAR(dq_test_select_names)
 		catch(var/exception/e)
 			GLOB.failed_any_test = TRUE
 			GLOB.current_test = null
+			GLOB.unit_test_runtime_capture = FALSE
+			LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
 			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
-			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
+			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "runtime_errors" = GLOB.unit_test_runtime_events, "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = null)
 	SSticker.delay_end = FALSE
 	// Ownership framework checks after the last test: a mutated shared definition or an
 	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
@@ -1124,7 +1134,7 @@ GLOBAL_VAR(dq_test_select_names)
 	if(length(framework_failures) || world.params[TEST_EXACT_AUTOMATIC_ROWS_PARAMETER])
 		var/list/automatic_rows = dq_test_automatic_rows()
 		var/framework_row = automatic_rows[1]
-		test_results[framework_row] = list("status" = length(framework_failures) ? UNIT_TEST_FAILED : UNIT_TEST_PASSED, "message" = jointext(framework_failures, "\n"), "name" = framework_row, "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
+		test_results[framework_row] = list("status" = length(framework_failures) ? UNIT_TEST_FAILED : UNIT_TEST_PASSED, "message" = jointext(framework_failures, "\n"), "name" = framework_row, "duration_ds" = 0, "runtimes" = 0, "runtime_errors" = list(), "runtime_errors_truncated" = FALSE, "ticks" = null)
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)

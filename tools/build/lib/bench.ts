@@ -827,6 +827,8 @@ export type UnitTestEntry = {
   name: string;
   duration_ds?: number;
   runtimes?: number;
+  runtime_errors?: { name: string | null; file: string | null; line: number | null; description: string | null }[];
+  runtime_errors_truncated?: boolean | 0 | 1;
   ticks?: { samples: number; overruns: number; max: number };
 };
 
