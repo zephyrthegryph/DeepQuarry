@@ -12,7 +12,7 @@ impl Compiler<'_> {
         arglist_argument: Option<&Expr>,
     ) -> Result<(), LowerError> {
         if name == "input" {
-            return self.input_call(args, &[], None, statement);
+            return self.input_call(args, &[], None, None, statement);
         }
         if name == "nameof" {
             let [arg] = args else {

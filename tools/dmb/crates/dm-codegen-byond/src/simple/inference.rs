@@ -149,6 +149,7 @@ impl Compiler<'_> {
         args: &[Expr],
         types: &[String],
         choices: Option<&Expr>,
+        filter_end: Option<usize>,
         statement: &str,
     ) -> Result<(), LowerError> {
         if args.len() > 4 {
@@ -216,7 +217,36 @@ impl Compiler<'_> {
             ],
         );
         self.emit(0xba, vec![]);
-        self.input_filter_warning(types, choices.is_some(), mask, source_ordinal);
+        let cursor_ordinal =
+            if choices.is_none() && types.len() > 1 && types.iter().any(|ty| ty == "anything") {
+                match (self.debug, filter_end) {
+                    (Some(provider), Some(end)) => {
+                        let anchor = if self.diagnostic_expression_coordinates {
+                            DiagnosticAnchor::LexerCursorAfterOffset(end)
+                        } else if let Some(span) = self.statement_span {
+                            DiagnosticAnchor::UnresolvedCursorAtOffset(span.start)
+                        } else {
+                            return Err(error(
+                                statement,
+                                "diagnostic cursor has no current source context",
+                            ));
+                        };
+                        provider
+                            .diagnostic_ordinal(anchor)
+                            .map_err(|reason| error(statement, &reason))?
+                    }
+                    _ => None,
+                }
+            } else {
+                None
+            };
+        self.input_filter_warning(
+            types,
+            choices.is_some(),
+            mask,
+            source_ordinal,
+            cursor_ordinal,
+        );
         Ok(())
     }
 

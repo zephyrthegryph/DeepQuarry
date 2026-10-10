@@ -124,7 +124,8 @@ pub struct Lexed {
 mod lexer_items;
 use lexer_items::*;
 pub use lexer_items::{
-    lex, lex_spans, lexical_balance, quoted_end, visit_comment_spans, visit_tokens, LexicalBalance,
+    lex, lex_spans, lexical_balance, next_significant_token, quoted_end, visit_comment_spans,
+    visit_tokens, visit_tokens_while, LexicalBalance,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

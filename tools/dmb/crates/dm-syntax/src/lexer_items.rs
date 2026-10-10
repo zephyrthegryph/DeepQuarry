@@ -110,6 +110,17 @@ pub fn lex_spans(source: &str) -> SpannedLexed {
 /// Visit source-backed tokens without retaining a whole-source token vector.
 /// Asset discovery and other streaming consumers can keep only relevant tokens.
 pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Diagnostic> {
+    visit_tokens_while(source, |token| {
+        visitor(token);
+        true
+    })
+}
+
+/// Same lexer with caller-controlled early completion; no token roster allocation.
+pub fn visit_tokens_while(
+    source: &str,
+    mut visitor: impl FnMut(SpanToken) -> bool,
+) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     let mut pos = 0;
     while pos < source.len() {
@@ -177,13 +188,50 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
                 message: "unterminated string or comment".into(),
             });
         }
-        visitor(SpanToken {
+        if !visitor(SpanToken {
             kind,
             span: Span::new(pos, end),
-        });
+        }) {
+            break;
+        }
         pos = end;
     }
     diagnostics
+}
+
+/// First nontrivia lookahead token after an exact lexer boundary. Lexical errors
+/// before that token decline the answer rather than inventing a cursor.
+pub fn next_significant_token(source: &str, after: usize) -> Option<SpanToken> {
+    let suffix = source.get(after..)?;
+    let mut found = None;
+    let diagnostics = visit_tokens_while(suffix, |mut token| {
+        if matches!(
+            token.kind,
+            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+        ) {
+            return true;
+        }
+        token.span.start += after;
+        token.span.end += after;
+        found = Some(token);
+        false
+    });
+    diagnostics.is_empty().then_some(found).flatten()
+}
+
+#[cfg(test)]
+mod cursor_tests {
+    use super::*;
+
+    #[test]
+    fn lookahead_uses_trivia_rules_and_stops_before_later_errors() {
+        let source = "input\n // comment\n /* block */ return \"unterminated";
+        let token = next_significant_token(source, "input".len()).unwrap();
+        assert_eq!(&source[token.span.start..token.span.end], "return");
+        assert!(next_significant_token("input /* unfinished", 5).is_none());
+        assert!(next_significant_token("input\n // end", 5).is_none());
+        assert!(next_significant_token("é", 1).is_none());
+    }
 }
 
 fn literal_or_comment(rest: &str) -> Option<(TokenKind, usize, bool)> {

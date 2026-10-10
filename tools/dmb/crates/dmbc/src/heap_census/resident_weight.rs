@@ -68,7 +68,7 @@ fn nodes<K, V>(map: &BTreeMap<K, V>) -> usize {
 #[cfg(test)]
 pub(crate) fn procedure(
     unit: &crate::lowering::LoweredUnit,
-    relative: &Vec<usize>,
+    relative: &Vec<crate::debug_sources::RelativeDebugAnchor>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
@@ -80,7 +80,7 @@ pub(crate) fn procedure(
 }
 pub(crate) fn procedure_shared(
     unit: &crate::lowering::LoweredUnit,
-    relative: &Vec<usize>,
+    relative: &Vec<crate::debug_sources::RelativeDebugAnchor>,
     key: &[u8],
     reads: &std::sync::Arc<[ResolverRead]>,
     versions: &std::sync::Arc<[(ReadDomain, u128)]>,
@@ -92,7 +92,7 @@ pub(crate) fn procedure_shared(
 }
 fn procedure_core(
     unit: &crate::lowering::LoweredUnit,
-    relative: &Vec<usize>,
+    relative: &Vec<crate::debug_sources::RelativeDebugAnchor>,
     key: &[u8],
     reads: &[ResolverRead],
     ledger: impl FnOnce(&mut HeapCensus),

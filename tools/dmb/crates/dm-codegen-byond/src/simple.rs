@@ -351,11 +351,8 @@ pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
     compile_simple_proc_with_resolver_and_debug(body, inputs, symbols, resolver, None)
 }
 
-/// Source origins are borrowed per occurrence; reusable code retains only ordinals.
-pub trait DebugSourceProvider {
-    fn entry_ordinal(&self) -> Result<u32, String>;
-    fn ordinal(&self, expanded_offset: usize) -> Result<u32, String>;
-}
+mod diagnostic_anchor;
+pub use diagnostic_anchor::{DebugSourceProvider, DiagnosticAnchor};
 pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
     body: &[Item],
     inputs: &crate::lower_resolver::ProcedureInputs,
@@ -574,6 +571,7 @@ fn compile_with_lookup_mode(
         debug_current: None,
         debug_last: None,
         statement_span: None,
+        diagnostic_expression_coordinates: false,
         statement_mask: match typed {
             Some(TypedInput::Statements(view)) => view.mask(),
             _ => None,
@@ -922,6 +920,7 @@ struct Compiler<'a> {
     debug_current: Option<u32>,
     debug_last: Option<u32>,
     statement_span: Option<LowerSpan>,
+    diagnostic_expression_coordinates: bool,
     statement_mask: Option<&'a dm_syntax::StatementMask>,
     // Exact AST node identity, not source-span equality: synthesized expressions
     // can share spans. Only an immediate statement call may discard its result.

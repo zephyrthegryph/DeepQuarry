@@ -3,12 +3,15 @@ use super::*;
 
 impl Compiler<'_> {
     pub(super) fn statements(&mut self, body: &[Item]) -> Result<(), LowerError> {
+        let saved_coordinates = self.diagnostic_expression_coordinates;
+        self.diagnostic_expression_coordinates = false;
         let saved_debug = self.debug_current;
         let saved_span = self.statement_span;
         let result = self
             .statements_inner(body)
             .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
+        self.diagnostic_expression_coordinates = saved_coordinates;
         self.statement_span = saved_span;
         result
     }

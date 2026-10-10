@@ -9,6 +9,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Serialize)]
 struct CompileReceipt<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    publication_proof: Option<&'a crate::publication_proof::NativePublicationProof>,
     schema_version: u32,
     kind: &'static str,
     store: &'a Path,
@@ -71,6 +73,7 @@ fn check_lengths(pair: &OutputPair) -> io::Result<()> {
 }
 pub fn write_compile(path: &Path, outcome: &BuildOutcome) -> io::Result<()> {
     let BuildOutcome::Published {
+        publication_proof,
         pair,
         output_project,
         store,
@@ -85,6 +88,7 @@ pub fn write_compile(path: &Path, outcome: &BuildOutcome) -> io::Result<()> {
     write_unique(
         path,
         &CompileReceipt {
+            publication_proof: publication_proof.as_ref(),
             schema_version: 1,
             kind: "native_pair",
             store,
@@ -255,6 +259,7 @@ mod tests {
         let path = root.join("result.json");
         let pair = OutputPair::from_bytes(b"dmb", b"rsc");
         let outcome = BuildOutcome::Published {
+            publication_proof: None,
             pair: pair.clone(),
             store: root.clone(),
             output_project: root.join("project.dme"),

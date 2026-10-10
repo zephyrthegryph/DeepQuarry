@@ -12,9 +12,13 @@ use std::cell::RefCell;
 use std::{collections::BTreeMap, sync::Arc};
 #[derive(Default)]
 struct MemoCapture {
-    debug: Vec<usize>,
+    debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     errors: Option<Vec<dm_codegen_byond::LowerError>>,
 }
+
+#[cfg(test)]
+#[path = "lowering/diagnostic_anchor_tests.rs"]
+mod diagnostic_anchor_tests;
 fn replay_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
@@ -74,15 +78,49 @@ struct MemoDebugProvider<'a> {
     capture: Option<&'a RefCell<MemoCapture>>,
 }
 impl dm_codegen_byond::DebugSourceProvider for MemoDebugProvider<'_> {
+    fn diagnostic_ordinal(
+        &self,
+        anchor: dm_codegen_byond::DiagnosticAnchor,
+    ) -> Result<Option<u32>, String> {
+        let Some(ordinal) = self.original.diagnostic_ordinal(anchor)? else {
+            return Ok(None);
+        };
+        if let Some(capture) = self.capture {
+            use crate::debug_sources::RelativeDebugAnchor as R;
+            use dm_codegen_byond::DiagnosticAnchor as A;
+            let relative = match anchor {
+                A::AtOffset(offset) => offset.checked_sub(self.base).map(R::AtBodyOffset),
+                A::LexerCursorAfterOffset(offset) => offset
+                    .checked_sub(self.base)
+                    .map(R::LexerCursorAfterBodyOffset),
+                A::UnresolvedCursorAtOffset(offset) => offset
+                    .checked_sub(self.base)
+                    .map(R::UnresolvedCursorAtBodyOffset),
+            }
+            .unwrap_or(R::Unbound);
+            let mut capture = capture.borrow_mut();
+            if capture.debug.len() <= ordinal as usize {
+                capture.debug.resize(ordinal as usize + 1, R::Unbound);
+            }
+            capture.debug[ordinal as usize] = relative;
+        }
+        Ok(Some(ordinal))
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         let ordinal = self.original.entry_ordinal()?;
         if let Some(capture) = self.capture {
             let mut capture = capture.borrow_mut();
             if capture.debug.len() <= ordinal as usize {
-                capture.debug.resize(ordinal as usize + 1, usize::MAX);
+                capture.debug.resize(
+                    ordinal as usize + 1,
+                    crate::debug_sources::RelativeDebugAnchor::Unbound,
+                );
             }
-            capture.debug[ordinal as usize] =
-                self.entry.checked_sub(self.base).unwrap_or(usize::MAX);
+            capture.debug[ordinal as usize] = self
+                .entry
+                .checked_sub(self.base)
+                .map(crate::debug_sources::RelativeDebugAnchor::AtBodyOffset)
+                .unwrap_or(crate::debug_sources::RelativeDebugAnchor::Unbound);
         }
         Ok(ordinal)
     }
@@ -91,10 +129,16 @@ impl dm_codegen_byond::DebugSourceProvider for MemoDebugProvider<'_> {
         if let Some(capture) = self.capture {
             // An unrebased legacy/default expression is uncacheable; recording
             // it must never introduce a new compiler failure.
-            let relative = offset.checked_sub(self.base).unwrap_or(usize::MAX);
+            let relative = offset
+                .checked_sub(self.base)
+                .map(crate::debug_sources::RelativeDebugAnchor::AtBodyOffset)
+                .unwrap_or(crate::debug_sources::RelativeDebugAnchor::Unbound);
             let mut capture = capture.borrow_mut();
             if capture.debug.len() <= ordinal as usize {
-                capture.debug.resize(ordinal as usize + 1, usize::MAX);
+                capture.debug.resize(
+                    ordinal as usize + 1,
+                    crate::debug_sources::RelativeDebugAnchor::Unbound,
+                );
             }
             capture.debug[ordinal as usize] = relative;
         }

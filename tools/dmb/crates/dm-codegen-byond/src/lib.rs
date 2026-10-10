@@ -31,8 +31,9 @@ pub use simple::{
     compile_statement_view_with_resolver_and_references_at, compile_typed_scopes_with_resolver,
     compile_typed_statements_with_resolver, decode_constant_string_literal, nameof_reference,
     typed_statement_view_supported, typed_statements_supported,
-    typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider, LowerBindings,
-    LowerError, LowerErrorKind, LowerSpan, ProcedureWarning, SharedLowerBindings, SimpleProc,
+    typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider,
+    DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerSpan, ProcedureWarning,
+    SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

@@ -39,7 +39,7 @@ struct Record {
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
-    relative_debug: Vec<usize>,
+    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     required_types: Arc<[dm_ir::SymbolId]>,
     modified_recipes: Arc<[crate::modified_initializers::SourceRecipe]>,
 }
@@ -57,7 +57,7 @@ pub(crate) struct Admission {
     key: Arc<[u8]>,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
-    relative_debug: Vec<usize>,
+    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 impl Admission {
     pub(super) fn with_metadata(mut self, metadata: Arc<dm_ir::ProcedureMetadata>) -> Self {
@@ -432,7 +432,7 @@ pub(super) fn admission(
     key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
-    relative_debug: Vec<usize>,
+    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     write_compact: bool,
 ) -> Option<Admission> {
     let store = memo.symbolic.clone();

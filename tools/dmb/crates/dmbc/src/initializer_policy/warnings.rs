@@ -32,13 +32,13 @@ pub use dm_ir::WarningCode;
 #[derive(Clone, Debug)]
 pub struct WarningLocation {
     pub semantic_path: std::sync::Arc<str>,
-    pub line: usize,
+    pub line: Option<usize>,
 }
 impl From<SourceLocation> for WarningLocation {
     fn from(location: SourceLocation) -> Self {
         Self {
             semantic_path: location.semantic_path,
-            line: location.line,
+            line: Some(location.line),
         }
     }
 }
@@ -124,13 +124,11 @@ pub fn write_warnings(output: &mut impl Write, warnings: &[InitializerWarning]) 
                 "invalid warning subject",
             ));
         }
-        write!(
-            output,
-            "{}:{}:warning ({}): ",
-            warning.location.semantic_path,
-            warning.location.line,
-            warning.code.name()
-        )?;
+        write!(output, "{}:", warning.location.semantic_path)?;
+        if let Some(line) = warning.location.line {
+            write!(output, "{line}:")?;
+        }
+        write!(output, "warning ({}): ", warning.code.name())?;
         if let Some(name) = &warning.name {
             write!(output, "{name}: ")?;
         }
@@ -227,9 +225,9 @@ mod tests {
             assert_eq!(
                 rows,
                 [
-                    ("global_value", 1 + shift),
-                    ("value", 3 + shift),
-                    ("cache", 8 + shift)
+                    ("global_value", Some(1 + shift)),
+                    ("value", Some(3 + shift)),
+                    ("cache", Some(8 + shift))
                 ]
             );
             assert_eq!(render(&warnings).unwrap().len(), 3);

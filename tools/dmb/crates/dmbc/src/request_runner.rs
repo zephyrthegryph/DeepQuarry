@@ -312,6 +312,7 @@ fn run_build_attempt(
                     let store_path = std::fs::canonicalize(store.root_path())?;
                     query_attempt.finish_published(&pair);
                     return Ok(BuildOutcome::Published {
+                        publication_proof: None,
                         pair,
                         store: store_path,
                         output_project,
@@ -843,6 +844,7 @@ fn run_build_attempt(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
+        let publication_proof = verification_capture.then(|| crate::publication_proof::issue(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path())).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
         if !verification_capture && (session.is_some() || resource_owner.is_some()) {
             let inputs = publication_inputs;
             let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
@@ -932,6 +934,7 @@ fn run_build_attempt(
         dmbc::initializer_policy::warnings::write_warnings(&mut dmbc::daemon::stderr_writer(), &output.warnings)?;
         query_attempt.finish_published(&pair);
         return Ok(BuildOutcome::Published {
+            publication_proof,
             pair,
             store: store_path,
             output_project,

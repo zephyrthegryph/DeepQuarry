@@ -8,6 +8,7 @@ impl Compiler<'_> {
         choices: bool,
         mask: u32,
         source_ordinal: Option<u32>,
+        cursor_ordinal: Option<u32>,
     ) {
         // Authenticated matrix: omitted types are silent; object/anything filters
         // suppress this warning, including constant and object mixed masks.
@@ -30,7 +31,7 @@ impl Compiler<'_> {
                 self.result.warnings.push(ProcedureWarning {
                     code: dm_ir::WarningCode::AnythingWithoutList,
                     name: None,
-                    source_ordinal,
+                    source_ordinal: cursor_ordinal,
                 });
             }
             return;

@@ -8,6 +8,79 @@ use dm_tree::frontend::ColdFrontend;
 use dm_tree::frontend::SourceLocation;
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
+/// Source-independent recipes interpreted only against the current body issuer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum RelativeDebugAnchor {
+    AtBodyOffset(usize),
+    LexerCursorAfterBodyOffset(usize),
+    UnresolvedCursorAtBodyOffset(usize),
+    Unbound,
+}
+impl RelativeDebugAnchor {
+    pub(crate) fn bind(
+        self,
+        base: usize,
+        length: usize,
+    ) -> Option<dm_codegen_byond::DiagnosticAnchor> {
+        use dm_codegen_byond::DiagnosticAnchor as A;
+        match self {
+            Self::AtBodyOffset(offset) if offset < length => {
+                Some(A::AtOffset(base.checked_add(offset)?))
+            }
+            Self::LexerCursorAfterBodyOffset(offset) if offset > 0 && offset <= length => {
+                Some(A::LexerCursorAfterOffset(base.checked_add(offset)?))
+            }
+            Self::UnresolvedCursorAtBodyOffset(offset) if offset < length => {
+                Some(A::UnresolvedCursorAtOffset(base.checked_add(offset)?))
+            }
+            _ => None,
+        }
+    }
+}
+
+/// Unknown include-return cursors retain the expression's source context but
+/// line zero explicitly denotes no issued exact cursor line. Such origins are
+/// diagnostic-only and must never be used by an instruction debug operand.
+pub(crate) fn diagnostic_origin(
+    frontend: &ColdFrontend,
+    anchor: dm_codegen_byond::DiagnosticAnchor,
+) -> Result<DebugOrigin, String> {
+    use dm_codegen_byond::DiagnosticAnchor as A;
+    match anchor {
+        A::AtOffset(offset) => frontend.origin(offset),
+        A::UnresolvedCursorAtOffset(offset) => {
+            let mut origin = frontend.origin(offset)?;
+            origin.line = 0;
+            Ok(origin)
+        }
+        A::LexerCursorAfterOffset(end) => {
+            let text = frontend.expanded.text.as_ref();
+            if end == 0 || end > text.len() || !text.is_char_boundary(end) {
+                return Err("diagnostic cursor outside current source".into());
+            }
+            if let Some(token) = dm_syntax::next_significant_token(text, end) {
+                let same_issuer = match (
+                    frontend.location(end - 1),
+                    frontend.location(token.span.start),
+                ) {
+                    (Some(before), Some(after)) => {
+                        before.path == after.path
+                            && before.include_occurrence == after.include_occurrence
+                    }
+                    _ => false,
+                };
+                if same_issuer {
+                    return frontend.origin(token.span.start);
+                }
+            }
+            // Expanded text alone cannot certify an include-return cursor.
+            let mut origin = frontend.origin(end - 1)?;
+            origin.line = 0;
+            Ok(origin)
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DebugOrigin {
     pub semantic_path: Arc<str>,
@@ -50,9 +123,28 @@ fn origin_from_location(location: &SourceLocation) -> Result<DebugOrigin, String
 #[derive(Default)]
 pub struct DebugOriginCollector {
     by_offset: BTreeMap<usize, u32>,
+    by_anchor: BTreeMap<dm_codegen_byond::DiagnosticAnchor, u32>,
     origins: DebugOrigins,
 }
 impl DebugOriginCollector {
+    pub fn record_anchor(
+        &mut self,
+        frontend: &ColdFrontend,
+        anchor: dm_codegen_byond::DiagnosticAnchor,
+    ) -> Result<u32, String> {
+        if let dm_codegen_byond::DiagnosticAnchor::AtOffset(offset) = anchor {
+            return self.record(frontend, offset);
+        }
+        if let Some(ordinal) = self.by_anchor.get(&anchor) {
+            return Ok(*ordinal);
+        }
+        let origin = diagnostic_origin(frontend, anchor)?;
+        let ordinal = u32::try_from(self.origins.entries.len())
+            .map_err(|_| "too many diagnostic source sites".to_owned())?;
+        self.origins.entries.push(origin);
+        self.by_anchor.insert(anchor, ordinal);
+        Ok(ordinal)
+    }
     pub fn record(
         &mut self,
         provider: &dyn DebugOriginProvider,
@@ -92,6 +184,15 @@ impl<'a> FrontendDebugProvider<'a> {
     }
 }
 impl dm_codegen_byond::DebugSourceProvider for FrontendDebugProvider<'_> {
+    fn diagnostic_ordinal(
+        &self,
+        anchor: dm_codegen_byond::DiagnosticAnchor,
+    ) -> Result<Option<u32>, String> {
+        self.collector
+            .borrow_mut()
+            .record_anchor(self.frontend, anchor)
+            .map(Some)
+    }
     fn entry_ordinal(&self) -> Result<u32, String> {
         self.ordinal(self.header_offset)
     }

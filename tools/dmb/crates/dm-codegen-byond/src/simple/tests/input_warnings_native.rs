@@ -112,7 +112,6 @@ fn anything_without_list_matches_authenticated_pure_null_and_duplicate_masks() {
             1
         };
         assert_eq!(compiled.warnings.len(), expected, "{}", item.header);
-        let offset = item.children[0].header_span.start;
         for warning in compiled.warnings {
             assert_eq!(warning.code, dm_ir::WarningCode::AnythingWithoutList);
             assert_eq!(
@@ -120,7 +119,10 @@ fn anything_without_list_matches_authenticated_pure_null_and_duplicate_masks() {
                 "'anything' has no meaning without a list"
             );
             assert_eq!(warning.name, None);
-            assert_eq!(warning.source_ordinal, Some(offset as u32));
+            assert_eq!(
+                warning.source_ordinal, None,
+                "standalone provider has no cursor authority"
+            );
             total += 1;
         }
     }
@@ -196,7 +198,14 @@ fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
         );
         for warning in &compiled.warnings {
             assert_eq!(warning.name, None);
-            assert_eq!(warning.source_ordinal, Some(offset as u32));
+            assert_eq!(
+                warning.source_ordinal,
+                if without_list {
+                    None
+                } else {
+                    Some(offset as u32)
+                }
+            );
             assert_eq!(
                 warning.code.name(),
                 if without_list {

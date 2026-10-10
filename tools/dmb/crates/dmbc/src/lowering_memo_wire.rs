@@ -7,7 +7,7 @@ use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
 use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
-const EXECUTABLE_SCHEMA: u32 = 0x0206_000e;
+const EXECUTABLE_SCHEMA: u32 = 0x0206_000f;
 const FAILURE_SCHEMA: u32 = 0x0206_0002;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
@@ -48,7 +48,7 @@ struct Payload {
     versions: Vec<(dm_ir::ReadDomain, u128)>,
     body: CodeWire,
     debug: Vec<(String, u32)>,
-    relative_debug: Vec<usize>,
+    relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
     abi: Option<Abi>,
     helpers: Vec<HelperWire>,
     selected_references: Option<selected_wire::SelectedWire>,
@@ -187,7 +187,7 @@ pub(crate) fn encode(
     reads: &[ResolverRead],
     versions: &[(dm_ir::ReadDomain, u128)],
     unit: &LoweredUnit,
-    relative_debug: &[usize],
+    relative_debug: &[crate::debug_sources::RelativeDebugAnchor],
 ) -> Option<Vec<u8>> {
     let abi = match unit.abi.as_ref() {
         None => None,
@@ -631,7 +631,7 @@ pub(crate) struct ProcedureReplayContext<'a> {
 pub(crate) struct ResidentPromotion {
     pub queries: Vec<ResolveQuery>,
     pub versions: Vec<(dm_ir::ReadDomain, u128)>,
-    pub relative_debug: Vec<usize>,
+    pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 #[derive(Default)]
 pub(crate) struct ProcedureLookup {

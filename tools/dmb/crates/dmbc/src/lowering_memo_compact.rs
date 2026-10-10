@@ -4,7 +4,7 @@ use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{borrow::Cow, sync::Arc};
 // Includes the certified src-cache operand encoding policy.
-pub(crate) const SCHEMA: u32 = 0x0206_000f;
+pub(crate) const SCHEMA: u32 = 0x0206_0010;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]
@@ -183,7 +183,7 @@ pub(crate) struct Payload<'a> {
     #[serde(borrow)]
     pub(crate) reads: BoundedVec<ReadWire<'a>>,
     pub(crate) versions: BoundedVec<(ReadDomain, u128)>,
-    pub(crate) debug: BoundedVec<usize>,
+    pub(crate) debug: BoundedVec<crate::debug_sources::RelativeDebugAnchor>,
     pub(crate) required_types: BoundedVec<SymbolId>,
     #[serde(borrow)]
     abi: Cow<'a, [u8]>,
@@ -200,7 +200,7 @@ pub(crate) fn encode<'a>(
     reads: impl IntoIterator<Item = &'a ResolverRead>,
     versions: &[(ReadDomain, u128)],
     value: &crate::symbolic::PreparedContribution,
-    debug: &[usize],
+    debug: &[crate::debug_sources::RelativeDebugAnchor],
 ) -> Option<Vec<u8>> {
     let recipes = value.modified_recipes()?;
     let artifact = value.shared_artifact();

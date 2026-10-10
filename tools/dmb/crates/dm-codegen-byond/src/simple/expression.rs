@@ -46,7 +46,7 @@ impl Compiler<'_> {
             }
             ExprKind::TypeFilter { .. } => {
                 if let Some((args, types)) = self.input_form(expr) {
-                    self.input_call(args, types, None, statement)?;
+                    self.input_call(args, types, None, Some(expr.span.end), statement)?;
                 } else if let ExprKind::TypeFilter { value, .. } = &expr.kind {
                     self.expression(value, statement)?;
                 }
@@ -63,7 +63,7 @@ impl Compiler<'_> {
                     }
                 }
                 if let Some((args, types)) = self.input_form(lhs) {
-                    self.input_call(args, types, Some(rhs), statement)?;
+                    self.input_call(args, types, Some(rhs), Some(lhs.span.end), statement)?;
                 } else if let ExprKind::Binary {
                     op: range_op,
                     lhs: low,

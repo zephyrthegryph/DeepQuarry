@@ -128,11 +128,11 @@ mod tests {
                     .map(|w| (w.location.line, w.code))
                     .collect::<Vec<_>>(),
                 vec![
-                    (7 + shift, WarningCode::OverrideBeforeDefinition),
-                    (9 + shift, WarningCode::DefinitionAfterOverride),
-                    (11 + shift, WarningCode::OverrideBeforeDefinition),
-                    (15 + shift, WarningCode::DefinitionAfterOverride),
-                    (13 + shift, WarningCode::OverrideBeforeDefinition),
+                    (Some(7 + shift), WarningCode::OverrideBeforeDefinition),
+                    (Some(9 + shift), WarningCode::DefinitionAfterOverride),
+                    (Some(11 + shift), WarningCode::OverrideBeforeDefinition),
+                    (Some(15 + shift), WarningCode::DefinitionAfterOverride),
+                    (Some(13 + shift), WarningCode::OverrideBeforeDefinition),
                 ]
             );
             assert!(warnings.iter().all(|w| w.name.as_deref() == Some("f")));

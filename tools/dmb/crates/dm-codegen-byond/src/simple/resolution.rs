@@ -464,6 +464,8 @@ impl Compiler<'_> {
         result
     }
     pub(super) fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
+        let saved_coordinates = self.diagnostic_expression_coordinates;
+        self.diagnostic_expression_coordinates = true;
         let saved_debug = self.debug_current;
         let saved_span = self.statement_span;
         let saved_slots = self.local_slots.checkpoint();
@@ -478,6 +480,7 @@ impl Compiler<'_> {
             .and_then(|()| self.typed_statements_inner(statements))
             .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
+        self.diagnostic_expression_coordinates = saved_coordinates;
         self.statement_span = saved_span;
         self.local_slots.restore(saved_slots);
         self.local_types.restore(saved_types);

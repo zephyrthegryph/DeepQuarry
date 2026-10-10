@@ -20,6 +20,7 @@ pub mod map_memo;
 pub mod output_cli;
 pub mod pinned_target;
 pub mod publish;
+pub mod publication_proof;
 pub mod request;
 pub mod request_failure;
 pub mod request_runner;

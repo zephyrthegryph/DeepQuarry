@@ -41,6 +41,15 @@ fn compact_disk_preserves_current_local_array_warning_receipts() {
         false,
     );
 }
+#[test]
+fn compact_disk_rebinds_lexer_warning_cursor_and_preserves_unknown_eof() {
+    check_replay("/proc/compact_probe()\n    var/value = input(\"warning fixture\") as text|anything\n    return value\n", false, false);
+    check_replay(
+        "/proc/compact_probe()\n    return input(\"warning fixture\") as text|anything\n",
+        false,
+        false,
+    );
+}
 fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
     check_replay_mode(source, helpers, modifiers, false);
 }
@@ -147,6 +156,18 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         .entries
         .iter()
         .map(|origin| {
+            if unit.code.procedure.warnings.iter().any(|warning| {
+                warning.code == dm_ir::WarningCode::AnythingWithoutList
+                    && warning.source_ordinal.is_some_and(|ordinal| {
+                        unit.debug_origins.entries.get(ordinal as usize) == Some(origin)
+                    })
+            }) {
+                let end =
+                    front.expanded.text.find("text|anything").unwrap() + "text|anything".len();
+                return crate::debug_sources::RelativeDebugAnchor::LexerCursorAfterBodyOffset(
+                    end - body.expanded_span.start,
+                );
+            }
             (0..body.expanded_span.end - body.expanded_span.start)
                 .find(|offset| {
                     front
@@ -155,6 +176,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                         .as_ref()
                         == Some(origin)
                 })
+                .map(crate::debug_sources::RelativeDebugAnchor::AtBodyOffset)
                 .expect("every producer origin belongs to the current body")
         })
         .collect();
@@ -371,10 +393,16 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         let mut malformed = decode(&bytes).unwrap();
         malformed.executable.corrupt_warning_name();
         assert!(malformed.rebind(context(), ready).is_err());
-        assert_eq!(
-            fresh_warnings,
-            ["compact.dme:2:warning (list_double_init): value: list doubly initialized\n"]
-        );
+        let cursor_warning = original_source.contains("as text|anything");
+        let unknown_cursor = cursor_warning && !original_source.contains("return value");
+        let expected = if unknown_cursor {
+            "compact.dme:warning (anything_no_list): 'anything' has no meaning without a list\n"
+        } else if cursor_warning {
+            "compact.dme:3:warning (anything_no_list): 'anything' has no meaning without a list\n"
+        } else {
+            "compact.dme:2:warning (list_double_init): value: list doubly initialized\n"
+        };
+        assert_eq!(fresh_warnings, [expected]);
         let shifted_text: &'static str =
             Box::leak(format!("// shifted\n\n{original_source}").into_boxed_str());
         let shifted = dm_tree::frontend::build_with_config(
@@ -457,10 +485,14 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
             )
             .unwrap()
         };
-        assert_eq!(
-            rendered(&fresh),
-            ["compact.dme:4:warning (list_double_init): value: list doubly initialized\n"]
-        );
+        let shifted_expected = if unknown_cursor {
+            expected
+        } else if cursor_warning {
+            "compact.dme:5:warning (anything_no_list): 'anything' has no meaning without a list\n"
+        } else {
+            "compact.dme:4:warning (list_double_init): value: list doubly initialized\n"
+        };
+        assert_eq!(rendered(&fresh), [shifted_expected]);
         assert_eq!(rendered(&fresh), rendered(&moved_resident));
         assert_eq!(rendered(&fresh), rendered(&moved_disk));
         let artifact = value.shared_artifact();

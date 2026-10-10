@@ -2,7 +2,7 @@
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
 // Encoder receiver-cache policy changes invalidate persisted frozen words.
-pub const PROCEDURE_VERSION: u32 = 12;
+pub const PROCEDURE_VERSION: u32 = 13;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -94,14 +94,13 @@ pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + 
 #[derive(Clone)]
 pub struct CachedProcedure {
     pub unit: crate::lowering::LoweredUnit,
-    pub relative_debug: Vec<usize>,
+    pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 pub(crate) fn rebase_debug(
     frontend: &dm_tree::frontend::ColdFrontend,
     body: &dm_tree::frontend::BodyOccurrence,
-    offsets: &[usize],
+    offsets: &[crate::debug_sources::RelativeDebugAnchor],
 ) -> Option<crate::debug_sources::DebugOrigins> {
-    use crate::debug_sources::DebugOriginProvider;
     let length = body
         .expanded_span
         .end
@@ -109,12 +108,11 @@ pub(crate) fn rebase_debug(
     let entries = offsets
         .iter()
         .map(|offset| {
-            if *offset >= length {
-                return None;
-            }
-            frontend
-                .origin(body.expanded_span.start.checked_add(*offset)?)
-                .ok()
+            crate::debug_sources::diagnostic_origin(
+                frontend,
+                offset.bind(body.expanded_span.start, length)?,
+            )
+            .ok()
         })
         .collect::<Option<Vec<_>>>()?;
     Some(crate::debug_sources::DebugOrigins { entries })
@@ -429,7 +427,7 @@ impl ProcedureMemo {
         key: &[u8],
         reads: &[ResolverRead],
         unit: &crate::lowering::LoweredUnit,
-        relative_debug: &[usize],
+        relative_debug: &[crate::debug_sources::RelativeDebugAnchor],
         versions: &[(ReadDomain, u128)],
     ) {
         if self.read_only_disk || self.disk.is_none() {
@@ -565,7 +563,7 @@ impl ProcedureMemo {
         key: Vec<u8>,
         reads: Vec<ResolverRead>,
         unit: &crate::lowering::LoweredUnit,
-        relative_debug: Vec<usize>,
+        relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
         versions: Vec<(ReadDomain, u128)>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
@@ -584,7 +582,7 @@ impl ProcedureMemo {
         key: Arc<[u8]>,
         reads: Arc<[ResolverRead]>,
         unit: &crate::lowering::LoweredUnit,
-        relative_debug: Vec<usize>,
+        relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
         versions: Arc<[(ReadDomain, u128)]>,
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
@@ -692,7 +690,7 @@ pub(crate) fn key(
     let member = tree.member(body.member)?;
     let owner = tree.type_node(member.owner)?.path;
     let source = frontend.expanded.text.get(body.expanded_span.range())?;
-    let mut key = b"dmbc-procedure-memo-v6-structural-declarations\0".to_vec();
+    let mut key = b"dmbc-procedure-memo-v7-diagnostic-anchors\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.extend_from_slice(&owner.bits().to_le_bytes());
     key.extend_from_slice(&member.name.bits().to_le_bytes());

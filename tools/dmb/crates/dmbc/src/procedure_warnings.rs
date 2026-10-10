@@ -20,7 +20,9 @@ pub(crate) fn bind(
             .nth(ordinal as usize)
             .ok_or("procedure warning ordinal outside current debug origins")?;
         validate_subject(warning, symbols, local_names)?;
-        if origin.line == 0 || origin.semantic_path.is_empty() {
+        if (origin.line == 0 && warning.code != dm_ir::WarningCode::AnythingWithoutList)
+            || origin.semantic_path.is_empty()
+        {
             return Err("invalid current procedure warning binding".into());
         }
         let name = warning
@@ -33,7 +35,7 @@ pub(crate) fn bind(
             .transpose()?;
         let location = WarningLocation {
             semantic_path: std::sync::Arc::clone(origin.semantic_path),
-            line: origin.line as usize,
+            line: (origin.line != 0).then_some(origin.line as usize),
         };
         output.push(InitializerWarning {
             source_ordinal: ordinal as usize,

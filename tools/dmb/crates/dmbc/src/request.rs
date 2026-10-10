@@ -60,6 +60,8 @@ pub enum Command {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildOutcome {
     Published {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        publication_proof: Option<crate::publication_proof::NativePublicationProof>,
         pair: crate::publish::OutputPair,
         store: PathBuf,
         output_project: PathBuf,

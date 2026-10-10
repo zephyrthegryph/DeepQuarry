@@ -26,7 +26,7 @@ impl DiskWriter {
         reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
         versions: &[(ReadDomain, u128)],
         value: &crate::symbolic::PreparedContribution,
-        debug: &[usize],
+        debug: &[crate::debug_sources::RelativeDebugAnchor],
     ) {
         let start = std::time::Instant::now();
         let payload =
