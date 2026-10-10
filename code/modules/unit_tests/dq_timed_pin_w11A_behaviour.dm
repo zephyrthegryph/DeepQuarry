@@ -51,6 +51,7 @@
 	duration = 5 SECONDS
 	drop_cancels = TRUE
 	loss_cancels = FALSE // the turf is the target and cannot be deleted
+	legacy_click = TRUE // the shovel's afterattack() is reached through the mob's own ClickOn()
 
 /datum/unit_test/dq_timed_pin_w8/a_dig_grave/setup_scene()
 	user = person()

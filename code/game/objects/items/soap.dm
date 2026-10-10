@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/soap)
 		begins(MSG(soap/scrub_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(scrub_decal_done)))
 	op("scrub_floor", at_target(/turf), priority(OP_PRIORITY_PART + 1), answers(INTENT_USE, INTENT_ATTACK), label("Scrub the floor"), when(req(PROC_REF(plain_click))), when(req(PROC_REF(floor_is_dry))), needs(req_adjacent()),
 		begins(MSG(soap/scrub_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(scrub_floor_done)))
-	op("clean", at_target(/atom), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clean"), when(req(PROC_REF(plain_click))), when(req(PROC_REF(not_decal_or_turf))), needs(req_adjacent()),
+	op("clean", at_target(/atom), priority(OP_PRIORITY_DEFAULT - 5), answers(INTENT_USE, INTENT_ATTACK), label("Clean"), when(req(PROC_REF(plain_click))), when(req(PROC_REF(not_decal_or_turf))), needs(req_adjacent()),
 		begins(MSG(soap/clean_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(clean_done)))
 
 /// The click aims at a human's mouth.

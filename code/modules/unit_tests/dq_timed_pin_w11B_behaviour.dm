@@ -18,7 +18,9 @@
 /datum/unit_test/dq_timed_pin_w8/denecrotizer_ghostjoin/setup_scene()
 	user = person()
 	var/mob/living/simple_mob/animal = allocate(/mob/living/simple_mob, get_step(user, NORTH))
+	animal.ic_revivable = TRUE
 	animal.death()
+	user.set_use_stance(I_HELP)
 	target = animal
 	held = hold(/obj/item/denecrotizer)
 
@@ -36,7 +38,9 @@
 /datum/unit_test/dq_timed_pin_w8/denecrotizer_basic/setup_scene()
 	user = person()
 	var/mob/living/simple_mob/animal = allocate(/mob/living/simple_mob, get_step(user, NORTH))
+	animal.ic_revivable = TRUE
 	animal.death()
+	user.set_use_stance(I_HELP)
 	target = animal
 	held = hold(/obj/item/denecrotizer/medical)
 
