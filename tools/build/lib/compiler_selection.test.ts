@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_SHADOW_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -204,5 +204,75 @@ test('typed and unknown native statuses preserve exact exit and never fall back'
     expect(failure).toBeInstanceOf(Juke.ExitCode);
     expect(failure.code).toBe(code);
     expect(calls).toBe(0);
+  }
+});
+
+test('shadow inspects acquired generation through both children and still rejects unproven closure', async () => {
+  fs.mkdirSync('E:/dq-cache', { recursive: true });
+  const ownedRoot = fs.mkdtempSync('E:/dq-cache/shadow-pair-fixture-');
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_DMB_INSPECT = 'fixture-inspector';
+  process.env.DQ_SHADOW_ROOT = path.join(ownedRoot, 'shadow');
+  process.env.DQ_NATIVE_RUN_ROOT = path.join(ownedRoot, 'run');
+  const project = path.join(ownedRoot, 'probe.dme');
+  fs.writeFileSync(project, '// fixture');
+  let slot = '';
+  let inspected = 0;
+  let acquisition = 0;
+  const execute = async (_executable: string, args: string[]) => {
+    if (args[0] === 'compile') {
+      const artifacts = args[args.indexOf('--artifact-directory') + 1];
+      // These mutable conventional files deliberately differ from the acquired pair.
+      fs.writeFileSync(path.join(artifacts, 'probe.dmb'), 'mutable');
+      fs.writeFileSync(path.join(artifacts, 'probe.rsc'), 'mutable');
+      fs.writeFileSync(args[args.indexOf('--compile-result-file') + 1], JSON.stringify({
+        schema_version: 1, kind: 'native_pair', store: path.join(artifacts, 'store'),
+        pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32),
+        dmb_bytes: 1, rsc_bytes: 2, output_project: path.join(artifacts, 'probe.dme'),
+      }));
+    } else if (args[0] === 'acquire') {
+      acquisition++;
+      slot = path.join(args[args.indexOf('--slots') + 1], 'owned-slot');
+      fs.mkdirSync(slot);
+      fs.writeFileSync(path.join(slot, 'deepquarry.dmb'), 'D');
+      fs.writeFileSync(path.join(slot, 'deepquarry.rsc'), 'RS');
+      fs.writeFileSync(path.join(slot, 'slot-complete'), '1'.repeat(32));
+      fs.writeFileSync(args[args.indexOf('--result-file') + 1], JSON.stringify({
+        schema_version: 1, kind: 'acquired_pair', store: args[args.indexOf('--output-store') + 1],
+        pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32),
+        dmb_bytes: 1, rsc_bytes: 2, slot, dmb: path.join(slot, 'deepquarry.dmb'),
+        rsc: path.join(slot, 'deepquarry.rsc'),
+      }));
+    } else {
+      inspected++;
+      const resource = args[0] === 'rsc-diff';
+      expect(args[2]).toBe(path.join(slot, resource ? 'deepquarry.rsc' : 'deepquarry.dmb'));
+      expect(fs.readFileSync(args[2], 'utf8')).toBe(resource ? 'RS' : 'D');
+      expect(fs.existsSync(path.join(slot, 'deepquarry.dmb'))).toBe(true);
+      const report = resource ? {
+        schema_version: 1, snapshot_id: args[4], complete: true,
+        expected_resources: 1, actual_resources: 1, differences: 0, unknown_wrappers: 0, examples: [],
+      } : { ...structuralReport(), snapshot_id: args[4] };
+      fs.writeFileSync(args[3], JSON.stringify(report));
+    }
+    return { code: 0, combined: '' };
+  };
+  try {
+    await expect(selectedCompiler(project, {}, async () => {
+      fs.writeFileSync(project.replace(/\.dme$/, '.dmb'), 'D');
+      fs.writeFileSync(project.replace(/\.dme$/, '.rsc'), 'RS');
+    }, execute)).rejects.toBeInstanceOf(Juke.ExitCode);
+    expect(acquisition).toBe(1);
+    expect(inspected).toBe(2);
+    expect(fs.existsSync(slot)).toBe(false);
+    const artifact = path.join(process.env.DQ_SHADOW_ROOT!, fs.readdirSync(process.env.DQ_SHADOW_ROOT!)[0]);
+    const admission = JSON.parse(fs.readFileSync(path.join(artifact, 'structural-admission.json'), 'utf8'));
+    expect(admission.structuralAdmission.status).toBe('parity');
+    expect(admission.resourceAdmission.status).toBe('parity');
+    expect(admission.status).toBe('incomplete');
+  } finally {
+    fs.rmSync(ownedRoot, { recursive: true, force: true });
   }
 });

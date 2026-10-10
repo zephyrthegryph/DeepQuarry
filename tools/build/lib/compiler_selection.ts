@@ -5,7 +5,7 @@ import path from 'node:path';
 import Juke from '../juke/index.js';
 import { classifyResourceReport } from './shadow_resources';
 import type { ByondCompilationResult, DreamMakerOptions } from './byond';
-import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, type CompiledOutput, type NativePairOutput } from './native_pair';
+import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
@@ -150,55 +150,58 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     }
     const inspector = process.env.DQ_DMB_INSPECT;
     if (!inspector) throw new Error('Shadow mode requires DQ_DMB_INSPECT for named per-procedure comparison.');
-    const report = path.join(artifacts, 'structural-diff.json');
-    const expected = path.resolve(dme.replace(/\.dme$/i, '.dmb'));
-    // A comparison label identifies this evidence, never proves both compilers
-    // consumed the same complete source/resource snapshot. DreamMaker currently
-    // returns no authenticated read roster or effective-version receipt.
-    const comparisonContext = {
-      schema: 'unverified-shadow-comparison-context-v1',
-      project: path.resolve(dme), manifestSha256: createHash('sha256').update(fs.readFileSync(dme)).digest('hex'),
-      requestedDefines: options.defines ?? [], requestedNamedDmVersion: options.namedDmVersion ?? null,
-      requestedWarningsAsErrors: options.warningsAsErrors ?? false,
-      requestedIgnoredWarningCodes: options.ignoreWarningCodes ?? [],
-      nativeCompilerIdentity: compilerCacheIdentity(),
-      expectedDmbSha256: createHash('sha256').update(fs.readFileSync(expected)).digest('hex'),
-      nativeDmbSha256: createHash('sha256').update(fs.readFileSync(nativeDmb)).digest('hex'),
-    };
-    const sourceSnapshot = shadowSnapshotContract();
-    const snapshot = createHash('sha256').update(JSON.stringify(comparisonContext)).digest('hex');
-    // Invocation metadata is useful evidence but cannot issue snapshot authority.
-    // Even a supplied future receipt needs an authenticated producer/consumer
-    // protocol before admission; no callback boolean or cast is trusted here.
-    fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
-    const inspected = await execute(inspector, ['structural-diff', expected, nativeDmb, report, snapshot], { throw: false });
-    if (inspected.code !== 0) {
-      Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
-      throw new Juke.ExitCode(1);
-    }
-    const resourceReport = path.join(artifacts, 'resource-diff.json');
-    const resourceCompared = await execute(inspector, ['rsc-diff', path.resolve(dme.replace(/\.dme$/i, '.rsc')), nativeRsc, resourceReport, snapshot], { throw: false });
-    let resourceAdmission: ReturnType<typeof classifyResourceReport>;
-    if (resourceCompared.code !== 0) {
-      resourceAdmission = { status: 'incomplete', reason: `resource inspector failed or exceeded its 32MiB entry bound (${resourceCompared.code})` };
-    } else {
-      try { resourceAdmission = classifyResourceReport(JSON.parse(fs.readFileSync(resourceReport, 'utf8')), snapshot); }
-      catch (error) { resourceAdmission = { status: 'invalid_report', reason: String(error) }; }
-    }
-    fs.writeFileSync(path.join(artifacts, 'resource-admission.json'), JSON.stringify(resourceAdmission, null, 2));
-    let admission: ShadowAdmission;
-    try { admission = classifyShadowReport(JSON.parse(fs.readFileSync(report, 'utf8')), snapshot); }
-    catch (error) { admission = { status: 'invalid_report', reason: String(error) }; }
-    const structuralAdmission = admission;
-    if (admission.status === 'parity' && resourceAdmission.status !== 'parity') admission = resourceAdmission;
-    if (admission.status === 'parity') admission = sourceSnapshot;
-    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, resourceAdmission, sourceSnapshot }, null, 2));
-    if (admission.status !== 'parity') {
-      Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
-      throw new Juke.ExitCode(1);
-    }
-    Juke.logger.info(`Shadow structural parity: ${report}`);
-    return conventionalOutput(dme);
+    return await withCompiledOutput(native.output!, execute, async acquiredDmb => {
+      const acquiredRsc = acquiredDmb.replace(/\.dmb$/i, '.rsc');
+      const report = path.join(artifacts, 'structural-diff.json');
+      const expected = path.resolve(dme.replace(/\.dme$/i, '.dmb'));
+      // A comparison label identifies this evidence, never proves both compilers
+      // consumed the same complete source/resource snapshot. DreamMaker currently
+      // returns no authenticated read roster or effective-version receipt.
+      const comparisonContext = {
+        schema: 'unverified-shadow-comparison-context-v1',
+        project: path.resolve(dme), manifestSha256: createHash('sha256').update(fs.readFileSync(dme)).digest('hex'),
+        requestedDefines: options.defines ?? [], requestedNamedDmVersion: options.namedDmVersion ?? null,
+        requestedWarningsAsErrors: options.warningsAsErrors ?? false,
+        requestedIgnoredWarningCodes: options.ignoreWarningCodes ?? [],
+        nativeCompilerIdentity: compilerCacheIdentity(),
+        expectedDmbSha256: createHash('sha256').update(fs.readFileSync(expected)).digest('hex'),
+        nativeDmbSha256: createHash('sha256').update(fs.readFileSync(acquiredDmb)).digest('hex'),
+      };
+      const sourceSnapshot = shadowSnapshotContract();
+      const snapshot = createHash('sha256').update(JSON.stringify(comparisonContext)).digest('hex');
+      // Invocation metadata is useful evidence but cannot issue snapshot authority.
+      // Even a supplied future receipt needs an authenticated producer/consumer
+      // protocol before admission; no callback boolean or cast is trusted here.
+      fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
+      const inspected = await execute(inspector, ['structural-diff', expected, acquiredDmb, report, snapshot], { throw: false });
+      if (inspected.code !== 0) {
+        Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
+        throw new Juke.ExitCode(1);
+      }
+      const resourceReport = path.join(artifacts, 'resource-diff.json');
+      const resourceCompared = await execute(inspector, ['rsc-diff', path.resolve(dme.replace(/\.dme$/i, '.rsc')), acquiredRsc, resourceReport, snapshot], { throw: false });
+      let resourceAdmission: ReturnType<typeof classifyResourceReport>;
+      if (resourceCompared.code !== 0) {
+        resourceAdmission = { status: 'incomplete', reason: `resource inspector failed or exceeded its 32MiB entry bound (${resourceCompared.code})` };
+      } else {
+        try { resourceAdmission = classifyResourceReport(JSON.parse(fs.readFileSync(resourceReport, 'utf8')), snapshot); }
+        catch (error) { resourceAdmission = { status: 'invalid_report', reason: String(error) }; }
+      }
+      fs.writeFileSync(path.join(artifacts, 'resource-admission.json'), JSON.stringify(resourceAdmission, null, 2));
+      let admission: ShadowAdmission;
+      try { admission = classifyShadowReport(JSON.parse(fs.readFileSync(report, 'utf8')), snapshot); }
+      catch (error) { admission = { status: 'invalid_report', reason: String(error) }; }
+      const structuralAdmission = admission;
+      if (admission.status === 'parity' && resourceAdmission.status !== 'parity') admission = resourceAdmission;
+      if (admission.status === 'parity') admission = sourceSnapshot;
+      fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, resourceAdmission, sourceSnapshot }, null, 2));
+      if (admission.status !== 'parity') {
+        Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
+        throw new Juke.ExitCode(1);
+      }
+      Juke.logger.info(`Shadow structural parity: ${report}`);
+      return conventionalOutput(dme);
+    });
   } finally {
     // Preserve small diagnostics/receipts, remove only this invocation's bulky outputs.
     const store = path.resolve(artifacts, 'store');
