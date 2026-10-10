@@ -38,7 +38,7 @@ CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
 
 /// The AI cannot reach in.
 /obj/structure/closet/walllocker/emerglocker/proc/actor_is_no_ai(datum/act/op/A)
-	return !isAI(A.actor)
+	return !istype(A.actor, /mob/living/silicon/ai)
 
 /obj/structure/closet/walllocker/emerglocker/proc/has_supplies(datum/act/A)
 	return (amount > 0) ? null : /datum/msg/emerglocker/empty // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked

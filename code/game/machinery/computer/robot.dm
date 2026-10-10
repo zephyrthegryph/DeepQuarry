@@ -121,7 +121,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
 	op("killbot", ui_act("killbot", arg("ref")), then(PROC_REF(ui_act_killbot)))
-	op("stopbot", ui_act("stopbot", arg("ref")), then(PROC_REF(ui_act_stopbot)))
+	op("stopbot", ui_act("stopbot", arg("ref")), needs(req_actor_kind(/mob/living/silicon/robot, not = TRUE, because = MSG(robotics/access_denied))), then(PROC_REF(ui_act_stopbot)))
 	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
@@ -204,9 +204,6 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	. = TRUE
 
 /obj/machinery/computer/robotics/proc/ui_act_stopbot(datum/act/op/A, ref)
-	if(isrobot(A.actor))
-		to_chat(A.actor, span_danger("Access Denied."))
-		return
 	var/mob/living/silicon/robot/R = ui_ref(ref, null, /mob/living/silicon/robot)
 	if(!can_control(A.actor, R, TRUE))
 		return

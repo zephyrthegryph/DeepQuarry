@@ -361,7 +361,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The held item is in the actor's own hands (not a module mounted on a cyborg), and the actor is no cyborg: only those let go of things at a closet.
 /obj/structure/closet/proc/can_set_down(datum/act/op/A)
-	return (!isrobot(A.actor) && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
 
 
 /// A held thing is let go of onto the tile of an open closet.

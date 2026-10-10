@@ -92,13 +92,9 @@ CAPABILITIES(/datum/tgui_module/alarm_monitor/security/glasses)
 
 	return all_alarms
 
-/// Only an AI works the buttons (silently: anyone else is just not answered).
-/datum/tgui_module/alarm_monitor/proc/ui_gate(datum/act/op/A)
-	return isAI(A.actor)
-
 CAPABILITIES(/datum/tgui_module/alarm_monitor)
 	interface("StationAlertConsole")
-	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_switchto)))
+	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_switchto)))
 
 /datum/tgui_module/alarm_monitor/proc/ui_act_switchto(datum/act/op/A, camera)
 	var/mob/user = A.actor
@@ -121,7 +117,7 @@ CAPABILITIES(/datum/tgui_module/alarm_monitor)
 			var/cameras[0]
 			var/lost_sources[0]
 
-			if(isAI(user))
+			if(istype(user, /mob/living/silicon/ai))
 				for(var/obj/machinery/camera/C in A2.cameras())
 					cameras[++cameras.len] = C.tgui_structure()
 			for(var/datum/alarm_source/AS in A2.sources)

@@ -91,6 +91,8 @@ CAPABILITIES(/obj/structure/table)
 	op("put_back", menu(), label("Put table back"), when(req(PROC_REF(is_flipped_up))),
 		needs(req(PROC_REF(actor_can_flip)), req(PROC_REF(can_put_back))),
 		then(PROC_REF(put_back)), says(MSG(table/put_back)))
+	extend("flip", needs(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(table/hands_busy))))
+	extend("put_back", needs(req_actor_kind(/mob/living/silicon/ai, not = TRUE, because = MSG(table/hands_busy))))
 	op("slice_blade", item(/obj/item/melee/energy/blade), then(PROC_REF(sliced_apart)))
 	op("slice_arm_blade", item(/obj/item/melee/changeling/arm_blade), then(PROC_REF(sliced_apart)))
 	op("claw", hand(), when(req(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart)))

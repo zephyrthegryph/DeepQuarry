@@ -20,7 +20,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	if(!ishuman(user) && !isrobot(user))
+	if(!ishuman(user) && !istype(user, /mob/living/silicon/robot))
 		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
 		return
 	var/style = A.request.value
@@ -40,7 +40,7 @@
 	if(!A.answer)
 		return
 	var/mob/user = A.request.answerer
-	if(!ishuman(user) && !isrobot(user))
+	if(!ishuman(user) && !istype(user, /mob/living/silicon/robot))
 		to_chat(src, span_warning("You must be a human or a robot to use this verb."))
 		return
 	var/datum/prompt/number/ui_style_alpha/ask = A.request

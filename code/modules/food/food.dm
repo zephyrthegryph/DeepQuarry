@@ -22,6 +22,7 @@ CAPABILITIES(/obj/item/reagent_containers/food)
 	op("rename", menu(), label("Rename food"), needs(req_bool(PROC_REF(can_cook), because = MSG(food/cannot_cook))),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(renamed)))
+	extend("rename", needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot), because = MSG(food/cannot_cook))))
 	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(req_bool(PROC_REF(small_self_drag))), label("Climb in"), then(PROC_REF(climbed_in)))
 	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(takes_micro))), label("Put in"),
 		needs(req_bool(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), then(PROC_REF(micro_stuffed)))
@@ -32,7 +33,7 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 /// Anyone alive who has hands for it, or a robot, can give a food a name.
 /obj/item/reagent_containers/food/proc/can_cook(datum/act/op/A)
 	var/mob/user = A.actor
-	return user.stat != DEAD && (ishuman(user) || isrobot(user))
+	return user.stat != DEAD
 
 /obj/item/reagent_containers/food/proc/rename_question(datum/act/op/A)
 	return "What would you like to name \the [src]? Leave blank to reset."

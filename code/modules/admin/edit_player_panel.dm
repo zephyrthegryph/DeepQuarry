@@ -94,7 +94,7 @@ CAPABILITIES(/datum/edit_player_panel)
 	data["has_client"] = !!target().client
 	data["is_newplayer"] = !!isnewplayer(target())
 	data["is_human"] = !!ishuman(target())
-	data["is_ai"] = !!isAI(target())
+	data["is_ai"] = istype(target(), /mob/living/silicon/ai)
 	data["is_carbon"] = !!iscarbon(target())
 	data["is_small"] = !!issmall(target())
 	data["is_corgi"] = !!iscorgi(target())

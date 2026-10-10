@@ -55,6 +55,7 @@ CAPABILITIES(/datum/tgui_module/communications)
 	op("messagelist", ui_act("messagelist", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_messagelist)))
 	op("delmessage", ui_act("delmessage", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(message_deletable))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to delete this message?")), then(PROC_REF(ui_act_delmessage)))
 	extend("delmessage", then(PROC_REF(ui_select_message), early = TRUE))
+	extend("newalertlevel", needs(req_actor_kind(list(/mob/living/silicon/ai, /mob/living/silicon/robot), not = TRUE, because = MSG(communications/no_alert_level))))
 	op("status", ui_act("status"), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_status)))
 	op("setstat", ui_act("setstat", arg("statdisp", enum(list("blank", "time", "shuttle", "message")))), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_setstat)))
 	op("setmsg1", ui_act("setmsg1"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 1", "default" = computed(PROC_REF(msg1_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg1)))
@@ -69,6 +70,7 @@ CAPABILITIES(/datum/tgui_module/communications)
 
 MSG_DEF_SELF(communications/out_of_range, "Unable to establish a connection: You're too far away from the station!")
 MSG_DEF_SELF(communications/access_denied, "Access denied.")
+MSG_DEF_SELF(communications/no_alert_level, "Firewalls prevent you from changing the alert level.")
 MSG_DEF_SELF(communications/no_recall, "Firewalls prevent you from recalling the shuttle.")
 MSG_DEF_SELF(communications/announce_cooldown, "Please allow at least one minute to pass between announcements.")
 MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by.")
@@ -190,7 +192,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	data["emagged"] = routing_scrambled()
 	data["message_current_id"] = current_viewing_message_id
 	data["message_current"] = current_viewing_message
-	data["is_ai"]         = isAI(user) || isrobot(user)
+	data["is_ai"]         = !!(A.authority & AUTH_REMOTE_ACCESS)
 	data["menu_state"]    = data["is_ai"] ? ai_menu_state : menu_state
 	data["authenticated"] = is_authenticated(user, 0)
 	data["authmax"] = data["authenticated"] == COMM_AUTHENTICATION_MAX ? TRUE : FALSE
@@ -320,10 +322,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /datum/tgui_module/communications/proc/ui_act_newalertlevel(datum/act/op/A, level)
 	var/mob/user = A.actor
 	. = TRUE
-	if(isAI(user) || isrobot(user))
-		to_chat(user, span_warning("Firewalls prevent you from changing the alert level."))
-		return
-	else if(isobserver(user))
+	if(isobserver(user))
 		var/mob/observer/dead/D = user
 		if(D.can_admin_interact())
 			change_security_level(user, level)
