@@ -39,7 +39,7 @@ MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it prop
 
 /// The window can be taken apart into glass.
 /obj/structure/window/proc/can_dismantle(datum/act/A)
-	return glasstype ? TRUE : FALSE
+	return glasstype ? null : /datum/msg/window/dismantle_refused
 
 /obj/structure/window/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)

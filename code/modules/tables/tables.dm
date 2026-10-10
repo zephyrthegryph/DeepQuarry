@@ -77,31 +77,31 @@ CAPABILITIES(/obj/structure/table)
 	smoothing()
 	table_frame()
 	climb(landing = PROC_REF(flipped_landing))
-	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle))))
+	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req_bool(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle))))
 	extend("construction.build:table_reinforced", priority(above("place_dragged")))
-	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(req(PROC_REF(is_damaged))),
+	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(req_bool(PROC_REF(is_damaged))),
 		then(PROC_REF(repaired)), says(MSG(table/repaired)))
-	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req(PROC_REF(can_carpet))),
+	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req_bool(PROC_REF(can_carpet))),
 		then(PROC_REF(carpet_laid)), says(MSG(table/carpeted)))
 	op("uncarpet", tool(TOOL_CROWBAR), wait(0), label("Remove carpet"), when(nameof(carpeted)),
 		then(PROC_REF(carpet_lifted)), says(MSG(table/uncarpeted)))
-	op("flip", menu(), label("Flip table"), when(req(PROC_REF(is_flippable))),
-		needs(req(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), req(PROC_REF(can_flip_away), because = MSG(table/wont_budge))),
+	op("flip", menu(), label("Flip table"), when(req_bool(PROC_REF(is_flippable))),
+		needs(req_bool(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), req_bool(PROC_REF(can_flip_away), because = MSG(table/wont_budge))),
 		then(PROC_REF(flip_over)), says(MSG(table/flipped)))
-	op("put_back", menu(), label("Put table back"), when(req(PROC_REF(is_flipped_up))),
-		needs(req(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), req(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))),
+	op("put_back", menu(), label("Put table back"), when(req_bool(PROC_REF(is_flipped_up))),
+		needs(req_bool(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), req_bool(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))),
 		then(PROC_REF(put_back)), says(MSG(table/put_back)))
 	op("slice_blade", item(/obj/item/melee/energy/blade), then(PROC_REF(sliced_apart)))
 	op("slice_arm_blade", item(/obj/item/melee/changeling/arm_blade), then(PROC_REF(sliced_apart)))
-	op("claw", hand(), when(req(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart)))
-	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req(PROC_REF(slam_applies))), then(PROC_REF(slam_face)))
-	op("put_on", item(/obj/item/grab), label("Put on table"), when(req(PROC_REF(person_grabbed))),
-		needs(req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), then(PROC_REF(put_person_on)))
+	op("claw", hand(), when(req_bool(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart)))
+	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req_bool(PROC_REF(slam_applies))), then(PROC_REF(slam_face)))
+	op("put_on", item(/obj/item/grab), label("Put on table"), when(req_bool(PROC_REF(person_grabbed))),
+		needs(req_bool(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), then(PROC_REF(put_person_on)))
 	op("place", item(/obj/item), label("Place"), priority(OP_PRIORITY_NORMAL - 5), answers(INTENT_USE, INTENT_ATTACK),
-		needs(req(PROC_REF(has_surface), because = MSG(table/needs_plating)), req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))),
+		needs(req_bool(PROC_REF(has_surface), because = MSG(table/needs_plating)), req_bool(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))),
 		then(PROC_REF(place_held)))
 	op("place_dragged", item(/obj/item), gesture(GESTURE_DRAG), label("Place"),
-		needs(req(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), then(PROC_REF(place_dragged)))
+		needs(req_bool(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), then(PROC_REF(place_dragged)))
 	on_op("construction.build:table_plated", then(PROC_REF(layers_changed)))
 	on_op("construction.build:table_reinforced", then(PROC_REF(layers_changed)))
 	on_op("construction.undo:table_plated", then(PROC_REF(layers_changed)))
@@ -113,15 +113,15 @@ CAPABILITIES(/obj/structure/table)
 /proc/table_frame()
 	return construction(start(STAGE_TABLE_FRAME), \
 		stage(STAGE_TABLE_PLATED, stack(/obj/item/stack/material, 1), wait(2 SECONDS), \
-			when(req(TYPE_PROC_REF(/obj/structure/table, plating_open))), \
+			when(req_bool(TYPE_PROC_REF(/obj/structure/table, plating_open))), \
 			undo = list(tool(TOOL_WRENCH), wait(2 SECONDS), \
-				needs(req(TYPE_PROC_REF(/obj/structure/table, carpet_off), because = MSG(table/carpet_on)), \
-					req(TYPE_PROC_REF(/obj/structure/table, plating_removable), because = MSG(table/plating_stuck))))), \
+				needs(req_bool(TYPE_PROC_REF(/obj/structure/table, carpet_off), because = MSG(table/carpet_on)), \
+					req_bool(TYPE_PROC_REF(/obj/structure/table, plating_removable), because = MSG(table/plating_stuck))))), \
 		stage(STAGE_TABLE_REINFORCED, stack(/obj/item/stack/material, 1), gesture(GESTURE_DRAG), wait(2 SECONDS), \
-			when(req(TYPE_PROC_REF(/obj/structure/table, reinforcement_open))), \
-			needs(req(TYPE_PROC_REF(/obj/structure/table, standing_up), because = MSG(table/put_back_first))), \
+			when(req_bool(TYPE_PROC_REF(/obj/structure/table, reinforcement_open))), \
+			needs(req_bool(TYPE_PROC_REF(/obj/structure/table, standing_up), because = MSG(table/put_back_first))), \
 			undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS), \
-				needs(req(TYPE_PROC_REF(/obj/structure/table, reinforcement_removable), because = MSG(table/reinforcement_stuck))))), \
+				needs(req_bool(TYPE_PROC_REF(/obj/structure/table, reinforcement_removable), because = MSG(table/reinforcement_stuck))))), \
 		dismantle(tool(TOOL_WRENCH), wait(2 SECONDS), becomes(/obj/item/stack/material/steel)))
 
 // ---- the layers ----

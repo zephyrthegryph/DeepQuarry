@@ -159,7 +159,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 
 /// Whoever works the lock is not shut in with it.
 /obj/structure/closet/crate/secure/proc/actor_outside(datum/act/op/A)
-	return A.actor?.loc != src // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
+	return (A.actor?.loc != src) ? null : /datum/msg/req_failed // ALLOW(reads): where the one at the lock is, read when the entry is offered and again at the click
 
 /// A hand's work on a locked crate is its lock; on an unlocked one, its door.
 /obj/structure/closet/crate/secure/touched_with_cutters(datum/act/op/A)

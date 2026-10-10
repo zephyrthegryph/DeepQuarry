@@ -13,6 +13,7 @@ robot|none menu: Alt
 robot|none menu: Deal
 robot|none menu: Deal Multiple Cards
 robot|none menu: Draw
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Search for Cards
@@ -20,6 +21,7 @@ robot|none menu: Shuffle
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Deal
 ghost|none menu: Deal Multiple Cards
@@ -165,5 +167,5 @@ human|/obj/item menu: Shuffle
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: alt, collect_item, deck_verb_deal, deck_verb_deal_multi, deck_verb_draw, deck_verb_search, deck_verb_shuffle, drag_buckle, equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
+keys: alt, collect_item, deck_verb_deal, deck_verb_deal_multi, deck_verb_draw, deck_verb_search, deck_verb_shuffle, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
 

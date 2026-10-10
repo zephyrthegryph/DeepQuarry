@@ -18,7 +18,7 @@
 // the hole asks which critter instead of a yes
 CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	without("inhabit")
-	op("critter", observer(), label("Inhabit"), needs(req(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
+	op("critter", observer(), label("Inhabit"), needs(req_bool(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
 		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(inhabit_title)), "question" = computed(PROC_REF(inhabit_question)), "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "buttons" = TRUE, "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(critter_type_chosen)))
 

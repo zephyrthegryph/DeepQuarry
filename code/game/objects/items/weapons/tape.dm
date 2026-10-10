@@ -30,14 +30,14 @@ MSG_DEF(tape/mouth_begin, null, span_danger("%U% begins taping up %T%'s mouth!")
 
 CAPABILITIES(/obj/item/tape_roll)
 	op("tape_eyes", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape over the eyes"),
-		when(req(PROC_REF(aimed_at_eyes))),
-		needs(req_adjacent(), req(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req(PROC_REF(has_head), because = MSG(tape/no_head)), req(PROC_REF(has_eyes), because = MSG(tape/no_eyes)),
-			req(PROC_REF(eyes_free), because = MSG(tape/eyes_covered)), req(PROC_REF(face_free), because = PROC_REF(face_text))),
+		when(req_bool(PROC_REF(aimed_at_eyes))),
+		needs(req_adjacent(), req_bool(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req_bool(PROC_REF(has_head), because = MSG(tape/no_head)), req_bool(PROC_REF(has_eyes), because = MSG(tape/no_eyes)),
+			req_bool(PROC_REF(eyes_free), because = MSG(tape/eyes_covered)), req_bool(PROC_REF(face_free), because = PROC_REF(face_text))),
 		begins(MSG(tape/eyes_begin)), wait(3 SECONDS), then(PROC_REF(tape_eyes_done)))
 	op("tape_mouth", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART + 1), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape up the mouth"),
-		when(req(PROC_REF(aimed_at_mouth))),
-		needs(req_adjacent(), req(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req(PROC_REF(has_head), because = MSG(tape/no_head)), req(PROC_REF(has_mouth), because = MSG(tape/no_mouth)),
-			req(PROC_REF(mask_free), because = MSG(tape/mask_worn)), req(PROC_REF(face_free), because = PROC_REF(face_text))),
+		when(req_bool(PROC_REF(aimed_at_mouth))),
+		needs(req_adjacent(), req_bool(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req_bool(PROC_REF(has_head), because = MSG(tape/no_head)), req_bool(PROC_REF(has_mouth), because = MSG(tape/no_mouth)),
+			req_bool(PROC_REF(mask_free), because = MSG(tape/mask_worn)), req_bool(PROC_REF(face_free), because = PROC_REF(face_text))),
 		begins(MSG(tape/mouth_begin)), wait(3 SECONDS), then(PROC_REF(tape_mouth_done)))
 
 /obj/item/tape_roll/proc/aimed_at_eyes(datum/act/op/A)

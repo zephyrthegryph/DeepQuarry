@@ -309,10 +309,10 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 /// Library constructors take requirements, not behind/blocked_by/locked_by: req_set / req_clear fold onto the
 /// entries' gate bits and keep their messages.
 /datum/unit_test/dq_forms_library_requirements/Run()
-	var/datum/capability/panel/P = cap_panel(needs = req_clear(COVER))
+	var/datum/capability/P = cap_gating(new /datum/capability, needs = req_clear(COVER))
 	TEST_ASSERT_EQUAL(P.blocked_by, COVER, "req_clear(COVER) folds onto blocked_by")
 	TEST_ASSERT_NULL(P.needs, "and leaves no requirement behind")
-	var/datum/capability/cover/C = cap_cover(needs = req_clear(LOCK))
+	var/datum/capability/C = cap_gating(new /datum/capability, needs = req_clear(LOCK))
 	TEST_ASSERT_EQUAL(C.locked_by, LOCK, "req_clear(LOCK) folds onto locked_by (\"it's locked\")")
 	var/datum/capability/slot/S = cap_slot(nameof(/obj/item/dq_forms_holder::part), /obj/item, needs = list(req_set(COVER), GLOBAL_PROC_REF(cap_in_reach)))
 	TEST_ASSERT_EQUAL(S.behind, COVER, "req_set(COVER) folds onto behind")

@@ -1493,16 +1493,16 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 /// The held item cuts metal.
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_offered(datum/act/op/A)
 	var/obj/item/held = A.held
-	return !length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+	return (!length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))) ? null : /datum/msg/req_failed
 
 /// The held item cuts metal, but the gun still has a round in it.
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfires(datum/act/op/A)
 	var/obj/item/held = A.held
-	return length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+	return (length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))) ? null : /datum/msg/req_failed
 
 /// Nothing to do to a barrel that was already shortened.
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_possible(datum/act/op/A)
-	return !read_once(sawn_off)
+	return (!read_once(sawn_off)) ? null : /datum/msg/req_failed
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfire(datum/act/op/A)
 	var/mob/user = A.actor

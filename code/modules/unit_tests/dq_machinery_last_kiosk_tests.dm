@@ -1,8 +1,11 @@
-// Record these through the real legacy hand/question path before replacing kiosk task_start.
+// Old-code behavior pins now exercise native questions, prompt claims and the real scan wait.
 /datum/unit_test/dq_timed_pin/last_medical_kiosk
 	var/end_mode = "complete"
 
 /datum/unit_test/dq_timed_pin/last_medical_kiosk/run_pin()
+	set_global(nameof(GLOB.dview_mob), GLOB.dview_mob)
+	set_global(nameof(GLOB.latency_last_ineligible), GLOB.latency_last_ineligible)
+	set_global(nameof(GLOB.latency_last_pin_reason), GLOB.latency_last_pin_reason)
 	var/mob/living/carbon/human/user = person()
 	var/obj/machinery/medical_kiosk/K = allocate(/obj/machinery/medical_kiosk, user.loc)
 	K.set_grid_power(TRUE)
@@ -18,7 +21,9 @@
 	TEST_ASSERT("Health Scan" in P.choices, "Health Scan remains available")
 	TEST_ASSERT("Backup Scan" in P.choices, "Backup Scan remains available")
 	TEST_ASSERT("Cancel" in P.choices, "Cancel remains available")
-	TEST_ASSERT(K.active_user() == user || op_claimed(K), "Opening the questions reserves the real kiosk")
+	TEST_ASSERT(op_claimed(K), "Opening the questions claims the real kiosk")
+	TEST_ASSERT_NULL(K.active_user(), "Questions do not start the patient scan")
+	TEST_ASSERT_EQUAL(K.use_power, USE_POWER_IDLE, "Questions reserve without active scan power")
 	if(end_mode == "competition")
 		var/mob/living/carbon/human/other = person(get_turf(user))
 		test_menu(other, K, "medical_kiosk_interaction_hand")
@@ -51,6 +56,7 @@
 			TEST_ASSERT(!said(user, "Health report results:"), "A cancelled scan gives no diagnosis")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "Finishing or cancelling closes the real question")
 	TEST_ASSERT_NULL(K.active_user(), "Every finish path releases the actual patient relation")
+	TEST_ASSERT(!op_claimed(K), "Every finish path releases the prompt and scan claim")
 	TEST_ASSERT_EQUAL(K.use_power, USE_POWER_IDLE, "Every finish path restores standby power")
 	TEST_ASSERT_NULL(running(user), "No scan is left running after completion or cancellation")
 

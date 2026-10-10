@@ -185,8 +185,9 @@ CAPABILITIES(/obj/item/detective_scanner)
 		. = 1
 	rel_add(src, nameof(stored), fresh, "\ref [A]")
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/detective_scanner/proc/has_stored_data(datum/act/op/A)
-	return length(stored) > 0
+	return (length(stored) > 0) ? null : MSG(req_failed)
 
 /// Another record follows while there are records left.
 /obj/item/detective_scanner/proc/display_more(datum/act/op/A)

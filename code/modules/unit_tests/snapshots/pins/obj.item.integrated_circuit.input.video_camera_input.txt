@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Rename Circuit (refused: You can't do that.)
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Rename Circuit (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Rename Circuit (refused: You can't do that.)
@@ -77,5 +79,5 @@ human|/obj/item menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: circuit_rename, collect_item, drag_buckle, equip_module, examine, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pin_data, pin_name, pin_unwire, remove, rename, scan, toggle_digestable, wire
+keys: circuit_rename, collect_item, drag_buckle, examine, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pin_data, pin_name, pin_unwire, remove, rename, scan, toggle_digestable, wire
 

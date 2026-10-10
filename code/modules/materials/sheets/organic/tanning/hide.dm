@@ -20,8 +20,9 @@ CAPABILITIES(/obj/item/stack/animalhide)
 
 MSG_DEF(animalhide/cutting, span_notice("You start cutting the hair off %T%"), span_infoplain(span_bold("%U%") + " starts cutting hair off %T%"))
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/stack/animalhide/proc/held_cuts(datum/act/op/A)
-	return has_edge(A.held) || is_sharp(A.held)
+	return (has_edge(A.held) || is_sharp(A.held)) ? null : MSG(req_failed)
 
 /// Another hide follows while the stack has any left.
 /obj/item/stack/animalhide/proc/scrape_more(datum/act/op/A)

@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -97,5 +99,5 @@ human|/obj/item/stack/material/plasteel menu: Move To Top
 human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plasteel menu: Use
 human|/obj/item/stack/material/plasteel click: Click: Use
-keys: attach, collect_item, construction.build:mecha_step_1, construction.build:mecha_step_10, construction.build:mecha_step_11, construction.build:mecha_step_12, construction.build:mecha_step_13, construction.build:mecha_step_14, construction.build:mecha_step_2, construction.build:mecha_step_3, construction.build:mecha_step_4, construction.build:mecha_step_5, construction.build:mecha_step_6, construction.build:mecha_step_7, construction.build:mecha_step_8, construction.build:mecha_step_9, construction.undo:mecha_step_1, construction.undo:mecha_step_10, construction.undo:mecha_step_11, construction.undo:mecha_step_12, construction.undo:mecha_step_13, construction.undo:mecha_step_2, construction.undo:mecha_step_3, construction.undo:mecha_step_4, construction.undo:mecha_step_5, construction.undo:mecha_step_6, construction.undo:mecha_step_7, construction.undo:mecha_step_8, construction.undo:mecha_step_9, drag_buckle, equip_module, hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+keys: attach, collect_item, construction.build:mecha_step_1, construction.build:mecha_step_10, construction.build:mecha_step_11, construction.build:mecha_step_12, construction.build:mecha_step_13, construction.build:mecha_step_14, construction.build:mecha_step_2, construction.build:mecha_step_3, construction.build:mecha_step_4, construction.build:mecha_step_5, construction.build:mecha_step_6, construction.build:mecha_step_7, construction.build:mecha_step_8, construction.build:mecha_step_9, construction.undo:mecha_step_1, construction.undo:mecha_step_10, construction.undo:mecha_step_11, construction.undo:mecha_step_12, construction.undo:mecha_step_13, construction.undo:mecha_step_2, construction.undo:mecha_step_3, construction.undo:mecha_step_4, construction.undo:mecha_step_5, construction.undo:mecha_step_6, construction.undo:mecha_step_7, construction.undo:mecha_step_8, construction.undo:mecha_step_9, drag_buckle, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
 

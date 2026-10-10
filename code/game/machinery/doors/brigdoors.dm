@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 	op("stop", ui_act("stop"), then(PROC_REF(ui_stop)))
 	op("flash", ui_act("flash"), then(PROC_REF(ui_flash)))
 	op("preset", ui_act("preset", arg("preset", enum(list("short", "medium", "long")))), then(PROC_REF(ui_preset)))
-	extend(TAG_UI, needs(req(PROC_REF(timer_access), because = MSG(door_timer/denied))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(timer_access), because = MSG(door_timer/denied))))
 
 /// Whoever has access works its window.
 /obj/machinery/door_timer/proc/timer_access(datum/act/op/A)

@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	drag_onto(PROC_REF(drop_input))
 	// the screwdriver takes the cell out; a built-in shield cell asks first, because taking it out destroys it
 	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(PROC_REF(cell_builtin))), then(PROC_REF(screwdriver_used)))
-	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(PROC_REF(cell_builtin)), needs(req(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
+	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(PROC_REF(cell_builtin)), needs(req_bool(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
 		asks(/datum/prompt/choice, fields = list("title" = "Selection List", "question" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "choices" = list("Cancel", "Remove"), "buttons" = TRUE, "timeout" = 0)),
 		then(PROC_REF(destroy_cell_answered)))
 	op("recolor", tool(TOOL_MULTITOOL), wait(0), label("Set the shield colour"),
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("toggle_shield_effect", menu(), label("Toggle Shield"), needs(carried()), then(PROC_REF(toggle_shield_effect_op)))
-	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req(PROC_REF(pred_has_weapon_holds), because = PROC_REF(pred_has_weapon_refusal))), then(PROC_REF(weapon_toggle_effect_op)))
+	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req_bool(PROC_REF(pred_has_weapon_holds), because = PROC_REF(pred_has_weapon_refusal))), then(PROC_REF(weapon_toggle_effect_op)))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell

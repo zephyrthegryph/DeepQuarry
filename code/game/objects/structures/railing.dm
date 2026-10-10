@@ -42,9 +42,9 @@ CAPABILITIES(/obj/structure/railing)
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
 	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req_bool(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
-	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
+	op("use_welder", lit_welder(fuel = 0), needs(req_bool(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
 	param(nameof(constructed), pos = 1)
 
 /// A railing that is not anchored breaks under whoever climbed it.

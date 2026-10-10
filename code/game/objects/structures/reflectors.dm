@@ -123,25 +123,15 @@ TRACKED(/obj/structure/reflector, admin)
 
 CAPABILITIES(/obj/structure/reflector)
 	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
-	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin_holds), because = PROC_REF(reflector_not_admin_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
 	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
 		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))
-	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(PROC_REF(not_anchored)), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
+	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(req(PROC_REF(not_anchored))), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
 	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
-	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req_bool(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
 
-/obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
-	return !admin
-
-/// Requirement (was REQ_* reflector_not_admin): the legacy check answers TRUE to pass.
-/obj/structure/reflector/proc/reflector_not_admin_holds(datum/act/op/A)
-	var/answer = reflector_not_admin(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why reflector_not_admin_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/reflector/proc/reflector_not_admin_refusal(datum/act/op/A)
-	var/answer = reflector_not_admin(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+/obj/structure/reflector/proc/reflector_not_admin(datum/act/op/A)
+	return admin ? /datum/msg/req_failed : null
 
 /obj/structure/reflector/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -186,7 +176,7 @@ MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor.
 	return !!read_once(can_decon)
 
 /obj/structure/reflector/proc/not_anchored(datum/act/op/A)
-	return !anchored
+	return (!anchored) ? null : /datum/msg/reflector/unweld_first
 
 /obj/structure/reflector/proc/dismantled(datum/act/op/A)
 	act_message(A.actor, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))

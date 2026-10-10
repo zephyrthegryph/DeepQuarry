@@ -38,7 +38,7 @@ MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 CAPABILITIES(/obj/item/lipstick)
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
-		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),
+		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req_bool(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),
 		then(PROC_REF(application_started), early = TRUE), wait(PROC_REF(application_delay)), then(PROC_REF(lipstick_applied)))
 
 /obj/item/lipstick/proc/twisted(datum/act/op/A)

@@ -153,16 +153,16 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	on_change(STAT_ARMED, EXIT, then(PROC_REF(disarmed)))
 	anchor()
 	extend("anchor.toggle", wait(5 SECONDS), claims(), needs(
-		req(PROC_REF(intact), because = MSG(porta_turret/wrecked)),
-		req(PROC_REF(idle_for_the_wrench), because = MSG(porta_turret/active)),
-		req(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
+		req_bool(PROC_REF(intact), because = MSG(porta_turret/wrecked)),
+		req_bool(PROC_REF(idle_for_the_wrench), because = MSG(porta_turret/active)),
+		req_bool(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
 	op("salvage", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/machinery, stat_is_broken)), wait(2 SECONDS), then(PROC_REF(salvaged)))
 	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), then(PROC_REF(struck)))
 
 	section(window, "The turret's window, its buttons, and who may use them")
 	interface("PortableTurret")
-	extend("ui_open", needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
-	extend(TAG_UI, needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
+	extend("ui_open", needs(req_bool(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
 	op("power", ui_act(), toggles(nameof(enabled)))
 	op("lethal", ui_act(), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
 	op("authweapon", ui_act(), toggles(nameof(check_weapons), when = nameof(targetting_is_configurable)))

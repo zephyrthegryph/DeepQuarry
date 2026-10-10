@@ -98,7 +98,7 @@
 
 CAPABILITIES(/datum/tgui_module/ship/nav)
 	interface("OvermapNavigation")
-	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 
 /datum/tgui_module/ship/nav/ui_data(datum/act/eval/A)

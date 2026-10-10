@@ -14,10 +14,10 @@ STAGE_DEF(machine_frame, finished)
 /obj/structure/frame/proc/native_frame_graph()
 	return list(start(STAGE_MACHINE_FRAME_LOOSE),
 		stage(STAGE_MACHINE_FRAME_PLACED, list(tool(TOOL_WRENCH), label("Wrench into place"), when(cond_not(PROC_REF(native_fitted_board))), begins(/datum/msg/start/interaction/construction/frame/anchor), wait(2 SECONDS), then(PROC_REF(native_anchor))), from = STAGE_MACHINE_FRAME_LOOSE, undo = list(), key = "anchor"),
-		stage(STAGE_MACHINE_FRAME_BOARD_IN, list(item(/obj/item/circuitboard), label("Insert circuit board"), when(PROC_REF(native_wants_board)), needs(req(PROC_REF(native_board_fits), because = PROC_REF(native_board_refusal))), then(PROC_REF(native_insert_board))), from = STAGE_MACHINE_FRAME_PLACED, undo = list(), key = "insert_board"),
+		stage(STAGE_MACHINE_FRAME_BOARD_IN, list(item(/obj/item/circuitboard), label("Insert circuit board"), when(PROC_REF(native_wants_board)), needs(req(PROC_REF(native_board_fits))), then(PROC_REF(native_insert_board))), from = STAGE_MACHINE_FRAME_PLACED, undo = list(), key = "insert_board"),
 		stage(STAGE_MACHINE_FRAME_FASTENED, list(tool(TOOL_SCREWDRIVER), wait(0), label("Fasten circuit board"), when(PROC_REF(native_own_board)), says(/datum/msg/interaction/construction/frame/fasten_board), then(PROC_REF(native_fasten_board))), from = STAGE_MACHINE_FRAME_BOARD_IN, undo = list(), key = "fasten_board"),
 		stage(STAGE_MACHINE_FRAME_WIRED, list(stack(/obj/item/stack/cable_coil, 5), label("Add cables"), begins(/datum/msg/start/interaction/construction/frame/wire), wait(2 SECONDS), says(/datum/msg/interaction/construction/frame/wire), then(PROC_REF(native_wire))), from = STAGE_MACHINE_FRAME_FASTENED, undo = list(), key = "wire"),
-		stage(STAGE_MACHINE_FRAME_PANELED, list(stack(/obj/item/stack/material, 2), label("Add glass panel"), when(PROC_REF(native_has_screen)), needs(req(PROC_REF(native_plain_glass), because = MSG(machine_frame/plain_glass))), begins(/datum/msg/start/interaction/construction/frame/add_glass), wait(2 SECONDS), says(/datum/msg/interaction/construction/frame/add_glass), then(PROC_REF(native_add_glass))), from = STAGE_MACHINE_FRAME_WIRED, undo = list(), key = "add_glass"),
+		stage(STAGE_MACHINE_FRAME_PANELED, list(stack(/obj/item/stack/material, 2), label("Add glass panel"), when(PROC_REF(native_has_screen)), needs(req_bool(PROC_REF(native_plain_glass), because = MSG(machine_frame/plain_glass))), begins(/datum/msg/start/interaction/construction/frame/add_glass), wait(2 SECONDS), says(/datum/msg/interaction/construction/frame/add_glass), then(PROC_REF(native_add_glass))), from = STAGE_MACHINE_FRAME_WIRED, undo = list(), key = "add_glass"),
 		stage(STAGE_MACHINE_FRAME_FINISHED, list(tool(TOOL_SCREWDRIVER), wait(0), label("Finish machine"), when(PROC_REF(native_is_machine)), needs(req(PROC_REF(native_has_components), because = MSG(machine_frame/missing_components))), then(PROC_REF(native_finish_machine))), from = STAGE_MACHINE_FRAME_WIRED, undo = list(), key = "finish_machine"),
 		stage(STAGE_MACHINE_FRAME_FINISHED, list(tool(TOOL_SCREWDRIVER), wait(0), label("Fasten cover"), when(PROC_REF(native_is_alarm)), when(cond_not(PROC_REF(native_is_machine))), says(/datum/msg/interaction/construction/frame/finish_alarm), then(PROC_REF(native_finish_alarm))), from = STAGE_MACHINE_FRAME_WIRED, undo = list(), key = "finish_alarm"),
 		stage(STAGE_MACHINE_FRAME_FINISHED, list(tool(TOOL_SCREWDRIVER), wait(0), label("Connect monitor"), when(PROC_REF(native_has_screen)), says(/datum/msg/interaction/construction/frame/connect_monitor), then(PROC_REF(native_connect_monitor))), from = STAGE_MACHINE_FRAME_PANELED, undo = list(), key = "connect_monitor"),
@@ -250,22 +250,22 @@ STAGE_DEF(machine_frame, finished)
 	return !read_once(need_circuit) && !!read_once(circuit)
 
 /obj/structure/frame/proc/native_board_fits(datum/act/op/A)
-	var/result = read_once(accepts_board(A.actor, src, A.held))
-	return !istext(result) && !!result
-
-/obj/structure/frame/proc/native_board_refusal(datum/act/op/A)
-	var/result = read_once(accepts_board(A.actor, src, A.held))
-	return istext(result) ? result : "needs a circuit board"
+	var/obj/item/circuitboard/board = A.held
+	if(!istype(board))
+		return "needs a circuit board"
+	var/datum/frame/frame_types/board_type = read_once(board.board_type)
+	if(read_once(board_type?.name) != read_once(frame_type.name))
+		return "this frame does not accept circuit boards of this type"
+	return read_once(board.loc?.release_refusal(board, A.actor))
 
 /obj/structure/frame/proc/native_plain_glass(datum/act/op/A)
 	return read_once(A.held.get_material_name()) == MAT_GLASS
 
 /obj/structure/frame/proc/native_has_components(datum/act/op/A)
-	return read_once(has_all_components(A.actor, src, A.held))
-
-
-
-
+	for(var/R in read_once(req_components))
+		if(read_once(req_components[R]) > 0)
+			return MSG(machine_frame/missing_components)
+	return null
 
 /// Board compatibility and custody; retained for the shared frame bundle too.
 /obj/structure/frame/proc/accepts_board(mob/actor, atom/target, obj/item/held)

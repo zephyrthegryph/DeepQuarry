@@ -62,10 +62,10 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	emag(then(PROC_REF(on_emag)), say = MSG(emitter/shorted), powered = FALSE)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emitter_step)), when = PROC_REF(firing))
 	op("toggle", hand(), when(req_empty_hand()), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
-		needs(req(PROC_REF(is_welded), because = MSG(emitter/unwelded))),
+		needs(req_bool(PROC_REF(is_welded), because = MSG(emitter/unwelded))),
 		then(PROC_REF(toggled)))
 	op("repair", item(/obj/item/stack/material/steel), label("Repair with steel"),
-		needs(req(PROC_REF(damaged), because = MSG(emitter/whole)), req(PROC_REF(enough_sheets), because = MSG(emitter/too_few_sheets))),
+		needs(req_bool(PROC_REF(damaged), because = MSG(emitter/whole)), req_bool(PROC_REF(enough_sheets), because = MSG(emitter/too_few_sheets))),
 		says(MSG(emitter/repairing)), wait(3 SECONDS), then(PROC_REF(repaired)))
 	op("anomalous", item(/obj/item/anomaly_scanner), label("Toggle anomalous mode"), wait(0), then(PROC_REF(anomalous_toggled)))
 	op("particle", tool(TOOL_MULTITOOL), label("Select particle"), wait(0), when(nameof(anomalous)),

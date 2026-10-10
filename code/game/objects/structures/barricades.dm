@@ -12,7 +12,7 @@
 
 CAPABILITIES(/obj/structure/barricade)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
-	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
+	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req_bool(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 TRACKED(/obj/structure/barricade, material)

@@ -16,7 +16,7 @@
 
 CAPABILITIES(/obj/item/picnic_blankets_carried)
 	// the old object verb: spread it out where the carrier stands
-	op("fold_out", menu(), label("Fold out"), needs(carried(), req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(picnic_blankets_carried_fold_out_effect)))
+	op("fold_out", menu(), label("Fold out"), needs(carried(), req_bool(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(picnic_blankets_carried_fold_out_effect)))
 
 /// A refused carried blanket must stay folded without allocating floor structures.
 /obj/item/picnic_blankets_carried/proc/can_unfold(datum/act/op/A)
@@ -52,7 +52,7 @@ TRACKED(/obj/structure/picnic_blanket_deployed, blanket_type)
 CAPABILITIES(/obj/structure/picnic_blanket_deployed)
 	owns_many(nameof(attached_blankets))
 	// the old object verb: pack it up from the center
-	op("fold_up", menu(), label("Fold up"), needs(req(PROC_REF(pred_can_fold_up), because = MSG(picnic_blanket/center))), then(PROC_REF(picnic_blanket_deployed_fold_up_effect)))
+	op("fold_up", menu(), label("Fold up"), needs(req_bool(PROC_REF(pred_can_fold_up), because = MSG(picnic_blanket/center))), then(PROC_REF(picnic_blanket_deployed_fold_up_effect)))
 
 MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
 

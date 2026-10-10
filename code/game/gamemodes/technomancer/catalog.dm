@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
 	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
-	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_refund_holds), because = PROC_REF(can_refund_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), needs(req_bool(PROC_REF(can_refund_holds), because = PROC_REF(can_refund_refusal))), then(PROC_REF(interaction_item)))
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"

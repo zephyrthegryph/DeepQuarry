@@ -244,37 +244,9 @@
 	TEST_ASSERT_EQUAL(jointext(F.ran, ","), "peek", "the observer op ran")
 	TEST_ASSERT_NULL(gesture_entry_for(H, F, null, GESTURE_CLICK), "a hand's click does not reach it")
 
-/// G16: every entry a library capability builds is a real op (a key, not a preset), so the router ranks it; a bespoke
-/// cap_hand() / cap_tool() / ... on the type itself stays a preset until its file migrates.
-/datum/unit_test/dx_cap_library_ops/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/list/types = list(
-		/obj/cap_fixture/anchorable, /obj/cap_fixture/breakable, /obj/lib_fixture/chair, /obj/cap_fixture/cell_box,
-		/obj/cap_fixture/cell_charger, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
-		/obj/cap_fixture/emag,
-		/obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
-		/obj/cap_fixture/panel, /obj/cap_fixture/rotatable,
-		/obj/cap_fixture/beacon, /obj/item/dq_cap_fixture/cig, /obj/cap_fixture/stampable,
-		/obj/item/cap_fixture/hoodie, /obj/cap_fixture/weldable, /obj/item/cap_fixture/two_handed,
-		/obj/cap_fixture/writable, /obj/item/cap_slot_probe, /obj/cap_fixture/ladder_probe, /obj/cap_fixture/rigged,
-		/obj/machinery/power/apc/dx_test,
-	)
-	var/checked = 0
-	for(var/path in types)
-		var/atom/A = allocate(path, T)
-		for(var/datum/interaction/capability/E as anything in cap_interactions(A))
-			if(istype(E.cap, /datum/capability/entry))
-				continue // a bespoke entry of the type's own (a preset or a cap_op()): not the library's
-			checked++
-			TEST_ASSERT(E.op, "[path]: [E.cap.type] builds [E.id] with no op")
-			if(!E.op)
-				continue
-			TEST_ASSERT(!E.op.legacy, "[path]: [E.cap.type] builds [E.id] as a preset")
-			TEST_ASSERT(length(E.op.key), "[path]: [E.cap.type] builds [E.id] with no op key")
-			TEST_ASSERT(E.op.action, "[path]: [E.cap.type] builds [E.id] with no action")
-	TEST_ASSERT(checked > 40, "the sweep covered the library ([checked] entries)")
+// The former dx_cap_library_ops sweep covered retired leaf-library builders.
+// Core gesture/resolution regression groups above and below remain live.
 
-/// The key of the op a click by user with held (exactly) reaches on A, or null: the legacy gesture table's, else the op engine's winner.
 /proc/dx_gesture_key(mob/user, atom/A, obj/item/held)
 	var/datum/interaction/capability/E = gesture_entry_for(user, A, held, GESTURE_CLICK)
 	if(E)
@@ -303,14 +275,20 @@
 
 	var/obj/machinery/computer/med_data/records = allocate(/obj/machinery/computer/med_data, T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
-	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, null), "open_records", "the old hand entry became the empty hand's op")
+	var/datum/op_result/opened = test_click(H, records)
+	TEST_ASSERT_EQUAL(opened?.key, "ui_open", "the generated window remains the empty-hand plain click")
 	TEST_ASSERT(H.put_in_active_hand(card), "the human holds an ID card")
-	TEST_ASSERT_EQUAL(dx_gesture_key(H, records, card), "insert_scan", "the old item entry became the ID slot's insert op")
-	TEST_ASSERT_EQUAL(try_interaction(H, records, card, INPUT_ACTION_USE, null, TRUE), INTERACTION_TRY_RAN, "a click with the card ran it")
-	TEST_ASSERT_EQUAL(records.scan, card, "the card is in the slot")
-	var/datum/interaction/capability/eject = op_entry_named(H, records, "Eject ID Card")
-	TEST_ASSERT_EQUAL(eject?.op?.action, ACT_NONE, "the old verb entry became the slot's ACT_NONE eject")
-	TEST_ASSERT(perform_op(H, records, "Eject ID Card"), "the Menu's eject runs by name")
+	var/datum/op_result/clicked = test_click(H, records, card)
+	TEST_ASSERT_EQUAL(clicked?.key, "use_item", "the card retains the existing generic computer click")
+	TEST_ASSERT_NULL(records.scan, "a generic plain click does not insert the card")
+	TEST_ASSERT(H.is_in_hands(card), "the generic click leaves the card carried")
+	var/datum/op_result/inserted = test_menu(H, records, "insert_scan")
+	TEST_ASSERT_EQUAL(inserted?.outcome, ACT_COMMITTED, "the named native insertion commits")
+	TEST_ASSERT_EQUAL(records.scan, card, "the real card is in the slot")
+	TEST_ASSERT_EQUAL(card.loc, records, "the console physically contains the card")
+	TEST_ASSERT(!H.is_in_hands(card), "insertion releases the actor's hand")
+	var/datum/op_result/ejected = test_menu(H, records, "eject_scan_menu")
+	TEST_ASSERT_EQUAL(ejected?.outcome, ACT_COMMITTED, "the named native eject commits")
 	TEST_ASSERT_NULL(records.scan, "the card came out")
 	TEST_ASSERT(H.is_in_hands(card), "into the hand")
 

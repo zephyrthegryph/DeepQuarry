@@ -306,7 +306,7 @@ TRACKED(/obj/item/taskmanager, scancount)
 TRACKED(/obj/item/taskmanager, scanreq)
 
 CAPABILITIES(/obj/item/taskmanager)
-	op("choose_department", in_hand(), label("Choose department"), needs(req_adjacent(), req_capable(), req(PROC_REF(living_operator), because = MSG(op/not_available))),
+	op("choose_department", in_hand(), label("Choose department"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(living_operator), because = MSG(op/not_available))),
 		asks(/datum/prompt/choice/taskmanager_department, keeps = 0), then(PROC_REF(department_chosen)))
 
 /obj/item/taskmanager/proc/living_operator(datum/act/op/A)

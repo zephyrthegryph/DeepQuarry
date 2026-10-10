@@ -153,4 +153,4 @@
 
 CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
 	without("reagent_refinery_set_transfer_amount")
-	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req(PROC_REF(has_room_holds), because = PROC_REF(has_room_refusal))), then(PROC_REF(interaction_insert)))
+	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_bool(PROC_REF(has_room_holds), because = PROC_REF(has_room_refusal))), then(PROC_REF(interaction_insert)))

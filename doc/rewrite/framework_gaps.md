@@ -581,6 +581,14 @@ Twelve opt-outs in machinery and none in power were reviewed. Nine remain becaus
 | computer/arcade.dm / recursive blackhole_hurt | REMOVED | The only remaining target is the deleted victim. |
 | wishgranter.dm / gib_wisher | REMOVED | The only effect gibs the deleted wisher. |
 
+### Custom requirement callback gap (2026-10-08)
+
+The machinery/power sweep found that master 4375b80682 still evaluates custom req(PROC_REF(...)) as a boolean: generic holds() returns !!op_call(A, what) in code/engine/parts/cond.dm. No constructor accepts a pure callback returning null to allow or a reason to refuse. Changing the remaining callbacks to that protocol would reverse admission. Four former-REQ adapters can use existing declarative parts and were converted; The expanded three-argument delegate inventory has 39 adapters remaining (38 machinery and one power, across 24 files); their requested null-or-reason callback conversion is blocked on the custom requirement form. No engine adapter or effect-stage workaround was added. Exact sites and behavior are listed in ../machinery_requirements_1008_gap.md.
+
+### Starts reentrant cancellation (2026-10-08)
+
+The real suit-cycler shock cancels its operation synchronously by changing actor capability during starts(). The runner previously continued into suspend_act() on the released action (Cannot read null.args). The user-approved guard after each starts callback now returns when the pending operation is inactive or deleted; its completed cancellation remains responsible for releasing claims and feedback. The real powered shock regressions cover this path.
+
 ### K19-K25 follow-up (rewrite/fw-gaps-k)
 
 Sites the new forms unblock that are not converted yet, so the next wave knows where they are: the empty sandbag fill, the bore pull cord and the tourniquet loosen verb (each needs its holder or an existing pinned test reworked: a series over a stack must finish its `use()` in `then()`, see "Repeating and unbounded waits" in final_api.html), the straw sip, butchering cuts, the dog-borg re-arm, nanopaste and the medical stack (balloon refusals with interpolated text need a `MSG_BALLOON` per case), and every `/mob/living` ability (K23, proposal in doc/rewrite/proposals/mob_living_root.md).

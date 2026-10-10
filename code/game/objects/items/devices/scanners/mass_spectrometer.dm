@@ -31,7 +31,7 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		icon_state = initial(icon_state)
 
 CAPABILITIES(/obj/item/mass_spectrometer)
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_analyze_holds), because = PROC_REF(can_analyze_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_analyze_holds), because = PROC_REF(can_analyze_refusal))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the spectrometer.
 /obj/item/mass_spectrometer/proc/can_analyze(mob/user, atom/target, obj/item/held)

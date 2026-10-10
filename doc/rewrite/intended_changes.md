@@ -3869,6 +3869,21 @@ Rows of other lanes left alone: look_states `mob.living.simple_mob.vore.morph` (
 * **Belly overlay preference of a robot:** a panel edit publishes `belly_change` on the host, which recomputes the robot's tracked `vore_light_states`; the preference itself is read only there, so it is not tracked.
 * **Pins:** `dq_look_tree_pin` shows only the eight `obj/structure/blob/core` colour rows (seeded random, the same on the base); no row was blessed. `dq_look_state_pin` was not run here (the merge batch runs it).
 
+### Machinery prompt waits (2026-10-08)
+
+Old-code pins for these three classes passed at e03f6c58d6 before conversion, recorded in e6e9a6b5a3. The landed prompt forms now replace their remaining timed tasks.
+
+| Class | Cause of conversion-pin changes |
+|---|---|
+| `/obj/machinery/medical_kiosk` | The Use operation owns a target claim through the service question and five-second scan. Patient state and active power begin after selection; cancelling the question releases the claim without starting scan power. Native requirements expose patient/panel/operability refusals in the menu. Service choices, reports and scan duration are preserved. |
+| `/obj/machinery/cryopod` | Grab and drag loading use native passenger-answerer consent and a two-second wait while retaining the loader as actor. Grab loading also has a menu binding for the same operation. Cancel, decline, movement and deletion end the pending operation without taking custody. The existing Enter Pod operation is unchanged. |
+| `/obj/machinery/suit_cycler` | Grab insertion uses a native two-second wait. Its real electrification shock runs in starts(); a successful shock returns a refusal before begins or a wait. Empty grabs silently refuse before building the insertion message. Occupancy and shock behavior are retained. |
+
+The cycler preserves shock-before-empty-grab checking: starts() silently refuses a missing passenger only after the actual shock attempt. An empty-grab shock regression exercises this ordering. The runner's approved reentrant-cancellation guard prevents a shock-induced cancellation from trying to suspend its already released action.
+
+### Declarative machinery requirements (2026-10-08)
+
+CableLayer's cable-or-on admission uses any_of(req_full(cable), req_is(on)); the bomb tester selects loading when either declared tank relation is empty; the painter selects on req_operable() and requires an empty insert relation. These replace four former-REQ boolean adapters without changing operation keys or labels. Cable and painter refusal text is unchanged, and native requirement reads track relation/stat changes directly. No pin row change is intended for these three classes.
 ## Look pin sweep (rewrite/pin-speed)
 
 The two look pins are one sweep (`code/modules/unit_tests/dq_look_sweep.dm`, doc/rewrite/agent_workflow.md section 9): each type is made once, from a block emptied and
@@ -3892,6 +3907,9 @@ look-state probes are narrowed to the vars `analyze look-keys` finds a draw read
   turf probe on a fresh tile of the template's floor type (`ChangeTurf` from a canonical turf, then drop `landed_holder`), then bless the one rule.
 * **Harness:** the bless writes CRLF and a lone newline for an empty row set; the committed files are LF and empty files stay empty, so those were normalised back.
 
+### Combined machinery prompts and requirement protocol (2026-10-08)
+
+The requirement-protocol branch now includes the prompts branch. Its scoped cryopod requirement pin therefore receives the same thirteen `Put grabbed victim in` menu rows already reviewed and recorded in `last_timed_1008` and the canonical cryopod pin: the native grab op now has a menu binding so passenger consent runs through `asks(answerer =)` while the loader remains the actor. This is a reuse of that existing capture, not a new recording. No CableLayer or bomb-tester pin rows change. Master’s CableLayer boolean adapter and bomb-tester boolean selection are replaced by direct null-or-reason checks of the same cable/on and tank-slot predicates; they must recover their original Toggle and Connect tank rows. The medical kiosk and cryopod prompt admission callbacks also use null-or-reason after combining the branches.
 ## Draw rest: the last legacy look providers (rewrite/draw-rest)
 
 Cash and casino chips, paper family and stamps, bundles, mail, telecube, device assemblies and holder, transfer valve, glass jar, fishing and butterfly nets,
@@ -4237,3 +4255,25 @@ Pins blessed (the alone run shows these and only these):
 * **`hit_pins/obj.structure.reagent_dispensers.coolanttank`**: `emp 1 | refresh_bits: 65 -> 0` becomes `1 -> 0`. Bit 64 was `CHANGE_CONTENTS`, which `rewrite/change-life` retired (commit "Retire the contents, can-move and item-charge channels"); that lane's merge into master left the pin on the old value.
 
 Not blessed: `dq_conversion_pin` showed six `ai|none` rows for the medbot and mulebot in the full run (`click: nothing` for `click: Click: Ui open`). Alone it matches the recorded rows, so the full-run rows are an order-dependent state leak that is still open; the pin is correct.
+
+### Generic silicon module Equip preservation (requirements re-land, 2026-10-09)
+
+The native `/obj/item` module Equip conversion preserves its old stable key `gen_silicon_item_silicon_equip_module` and silicon menu availability. An item outside a robot module retains the disabled Equip row with `not possible right now` for both robots and AI. Module containment is a null-or-reason requirement, not a selector that hides refusal rows. A module-contained item still equips for a robot; an AI retains its old successful no-op. The native remote binding and DEFAULT - 50 priority remain. This restores the pre-conversion behavior; no requirement snapshot rows are re-blessed. The resolver explanation's key spelling is updated to match that preserved key.
+
+## Medical records capability bridge retirement (2026-10-09)
+
+## /obj/machinery/computer/med_data
+
+Retire the local capabilities()/cap_slot()/cap_op() declarations in favor of a single native CAPABILITIES block. The native owned scan var remains the same one-occupant physical slot, with unchanged checked transfer, physical insertion/ejection while broken or unpowered, records-opening effect, and full-hands floor fallback. Plain clicks retain Ui open for an empty hand and Use item for a held ID; screwdriver still selects Disconnect. The named Open records menu action remains usable while carrying an ID or other item.
+
+The old bridge advertised duplicate menu provider entries. One refused Open records row for every held-item sample disappears when its old empty-hand provider entry is replaced by an origin-aware native hand op, while its usable menu entry is retained. The held-ID sample also loses its duplicate refused Insert ID card provider row; the usable insertion menu entry remains. Keys are renamed from bridge-generated interaction IDs to explicit native operation keys: hand:Open records:interaction_open_ui_fingerprint -> open_records; slot_insert_scan -> insert_scan; slot_eject_scan_8 -> eject_scan_menu. No click ranking or gameplay behavior is intentionally changed.
+
+The inherited `/obj/machinery/computer/med_data/laptop` receives the same native operations; its derived look-key metadata changes with that declaration, with no laptop-specific appearance or click change and no new laptop conversion snapshot. Physical slot requirements retain the console's declared remote silicon reach. Records menu rows retain the old AI/robot no-provider and ghost reach refusals verbatim.
+
+The unused legacy capability-library leaves are retired in the same follow-up, with user approval. They have no production instantiation; native gameplay implementations already supply their behavior. Their API-only tests are removed, while mixed table/runtime/slot/lifecycle/look tests keep their assertions with test-owned fixtures. Real shield, assembly, radio and integrity behavior remains intact. This retirement does not justify changing any gameplay pin row; the only conversion-pin cause in this batch is the medical class change documented above.
+
+### Batch 41 merge of the requirement protocol lane (2026-10-10)
+
+- The conversion pins (`dq_conversion_pin`, `machinery_timed_1008`, `last_timed_1008`) are re-blessed for the lane's preserved silicon Equip op: key `gen_silicon_item_silicon_equip_module` and the disabled `Equip (refused: not possible right now)` row for robot and AI on items outside a module, as described above.
+- The cryopod and medical kiosk lose master's interim `cryopod_load` and `medical_kiosk_scan` keys: the lane's native prompt ops replace the minimal timed-op conversion master made in parallel. The cryopod's `Put grabbed victim in` row is now listed (silently refused) for every probe without a grab, like the suit cycler's `Put in cycler`.
+- Boolean requirement callbacks master added after the lane forked (soap, multitool, detective scanner, animal hide, leash, glasses kit, nail polish and remover, nanopaste, straw, medical stacks, mecha bolts and passengers, bonfire dismantle) and the mecha wreckage salvage checks the lane missed now return null or a reason; behaviour is unchanged (the wreckage's cut rows were briefly refused in the merged tree before this fix).

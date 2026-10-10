@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/resonator)
 		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
 		then(PROC_REF(settings_picked)))
 	op("resonate", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Create resonance field"),
-		needs(req_adjacent(), req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))
+		needs(req_adjacent(), req_bool(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))
 
 /obj/item/resonator/proc/settings_picked(datum/act/op/A)
 	var/datum/prompt/choice/picked = A.answer

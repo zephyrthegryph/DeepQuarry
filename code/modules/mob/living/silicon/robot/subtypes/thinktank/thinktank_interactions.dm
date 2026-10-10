@@ -13,7 +13,7 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 /// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
 /// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).
 /mob/living/silicon/robot/platform/proc/ghost_control_possible(datum/act/op/A)
-	return read_once(!(client || key || stat == DEAD || !SSticker || !SSticker.mode)) // whether anyone is in it is asked when the click is made
+	return read_once(!(client || key || stat == DEAD || !SSticker || !SSticker.mode)) ? null : /datum/msg/req_failed // whether anyone is in it is asked when the click is made
 
 /mob/living/silicon/robot/platform/proc/ghost_control_question(datum/act/A)
 	return "Do you wish to take control of 	he [src]?"

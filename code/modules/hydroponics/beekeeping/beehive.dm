@@ -29,11 +29,11 @@ CAPABILITIES(/obj/machinery/beehive)
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(can_dismantle_holds), because = PROC_REF(can_dismantle_refusal))),
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req_bool(PROC_REF(can_dismantle_holds), because = PROC_REF(can_dismantle_refusal))),
 		begins(MSG(beehive/dismantling)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE, volume = 0.5), wait(3 SECONDS), then(PROC_REF(dismantle_done)))
 	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
-	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
-	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
+	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req_bool(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
+	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req_bool(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
 	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
 	// A closed hive is not harvested (the click goes on); an open one gives a frame every 3 seconds while it holds a filled one.
 	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), when(req(PROC_REF(hive_open))), starts(PROC_REF(harvest_started)),
@@ -195,7 +195,7 @@ MSG_DEF_SELF(beehive/no_combs, span_notice("There are no filled honeycombs."))
 MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 
 /obj/machinery/beehive/proc/hive_open(datum/act/op/A)
-	return !closed
+	return !closed ? null : /datum/msg/req_failed
 
 /// Only an open hive with a filled frame in it, and bees that are smoked or absent, is harvested.
 /obj/machinery/beehive/proc/harvest_started(datum/act/op/A)
@@ -469,8 +469,8 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req(PROC_REF(can_extract_frame_holds), because = PROC_REF(can_extract_frame_refusal))), then(PROC_REF(interaction_honey_extractor_load_frame)))
-	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
+	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req_bool(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_bool(PROC_REF(can_extract_frame_holds), because = PROC_REF(can_extract_frame_refusal))), then(PROC_REF(interaction_honey_extractor_load_frame)))
+	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req_bool(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
 
 /obj/machinery/honey_extractor/proc/crowbar_used(datum/act/op/A)
 	if(processing)

@@ -8,21 +8,21 @@ MSG_DEF_SELF(shadekin_ability/respite_cooldown, "you can't use that so soon afte
 MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Respite triggered by an emergency warp")
 
 /mob/living/proc/ability_in_dark_respite_area(datum/act/op/A)
-	return istype(get_area(src), /area/shadekin)
+	return (istype(get_area(src), /area/shadekin)) ? null : /datum/msg/req_failed
 
 /mob/living/proc/ability_respite_not_cooling_down(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && !SK.in_dark_respite
+	return (!!SK && !SK.in_dark_respite) ? null : /datum/msg/req_failed
 
 /// A Dark Respite that an emergency warp triggered can't be manually ended; one the player started can. Always TRUE when no respite is running
 /// (there's nothing to end - ability_dark_respite then starts a fresh one).
 /mob/living/proc/ability_respite_endable(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return FALSE
+		return /datum/msg/req_failed
 	if(!has_body_effect(/datum/body_effect/dark_respite))
-		return TRUE
-	return !!SK.manual_respite
+		return null
+	return (!!SK.manual_respite) ? null : /datum/msg/req_failed
 
 /// Toggles Dark Respite: ends a running one, or starts one.
 /mob/living/proc/ability_dark_respite(datum/act/op/A)

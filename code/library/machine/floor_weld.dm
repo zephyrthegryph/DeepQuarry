@@ -28,9 +28,9 @@ CAPABILITY_TYPE(floor_weld, CAP_FLOOR_WELD, /datum/capability/lib/floor_weld, ke
 	var/list/idle = busy ? needs(req_is(busy, FALSE, because = MSG(floor_weld/busy))) : null
 	return list(
 		op("bolt", tool(TOOL_WRENCH), label("Bolt to the floor"), wait(0), idle,
-			needs(req(CAP_PROC(not_welded), because = MSG(floor_weld/needs_unwelding))), then(CAP_PROC(bolt_toggled)), says(CAP_PROC(bolt_message))),
+			needs(req_bool(CAP_PROC(not_welded), because = MSG(floor_weld/needs_unwelding))), then(CAP_PROC(bolt_toggled)), says(CAP_PROC(bolt_message))),
 		op("weld", lit_welder(), label("Weld to the floor"), wait(weld_time), idle,
-			needs(req(CAP_PROC(not_loose), because = MSG(floor_weld/needs_bolting))), then(CAP_PROC(weld_toggled)), says(CAP_PROC(weld_message))),
+			needs(req_bool(CAP_PROC(not_loose), because = MSG(floor_weld/needs_bolting))), then(CAP_PROC(weld_toggled)), says(CAP_PROC(weld_message))),
 		examine_line(CAP_PROC(examine_rung)))
 
 /datum/capability/lib/floor_weld/proc/not_welded(datum/act/A)

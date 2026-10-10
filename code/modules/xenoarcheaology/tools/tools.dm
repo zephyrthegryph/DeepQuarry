@@ -342,8 +342,8 @@ CAPABILITIES(/obj/item/xenoarch_multi_tool)
 	held_verb(/obj/item/xenoarch_multi_tool/proc/swap_functionality, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies, SLOT_ANY_CARRIED)
 	op("view_depth_scans", in_hand(), then(PROC_REF(depth_requested)))
-	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
-	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
+	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req_bool(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
+	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req_bool(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
 
 TRACKED(/obj/item/xenoarch_multi_tool, mode)
 

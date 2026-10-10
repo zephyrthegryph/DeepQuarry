@@ -4,12 +4,14 @@ human|none menu: Pick up
 human|none menu: Ring
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Ring
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Hammer rudely
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Ring
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Ring
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -79,5 +81,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Ring
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Ring
-keys: collect_item, drag_buckle, equip_module, hammer, hammer_with_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, ring, ring_with_item, toggle_digestable, use_wrench
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, hammer, hammer_with_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, ring, ring_with_item, toggle_digestable, use_wrench
 

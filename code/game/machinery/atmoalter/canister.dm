@@ -63,19 +63,19 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(canister_step)), when = nameof(working))
 	on_change(nameof(valve_open), ANY, then(PROC_REF(valve_moved)))
 	op("liner", stack(/obj/item/stack/material, 2), label("Install pressure liner"), wait(0),
-		needs(req(PROC_REF(no_liner), because = MSG(canister/has_liner)), req(PROC_REF(drained_for_liner), because = MSG(canister/drain_first))),
+		needs(req_bool(PROC_REF(no_liner), because = MSG(canister/has_liner)), req_bool(PROC_REF(drained_for_liner), because = MSG(canister/drain_first))),
 		then(PROC_REF(install_liner)))
 	op("refill_jetpack", item(/obj/item/tank/jetpack), label("Pulse-pressurize jetpack"), wait(0), when(PROC_REF(actor_is_robot)),
 		says(MSG(canister/jetpack)), then(PROC_REF(refill_jetpack)))
 	extend("melee_hit", when(cond_not(req(/obj/item/tank))), when(cond_not(req(/obj/item/analyzer))), when(cond_not(req(/obj/item/pda))))
-	op("weld_apart", tool(TOOL_WELDER), label("Deconstruct"), wait(2 SECONDS), needs(req(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))),
+	op("weld_apart", tool(TOOL_WELDER), label("Deconstruct"), wait(2 SECONDS), needs(req_bool(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))),
 		says(MSG(canister/deconstructed)), then(PROC_REF(welded_apart)))
 
 	/// The canister's window and the buttons in it.
 	section(controls, "The canister's window and the buttons in it")
 	interface("Canister", state = nameof(GLOB.tgui_physical_state))
-	extend("ui_open", needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked))))
-	op("relabel", ui_act("relabel"), needs(req(PROC_REF(can_relabel), because = MSG(canister/not_empty))),
+	extend("ui_open", needs(req_bool(PROC_REF(not_destroyed), because = MSG(portable/wrecked))))
+	op("relabel", ui_act("relabel"), needs(req_bool(PROC_REF(can_relabel), because = MSG(canister/not_empty))),
 		asks(/datum/prompt/choice, fields = list("title" = "Gas canister", "question" = "Choose canister label", "choices" = computed(PROC_REF(label_choices)))),
 		then(PROC_REF(label_chosen)))
 	op("pressure", ui_act("pressure", arg("pressure", num())), then(PROC_REF(ui_set_release_pressure)))

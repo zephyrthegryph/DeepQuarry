@@ -16,15 +16,15 @@
 
 /mob/living/proc/ability_no_dark_tunnel_yet(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && !SK.created_dark_tunnel
+	return (!!SK && !SK.created_dark_tunnel) ? null : /datum/msg/req_failed
 
 /// Checks the deploy site (dq_dark_tunnel_template()'s check_deploy()) without side effects.
 /mob/living/proc/ability_dark_tunnel_site_ready(datum/act/op/A)
 	var/turf/T = get_turf(src)
 	if(!T)
-		return FALSE
+		return /datum/msg/req_failed
 	var/datum/map_template/shelter/template = dq_dark_tunnel_template()
-	return template.check_deploy(T) == SHELTER_DEPLOY_ALLOWED
+	return (template.check_deploy(T) == SHELTER_DEPLOY_ALLOWED) ? null : /datum/msg/req_failed
 
 /// Why the site is not ready: it varies by what's wrong with it.
 /mob/living/proc/ability_dark_tunnel_site_text(datum/act/op/A)
@@ -41,7 +41,7 @@
 
 /mob/living/proc/ability_can_afford_dark_tunnel(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && SK.shadekin_get_energy() >= DARK_TUNNEL_COST
+	return (!!SK && SK.shadekin_get_energy() >= DARK_TUNNEL_COST) ? null : /datum/msg/req_failed
 
 /// The dark_portal shelter template, loaded once and cached.
 /proc/dq_dark_tunnel_template()

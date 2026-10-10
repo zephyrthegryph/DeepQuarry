@@ -58,12 +58,12 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 	owns_many(nameof(recipes))
 	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))
 	op("fill_target", item(/obj/item/stack/material), label("Fill target"),
-		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req(PROC_REF(not_synthesized), because = MSG(particle_smasher/synthesizer))),
+		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req_bool(PROC_REF(not_synthesized), because = MSG(particle_smasher/synthesizer))),
 		then(PROC_REF(interaction_fill_target)))
 	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
 		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
 	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
-	op("store", item(/obj/item), label("Store"), when(req(PROC_REF(can_store_item))), then(PROC_REF(interaction_store)))
+	op("store", item(/obj/item), label("Store"), when(req_bool(PROC_REF(can_store_item))), then(PROC_REF(interaction_store)))
 	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
 	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
 
@@ -100,9 +100,13 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 /obj/machinery/particle_smasher/proc/interaction_store(datum/act/op/A)
 	move_into(src, nameof(src.storage), A.held, A.actor)
 
-/// The old verb's check: alive, conscious and free.
+/// Retains the old living-only restraint/full-buckle gate.
 /obj/machinery/particle_smasher/proc/actor_can_act(datum/act/op/A)
-	return dq_actor_can_act(A.actor, src, A.held)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "You can't do that right now."
+	return null
 
 /obj/machinery/particle_smasher/proc/secured(datum/act/op/A)
 	var/mob/user = A.actor

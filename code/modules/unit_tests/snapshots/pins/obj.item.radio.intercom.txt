@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Toggle the AI channel
 ai|none menu: Toggle the microphone
 ai|none menu: Use
@@ -66,5 +68,5 @@ human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
 wires: Receiver, Signal, Transmitter
-keys: broadcast, channel, collect_item, controls, drag_buckle, equip_module, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, remote_channel, remote_microphone, setFrequency, specFreq, subspace, toggleLoudspeaker, toggle_digestable, use, use_screwdriver, use_wirecutter
+keys: broadcast, channel, collect_item, controls, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, remote_channel, remote_microphone, setFrequency, specFreq, subspace, toggleLoudspeaker, toggle_digestable, use, use_screwdriver, use_wirecutter
 

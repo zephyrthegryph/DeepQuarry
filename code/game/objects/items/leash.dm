@@ -159,8 +159,8 @@ TRACKED(/obj/item/leash, leashed)
 /obj/item/leash/proc/leashable_pet(datum/act/op/A)
 	var/mob/living/pet = A.target
 	if(!read_once(pet.mind) || pet == A.actor)
-		return FALSE
-	return !istype(pet, /mob/living/carbon/human) || is_wearing_collar(pet)
+		return MSG(req_failed)
+	return (!istype(pet, /mob/living/carbon/human) || is_wearing_collar(pet)) ? null : MSG(req_failed)
 
 /// A cuffed pet is leashed faster.
 /obj/item/leash/proc/leash_time(datum/act/op/A)

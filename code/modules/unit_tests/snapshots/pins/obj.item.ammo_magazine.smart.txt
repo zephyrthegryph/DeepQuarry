@@ -5,11 +5,13 @@ human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Clear Ammo Data (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Clear Ammo Data (refused: You can't do that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -120,5 +122,5 @@ human|/obj/item/cell/device menu: Smart item
 human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell/device menu: Use
 human|/obj/item/cell/device click: Click: Load
-keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable
+keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable
 

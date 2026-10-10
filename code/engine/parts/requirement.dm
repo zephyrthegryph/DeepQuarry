@@ -1,4 +1,5 @@
 // The shared requirement protocol used by native operation parts and downstream adapters.
+// holds() remains the boolean view needed by existing consumers; check() is null when allowed, or a refusal reason.
 
 /datum/requirement
 	/// The reason this requirement fails with (a /datum/msg type), unless test() returns another.
@@ -10,6 +11,10 @@
 /datum/requirement/proc/holds(datum/act/op/A)
 	stack_trace("legacy requirement [type] has no form in the new engine: write its req_* of code/engine/parts/cond.dm")
 	return FALSE
+
+/// The reason view of a compatibility requirement, null when allowed.
+/datum/requirement/proc/check(datum/act/op/A)
+	return holds(A) ? null : refusal(A)
 
 /datum/requirement/proc/refusal(datum/act/op/A)
 	return reason

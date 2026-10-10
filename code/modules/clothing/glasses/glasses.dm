@@ -711,8 +711,9 @@ MSG_DEF_SELF(glasses_kit/on_self, span_warning("You can't use this on yourself. 
 MSG_DEF_SELF(glasses_kit/no_prescription, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
 MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be covered!"))
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/glasses_kit/proc/not_the_user(datum/act/op/A)
-	return A.target != A.actor
+	return (A.target != A.actor) ? null : MSG(req_failed)
 
 /// The measuring is refused (and nothing starts) while the person's eyes are covered; otherwise the person and the room are told.
 /obj/item/glasses_kit/proc/measuring_started(datum/act/op/A)

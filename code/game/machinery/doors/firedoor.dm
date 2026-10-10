@@ -204,28 +204,28 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	ref_one(nameof(turbolift_floor), /datum/turbolift_floor)
 	op("busy", inputs(hand(), item(/obj/item)), priority(OP_PRIORITY_CLAW + 8), when(nameof(operating)), wait(0), then(PROC_REF(nothing_done)))
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
-		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
-			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
+		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req_bool(PROC_REF(can_work), because = MSG(firedoor/dead)),
+			req_bool(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
 	// A silicon link and a pilot bump ask the same question by this key.
 	op("remote_use", remote(), wait(0),
-		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)),
-			req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
+		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req_bool(PROC_REF(can_work), because = MSG(firedoor/dead)),
+			req_bool(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
-	op("force_claws", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
+	op("force_claws", hand(), label("Force"), when(req_bool(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_CLAW + 5), wait(0), then(PROC_REF(nothing_done)))
 	op("welded", item(/obj/item), priority(OP_PRIORITY_CLAW + 4), when(nameof(blocked)), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_shut))), then(PROC_REF(nothing_done)))
-	op("pry", item(/obj/item), label("Force"), when(req(PROC_REF(prying_item))), priority(OP_PRIORITY_CLAW + 3), wait(3 SECONDS), claims(),
-		needs(req(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), then(PROC_REF(item_forced)))
+	op("pry", item(/obj/item), label("Force"), when(req_bool(PROC_REF(prying_item))), priority(OP_PRIORITY_CLAW + 3), wait(3 SECONDS), claims(),
+		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), then(PROC_REF(item_forced)))
 	op("weld", tool(TOOL_WELDER), label("Weld"), when(cond_not(PROC_REF(repairable))), priority(OP_PRIORITY_CLAW + 6), wait(0), costs(RES_FUEL, 0),
 		needs(req_unclaimed(because = MSG(firedoor/busy_prying))), then(PROC_REF(weld_toggled)))
 	op("hatch", tool(TOOL_SCREWDRIVER), label("Maintenance hatch"), when(nameof(density)), priority(OP_PRIORITY_CLAW + 6), wait(0), then(PROC_REF(hatch_toggled)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(nameof(blocked)), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS),
-		needs(req(PROC_REF(hatch_reachable), because = MSG(firedoor/hatch_first))), then(PROC_REF(electronics_out)))
+		needs(req_bool(PROC_REF(hatch_reachable), because = MSG(firedoor/hatch_first))), then(PROC_REF(electronics_out)))
 	op("pry_tool", tool(TOOL_CROWBAR), label("Force"), when(cond_not(nameof(blocked))), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS), claims(),
-		needs(req(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), then(PROC_REF(tool_forced)))
+		needs(req_bool(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), then(PROC_REF(tool_forced)))
 
 /// An op that only swallows the touch (a busy door, tape, a welded door's refusal): nothing happens.
 /obj/machinery/door/firedoor/proc/nothing_done(datum/act/op/A)

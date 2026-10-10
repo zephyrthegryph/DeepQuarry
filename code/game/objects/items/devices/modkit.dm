@@ -22,7 +22,7 @@ TRACKED(/obj/item/modkit, parts)
 CAPABILITIES(/obj/item/modkit)
 	examine_line(PROC_REF(refit_description))
 	op("refit", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Refit hardsuit"),
-		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), then(PROC_REF(refitted)))
+		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req_bool(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), then(PROC_REF(refitted)))
 	op("discard_spent", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Discard spent kit"),
 		when(cond_not(PROC_REF(has_refit_parts))), needs(req_adjacent()), then(PROC_REF(spent_discarded)))
 

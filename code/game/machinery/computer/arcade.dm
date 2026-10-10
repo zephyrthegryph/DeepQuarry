@@ -1080,18 +1080,13 @@ CAPABILITIES(/obj/item/orion_ship)
 
 TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 
-/// Payment and Use. The old attackby tested the base arcade's own interactions
-/// (ticket redemption) first via `if(..()) return`, so our own payment
-/// interaction is declared after ..() rather than before it; attack_hand's
-/// `if(..()) return; tgui_interact(user)` is the shared open_ui interaction.
-/// Requirement (was REQ_* wants_payment): the legacy check answers TRUE to pass.
-/obj/machinery/computer/arcade/clawmachine/proc/wants_payment_holds(datum/act/op/A)
-	var/answer = wants_payment(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
+/// Payment follows inherited ticket redemption; the selection gate keeps an already-paid
+/// machine or unavailable vendor account from swallowing the inherited interaction.
 /// Whether the claw machine still needs payment and can take it right now.
-/obj/machinery/computer/arcade/clawmachine/proc/wants_payment(mob/actor, atom/target, obj/item/held)
-	return gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended
+/obj/machinery/computer/arcade/clawmachine/proc/wants_payment(datum/act/op/A)
+	if(gamepaid == 0 && GLOB.vendor_account && !GLOB.vendor_account.suspended)
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/computer/arcade/clawmachine/proc/interaction_pay(datum/act/op/A)
 	var/mob/user = A.actor
@@ -1226,7 +1221,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
-	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), then(PROC_REF(interaction_pay)))
+	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment))), then(PROC_REF(interaction_pay)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)

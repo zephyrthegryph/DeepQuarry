@@ -173,7 +173,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), starts(PROC_REF(interaction_scan)), wait(1 SECOND), then(PROC_REF(interaction_scan_timed_done)))
 	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_beaker)))
+	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_beaker)))
 	default_parts()
 
 /obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
@@ -194,16 +194,6 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	efficiency = 3 / max(man_rating, 1)
 	speed = max(cap_rating, 1) / 2
 
-
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
-/obj/machinery/food_replicator/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/food_replicator/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
 
 /obj/machinery/food_replicator/proc/interaction_eject_beaker(datum/act/op/A)
 	var/mob/user = A.actor
@@ -246,3 +236,10 @@ CAPABILITIES(/obj/machinery/food_replicator)
 /obj/machinery/food_replicator/ownership()
 	. = ..()
 	. += owns(nameof(container), policy = OWN_CONTAINED)
+
+/obj/machinery/food_replicator/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

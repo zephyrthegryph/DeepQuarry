@@ -12,7 +12,7 @@
 //!   `A.dt` in a requirement).
 //! * `impure`: a requirement, condition, output or contribution (or any body it follows) that
 //!   writes a tracked var, or calls a setter, hold, release, grant, revoke, `rel_*` or a message.
-//! * `requirement_return`: a requirement or condition that returns text, a type, null or a number
+//! * `requirement_return`: a requirement that returns a boolean, or a condition/req_bool callback that returns a non-boolean
 //!   other than TRUE/FALSE (it would read as TRUE and silently allow the op).
 //!
 //! And over every proc that takes a context or starts an action (structural, no declaration needed):
@@ -38,7 +38,7 @@ const H_UNRESOLVED: &str = "name a proc the type declares, or fix the declaratio
 const H_SIG: &str = "every handler is x(datum/act/A): one parameter of a datum/act type, A.holder always set";
 const H_FIELD: &str = "read only the fields the context type carries (doc/rewrite/final_api.html section 8): use a requirement for A.actor, an output for A.dt";
 const H_IMPURE: &str = "requirements, conditions, outputs and contributions are pure: move the write into an effect (then()) or a setter called from one";
-const H_RETURN: &str = "answer TRUE or FALSE; the refusal text is the requirement's declared reason (because = ...)";
+const H_RETURN: &str = "req callbacks return null to allow or text/a refusal datum to refuse; conditions and transitional req_bool callbacks return TRUE/FALSE";
 const H_PAIR: &str = "act_done(F) or act_cancel(F) on every path after ACT_TRY (a branch that tests F for null or ACT_PASS needs neither)";
 const H_ESCAPE: &str = "a context is pooled and lives for one trigger: use A.snapshot() for anything that must outlive it";
 const H_OUTPUT: &str = "an override takes the base's parameters exactly, or it is a silent no-op";

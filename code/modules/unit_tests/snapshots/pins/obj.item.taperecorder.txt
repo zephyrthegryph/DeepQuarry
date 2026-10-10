@@ -11,6 +11,7 @@ human|none menu: Wipe Tape (refused: You can't do that.)
 human|none click: Click: Eject tape
 robot|none menu: Eject tape
 robot|none menu: Eject Tape (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Playback Tape (refused: You can't do that.)
@@ -20,6 +21,7 @@ robot|none menu: Stop (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Wipe Tape (refused: You can't do that.)
 robot|none click: Click: Eject tape
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Eject Tape (refused: You can't do that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -166,5 +168,5 @@ human|/obj/item/rectape menu: Stop (refused: You can't do that.)
 human|/obj/item/rectape menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/rectape menu: Wipe Tape (refused: You can't do that.)
 human|/obj/item/rectape click: Click: Insert tape
-keys: collect_item, drag_buckle, eject, emag.subvert, emag.use, equip_module, hand_eject, insert_tape, kit_customize, kit_customize_last, move_to_top, pick_up_item, playback, print, record, stop, toggle_digestable, use, wipe
+keys: collect_item, drag_buckle, eject, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, hand_eject, insert_tape, kit_customize, kit_customize_last, move_to_top, pick_up_item, playback, print, record, stop, toggle_digestable, use, wipe
 

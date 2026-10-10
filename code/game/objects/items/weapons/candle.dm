@@ -30,7 +30,7 @@ TRACKED(/obj/item/flame/candle, wax)
 
 CAPABILITIES(/obj/item/flame/candle)
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
-	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
+	op("light_from", item(/obj/item), passes(), when(req_bool(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 

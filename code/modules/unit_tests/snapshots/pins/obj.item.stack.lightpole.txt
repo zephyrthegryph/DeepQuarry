@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Split
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Split
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Split
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Split
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -68,5 +70,5 @@ human|/obj/item/stack menu: Move To Top
 human|/obj/item/stack menu: Split
 human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack click: Click: Combine
-keys: build, collect_item, combine, consolidate, drag_buckle, equip_module, kit_customize, kit_customize_last, lightpole_self, make, move_to_top, pick_up_item, split, toggle_digestable
+keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lightpole_self, make, move_to_top, pick_up_item, split, toggle_digestable
 

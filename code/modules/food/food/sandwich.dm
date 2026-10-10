@@ -11,7 +11,7 @@
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich)
 	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden)))
 	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"),
-		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
+		needs(req_bool(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
 	owns_many(nameof(ingredients))
 
 MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to collapse.")

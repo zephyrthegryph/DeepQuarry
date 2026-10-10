@@ -262,7 +262,7 @@ CAPABILITIES(/obj/mecha)
 	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
 	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
 	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers), because = MSG(mecha_passenger/none))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
@@ -1106,7 +1106,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
 /obj/mecha/proc/pilot_only(datum/act/op/A)
-	return A.actor && A.actor == pilot_of()
+	return A.actor && A.actor == pilot_of() ? null : MSG(mecha/not_pilot)
 
 /// A paint kit customises the mech (the handler is declared with the kit's code, paintkit.dm).
 /obj/mecha/proc/mecha_paint_kit_op(datum/act/op/A)
@@ -2638,11 +2638,11 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// Requirement: the maintenance protocols are on and the securing bolts are exposed.
 /obj/mecha/proc/bolts_exposed(datum/act/op/A)
-	return state >= MECHA_BOLTS_SECURED
+	return state >= MECHA_BOLTS_SECURED ? null : MSG(req_silent)
 
 /// Requirement: somebody sits in a passenger compartment (the tracked passenger_count).
 /obj/mecha/proc/has_passengers(datum/act/op/A)
-	return passenger_count > 0
+	return passenger_count > 0 ? null : MSG(mecha_passenger/none)
 
 /// A compartment's occupancy changed: recount the passengers into the tracked mirror.
 /obj/mecha/proc/mecha_passenger_changed()

@@ -19,9 +19,9 @@ TRACKED(/obj/item/hailer, insults)
 CAPABILITIES(/obj/item/hailer)
 	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
-	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req(PROC_REF(unfried), because = PROC_REF(settings_refusal))),
+	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req_bool(PROC_REF(unfried), because = PROC_REF(settings_refusal))),
 		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Please enter new message (leave blank to reset).")), then(PROC_REF(message_picked)))
-	emag(list(needs(req(PROC_REF(unfried), because = PROC_REF(emag_refusal))), then(PROC_REF(overloaded))), repeatable = TRUE)
+	emag(list(needs(req_bool(PROC_REF(unfried), because = PROC_REF(emag_refusal))), then(PROC_REF(overloaded))), repeatable = TRUE)
 
 /obj/item/hailer/proc/set_hailer_message()
 	set name = "Set Hailer Message"

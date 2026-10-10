@@ -57,9 +57,9 @@ CAPABILITIES(/obj/item/stack/nanopaste)
 /obj/item/stack/nanopaste/proc/robot_needs_repair(datum/act/op/A)
 	var/mob/living/silicon/robot/R = A.target
 	if(!read_once(can_use(1)))
-		return FALSE
+		return MSG(req_failed)
 	var/list/demand = read_once(R.treatment_demand(/datum/diagnostic_profile/robot_analyzer))
-	return !!(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
+	return (!!(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])) ? null : MSG(req_failed)
 
 /obj/item/stack/nanopaste/proc/robot_repair_time(datum/act/op/A)
 	return 7 * toolspeed

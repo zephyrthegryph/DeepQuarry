@@ -10,7 +10,7 @@
 	name = "desert rock"
 
 CAPABILITIES(/obj/structure/prop/desert_rock/rock)
-	op("push", hand(), label("Push"), needs(req(PROC_REF(can_push), silent = TRUE)), begins(MSG(desert_rock/push)), wait(3 SECONDS), then(PROC_REF(pushed)))
+	op("push", hand(), label("Push"), needs(req_bool(PROC_REF(can_push), silent = TRUE)), begins(MSG(desert_rock/push)), wait(3 SECONDS), then(PROC_REF(pushed)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 MSG_DEF_SELF(desert_rock/push, "You push on %T%.")

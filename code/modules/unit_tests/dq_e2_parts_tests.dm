@@ -332,7 +332,7 @@
 		"    15. toggle_digestable menu tier=normal claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:388 -> dropped by origin (You can't do that that way.)",
 		"    16. pick_up_item hand tier=-2010 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:389 -> dropped by match",
 		"    17. collect_item item(/obj/item/storage) tier=default claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:390 -> dropped by match",
-		"    18. equip_module remote tier=-2050 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:391 -> dropped by origin (You can't do that that way.)",
+		"    18. gen_silicon_item_silicon_equip_module remote tier=-2050 claims=none (derived) side=held @ code/modules/mob/living/silicon/robot/component.dm:391 -> dropped by origin (You can't do that that way.)",
 		"    19. drag_buckle item(/mob/living) tier=default claims=none (derived) side=actor @ code/modules/lighting/lighting_atom.dm:48 -> dropped by match",
 		"    20. yank_out ai tier=normal claims=body (derived) side=actor @ code/modules/mob/mob_defines.dm:266 -> dropped by origin (You can't do that that way.)",
 		"    21. zmove ai tier=normal claims=body (derived) side=actor @ code/modules/mob/mob_defines.dm:268 -> dropped by origin (You can't do that that way.)",

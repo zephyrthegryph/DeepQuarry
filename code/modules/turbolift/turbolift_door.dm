@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/door/airlock/lift)
 	links(/obj/machinery/door/airlock/lift::lift, /datum/turbolift::doors, b_many = TRUE)
 	without(CAP_EMAG)
 	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
-		needs(req(PROC_REF(emag_welcome), because = MSG(lift_door/internal))), then(PROC_REF(nothing_done)))
+		needs(req_bool(PROC_REF(emag_welcome), because = MSG(lift_door/internal))), then(PROC_REF(nothing_done)))
 
 /// Never: the lift machinery alone works the door.
 /obj/machinery/door/airlock/lift/proc/emag_welcome(datum/act/A)

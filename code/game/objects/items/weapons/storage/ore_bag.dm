@@ -63,7 +63,7 @@ TRACKED(/obj/item/ore_bag, current_capacity)
 TRACKED(/obj/item/ore_bag, max_storage_space)
 
 CAPABILITIES(/obj/item/ore_bag)
-	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more), because = MSG(ore_bag/full))), then(PROC_REF(interaction_item)))
+	op("bag_item", item(/obj/item), needs(req_bool(PROC_REF(can_take_more), because = MSG(ore_bag/full))), then(PROC_REF(interaction_item)))
 
 /// Requirement: a full bag takes nothing more.
 /obj/item/ore_bag/proc/can_take_more(datum/act/op/A)

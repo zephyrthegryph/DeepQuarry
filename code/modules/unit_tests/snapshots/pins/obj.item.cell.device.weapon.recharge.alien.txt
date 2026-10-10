@@ -7,11 +7,13 @@ human|none menu: Use (refused: needs an item)
 human|none click: Click: Pick up
 robot|none menu: Charge with your body (refused: not in your hand)
 robot|none menu: Drain its charge (refused: not in your hand)
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Charge with your body (refused: not in your hand)
 ghost|none menu: Drain its charge (refused: not in your hand)
@@ -95,5 +97,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: collect_item, drag_buckle, electrovore_charge, electrovore_drain, equip_module, inject_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
+keys: collect_item, drag_buckle, electrovore_charge, electrovore_drain, gen_silicon_item_silicon_equip_module, inject_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
 

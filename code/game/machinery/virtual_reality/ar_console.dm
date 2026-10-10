@@ -37,7 +37,7 @@
 
 CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 	op("scan_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_scan_impl)))
-	op("eject_impl", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_impl)))
+	op("eject_impl", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_impl)))
 
 /obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -48,16 +48,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
 		I.attack(occupant, user)
 	return TRUE
-
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
-/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
 
 /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -198,3 +188,10 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 
 /obj/machinery/vr_sleeper/alien/beta_replicant
 	produce_species = SPECIES_REPLICANT_BETA
+
+/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

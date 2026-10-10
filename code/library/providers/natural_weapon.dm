@@ -24,7 +24,7 @@ MSG_DEF(natural_weapon/attack, "You attack %T%!", "%U% attacks %T%!")
 	return list(
 		provides(AFF_ATTACK, reach = 1, authority = AUTH_PHYSICAL | AUTH_AI),
 		op("attack", inputs(ai(), clicks()), reach(REACH_ADJACENT), by(AFF_ATTACK), hostile(), label("Attack"),
-			needs(req(CAP_PROC(not_self), because = MSG(natural_weapon/self))),
+			needs(req_bool(CAP_PROC(not_self), because = MSG(natural_weapon/self))),
 			cooldown(recover), then(CAP_PROC(strike)), says(MSG(natural_weapon/attack)), logs(LOG_GAME)))
 
 /datum/capability/lib/natural_weapon/proc/not_self(datum/act/op/A)

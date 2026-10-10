@@ -58,10 +58,10 @@ TRACKED(/obj/item/rig_module, suit_overlay)
 
 CAPABILITIES(/obj/item/rig_module)
 	owns_many(nameof(stat_modules))
-	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged), because = MSG(rig_module/undamaged))),
+	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req_bool(PROC_REF(damaged), because = MSG(rig_module/undamaged))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
 	op("mend_cable", item(/obj/item/stack/cable_coil), label("Mend with cable"),
-		needs(req(PROC_REF(damaged), because = MSG(rig_module/undamaged)), req(PROC_REF(mendable_with_cable), because = MSG(rig_module/crude))),
+		needs(req_bool(PROC_REF(damaged), because = MSG(rig_module/undamaged)), req_bool(PROC_REF(mendable_with_cable), because = MSG(rig_module/crude))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_cable)))
 
 MSG_DEF_SELF(rig_module/undamaged, "There is no damage to mend.")

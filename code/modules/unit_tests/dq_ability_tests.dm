@@ -276,18 +276,18 @@
 	// (unrelated) site-readiness requirement would fail first there and this test would never reach the energy one it's meant to exercise.
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
-	TEST_ASSERT(H.ability_can_afford_dark_tunnel(null), "full energy affords the tunnel")
+	TEST_ASSERT(isnull(H.ability_can_afford_dark_tunnel(null)), "full energy affords the tunnel")
 	SK.dark_energy = 10
-	TEST_ASSERT(!H.ability_can_afford_dark_tunnel(null), "blocked with too little energy")
+	TEST_ASSERT(!isnull(H.ability_can_afford_dark_tunnel(null)), "blocked with too little energy")
 
 /datum/unit_test/dq_ability_dark_tunneling_once_only
 
 /datum/unit_test/dq_ability_dark_tunneling_once_only/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
-	TEST_ASSERT(H.ability_no_dark_tunnel_yet(null), "no tunnel yet")
+	TEST_ASSERT(isnull(H.ability_no_dark_tunnel_yet(null)), "no tunnel yet")
 	SK.created_dark_tunnel = TRUE
-	TEST_ASSERT(!H.ability_no_dark_tunnel_yet(null), "blocked after one use")
+	TEST_ASSERT(!isnull(H.ability_no_dark_tunnel_yet(null)), "blocked after one use")
 
 // ---- Borg abilities ----
 

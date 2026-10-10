@@ -382,13 +382,23 @@ CAPABILITIES(/obj/item)
 	owns_many(nameof(possessed_voice))
 	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
 	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
-	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
-	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req_bool(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
 	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
-	op("equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), when(PROC_REF(item_in_robot_module)), then(PROC_REF(item_silicon_equip_module)))
+	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
+/// Other silicons preserve the module action's successful no-op.
+/mob/living/silicon/proc/equip_item_from_module(obj/item/I)
+	return OP_OK
+
+/// A robot activates the selected module item, then updates its module display.
+/mob/living/silicon/robot/equip_item_from_module(obj/item/I)
+	activate_module(I)
+	hud_used.update_robot_modules_display()
+	return OP_OK
+
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)

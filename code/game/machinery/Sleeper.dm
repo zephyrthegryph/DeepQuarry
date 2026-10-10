@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	extend(TAG_UI, needs(req_closed(SPACE_PANEL)), then(PROC_REF(control_touched), early = TRUE))
 	op("chemical", ui_act("chemical", arg("amount", num()), arg("chemid")),
 		needs(req_operable(), req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)),
-			req(PROC_REF(occupant_alive), because = MSG(sleeper/dead_occupant)), req(PROC_REF(occupant_viable), because = MSG(sleeper/too_far_gone))),
+			req_bool(PROC_REF(occupant_alive), because = MSG(sleeper/dead_occupant)), req_bool(PROC_REF(occupant_viable), because = MSG(sleeper/too_far_gone))),
 		then(PROC_REF(inject_chosen)))
 	op("togglefilter", ui_act("togglefilter"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))),
 		toggles(nameof(filtering)))

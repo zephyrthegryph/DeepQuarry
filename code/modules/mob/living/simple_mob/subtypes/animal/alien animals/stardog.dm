@@ -62,7 +62,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	op("eat_weather", ai(), needs(req_capable()), takes("event", "nut", "aff", "monster", "ore", "tre", "msg", "heal", "delet"), wait(20 SECONDS), then(PROC_REF(eat_space_weather_stardog_done)))
 	op("transition_up", ai(), needs(req_capable()), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_stardog_done)))
 	op("transition_down", ai(), needs(req_capable()), takes("destination"), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_down_done)))
-	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
+	op("fur_pick", hand(), ungated(), label("Use"), when(req_bool(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
 /// The one picked is told a hand is coming, as the wait starts.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_reaches(datum/act/op/A)
@@ -424,7 +424,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/fur)
 	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
 	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
 	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
-	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req(PROC_REF(emoter_is_living), silent = TRUE), req(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
+	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(emoter_is_living), silent = TRUE), req_bool(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
 
 MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 
@@ -862,15 +862,16 @@ MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span
 MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
 CAPABILITIES(/obj/structure/control_pod)
-	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free), because = PROC_REF(pod_busy_text))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
+	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
 
 /// Nobody is in the pod.
 /obj/structure/control_pod/proc/pod_free(datum/act/op/A)
-	return !read_once(controller)
+	return read_once(controller) ? pod_busy_text(A) : null
 
 /// Why the pod is taken: names who is inside.
 /obj/structure/control_pod/proc/pod_busy_text(datum/act/op/A)
-	return span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!")
+	var/mob/living/user_inside = read_once(controller)
+	return span_warning("You can see \the [user_inside] inside! Tendrils of nerves seem to have attached themselves to \the [user_inside]! There's no room for you right now!")
 
 /// Refuses a pod with no dog to answer it, or a dog that does not trust anyone yet (take care of my dog).
 /obj/structure/control_pod/proc/control_started(datum/act/op/A)

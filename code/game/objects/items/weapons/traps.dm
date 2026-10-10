@@ -36,7 +36,7 @@ MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
 CAPABILITIES(/obj/item/beartrap)
-	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+	op("deploy", in_hand(), label("Deploy trap"), needs(req_bool(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(beartrap/deploying), blind = "You hear the slow creaking of a spring."), wait(6 SECONDS),
 		then(PROC_REF(deploy_trap)), says(MSG(beartrap/deployed), blind = "You hear a latch click loudly."))
 	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), priority(OP_PRIORITY_TAKE_OUT), begins(PROC_REF(freeing_text)), wait(6 SECONDS),
@@ -194,7 +194,7 @@ MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to colle
 MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
 
 CAPABILITIES(/obj/item/material/barbedwire)
-	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+	op("deploy", in_hand(), label("Deploy trap"), needs(req_bool(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),
 		then(PROC_REF(deploy_wire)), says(MSG(barbedwire/deployed), blind = "You hear the rustling of wire."))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))

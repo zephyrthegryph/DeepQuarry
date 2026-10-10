@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Rename food
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Rename food
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Rename food (refused: You can't cook!)
@@ -83,5 +85,5 @@ human|/obj/item/material/kitchen/utensil menu: Rename food
 human|/obj/item/material/kitchen/utensil menu: Scoop up
 human|/obj/item/material/kitchen/utensil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/material/kitchen/utensil click: Click: Scoop up
-keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, equip_module, grown_item, grown_self, grown_squash, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, stuff, toggle_digestable, unwrap
+keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, grown_item, grown_self, grown_squash, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, stuff, toggle_digestable, unwrap
 

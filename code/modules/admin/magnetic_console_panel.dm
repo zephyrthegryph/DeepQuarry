@@ -28,7 +28,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	op("mag_plus", ui_act("mag_plus"), then(PROC_REF(ui_act_mag_plus)))
 	op("speed_minus", ui_act("speed_minus"), then(PROC_REF(ui_act_speed_minus)))
 	op("speed_plus", ui_act("speed_plus"), then(PROC_REF(ui_act_speed_plus)))
-	op("set_path", ui_act("set_path"), needs(req(PROC_REF(path_prompt_ready), because = MSG(magnet/path_unavailable))), asks(/datum/prompt/text, step = "path", fields = list("question" = "Please define a new path!", "default" = computed(PROC_REF(path_prompt_default)), "max_len" = MAX_MESSAGE_LEN, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_path)))
+	op("set_path", ui_act("set_path"), needs(req_bool(PROC_REF(path_prompt_ready), because = MSG(magnet/path_unavailable))), asks(/datum/prompt/text, step = "path", fields = list("question" = "Please define a new path!", "default" = computed(PROC_REF(path_prompt_default)), "max_len" = MAX_MESSAGE_LEN, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_path)))
 	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 

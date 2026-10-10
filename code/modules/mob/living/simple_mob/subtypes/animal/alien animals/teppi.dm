@@ -559,7 +559,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 
 /// A knife on a napping teppi nobody plays.
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/can_slaughter(datum/act/op/A)
-	return stat != DEAD && !read_once(client) && resting
+	return (stat != DEAD && !read_once(client) && resting) ? null : /datum/msg/req_failed
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_slaughter_done(datum/act/op/A)
 	var/mob/user = A.actor

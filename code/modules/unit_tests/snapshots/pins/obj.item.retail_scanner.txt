@@ -4,10 +4,12 @@ human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
 robot|none menu: Alternate use
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -81,5 +83,5 @@ human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: add, alt, clear, clear_entry, collect_item, controls, custom_order, drag_buckle, emag.subvert, emag.use, equip_module, item, kit_customize, kit_customize_last, link_account, move_to_top, pick_up_item, refund_transaction, reset_log, set_amount, subtract, toggle_digestable, toggle_lock
+keys: add, alt, clear, clear_entry, collect_item, controls, custom_order, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, link_account, move_to_top, pick_up_item, refund_transaction, reset_log, set_amount, subtract, toggle_digestable, toggle_lock
 

@@ -502,7 +502,7 @@ MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.
 // else goes on to the storage.
 CAPABILITIES(/obj/item/storage/firstaid)
 	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)),
-		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
+		when(req_bool(PROC_REF(arm_is_robotic))), label("Add robot arm"),
 		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(icon_variety))
 

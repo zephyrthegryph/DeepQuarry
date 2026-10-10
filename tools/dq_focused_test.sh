@@ -437,13 +437,6 @@ if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [
 	look_world=1
 	do_split=1
 fi
-# The cap on look-pin runs across the machine (tools/dq_look_lock.sh): any run that holds a look pin waits for a slot first.
-if [ ${#look_group[@]} -gt 0 ]; then
-	# shellcheck source=tools/dq_look_lock.sh
-	. tools/dq_look_lock.sh
-	DQ_LOOK_LOCK_LABEL="focused ${look_group[*]:0:2}" look_lock_acquire
-fi
-
 LOOK_PARAMS=""
 LOOK_PLAN_FILE=""
 LOOK_STALE_COUNT=-1
@@ -474,6 +467,14 @@ look_prepare() {
 	if [ -n "$look_dump" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-dump=$look_dump"; fi
 }
 if [ "$look_world" -eq 1 ]; then look_prepare; fi
+
+# Only runs that will probe appearances need the machine-wide look slot.
+# A prepared incremental plan with zero stale types still runs its main tests.
+if [ ${#look_group[@]} -gt 0 ] && [ "$LOOK_STALE_COUNT" -ne 0 ]; then
+	# shellcheck source=tools/dq_look_lock.sh
+	. tools/dq_look_lock.sh
+	DQ_LOOK_LOCK_LABEL="focused ${look_group[*]:0:2}" look_lock_acquire
+fi
 
 status_write running "tests=${#tests[@]}" "split=$do_split"
 
@@ -570,7 +571,8 @@ run_worlds() {
 			if [ "$n" -gt 1 ]; then shard="$i/$n"; fi
 			add_world "look$i" "$shard" "$LOOK_PARAMS" "${look_group[@]}"
 		done
-	elif [ ${#look_group[@]} -gt 0 ]; then
+	elif [ "$look_world" -ne 1 ] && [ ${#look_group[@]} -gt 0 ]; then
+		# Unprepared look runs stay full; an incremental plan with zero stale types needs no look world.
 		add_world look "" "" "${look_group[@]}"
 	fi
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do echo "== worlds: ${W_LABEL[$i]}${W_SHARD[$i]:+ (slice ${W_SHARD[$i]})}"; done

@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/deskbell)
 
 /// Requirement: the bell lies on a turf (not in a hand or a bag).
 /obj/item/deskbell/proc/on_floor(datum/act/op/A)
-	return read_once(isturf(loc)) // where the bell lies is asked when the click is made
+	return read_once(isturf(loc)) ? null : /datum/msg/req_silent // where the bell lies is asked when the click is made
 
 /obj/item/deskbell/proc/wrench_used(datum/act/op/A)
 	to_chat(A.actor, span_notice("You disassemble the desk bell."))

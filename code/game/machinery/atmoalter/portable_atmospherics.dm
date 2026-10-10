@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	ref_one(nameof(connected_port), /obj/machinery/atmospherics/portables_connector)
 	tank_bay(nameof(holding), when = PROC_REF(not_destroyed))
 	op("port", tool(TOOL_WRENCH), label("Connect to the port"), wait(0), when(PROC_REF(port_wrench_offered)),
-		needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), req(PROC_REF(port_reachable), because = MSG(portable/no_port)), req(PROC_REF(port_free), because = MSG(portable/port_taken))),
+		needs(req_bool(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), req_bool(PROC_REF(port_reachable), because = MSG(portable/no_port)), req_bool(PROC_REF(port_free), because = MSG(portable/port_taken))),
 		says(PROC_REF(port_message)), then(PROC_REF(port_wrenched)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
 	op("cell_in", item(/obj/item/cell), label("Insert power cell"), wait(0), when(nameof(use_cell)),
 		needs(req_empty(nameof(cell), because = MSG(portable/cell_present))), put_in(nameof(cell)), says(MSG(portable/cell_in)), then(PROC_REF(cell_changed)))
 	op("cell_out", tool(TOOL_SCREWDRIVER), label("Remove power cell"), when(nameof(removeable_cell)),
-		needs(req(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
+		needs(req_bool(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
 
 /// The cell it comes with (none by default).
 /obj/machinery/portable_atmospherics/powered/proc/starting_cell(datum/act/A)

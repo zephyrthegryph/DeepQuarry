@@ -19,7 +19,7 @@
 CAPABILITIES(/obj/item/autopsy_scanner)
 	owns_many(nameof(chemtraces))
 	owns_many(nameof(wdata))
-	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_print_data_holds), because = PROC_REF(can_print_data_refusal))), then(PROC_REF(print_data_effect)))
+	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(can_print_data_holds), because = PROC_REF(can_print_data_refusal))), then(PROC_REF(print_data_effect)))
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used

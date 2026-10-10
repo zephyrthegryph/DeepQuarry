@@ -296,8 +296,8 @@ CAPABILITIES(/obj/structure/flora/pottedplant)
 	without("item")
 	without("uproot")
 	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
-	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full), because = MSG(pottedplant/nothing))), wait(1 SECOND), then(PROC_REF(item_found)))
+		needs(req_bool(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
+	op("search", hand(), label("Search"), needs(req_bool(PROC_REF(pot_full), because = MSG(pottedplant/nothing))), wait(1 SECOND), then(PROC_REF(item_found)))
 
 /obj/structure/flora/pottedplant/examine(mob/user)
 	. = ..()

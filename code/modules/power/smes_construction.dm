@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	// A failing unit swallows whatever touches it and says why: nothing is done to it.
 	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))))
 	op("install_coil", item(/obj/item/smes_coil), at(SPACE_PANEL),
-		needs(req(PROC_REF(modify_allowed), because = PROC_REF(modify_refusal)), req(PROC_REF(coil_room), because = MSG(smes/coils_full))),
+		needs(req_bool(PROC_REF(modify_allowed), because = PROC_REF(modify_refusal)), req_bool(PROC_REF(coil_room), because = MSG(smes/coils_full))),
 		then(PROC_REF(coil_installed)))
 	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), at(SPACE_PANEL),
 		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))),
