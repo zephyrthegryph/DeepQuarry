@@ -31,7 +31,7 @@
 // slots (code/modules/mob/inventory.dm); the ledger is the only record of what
 // a mob wears and holds.
 
-/datum/om/relation/slot/body
+/datum/relation_definition/slot/body
 	name = "body slot"
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	capacity_model = SLOT_CAPACITY_COUNT
@@ -59,7 +59,7 @@
 	var/covered_by
 	var/cover_flags = NONE
 
-/datum/om/relation/slot/body/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/body/refusal(atom/holder, atom/movable/thing, mob/actor)
 	var/mob/living/wearer = holder
 	if(!istype(wearer))
 		return "there's nowhere to put it"
@@ -74,7 +74,7 @@
 // ---- The shared slot ----
 
 /// Organs, implants, bellies and anything else inside the mob.
-/datum/om/relation/slot/body/interior
+/datum/relation_definition/slot/body/interior
 	slot_id = SLOT_ID_BODY
 	name = "body"
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -90,7 +90,7 @@
 	radiation_transmission = 0
 
 /// Redraws this slot on `M`: the proc `redraw` names, called by name so the mob type's override of it runs.
-/datum/om/relation/slot/body/proc/redraw_on(mob/M)
+/datum/relation_definition/slot/body/proc/redraw_on(mob/M)
 	if(!redraw)
 		return
 	var/path_text = "[redraw]"
@@ -98,17 +98,17 @@
 
 // ---- Hands ----
 
-/datum/om/relation/slot/body/hand
+/datum/relation_definition/slot/body/hand
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	provides = AFF_HOLD | AFF_MANIPULATE | AFF_HOLD_SMALL | AFF_INTERFACE
 
-/datum/om/relation/slot/body/hand/left
+/datum/relation_definition/slot/body/hand/left
 	redraw = /mob/proc/update_inv_l_hand
 	slot_id = SLOT_ID_HAND_L
 	name = "left hand"
 	required_parts = list(BP_L_HAND)
 
-/datum/om/relation/slot/body/hand/right
+/datum/relation_definition/slot/body/hand/right
 	redraw = /mob/proc/update_inv_r_hand
 	slot_id = SLOT_ID_HAND_R
 	name = "right hand"
@@ -116,7 +116,7 @@
 
 // ---- Humanoid equipment ----
 
-/datum/om/relation/slot/body/head
+/datum/relation_definition/slot/body/head
 	redraw = /mob/proc/update_inv_head
 	slot_id = SLOT_ID_HEAD
 	name = "head"
@@ -124,7 +124,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
-/datum/om/relation/slot/body/mask
+/datum/relation_definition/slot/body/mask
 	redraw = /mob/proc/update_inv_wear_mask
 	covered_by = SLOT_ID_HEAD
 	cover_flags = FACE
@@ -134,7 +134,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
-/datum/om/relation/slot/body/suit
+/datum/relation_definition/slot/body/suit
 	redraw = /mob/proc/update_inv_wear_suit
 	drops_with = list(SLOT_ID_SUIT_STORAGE)
 	slot_id = SLOT_ID_SUIT
@@ -144,7 +144,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/uniform
+/datum/relation_definition/slot/body/uniform
 	redraw = /mob/proc/update_inv_w_uniform
 	drops_with = list(SLOT_ID_POCKET_R, SLOT_ID_POCKET_L, SLOT_ID_ID)
 	covered_by = SLOT_ID_SUIT
@@ -155,7 +155,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/gloves
+/datum/relation_definition/slot/body/gloves
 	redraw = /mob/proc/update_inv_gloves
 	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_GLOVES
@@ -164,7 +164,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	any_parts = list(BP_L_HAND, BP_R_HAND)
 
-/datum/om/relation/slot/body/shoes
+/datum/relation_definition/slot/body/shoes
 	redraw = /mob/proc/update_inv_shoes
 	slot_id = SLOT_ID_SHOES
 	name = "shoes"
@@ -174,7 +174,7 @@
 
 /// Glasses: armour (get_covering_clothing() counts them) but not conductivity
 /// or thermal protection, as before.
-/datum/om/relation/slot/body/eyes
+/datum/relation_definition/slot/body/eyes
 	redraw = /mob/proc/update_inv_glasses
 	covered_by = SLOT_ID_HEAD
 	cover_flags = EYES
@@ -184,7 +184,7 @@
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR
 	required_parts = list(BP_HEAD)
 
-/datum/om/relation/slot/body/ear_left
+/datum/relation_definition/slot/body/ear_left
 	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_L
 	name = "left ear"
@@ -192,7 +192,7 @@
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
-/datum/om/relation/slot/body/ear_right
+/datum/relation_definition/slot/body/ear_right
 	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_R
 	name = "right ear"
@@ -200,7 +200,7 @@
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
-/datum/om/relation/slot/body/back
+/datum/relation_definition/slot/body/back
 	redraw = /mob/proc/update_inv_back
 	slot_id = SLOT_ID_BACK
 	name = "back"
@@ -208,7 +208,7 @@
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/belt
+/datum/relation_definition/slot/body/belt
 	redraw = /mob/proc/update_inv_belt
 	slot_id = SLOT_ID_BELT
 	name = "belt"
@@ -216,7 +216,7 @@
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/id
+/datum/relation_definition/slot/body/id
 	redraw = /mob/proc/update_inv_wear_id
 	slot_id = SLOT_ID_ID
 	name = "ID"
@@ -224,7 +224,7 @@
 	roles = BODY_SLOT_WORN
 
 /// Suit storage: clipped inside the suit.
-/datum/om/relation/slot/body/suit_storage
+/datum/relation_definition/slot/body/suit_storage
 	redraw = /mob/proc/update_inv_s_store
 	slot_id = SLOT_ID_SUIT_STORAGE
 	name = "suit storage"
@@ -233,28 +233,28 @@
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/pocket
+/datum/relation_definition/slot/body/pocket
 	exposure = SLOT_EXPOSURE_INTERNAL
 	required_parts = list(BP_TORSO)
 
-/datum/om/relation/slot/body/pocket/left
+/datum/relation_definition/slot/body/pocket/left
 	slot_id = SLOT_ID_POCKET_L
 	name = "left pocket"
 	accepts = /datum/predicate/equip_slot/pocket/left
 
-/datum/om/relation/slot/body/pocket/right
+/datum/relation_definition/slot/body/pocket/right
 	slot_id = SLOT_ID_POCKET_R
 	name = "right pocket"
 	accepts = /datum/predicate/equip_slot/pocket/right
 
-/datum/om/relation/slot/body/handcuffed
+/datum/relation_definition/slot/body/handcuffed
 	redraw = /mob/proc/update_inv_handcuffed
 	slot_id = SLOT_ID_HANDCUFFED
 	name = "wrists"
 	accepts = /datum/predicate/equip_slot/handcuffs
 	required_parts = list(BP_L_HAND, BP_R_HAND)
 
-/datum/om/relation/slot/body/legcuffed
+/datum/relation_definition/slot/body/legcuffed
 	redraw = /mob/proc/update_inv_legcuffed
 	slot_id = SLOT_ID_LEGCUFFED
 	name = "ankles"
@@ -264,21 +264,21 @@
 // ---- Cyborg modules ----
 
 /// A cyborg's active module slot: takes only its own module's tools.
-/datum/om/relation/slot/body/module
+/datum/relation_definition/slot/body/module
 	/// Module slot number, 1-3.
 	var/module_index
 
-/datum/om/relation/slot/body/module/one
+/datum/relation_definition/slot/body/module/one
 	slot_id = SLOT_ID_MODULE_1
 	name = "module 1"
 	module_index = 1
 
-/datum/om/relation/slot/body/module/two
+/datum/relation_definition/slot/body/module/two
 	slot_id = SLOT_ID_MODULE_2
 	name = "module 2"
 	module_index = 2
 
-/datum/om/relation/slot/body/module/three
+/datum/relation_definition/slot/body/module/three
 	slot_id = SLOT_ID_MODULE_3
 	name = "module 3"
 	module_index = 3
@@ -299,93 +299,93 @@
 // decoy's own type has no declared group, so it gets no ledger at all, same
 // as before.
 
-/datum/om/relation/slot/body/hand/left
+/datum/relation_definition/slot/body/hand/left
 	holder = list(/datum/body/simple, /datum/body/humanoid)
 	order = 1
 
-/datum/om/relation/slot/body/hand/right
+/datum/relation_definition/slot/body/hand/right
 	holder = list(/datum/body/simple, /datum/body/humanoid)
 	order = 2
 
-/datum/om/relation/slot/body/interior
+/datum/relation_definition/slot/body/interior
 	holder = list(/datum/body/simple, /datum/body/humanoid, /mob/living/silicon/robot)
 	order = 20
 
-/datum/om/relation/slot/body/module/one
+/datum/relation_definition/slot/body/module/one
 	holder = /mob/living/silicon/robot
 
-/datum/om/relation/slot/body/module/two
+/datum/relation_definition/slot/body/module/two
 	holder = /mob/living/silicon/robot
 
-/datum/om/relation/slot/body/module/three
+/datum/relation_definition/slot/body/module/three
 	holder = /mob/living/silicon/robot
 	slot_id = SLOT_ID_MODULE_3
 
-/datum/om/relation/slot/body/head
+/datum/relation_definition/slot/body/head
 	holder = /datum/body/humanoid
 	order = 3
 
-/datum/om/relation/slot/body/mask
+/datum/relation_definition/slot/body/mask
 	holder = /datum/body/humanoid
 	order = 4
 
-/datum/om/relation/slot/body/suit
+/datum/relation_definition/slot/body/suit
 	holder = /datum/body/humanoid
 	order = 5
 
-/datum/om/relation/slot/body/uniform
+/datum/relation_definition/slot/body/uniform
 	holder = /datum/body/humanoid
 	order = 6
 
-/datum/om/relation/slot/body/gloves
+/datum/relation_definition/slot/body/gloves
 	holder = /datum/body/humanoid
 	order = 7
 
-/datum/om/relation/slot/body/shoes
+/datum/relation_definition/slot/body/shoes
 	holder = /datum/body/humanoid
 	order = 8
 
-/datum/om/relation/slot/body/eyes
+/datum/relation_definition/slot/body/eyes
 	holder = /datum/body/humanoid
 	order = 9
 
-/datum/om/relation/slot/body/ear_left
+/datum/relation_definition/slot/body/ear_left
 	holder = /datum/body/humanoid
 	order = 10
 
-/datum/om/relation/slot/body/ear_right
+/datum/relation_definition/slot/body/ear_right
 	holder = /datum/body/humanoid
 	order = 11
 
-/datum/om/relation/slot/body/back
+/datum/relation_definition/slot/body/back
 	holder = /datum/body/humanoid
 	order = 12
 
-/datum/om/relation/slot/body/belt
+/datum/relation_definition/slot/body/belt
 	holder = /datum/body/humanoid
 	order = 13
 
-/datum/om/relation/slot/body/id
+/datum/relation_definition/slot/body/id
 	holder = /datum/body/humanoid
 	order = 14
 
-/datum/om/relation/slot/body/suit_storage
+/datum/relation_definition/slot/body/suit_storage
 	holder = /datum/body/humanoid
 	order = 15
 
-/datum/om/relation/slot/body/pocket/left
+/datum/relation_definition/slot/body/pocket/left
 	holder = /datum/body/humanoid
 	order = 16
 
-/datum/om/relation/slot/body/pocket/right
+/datum/relation_definition/slot/body/pocket/right
 	holder = /datum/body/humanoid
 	order = 17
 
-/datum/om/relation/slot/body/handcuffed
+/datum/relation_definition/slot/body/handcuffed
 	holder = /datum/body/humanoid
 	order = 18
 
-/datum/om/relation/slot/body/legcuffed
+/datum/relation_definition/slot/body/legcuffed
 	holder = /datum/body/humanoid
 	order = 19
 
@@ -410,8 +410,8 @@
 
 /// Why this mob can't use body slot `def` right now, or null: the holder's own
 /// rules, checked before the slot's `accepts`.
-/mob/living/proc/body_slot_refusal(datum/om/relation/slot/body/def)
-	if(istype(def, /datum/om/relation/slot/body/hand) && !has_hands_to_hold())
+/mob/living/proc/body_slot_refusal(datum/relation_definition/slot/body/def)
+	if(istype(def, /datum/relation_definition/slot/body/hand) && !has_hands_to_hold())
 		return "you have no hands"
 	return null
 
@@ -425,8 +425,8 @@
 /mob/living/simple_mob/has_hands_to_hold()
 	return has_hands
 
-/mob/living/silicon/robot/body_slot_refusal(datum/om/relation/slot/body/def)
-	if(istype(def, /datum/om/relation/slot/body/module))
+/mob/living/silicon/robot/body_slot_refusal(datum/relation_definition/slot/body/def)
+	if(istype(def, /datum/relation_definition/slot/body/module))
 		return module ? null : "you have no module"
 	return ..()
 
@@ -435,7 +435,7 @@
 
 /// Species slots and body parts. Species gating is the species HUD's slot list
 /// (what mob_can_equip() checked); body parts are the part map above.
-/mob/living/carbon/human/body_slot_refusal(datum/om/relation/slot/body/def)
+/mob/living/carbon/human/body_slot_refusal(datum/relation_definition/slot/body/def)
 	if(def.slot_id != SLOT_ID_BODY && species && !(def.slot_id in dq_equip_slots_of(src)))
 		return "you have nowhere to wear it"
 	for(var/part in def.required_parts)
@@ -460,11 +460,11 @@
 /// there, its species has it): the old has_organ_for_slot().
 /mob/living/proc/body_slot_usable(id)
 	var/datum/ledger/L = dq_ledger(src)
-	var/datum/om/relation/slot/body/def = L?.def_by_id(id)
+	var/datum/relation_definition/slot/body/def = L?.def_by_id(id)
 	return istype(def) && !body_slot_refusal(def)
 
 /// What is in body slot `def`.
-/mob/living/proc/body_slot_item(datum/om/relation/slot/body/def)
+/mob/living/proc/body_slot_item(datum/relation_definition/slot/body/def)
 	var/datum/ledger/L = dq_ledger(src)
 	var/list/things = L?.slots[def.slot_id]
 	return length(things) ? things[1] : null
@@ -473,7 +473,7 @@
 /// slot declaration order.
 /mob/living/proc/body_slot_items(roles)
 	. = list()
-	for(var/datum/om/relation/slot/body/def in dq_slot_defs_for(src))
+	for(var/datum/relation_definition/slot/body/def in dq_slot_defs_for(src))
 		if(!(def.roles & roles))
 			continue
 		var/obj/item/I = body_slot_item(def)

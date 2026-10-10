@@ -20,7 +20,7 @@
 	icon_state = "toolbox"
 	w_class = ITEMSIZE_NORMAL
 
-/datum/om/relation/slot/dq_latency_test_interior
+/datum/relation_definition/slot/dq_latency_test_interior
 	holder = /obj/item/dq_latency_test_box
 	slot_id = "dq_latency_interior"
 	capacity_model = SLOT_CAPACITY_COUNT
@@ -40,11 +40,11 @@
 
 // The real internals and stock slots (stock.dm), held by this test machine: the sweep's stock
 // exclusion keys on CONTAINER_SLOT_STOCK, so the subtypes keep the production semantics.
-/datum/om/relation/slot/machine_internals/dq_latency_test
+/datum/relation_definition/slot/machine_internals/dq_latency_test
 	holder = /obj/item/dq_latency_test_machine
 	is_default = TRUE
 
-/datum/om/relation/slot/stock/dq_latency_test
+/datum/relation_definition/slot/stock/dq_latency_test
 	holder = /obj/item/dq_latency_test_machine
 
 /// Which of can_be_latent()'s conditions refuses `A`, for failure messages.

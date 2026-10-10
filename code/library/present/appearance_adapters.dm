@@ -21,7 +21,7 @@
 	var/mob/M = I.loc
 	if(!ismob(M))
 		return
-	var/datum/om/relation/slot/body/def = dq_ledger(M)?.def_by_id(M.inventory_slot_id(I))
+	var/datum/relation_definition/slot/body/def = dq_ledger(M)?.def_by_id(M.inventory_slot_id(I))
 	if(istype(def))
 		def.redraw_on(M)
 

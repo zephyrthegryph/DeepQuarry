@@ -401,10 +401,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			total += n
 			max_bucket = max(max_bucket, n)
 			for(var/i in 1 to length(L) step 4)
-				var/datum/om/rec/rec = L[i]
+				var/datum/scheduler_record/rec = L[i]
 				var/dl_key = L[i + 1]
 				var/bid = dl_key % OM_DL_SUB
-				var/datum/om/behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
+				var/datum/scheduled_behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
 				var/bname = B ? "[B.type]" : "bid [bid]"
 				var/is_live = FALSE
 				if(rec && !rec.torn_down && rec.deadlines)

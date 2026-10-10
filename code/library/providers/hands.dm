@@ -17,7 +17,7 @@
 /mob/living/proc/has_working_hand(datum/act/A)
 	var/list/defs = dq_slot_defs_for(src)
 	var/declared = FALSE
-	for(var/datum/om/relation/slot/body/hand/def in defs)
+	for(var/datum/relation_definition/slot/body/hand/def in defs)
 		declared = TRUE
 		if(!body_slot_refusal(def))
 			return TRUE

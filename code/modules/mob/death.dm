@@ -50,17 +50,17 @@
 // --- The death pipeline ----------------------------------------------------------------------
 // death() is the one way a mob dies, and it is sealed: subtypes contribute through the hooks
 // below (replace_death, death_message, death_links, play_death_sound, on_death) and listeners
-// through /datum/om/event/mob_death / /datum/om/event/world_mob_death (OM_EMIT_WORLD). The order is fixed:
+// through /datum/definition_event/mob_death / /datum/definition_event/world_mob_death (OM_EMIT_WORLD). The order is fixed:
 //   1. guard       - already dead or deleted: return FALSE with no side effects;
 //   2. replace     - replace_death() lets a mob end some other way (vanish, split, retreat);
 //   3. transition  - the one set_stat(DEAD), time of death, the living/dead lists;
 //   4. effects     - message, soul links / nests / vore flags, sound, senses, drops, diseases,
 //                    mind memory, respawn timer;
-//   5. signals     - /datum/om/event/mob_death, then /datum/om/event/world_mob_death (OM_EMIT_WORLD);
+//   5. signals     - /datum/definition_event/mob_death, then /datum/definition_event/world_mob_death (OM_EMIT_WORLD);
 //   6. on_death()  - subtype contributions (loot, remains, verbs, qdel);
 //   7. refresh     - HUD, icon and vision (skipped when on_death() deleted the mob);
 //   8. antag       - the game mode's win check;
-//   9. final       - /datum/om/event/living_death_final, once, after everything above.
+//   9. final       - /datum/definition_event/living_death_final, once, after everything above.
 // The way back is /mob/living/proc/return_from_death() (code/modules/body/revival.dm).
 
 /// Kill this mob. Returns TRUE if it went from alive to dead, FALSE otherwise (already dead,

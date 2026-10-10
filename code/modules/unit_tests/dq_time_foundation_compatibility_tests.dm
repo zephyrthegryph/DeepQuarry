@@ -1,10 +1,10 @@
 // Legacy carrier identities and global forwards share the actual time-engine state.
 /datum/unit_test/dq_time_foundation_compatibility/Run()
 	var/datum/time_scheduler/sched = time_scheduler()
-	TEST_ASSERT(istype(sched, /datum/om/scheduler), "The real compatibility factory preserves downstream scheduler extensions")
+	TEST_ASSERT(istype(sched, /datum/time_scheduler), "The real compatibility factory preserves downstream scheduler extensions")
 	TEST_ASSERT_EQUAL(time_scheduler(), sched, "Both scheduler entry points return the same active instance")
 	var/datum/owner = timer_global_owner()
-	TEST_ASSERT(istype(owner, /datum/om/global_owner), "The timer owner factory preserves downstream owned relation declarations")
+	TEST_ASSERT(istype(owner, /datum/timer_owner), "The timer owner factory preserves downstream owned relation declarations")
 	TEST_ASSERT_EQUAL(timer_global_owner(), owner, "Both timer-owner entry points return the same actual owner")
 	var/datum/probe = allocate(/datum)
 	var/datum/scheduler_record/record = scheduler_record_of(probe)
@@ -17,12 +17,12 @@
 	qdel(probe)
 	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the canonical handle")
 	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the legacy handle too")
-	var/datum/relation_definition/relation = allocate(/datum/om/relation)
+	var/datum/relation_definition/relation = allocate(/datum/relation_definition)
 	var/datum/relation_edge/edge = relation.make_edge()
-	TEST_ASSERT(istype(edge, /datum/om/edge), "A real link carrier still passes existing legacy edge identity checks")
+	TEST_ASSERT(istype(edge, /datum/relation_edge), "A real link carrier still passes existing legacy edge identity checks")
 	qdel(edge)
 	var/datum/scheduled_behaviour/inline/inline_callback = definition_registry().make_inline_behaviour()
-	TEST_ASSERT(istype(inline_callback, /datum/om/behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
+	TEST_ASSERT(istype(inline_callback, /datum/scheduled_behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback)
 
 /datum/unit_test/om/dq_time_foundation_clock_callback
@@ -79,7 +79,7 @@
 		feedback = transfer_feedback_provider()
 		reused = factory == time_scheduler_factory() && native == native_watch_provider() && construction == construction_stage_provider() && feedback == transfer_feedback_provider()
 		made_scheduler = factory.make()
-		legacy_scheduler = istype(made_scheduler, /datum/om/scheduler)
+		legacy_scheduler = istype(made_scheduler, /datum/time_scheduler)
 	catch(var/exception/error)
 		problem = error
 	// Restore before assertions (TEST_ASSERT returns on failure) and before deleting probes.

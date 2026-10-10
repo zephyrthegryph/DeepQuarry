@@ -39,8 +39,8 @@
 
 /datum/unit_test/dq_b4_base_vars_bridge/Run()
 	var/obj/machinery/M = allocate(/obj/machinery)
-	var/datum/om/rec/rec = scheduler_record_of(M)
-	var/datum/om/scheduler/sched = rec.sched
+	var/datum/scheduler_record/rec = scheduler_record_of(M)
+	var/datum/time_scheduler/sched = rec.sched
 	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	M.set_anchored(FALSE)
 	sched.test_raises = list()

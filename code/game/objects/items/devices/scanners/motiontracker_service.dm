@@ -1,4 +1,4 @@
-// The motion tracker system (was SSmotiontracker). ping() raises /datum/om/event/movable_motiontracker on the
+// The motion tracker system (was SSmotiontracker). ping() raises /datum/definition_event/movable_motiontracker on the
 // system for every hooked listener; listeners queue echo turfs with queue_echo(), and draw_echoes draws the
 // queued echoes every second.
 SYSTEM_DEF(motiontracker)

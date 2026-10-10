@@ -659,6 +659,7 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/definition_event, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",
   "task_timed = an op with wait(t) (begins(MSG(x)), claims(), then(PROC_REF(x))); doc/rewrite/conversion_guide.md section 12",
   "task_start = an op with wait(t) and takes()/A.arg() for the state the task carried; doc/rewrite/conversion_guide.md section 12",
   "task_busy = op_claimed(thing) for an op's claim, work_busy(thing) for a held busy",

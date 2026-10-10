@@ -39,7 +39,7 @@
 		log_world("## MISC a [src] didn't find an input plate.")
 
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/om/relation/slot/occupant/gibber
+/datum/relation_definition/slot/occupant/gibber
 	holder = /obj/machinery/gibber
 	slot_id = OCCUPANT_SLOT_GIBBER
 	name = "gibber"

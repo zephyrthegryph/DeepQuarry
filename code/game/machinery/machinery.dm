@@ -689,7 +689,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 /obj/machinery/var/panel_open = FALSE // ALLOW(base_vars): the machine maintenance panel's tracked state, read by the panel ops and the maintenance requirements
 TRACKED_BRIDGED(/obj/machinery, panel_open, CHANGE_MACHINE_PANEL)
 
-/// Who is in the machine's sealed occupant slot `slot_id` (a /datum/om/relation/slot/occupant), or null. The accessor requirements read: the slot
+/// Who is in the machine's sealed occupant slot `slot_id` (a /datum/relation_definition/slot/occupant), or null. The accessor requirements read: the slot
 /// publishes OCCUPANT_KEY when someone gets in or out (code/datums/containment/occupant_slot.dm), so a cached menu follows it.
 /obj/machinery/proc/slot_occupant(slot_id)
 	return slot_item(slot_id)

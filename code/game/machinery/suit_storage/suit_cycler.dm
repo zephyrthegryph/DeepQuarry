@@ -62,7 +62,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3). The
 /// suit and helmet stay their own typed vars in raw contents, same as the
 /// suit storage unit -- only the person inside is a slot.
-/datum/om/relation/slot/occupant/suit_cycler
+/datum/relation_definition/slot/occupant/suit_cycler
 	holder = /obj/machinery/suit_cycler
 	slot_id = OCCUPANT_SLOT_SUIT_CYCLER
 	name = "suit cycler"

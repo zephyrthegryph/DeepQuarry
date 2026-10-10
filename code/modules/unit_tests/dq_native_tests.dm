@@ -230,7 +230,7 @@
 /datum/unit_test/dq_native_kernel_frame_once_per_tick
 
 /datum/unit_test/dq_native_kernel_frame_once_per_tick/Run()
-	var/datum/om/scheduler/sched = kernel().sched
+	var/datum/time_scheduler/sched = kernel().sched
 	TEST_ASSERT_NOTNULL(sched, "the kernel has no scheduler")
 	var/datum/system/native/N = native_system()
 	var/saved_time = sched.manual_time

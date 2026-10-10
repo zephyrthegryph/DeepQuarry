@@ -439,7 +439,7 @@ SEQ_TEST_STEP(cy)
 /datum/unit_test/kernel_sequence_rewake
 
 /datum/unit_test/kernel_sequence_rewake/Run()
-	var/datum/om/scheduler/sched = scheduler_test_begin()
+	var/datum/time_scheduler/sched = scheduler_test_begin()
 	var/datum/seq_test_entity/E = allocate(/datum/seq_test_entity)
 	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
 	seq_run_frame_now(E, SEQ_TEST)

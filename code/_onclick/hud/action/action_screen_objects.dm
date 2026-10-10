@@ -247,7 +247,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 	unobserve(take_from, /datum/notice/mob_granted_action, src)
 	unobserve(take_from, /datum/notice/mob_removed_action, src)
 
-/// Hook for /datum/om/event/mob_granted_action - If we're viewing another mob's action buttons,
+/// Hook for /datum/definition_event/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
 /mob/proc/on_observing_action_granted(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -258,7 +258,7 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 		return
 	action.GiveAction(src)
 
-/// Hook for /datum/om/event/mob_removed_action - If we're viewing another mob's action buttons,
+/// Hook for /datum/definition_event/mob_removed_action - If we're viewing another mob's action buttons,
 /// we need to update with any removed buttons from the mob.
 /mob/proc/on_observing_action_removed(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

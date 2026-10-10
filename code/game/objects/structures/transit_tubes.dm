@@ -38,7 +38,7 @@
 
 // C11: one slot for whoever's riding. Riders are spilled onto the pod's drop
 // location when it is destroyed (phase 3).
-/datum/om/relation/slot/transit_pod
+/datum/relation_definition/slot/transit_pod
 	holder = /obj/structure/transit_tube_pod
 	slot_id = CONTAINER_SLOT_TRANSIT_POD
 	name = "riders"

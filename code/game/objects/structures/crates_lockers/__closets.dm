@@ -128,7 +128,7 @@ CAPABILITIES(/obj/structure/closet)
 // heat reaches it through the closet's insulation, and only rounds and stabs
 // that get through the sheet metal, and seeping acid, reach its contents. ----
 
-/datum/om/relation/slot/closet_interior
+/datum/relation_definition/slot/closet_interior
 	holder = /obj/structure/closet
 	slot_id = CONTAINER_SLOT_INTERIOR
 	name = "interior"
@@ -138,10 +138,10 @@ CAPABILITIES(/obj/structure/closet)
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
 
-/datum/om/relation/slot/closet_interior/capacity_for(obj/structure/closet/holder)
+/datum/relation_definition/slot/closet_interior/capacity_for(obj/structure/closet/holder)
 	return holder.storage_capacity
 
-/datum/om/relation/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
+/datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
 	return holder.storage_cost_of(thing)
 
 /datum/predicate/slot_closet_interior
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/latent_generator_clear()
 	starts_with = null
 
-/datum/om/relation/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
+/datum/relation_definition/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
 	return holder.storage_cost_of_type(path)
 
 /// What a thing of `path` would take up, from type data (latent entries).

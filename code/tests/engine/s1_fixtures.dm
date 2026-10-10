@@ -27,13 +27,13 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 	/// Welded: a needs() on the remove action refuses a transfer out.
 	var/welded = FALSE
 
-/datum/om/relation/slot/s1_main
+/datum/relation_definition/slot/s1_main
 	holder = /obj/s1_fixture/rack
 	slot_id = "s1_main"
 	name = "main"
 	is_default = TRUE
 
-/datum/om/relation/slot/s1_side
+/datum/relation_definition/slot/s1_side
 	holder = /obj/s1_fixture/rack
 	slot_id = "s1_side"
 	name = "side"
@@ -63,7 +63,7 @@ TRACKED(/obj/s1_fixture/rack, welded)
 	var/inserted_heard = 0
 	var/welded = FALSE
 
-/datum/om/relation/slot/s1_picky
+/datum/relation_definition/slot/s1_picky
 	holder = /obj/s1_fixture/picky
 	slot_id = "s1_picky"
 	name = "picky"

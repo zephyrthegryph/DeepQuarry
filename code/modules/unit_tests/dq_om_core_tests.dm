@@ -41,7 +41,7 @@
 
 /datum/unit_test/om
 	abstract_type = /datum/unit_test/om
-	var/datum/om/scheduler/sched
+	var/datum/time_scheduler/sched
 
 /datum/unit_test/om/Run()
 	rel_set(src, nameof(sched), scheduler_test_begin())

@@ -1,6 +1,6 @@
 /**
  * Recursive move relay
- * Attach with dq_add_recursive_move(AM) to anything where /datum/om/event/movable_attempted_move
+ * Attach with dq_add_recursive_move(AM) to anything where /datum/definition_event/movable_attempted_move
  * should also be emitted when a container it is inside (at any depth) moves.
  * Previously there was a system where moves were always recursively propagated, but that was unnecessary bloat.
  *

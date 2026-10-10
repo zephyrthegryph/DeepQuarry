@@ -49,14 +49,14 @@
 ///   1. Armour for the hit part and kind (only for hits from outside the body,
 ///      INJURE_ARMORED). `armor_pen` points of it are ignored. Armour can turn
 ///      the edge of a cut or pierce, landing it as blunt trauma.
-///   2. Energy shields (/datum/om/event/living_shield_injury: shields drain a cell for
+///   2. Energy shields (/datum/definition_event/living_shield_injury: shields drain a cell for
 ///      what they absorb).
 ///   3. Resistance factors: BF_INCOMING_ALL x BF_INCOMING(category) (modifiers,
 ///      forms, species baselines, traits, reagents).
 ///   4. The body's species / part multiplier (immunities, prosthetics).
 /// INJURE_IGNORE_RESISTANCE skips stages 2-4. Every stage is recorded when
 /// the mob's injury trace is on or something listens to
-/// /datum/om/event/living_injury_explained (see explain_injury_stages()).
+/// /datum/definition_event/living_injury_explained (see explain_injury_stages()).
 /// Hot path: allocates nothing unless a listener or the trace needs it, and
 /// only marks the vitals dirty instead of recomputing them.
 /mob/living/proc/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
@@ -150,7 +150,7 @@
 		. += injure(split_kind, amount * kinds[split_kind], zone, source, armor_pen, null, flags)
 
 /// Records one injure() call's mitigation stages: sends
-/// /datum/om/event/living_injury_explained and, while the injury trace is on, logs the
+/// /datum/definition_event/living_injury_explained and, while the injury trace is on, logs the
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)

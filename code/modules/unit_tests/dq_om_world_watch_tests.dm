@@ -80,7 +80,7 @@
 	var/republish_cell
 
 /datum/world_test_subscriber/proc/on_world_wake(datum/native_watch/world/watch, reason, source, source_kind)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	wakes += list(list(reason, source, source_kind, sched.world_step_tick, sched.world_previous_step_tick, watch.lane))
 	if(republish > 0)
 		republish--
@@ -164,7 +164,7 @@
 /datum/unit_test/dq_world_lanes_and_budget
 
 /datum/unit_test/dq_world_lanes_and_budget/Run()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	world_test_probe_set(74, 100, 293)
 	dq_test_ticks(2)
 	var/old_budget = sched.world_budget
@@ -267,7 +267,7 @@
 /datum/unit_test/dq_world_diagnostics
 
 /datum/unit_test/dq_world_diagnostics/Run()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	world_test_probe_set(75, 100, 293)
 	dq_test_ticks(2)

@@ -17,7 +17,7 @@
 //
 // `view` (not `occupant`): this is a thin display mob, not a containment
 // relationship -- it is never linked through a slot, and there is no
-// /datum/om/relation naming it. Renamed off `occupant` (OM relations step 3)
+// /datum/relation_definition naming it. Renamed off `occupant` (OM relations step 3)
 // so it can't be mistaken for one, and so the core-owned-field lint (any
 // relation's declared target_ref_field, containment.md) never has a reason to
 // look at this file.

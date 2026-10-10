@@ -137,7 +137,7 @@
  * Arguments:
  * - [source][/obj/item]: The source of the materials we are inserting.
  * - multiplier: The multiplier for the materials extract from this item being inserted.
- * - context: the atom performing the operation, this is the last argument sent in /datum/om/event/matcontainer_item_consumed
+ * - context: the atom performing the operation, this is the last argument sent in /datum/definition_event/matcontainer_item_consumed
  * and is used mostly for silo logging, the silo resends this signal on the context to give it a
  * chance to process the item
  */
@@ -202,7 +202,7 @@
  * Arguments:
  * - [weapon][obj/item]: the item you are trying to insert
  * - multiplier: The multiplier for the materials being inserted
- * - context: the atom performing the operation, this is the last argument sent in /datum/om/event/matcontainer_item_consumed and is used mostly for silo logging
+ * - context: the atom performing the operation, this is the last argument sent in /datum/definition_event/matcontainer_item_consumed and is used mostly for silo logging
  * * - delete_item: should we delete the item after its materials are consumed. does not apply to stacks if they were split due to lack of space
  */
 /datum/material_container/proc/insert_item(obj/item/weapon, multiplier = 1, atom/context = owner, delete_item = TRUE)
@@ -252,7 +252,7 @@
  * Arguments:
  * * held_item - the item to insert
  * * user - the mob inserting this item
- * * context - the atom performing the operation, this is the last argument sent in /datum/om/event/matcontainer_item_consumed and is used mostly for silo logging
+ * * context - the atom performing the operation, this is the last argument sent in /datum/definition_event/matcontainer_item_consumed and is used mostly for silo logging
  */
 /datum/material_container/proc/user_insert(obj/item/held_item, mob/living/user, atom/context = owner)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (tgui_input_number)
@@ -639,7 +639,7 @@
  * sheet_amt: number of sheets to extract
  * [material][datum/material]: type of sheets present in this container to extract
  * [target][atom]: drop location
- * [atom][context]: context - the atom performing the operation, this is the last argument sent in /datum/om/event/matcontainer_stack_retrieved and is used mostly for silo logging
+ * [atom][context]: context - the atom performing the operation, this is the last argument sent in /datum/definition_event/matcontainer_stack_retrieved and is used mostly for silo logging
  */
 /datum/material_container/proc/retrieve_sheets(sheet_amt, datum/material/material, atom/target = null, atom/context = owner)
 	//do we support sheets of this material

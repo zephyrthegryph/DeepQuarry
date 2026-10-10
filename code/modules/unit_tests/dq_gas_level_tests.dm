@@ -9,7 +9,7 @@
 /proc/dq_gas_level_test_deliver()
 	SSair.run_gas_frames(2)
 	SSmachines.wake_dirty_gas_subscribers()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		for(var/lane in 1 to OM_LANE_COUNT)
 			sched.run_world_wakes(lane)

@@ -304,7 +304,7 @@
 	TEST_ASSERT(H.get_equipped_item(SLOT_ID_HAND_L) != W, "a blocked left hand should drop what it holds")
 
 
-/// Energy shields keep their charge-dependent resistance (injure() stage 2, /datum/om/event/living_shield_injury).
+/// Energy shields keep their charge-dependent resistance (injure() stage 2, /datum/definition_event/living_shield_injury).
 /datum/unit_test/dq_body_factor_energy_shield
 
 /datum/unit_test/dq_body_factor_energy_shield/Run()

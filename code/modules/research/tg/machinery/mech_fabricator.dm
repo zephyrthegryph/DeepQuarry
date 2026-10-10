@@ -482,7 +482,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	queue_producer_accounts.Cut()
 	return OP_OK
 
-/// Local material container hook (/datum/om/event/matcontainer_item_consumed).
+/// Local material container hook (/datum/definition_event/matcontainer_item_consumed).
 /obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/act/notice/N)
 	var/datum/notice/matcontainer_item_consumed/event = N
 	AfterMaterialInsert(event.item, event.primary_mat, event.material_amount)

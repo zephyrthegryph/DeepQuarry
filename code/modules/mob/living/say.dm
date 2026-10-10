@@ -508,14 +508,14 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	return "normal"
 
 /// Keeps generated images alive independently of the speaker until their global cleanup.
-/datum/om/global_owner/var/list/pending_speech_images
+/datum/timer_owner/var/list/pending_speech_images
 
-CAPABILITIES(/datum/om/global_owner)
+CAPABILITIES(/datum/timer_owner)
 	owns_many(nameof(pending_speech_images))
 
 /// Capture images as positional values; retain them through their weak timer arguments.
 /proc/queue_speech_images(list/images_to_clients)
-	var/datum/om/global_owner/owner = timer_global_owner()
+	var/datum/timer_owner/owner = timer_global_owner()
 	var/list/speech_image_pairs = list()
 	for(var/image/I as anything in images_to_clients)
 		rel_add(owner, nameof(owner.pending_speech_images), I)
@@ -533,6 +533,6 @@ CAPABILITIES(/datum/om/global_owner)
 		for(var/client/C as anything in clients_from_image)
 			if(C) //Could have disconnected after message sent, before removing bubble.
 				C.images -= I
-		own_take_member(timer_global_owner(), nameof(/datum/om/global_owner::pending_speech_images), I)
+		own_take_member(timer_global_owner(), nameof(/datum/timer_owner::pending_speech_images), I)
 		spent(I)
 

@@ -1,5 +1,5 @@
 // Result bits and helper constants for OM events (moved from the DCS signal
-// defines when the signals became /datum/om/event types). A handler returns
+// defines when the signals became /datum/definition_event types). A handler returns
 // these; om_emit() ORs them into event.result and returns it.
 
 // ---- from signals_action.dm

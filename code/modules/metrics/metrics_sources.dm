@@ -97,8 +97,8 @@
 	var/list/behaviour_metric
 
 /datum/metrics_source/om/collect(datum/system/server_metrics/M, dt)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	var/datum/om/registry/reg = definition_registry()
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/definition_registry/reg = definition_registry()
 	if(!sched || !reg)
 		return
 	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background", "world")
@@ -112,7 +112,7 @@
 		LAZYINITLIST(behaviour_metric)
 		last_behaviour_ms.len = stat_count
 		behaviour_metric.len = stat_count
-	for(var/datum/om/behaviour/B as anything in reg.behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 		var/id = B?.id
 		if(!id || id > stat_count)
 			continue

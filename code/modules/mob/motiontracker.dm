@@ -21,7 +21,7 @@
 		return
 	. = ..()
 
-// For /datum/om/event/movable_motiontracker
+// For /datum/definition_event/movable_motiontracker
 /mob/proc/handle_motion_tracking(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)

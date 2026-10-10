@@ -9,7 +9,7 @@
 /// KERNEL_NATIVE_MAX_CATCHUP ticks); `budget` is the per-tick wake budget the frame may deliver. Runs at most
 /// once per wheel tick, and never on a scheduler running injected time.
 /proc/native_frame(elapsed, budget)
-	var/datum/om/scheduler/sched = kernel().sched
+	var/datum/time_scheduler/sched = kernel().sched
 	if(!sched || !sched.world_frame_begin(world_tick_of(world.time)))
 		return
 	var/start = TICK_USAGE_REAL

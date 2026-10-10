@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/disposal)
 // into the bin before a flush). Drop policy is left to this type's own
 // Destroy() below, which already calls eject() -- emptying the bin onto the
 // floor -- before ..() reaches the base Destroy()'s generic drop-policy pass.
-/datum/om/relation/slot/disposal_bin
+/datum/relation_definition/slot/disposal_bin
 	holder = /obj/machinery/disposal
 	slot_id = CONTAINER_SLOT_DISPOSAL
 	name = "contents"
