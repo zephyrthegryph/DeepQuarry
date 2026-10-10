@@ -22,6 +22,7 @@ from iteration_structural import Comparison, source_matches, authenticate_source
 import semantic_configuration
 from iteration_history import EditHistory
 import host_context
+import worktree_authority
 
 
 DEFAULT = Path("E:/dmb-native-v2-phase0/review-power-focus")
@@ -261,6 +262,12 @@ def main():
         for source in sources:
             if not (source / ".git").exists():
                 raise ValueError(f"source lacks Git worktree marker: {source}")
+    try:
+        worktree_proof = worktree_authority.authenticate(sources) if args.worktree_sources else None
+    except Exception as error:
+        print(json.dumps({"schema": "dm-six-worktree-authority-v1", "status": "failed", "error": str(error)}))
+        raise
+
     scenario_path = safe_e(args.scenarios)
     scenario = json.loads(scenario_path.read_text())[0]
     arguments = list(scenario["arguments"])
@@ -311,6 +318,7 @@ def main():
                "compiler_sha256": sha(executable), "template_sha256": sha(template),
                "scenario_sha256": sha(scenario_path), "workers": args.workers,
                "require_owned_daemon": args.require_owned_daemon,
+               "worktree_authority": worktree_proof,
                "source_roots": [str(source) for source in sources], "session_count": len(sources),
                "request_mode": "one-shot" if args.one_shot_requests else "daemon",
                "isolated_compiler_cache": str(root / "compiler-cache"),

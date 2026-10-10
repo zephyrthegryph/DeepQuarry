@@ -50,7 +50,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
             },
         ]
         .into(),
-        fields: vec![FieldProjection {
+        fields: vec![std::sync::Arc::new(FieldProjection {
             owner: area,
             declaring_owner: area,
             name: luminosity,
@@ -59,7 +59,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
             intrinsic: true,
             shared: false,
             value: DefaultValue::Scalar(SemanticValue::NumberBits(baseline.to_bits())),
-        }]
+        })]
         .into(),
         chains: Arc::from([]),
         procedure_declarations: Default::default(),
@@ -94,7 +94,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
                 .unwrap_or_default()
                 .into_iter()
                 .filter(|field| image.string(field.name_string_id) == Some(b"luminosity"))
-                .map(|field| field.value)
+                .map(|field| field.value.clone())
                 .collect::<Vec<_>>()
         };
         assert_eq!(selectors(&dmb), selectors(&oracle));

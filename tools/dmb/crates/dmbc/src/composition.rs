@@ -601,8 +601,8 @@ fn compose_records_access(
             .ok_or_else(|| unsupported("procedure ABI was not authoritative"))?;
         let proc = &unit.lowered.frame;
         let code_id = append_list(&mut dmb, linked_words)?;
-        let mut locals = Vec::new();
-        for name in &proc.local_names {
+        let mut first_local = 0;
+        for (local, name) in proc.local_names.iter().enumerate() {
             let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
             let variable_id = u32::try_from(dmb.variables.len())
                 .map_err(|_| unsupported("variable record overflow"))?;
@@ -611,10 +611,16 @@ fn compose_records_access(
                 value: 0,
                 name: name_id,
             });
-            locals.push(variable_id);
+            if local == 0 {
+                first_local = variable_id;
+            }
         }
+        let locals = unit
+            .metadata_recipe
+            .local_list(first_local, proc.local_names.len());
         let locals_id = append_list(&mut dmb, locals)?;
-        let mut args = Vec::new();
+        let mut first_argument = 0;
+        let mut resolved_sources = Vec::with_capacity(proc.argument_names.len());
         let mut value_sources = metadata.value_sources.into_iter();
         for (argument, name) in proc.argument_names.iter().enumerate() {
             let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
@@ -628,13 +634,16 @@ fn compose_records_access(
             let value_source = value_sources
                 .next()
                 .expect("prepared argument count checked")?;
-            args.extend([
-                proc.argument_type_flags[argument],
-                value_source,
-                variable_id,
-                0,
-            ]);
+            if argument == 0 {
+                first_argument = variable_id;
+            }
+            resolved_sources.push(value_source);
         }
+        let args = unit.metadata_recipe.argument_list(
+            first_argument,
+            &proc.argument_type_flags,
+            resolved_sources,
+        );
         let args_id = append_list(&mut dmb, args)?;
         let path = metadata.path?;
         let path_id = string_index.intern(&mut dmb, path.as_bytes())?;

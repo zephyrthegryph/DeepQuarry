@@ -398,5 +398,45 @@
       "action": "owned Cargo clean -p dmbc --profile dev removed 12.5 GiB; verification retry passed with incremental storage disabled and dmbc test debug info disabled",
       "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190101-deba2f00.json"
     }
+  },
+  "current_projection_and_publication_migration": {
+    "status": "production hooks and bounded focused gates passed; real benchmark pending",
+    "workspace_all_targets": {
+      "seconds": 94.6759345,
+      "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-191800-52f328e0.json"
+    },
+    "focused_dmbc_passed": 13,
+    "focused_tree_passed": 2,
+    "worktree_authority_fake_api_passed": 4,
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-191946-04ce760f.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-migration-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-projection-focused.json"
+    ],
+    "implemented": [
+      "request-local projected macro stacks and include chains with fresh FileId authority",
+      "artifact-backed locals and argument row buffers with exact current numeric dependencies",
+      "immutable field rows shared between current projection and existing admitted owner artifacts",
+      "full prepublication input restat including external binary template and retained resource proofs",
+      "shared daemon/CLI bounded rebuild policy: two rebuilds then explicit latest captured-snapshot warning",
+      "verification journals fail on moving inputs instead of overwriting immutable captures",
+      "recording journal finalization before publication latch",
+      "pinned executable target macro admission rejects unsupported BYOND overrides",
+      "six registered worktree roots authenticated before benchmark timers"
+    ],
+    "limitations": [
+      "ordered current projection and model materialization still rebuilt",
+      "field-row Arc allocations add cold overhead; no measured benefit claimed",
+      "current transient ClassProjection roster absent from general census; retained rows accounted",
+      "six-worktree harness source authenticated but real concurrency workload not yet run",
+      "whole-program BYOND structural and Phase5 runtime baseline still open"
+    ],
+    "new_end_to_end_timings": null,
+    "frozen_build_attempt": {
+      "commit": "0c34d40c9a48872b88fc44ae675a8ceb4fbaa070",
+      "codegen_units": 64,
+      "status": "300-second watchdog; owned children reaped; dependency compilation progressed; no executable",
+      "receipt": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-191055-7e114405.json"
+    }
   }
 }

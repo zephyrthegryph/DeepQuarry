@@ -335,6 +335,7 @@ impl ColdFrontend {
     /// substitution mapping is not claimed by this logical-line projection.
     pub fn location(&self, expanded_offset: usize) -> Option<SourceLocation> {
         Mapping {
+            projection: Default::default(),
             plan: &self.plan,
             expanded: &self.expanded,
             files: &self.files,
@@ -347,6 +348,7 @@ impl ColdFrontend {
     /// Uses the same captured origin and validity checks as `location`.
     pub fn debug_site(&self, expanded_offset: usize) -> Option<(Arc<str>, usize)> {
         Mapping {
+            projection: Default::default(),
             plan: &self.plan,
             expanded: &self.expanded,
             files: &self.files,
@@ -635,7 +637,10 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
     })
 }
 
+#[path = "frontend_source_projection.rs"]
+mod source_projection;
 struct Mapping<'a> {
+    projection: source_projection::CurrentSourceProjection,
     plan: &'a DirectivePlan,
     expanded: &'a ExpandedRegions,
     files: &'a [SourceFile],
@@ -675,7 +680,7 @@ impl Mapping<'_> {
             line: origin.origin.source_line,
             encounter_ordinal: self.plan.regions[origin.region].encounter_ordinal,
             include_occurrence: occurrence,
-            include_chain: self.chain(occurrence).into(),
+            include_chain: self.include_chain(occurrence),
             macro_expansions: Arc::clone(origin.macro_expansions),
         })
     }
@@ -708,7 +713,7 @@ impl Mapping<'_> {
                 })
                 .map_or(occurrence, |region| region.encounter_ordinal),
             include_occurrence: occurrence,
-            include_chain: self.chain(occurrence).into(),
+            include_chain: self.include_chain(occurrence),
             macro_expansions: Arc::new(Vec::new()),
         })
     }

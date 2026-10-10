@@ -6,6 +6,20 @@ use crate::{
 };
 use dm_ir::ReadDomain;
 
+fn inspect_field(census: &mut HeapCensus, field: &Arc<crate::class_projection::FieldProjection>) {
+    let name = "owner_projection.defaults";
+    if !census.arc_object(name, field) {
+        return;
+    }
+    match &field.value {
+        DefaultValue::Transform(_) => {}
+        DefaultValue::Scalar(value) => census.semantic_value(name, value),
+        DefaultValue::InitializerExpression { canonical, .. } => {
+            census.slice(name, canonical, true);
+        }
+    }
+}
+
 pub(crate) fn weight(
     values: &Vec<MemberContribution>,
     key: &[u8],
@@ -16,15 +30,7 @@ pub(crate) fn weight(
     census.vec_payload("resident_owner_projection.values", values);
     for value in values {
         match value {
-            MemberContribution::Field(field) => match &field.value {
-                DefaultValue::Transform(_) => {}
-                DefaultValue::Scalar(value) => {
-                    census.semantic_value("resident_owner_projection.defaults", value)
-                }
-                DefaultValue::InitializerExpression { canonical, .. } => {
-                    census.slice("resident_owner_projection.defaults", canonical, true);
-                }
-            },
+            MemberContribution::Field(field) => inspect_field(&mut census, field),
             MemberContribution::Procedure {
                 owner: _,
                 name: _,
@@ -99,15 +105,7 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
             {
                 for member in value.iter() {
                     if let MemberContribution::Field(field) = member {
-                        match &field.value {
-                            DefaultValue::Transform(_) => {}
-                            DefaultValue::Scalar(value) => {
-                                census.semantic_value("owner_projection.defaults", value)
-                            }
-                            DefaultValue::InitializerExpression { canonical, .. } => {
-                                census.slice("owner_projection.defaults", canonical, true);
-                            }
-                        }
+                        inspect_field(&mut census, field);
                     }
                 }
             }
@@ -127,7 +125,7 @@ mod tests {
         values.reserve_exact(100);
         let reserved = weight(&values, b"key", &empty, &Vec::new()).unwrap();
         assert!(reserved >= before + 100 * size_of::<MemberContribution>());
-        values.push(MemberContribution::Field(
+        values.push(MemberContribution::Field(std::sync::Arc::new(
             crate::class_projection::FieldProjection {
                 owner: dm_ir::SymbolId::of("/obj"),
                 declaring_owner: dm_ir::SymbolId::of("/obj"),
@@ -141,7 +139,7 @@ mod tests {
                     dm_ir::SemanticValue::Text(Arc::from(b"value".as_slice())),
                 )]))),
             },
-        ));
+        )));
         assert!(weight(&values, b"key", &empty, &Vec::new()).unwrap() > reserved);
     }
 }

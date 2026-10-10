@@ -77,15 +77,17 @@ fn captured_matrix_headers_and_null_reset_match_full_projection_writer() {
         ),
     ]
     .into_iter()
-    .map(|(owner, value)| FieldProjection {
-        owner,
-        declaring_owner: atom,
-        name: transform,
-        role: FieldRole::Assignment,
-        wire_flags: None,
-        intrinsic: true,
-        shared: false,
-        value,
+    .map(|(owner, value)| {
+        std::sync::Arc::new(FieldProjection {
+            owner,
+            declaring_owner: atom,
+            name: transform,
+            role: FieldRole::Assignment,
+            wire_flags: None,
+            intrinsic: true,
+            shared: false,
+            value,
+        })
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {

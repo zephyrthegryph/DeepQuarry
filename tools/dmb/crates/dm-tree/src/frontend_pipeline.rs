@@ -162,6 +162,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         });
     }
     let mapping = Mapping {
+        projection: Default::default(),
         plan: &plan,
         expanded: &expanded,
         files: &files,
@@ -309,18 +310,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         let include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
             .map_err(|_| vec![internal("too many include occurrences")])?;
         let region = region_hashes[expanded_origin.region];
-        let expansion_stack = expanded_origin
-            .macro_expansions
-            .iter()
-            .filter_map(|expansion| expansion.definition.as_ref())
-            .filter_map(|definition| {
-                by_path
-                    .get(definition.path.as_ref())
-                    .map(|file| (*file, definition))
-            })
-            .map(|(file, definition)| source_span(file, definition.source_span))
-            .collect::<Result<Vec<_>, _>>()?
-            .into();
+        let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
         current_origins.push(crate::Provenance {
             span,
             include_occurrence,

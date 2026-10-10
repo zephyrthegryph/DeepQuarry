@@ -761,3 +761,51 @@ fn ordered_plan_reuse_requires_current_bindings_and_complete_artifact_order() {
     let after_clear = owner.bind_plan(plan(&fresh), &fresh).procedures.unwrap();
     assert!(!Arc::ptr_eq(&after_failure, &after_clear));
 }
+
+#[test]
+fn artifact_emission_lists_share_output_backing_after_current_variable_allocation() {
+    use std::sync::{Arc, Mutex};
+    struct Observe(Mutex<Vec<[Arc<Vec<u32>>; 2]>>);
+    impl NonTextOutputStage for Observe {
+        fn validate_source(&self, _: &dm_tree::frontend::ColdFrontend) -> Result<(), String> {
+            Ok(())
+        }
+        fn apply(&self, dmb: &mut Dmb, batch: &FrozenBatch) -> Result<BTreeSet<Key>, String> {
+            let proc_id = batch
+                .tables
+                .index(crate::symbolic::unit_key(batch.units[0].lowered.identity))
+                .unwrap();
+            let ids = dmb.procs[proc_id as usize].code_locals_args;
+            self.0.lock().unwrap().push([
+                Arc::clone(dmb.lists.shared(ids[1] as usize).unwrap()),
+                Arc::clone(dmb.lists.shared(ids[2] as usize).unwrap()),
+            ]);
+            Ok(BTreeSet::new())
+        }
+    }
+    let (mut batch, symbols) = ownership_fixture();
+    batch.units[0].lowered.frame.local_names = vec!["kept_local".into()];
+    batch.units[0].lowered.frame.local_count = 1;
+    let observer = Observe(Mutex::new(Vec::new()));
+    let compose = || {
+        compose_records_access(
+            include_bytes!("../../../../fixtures/native_template.bin"),
+            owned::BatchAccess::Borrowed(&batch),
+            &symbols,
+            None,
+            Some(&observer),
+            None,
+            None,
+        )
+        .unwrap()
+    };
+    let first = compose();
+    let second = compose();
+    assert_eq!(first.bytes(), second.bytes());
+    let rows = observer.0.lock().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0][0].len(), 1);
+    assert!(rows[0][1].is_empty());
+    assert!(Arc::ptr_eq(&rows[0][0], &rows[1][0]));
+    assert!(Arc::ptr_eq(&rows[0][1], &rows[1][1]));
+}

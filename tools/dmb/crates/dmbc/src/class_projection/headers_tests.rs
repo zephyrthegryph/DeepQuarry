@@ -183,7 +183,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
             path: child_symbol,
             parent: Some(parent_symbol),
         }]),
-        fields: Arc::from([FieldProjection {
+        fields: Arc::from([std::sync::Arc::new(FieldProjection {
             owner: child_symbol,
             declaring_owner: parent_symbol,
             name: plane_symbol,
@@ -195,7 +195,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
                 token: 123,
                 canonical: Arc::from([]),
             },
-        }]),
+        })]),
         chains: Arc::from([]),
     };
     finalize_headers(&mut dmb, engine_bytes, &projection, &tables, &symbols).unwrap();
@@ -289,7 +289,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
             },
         ]
         .into(),
-        fields: vec![FieldProjection {
+        fields: vec![std::sync::Arc::new(FieldProjection {
             owner: atom,
             declaring_owner: atom,
             name: layer,
@@ -298,7 +298,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
             intrinsic: true,
             shared: false,
             value: DefaultValue::Scalar(SemanticValue::NumberBits(inherited)),
-        }]
+        })]
         .into(),
         chains: Arc::from([]),
         procedure_declarations: Arc::new(BTreeMap::new()),
@@ -309,7 +309,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
     // A source child assignment still wins over the authored parent.
     dmb.classes[area_id].layer_bits = native_area;
     let mut fields = projection.fields.to_vec();
-    fields.push(FieldProjection {
+    fields.push(std::sync::Arc::new(FieldProjection {
         owner: area,
         declaring_owner: area,
         name: layer,
@@ -318,7 +318,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
         intrinsic: true,
         shared: false,
         value: DefaultValue::Scalar(SemanticValue::NumberBits(native_area)),
-    });
+    }));
     projection.fields = fields.into();
     finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
     assert_eq!(dmb.classes[area_id].layer_bits, native_area);

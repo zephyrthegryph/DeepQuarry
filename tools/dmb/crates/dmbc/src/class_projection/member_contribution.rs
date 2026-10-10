@@ -5,7 +5,7 @@ use super::*;
 
 #[derive(Clone)]
 pub(crate) enum MemberContribution {
-    Field(FieldProjection),
+    Field(Arc<FieldProjection>),
     Procedure {
         owner: SymbolId,
         name: SymbolId,
@@ -124,16 +124,18 @@ pub(super) fn produce(
                     "list defaults need occurrence-specific materialization".into(),
                 ));
             }
-            Ok(MemberContribution::Field(FieldProjection {
-                owner,
-                declaring_owner,
-                name: member.name,
-                role,
-                wire_flags: flags,
-                intrinsic,
-                shared,
-                value,
-            }))
+            Ok(MemberContribution::Field(std::sync::Arc::new(
+                FieldProjection {
+                    owner,
+                    declaring_owner,
+                    name: member.name,
+                    role,
+                    wire_flags: flags,
+                    intrinsic,
+                    shared,
+                    value,
+                },
+            )))
         }
         MemberKind::Proc | MemberKind::Verb => {
             let verb = member.kind == MemberKind::Verb;

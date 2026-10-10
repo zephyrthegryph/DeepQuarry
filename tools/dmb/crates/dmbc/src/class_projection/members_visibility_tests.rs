@@ -75,15 +75,17 @@ fn authored_visibility_and_inheritance_match_captured_byond_headers() {
         ),
     ]
     .into_iter()
-    .map(|(owner, value)| FieldProjection {
-        owner,
-        declaring_owner: atom,
-        name: invisibility,
-        role: FieldRole::Assignment,
-        wire_flags: None,
-        intrinsic: true,
-        shared: false,
-        value,
+    .map(|(owner, value)| {
+        std::sync::Arc::new(FieldProjection {
+            owner,
+            declaring_owner: atom,
+            name: invisibility,
+            role: FieldRole::Assignment,
+            wire_flags: None,
+            intrinsic: true,
+            shared: false,
+            value,
+        })
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {

@@ -13,6 +13,8 @@ mod runner_report;
 #[path = "runner_resources.rs"]
 mod runner_resources;
 use runner_resources::{OutputResourceSink, ResourceOutputs};
+#[path = "runner_freshness.rs"]
+mod runner_freshness;
 
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -64,6 +66,10 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    runner_freshness::run(request, |request, allow_moving| run_build_attempt(request, host, allow_moving))
+}
+
+fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::BuildHost, allow_moving: bool) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let _build_profile = dm_profile::stage("build");
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
@@ -115,42 +121,6 @@ pub fn run_build_with_host(
     if embedded_engine {
         bootstrap_catalog = true;
     }
-    drop(request_profile);
-    let engine_input_profile = dm_profile::stage("engine_input");
-    let engine_bytes = if embedded_engine {
-        Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
-    } else {
-        engine_template
-            .as_ref()
-            .map(|path| {
-                dm_profile::io_call(|| std::fs::read(path), |bytes| (bytes.len() as u64, 0))
-                    .map_err(|error| format!("engine template {}: {error}", path.display()))
-            })
-            .transpose()?
-    };
-    let engine_identity = engine_bytes
-        .as_ref()
-        .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
-    drop(engine_input_profile);
-    let input_context_profile = dm_profile::stage("request.input_context");
-    if executable {
-        if engine_bytes.as_deref()
-            != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
-        {
-            return Err(
-                "native unsupported: compile requires the pinned BYOND 516.1687 engine template"
-                    .into(),
-            );
-        }
-        // This driver supports the pinned 516.1687 ABI. The reusable frontend
-        // still receives explicit configuration rather than inferring a target.
-        defines
-            .entry("DM_VERSION".into())
-            .or_insert_with(|| "516".into());
-        defines
-            .entry("DM_BUILD".into())
-            .or_insert_with(|| "1687".into());
-    }
     let now_ns = || {
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -165,6 +135,34 @@ pub fn run_build_with_host(
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns())
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(host.prepared_sources());
+    drop(request_profile);
+    let engine_input_profile = dm_profile::stage("engine_input");
+    let engine_bytes = if embedded_engine {
+        Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
+    } else {
+        engine_template
+            .as_ref()
+            .map(|path| {
+                inputs_capture.read_binary(path)
+                    .map_err(|error| format!("engine template {}: {error}", path.display()))
+            })
+            .transpose()?
+    };
+    let engine_identity = engine_bytes
+        .as_ref()
+        .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
+    drop(engine_input_profile);
+    let input_context_profile = dm_profile::stage("request.input_context");
+    if executable {
+        if engine_bytes.as_deref()
+            != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
+        {
+            return Err(dmbc::request_failure::RequestFailure::internal("native unsupported: compile requires the pinned BYOND 516.1687 engine template").into());
+        }
+        // This driver supports the pinned 516.1687 ABI. The reusable frontend
+        // still receives explicit configuration rather than inferring a target.
+        dmbc::pinned_target::admit_defines(&mut defines)?;
+    }
     let mut session = None;
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
@@ -234,6 +232,7 @@ pub fn run_build_with_host(
                         exact_inputs,
                         now_ns(),
                     )?;
+                    runner_freshness::admit_live(&validated.record().inputs, allow_moving)?;
                     dmbc::daemon::control::begin_publication()?;
                     if !outputs_match {
                         store.install_exact(
@@ -773,6 +772,9 @@ pub fn run_build_with_host(
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
+        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, allow_moving)?;
+        input_provider.finish()?;
+        inputs_capture.finish_prepared()?;
         dmbc::daemon::control::begin_publication()?;
         let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
@@ -802,8 +804,6 @@ pub fn run_build_with_host(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
-        input_provider.finish()?;
-        inputs_capture.finish_prepared()?;
         if let (Some(cache), Some(snapshot), Some(session)) =
             (&memo_cache, &cache_snapshot, &session)
         {
@@ -825,10 +825,7 @@ pub fn run_build_with_host(
             }
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
-            let mut inputs = inputs_capture.snapshot()?;
-            if let Some(retained) = &publication.retained_resource_inputs {
-                inputs.merge(retained)?;
-            }
+            let inputs = publication_inputs;
             let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture(
                 inputs.proof_paths(),
                 inputs.proof_folders(),

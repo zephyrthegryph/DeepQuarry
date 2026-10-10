@@ -16,6 +16,7 @@ pub mod input_snapshot;
 pub use runner_host::disk as runner_disk;
 pub mod map_memo;
 pub mod output_cli;
+pub mod pinned_target;
 pub mod publish;
 pub mod request;
 pub mod request_failure;

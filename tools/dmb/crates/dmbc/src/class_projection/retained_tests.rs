@@ -97,3 +97,29 @@ fn interleaved_owner_payloads_rebind_shifted_sources_and_match_fresh_reorder() {
         DefaultValue::Scalar(SemanticValue::NumberBits(4f32.to_bits()))
     );
 }
+
+#[test]
+fn current_ordered_projection_shares_admitted_field_rows_and_invalidates_values() {
+    let store = ClassProjections::default();
+    let source = "/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n";
+    let first = project_source(&store, source, false);
+    let second = project_source(&store, source, false);
+    assert_eq!(first.fields.len(), 2);
+    for (a, b) in first.fields.iter().zip(second.fields.iter()) {
+        assert!(Arc::ptr_eq(a, b));
+    }
+    let changed = project_source(
+        &store,
+        "/datum/a\n    var/x = 4\n/datum/b\n    var/y = 3\n",
+        false,
+    );
+    assert!(!Arc::ptr_eq(&first.fields[0], &changed.fields[0]));
+    assert!(Arc::ptr_eq(&first.fields[1], &changed.fields[1]));
+    let moved = project_source(
+        &store,
+        "/datum/b\n    var/y = 3\n/datum/a\n    var/x = 4\n",
+        false,
+    );
+    assert_eq!(moved.fields[0].name, SymbolId::of("y"));
+    assert!(Arc::ptr_eq(&changed.fields[1], &moved.fields[0]));
+}

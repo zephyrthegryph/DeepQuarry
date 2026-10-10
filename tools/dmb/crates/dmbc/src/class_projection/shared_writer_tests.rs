@@ -58,7 +58,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
             },
         ]
         .into(),
-        fields: vec![FieldProjection {
+        fields: vec![std::sync::Arc::new(FieldProjection {
             owner: child,
             declaring_owner: child,
             name,
@@ -69,7 +69,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
             value: DefaultValue::Scalar(SemanticValue::Text(Arc::from(
                 b"shared writer name".as_slice(),
             ))),
-        }]
+        })]
         .into(),
         chains: Arc::from([]),
         procedure_declarations: Default::default(),

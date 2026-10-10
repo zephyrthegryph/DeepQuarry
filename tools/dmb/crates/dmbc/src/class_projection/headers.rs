@@ -554,7 +554,7 @@ mod routing_tests {
             ]
             .into(),
             fields: vec![
-                FieldProjection {
+                std::sync::Arc::new(FieldProjection {
                     owner: savefile,
                     declaring_owner: savefile,
                     name: version,
@@ -565,8 +565,8 @@ mod routing_tests {
                     value: crate::initializer_policy::DefaultValue::Scalar(
                         dm_ir::SemanticValue::Null,
                     ),
-                },
-                FieldProjection {
+                }),
+                std::sync::Arc::new(FieldProjection {
                     owner: world,
                     declaring_owner: world,
                     name,
@@ -577,7 +577,7 @@ mod routing_tests {
                     value: crate::initializer_policy::DefaultValue::Scalar(
                         dm_ir::SemanticValue::Null,
                     ),
-                },
+                }),
             ]
             .into(),
             chains: Arc::from([]),

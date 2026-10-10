@@ -199,6 +199,10 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .into_inner()
             .map_err(|_| invalid("input capture mutex poisoned"))
     }
+    /// Capture a binary compiler input through the same exact read ledger.
+    pub fn read_binary(&self, path: &Path) -> io::Result<Vec<u8>> {
+        self.read_recorded(path)
+    }
     fn read_recorded(&self, path: &Path) -> io::Result<Vec<u8>> {
         let (stamp, bytes, content) = self.provider.read_verified(path)?.into_parts();
         // The provider's immutable envelope already authenticates the exact bytes.

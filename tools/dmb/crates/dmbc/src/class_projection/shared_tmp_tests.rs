@@ -95,7 +95,7 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
                 .push((key, first_slot + shared_order.len() as u32));
             shared_order.push(key);
         }
-        projections.push(FieldProjection {
+        projections.push(std::sync::Arc::new(FieldProjection {
             owner,
             declaring_owner: owner,
             name,
@@ -104,7 +104,7 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
             intrinsic: false,
             shared,
             value: DefaultValue::Scalar(SemanticValue::NumberBits(1f32.to_bits())),
-        });
+        }));
     }
     let local = dm_ir::ProcedureStaticIdentity {
         procedure: dm_ir::ProcedureIdentity {

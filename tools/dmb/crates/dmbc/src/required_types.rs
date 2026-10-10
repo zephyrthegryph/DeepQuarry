@@ -297,18 +297,20 @@ mod tests {
                 },
             ]
             .into(),
-            fields: vec![crate::class_projection::FieldProjection {
-                owner: SymbolId::of("/savefile"),
-                declaring_owner: SymbolId::of("/savefile"),
-                name: SymbolId::of("byond_version"),
-                role: crate::class_projection::FieldRole::Assignment,
-                wire_flags: None,
-                intrinsic: true,
-                shared: false,
-                value: crate::initializer_policy::DefaultValue::Scalar(SemanticValue::NumberBits(
-                    516f32.to_bits(),
-                )),
-            }]
+            fields: vec![std::sync::Arc::new(
+                crate::class_projection::FieldProjection {
+                    owner: SymbolId::of("/savefile"),
+                    declaring_owner: SymbolId::of("/savefile"),
+                    name: SymbolId::of("byond_version"),
+                    role: crate::class_projection::FieldRole::Assignment,
+                    wire_flags: None,
+                    intrinsic: true,
+                    shared: false,
+                    value: crate::initializer_policy::DefaultValue::Scalar(
+                        SemanticValue::NumberBits(516f32.to_bits()),
+                    ),
+                },
+            )]
             .into(),
             shared_slot_order: Vec::new().into(),
             procedure_statics: Vec::new().into(),
@@ -350,7 +352,7 @@ mod tests {
             .unwrap_err()
             .contains("native primitive requires explicit physical class ABI"));
         let mut field = projection();
-        std::sync::Arc::make_mut(&mut field.fields)[0].name = SymbolId::of("eof");
+        std::sync::Arc::make_mut(&mut std::sync::Arc::make_mut(&mut field.fields)[0]).name = SymbolId::of("eof");
         assert!(admit(field, inputs())
             .unwrap_err()
             .contains("native primitive requires explicit physical class ABI"));

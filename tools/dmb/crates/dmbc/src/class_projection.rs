@@ -71,7 +71,7 @@ pub struct ClassProjection {
     pub types: Arc<[TypeProjection]>,
     /// Original occurrence order; writer emits formal declarations separately
     /// from assignment records, retaining each ordered assignment.
-    pub fields: Arc<[FieldProjection]>,
+    pub fields: Arc<[Arc<FieldProjection>]>,
     pub chains: Arc<[ProcedureChain]>,
 }
 #[derive(Clone, Debug)]
@@ -554,7 +554,7 @@ pub trait TypeValuePolicy {
 }
 
 fn client_header_directives(
-    fields: &[FieldProjection],
+    fields: &[Arc<FieldProjection>],
     owner_order: &[SymbolId],
     symbols: &dm_ir::SymbolTable,
 ) -> Result<Vec<crate::client_projection::Directive>, ProjectionError> {

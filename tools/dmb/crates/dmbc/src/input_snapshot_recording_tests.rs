@@ -164,3 +164,51 @@ fn recording_and_default_digest_forward_the_authenticated_provider_read() {
     );
     assert_eq!(provider.verified_reads.load(Ordering::Relaxed), 2);
 }
+#[test]
+fn binary_template_capture_keeps_raw_bytes_and_participates_in_freshness_and_exact_proofs() {
+    struct Binary {
+        bytes: std::sync::Mutex<Vec<u8>>,
+        modified: AtomicUsize,
+    }
+    impl SnapshotProvider for Binary {
+        fn stamp(&self, _: &Path) -> io::Result<Stamp> {
+            Ok(Stamp {
+                size: self.bytes.lock().unwrap().len() as u64,
+                modified_ns: self.modified.load(Ordering::Relaxed) as u128,
+                file_id: Some(81),
+            })
+        }
+        fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+            Ok((self.stamp(path)?, self.bytes.lock().unwrap().clone()))
+        }
+        fn list(&self, _: &Path) -> io::Result<FolderListing> {
+            panic!("binary capture must not discover folders")
+        }
+    }
+    let provider = Binary {
+        bytes: std::sync::Mutex::new(vec![0xff, 0, 0xef, 0xbb, 0xbf, 7]),
+        modified: AtomicUsize::new(1),
+    };
+    let inputs = RecordingInputs::new(&provider, 10_000_000_000);
+    let path = Path::new("engine/template.dmb");
+    let bytes = inputs.read_binary(path).unwrap();
+    assert_eq!(bytes, [0xff, 0, 0xef, 0xbb, 0xbf, 7]);
+    let snapshot = inputs.snapshot().unwrap();
+    let fact = snapshot.files().next().unwrap();
+    assert_eq!(fact.path, canonical_path(path));
+    assert_eq!(fact.content, xxhash_rust::xxh3::xxh3_128(&bytes));
+    assert!(snapshot.restat(&provider).unwrap().unchanged());
+    provider.modified.store(2, Ordering::Relaxed);
+    assert!(!snapshot.restat(&provider).unwrap().unchanged());
+    // Same stamp but different binary payload still cannot pass exact reuse.
+    provider.modified.store(1, Ordering::Relaxed);
+    provider.bytes.lock().unwrap()[0] = 0xfe;
+    assert!(snapshot
+        .validate_for_reuse(&provider, true, 20_000_000_000)
+        .unwrap()
+        .is_none());
+    assert_eq!(
+        inputs.read_binary(path).unwrap_err().kind(),
+        io::ErrorKind::InvalidData
+    );
+}

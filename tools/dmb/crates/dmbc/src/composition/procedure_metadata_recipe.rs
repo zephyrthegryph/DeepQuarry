@@ -10,6 +10,8 @@ pub(crate) struct ProcedureMetadataRecipe {
     implicit_path: Arc<str>,
     display: Arc<str>,
     selectors: Arc<[ArgumentSource]>,
+    locals: std::sync::Mutex<Option<emission_lists::LocalList>>,
+    arguments: std::sync::Mutex<Option<emission_lists::ArgumentList>>,
 }
 impl ProcedureMetadataRecipe {
     pub(crate) fn capture(
@@ -43,6 +45,8 @@ impl ProcedureMetadataRecipe {
             implicit_path,
             display: text(symbols, identity.name)?.replace('_', " ").into(),
             selectors: abi.map_or_else(|| Arc::from([]), |abi| abi.argument_sources.clone().into()),
+            locals: Default::default(),
+            arguments: Default::default(),
         })
     }
     pub(crate) fn path(
@@ -77,6 +81,7 @@ impl ProcedureMetadataRecipe {
             census.arc_text("procedure_metadata.paths", &recipe.implicit_path);
             census.arc_text("procedure_metadata.display", &recipe.display);
             census.slice("procedure_metadata.selectors", &recipe.selectors, true);
+            recipe.census_emission_lists(census);
             census.unknown(
                 "procedure_metadata.recipe",
                 "Arc control block and allocator overhead are unavailable",
@@ -84,6 +89,8 @@ impl ProcedureMetadataRecipe {
         }
     }
 }
+
+mod emission_lists;
 
 #[cfg(test)]
 mod tests {

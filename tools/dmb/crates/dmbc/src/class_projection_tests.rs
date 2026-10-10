@@ -104,7 +104,7 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
         occurrence_count: 1,
         types: Arc::from([]),
         chains: Arc::from([]),
-        fields: Arc::from([FieldProjection {
+        fields: Arc::from([std::sync::Arc::new(FieldProjection {
             owner: root,
             declaring_owner: root,
             name,
@@ -113,7 +113,7 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
             intrinsic: false,
             shared: true,
             value: DefaultValue::Scalar(SemanticValue::Procedure(identity)),
-        }]),
+        })]),
     };
     materialize_members(&mut dmb, &projection, &tables, &symbols, &NoTypes).unwrap();
     let record_id = dmb.lists[dmb.variable_footer as usize][footer_index as usize * 2];
@@ -129,15 +129,17 @@ fn indexed_client_headers_preserve_owner_and_repeated_write_effects() {
     let child = symbols.intern("/client/child").unwrap();
     let unrelated = symbols.intern("/datum/unrelated").unwrap();
     let name = symbols.intern("control_freak").unwrap();
-    let field = |owner, value, intrinsic| FieldProjection {
-        owner,
-        declaring_owner: parent,
-        name,
-        role: FieldRole::Assignment,
-        wire_flags: None,
-        intrinsic,
-        shared: false,
-        value: DefaultValue::Scalar(SemanticValue::NumberBits((value as f32).to_bits())),
+    let field = |owner, value, intrinsic| {
+        std::sync::Arc::new(FieldProjection {
+            owner,
+            declaring_owner: parent,
+            name,
+            role: FieldRole::Assignment,
+            wire_flags: None,
+            intrinsic,
+            shared: false,
+            value: DefaultValue::Scalar(SemanticValue::NumberBits((value as f32).to_bits())),
+        })
     };
     let fields = [
         field(child, 1, true),
@@ -184,7 +186,7 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
         types: Arc::from([]),
         chains: Arc::from([]),
         fields: Arc::from([
-            FieldProjection {
+            std::sync::Arc::new(FieldProjection {
                 owner,
                 declaring_owner: owner,
                 name,
@@ -195,8 +197,8 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
                 value: DefaultValue::Scalar(SemanticValue::Text(Arc::from(
                     b"source name".as_slice(),
                 ))),
-            },
-            FieldProjection {
+            }),
+            std::sync::Arc::new(FieldProjection {
                 owner,
                 declaring_owner: owner,
                 name: layer,
@@ -205,7 +207,7 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
                 intrinsic: true,
                 shared: false,
                 value: DefaultValue::Scalar(SemanticValue::NumberBits(3.5f32.to_bits())),
-            },
+            }),
         ]),
     };
     let mut dmb = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
