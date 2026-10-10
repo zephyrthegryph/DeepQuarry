@@ -2,12 +2,11 @@
 //! Run against a fresh scratch directory; this never invokes a compiler/runtime.
 use dm_cache::{Cache, CacheError, Limits, Record, RecordKey};
 use std::{
-    collections::BTreeSet,
     fs,
     path::{Path, PathBuf},
     process::{Child, Command},
     sync::Arc,
-    time::{Duration, Instant, SystemTime},
+    time::{Duration, Instant},
 };
 fn record(content: u128) -> Record {
     Record {
@@ -41,13 +40,10 @@ fn worker(root: &Path, id: u128) -> Result<(), Box<dyn std::error::Error>> {
         std::thread::sleep(Duration::from_millis(5));
     }
     let mut sink = cache.publish_sink(400);
-    let mut own = BTreeSet::new();
     for index in 0..8 {
         let input = record(id * 100 + index);
-        own.insert(input.key);
         sink.push(input)?;
         sink.flush()?;
-        cache.record_lease(id, SystemTime::now(), &own)?;
         std::thread::sleep(Duration::from_millis(3));
     }
     sink.finish()?;
@@ -98,8 +94,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 validate(key, view.payload, &view.symbols)?;
                 reads += 1;
             }
-            match cache.compact_leased(SystemTime::now(), Duration::from_secs(14 * 86400), validate)
-            {
+            match cache.compact(&reader.record_keys(), validate) {
                 Ok(_) => compactions += 1,
                 Err(CacheError::Busy) => (),
                 Err(error) => return Err(error.into()),

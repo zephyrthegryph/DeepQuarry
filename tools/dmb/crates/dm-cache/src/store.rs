@@ -1,3 +1,6 @@
+#[path = "store_lifecycle.rs"]
+mod lifecycle;
+pub use lifecycle::EvictionReport;
 #[path = "store_candidates.rs"]
 mod candidates;
 #[path = "store_compaction.rs"]
@@ -201,7 +204,7 @@ impl Cache {
         let _ = fs::remove_file(&temporary);
         result
     }
-    /// `live` is supplied by session reachability (last fourteen days). This
+    /// `live` is an explicit caller-selected record roster. This
     /// neutral storage layer does not invent session or payload dependency rules.
     /// All retained payloads are bytechecked before a base may supersede inputs.
     pub fn compact(
@@ -254,8 +257,8 @@ impl CacheSnapshot {
             .unwrap_or_else(|e| e.into_inner())
             .clone()
     }
-    /// Conservative roots for configured-session leases. Superseded or rejected
-    /// segments contribute no roots; keys are immutable symbolic record identities.
+    /// Current visible immutable key inventory for explicit inspection/compaction.
+    /// Superseded or rejected segments contribute no keys.
     pub fn record_keys(&self) -> BTreeSet<RecordKey> {
         let superseded = self.current_superseded();
         self.segments

@@ -3,7 +3,7 @@
 mod segment;
 mod store;
 pub use segment::{CacheError, Limits, Record, RecordKey, RecordView, Segment, SymbolText};
-pub use store::{Cache, CacheSnapshot, CompactResult, RejectedSegment};
+pub use store::{Cache, CacheSnapshot, CompactResult, EvictionReport, RejectedSegment};
 
 #[cfg(test)]
 mod tests;
@@ -13,8 +13,6 @@ pub use variants::{decode_variants, encode_variants};
 
 mod sink;
 pub use sink::{PublishReport, PublishSink};
-mod leases;
-pub use leases::LeaseCompaction;
 
 mod pending;
 pub use pending::PendingRecords;

@@ -2,9 +2,9 @@
 pub(super) fn publish_cache_records(
     cache: &crate::runner_disk::LazyDisk,
     records: Vec<dm_cache::Record>,
-) -> Result<std::collections::BTreeSet<dm_cache::RecordKey>, String> {
+) -> Result<(), String> {
     if records.is_empty() {
-        return Ok(std::collections::BTreeSet::new());
+        return Ok(());
     }
     let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
     for record in records {
@@ -12,7 +12,7 @@ pub(super) fn publish_cache_records(
             .map_err(|error| format!("cache population failed: {error}"))?;
     }
     match sink.finish() {
-        Ok(report) => Ok(report.keys),
+        Ok(_) => Ok(()),
         Err(error) => Err(format!("cache population failed: {error}")),
     }
 }

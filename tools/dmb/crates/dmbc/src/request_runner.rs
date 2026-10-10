@@ -76,7 +76,10 @@ fn run_build_attempt(
     host: &mut crate::runner_host::BuildHost,
     allow_moving: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(host.query_state(), host.retains_artifacts());
+    let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
+        host.query_state(),
+        host.retains_artifacts(),
+    );
     let _build_profile = dm_profile::stage("build");
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
@@ -348,21 +351,15 @@ fn run_build_attempt(
     };
     // The shared handle stays unopened until resident fallback or computed publication.
     let cache_snapshot = memo_cache.clone();
-    let published_keys = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
     let cache_publisher: Option<Arc<dmbc::lowering_memo::CachePublisher>> =
         memo_cache.as_ref().map(|cache| {
             let cache = Arc::clone(cache);
-            let published_keys = Arc::clone(&published_keys);
             Arc::new(move |records: Vec<dm_cache::Record>| {
                 let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
                 for record in records {
                     sink.push(record).map_err(|error| error.to_string())?;
                 }
-                let report = sink.finish().map_err(|error| error.to_string())?;
-                published_keys
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner())
-                    .extend(report.keys);
+                sink.finish().map_err(|error| error.to_string())?;
                 Ok(())
             }) as Arc<dmbc::lowering_memo::CachePublisher>
         });
@@ -763,10 +760,7 @@ fn run_build_attempt(
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
-            published_keys
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .extend(publish_cache_records(cache, records)?);
+            publish_cache_records(cache, records)?;
             use std::sync::atomic::Ordering::Relaxed;
             dmbc::daemon_eprintln!("native retention: policy={:032x} host={}", memo.policy, retention_status);
             dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} resident_dropped={} retention={:?} recomputed={} unsupported_disk={}",
@@ -779,10 +773,7 @@ fn run_build_attempt(
             }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &expansion_memo) {
-            published_keys
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .extend(publish_cache_records(cache, memo.take_pending())?);
+            publish_cache_records(cache, memo.take_pending())?;
             let errors = memo.publication_errors();
             if !errors.is_empty() {
                 return Err(
@@ -791,10 +782,7 @@ fn run_build_attempt(
             }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &map_memo) {
-            published_keys
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .extend(publish_cache_records(cache, memo.take_pending())?);
+            publish_cache_records(cache, memo.take_pending())?;
             let errors = memo.publication_errors();
             if !errors.is_empty() {
                 return Err(format!("map cache population failed: {}", errors.join("; ")).into());
@@ -850,26 +838,6 @@ fn run_build_attempt(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
-        if let (Some(cache), Some(snapshot), Some(session)) =
-            (&memo_cache, &cache_snapshot, &session)
-        {
-            let mut roots = snapshot.loaded_snapshot().map_or_else(std::collections::BTreeSet::new, |snapshot| snapshot.record_used_keys());
-            roots.extend(
-                published_keys
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner())
-                    .iter()
-                    .copied(),
-            );
-            if !roots.is_empty() {
-                match cache.writer() {
-                    Ok(cache) => if let Err(error) = cache.record_lease(session.identity()?, std::time::SystemTime::now(), &roots) {
-                        dmbc::daemon_eprintln!("native cache lease skipped: {error}");
-                    },
-                    Err(error) => dmbc::daemon_eprintln!("native cache lease skipped: {error}"),
-                }
-            }
-        }
         if let Some(session) = &session.filter(|_| !verification_capture) {
             let inputs = publication_inputs;
             let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;

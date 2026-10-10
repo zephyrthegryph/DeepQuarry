@@ -251,61 +251,6 @@ fn bounded_sink_and_multisegment_compaction_preserve_every_live_record() {
     }
 }
 #[test]
-fn leases_preserve_live_roots_expire_old_roots_and_reject_corrupt_hints() {
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
-    let root = Temp::new();
-    let cache = Cache::open(&root.0, Limits::default()).unwrap();
-    let a = record(1, 1);
-    let b = record(2, 1);
-    cache.publish(&[a.clone(), b.clone()]).unwrap();
-    let retention = Duration::from_secs(14 * 86400);
-    let now = SystemTime::now() + retention * 2;
-    cache
-        .record_lease(1, now, &[a.key].into_iter().collect())
-        .unwrap();
-    cache
-        .record_lease(2, UNIX_EPOCH, &[b.key].into_iter().collect())
-        .unwrap();
-    let result = cache
-        .compact_leased(now, retention, |_, payload, symbols| {
-            validate(payload, symbols)
-        })
-        .unwrap();
-    assert_eq!(result.active_leases, 1);
-    assert_eq!(result.expired_leases, 1);
-    let snapshot = cache.snapshot().unwrap();
-    assert!(snapshot.get(a.key, validate).is_some());
-    assert!(snapshot.get(b.key, validate).is_none());
-    let lease = root.0.join("leases").join(format!("{:032x}.lease", 1));
-    let mut bytes = fs::read(&lease).unwrap();
-    bytes[9] ^= 1;
-    fs::write(lease, bytes).unwrap();
-    assert!(cache
-        .compact_leased(now, retention, |_, payload, symbols| validate(
-            payload, symbols
-        ))
-        .is_err());
-    assert!(cache.snapshot().unwrap().get(a.key, validate).is_some());
-}
-#[test]
-fn recently_published_unleased_segments_survive_lease_compaction() {
-    use std::time::{Duration, SystemTime};
-    let root = Temp::new();
-    let cache = Cache::open(&root.0, Limits::default()).unwrap();
-    let input = record(9, 1);
-    cache.publish(std::slice::from_ref(&input)).unwrap();
-    let result = cache
-        .compact_leased(
-            SystemTime::now(),
-            Duration::from_secs(14 * 86400),
-            |_, payload, symbols| validate(payload, symbols),
-        )
-        .unwrap();
-    assert_eq!(result.compact.records, 1);
-    assert!(cache.snapshot().unwrap().get(input.key, validate).is_some());
-}
-
-#[test]
 fn oversized_singleton_population_and_compaction_preserve_the_record() {
     let root = Temp::new();
     let limits = Limits {
