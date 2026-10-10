@@ -232,7 +232,7 @@ impl HeapCensus {
                     "current_initializer_units.write_ordinals",
                     &unit.write_ordinals,
                 );
-                self.resolver_code(&unit.code);
+                self.initializer_code(&unit.code);
                 self.debug("current_initializer_units.debug", &unit.debug_origins);
                 if let Some(encoding) = &unit.encoding {
                     self.initializer_encoding(encoding);
@@ -247,9 +247,7 @@ impl HeapCensus {
         use crate::initialization_artifact::InitializationCoverage;
         if self.vec_payload("current_map_initializers", units) {
             for unit in units {
-                if self.arc_object("current_map_initializers.code", &unit.code) {
-                    self.resolver_code(&unit.code);
-                }
+                self.initializer_code(&unit.code);
                 if self.arc_object("current_map_initializers.debug", &unit.debug_origins) {
                     self.debug("current_map_initializers.debug", &unit.debug_origins);
                 }

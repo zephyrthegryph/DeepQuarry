@@ -57,10 +57,11 @@ pub(crate) fn weight(
                 coverage,
                 encoding,
             } = artifact;
+            census.initializer_type_requests(code.requests());
             if let Some(encoding) = encoding {
                 census.initializer_encoding(encoding);
             }
-            if census.arc_object("retained_maps.code", code) {
+            if census.arc_object("retained_maps.code", code.code_owner()) {
                 // Reuse the complete resolver owner walker and its conservative
                 // private-index bounds. Separate traversal may overcharge aliases
                 // across procedures, but never labels them exact census bytes.

@@ -746,6 +746,7 @@ impl HeapCensus {
         self.vec_payload(owner, &procedure.class_paths);
         self.vec_payload(owner, &procedure.instance_paths);
         self.vec_payload(owner, &procedure.resources);
+        self.vec_payload(owner, &procedure.warnings);
         self.strings(owner, &procedure.local_names);
         self.strings(owner, &procedure.argument_names);
         self.vec_payload(owner, &procedure.argument_type_flags);
@@ -857,6 +858,7 @@ impl HeapCensus {
             crate::composition::ProcedureMetadataRecipe::census(&unit.metadata_recipe, self);
             self.frozen_code(&unit.frozen);
             self.frozen_debug("frozen_units", &unit.lowered.debug_origins);
+            self.slice("frozen_units.warnings", &unit.lowered.warnings, true);
             self.frozen_frame("frozen_units", &unit.lowered.frame);
             if let Some(abi) = &unit.lowered.abi {
                 self.abi(abi);
@@ -865,6 +867,7 @@ impl HeapCensus {
         for helper in &batch.helpers {
             self.latest_image(helper.latest_image());
             self.frozen_code(&helper.frozen);
+            self.slice("frozen_units.warnings", &helper.warnings, true);
             self.frozen_debug("frozen_units", &helper.debug_origins);
             self.strings("frozen_units", &helper.local_names);
         }

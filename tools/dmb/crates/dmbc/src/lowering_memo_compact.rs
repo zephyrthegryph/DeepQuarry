@@ -4,7 +4,7 @@ use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
 // Includes the certified src-cache operand encoding policy.
-pub(crate) const SCHEMA: u32 = 0x0206_000d;
+pub(crate) const SCHEMA: u32 = 0x0206_000f;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]

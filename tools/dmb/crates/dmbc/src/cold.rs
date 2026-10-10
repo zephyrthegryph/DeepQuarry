@@ -623,7 +623,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     // exactly as before; this capture performs no resolver/evaluator operations.
     let pending_modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
-    let warnings = crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
+    let mut warnings = crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
         .map_err(initializer_lowering_error)?;
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
@@ -704,6 +704,10 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         census.prepared(&contributions);
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
+    for contribution in &contributions {
+        warnings.extend(contribution.current_warnings(frontend.snapshot.tree.symbols())
+            .map_err(ColdError::InitializerInvariant)?);
+    }
     let body_types: Vec<_> = contributions
         .iter_mut()
         .flat_map(crate::symbolic::PreparedContribution::take_required_types)
@@ -721,7 +725,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let seeds = initialization
         .units
         .iter()
-        .map(|unit| (&unit.code, &unit.debug_origins))
+        .map(|unit| (unit.code.as_ref(), &unit.debug_origins))
         .chain(
             map_initializers
                 .iter()

@@ -287,7 +287,7 @@ fn finish_collection<R: Resolver>(
             identity: dm_link::InitializerIdentity::Modified(SymbolId::of(
                 &captured.descriptor.alias(),
             )),
-            code: Arc::new(code),
+            code: code.into(),
             debug_origins: Arc::new(debug_origins),
             coverage: InitializationCoverage::ModifiedAssignments {
                 count: u32::try_from(fields.len())

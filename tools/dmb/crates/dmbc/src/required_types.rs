@@ -204,10 +204,10 @@ fn admit_common(
         BodyRequirements::Prepared(prepared) => requests.extend_from_slice(prepared),
     }
     for unit in initializers {
-        append_code_requests(&unit.code, &mut requests, symbols)?;
+        unit.code.requests().append(&mut requests, symbols)?;
     }
     for unit in maps {
-        append_code_requests(&unit.code, &mut requests, symbols)?;
+        unit.code.requests().append(&mut requests, symbols)?;
     }
     // Non-text descriptor producers already issue exact semantic type keys.
     // Preserve their caller-provided order when available, never sort hashes.
@@ -237,26 +237,7 @@ pub(crate) fn append_code_requests(
     requests: &mut Vec<SymbolId>,
     symbols: &SymbolTable,
 ) -> Result<(), String> {
-    let mut failure = None;
-    code.procedure.code.for_each_reference(|reference| {
-        if let dm_ir::SymRef::Type(id) = reference {
-            if symbols.text(id).is_none() {
-                failure = Some(format!(
-                    "referenced type spelling not collision checked: {id:?}"
-                ));
-            }
-            requests.push(id);
-        }
-    });
-    // Modified alias identities do not invent class rows; their explicitly
-    // resolved runtime class is a real dependency of the instance artifact.
-    for instance in code.instances.values() {
-        requests.push(instance.runtime_type);
-    }
-    for instance in code.modified_instances.values() {
-        requests.push(instance.descriptor.runtime_type());
-    }
-    failure.map_or(Ok(()), Err)
+    crate::initializer_code::append_fresh(code, requests, symbols)
 }
 
 #[cfg(test)]

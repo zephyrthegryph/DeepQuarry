@@ -15,6 +15,12 @@ pub struct PreparedContribution {
     selected_facts: Option<Arc<dm_ir::SelectedReferences>>,
 }
 impl PreparedContribution {
+    pub(crate) fn current_warnings(
+        &self,
+        symbols: &SymbolTable,
+    ) -> Result<Vec<crate::initializer_policy::warnings::InitializerWarning>, String> {
+        self.contribution.current_warnings(symbols)
+    }
     pub(crate) fn current_source(&self) -> &dm_tree::frontend::SourceLocation {
         self.contribution.current_source()
     }

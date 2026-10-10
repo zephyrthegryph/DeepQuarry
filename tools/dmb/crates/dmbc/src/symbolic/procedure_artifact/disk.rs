@@ -23,6 +23,7 @@ struct StringWire<'a> {
 }
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Encoded<'a> {
+    warnings: crate::lowering_memo_compact::BoundedVec<dm_codegen_byond::ProcedureWarning>,
     #[serde(borrow)]
     words: Cow<'a, [u8]>,
     relocations: crate::lowering_memo_compact::BoundedVec<(u32, SymRef, Option<u8>)>,
@@ -51,6 +52,7 @@ impl ReusableProcedureArtifact {
     }
     pub(crate) fn disk_encoded(&self) -> Option<Encoded<'_>> {
         Encoded::capture(
+            &self.warnings,
             &self.frozen,
             &self.frame,
             &self.strings,
@@ -112,6 +114,15 @@ impl HelperWire<'_> {
     }
 }
 impl<'a> Encoded<'a> {
+    #[cfg(test)]
+    pub(crate) fn corrupt_warning_ordinal(&mut self, ordinal: Option<u32>) {
+        self.warnings.0[0].source_ordinal = ordinal;
+    }
+    #[cfg(test)]
+    pub(crate) fn corrupt_warning_name(&mut self) {
+        self.warnings.0[0].name = Some(SymbolId::of("absent warning name"));
+    }
+
     fn capture_helper(helper: &'a HelperArtifact) -> Option<Self> {
         if helper
             .frozen
@@ -122,6 +133,7 @@ impl<'a> Encoded<'a> {
             return None;
         }
         Self::capture_fields(
+            &helper.warnings,
             &helper.frozen,
             helper.local_names.len().try_into().ok()?,
             &helper.local_names,
@@ -133,6 +145,7 @@ impl<'a> Encoded<'a> {
         )
     }
     fn capture(
+        warnings: &[dm_codegen_byond::ProcedureWarning],
         frozen: &'a FrozenProc,
         frame: &'a FrozenFrame,
         strings: &'a OwnedStrings,
@@ -140,6 +153,7 @@ impl<'a> Encoded<'a> {
         content: &'a dm_link::EntryContent,
     ) -> Option<Self> {
         Self::capture_fields(
+            warnings,
             frozen,
             frame.local_count,
             &frame.local_names,
@@ -152,6 +166,7 @@ impl<'a> Encoded<'a> {
     }
     #[allow(clippy::too_many_arguments)]
     fn capture_fields(
+        warnings: &[dm_codegen_byond::ProcedureWarning],
         frozen: &'a FrozenProc,
         local_count: u32,
         locals: &'a [String],
@@ -175,6 +190,7 @@ impl<'a> Encoded<'a> {
             labels.extend_from_slice(&label.unwrap_or(0).to_le_bytes());
         }
         Some(Encoded {
+            warnings: crate::lowering_memo_compact::BoundedVec(warnings.to_vec()),
             words: Cow::Owned(words),
             labels: Cow::Owned(labels),
             relocations: crate::lowering_memo_compact::BoundedVec(
@@ -265,6 +281,16 @@ impl Encoded<'_> {
         instances: &std::collections::BTreeSet<SymRef>,
         plain: &[(SymbolId, SymbolId)],
     ) -> Option<Arc<ReusableProcedureArtifact>> {
+        if self.warnings.0.iter().any(|warning| {
+            !crate::procedure_warnings::valid_receipt(warning, debug_count, |id| {
+                self.locals
+                    .0
+                    .iter()
+                    .any(|name| !name.is_empty() && SymbolId::of(name.as_ref()) == id)
+            })
+        }) {
+            return None;
+        }
         let source_len = body
             .expanded_span
             .end
@@ -435,6 +461,7 @@ impl Encoded<'_> {
         )
         .ok()?;
         Some(Arc::new(ReusableProcedureArtifact {
+            warnings: self.warnings.0.into(),
             identity,
             frozen,
             metadata_recipe: Arc::new(recipe),
@@ -503,6 +530,7 @@ impl ReusableProcedureArtifact {
             )?;
             let code = Arc::try_unwrap(code).ok()?;
             restored.push(HelperArtifact {
+                warnings: Arc::clone(&code.warnings),
                 argument: helper.argument,
                 frozen: code.frozen,
                 image_owner: code.image_owner,

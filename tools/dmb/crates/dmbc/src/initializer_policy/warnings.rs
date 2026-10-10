@@ -1,7 +1,7 @@
 //! Successful initializer warnings, bound only to the current source plan.
 //! These never enter failure diagnostics or retained classification payloads.
 use super::{ClassifiedInitializers, RuntimeValue};
-use crate::initializer_diagnostics::{InitializerLoweringError, captured_locations};
+use crate::initializer_diagnostics::{captured_locations, InitializerLoweringError};
 use dm_ir::{InitializerSite, InitializerTarget};
 use dm_tree::{
     frontend::{ColdFrontend, SourceLocation},
@@ -26,23 +26,29 @@ fn unique_authored<'a>(
     true
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum WarningCode {
-    ListDoubleInit,
+pub use dm_ir::WarningCode;
+/// Presentation coordinates only; occurrence provenance is used during capture,
+/// never inferred from a different enclosing procedure or retained here.
+#[derive(Clone, Debug)]
+pub struct WarningLocation {
+    pub semantic_path: std::sync::Arc<str>,
+    pub line: usize,
 }
-impl WarningCode {
-    pub fn name(self) -> &'static str {
-        match self {
-            Self::ListDoubleInit => "list_double_init",
+impl From<SourceLocation> for WarningLocation {
+    fn from(location: SourceLocation) -> Self {
+        Self {
+            semantic_path: location.semantic_path,
+            line: location.line,
         }
     }
 }
+
 #[derive(Clone, Debug)]
 pub struct InitializerWarning {
     pub source_ordinal: usize,
     pub code: WarningCode,
-    pub name: String,
-    pub location: SourceLocation,
+    pub name: Option<String>,
+    pub location: WarningLocation,
 }
 
 /// Call after successful classification/lowering. The classifier's typed
@@ -103,8 +109,8 @@ pub fn capture(
         .map(|((source_ordinal, name), location)| InitializerWarning {
             source_ordinal,
             code: WarningCode::ListDoubleInit,
-            name,
-            location,
+            name: Some(name),
+            location: location.into(),
         })
         .collect())
 }
@@ -112,14 +118,23 @@ pub fn capture(
 /// A warning has no failure status; callers keep their successful outcome.
 pub fn write_warnings(output: &mut impl Write, warnings: &[InitializerWarning]) -> io::Result<()> {
     for warning in warnings {
-        writeln!(
+        if warning.code.requires_name() != warning.name.is_some() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid warning subject",
+            ));
+        }
+        write!(
             output,
-            "{}:{}:warning ({}): {}: list doubly initialized",
+            "{}:{}:warning ({}): ",
             warning.location.semantic_path,
             warning.location.line,
-            warning.code.name(),
-            warning.name
+            warning.code.name()
         )?;
+        if let Some(name) = &warning.name {
+            write!(output, "{name}: ")?;
+        }
+        writeln!(output, "{}", warning.code.message())?;
     }
     Ok(())
 }
@@ -207,7 +222,7 @@ mod tests {
             let warnings = capture(&frontend, plan, &classified).unwrap();
             let rows = warnings
                 .iter()
-                .map(|warning| (warning.name.as_str(), warning.location.line))
+                .map(|warning| (warning.name.as_deref().unwrap(), warning.location.line))
                 .collect::<Vec<_>>();
             assert_eq!(
                 rows,
@@ -255,7 +270,7 @@ mod tests {
         let warning = InitializerWarning {
             source_ordinal: 7,
             code: WarningCode::ListDoubleInit,
-            name: "value".into(),
+            name: Some("value".into()),
             location: SourceLocation {
                 span: dm_ir::Span {
                     file: dm_ir::FileId(0),
@@ -269,7 +284,8 @@ mod tests {
                 include_occurrence: 0,
                 include_chain: Arc::from([]),
                 macro_expansions: Arc::new(Vec::new()),
-            },
+            }
+            .into(),
         };
         let mut output = Vec::new();
         write_warnings(&mut output, &[warning]).unwrap();

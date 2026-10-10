@@ -9,6 +9,7 @@ mod retained_census;
 /// Immutable procedure payload, independent of source positions and link tables.
 /// Its private constructor is reached only through the existing checked freezer.
 pub struct ReusableProcedureArtifact {
+    warnings: Arc<[dm_codegen_byond::ProcedureWarning]>,
     identity: UnitIdentity,
     frozen: Arc<FrozenProc>,
     metadata_recipe: Arc<crate::composition::ProcedureMetadataRecipe>,
@@ -23,6 +24,7 @@ pub struct ReusableProcedureArtifact {
     helpers: Vec<HelperArtifact>,
 }
 struct HelperArtifact {
+    warnings: Arc<[dm_codegen_byond::ProcedureWarning]>,
     argument: u32,
     frozen: Arc<FrozenProc>,
     image_owner: Arc<latest_image::LatestImage>,
@@ -46,6 +48,29 @@ pub(super) struct Contribution {
     binding: ProcedureRevisionBinding,
 }
 impl Contribution {
+    pub(super) fn current_warnings(
+        &self,
+        symbols: &SymbolTable,
+    ) -> Result<Vec<crate::initializer_policy::warnings::InitializerWarning>, String> {
+        let mut warnings = crate::procedure_warnings::bind(
+            &self.artifact.warnings,
+            &self.binding.debug,
+            symbols,
+            &self.artifact.frame.local_names,
+        )?;
+        if self.artifact.helpers.len() != self.binding.helpers.len() {
+            return Err("procedure helper warning bindings incomplete".into());
+        }
+        for (helper, origins) in self.artifact.helpers.iter().zip(&self.binding.helpers) {
+            warnings.extend(crate::procedure_warnings::bind(
+                &helper.warnings,
+                origins,
+                symbols,
+                &helper.local_names,
+            )?);
+        }
+        Ok(warnings)
+    }
     pub(super) fn current_source(&self) -> &dm_tree::frontend::SourceLocation {
         &self.binding.origin.source
     }
@@ -131,6 +156,7 @@ impl Clone for HelperArtifact {
     fn clone(&self) -> Self {
         Self {
             argument: self.argument,
+            warnings: Arc::clone(&self.warnings),
             frozen: self.frozen.clone(),
             image_owner: Arc::clone(&self.image_owner),
             features: self.features,
@@ -146,6 +172,7 @@ impl Clone for ReusableProcedureArtifact {
     fn clone(&self) -> Self {
         Self {
             identity: self.identity,
+            warnings: Arc::clone(&self.warnings),
             frozen: self.frozen.clone(),
             metadata_recipe: Arc::clone(&self.metadata_recipe),
             image_owner: Arc::clone(&self.image_owner),
@@ -192,6 +219,7 @@ impl Contribution {
             "artifact is created before output linking"
         );
         let FrozenUnitMetadata {
+            warnings,
             identity,
             origin,
             abi,
@@ -202,6 +230,7 @@ impl Contribution {
         let mut helper_origins = Vec::with_capacity(bound.helpers.len());
         for entry in bound.helpers {
             let FrozenHelper {
+                warnings,
                 owner,
                 argument,
                 frozen,
@@ -215,6 +244,7 @@ impl Contribution {
             debug_assert!(current_image.is_none());
             helper_origins.push(debug_origins);
             helper_artifacts.push(HelperArtifact {
+                warnings,
                 argument,
                 frozen,
                 image_owner,
@@ -229,6 +259,7 @@ impl Contribution {
         let artifact_abi = abi.clone();
         Self {
             artifact: Arc::new(ReusableProcedureArtifact {
+                warnings,
                 identity,
                 frozen,
                 metadata_recipe,
@@ -260,6 +291,7 @@ impl Contribution {
         let identity = artifact.identity;
         let unit = FrozenUnit {
             lowered: FrozenUnitMetadata {
+                warnings: artifact.warnings,
                 identity,
                 origin: self.binding.origin,
                 abi: self.binding.abi,
@@ -278,6 +310,7 @@ impl Contribution {
             .zip(self.binding.helpers)
             .map(|(helper, debug_origins)| HelperContribution {
                 helper: FrozenHelper {
+                    warnings: helper.warnings,
                     owner: identity,
                     argument: helper.argument,
                     frozen: helper.frozen,

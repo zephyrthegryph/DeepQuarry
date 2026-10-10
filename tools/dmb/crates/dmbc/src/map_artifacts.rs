@@ -176,7 +176,7 @@ pub fn lower<R: Resolver>(
         let artifact = InitializationArtifact {
             encoding: None,
             identity,
-            code: Arc::new(code),
+            code: code.into(),
             debug_origins: Arc::new(origins.collector.into_inner().finish()),
             coverage: InitializationCoverage::MapAssignments {
                 count: u32::try_from(unit.assignments.len())

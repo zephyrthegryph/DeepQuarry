@@ -7,6 +7,7 @@
 pub mod cache_maintenance;
 pub mod cli;
 pub mod debug_sources;
+mod procedure_warnings;
 pub mod diagnostics;
 pub mod expansion_memo;
 pub mod filesystem_proofs;
@@ -42,6 +43,8 @@ pub mod engine_abi_coverage;
 pub mod engine_host;
 pub mod engine_link;
 pub mod initialization_artifact;
+mod initializer_code;
+pub use initializer_code::InitializerCode;
 pub mod initializer_diagnostics;
 pub mod initializer_lowering;
 pub mod initializer_policy;

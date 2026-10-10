@@ -264,7 +264,7 @@ impl InitializerAssemblies {
         // This store retains the current roster without a byte admission budget.
         // Full resident ownership is measured only by the opt-in census.
         let weight = std::mem::size_of::<RetainedAssembly>();
-        let encoding = std::sync::Arc::new(crate::symbolic::InitializerEncoding::default());
+        let encoding = std::sync::Arc::new(crate::symbolic::InitializerEncoding::new(code));
         self.values.insert_with(
             std::sync::Arc::clone(&key.key),
             reads,

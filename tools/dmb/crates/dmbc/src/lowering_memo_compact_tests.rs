@@ -33,6 +33,14 @@ fn compact_disk_reissues_modified_descriptor_from_current_source() {
         true,
     );
 }
+#[test]
+fn compact_disk_preserves_current_local_array_warning_receipts() {
+    check_replay(
+        "/proc/compact_probe()\n    var/list/value[2] = list(\"warning fixture\",2)\n    return value\n",
+        false,
+        false,
+    );
+}
 fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
     check_replay_mode(source, helpers, modifiers, false);
 }
@@ -65,6 +73,7 @@ impl<R: Resolver> Resolver for InstanceHost<'_, R> {
     }
 }
 fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain: bool) {
+    let original_source = source;
     let engine = crate::engine::EngineSnapshot::from_bytes(
         include_bytes!("../../../fixtures/native_template.bin"),
         1,
@@ -340,6 +349,140 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         restored.shared_artifact().code().code().canonical_bytes(),
         value.shared_artifact().code().code().canonical_bytes()
     );
+    let fresh_warnings = crate::initializer_policy::warnings::render(
+        &value
+            .current_warnings(front.snapshot.tree.symbols())
+            .unwrap(),
+    )
+    .unwrap();
+    let disk_warnings = crate::initializer_policy::warnings::render(
+        &restored
+            .current_warnings(front.snapshot.tree.symbols())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(fresh_warnings, disk_warnings);
+    if !fresh_warnings.is_empty() {
+        for ordinal in [None, Some(u32::MAX)] {
+            let mut malformed = decode(&bytes).unwrap();
+            malformed.executable.corrupt_warning_ordinal(ordinal);
+            assert!(malformed.rebind(context(), ready).is_err());
+        }
+        let mut malformed = decode(&bytes).unwrap();
+        malformed.executable.corrupt_warning_name();
+        assert!(malformed.rebind(context(), ready).is_err());
+        assert_eq!(
+            fresh_warnings,
+            ["compact.dme:2:warning (list_double_init): value: list doubly initialized\n"]
+        );
+        let shifted_text: &'static str =
+            Box::leak(format!("// shifted\n\n{original_source}").into_boxed_str());
+        let shifted = dm_tree::frontend::build_with_config(
+            Path::new("compact.dme"),
+            &Source(shifted_text),
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let (shifted_host, _) =
+            crate::request_runner::runner_facts::prepare(&shifted, &engine).unwrap();
+        let shifted_startup = crate::startup::capture(&shifted).unwrap();
+        let shifted_abi =
+            crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+                &shifted,
+                &engine,
+                &shifted_host,
+                &shifted_startup,
+                None,
+                &pool,
+                None,
+            )
+            .unwrap();
+        let shifted_policy =
+            crate::driver_facts::FrozenPreparedPolicy::new(&shifted, &shifted_abi.prepared)
+                .unwrap();
+        let mut fresh = crate::lowering::lower_frontend_with_statics(
+            &shifted,
+            &shifted_host,
+            &shifted_policy,
+            Default::default(),
+            &shifted_startup,
+        );
+        assert!(fresh.diagnostics.is_empty());
+        let fresh = crate::symbolic::prepare_contribution(
+            fresh.units.pop().unwrap(),
+            shifted.snapshot.tree.symbols(),
+            &source,
+            &external,
+            false,
+        )
+        .unwrap();
+        let shifted_body = &shifted.bodies[0];
+        let shifted_ready = &shifted_abi.prepared.units[0].1;
+        let shifted_debug =
+            crate::lowering_memo::rebase_debug(&shifted, shifted_body, &offsets).unwrap();
+        let artifact = value.shared_artifact();
+        let moved_resident = crate::symbolic::PreparedContribution::rebind(
+            &artifact,
+            &shifted,
+            shifted_body,
+            shifted_ready,
+            shifted_debug,
+            &[],
+        )
+        .unwrap();
+        let moved_disk = decode(&bytes)
+            .unwrap()
+            .rebind(
+                crate::lowering_memo_wire::ProcedureReplayContext {
+                    frontend: &shifted,
+                    body: shifted_body,
+                    parsed: None,
+                    bindings: Some(bindings),
+                    selections_only: false,
+                    modified: None,
+                },
+                shifted_ready,
+            )
+            .unwrap();
+        let rendered = |value: &crate::symbolic::PreparedContribution| {
+            crate::initializer_policy::warnings::render(
+                &value
+                    .current_warnings(shifted.snapshot.tree.symbols())
+                    .unwrap(),
+            )
+            .unwrap()
+        };
+        assert_eq!(
+            rendered(&fresh),
+            ["compact.dme:4:warning (list_double_init): value: list doubly initialized\n"]
+        );
+        assert_eq!(rendered(&fresh), rendered(&moved_resident));
+        assert_eq!(rendered(&fresh), rendered(&moved_disk));
+        let artifact = value.shared_artifact();
+        let resident = crate::symbolic::PreparedContribution::rebind(
+            &artifact,
+            &front,
+            body,
+            ready,
+            crate::lowering_memo::rebase_debug(&front, body, &offsets).unwrap(),
+            &[],
+        )
+        .unwrap();
+        assert_eq!(
+            crate::initializer_policy::warnings::render(
+                &resident
+                    .current_warnings(front.snapshot.tree.symbols())
+                    .unwrap()
+            )
+            .unwrap(),
+            fresh_warnings
+        );
+    }
     let mut bad = decode(&bytes).unwrap();
     bad.abi = Cow::Borrowed(b"wrong current ABI");
     assert!(bad.rebind(context(), ready).is_err());

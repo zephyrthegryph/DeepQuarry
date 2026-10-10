@@ -46,6 +46,7 @@ impl HeapCensus {
         encoding: &Arc<crate::symbolic::InitializerEncoding>,
     ) {
         if self.arc_object("initializer_encoding", encoding) {
+            self.initializer_type_requests(encoding.retained_types());
             if let Some(ready) = encoding.retained() {
                 if self.arc_object("initializer_encoding.payload", ready) {
                     self.latest_image(&ready.image_owner);
@@ -108,5 +109,22 @@ impl HeapCensus {
                 }
             }
         }
+    }
+}
+
+impl HeapCensus {
+    pub(crate) fn initializer_type_requests(
+        &mut self,
+        types: &Arc<crate::initializer_code::TypeRequests>,
+    ) {
+        if self.arc_object("initializer_type_requests", types) {
+            self.vec_payload("initializer_type_requests.ordered", types.ordered());
+        }
+    }
+    pub(crate) fn initializer_code(&mut self, code: &crate::InitializerCode) {
+        if self.arc_object("current_initializer_code", code.code_owner()) {
+            self.resolver_code(code);
+        }
+        self.initializer_type_requests(code.requests());
     }
 }

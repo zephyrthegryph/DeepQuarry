@@ -132,7 +132,7 @@ fn retained_map_outputs_share_code_match_fresh_and_invalidate_storage_reads() {
     assert_eq!(second.counts.output_hits.load(Ordering::Relaxed), 1);
     assert!(Arc::ptr_eq(&descriptors.entries, &hit_descriptors.entries));
     assert_eq!(code.len(), 1);
-    assert!(Arc::ptr_eq(&code[0].code, &hit[0].code));
+    assert!(Arc::ptr_eq(code[0].code.code_owner(), hit[0].code.code_owner()));
     assert!(Arc::ptr_eq(&code[0].debug_origins, &hit[0].debug_origins));
     let (_, fresh) = prepare(
         &MapMemo::new(1, 0),

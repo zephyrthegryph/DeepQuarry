@@ -1,7 +1,6 @@
 //! Common anonymous executable input. Declaration coverage and map assignment
 //! coverage are separate domains; map initialization is never a class default.
 use crate::{debug_sources::DebugOrigins, initializer_lowering::LoweredInitializerUnit};
-use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_link::InitializerIdentity;
 use std::sync::Arc;
 
@@ -23,7 +22,7 @@ pub enum InitializationCoverage {
 #[derive(Clone)]
 pub struct InitializationArtifact {
     pub identity: InitializerIdentity,
-    pub code: Arc<ResolverProc>,
+    pub code: crate::InitializerCode,
     pub debug_origins: Arc<DebugOrigins>,
     pub coverage: InitializationCoverage,
     pub(crate) encoding: Option<Arc<crate::symbolic::InitializerEncoding>>,
@@ -35,7 +34,7 @@ impl From<LoweredInitializerUnit> for InitializationArtifact {
                 dm_ir::InitializerScope::Global => InitializerIdentity::Global,
                 dm_ir::InitializerScope::Instance(owner) => InitializerIdentity::Class(owner),
             },
-            code: Arc::new(unit.code),
+            code: unit.code,
             debug_origins: Arc::new(unit.debug_origins),
             encoding: unit.encoding,
             coverage: match unit.declaration_presence {

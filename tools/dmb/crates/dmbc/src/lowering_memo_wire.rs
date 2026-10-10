@@ -7,7 +7,7 @@ use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
 use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
-const EXECUTABLE_SCHEMA: u32 = 0x0206_0005;
+const EXECUTABLE_SCHEMA: u32 = 0x0206_000e;
 const FAILURE_SCHEMA: u32 = 0x0206_0002;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
@@ -93,6 +93,17 @@ impl CodeWire {
         }
     }
     fn rehydrate<R: Resolver>(self, host: &R, debug_count: usize) -> Option<ResolverProc> {
+        if self.code.warnings.iter().any(|warning| {
+            !crate::procedure_warnings::valid_receipt(warning, debug_count, |id| {
+                self.code
+                    .local_names
+                    .iter()
+                    .any(|name| !name.is_empty() && SymbolId::of(name) == id)
+            })
+        }) {
+            return None;
+        }
+
         let mut slots = BTreeMap::new();
         for (key, symbol, owner, name) in self.slots {
             if key != SymRef::VariableSlot(symbol) {
@@ -873,3 +884,7 @@ mod borrowed_wire_tests;
 #[cfg(test)]
 #[path = "lowering_memo_owner_domain_tests.rs"]
 mod owner_domain_tests;
+
+#[cfg(test)]
+#[path = "lowering_memo_warning_wire_tests.rs"]
+mod warning_wire_tests;

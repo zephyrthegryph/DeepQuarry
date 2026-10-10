@@ -131,6 +131,16 @@ pub(super) fn freeze_unit(
     external: &ReferenceBindings,
     freeze_detail: bool,
 ) -> Result<Contribution, IntegrationError> {
+    crate::procedure_warnings::validate(
+        &lowered.code.procedure.warnings,
+        lowered.debug_origins.entries.len(),
+        symbols,
+        &lowered.code.procedure.local_names,
+    )
+    .map_err(|message| IntegrationError::Freeze {
+        unit: lowered.identity,
+        message,
+    })?;
     let mut slots = Slots::default();
     let mut helpers = Vec::new();
     let frozen = freezing::freeze_artifact_to_sink(
@@ -157,6 +167,16 @@ pub(super) fn freeze_unit(
                 message: "invalid companion owner/formal frame".into(),
             });
         }
+        crate::procedure_warnings::validate(
+            &helper.code.procedure.warnings,
+            helper.debug_origins.entries.len(),
+            symbols,
+            &helper.code.procedure.local_names,
+        )
+        .map_err(|message| IntegrationError::Freeze {
+            unit: lowered.identity,
+            message,
+        })?;
         let mut helper_slots = Slots::default();
         let frozen_helper = freezing::freeze_artifact_to_sink(
             &helper.code,
@@ -187,6 +207,7 @@ pub(super) fn freeze_unit(
             slots: helper_slots,
             content,
             helper: FrozenHelper {
+                warnings: std::mem::take(&mut helper.code.procedure.warnings).into(),
                 owner: helper.owner,
                 argument: helper.argument,
                 frozen: Arc::new(frozen_helper),

@@ -27,6 +27,7 @@ impl FrozenUnit {
 }
 /// Composition-only metadata: resolver receipts and rich instructions are released.
 pub struct FrozenUnitMetadata {
+    pub(crate) warnings: Arc<[dm_codegen_byond::ProcedureWarning]>,
     pub identity: UnitIdentity,
     pub origin: dm_tree::frontend::BodyOccurrence,
     pub abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
@@ -48,6 +49,7 @@ impl FrozenUnitMetadata {
             origin: unit.origin,
             abi: unit.abi,
             debug_origins: unit.debug_origins.into(),
+            warnings: procedure.warnings.into(),
             frame: Arc::new(FrozenFrame {
                 local_count: procedure.local_count,
                 local_names: procedure.local_names,
@@ -58,6 +60,7 @@ impl FrozenUnitMetadata {
     }
 }
 pub struct FrozenHelper {
+    pub(crate) warnings: Arc<[dm_codegen_byond::ProcedureWarning]>,
     pub owner: UnitIdentity,
     pub argument: u32,
     pub frozen: Arc<FrozenProc>,

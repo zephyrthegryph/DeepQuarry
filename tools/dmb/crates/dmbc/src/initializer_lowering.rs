@@ -5,9 +5,7 @@ use crate::initializer_diagnostics::{map_captured_lower_errors, InitializerLower
 use crate::initializer_policy::{
     self, CapturedInitializerEvaluator, ClassifiedInitializers, RuntimeValue,
 };
-use dm_codegen_byond::{
-    initializer::InitializerContext, lower_resolver::ResolverProc, DebugSourceProvider,
-};
+use dm_codegen_byond::{initializer::InitializerContext, DebugSourceProvider};
 use dm_ir::{InitializerScope, Resolver};
 use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
 use std::sync::Arc;
@@ -59,7 +57,7 @@ pub struct LoweredInitializerUnit {
     pub scope: InitializerScope,
     /// Exact selected source writes, in executable order after ABI phasing.
     pub write_ordinals: Vec<usize>,
-    pub code: ResolverProc,
+    pub code: crate::InitializerCode,
     pub debug_origins: DebugOrigins,
     pub(crate) encoding: Option<Arc<crate::symbolic::InitializerEncoding>>,
 }
@@ -596,7 +594,7 @@ fn lower_group<R: Resolver>(
                     .map(InitializerScope::Instance)
                     .unwrap_or(InitializerScope::Global),
                 write_ordinals,
-                code,
+                code: crate::InitializerCode::from_admitted(code, encoding.type_requests()),
                 debug_origins: debug.origins,
                 encoding: Some(encoding),
             });
@@ -895,7 +893,10 @@ fn lower_group<R: Resolver>(
             .map(InitializerScope::Instance)
             .unwrap_or(InitializerScope::Global),
         write_ordinals,
-        code,
+        code: match &encoding {
+            Some(owner) => crate::InitializerCode::from_admitted(code, owner.type_requests()),
+            None => code.into(),
+        },
         debug_origins: debug.origins,
         encoding,
     })

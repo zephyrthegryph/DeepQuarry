@@ -1,12 +1,13 @@
 //! Shared anonymous encoding payload. Current coverage and source origins remain
 //! outside this owner and must be admitted on every request before replay.
 use super::*;
+use dm_codegen_byond::lower_resolver::ResolverProc;
 
 /// Installed only on an initializer assembly admitted by the common artifact
 /// store. This memo belongs to that semantic payload, never to a dense output.
-#[derive(Default)]
 pub(crate) struct InitializerEncoding {
     ready: std::sync::OnceLock<Arc<FrozenInitializerContribution>>,
+    types: Arc<crate::initializer_code::TypeRequests>,
 }
 
 pub(crate) struct FrozenInitializerContribution {
@@ -17,6 +18,18 @@ pub(crate) struct FrozenInitializerContribution {
 }
 
 impl InitializerEncoding {
+    pub(crate) fn new(code: &ResolverProc) -> Self {
+        Self {
+            ready: Default::default(),
+            types: crate::initializer_code::TypeRequests::capture(code),
+        }
+    }
+    pub(crate) fn type_requests(&self) -> Arc<crate::initializer_code::TypeRequests> {
+        Arc::clone(&self.types)
+    }
+    pub(crate) fn retained_types(&self) -> &Arc<crate::initializer_code::TypeRequests> {
+        &self.types
+    }
     pub(crate) fn retained(&self) -> Option<&Arc<FrozenInitializerContribution>> {
         self.ready.get()
     }
@@ -93,7 +106,6 @@ mod tests {
     fn shared_encoding_rebinds_current_coverage_and_rejects_missing_license() {
         use crate::initialization_artifact::{InitializationArtifact, InitializationCoverage};
         use dm_codegen_byond::lower_resolver::ResolverProc;
-        let encoding = Arc::new(InitializerEncoding::default());
         let code = ResolverProc {
             procedure: Default::default(),
             modified_instances: Default::default(),
@@ -103,9 +115,10 @@ mod tests {
             resources: Default::default(),
             instances: Default::default(),
         };
+        let encoding = Arc::new(InitializerEncoding::new(&code));
         let mut unit = InitializationArtifact {
             identity: dm_link::InitializerIdentity::Global,
-            code: Arc::new(code),
+            code: code.into(),
             debug_origins: Arc::new(Default::default()),
             coverage: InitializationCoverage::DeclarationWrites(vec![2]),
             encoding: Some(encoding),
@@ -129,7 +142,7 @@ mod tests {
             first.frozen.code().canonical_bytes(),
             independent.frozen.code().canonical_bytes()
         );
-        let invalid = Arc::make_mut(&mut unit.code);
+        let mut invalid = unit.code.as_ref().clone();
         invalid
             .procedure
             .code
@@ -142,6 +155,7 @@ mod tests {
                     ))],
                 },
             ));
+        unit.code = invalid.into();
         assert!(freeze_current(&unit, context, &bindings, &external, false).is_err());
     }
 }

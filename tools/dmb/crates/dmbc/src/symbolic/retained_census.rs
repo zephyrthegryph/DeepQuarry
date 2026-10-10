@@ -8,6 +8,7 @@ impl ReusableProcedureArtifact {
         if !census.arc_object("session_symbolic.artifact", artifact) {
             return;
         }
+        census.slice("session_symbolic.warnings", &artifact.warnings, true);
         census.latest_image(&artifact.image_owner);
         crate::composition::ProcedureMetadataRecipe::census(&artifact.metadata_recipe, census);
         census.retained_symbolic_procedure(&artifact.frozen, &artifact.frame, &artifact.abi);
@@ -17,6 +18,7 @@ impl ReusableProcedureArtifact {
         census.prepared_entry_bytes(&artifact.content);
         if census.vec_payload("session_symbolic.helpers", &artifact.helpers) {
             for helper in &artifact.helpers {
+                census.slice("session_symbolic.warnings", &helper.warnings, true);
                 census.latest_image(&helper.image_owner);
                 census.retained_symbolic_helper(&helper.frozen, &helper.local_names);
                 census.prepared_strings(&helper.strings.0);
