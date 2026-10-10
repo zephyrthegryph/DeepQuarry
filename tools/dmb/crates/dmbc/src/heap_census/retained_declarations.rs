@@ -4,6 +4,11 @@ use dm_tree::frontend::{DeclarationStorageView, RetainedSemanticTree};
 
 pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_declarations");
+    inspect_into(&mut census, state);
+    census.finish()
+}
+
+pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemanticTree) {
     if state.declaration_retention_stats().shared_census_scope {
         census.unknown("retained_declarations.scope", "contribution storage is engine-wide across host leases; shared allocations counted once in this census, not per-host retained bytes");
     }
@@ -80,7 +85,6 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
             contribution_payload(&mut census, contribution);
         }
     });
-    census.finish()
 }
 
 fn contribution_payload(

@@ -497,7 +497,15 @@ fn run_build_attempt(
             .ok_or("compile requires captured engine")?;
         let bytes = &retained_engine.bytes;
         let engine = &retained_engine.snapshot;
-        dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
+        dmbc::heap_census::emit_if_enabled("frontend.ready", |census| {
+            census.frontend(&frontend);
+            census.retained_frontend_owners(
+                semantic_state.as_deref(),
+                frontend_memo.as_ref().and_then(|memo| {
+                    dm_preprocess::regions::ExpansionMemo::input_admissions(memo)
+                }),
+            );
+        })?;
         crate::runner_retained_census::emit(semantic_state.as_deref())?;
         if progress_enabled {
             dmbc::daemon_eprintln!(

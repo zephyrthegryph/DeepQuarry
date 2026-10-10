@@ -94,6 +94,20 @@ pub struct HeapCensus {
     frozen_code_metrics: relocation_metrics::RelocationMetrics,
 }
 impl HeapCensus {
+    /// Borrow retained frontend owners into this boundary's pointer ledger.
+    /// Private index backing remains explicitly unknown.
+    pub fn retained_frontend_owners(
+        &mut self,
+        state: Option<&dm_tree::frontend::RetainedSemanticTree>,
+        expansion: Option<&dm_preprocess::regions::ExpansionInputs>,
+    ) {
+        if let Some(state) = state {
+            retained_declarations::inspect_into(self, state);
+        }
+        if let Some(expansion) = expansion {
+            self.expansion_inputs(expansion);
+        }
+    }
     pub fn new(stage: impl Into<String>) -> Self {
         // Sample before any census-owned allocation or traversal.
         #[cfg(feature = "allocation-counting")]
