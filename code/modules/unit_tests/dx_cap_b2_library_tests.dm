@@ -82,7 +82,10 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 			open_row = row
 	TEST_ASSERT_NOTNULL(open_row, "ui_open remains offered with a worn ID")
 	TEST_ASSERT_EQUAL(open_row?["enabled"], TRUE, "an empty hand with a worn ID opens it")
+	// Map/admin access is untracked: set this instance's override before its first menu read.
+	C = allocate(/obj/machinery/computer/drone_control, T)
 	C.req_access = list(ACCESS_CAPTAIN)
+	TEST_ASSERT(!access_allowed(C, H), "the instance override refuses the worn engineering ID")
 	open_row = null
 	for(var/list/row as anything in op_menu(H, C, null))
 		if(row["key"] == "ui_open")
