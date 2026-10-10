@@ -7,7 +7,7 @@ const runtime = { executable: 'E:/dd.exe', sha256: 'a'.repeat(64), version: null
 const compilation = { requestedBackend: 'byond', actualBackend: 'byond', compiler: { executable: 'E:/dm.exe', sha256: 'b'.repeat(64), version: 516, build: 1687 }, orderedDefines: ['UNIT_TESTS'], fallback: null, nativePair: null } as const;
 const checkpoint = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false, compilation, runtimeIdentity: runtime } as unknown as NormalResumeCheckpoint;
 function evidence(): ResumeEvidence<ResumeRun> {
-  return { batchSize: 1, compilation, inventory: { compilation, clean: true, killedByWatchdog: false, runtimeIdentity: runtime, results: {},
+  return { batchSize: 1, compilation, selectionProtocol: 'normal-select-v1', inventory: { compilation, clean: true, killedByWatchdog: false, runtimeIdentity: runtime, results: {},
     inventory: { schema: 1, tier: 'normal', eligible: ['/datum/unit_test/a', '/datum/unit_test/b'], excluded: [], automaticRows: ['framework'] } },
     batches: [{ requested: ['/datum/unit_test/a'], run: { compilation, clean: false, killedByWatchdog: false, runtimeIdentity: runtime,
       results: { '/datum/unit_test/a': { status: 1, runtimes: 2 }, framework: { status: 0 } } } }] };
@@ -63,5 +63,7 @@ describe('historical normal continuation', () => {
     expect(() => validateCompletedPrefix(nonprefix, checkpoint, 1)).toThrow();
     const missing = evidence(); delete missing.batches[0].run.results!.framework;
     expect(() => validateCompletedPrefix(missing, checkpoint, 1)).toThrow();
+    const focused = evidence(); delete focused.selectionProtocol;
+    expect(() => validateCompletedPrefix(focused, checkpoint, 1)).toThrow('selection protocol');
   });
 });

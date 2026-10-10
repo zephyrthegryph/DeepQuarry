@@ -10,6 +10,12 @@ const row = { name, status: 0, runtimes: 0, runtime_errors: [] as {
 }[], runtime_errors_truncated: false };
 const runtime = { executable: 'E:/fake/dd.exe', sha256: 'a'.repeat(64), version: null, security: '-trusted' };
 const sha = (bytes: string) => createHash('sha256').update(bytes).digest('hex');
+test('normal suite comparisons reject focused-mode partitions', () => {
+  fixture(({ native, compare }) => {
+    native.selectionProtocol = 'legacy-focused-batches';
+    expect(compare).toThrow('completed issued inventory');
+  });
+});
 function suite(backend: 'byond' | 'native', planHash: string | null) {
   const compilation = { requestedBackend: backend, actualBackend: backend,
     fallback: null as string | null, orderedDefines: ['UNIT_TESTS'],
@@ -19,7 +25,7 @@ function suite(backend: 'byond' | 'native', planHash: string | null) {
       rscHash: '3'.repeat(32), dmbBytes: 1, rscBytes: 0 } : null };
   const run = () => ({ compilation, runtimeIdentity: runtime, clean: true, killedByWatchdog: false,
     results: { [name]: structuredClone(row) } });
-  return { schema: 1, status: 'passed', batchSize: 1, compilation,
+  return { schema: 1, status: 'passed', batchSize: 1, compilation, selectionProtocol: 'normal-select-v1',
     inventory: { ...run(), inventory: { schema: 1, tier: 'normal', eligible: [name], excluded: [], automaticRows: [] } },
     plan: { sha256: planHash, eligibleOrder: [name], observedOrderDiffers: false },
     batches: [{ requested: [name], run: run() }] };

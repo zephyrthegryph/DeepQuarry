@@ -9,6 +9,7 @@ import { exactNormalUnion, normalSuiteBatches, sameSuiteRuntime, suiteRowSucceed
 export type ResumeRun = { compilation: CompilerProvenance | null; results: Record<string, { status: number; runtimes?: number }> | null;
   killedByWatchdog: boolean; clean: boolean; runtimeIdentity?: RuntimeIdentity };
 export type ResumeEvidence<R extends ResumeRun> = { batchSize: number; compilation: CompilerProvenance | null;
+  selectionProtocol?: string;
   inventory?: R & { inventory?: IssuedNormalInventory }; plan?: { eligibleOrder: string[] };
   batches: { requested: string[]; run: R }[] };
 export type NormalResumeCheckpoint = { schema: 1; kind: 'historical_normal_suite_resume'; inputClosureAuthenticated: false;
@@ -38,6 +39,7 @@ function authenticatedJson(file: string, sha256: string): unknown {
 }
 export function validateCompletedPrefix<R extends ResumeRun>(evidence: ResumeEvidence<R>, checkpoint: NormalResumeCheckpoint, batchSize: number) {
   if (evidence.batchSize !== batchSize || JSON.stringify(evidence.compilation) !== JSON.stringify(checkpoint.compilation)) throw new Error('resume compilation/configuration differs');
+  if (evidence.batches.length && evidence.selectionProtocol !== 'normal-select-v1') throw new Error('resume completed batches used another selection protocol');
   const issued = evidence.inventory;
   if (!issued?.inventory || !issued.clean || issued.killedByWatchdog || !sameSuiteRuntime(issued.runtimeIdentity, checkpoint.runtimeIdentity)) throw new Error('resume inventory/runtime unavailable');
   const plan = { ...issued.inventory, eligible: evidence.plan?.eligibleOrder ?? issued.inventory.eligible };

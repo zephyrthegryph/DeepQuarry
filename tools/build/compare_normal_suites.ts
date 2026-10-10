@@ -15,6 +15,7 @@ type Run = {
 };
 type Evidence = {
   schema: number; status: string; batchSize: number; compilation: CompilerProvenance;
+  selectionProtocol: string;
   inventory: Run; plan: { sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
   batches: { requested: string[]; run: Run }[];
 };
@@ -54,7 +55,7 @@ function runtime(value: RuntimeIdentity) {
 }
 
 function admitted(value: Evidence, backend: 'byond' | 'native'): ComparableNormalSuite {
-  if (!value || value.schema !== 1 || !['passed', 'failed'].includes(value.status) || !value.plan
+  if (!value || value.schema !== 1 || value.selectionProtocol !== 'normal-select-v1' || !['passed', 'failed'].includes(value.status) || !value.plan
       || typeof value.plan.observedOrderDiffers !== 'boolean' || !value.inventory?.inventory || !Array.isArray(value.batches)) {
     throw new Error('suite has no completed issued inventory/plan');
   }

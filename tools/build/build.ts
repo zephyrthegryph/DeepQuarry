@@ -814,7 +814,9 @@ async function runIsolatedTestWorld(
     if (focus) {
       const focusFile = `${slot.dir}/focus.txt`;
       fs.writeFileSync(focusFile, `${focus.join('\n')}\n`);
-      params['test-focus'] = focusFile;
+      // A normal suite partition must retain normal-mode semantics. In
+      // particular, the unknown-focus sentinel must see no focused request.
+      params[options.exactBatch ? 'test-select' : 'test-focus'] = focusFile;
     }
     const port = await freePort();
     Juke.logger.info(
@@ -1643,8 +1645,8 @@ async function runNormalBatches(get: any, batchSize: number): Promise<void> {
   const id = runIdentity('normal-batches');
   const evidenceFile = `data/normal-suite/${id.id}-${randomUUID()}.json`;
   const evidence: { schema: number; status: string; compilation: unknown; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
-    batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; error?: string } = {
-    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false,
+    batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; error?: string } = {
+    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false, selectionProtocol: 'normal-select-v1',
     continuation: resume ? { checkpoint: resume.checkpointPath, sha256: resume.checkpointSha256, scope: 'historical same compiled generation; current source closure is not authenticated' } : undefined };
   writeJson(evidenceFile, evidence);
   try {
