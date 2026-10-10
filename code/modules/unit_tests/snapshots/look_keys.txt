@@ -1313,26 +1313,26 @@
 /obj/effect/alien/weeds	11a59aea99fc1377	linked_node
 /obj/effect/alien/weeds/node	619906d840920db9	linked_node,node_range
 /obj/effect/alien/weeds/node/weak	4c4d9f27509a8f6b	linked_node,node_range
-/obj/effect/anomaly	466e4aba045142d5	anomaly_core,countdown,drops_core,lifespan,move_chance,stats
-/obj/effect/anomaly/bioscrambler	3a8a9ed5bab646a3	*
-/obj/effect/anomaly/bioscrambler/docile	00146b4b1a00b28d	*
-/obj/effect/anomaly/bluespace	482f79643441b17f	*
-/obj/effect/anomaly/bluespace/big	216812767bb1408c	*
-/obj/effect/anomaly/dimensional	f17e4dd05eb3cf1f	*
-/obj/effect/anomaly/dust	c89e25b7b8c2f18d	*
-/obj/effect/anomaly/flux	0c9a2adfe4f4b689	*
-/obj/effect/anomaly/flux/minor	f38ccae7bb162bd7	*
-/obj/effect/anomaly/grav	48a5ae274e14f9a4	*
-/obj/effect/anomaly/hallucination	f356d5b884efd349	*
-/obj/effect/anomaly/hallucination/decoy	b414bff8cee4076e	*
-/obj/effect/anomaly/hallucination/supermatter	da4a10fc7227bcbc	*
-/obj/effect/anomaly/pyro	da10a002eed0a2c3	anomaly_core,countdown,drops_core,lifespan,move_chance,releasedelay,stats,ticks
-/obj/effect/anomaly/weather	e1e5ed1aa055dfaa	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/ashstorm	760240ed84380980	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/bloodrain	3bf3a9cd17a2906e	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/hail	fd5881f9e8e370c9	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/rain	9fe874e3ddc23b06	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/storm	ebd910fd664605b5	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly	72382788afb83695	anomaly_core,countdown,drops_core,lifespan,move_chance,stats
+/obj/effect/anomaly/bioscrambler	121550ee8dfa4c73	*
+/obj/effect/anomaly/bioscrambler/docile	4a909c3527593182	*
+/obj/effect/anomaly/bluespace	b08a78632b2383b1	*
+/obj/effect/anomaly/bluespace/big	dcd73e02e00c11a6	*
+/obj/effect/anomaly/dimensional	2737a91db5f4c9a2	*
+/obj/effect/anomaly/dust	b70c57bef491239d	*
+/obj/effect/anomaly/flux	6b6387913c0e3139	*
+/obj/effect/anomaly/flux/minor	5f27388fa018d8e2	*
+/obj/effect/anomaly/grav	56613b93eae3c223	*
+/obj/effect/anomaly/hallucination	f846d333acd43c76	*
+/obj/effect/anomaly/hallucination/decoy	b77483af51c32264	*
+/obj/effect/anomaly/hallucination/supermatter	e72534e2d31f497a	*
+/obj/effect/anomaly/pyro	4461819865f78660	anomaly_core,countdown,drops_core,lifespan,move_chance,releasedelay,stats,ticks
+/obj/effect/anomaly/weather	ebc161eb4e7e31b8	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather/ashstorm	90982a063afcfbfa	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather/bloodrain	d73bb0fc2e188c3c	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather/hail	c52ed4c2b590e0d8	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather/rain	d366a343b6a921cf	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather/storm	bc1cadcd8e865d02	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,is_raining,lifespan,move_chance,selected_weather,stats
 /obj/effect/ant_structure	44a72861a756f773	
 /obj/effect/ant_structure/trap	4699d07c224579df	
 /obj/effect/ant_structure/trap/burn	71bee56ec1c6269f	
@@ -2434,7 +2434,7 @@
 /obj/effect/mine/stripping	f76ef2797b687b2a	panel_open,trap,triggered
 /obj/effect/mine/stun	9d3c268ea98a7b62	*
 /obj/effect/mine/training	fe04891a85dc39ac	*
-/obj/effect/mineral	e40c41daf14d06f6	
+/obj/effect/mineral	68aa9290039bfbfb	ore_key
 /obj/effect/mist	378e330ba3b6c021	
 /obj/effect/mobblocker	a0f18255db1776be	
 /obj/effect/mouse_hole_spawner	c6550782ebc8892c	chance_to_spawn
@@ -5444,13 +5444,13 @@
 /obj/item/clothing/gloves/orange	f5bd616ed39d7b4f	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/purple	5e34d16d7c5856f8	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/rainbow	d0a3c8b8779b8b33	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger	21e21d5375707e2d	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/black	41e8d2fe3c4f9dd2	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/cyan	2a2c8f95c980e34f	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/green	cc0a8198029f7a56	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/orange	a9d34fdbf24776db	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/pink	108ad0d9301b81b1	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/ranger/yellow	6f24d9a66ce88ae1	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger	1acc1d0a42dfd473	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/black	e9c472c334d3dfda	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/cyan	9f90fbb3f059c27b	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/green	a1d0eb85ca11957a	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/orange	cc05ccdc0e57d81e	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/pink	a8ebc0082ee556ff	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/ranger/yellow	c94de6084b29a979	IC,accessories,carried_afflictions,default_material,economic_adoption,glovecolor,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/red	2234389967c9a6d1	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/regen	7e6f73bd12903fa0	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,regenerating,ring,special_attack,special_attack_type,wearer
 /obj/item/clothing/gloves/ring	a803dc79d1e82e72	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
@@ -6312,13 +6312,13 @@
 /obj/item/clothing/shoes/boots/jackboots/white	4e3b236255d3efcf	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
 /obj/item/clothing/shoes/boots/jungle	5fe2372c22a68306	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
 /obj/item/clothing/shoes/boots/marine	20dd33a7bf5cc5ae	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger	29844bacd1f004b3	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/black	8a107c9004ce1564	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/cyan	fc0c50f7482a1880	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/green	b6986476ffa3565d	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/orange	1a40e9f455a47428	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/pink	6abd964a59815009	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
-/obj/item/clothing/shoes/boots/ranger/yellow	86d2138aae9f8fdd	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger	8c66bf3decc2b78a	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/black	c3604a7794bf6aa9	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/cyan	f0cba76e166ceb4e	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/green	69dfe18c0d7b56bb	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/orange	7f596ada685099e5	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/pink	05901be31140f26d	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
+/obj/item/clothing/shoes/boots/ranger/yellow	f5ff693cc1131c02	IC,accessories,bootcolor,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
 /obj/item/clothing/shoes/boots/singer	78b57cb256936320	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
 /obj/item/clothing/shoes/boots/singer/yellow	92d1126fa17c535b	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
 /obj/item/clothing/shoes/boots/speed	2d7eb5fab82cd159	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,holding,identity,mind_host,polychromic,possessed_voice,shoes,shoes_under_pants,squeak
@@ -7467,13 +7467,13 @@
 /obj/item/clothing/under/color/pink	c234aa8770245747	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
 /obj/item/clothing/under/color/prison	9a0bc033349ccbb2	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
 /obj/item/clothing/under/color/rainbow	170b58142b669524	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger	9bfdb7e68aad5d20	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/black	c5971da96d31cff1	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/cyan	14bbcf759a84b1db	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/green	bd6460b13d03fa93	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/orange	a59d907de63c12be	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/pink	31269aee782e31d0	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
-/obj/item/clothing/under/color/ranger/yellow	bbc433c127877829	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
+/obj/item/clothing/under/color/ranger	4a9aa58fd34eb1e5	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/black	8ecfa8269a9ddc61	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/cyan	ca6ad26967a7be30	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/green	59c51284a7990519	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/orange	c6edb248e3523ba2	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/pink	188d18e301c9ada9	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
+/obj/item/clothing/under/color/ranger/yellow	4e11cc38a4fb12ff	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves,unicolor
 /obj/item/clothing/under/color/red	5a1b7376135445c8	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
 /obj/item/clothing/under/color/white	48e0198f436f42ad	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
 /obj/item/clothing/under/color/white/craftable	789b856a193ed0e2	IC,accessories,carried_afflictions,default_material,economic_adoption,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,rolled_down,rolled_sleeves
@@ -9057,14 +9057,14 @@
 /obj/item/frame/mirror	0ab8165ed869b180	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/frame/noticeboard	5ecc15c8b926426f	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/frame/painting	99095f6ee45cb8d4	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/fuel_assembly	0867afefa038f4a8	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/blitz	145e0e49d8fa2b23	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/blitz/shielded	46df541eb1ad1903	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/blitz/unshielded	5aeb34a31cc3c3fc	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/deuterium	ac9f8ebe2e01d287	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/phoron	854a8a3a21f70ce5	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/supermatter	9c0823e064348eea	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
-/obj/item/fuel_assembly/tritium	c3915a0669ccf6ed	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity
+/obj/item/fuel_assembly	a5c7fcd440832f34	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/blitz	8803776d434b7abe	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/blitz/shielded	a11b170acaece4aa	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/blitz/unshielded	b0ce61ae93ec10f4	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/deuterium	5ae5bfbbf218e814	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/phoron	47cfe41397fe4da9	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/supermatter	c1bf71dbb25f0a22	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
+/obj/item/fuel_assembly/tritium	d7f2fb81d1a963bc	active,carried_afflictions,economic_adoption,event_cooldown,fuel_colour,fuel_type,identity,mind_host,possessed_voice,radioactivity,rod_glows
 /obj/item/fulton_core	d71221726ff120ec	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/fusion_coil	911acb312e87305e	carried_afflictions,coil_charged,coil_damaged,economic_adoption,identity,light_color_danger,mind_host,possessed_voice
 /obj/item/geiger	84f486182a7a5b9d	carried_afflictions,economic_adoption,geiger_sound,identity,last_perceived_radiation_danger,mind_host,possessed_voice,scanning
@@ -10260,10 +10260,10 @@
 /obj/item/mail/junkmail	5604a6f0fa1dd19e	carried_afflictions,colored_envelope,economic_adoption,identity,mind_host,possessed_voice,postmark_dx,postmark_roll,postmarked,stamp_offset_x,stamp_offset_y,stamps
 /obj/item/mail_scanner	eeabce3cbd50d816	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/makeover	53ffb930132eca61	M,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/mapping_unit	890f6ac6f26ad03e	*
-/obj/item/mapping_unit/deathsquad	a511a2bfd9d67f47	*
-/obj/item/mapping_unit/ert	b854a48a2d9d8c1c	*
-/obj/item/mapping_unit/operative	459363b49592bf85	*
+/obj/item/mapping_unit	ca69326f48eb323e	*
+/obj/item/mapping_unit/deathsquad	4ef9e9a30bd5fc7a	*
+/obj/item/mapping_unit/ert	b4a3d7e96c4cd3bc	*
+/obj/item/mapping_unit/operative	a2e72fce933b3b22	*
 /obj/item/mass_spectrometer	6d92b233cc9a25cc	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/mass_spectrometer/adv	8cf0688034d4280e	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/material	6dcdb19a2009430c	carried_afflictions,default_material,economic_adoption,identity,material,mind_host,possessed_voice
@@ -12603,56 +12603,56 @@
 /obj/item/reagent_containers/food/drinks/flask/vacuumflask	cf517c6e59bffdeb	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
 /obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff	5d7d6be1dfeaa90d	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
 /obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor	73bb265c3e071aa8	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
-/obj/item/reagent_containers/food/drinks/glass2	52b8f07ae7b7ee8f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/carafe	019176ce5776d6d8	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/cocktail	cf1b5022ed426809	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug	ce579e8b89a88c69	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/aether	b92fec9d5b8f506c	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/alma	2cab936fd549be57	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/almp	22c0c76d066721c5	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/bishop	70f4af0d0b0df440	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/black	8ebff6bd1908b418	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/blue	8c9670d12df21f4f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/britcup	de72c76ce8e3a01e	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/diona	d3902605d116a2fd	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fivearrows	0d6962537d0bf36d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/flame	42ca63fc9f3289c3	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fleet	e14c7c2d185ba5c8	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/gilthari	cf58f7e4222a7fe4	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/glass	44e8d8db6e26c14e	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green	980513e9a9fd3840	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green/dark	14fe2fe14558cdf7	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/heart	65e4984b60b2699c	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal	8e24521586ce4159	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal/wulf	e44b2ac635639def	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/nt	e4f3b96a30380fcf	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/oculum	ae92e98153ec4779	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/one	eb431cc7d2fb7ebc	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/pawn	28da1bffcf02e2f6	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/psc	118864877fd3338f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/puni	af01b3ba94e3a9df	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/rainbow	7ad0a65f9f5ab0bb	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/sol	c3abd8b6798936c5	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall	bac4214d6e20292f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black	ce745fbd2b6e5a8e	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/metal	c684954a2b27ba04	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/rainbow	36fc07a1cc9ace7e	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon	ee0c5c4e7d6938b7	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/wt	91ef8a6d7d9197a1	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/zeng	5b39474b56746bea	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask	cba6624904d8155d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake	f4af0aff2aaf810d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake	2a48ac85137d2cb3	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/fluff	c625011b6d98d8f0	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask	90a7e3625750d7a3	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/mug	bf3f2ee2aad7ac7d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/pint	21953468e6b3aceb	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/pitcher	069aeee43d5f035b	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/rocks	458b27358ae2c4b2	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/shake	bd79a383b75ea70e	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/shot	b622aabd5d46a7cb	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/square	cc6226791ec0eae2	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
-/obj/item/reagent_containers/food/drinks/glass2/wine	46e9bf1aca5fec40	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2	fd02b7f940e0d713	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/carafe	42982820633bd660	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/cocktail	0d813fa3d61021e8	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug	dec9f4ed5e089d1c	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/aether	769034fff31afabf	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/alma	fee71b496e8449f3	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/almp	70e542e0e7b305f1	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/bishop	8a38d2c3c80d95ed	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/black	d4419c3e48153b14	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/blue	27dfaf856effe388	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/britcup	f783ef5533f96baf	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/diona	bf3e91194abe97c1	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fivearrows	cb32e03993bef1a7	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/flame	ee536bd246c23fc8	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/fleet	85657b51e0c7ff5f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/gilthari	cfb62b864ee489fb	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/glass	2a16333be9c8606f	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green	32f4ef699e9b40e4	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/green/dark	2f32da33e9e5ea82	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/heart	1a6e8a0a48f4c280	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal	94d4a75d4cfa3588	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/metal/wulf	9a7328a33caa4631	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/nt	8712518f6a2ad0d7	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/oculum	135d5bc4b309dfa1	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/one	e16cfc6013ee999d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/pawn	9b7728e9d59c29c4	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/psc	b1d1c71ed914125c	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/puni	edbc7660b158d318	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/rainbow	c204a888e043c3e3	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/sol	3dfd06430230c2db	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall	eccf52174f938b09	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black	bb4931c68c2c17ea	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/metal	158140bbd0c1569c	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/rainbow	3a69b1ced2628a55	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon	74934a1cd8c39772	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/wt	1f7c0eb3a3f121e6	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/zeng	fe0fee6320dfa5bb	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,fillsource,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask	b23d0f5613f9600b	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake	515746abd537ae36	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake	2be50bef4b0f7fbe	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,lid_color,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/fluff	ba98edbb95b74f78	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask	c82161c508da5b4d	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/mug	9073560da00d50ec	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/pint	fcb1bff7f121e908	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/pitcher	fbe52e23b203342b	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/rocks	bf450c69c7393af7	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/shake	50dde76f64ed6aa2	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/shot	94e08edad4219aae	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/square	e9075612c2fbd728	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
+/obj/item/reagent_containers/food/drinks/glass2/wine	3f62607028996086	amount_per_transfer_from_this,base_icon,base_name,cant_open,carried_afflictions,economic_adoption,extras,filling_states,food_inserted_micros,identity,master,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,rim_pos,volume
 /obj/item/reagent_containers/food/drinks/golden_cup	fc707c2fbafe04cb	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
 /obj/item/reagent_containers/food/drinks/grande	b1b1c135ed3fe132	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
 /obj/item/reagent_containers/food/drinks/greentea	2227ea37d0af7efc	amount_per_transfer_from_this,cant_open,carried_afflictions,economic_adoption,food_inserted_micros,identity,max_transfer_amount,min_transfer_amount,mind_host,open_at_start,possessed_voice,volume
@@ -14050,7 +14050,7 @@
 /obj/item/salvage/ruin/russian	949aeccf22544eea	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,worth
 /obj/item/sample	bf263a5975ecb730	carried_afflictions,economic_adoption,evidence,identity,mind_host,possessed_voice,taken_from
 /obj/item/sample/fibers	5a33cbf14dfd6344	carried_afflictions,economic_adoption,evidence,identity,mind_host,possessed_voice,taken_from
-/obj/item/sample/print	e543201d064a06ed	carried_afflictions,economic_adoption,evidence,identity,mind_host,possessed_voice,taken_from
+/obj/item/sample/print	9a8762620ca82ddc	carried_afflictions,economic_adoption,evidence,identity,mind_host,possessed_voice,taken_from
 /obj/item/scepter	5eb1bc3161a43842	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/scrying	637d6a743701cf43	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/secbot_assembly	24b55b014292c2bf	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
@@ -15781,7 +15781,7 @@
 /obj/item/tool/screwdriver/hybrid/alien	c08f218bd705dfc5	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/tool/screwdriver/power	8300ff9e1ab1a08c	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/tool/screwdriver/sdriver	03e34e2996d2c8a3	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/tool/screwdriver/test_driver	b2fd78a4d1fb2465	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
+/obj/item/tool/screwdriver/test_driver	215f1a6b26746c61	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/tool/transforming	56c31e3d82ca8fd9	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,welder
 /obj/item/tool/transforming/altevian	438fa45c032d9a84	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,welder
 /obj/item/tool/transforming/jawsoflife	26b12427795c560b	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,welder
@@ -16300,8 +16300,8 @@
 /obj/item/weldingtool/spell	40c88c694c5d325c	*
 /obj/item/weldingtool/tubefed	6481aa4986d3e013	*
 /obj/item/weldingtool/tubefed/survival	7cdcab91e73a01e4	*
-/obj/item/weldpack	078a4bb563adef98	carried_afflictions,economic_adoption,identity,mind_host,nozzle,possessed_voice
-/obj/item/weldpack/survival	912f29398eb423db	carried_afflictions,economic_adoption,identity,mind_host,nozzle,possessed_voice
+/obj/item/weldpack	514d2930600a429f	carried_afflictions,economic_adoption,identity,mind_host,nozzle,nozzle_type,possessed_voice
+/obj/item/weldpack/survival	516f69cc3fe079bf	carried_afflictions,economic_adoption,identity,mind_host,nozzle,nozzle_type,possessed_voice
 /obj/item/wheelchair	ee388dd56b3d963f	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/wheelchair/motor	55c7fb7b4698473f	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/wheelchair/motor/small	96af8151ed6163b9	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
@@ -16341,14 +16341,14 @@
 /obj/machinery/alembic	0a8f209fc930a36d	active_power_usage,base_reagent,bubbling,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,potion_reagent,power_area,power_channel,power_forced,use_power
 /obj/machinery/anomaly_harvester	ee71b3ea5fc837fd	active_power_usage,circuit,component_parts,dir_at_make,harvested,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/appliance	697943db34c0e0c5	active_power_usage,circuit,component_parts,cooking,cooking_objs,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/appliance/cooker	5320546947df7791	active_power_usage,circuit,component_parts,cooking,cooking_objs,dir_at_make,idle_power_usage,light_x,light_y,maintenance_flags,panel_open,power_area,power_channel,power_forced,thermostat_watch,use_power
-/obj/machinery/appliance/cooker/fryer	c164e9aba11cccda	*
-/obj/machinery/appliance/cooker/grill	cba83d72295c029e	*
-/obj/machinery/appliance/cooker/oven	4ce5d444f4c8fd36	*
-/obj/machinery/appliance/cooker/oven/yeoldoven	928cf58deb584840	*
-/obj/machinery/appliance/mixer	9b7789caaefb0491	*
-/obj/machinery/appliance/mixer/candy	65fd84259da40177	*
-/obj/machinery/appliance/mixer/cereal	d795f65465ec37bb	*
+/obj/machinery/appliance/cooker	527b631cc78f7276	active_power_usage,circuit,component_parts,cooking,cooking_objs,dir_at_make,idle_power_usage,light_x,light_y,maintenance_flags,panel_open,power_area,power_channel,power_forced,thermostat_watch,use_power
+/obj/machinery/appliance/cooker/fryer	4e1d57c3609f9421	*
+/obj/machinery/appliance/cooker/grill	531725a701fff53b	*
+/obj/machinery/appliance/cooker/oven	49bc851635e3223b	*
+/obj/machinery/appliance/cooker/oven/yeoldoven	41db92814007195e	*
+/obj/machinery/appliance/mixer	3e44f4f91cb90e9a	*
+/obj/machinery/appliance/mixer/candy	979de1c21a6d7707	*
+/obj/machinery/appliance/mixer/cereal	dcefda502527fb90	*
 /obj/machinery/artifact	3e7aacbaeaa2c8d4	active_power_usage,circuit,component_parts,dir_at_make,icon_num,idle_power_usage,maintenance_flags,overheated,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/artifact/predefined	a5f2af80434b5213	active_power_usage,circuit,component_parts,dir_at_make,icon_num,idle_power_usage,maintenance_flags,overheated,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/artifact/predefined/hungry_statue	d9c001d91fcce83f	active_power_usage,circuit,component_parts,dir_at_make,icon_num,idle_power_usage,maintenance_flags,overheated,panel_open,power_area,power_channel,power_forced,use_power
@@ -16568,7 +16568,7 @@
 /obj/machinery/beehive	c442101dee001cf1	active_power_usage,bee_count,circuit,closed,component_parts,dir_at_make,frames,honeycombs,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,smoked,use_power
 /obj/machinery/biogenerator	5e63593089dfdbb9	active_power_usage,beaker,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,processing,use_power
 /obj/machinery/blackbox_recorder	b09b7444eaa33c86	active_power_usage,circuit,component_parts,dir_at_make,feedback,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/bluespace_beacon	459cbb0479462928	Beacon,active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
+/obj/machinery/bluespace_beacon	8200dedd4c330335	Beacon,active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/bluespace_denier	4b85e52d36eaddc9	*
 /obj/machinery/body_scanconsole	8aa8216f3cf7fdcc	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,scan_ratio,scanner,use_power
 /obj/machinery/bodyscanner	441cb31dcabce4da	*
@@ -16706,8 +16706,8 @@
 /obj/machinery/clonepod	662afc7de42f2bb5	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/clonepod/full	34146a09a279b3a7	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/clonepod/transhuman	43ee000563159e8e	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/clonepod/transhuman/full	0893ca5c42b478d4	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/clonepod/transhuman/full/abductor	988e2be41bc33218	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
+/obj/machinery/clonepod/transhuman/full	3c10e0e9c5659e82	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
+/obj/machinery/clonepod/transhuman/full/abductor	adf84ab4b1167e6e	active_power_usage,circuit,component_parts,connected,containers,dir_at_make,growing_record,idle_power_usage,maintenance_flags,mess,occupant_mob,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/compressor	74f63b00c2ca8cf3	*
 /obj/machinery/computer	d8cb22ce039180f4	active_power_usage,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/computer/HolodeckControl	caf0f71887de3c36	*
@@ -16774,8 +16774,8 @@
 /obj/machinery/computer/security/mining	934dbd7acbf8b068	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/computer/security/nuclear	2e20fbcd854f75d2	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/computer/security/telescreen	a850dac64d9d6d86	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/computer/security/telescreen/bodycamera	831f2464592785a2	active_power_usage,bradio,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,showing,use_power
-/obj/machinery/computer/security/telescreen/entertainment	c93805c8f6e141c2	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,radio,use_power
+/obj/machinery/computer/security/telescreen/bodycamera	a4559fc553d70ba6	active_power_usage,bradio,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,showing,use_power
+/obj/machinery/computer/security/telescreen/entertainment	017757b1dd3486f3	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,radio,use_power
 /obj/machinery/computer/security/wooden_tv	6fe2fddda4ffc055	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/computer/security/xenobio	3f38092f2690cdb9	active_power_usage,camera,circuit,component_parts,dir_at_make,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/computer/ship	fa705685fc06cae7	active_power_usage,ai_control,circuit,component_parts,dir_at_make,extra_view,flight_operations_ui,icon_keyboard,icon_screen,idle_power_usage,light_power_on,light_range_on,linked,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
@@ -17153,7 +17153,7 @@
 /obj/machinery/embedded_controller/radio/airlock/access_controller	77871d49510ae010	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller	85ee06d80045e640	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller	14afab521846864a	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
-/obj/machinery/embedded_controller/radio/airlock/docking_port	d8c2e98664cc04d3	active_power_usage,airlock_program,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
+/obj/machinery/embedded_controller/radio/airlock/docking_port	c6913dbf2d6b6e80	active_power_usage,airlock_program,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
 /obj/machinery/embedded_controller/radio/airlock/docking_port_multi	a254004f9244a85d	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
 /obj/machinery/embedded_controller/radio/docking_port_multi	d091363689f11c54	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
 /obj/machinery/embedded_controller/radio/simple_docking_controller	f70e465925b72cbd	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,on,panel_open,power_area,power_channel,power_forced,program,use_power
@@ -17218,10 +17218,10 @@
 /obj/machinery/gear_dispenser/suit/ert	03cbfc36f339e104	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,one_setting,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/gear_dispenser/suit/standard	0e9a9cc0294d00e8	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,one_setting,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/gear_dispenser/suit/station	20cbcb63ee89c3a2	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,one_setting,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/gear_dispenser/suit_fancy	b96dd634bfe0209a	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
-/obj/machinery/gear_dispenser/suit_fancy/aether	b5d232e029b6a705	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
-/obj/machinery/gear_dispenser/suit_fancy/autolok	5b124a9676d08372	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
-/obj/machinery/gear_dispenser/suit_fancy/commonwealth	81824ae337602b04	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
+/obj/machinery/gear_dispenser/suit_fancy	71f3112a24878a54	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
+/obj/machinery/gear_dispenser/suit_fancy/aether	f6c43b9d7210307c	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
+/obj/machinery/gear_dispenser/suit_fancy/autolok	5714c78cef51c330	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
+/obj/machinery/gear_dispenser/suit_fancy/commonwealth	83b453384a8ab093	active_power_usage,circuit,component_parts,dir_at_make,held_gear_disp,idle_power_usage,maintenance_flags,needs_power,one_setting,panel_open,power_area,power_channel,power_forced,special_frame,use_power
 /obj/machinery/gear_dispenser/suit_old	836f284e70b6bd56	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,one_setting,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/gear_painter	42b3ea333c0767db	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,inserted,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/generated_station_data_relay	f48945c675fa0d44	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
@@ -17361,8 +17361,8 @@
 /obj/machinery/mineral/unloading_machine	5f7df02e22717033	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/mining	4906a919017dde27	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/mining/brace	366b85b3259ed0eb	active_power_usage,circuit,component_parts,connected,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/mining/drill	f3726d42247c91ef	active,active_power_usage,cell,circuit,component_parts,dir_at_make,faultreporter,idle_power_usage,maintenance_flags,need_player_check,panel_open,power_area,power_channel,power_forced,supported,use_power
-/obj/machinery/mining/drill/loaded	b6bca170d2573fe5	active,active_power_usage,cell,circuit,component_parts,dir_at_make,faultreporter,idle_power_usage,maintenance_flags,need_player_check,panel_open,power_area,power_channel,power_forced,supported,use_power
+/obj/machinery/mining/drill	1ebe66f2d362fd92	active,active_power_usage,cell,circuit,component_parts,dir_at_make,faultreporter,idle_power_usage,maintenance_flags,need_player_check,panel_open,power_area,power_channel,power_forced,supported,use_power
+/obj/machinery/mining/drill/loaded	2d24ba57a687ee85	active,active_power_usage,cell,circuit,component_parts,dir_at_make,faultreporter,idle_power_usage,maintenance_flags,need_player_check,panel_open,power_area,power_channel,power_forced,supported,use_power
 /obj/machinery/navbeacon	d16844ce8f3009a0	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,open,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/navbeacon/delivery	28ca9f92df43dd79	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,open,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/navbeacon/delivery/east	02bf75fa5c72d0ec	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,open,panel_open,power_area,power_channel,power_forced,use_power
@@ -17610,21 +17610,21 @@
 /obj/machinery/pump_relay	b74165e0ea4606b3	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/radiocarbon_spectrometer	d63fca672b20fac6	active_power_usage,circuit,component_parts,dir_at_make,heat,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,scanning,use_power
 /obj/machinery/readybutton	698605fc69f41117	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,ready,use_power
-/obj/machinery/reagent_refinery	ba51ce424a6953e1	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/filter	18a82602e01e4128	active_power_usage,circuit,component_parts,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/filter/alt	50102ccb7a67c26a	active_power_usage,circuit,component_parts,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/furnace	4f90dc5a11f9c63f	active_power_usage,beaker,circuit,component_parts,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/furnace/alt	9907b7a85ffba6e6	active_power_usage,beaker,circuit,component_parts,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/grinder	db0fa5c40f3be047	active_power_usage,circuit,component_parts,dir_at_make,holdingitems,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/hub	c7888ffe6ac98fa7	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/mixer	d81222d0b24b0668	active_power_usage,circuit,component_parts,dir_at_make,got_input,idle_power_usage,maintenance_flags,mixer_angle,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/pipe	1d0f5e0c99d566bb	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/pump	94412f1b2dce2f94	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/reactor	ce63f3975bed7fc6	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,internal_tank,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,toggle_mode,use_power
-/obj/machinery/reagent_refinery/splitter	8bc74188a00c979c	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/vat	c0352d17ee220dc0	active_power_usage,amount_per_transfer_from_this,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/waste	2565da0acfac9cb3	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
-/obj/machinery/reagent_refinery/waste_processor	7785ab290cecc888	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,use_power
+/obj/machinery/reagent_refinery	4218a88484359a2d	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/filter	e430bdd906fc54ff	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/filter/alt	5c2c75ee7c7b3652	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/furnace	0493dbe8f928ea98	active_power_usage,beaker,circuit,component_parts,default_max_vol,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/furnace/alt	84376cad67699e23	active_power_usage,beaker,circuit,component_parts,default_max_vol,dir_at_make,filter_side,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/grinder	14ab7fa6fa210d57	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,holdingitems,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/hub	eb6f833ec2712e08	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/mixer	8467efb514ed3698	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,got_input,idle_power_usage,maintenance_flags,mixer_angle,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/pipe	e7bae168a5c8faa5	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/pump	1d4fb12e1b865b03	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/reactor	f67a600b4c6d6aa0	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,internal_tank,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,toggle_mode,use_power
+/obj/machinery/reagent_refinery/splitter	17c553c8c6c439cb	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/vat	485d745849b6e163	active_power_usage,amount_per_transfer_from_this,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/waste	f1fda608106b942a	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
+/obj/machinery/reagent_refinery/waste_processor	7f1698244145c55e	active_power_usage,circuit,component_parts,default_max_vol,dir_at_make,idle_power_usage,maintenance_flags,panel_open,possible_transfer_amounts,power_area,power_channel,power_forced,reagent_type,use_power
 /obj/machinery/reagentgrinder	5a61f42b01745cfb	active_power_usage,beaker,circuit,component_parts,dir_at_make,grinding,holdingitems,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/recharge_station	b0cf1795858568d5	active_power_usage,cell,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,paicard,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/recharge_station/ghost_pod_recharger	1f3fce7ca25d4d84	active_power_usage,cell,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,paicard,panel_open,power_area,power_channel,power_forced,use_power
@@ -18560,14 +18560,14 @@
 /obj/structure/bed/holobed	803cd6b5cf2c8031	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
 /obj/structure/bed/nest	c18d56787751c02f	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
 /obj/structure/bed/padded	3b758fbe1a9f1944	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
-/obj/structure/bed/pillowpile	76e5db8ded48d38a	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/black	5e23449d233098d4	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/green	171bc095a336dca1	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/orange	76d8edab20d8dc51	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/red	1ffa4b9d555cc7c1	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/teal	3198feb973fdd831	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/white	940ade36aaa9819b	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
-/obj/structure/bed/pillowpile/yellow	1baaae092cda4f21	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile	288a3b3aa43f84c6	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/black	fe6213719c895b7d	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/green	61737517b7b7b977	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/orange	a4abeba876fe4c39	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/red	670a4395fdb6cd1d	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/teal	b54d2ed39af7fb48	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/white	1330a38a7110153f	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
+/obj/structure/bed/pillowpile/yellow	2c26f10513d3ff89	applies_material_colour,base_icon,front,material,material_key,padding_key,padding_material,pillowpilefront
 /obj/structure/bed/pillowpilefront	2dc683321a2d63e2	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
 /obj/structure/bed/pillowpilefront/black	bd026c5ed8a87840	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
 /obj/structure/bed/pillowpilefront/green	1f897023da60370a	applies_material_colour,base_icon,material,material_key,padding_key,padding_material
@@ -18949,7 +18949,7 @@
 /obj/structure/closet/secure_closet/warden/snowfield	9c135ffa1d3eff93	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/secure_closet/xenoarchaeologist	39eb8f784eaa8c11	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/shuttleemerg	fcf0673be7c2b2d6	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
-/obj/structure/closet/statue	ba63e92f1983c63a	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,starts_with,statue_of,storage_capacity,storage_cost,timer
+/obj/structure/closet/statue	bccf43a6988d2b91	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,starts_with,statue_of,statue_shape,storage_capacity,storage_cost,timer
 /obj/structure/closet/syndicate	be6cfb2496296370	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/nuclear	b12e7c6f0fb09025	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/personal	df5c8251c274f4db	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
@@ -19627,28 +19627,28 @@
 /obj/structure/noticeboard/toxins	4e156a774d76e821	*
 /obj/structure/old_roboprinter	b08a337f16e104d0	
 /obj/structure/ore_box	bbbfa36f44cf8ee2	
-/obj/structure/outcrop	1d35b11f9cb9b619	
-/obj/structure/outcrop/coal	3ffe6bddb6522288	
-/obj/structure/outcrop/coal/tyr	9ad1fa1091b669c2	
-/obj/structure/outcrop/diamond	d7e2d78dffbede9b	
-/obj/structure/outcrop/diamond/tyr	40ae712611809112	
-/obj/structure/outcrop/gold	24d7cc5c98afebe2	
-/obj/structure/outcrop/gold/tyr	5709b36cbefcf0a1	
-/obj/structure/outcrop/hydrogen	768f0f48410b1cf7	
-/obj/structure/outcrop/iron	e2efe9789cbf6cc3	
-/obj/structure/outcrop/iron/tyr	a24b73a98fcf80e9	
-/obj/structure/outcrop/lead	2e383f370bcae809	
-/obj/structure/outcrop/lead/tyr	013a5c3e00be1830	
-/obj/structure/outcrop/phoron	b0836e437a6cf284	
-/obj/structure/outcrop/phoron/tyr	f58d8ee698e095d0	
-/obj/structure/outcrop/platinum	444830408f17efea	
-/obj/structure/outcrop/platinum/tyr	bbce40b30908c78a	
-/obj/structure/outcrop/silver	134acf45787f19b2	
-/obj/structure/outcrop/silver/tyr	c7156c05a26dd183	
-/obj/structure/outcrop/uranium	ce25878af50297c9	
-/obj/structure/outcrop/uranium/tyr	df9b8bfca7c077d7	
-/obj/structure/outcrop/verdantium	dbb39057c20540d0	
-/obj/structure/outcrop/weathered_gate	26aa8f1fdbfd5771	
+/obj/structure/outcrop	282d05647f5a84f8	has_egg
+/obj/structure/outcrop/coal	d7f35bb6bdc1ebf1	has_egg
+/obj/structure/outcrop/coal/tyr	eff301ce28481bb3	has_egg
+/obj/structure/outcrop/diamond	973ab2dcda748787	has_egg
+/obj/structure/outcrop/diamond/tyr	99e71d386fe9964b	has_egg
+/obj/structure/outcrop/gold	6f2882c0d49f7708	has_egg
+/obj/structure/outcrop/gold/tyr	42cb09ca11233417	has_egg
+/obj/structure/outcrop/hydrogen	28f8da31e1ca8b1c	has_egg
+/obj/structure/outcrop/iron	4f9c46de6b9e1d4e	has_egg
+/obj/structure/outcrop/iron/tyr	271d6743b48221c5	has_egg
+/obj/structure/outcrop/lead	4c58e118b295b8cf	has_egg
+/obj/structure/outcrop/lead/tyr	b5b1930b9532fa09	has_egg
+/obj/structure/outcrop/phoron	866210bd7ff7f07a	has_egg
+/obj/structure/outcrop/phoron/tyr	24cb4e881633eedc	has_egg
+/obj/structure/outcrop/platinum	27a403ba950687e4	has_egg
+/obj/structure/outcrop/platinum/tyr	fc4bd855687a495f	has_egg
+/obj/structure/outcrop/silver	24d4142fe2a7af85	has_egg
+/obj/structure/outcrop/silver/tyr	aad1f7e3f79418f6	has_egg
+/obj/structure/outcrop/uranium	3fe8428a7a55c45c	has_egg
+/obj/structure/outcrop/uranium/tyr	c221e2d2cf4daafe	has_egg
+/obj/structure/outcrop/verdantium	966ebb88d5a3b52a	has_egg
+/obj/structure/outcrop/weathered_gate	d1e05cd6dfacf1d1	has_egg
 /obj/structure/panic_button	701f2536a38f67b2	glass,launched
 /obj/structure/particle_accelerator	c8d595b620b88e90	master,powered,reference,strength
 /obj/structure/particle_accelerator/end_cap	956c365cf6bfa863	master,powered,reference,strength
@@ -19809,7 +19809,7 @@
 /obj/structure/prop/machine/sorter	e83dd450ce7a36f9	interaction_message
 /obj/structure/prop/machine/sorter/starts_on	1f3cb60273c3fc1f	interaction_message
 /obj/structure/prop/machine/stamper	f32bcef0eaf00dd7	interaction_message
-/obj/structure/prop/machine/stamper/starts_on	e32ba62502915548	interaction_message
+/obj/structure/prop/machine/stamper/starts_on	7f2eaebd4487949b	interaction_message
 /obj/structure/prop/machine/tgmc_console1	cc0ca3919028e3b5	interaction_message
 /obj/structure/prop/machine/tgmc_console1/starts_on	a844fcdc04133f73	interaction_message
 /obj/structure/prop/machine/tgmc_console2	716a8869bc98b686	interaction_message
@@ -20503,11 +20503,11 @@
 /obj/structure/timer_door/fifteen	d44e5a09740cdec9	time_til_open
 /obj/structure/timer_door/ten	588121d1f00ed479	time_til_open
 /obj/structure/timer_door/twenty	bdea63faae700531	time_til_open
-/obj/structure/toilet	5d0541fec5ea5a8e	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
-/obj/structure/toilet/item	7ff7ae0d512ce1ac	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
-/obj/structure/toilet/prison	9a3c10fd3e592e52	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
-/obj/structure/toilet/teleplumbed	20babd948150d0f6	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
-/obj/structure/toilet/wooden	537f1e22ba702ddc	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
+/obj/structure/toilet	5622a24c3aa6f2e3	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
+/obj/structure/toilet/item	2fefabcd1f807574	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
+/obj/structure/toilet/prison	ae63071c24e5418d	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
+/obj/structure/toilet/teleplumbed	88d33aee37a37817	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
+/obj/structure/toilet/wooden	2a66461e695e684b	bin,cistern,open,parts,refilling,swirlie_mob,teleplumb_crystal,teleplumb_dest
 /obj/structure/trailblazer	5959c584d7a2c47e	
 /obj/structure/trailblazer/blue	2e1a7e6aef7dec9c	
 /obj/structure/trailblazer/red	591bc0837c9b2355	
@@ -20675,7 +20675,7 @@
 /turf/simulated/floor/holofloor/beach/water	2fe083b02e9b048a	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
 /turf/simulated/floor/holofloor/bmarble	11201f67a5a9696a	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
 /turf/simulated/floor/holofloor/carpet	ef6e57b4966af205	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
-/turf/simulated/floor/holofloor/desert	2f6af6598191d956	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
+/turf/simulated/floor/holofloor/desert	2035999349c367c6	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,rocks,scorch_state,shandler,shandler_noinit
 /turf/simulated/floor/holofloor/grass	b2e03fd08b104af1	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
 /turf/simulated/floor/holofloor/lino	d08dbb291132787e	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
 /turf/simulated/floor/holofloor/reinforced	81125dc685beb9bd	active_hotspot,air,base_icon,base_icon_state,broken,burnt,climbable,edge_key_sent,edge_mask,edge_spill,flooring,flooring_override,floortype_at_make,no_ceiling,plating_damage_state,plating_exposed,scorch_state,shandler,shandler_noinit
