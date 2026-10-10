@@ -89,6 +89,12 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             message: diagnostic.message,
         }]
     })?;
+    let parameter_diagnostics = crate::argument_sources::ParameterDiagnosticSource::from_current(
+        frontend,
+        parsed.item(),
+        metadata,
+        symbols,
+    );
     let typed_attempted = parsed.statement_attempted();
     // The issued parser owner survives ABI hooks that return only a header.
     // It remains subject to the current startup/settings mask below.
@@ -292,6 +298,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         base: body.expanded_span.start,
         entry: parsed.header_span.start,
         capture,
+        parameters: parameter_diagnostics,
     };
     let mut selected_references = None;
     let code = {
@@ -370,8 +377,12 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         errors
             .into_iter()
             .map(|e| {
-                let Some(related) = super::related::bind_related(frontend, body, e.related, false)
-                else {
+                let Some(related) = super::related::bind_current_related(
+                    frontend,
+                    body,
+                    debug.parameters.as_ref(),
+                    e.related,
+                ) else {
                     return LoweringDiagnostic {
                         related: Vec::new(),
                         kind: DiagnosticKind::Internal,

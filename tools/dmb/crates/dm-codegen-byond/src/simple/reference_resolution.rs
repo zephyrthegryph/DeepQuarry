@@ -13,7 +13,7 @@ impl VariableContext for Context<'_, '_> {
             .bindings
             .parameters
             .iter()
-            .position(|value| value == name)
+            .rposition(|value| value == name)
             .map(|index| index as u32)
     }
     fn procedure_static(&self, name: &str) -> Result<Option<SymRef>, LowerError> {

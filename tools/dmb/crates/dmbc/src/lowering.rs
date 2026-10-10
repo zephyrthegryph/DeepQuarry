@@ -79,8 +79,18 @@ struct MemoDebugProvider<'a> {
     base: usize,
     entry: usize,
     capture: Option<&'a RefCell<MemoCapture>>,
+    parameters: Option<crate::argument_sources::ParameterDiagnosticSource<'a>>,
 }
 impl dm_codegen_byond::DebugSourceProvider for MemoDebugProvider<'_> {
+    fn parameter_declaration(
+        &self,
+        name: &str,
+    ) -> Result<Option<dm_codegen_byond::LowerSpan>, String> {
+        match &self.parameters {
+            Some(source) => source.declaration(name),
+            None => Ok(None),
+        }
+    }
     fn diagnostic_ordinal(
         &self,
         anchor: dm_codegen_byond::DiagnosticAnchor,

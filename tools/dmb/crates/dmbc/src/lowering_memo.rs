@@ -1,8 +1,8 @@
 //! Exact lowering variants with retained dependency answers and source replay.
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
-// Certified missing calls now issue source errors; old failure meanings miss.
-pub const PROCEDURE_VERSION: u32 = 14;
+// Native formal scope rules change both successful code and diagnostics.
+pub const PROCEDURE_VERSION: u32 = 15;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};

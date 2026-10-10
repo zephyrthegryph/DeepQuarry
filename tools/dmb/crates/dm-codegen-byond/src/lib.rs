@@ -441,3 +441,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "parameter_scope_tests.rs"]
+mod parameter_scope_tests;

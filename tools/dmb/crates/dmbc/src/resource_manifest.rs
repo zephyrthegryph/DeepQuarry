@@ -18,34 +18,24 @@ pub struct ObservedValidation {
     pub exact: bool,
     pub now: u128,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct ResourceManifest {
     version: u32,
     policy: u128,
-    #[serde(with = "catalog_wire")]
     catalog: Arc<CatalogRecord>,
     catalog_identity: u128,
-    inputs: InputSnapshot,
-    order: Vec<usize>,
-    archive: ResourceIdentity,
-    #[serde(skip)]
+    inputs: Arc<InputSnapshot>,
+    content: Arc<ResourceContent>,
     admitted_catalog: OnceLock<ResourceCatalog>,
 }
-// Preserve the legacy record object on disk without requiring serde's rc feature.
-mod catalog_wire {
-    use super::*;
-    pub fn serialize<S: serde::Serializer>(
-        value: &Arc<CatalogRecord>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
-        value.as_ref().serialize(serializer)
-    }
-    pub fn deserialize<'de, D: serde::Deserializer<'de>>(
-        deserializer: D,
-    ) -> Result<Arc<CatalogRecord>, D::Error> {
-        CatalogRecord::deserialize(deserializer).map(Arc::new)
-    }
+/// Immutable archive layout contains no absolute source or publication paths.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ResourceContent {
+    pub(crate) order: Vec<usize>,
+    pub(crate) archive: ResourceIdentity,
 }
+#[path = "resource_manifest_wire.rs"]
+mod wire;
 impl PartialEq for ResourceManifest {
     fn eq(&self, other: &Self) -> bool {
         self.version == other.version
@@ -53,16 +43,14 @@ impl PartialEq for ResourceManifest {
             && self.catalog == other.catalog
             && self.catalog_identity == other.catalog_identity
             && self.inputs == other.inputs
-            && self.order == other.order
-            && self.archive == other.archive
+            && self.content == other.content
     }
 }
 impl Eq for ResourceManifest {}
 pub struct ValidatedResources {
     pub(crate) catalog: ResourceCatalog,
     pub(crate) inputs: InputSnapshot,
-    pub(crate) archive: ResourceIdentity,
-    pub(crate) order: Vec<usize>,
+    pub(crate) content: Arc<ResourceContent>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceValidationStage {
@@ -123,15 +111,18 @@ impl ResourceManifest {
             policy,
             catalog: Arc::clone(catalog.shared_record()),
             catalog_identity: catalog.identity(),
-            inputs,
-            order,
-            archive,
+            inputs: Arc::new(inputs),
+            content: Arc::new(ResourceContent { order, archive }),
             admitted_catalog: OnceLock::from(catalog.clone()),
         })
     }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
-        crate::runner_host::resources::inspect_snapshot(&self.inputs, census);
-        census.vec_payload("resources.archive_order", &self.order);
+        if census.arc_object("resources.input_proof", &self.inputs) {
+            crate::runner_host::resources::inspect_snapshot(&self.inputs, census);
+        }
+        if census.arc_object("resources.archive_content", &self.content) {
+            census.vec_payload("resources.archive_order", &self.content.order);
+        }
         if !census.arc_object("resources.catalog", &self.catalog) {
             return;
         }
@@ -150,7 +141,7 @@ impl ResourceManifest {
         }
     }
     pub fn archive(&self) -> ResourceIdentity {
-        self.archive
+        self.content.archive
     }
     pub fn filesystem_proofs(&self) -> io::Result<crate::filesystem_proofs::BulkFileSystemProofs> {
         crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&self.inputs)
@@ -216,7 +207,7 @@ impl ResourceManifest {
             observer,
             ResourceValidationStage::DemandAdmission,
             || -> io::Result<bool> {
-                validate_order(&self.order, catalog.record().aliases.len())?;
+                validate_order(&self.content.order, catalog.record().aliases.len())?;
                 if catalog
                     .record()
                     .aliases
@@ -276,15 +267,14 @@ impl ResourceManifest {
         if !measured(
             observer,
             ResourceValidationStage::ArchiveAuthentication,
-            || authenticate(self.archive),
+            || authenticate(self.content.archive),
         )? {
             return Ok(None);
         }
         Ok(Some(ValidatedResources {
             catalog,
             inputs,
-            archive: self.archive,
-            order: self.order.clone(),
+            content: Arc::clone(&self.content),
         }))
     }
 }
@@ -401,7 +391,7 @@ mod tests {
             crate::runner_host::resources::Hint {
                 pair: 7,
                 manifest: std::sync::Arc::new(manifest.clone()),
-                outputs: InputSnapshot::new(0),
+                outputs: Arc::new(InputSnapshot::new(0)),
             },
         );
         let retained = owner.hint(&configuration).unwrap();
@@ -426,6 +416,35 @@ mod tests {
         assert!(Arc::ptr_eq(&manifest.catalog, catalog.shared_record()));
         let clone = manifest.clone();
         assert!(Arc::ptr_eq(&clone.catalog, &manifest.catalog));
+        assert!(Arc::ptr_eq(&clone.inputs, &manifest.inputs));
+        assert!(Arc::ptr_eq(&clone.content, &manifest.content));
+        #[derive(Serialize, Deserialize)]
+        struct LegacyManifest {
+            version: u32,
+            policy: u128,
+            catalog: CatalogRecord,
+            catalog_identity: u128,
+            inputs: InputSnapshot,
+            order: Vec<usize>,
+            archive: ResourceIdentity,
+        }
+        let legacy = LegacyManifest {
+            version: manifest.version,
+            policy: manifest.policy,
+            catalog: (*manifest.catalog).clone(),
+            catalog_identity: manifest.catalog_identity,
+            inputs: (*manifest.inputs).clone(),
+            order: manifest.content.order.clone(),
+            archive: manifest.content.archive,
+        };
+        let legacy_bytes = dm_wire::encode(0x524d_0001, &legacy).unwrap();
+        assert_eq!(
+            legacy_bytes,
+            dm_wire::encode(0x524d_0001, &manifest).unwrap()
+        );
+        let legacy_restored: ResourceManifest =
+            dm_wire::decode(0x524d_0001, &legacy_bytes, dm_wire::MAX_BYTES).unwrap();
+        assert_eq!(legacy_restored, manifest);
         // The durable wire remains the old record object, not a cache envelope.
         let wire = serde_json::to_vec(&manifest).unwrap();
         let restored: ResourceManifest = serde_json::from_slice(&wire).unwrap();
@@ -440,6 +459,8 @@ mod tests {
                 .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
                 .unwrap()
                 .unwrap();
+            assert!(Arc::ptr_eq(&first.content, &candidate.content));
+            assert!(Arc::ptr_eq(&first.content, &second.content));
             assert!(Arc::ptr_eq(
                 first.catalog.shared_record(),
                 second.catalog.shared_record()
@@ -473,7 +494,7 @@ mod tests {
             .unwrap()
             .is_none());
         let mut invalid_order: ResourceManifest = serde_json::from_slice(&wire).unwrap();
-        invalid_order.order = vec![0, 0];
+        Arc::make_mut(&mut invalid_order.content).order = vec![0, 0];
         assert!(invalid_order
             .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
             .is_err());
@@ -545,7 +566,7 @@ mod tests {
             crate::runner_host::resources::Hint {
                 pair: 8,
                 manifest: std::sync::Arc::new(manifest),
-                outputs: InputSnapshot::new(0),
+                outputs: Arc::new(InputSnapshot::new(0)),
             },
         );
         assert!(owner.hint(&configuration).is_none());

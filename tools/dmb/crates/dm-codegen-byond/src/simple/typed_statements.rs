@@ -21,6 +21,40 @@ impl Compiler<'_> {
             let saved_slots = scoped_statement.then(|| self.local_slots.checkpoint());
             let saved_types = scoped_statement.then(|| self.local_types.checkpoint());
             self.debug_at(statement.header_span.start, &statement.raw_header)?;
+            if let StatementKind::For { control, .. } = &statement.kind {
+                let declarations: &[&str] = match control {
+                    ForControl::All { declaration } => &[declaration],
+                    ForControl::Each { binding, .. } | ForControl::Range { binding, .. } => {
+                        &[binding]
+                    }
+                    ForControl::Pair {
+                        key_binding,
+                        value_binding,
+                        ..
+                    } => &[key_binding, value_binding],
+                    ForControl::CStyle {
+                        initializer: Some(ForInitializer::Declare { declaration, .. }),
+                        ..
+                    } => &[declaration],
+                    _ => &[],
+                };
+                for declaration in declarations {
+                    if declaration.starts_with("var/") {
+                        if let Some(name) = local_name(declaration) {
+                            if self.bindings.parameters.iter().any(|formal| formal == name) {
+                                self.check_local_declaration(
+                                    name,
+                                    &statement.raw_header,
+                                    LowerSpan {
+                                        start: statement.header_span.start,
+                                        end: statement.header_span.end,
+                                    },
+                                )?;
+                            }
+                        }
+                    }
+                }
+            }
             match &statement.kind {
                 StatementKind::Set { .. } => {
                     return Err(error(
@@ -187,27 +221,14 @@ impl Compiler<'_> {
                             "unsupported local declaration",
                         ));
                     }
-                    if self.local_slots.contains_key(name) {
-                        let mut failure = error(
-                            &statement.raw_header,
-                            &format!("{name}: duplicate definition"),
-                        );
-                        failure.kind = LowerErrorKind::SourceError;
-                        if let Some(previous) = self
-                            .local_slots
-                            .get(name)
-                            .and_then(|slot| self.local_declarations.get(slot))
-                        {
-                            failure.related.push(LowerRelated {
-                                span: *previous,
-                                message: format!("{name}: previous definition"),
-                            });
-                        }
-                        return Err(failure.at(Some(LowerSpan {
+                    self.check_local_declaration(
+                        name,
+                        &statement.raw_header,
+                        LowerSpan {
                             start: statement.header_span.start,
                             end: statement.header_span.end,
-                        })));
-                    }
+                        },
+                    )?;
                     let slot = self.locals.len() as u32;
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);

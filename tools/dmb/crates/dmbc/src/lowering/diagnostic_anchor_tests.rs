@@ -56,6 +56,7 @@ fn current_lexer_cursor_rebinds_shared_and_wire_recipes_without_stale_next_offse
             let parsed = frontend.parse_body(body).unwrap();
             let capture = RefCell::new(MemoCapture::default());
             let provider = MemoDebugProvider {
+                parameters: None,
                 original: FrontendDebugProvider::new(&frontend, parsed.item().header_span.start),
                 base: body.expanded_span.start,
                 entry: parsed.item().header_span.start,

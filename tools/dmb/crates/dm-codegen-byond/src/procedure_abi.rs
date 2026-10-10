@@ -409,9 +409,7 @@ pub fn prepare_verified_procedure(
         let name = symbols
             .text(param.name)
             .ok_or_else(|| AbiError::invariant("parameter name spelling unavailable"))?;
-        if inputs.parameters.iter().any(|old| old == name) {
-            return Err(AbiError::source("duplicate parameter name"));
-        }
+        // BYOND preserves duplicate formal slots; lexical name lookup selects the last.
         inputs.parameters.push(name.to_owned());
         if param.flags & 2 != 0 {
             inputs.readonly_parameters.insert(index as u32);

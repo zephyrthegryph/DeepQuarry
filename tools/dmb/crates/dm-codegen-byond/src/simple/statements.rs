@@ -101,6 +101,16 @@ impl Compiler<'_> {
                     let name = binding
                         .strip_prefix("var/")
                         .ok_or_else(|| error(text, "iterator binding must declare a local"))?;
+                    if self.bindings.parameters.iter().any(|formal| formal == name) {
+                        self.check_local_declaration(
+                            name,
+                            text,
+                            LowerSpan {
+                                start: item.header_span.start,
+                                end: item.header_span.end,
+                            },
+                        )?;
+                    }
                     if name.is_empty() || name.contains('/') || self.local_slots.contains_key(name)
                     {
                         return Err(error(text, "unsupported iterator binding"));
@@ -365,12 +375,24 @@ impl Compiler<'_> {
                 .map_or((text.trim(), None), |(n, e)| (n.trim(), Some(e.trim())));
             let name = local_name(declaration)
                 .ok_or_else(|| error(text, "unsupported local declaration"))?;
-            if self.local_slots.contains_key(name) {
-                return Err(error(text, "unsupported or repeated local declaration"));
-            }
+            self.check_local_declaration(
+                name,
+                text,
+                LowerSpan {
+                    start: item.header_span.start,
+                    end: item.header_span.end,
+                },
+            )?;
             let slot = self.locals.len() as u32;
             self.locals.push(name.into());
             self.local_slots.insert(name.into(), slot);
+            self.local_declarations.insert(
+                slot,
+                LowerSpan {
+                    start: item.header_span.start,
+                    end: item.header_span.end,
+                },
+            );
             if let Some(dimensions) = local_array_dimensions(declaration) {
                 self.local_array_declaration(
                     &dimensions,

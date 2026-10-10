@@ -126,3 +126,66 @@ fn duplicate_local_related_diagnostic_uses_current_source_and_renderer() {
         );
     }
 }
+
+#[test]
+fn actual_parameter_rules_match_authenticated_native_capture() {
+    let accepted = production_lower(include_str!(
+        "../../../../fixtures/native/parameter_duplicate_diagnostics/duplicate_parameter.dm"
+    ));
+    assert!(
+        accepted.diagnostics.is_empty(),
+        "{:?}",
+        accepted.diagnostics
+    );
+    assert_eq!(accepted.units.len(), 1);
+    assert_eq!(
+        accepted.units[0].code.procedure.argument_names,
+        ["value", "value"]
+    );
+    for (source, previous, current) in [
+        (
+            "/proc/probe(value)\n    var/value = 7\n    return value\n",
+            1,
+            2,
+        ),
+        (
+            "/proc/probe(value)\n    if(1)\n        var/value = 7\n        return value\n",
+            1,
+            3,
+        ),
+        (
+            "/proc/probe(value)\n    for(var/value in list(1, 2))\n        return value\n",
+            1,
+            2,
+        ),
+        (
+            "// shifted\n\n/proc/probe(value)\n    var/value = 7\n    return value\n",
+            3,
+            4,
+        ),
+    ] {
+        let result = production_lower(source);
+        assert!(result.units.is_empty());
+        assert_eq!(result.diagnostics.len(), 1);
+        let error = &result.diagnostics[0];
+        assert_eq!(error.kind, DiagnosticKind::SourceError);
+        assert_eq!(error.origin.line, current);
+        assert_eq!(error.related.len(), 1);
+        assert_eq!(error.related[0].origin.line, previous);
+        assert_eq!(error.related[0].message, "value: previous definition");
+        let mut text = Vec::new();
+        crate::diagnostics::write_lowering_diagnostics(&mut text, &result.diagnostics).unwrap();
+        let text = String::from_utf8(text).unwrap();
+        assert!(
+            text.contains(&format!("project.dme:{current}:error:")),
+            "{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "project.dme:{previous}:error: value: previous definition"
+            )),
+            "{text}"
+        );
+        assert_eq!(text.matches(":error:").count(), 2);
+    }
+}

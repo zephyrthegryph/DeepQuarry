@@ -966,3 +966,6 @@ mod dynamic_selector_tests;
 #[cfg(test)]
 #[path = "simple/tests/mod.rs"]
 mod tests;
+
+#[path = "simple/local_declaration_diagnostics.rs"]
+mod local_declaration_diagnostics;

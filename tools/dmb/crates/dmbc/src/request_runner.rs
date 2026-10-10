@@ -243,7 +243,7 @@ fn run_build_attempt(
                     generated_paths,
                     |record| {
                         if prior_outputs.is_none() {
-                            prior_outputs = record.outputs.clone();
+                            prior_outputs = record.outputs.as_ref().map(|outputs| std::sync::Arc::new(outputs.clone()));
                         }
                         if resource_prior.is_none() {
                             if let Some(manifest) = &record.resource_manifest {
@@ -407,7 +407,7 @@ fn run_build_attempt(
     };
     if let Some(hint) = resource_owner.as_ref().and_then(|owner| owner.hint(&resource_configuration)) {
         resource_prior = Some((hint.pair, std::sync::Arc::clone(&hint.manifest)));
-        prior_outputs = Some(hint.outputs.clone());
+        prior_outputs = Some(std::sync::Arc::clone(&hint.outputs));
     }
     let host_facts = if executable { host.host_facts() } else { None };
     let (frontend_memo, execution, mut semantic_state) = host.execution(
@@ -869,7 +869,7 @@ fn run_build_attempt(
                 let resource_manifest = std::sync::Arc::new(resource_manifest);
                 if let Some(owner) = &resource_owner {
                     owner.remember(resource_configuration, crate::runner_host::resources::Hint {
-                        pair: pair.id, manifest: std::sync::Arc::clone(&resource_manifest), outputs: outputs.clone(),
+                        pair: pair.id, manifest: std::sync::Arc::clone(&resource_manifest), outputs: std::sync::Arc::new(outputs.clone()),
                     });
                 }
                 if let Some(session) = &session {

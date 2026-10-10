@@ -26,3 +26,28 @@ pub(super) fn bind_related(
         })
         .collect()
 }
+
+/// Fresh signature notes require the current parser-issued parameter span.
+/// They remain outside the body-relative memo format and decline capture.
+pub(super) fn bind_current_related(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    parameters: Option<&crate::argument_sources::ParameterDiagnosticSource<'_>>,
+    related: Vec<dm_codegen_byond::LowerRelated>,
+) -> Option<Vec<RelatedDiagnostic>> {
+    related
+        .into_iter()
+        .map(|note| {
+            let inside_body = note.span.start <= note.span.end
+                && note.span.start >= body.expanded_span.start
+                && note.span.end <= body.expanded_span.end;
+            if !inside_body && !parameters.is_some_and(|source| source.authenticates(&note.span)) {
+                return None;
+            }
+            Some(RelatedDiagnostic {
+                origin: frontend.location(note.span.start)?,
+                message: note.message,
+            })
+        })
+        .collect()
+}

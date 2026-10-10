@@ -18,7 +18,7 @@ pub(crate) struct Configuration {
 pub(crate) struct Hint {
     pub pair: u128,
     pub manifest: Arc<ResourceManifest>,
-    pub outputs: InputSnapshot,
+    pub outputs: Arc<InputSnapshot>,
 }
 pub(crate) struct Resources {
     values: dm_session::ObservedArtifactStore<Hint, (), Configuration, ()>,
@@ -111,7 +111,9 @@ impl Resources {
                     if c.arc_object("resources.manifest", &value.manifest) {
                         value.manifest.census(&mut c);
                     }
-                    inspect_snapshot(&value.outputs, &mut c);
+                    if c.arc_object("resources.publication_proof", &value.outputs) {
+                        inspect_snapshot(&value.outputs, &mut c);
+                    }
                 }
             }
         });

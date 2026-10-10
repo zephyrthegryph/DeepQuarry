@@ -23,11 +23,11 @@ pub struct LoweredHelper {
 /// Locate the actual captured source expression in the signature. The typed
 /// parameter's relative span is checked against the real expanded header before
 /// assigning any debug provenance to the companion's parser-only container.
-fn source_offset(
+fn parameter_span(
     parsed: ProcedureHeader<'_>,
     metadata: &ProcedureMetadata,
     index: usize,
-) -> Result<usize, String> {
+) -> Result<dm_codegen_byond::LowerSpan, String> {
     let parameter = metadata
         .signature
         .parameters
@@ -52,6 +52,42 @@ fn source_offset(
         .end
         .checked_add(parameter.relative_span.end)
         .ok_or("source helper parameter extent overflow")?;
+    parsed
+        .header
+        .get(start..end)
+        .ok_or("parameter span differs from captured header")?;
+    Ok(dm_codegen_byond::LowerSpan {
+        start: parsed
+            .header_span
+            .start
+            .checked_add(start)
+            .ok_or("parameter start overflow")?,
+        end: parsed
+            .header_span
+            .start
+            .checked_add(end)
+            .ok_or("parameter end overflow")?,
+    })
+}
+fn source_offset(
+    parsed: ProcedureHeader<'_>,
+    metadata: &ProcedureMetadata,
+    index: usize,
+) -> Result<usize, String> {
+    let span = parameter_span(parsed, metadata, index)?;
+    let parameter = metadata
+        .signature
+        .parameters
+        .get(index)
+        .ok_or("source helper argument is out of range")?;
+    let start = span
+        .start
+        .checked_sub(parsed.header_span.start)
+        .ok_or("parameter source start precedes current header")?;
+    let end = span
+        .end
+        .checked_sub(parsed.header_span.start)
+        .ok_or("parameter source end precedes current header")?;
     let text = parsed
         .header
         .get(start..end)
@@ -135,6 +171,59 @@ impl<'a> From<dm_tree::frontend::ItemView<'a>> for ProcedureHeader<'a> {
             header: item.header(),
             header_span: item.header_span(),
         }
+    }
+}
+pub(crate) struct ParameterDiagnosticSource<'a> {
+    header: ProcedureHeader<'a>,
+    metadata: &'a ProcedureMetadata,
+    symbols: &'a SymbolTable,
+}
+impl<'a> ParameterDiagnosticSource<'a> {
+    pub(crate) fn from_current(
+        frontend: &'a ColdFrontend,
+        item: &Item,
+        metadata: &'a ProcedureMetadata,
+        symbols: &'a SymbolTable,
+    ) -> Option<Self> {
+        let header = frontend.expanded.text.get(item.header_span.range())?;
+        // Coordinates may differ for synthetic/normalized/custom headers.
+        // Such headers cannot issue this source-only diagnostic authority.
+        if header != item.header {
+            return None;
+        }
+        Some(Self {
+            header: ProcedureHeader {
+                header,
+                header_span: item.header_span,
+            },
+            metadata,
+            symbols,
+        })
+    }
+    pub(crate) fn authenticates(&self, span: &dm_codegen_byond::LowerSpan) -> bool {
+        self.metadata
+            .signature
+            .parameters
+            .iter()
+            .enumerate()
+            .any(|(index, _)| {
+                parameter_span(self.header, self.metadata, index)
+                    .is_ok_and(|issued| issued.start == span.start && issued.end == span.end)
+            })
+    }
+    pub(crate) fn declaration(
+        &self,
+        name: &str,
+    ) -> Result<Option<dm_codegen_byond::LowerSpan>, String> {
+        let index = self
+            .metadata
+            .signature
+            .parameters
+            .iter()
+            .rposition(|parameter| self.symbols.text(parameter.name) == Some(name));
+        index
+            .map(|index| parameter_span(self.header, self.metadata, index))
+            .transpose()
     }
 }
 pub struct HelperInputs<'a> {

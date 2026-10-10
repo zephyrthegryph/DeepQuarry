@@ -515,92 +515,92 @@ fn capture_with_resource_operation<
             )
         });
         match candidate {
-            Ok(order) if order == retained.order => Some(retained),
+            Ok(order) if order == retained.content.order => Some((retained, order)),
             _ => None,
         }
     } else {
         None
     };
-    let (resolver, projection, order, retained_inputs, retained_catalog) = if let Some(retained) =
-        retained
-    {
-        let resolver = timed(observer, CaptureStage::SymbolBinding, || {
-            let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
-            for map in captured.maps.iter() {
-                for (_, text) in map.symbols.ordered() {
-                    symbols.intern(text).map_err(|error| error.to_string())?;
+    let (resolver, projection, order, retained_inputs, retained_catalog) =
+        if let Some((retained, current_order)) = retained {
+            let resolver = timed(observer, CaptureStage::SymbolBinding, || {
+                let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+                for map in captured.maps.iter() {
+                    for (_, text) in map.symbols.ordered() {
+                        symbols.intern(text).map_err(|error| error.to_string())?;
+                    }
                 }
-            }
-            let resolver = NativeResourceResolver::from_catalog(
-                host,
-                std::sync::Arc::new(symbols),
-                &retained.catalog,
-            )
-            .map_err(|error| error.to_string())?;
-            Ok(resolver)
-        })?;
-        let projection = timed(observer, CaptureStage::ResourceProjection, || {
-            crate::assets::project_retained_resources(
-                &retained.catalog,
-                &retained.order,
-                retained.archive,
-            )
-            .map_err(|error| format!("retained resource projection: {error:?}"))
-        })?;
-        (
-            resolver,
-            projection,
-            retained.order,
-            Some(retained.inputs),
-            Some(retained.catalog),
-        )
-    } else {
-        let resources = timed(observer, CaptureStage::AssetCapture, || {
-            let resources = capture_resources(demand, &captured.assets, resource_provider)
+                let resolver = NativeResourceResolver::from_catalog(
+                    host,
+                    std::sync::Arc::new(symbols),
+                    &retained.catalog,
+                )
                 .map_err(|error| error.to_string())?;
-            reject_missing_literals(frontend, &captured, &resources)?;
-            crate::heap_census::emit_if_enabled("resources.captured", |census| {
-                census.resources(&resources)
-            })
-            .map_err(|error| format!("heap census: {error}"))?;
-            resources
-                .require_complete()
-                .map_err(|error| error.to_string())?;
-            Ok(resources)
-        })?;
-        let order = timed(observer, CaptureStage::ResourceOrder, || {
-            let (prefix, suffix) = crate::resource_order::nontext_imports(&captured, &resources)?;
-            crate::resource_order::captured_archive_order(
-                frontend,
-                &resources,
-                &host,
-                known_roots,
-                &prefix,
-                &suffix,
+                Ok(resolver)
+            })?;
+            let projection = timed(observer, CaptureStage::ResourceProjection, || {
+                crate::assets::project_retained_resources(
+                    &retained.catalog,
+                    &retained.content.order,
+                    retained.content.archive,
+                )
+                .map_err(|error| format!("retained resource projection: {error:?}"))
+            })?;
+            (
+                resolver,
+                projection,
+                current_order,
+                Some(retained.inputs),
+                Some(retained.catalog),
             )
-        })?;
-        let resolver = timed(observer, CaptureStage::SymbolBinding, || {
-            let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
-            for map in captured.maps.iter() {
-                for (_, text) in map.symbols.ordered() {
-                    symbols.intern(text).map_err(|error| error.to_string())?;
-                }
-            }
-            for lookup in &resources.lookups {
-                symbols
-                    .intern(&lookup.path)
+        } else {
+            let resources = timed(observer, CaptureStage::AssetCapture, || {
+                let resources = capture_resources(demand, &captured.assets, resource_provider)
                     .map_err(|error| error.to_string())?;
-            }
-            resources
-                .into_resolver_shared(host, std::sync::Arc::new(symbols))
-                .map_err(|error| error.to_string())
-        })?;
-        let projection = timed(observer, CaptureStage::ResourceProjection, || {
-            crate::assets::project_captured_resources_with_sink(&resolver, &order, sink)
-                .map_err(|error| format!("resource projection: {error:?}"))
-        })?;
-        (resolver, projection, order, None, None)
-    };
+                reject_missing_literals(frontend, &captured, &resources)?;
+                crate::heap_census::emit_if_enabled("resources.captured", |census| {
+                    census.resources(&resources)
+                })
+                .map_err(|error| format!("heap census: {error}"))?;
+                resources
+                    .require_complete()
+                    .map_err(|error| error.to_string())?;
+                Ok(resources)
+            })?;
+            let order = timed(observer, CaptureStage::ResourceOrder, || {
+                let (prefix, suffix) =
+                    crate::resource_order::nontext_imports(&captured, &resources)?;
+                crate::resource_order::captured_archive_order(
+                    frontend,
+                    &resources,
+                    &host,
+                    known_roots,
+                    &prefix,
+                    &suffix,
+                )
+            })?;
+            let resolver = timed(observer, CaptureStage::SymbolBinding, || {
+                let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+                for map in captured.maps.iter() {
+                    for (_, text) in map.symbols.ordered() {
+                        symbols.intern(text).map_err(|error| error.to_string())?;
+                    }
+                }
+                for lookup in &resources.lookups {
+                    symbols
+                        .intern(&lookup.path)
+                        .map_err(|error| error.to_string())?;
+                }
+                resources
+                    .into_resolver_shared(host, std::sync::Arc::new(symbols))
+                    .map_err(|error| error.to_string())
+            })?;
+            let projection = timed(observer, CaptureStage::ResourceProjection, || {
+                crate::assets::project_captured_resources_with_sink(&resolver, &order, sink)
+                    .map_err(|error| format!("resource projection: {error:?}"))
+            })?;
+            (resolver, projection, order, None, None)
+        };
     let resolver = resolver.into_metadata();
     // This is the same immutable catalog used to construct the metadata host.
     // Reissuing it would clone/sort every lookup and reserialize its identity.
