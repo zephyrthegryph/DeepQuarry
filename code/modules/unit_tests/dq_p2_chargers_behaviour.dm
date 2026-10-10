@@ -69,12 +69,12 @@
 	p2_area = get_area(run_loc_floor_bottom_left)
 	p2_area_requires = p2_area.requires_power
 	p2_area_equip = p2_area.power_equip
-	p2_area.requires_power = FALSE
+	p2_area.set_requires_power(FALSE)
 	p2_area.power_equip = TRUE
 	run_gate()
 	own_turf_contents(run_loc_floor_bottom_left)
 	own_turf_contents(run_loc_floor_top_right)
-	p2_area.requires_power = p2_area_requires
+	p2_area.set_requires_power(p2_area_requires)
 	p2_area.power_equip = p2_area_equip
 	test_driver_end()
 
@@ -440,11 +440,11 @@
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/G = p2c_gun()
 	R.set_grid_power(FALSE)
-	p2_area.requires_power = TRUE
+	p2_area.set_requires_power(TRUE)
 	p2_area.power_equip = FALSE
 	touch(H, R, G)
 	TEST_ASSERT_NULL(p2c_held(R), "unpowered: refused")
-	p2_area.requires_power = FALSE
+	p2_area.set_requires_power(FALSE)
 	p2_area.power_equip = TRUE
 	R.set_grid_power(TRUE)
 	var/obj/item/gun/energy/selfish = allocate(/obj/item/gun/energy/taser, run_loc_floor_bottom_left)

@@ -48,7 +48,8 @@
 	var/list/required_parts
 	/// BP_* parts of which at least one must be present.
 	var/list/any_parts
-	/// /mob proc that redraws this slot's overlay and HUD icon when its item changes.
+	/// /mob proc that redraws this slot's overlay and HUD icon when its item changes. Run it with redraw_on(): a proc path called through call() binds that
+	/// exact proc, so the mob type's own override (the human's) would never run.
 	var/redraw
 	/// Slots whose items fall out when this slot is emptied through the inventory
 	/// procs (pockets and ID with the jumpsuit, suit storage with the suit).
@@ -87,6 +88,13 @@
 	// The body model handles what reaches organs; nothing passes this way.
 	heat_transmission = 0
 	radiation_transmission = 0
+
+/// Redraws this slot on `M`: the proc `redraw` names, called by name so the mob type's override of it runs.
+/datum/om/relation/slot/body/proc/redraw_on(mob/M)
+	if(!redraw)
+		return
+	var/path_text = "[redraw]"
+	call(M, copytext(path_text, findlasttext(path_text, "/") + 1))()
 
 // ---- Hands ----
 

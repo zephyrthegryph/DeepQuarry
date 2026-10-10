@@ -62,7 +62,7 @@
 	TEST_ASSERT(north in sweep_tiles, "the sweep should include the front tile")
 
 
-// A target standing in the swing tile takes damage — routed through the attackby hook
+// A target standing in the swing tile takes damage — routed through hit_with_item(),
 // to also cover the divert in item_attack.dm.
 /datum/unit_test/dq_melee_swing_hits_occupied_tile
 
@@ -82,7 +82,7 @@
 
 	var/before = victim.vitality()
 	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
-	victim.attackby(weapon, attacker) // harm-intent item attack -> divert -> windup -> swing
+	victim.hit_with_item(weapon, attacker, 1, I_HURT) // harm-stance item attack -> divert -> windup -> swing
 	set_global("timed_actions_instant", FALSE)
 	TEST_ASSERT(victim.vitality() < before, "a victim in the swing tile should take damage (vitality before [before], after [victim.vitality()])")
 

@@ -320,6 +320,8 @@ CAPABILITIES(/obj/item/holo/esword)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
+	// The held sprite follows item_state, so the hand it is in is redrawn with it.
+	update_held_icon()
 	add_fingerprint(user)
 	return TRUE
 

@@ -4045,3 +4045,24 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
   - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
   - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
     this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.
+
+## Suite lane B: the stale pins of the first full normal-tier run (master 1e10a8130e)
+
+Blessed with this lane, by class; none of them a click that stopped answering.
+
+* **`reagents_start` (34 rows):** every changed row is a type that rolls its contents (random vials, old food, flavoured gum and lollipops, the chaos donut and cake, `bodaplus`,
+  `zoom`); the rolled value follows the rng stream, which had moved. The test now reseeds before each type, so a row no longer depends on what ran before. The one non-roll change:
+  `/obj/item/organ/internal/heart/machine/anomalock/prebuilt` is `vol=5 holder=/datum/reagents` where the pin recorded `runtime` (its init no longer fails out of a body).
+* **`machinery_timed_1008` (8 rows, camera assembly and supply beacon):** the cyborg's equip-module entry is the declared op `equip_module` (it was the generated key
+  `gen_silicon_item_silicon_equip_module`), and it is offered only for an item of a robot module (`when(...)`), so the robot and AI menu rows "Equip (refused: not possible right now)"
+  are gone. The class is the one listed above for the i7 snapshots (the silicon equip-module spec is an op; a tool or item op is listed only for an input that fits).
+* **`loot/resolver_reader` (2 rows):** `/obj/effect/mouse_hole_spawner` (a `prob()`) and `/obj/effect/gibspawner/human` land on other rolls of the map-time stream. No resolver changed.
+* **`dx_menu_order` (80 scenarios) and its static table:** the click and menu strings only gain ops the earlier classes already add (`melee_hit` on structures and objects, the eight living
+  defaults and the attack variants on bots and holders, `hit_help`, `touch_help`, `eject_pai_blocked`); no op moved or went. In the static table the removed keys are the 12 swallow
+  targets' `swallow` and the last undo of a ladder (`construction.undo:<stage>_finished` of the door, windoor and firedoor assemblies, the light switch and light frame, the p2 frame:
+  the finishing step is `undo = NO_UNDO`); the food types' `climb_in` (a drag op, answering no click) now sorts after the item op beside it.
+
+Fixes that came with the pins: the heater's work runs from its own cell whatever its area gives (`started_work(unpowered = TRUE)`), a machine's power reads the area's `requires_power`
+(`area_gives_power()` lists it, so toggling it re-reads every machine in the area), a bonfire's dismantle op answers an empty hand only, a worn item's look redraws its slot through the
+mob's own override (the slot's `redraw` is a proc path, which `call()` binds to /mob's version), the pod's `gas_store()` runs in a `CAPABILITIES` block (its mixture was never made),
+the esword redraws the hand it is held in, and the pAI sheet asks the pAI system for its chassis list before it builds.

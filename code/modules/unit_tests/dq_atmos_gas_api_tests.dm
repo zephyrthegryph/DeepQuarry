@@ -10,6 +10,9 @@
 	heat_set(M, temperature, HEAT_SOURCE_OTHER)
 	return M
 
+/datum/unit_test/dq_gas_api
+	abstract_type = /datum/unit_test/dq_gas_api
+
 /datum/unit_test/dq_gas_api/release_to_pressure_and_rate
 /datum/unit_test/dq_gas_api/release_to_pressure_and_rate/Run()
 	var/datum/gas_mixture/source = gas_api_test_mix(1000, 1000)

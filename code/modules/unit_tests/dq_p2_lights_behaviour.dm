@@ -146,7 +146,7 @@
 	p2l_area_switch = p2l_area.lightswitch
 	p2l_area_equip = p2l_area.power_equip
 	p2l_area.power_equip = TRUE
-	p2l_area.requires_power = TRUE
+	p2l_area.set_requires_power(TRUE)
 	p2l_area.power_light = TRUE
 	p2l_area.lightswitch = 1
 	run_gate()
@@ -158,7 +158,7 @@
 			qdel(A)
 	own_turf_contents(run_loc_floor_bottom_left)
 	own_turf_contents(run_loc_floor_top_right)
-	p2l_area.requires_power = p2l_area_requires
+	p2l_area.set_requires_power(p2l_area_requires)
 	p2l_area.power_light = p2l_area_light
 	p2l_area.lightswitch = p2l_area_switch
 	p2l_area.power_equip = p2l_area_equip
@@ -424,7 +424,7 @@
 
 /datum/unit_test/dq_p2_lights/area_without_a_power_requirement_keeps_the_lights_on/run_gate()
 	var/obj/machinery/light/L = light()
-	p2l_area.requires_power = FALSE
+	p2l_area.set_requires_power(FALSE)
 	set_area_power(FALSE)
 	TEST_ASSERT(L.on, "lit: the area does not need power")
 	TEST_ASSERT(!p2l_emergency(L), "and not on the cell")

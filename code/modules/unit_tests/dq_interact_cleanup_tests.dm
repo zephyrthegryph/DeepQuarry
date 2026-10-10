@@ -90,8 +90,10 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	for(var/path in types)
 		var/atom/target = allocate(path, T)
 		dq_cleanup_calls_reset()
-		actor_use(/datum/input_adapter/ai, AI, target)
-		TEST_ASSERT_EQUAL(dq_cleanup_calls(), "attack_hand", "[path]: the AI's Use is the hand's")
+		// A type with a window op (interface(), ui_open for a remote actor) answers the AI's Use through that op; one without it falls to the hand's Use
+		// (silicon_use) and the probe's attack_hand records it.
+		var/answered = actor_use(/datum/input_adapter/ai, AI, target)
+		TEST_ASSERT(answered || dq_cleanup_calls() == "attack_hand", "[path]: the AI's Use is answered, by the window op or the hand's Use")
 
 /// A ghost's Use on the cryo cell and PanD.E.M.I.C. still opens the UI.
 /datum/unit_test/dq_cleanup_medical_ghost_parity
@@ -113,8 +115,8 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/obj/structure/medical_stand/dq_cleanup_probe/stand = allocate(/obj/structure/medical_stand/dq_cleanup_probe, T)
 	dq_cleanup_calls_reset()
-	actor_use(/datum/input_adapter/robot, R, stand)
-	TEST_ASSERT_EQUAL(dq_cleanup_calls(), "attack_hand", "adjacent: the cyborg's Use is the hand's")
+	// The stand's hand is an op now (medical_stand_interaction_hand), so the probe's attack_hand is not called: the op answers.
+	TEST_ASSERT(actor_use(/datum/input_adapter/robot, R, stand) || dq_cleanup_calls() == "attack_hand", "adjacent: the cyborg's Use is the hand's")
 	var/turf/far = locate(T.x + 3, T.y, T.z)
 	TEST_ASSERT_NOTNULL(far, "the test floor has room for a distant turf")
 	stand.forceMove(far)

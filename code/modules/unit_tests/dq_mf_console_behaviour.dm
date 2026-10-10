@@ -75,12 +75,12 @@
 	var/area/A = get_area(C)
 	var/requires = A.requires_power
 	var/equip = A.power_equip
-	A.requires_power = TRUE
+	A.set_requires_power(TRUE)
 	A.power_equip = FALSE
 	C.power_change()
 	test_time(1 SECOND)
 	TEST_ASSERT(!C.light_range, "an unpowered one is dark")
-	A.requires_power = requires
+	A.set_requires_power(requires)
 	A.power_equip = equip
 	C.power_change()
 

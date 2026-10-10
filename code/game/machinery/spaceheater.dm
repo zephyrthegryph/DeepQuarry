@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	// Regulates the air while switched on (any state but SHEATER_OFF); a step with no charge left switches it off and stops the work.
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(state))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(state), unpowered = TRUE) // it runs from its own cell, whatever its area gives; work_step() reads the cell itself
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"), wait(0),
 		needs(req(PROC_REF(hatch_open), because = MSG(space_heater/hatch_closed)), req(PROC_REF(no_cell_installed), because = MSG(space_heater/cell_present))),
 		then(PROC_REF(interaction_insert_cell)))

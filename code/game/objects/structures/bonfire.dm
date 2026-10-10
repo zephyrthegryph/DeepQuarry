@@ -29,7 +29,7 @@ CAPABILITIES(/obj/structure/bonfire)
 		then(PROC_REF(construction_chosen)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("dismantle", hand(), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(req(PROC_REF(ready_to_dismantle))),
+	op("dismantle", hand(), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(req_empty_hand()), when(req(PROC_REF(ready_to_dismantle))),
 		needs(req(PROC_REF(not_burning), because = MSG(bonfire/still_burning))), begins(MSG(bonfire/dismantling)), wait(5 SECONDS), then(PROC_REF(dismantle_done)))
 
 MSG_DEF(bonfire/dismantling, "You start dismantling %T%.", "%U% starts dismantling %T%.")

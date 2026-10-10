@@ -263,6 +263,10 @@ CAPABILITIES(/datum/overlay_lighting)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
 	rel_set(src, nameof(current_holder), new_holder)
+	if(new_holder && current_holder() != new_holder)
+		// The relation refused a holder that is being destroyed (a moved notice sent from its own teardown): there is nothing to light from.
+		clean_old_turfs()
+		return
 	if(new_holder == null)
 		clean_old_turfs()
 		return

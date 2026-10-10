@@ -2,6 +2,8 @@
 	name = "pai_icons"
 
 /datum/asset/spritesheet_batched/pai_icons/create_spritesheets()
+	// The sheet registers when the assets do, which can be before the pAI system has built its chassis list (it boots after atoms): ask it to now.
+	SSpai.ready()
 	for(var/name, current_sprite in SSpai.get_chassis_list())
 		var/datum/pai_sprite/sprite = current_sprite
 		if(!sprite.name || !sprite.sprite_icon_state)
