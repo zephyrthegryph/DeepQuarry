@@ -188,6 +188,7 @@ fn static_verb_normalization_preserves_namespace_and_actual_display_name() {
 }
 
 #[test]
+#[cfg(feature = "opendream-translation")]
 fn colliding_display_aliases_follow_native_dynamic_call_encoding() {
     let native = Dmb::from_bytes(include_bytes!(
         "../fixtures/lowering/selector_alias_collision.bin"
@@ -519,24 +520,30 @@ fn dedicated_header_ids_are_normalized_but_payload_changes_remain_visible() {
     actual.resources.push(actual.resources[0].clone());
     actual.classes[id].initial_ids[4] = 1;
     assert!(compare_class_tables(&expected, &actual, 100).is_empty());
-    assert!(compare_dmbs(
-        &expected,
-        &actual,
-        &CompareOptions {
-            compare_bytecode: false,
-            ..Default::default()
-        }
-    )
-    .is_empty());
+    assert!(
+        compare_dmbs(
+            &expected,
+            &actual,
+            &CompareOptions {
+                compare_bytecode: false,
+                ..Default::default()
+            }
+        )
+        .is_empty()
+    );
     actual.resources[1].id ^= 1;
-    assert!(compare_class_tables(&expected, &actual, 100)
-        .iter()
-        .any(|d| d.field == "class.header.icon"));
+    assert!(
+        compare_class_tables(&expected, &actual, 100)
+            .iter()
+            .any(|d| d.field == "class.header.icon")
+    );
     actual.resources[1].id ^= 1;
     actual.classes[id].direction ^= 1;
-    assert!(compare_class_tables(&expected, &actual, 100)
-        .iter()
-        .any(|d| d.field == "class.header.direction"));
+    assert!(
+        compare_class_tables(&expected, &actual, 100)
+            .iter()
+            .any(|d| d.field == "class.header.direction")
+    );
 }
 #[test]
 fn client_path_is_a_singleton_not_class_zero() {
@@ -575,9 +582,10 @@ fn class_parent_change_uses_logical_path() {
             ..Default::default()
         },
     );
-    assert!(diff
-        .iter()
-        .any(|d| d.path == "/datum" && d.field == "class.parent"));
+    assert!(
+        diff.iter()
+            .any(|d| d.path == "/datum" && d.field == "class.parent")
+    );
 }
 
 #[test]

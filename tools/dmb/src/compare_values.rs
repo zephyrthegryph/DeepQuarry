@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "compare_global_variables.rs"]
+mod globals;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum NormalValue {
     Null,
@@ -98,6 +101,7 @@ pub(super) fn value(dmb: &Dmb, value: Value) -> NormalValue {
 pub(super) enum NormalVariable {
     Field(Option<Vec<u8>>),
     Global(Option<Vec<u8>>),
+    InvalidGlobal(&'static str, u32, Option<u32>),
     DynamicProc(Option<Vec<u8>>),
     DynamicVerb(Option<Vec<u8>>),
     StaticProc(Option<Vec<u8>>),
@@ -115,11 +119,7 @@ pub(super) fn variable(dmb: &Dmb, input: &Variable) -> NormalVariable {
     use Variable::*;
     match input {
         Field(id) => NormalVariable::Field(bytes(dmb, *id)),
-        Global(id) => NormalVariable::Global(
-            dmb.variables
-                .get(*id as usize)
-                .and_then(|v| bytes(dmb, v.name)),
-        ),
+        Global(id) => globals::normalize(dmb, *id),
         DynamicProc(id) => NormalVariable::DynamicProc(bytes(dmb, *id)),
         DynamicVerb(id) => NormalVariable::DynamicVerb(bytes(dmb, *id)),
         StaticProc(id) => {

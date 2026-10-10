@@ -14,8 +14,10 @@ cargo run -j1 --manifest-path tools/dmb/Cargo.toml -p dmbc -- compile deepquarry
 This path is experimental. Captured historical DeepQuarry builds complete and
 match independent fresh-native outputs; that does not establish BYOND runtime
 parity or current-master admission. Unsupported semantics fail before output
-publication. The CLI is one-shot; daemon activation and cross-revision semantic
-incremental compilation remain unfinished. The pinned target is BYOND 516.1687; the driver
+publication. The CLI and daemon share the request pipeline; `--no-daemon` selects
+a one-shot host. Retained sessions reuse admitted source, semantic, query and
+procedure artifacts, but full output projection and several global stages remain.
+The pinned target is BYOND 516.1687; the driver
 supplies its default version macros and accepts explicit source defines.
 
 ### Shared request core
@@ -27,10 +29,18 @@ Each request binds fresh profiling context and current resolver/source/ABI facts
 validated disk candidates can promote without republishing. Worker-count changes
 join and replace the pool. `BuildHost::one_shot()` bypasses resident retention.
 
-This core does not retain a frontend revision or reuse startup issuance across
-edits. It is a migration boundary for future transport and tooling, not a complete
-daemon. Phase 1 throughput and memory gates must close before daemon and disk-cache
-activation. See `STATUS.md` for measured results and validation scopes.
+The host retains frontend revisions, owner artifacts, startup issuance and
+procedure candidates across edits. Admission always uses current source and
+binding authority. Throughput, memory, concurrency and BYOND correctness gates
+remain open; retained support is not a completion or readiness claim. See the
+measured receipts in `phase0/migration_checkpoint_20261009.json` for validation scopes.
+
+### Format dependency boundary
+
+Native compiler crates use the format library with default features disabled.
+That provides DMB/RSC codecs, operands and bytecode without building inspection
+or the OpenDream translator. `inspection` and `opendream-translation` are optional
+features; both remain enabled by default for the existing `dmb-inspect` tool.
 
 On Windows, pairs share `%LOCALAPPDATA%/dmbd/pairs` on that drive and
 `<drive>:\.dmbd\pairs` on other drives.

@@ -42,7 +42,16 @@
       "shifted_proc_body": 64.7484221,
       "asset_edit": 72.2342179
     },
-    "fresh_native_end_to_end_seconds": [46.9654475, 41.8782306, 44.0754947, 38.2174932, 40.0676746, 37.2691415, 36.4943155, 38.8000703],
+    "fresh_native_end_to_end_seconds": [
+      46.9654475,
+      41.8782306,
+      44.0754947,
+      38.2174932,
+      40.0676746,
+      37.2691415,
+      36.4943155,
+      38.8000703
+    ],
     "byond_structural_gate": "open; 1850404 unexplained differences; traversal completion is not semantic parity",
     "runtime_gate": "deferred to Phase 5",
     "limitations": [
@@ -562,5 +571,39 @@
       "status": "300-second watchdog; owned children reaped; dependency compilation progressed; no executable",
       "receipt": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-191055-7e114405.json"
     }
+  },
+  "header_preprocessing_and_native_dependency_wave": {
+    "status": "isolated native and workspace all-target checks passed; focused fixes passed; new real benchmark pending",
+    "implemented": [
+      "absolute typed headers issue BYOND type side effects and zero arguments through one signature parser and allocation ledger",
+      "pragma multiple is authenticated in preprocessing and memo replay with bounded recursive inclusion",
+      "authoritative missing variables produce source errors without reclassifying opaque unsupported answers",
+      "global slot references normalize through the DMB footer with explicit malformed-reference coverage gaps",
+      "frame metadata depends on used string IDs and nonempty variable rosters rather than unrelated table frontiers",
+      "native compiler depends only on base binary codecs; inspection and OpenDream translation remain optional format-library features",
+      "procedure store generation and policy replacement counters expose lifecycle changes without affecting admission"
+    ],
+    "isolated_native_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212017-814dc514.json",
+    "workspace_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212052-564769da.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-210710-ffae1c1d.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-210829-c0b3495e.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211024-dac709ce.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211255-9b2c0813.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211227-36764b3f.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-211405-5dbccc2e.json"
+    ],
+    "compile_only_evidence": [
+      "E:/dq-cache/dmb-native-v2/typed-parameter-probes-20261009-2110/receipt.json",
+      "E:/dq-cache/dmb-native-v2/typed-parameter-mixed-20261009-2120/receipt.json",
+      "E:/dq-cache/dmb-native-v2/turfpack-oracle-20261009-2124/receipt.json"
+    ],
+    "limitations": [
+      "no updated end-to-end timings or whole-program structural admission yet",
+      "126 Input middle words remain explicitly uncovered without an opcode contract",
+      "per-owner domain certification implementation remains in progress",
+      "Phase5 runtime, actual six-worktree concurrency and history replay gates remain open"
+    ],
+    "new_end_to_end_timings": null
   }
 }

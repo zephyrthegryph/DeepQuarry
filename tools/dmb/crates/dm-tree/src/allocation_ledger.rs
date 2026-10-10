@@ -259,6 +259,49 @@ fn walk(
             if explicit.is_none() && namespace.is_none() && parts.len() > 1 {
                 member_owner = path(owner, &normalized[..normalized.rfind('/').unwrap()]);
             }
+            let (_, arguments, trailing) =
+                crate::adapter::signature_parts(header).map_err(|message| Error {
+                    span: item.header_span,
+                    message,
+                })?;
+            let parsed =
+                crate::procedure::parse_signature_declarations(arguments, trailing, symbols)
+                    .map_err(|message| Error {
+                        span: item.header_span,
+                        message,
+                    })?;
+            let argument_offset = arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+            for declaration in parsed.declarations {
+                let start = item
+                    .header_span
+                    .start
+                    .checked_add(argument_offset)
+                    .and_then(|offset| offset.checked_add(declaration.relative_span.start))
+                    .ok_or_else(|| Error {
+                        span: item.header_span,
+                        message: "header allocation source coordinate overflow".into(),
+                    })?;
+                let end = item
+                    .header_span
+                    .start
+                    .checked_add(argument_offset)
+                    .and_then(|offset| offset.checked_add(declaration.relative_span.end))
+                    .ok_or_else(|| Error {
+                        span: item.header_span,
+                        message: "header allocation source coordinate overflow".into(),
+                    })?;
+                let span = Span::new(start, end);
+                events.push(AllocationEvent {
+                    encounter_order: events.len(),
+                    span,
+                    header_span: span,
+                    kind: AllocationKind::Type {
+                        path: declaration.path,
+                        lexical_owner: intern(symbols, owner, span)?,
+                        absolute: true,
+                    },
+                });
+            }
             let owner_id = intern(symbols, &member_owner, item.header_span)?;
             let name_id = intern(symbols, name, item.header_span)?;
             push(
@@ -347,6 +390,39 @@ fn walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn absolute_header_type_effects_precede_procedure_and_keep_exact_current_spans() {
+        let source = "/proc/probe(datum/ordinary/arg, /datum/marker_target/target, /datum/second_marker/value)\n    return arg\n";
+        let ast = dm_syntax::parse(source);
+        let mut symbols = SymbolTable::default();
+        let ledger = capture(&ast.items, "/", &mut symbols).unwrap();
+        let events: Vec<_> = ledger.events.iter().collect();
+        assert_eq!(events.len(), 3);
+        for (index, path) in ["/datum/marker_target/target", "/datum/second_marker/value"]
+            .iter()
+            .enumerate()
+        {
+            assert_eq!(events[index].encounter_order, index);
+            assert_eq!(
+                &source[events[index].span.start..events[index].span.end],
+                *path
+            );
+            assert_eq!(events[index].header_span, events[index].span);
+            assert_eq!(
+                events[index].kind,
+                AllocationKind::Type {
+                    path: SymbolId::of(path),
+                    lexical_owner: SymbolId::of("/"),
+                    absolute: true,
+                }
+            );
+        }
+        assert!(
+            matches!(events[2].kind, AllocationKind::Procedure { name, .. } if name == SymbolId::of("probe"))
+        );
+        assert_eq!(events[2].encounter_order, 2);
+        assert_eq!(events[2].span, ast.items[0].span);
+    }
     #[test]
     fn trailing_signature_separator_does_not_become_allocation_owner() {
         let ast = dm_syntax::parse("/obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)\n    return signal\n");

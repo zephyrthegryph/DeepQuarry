@@ -8,7 +8,7 @@ description = "Deterministic resource inputs for the Rust DM compiler"
 [dependencies]
 dm-exec = { path = "../dm-exec" }
 dm-profile = { path = "../dm-profile" }
-byond-dmb = { path = "../.." }
+byond-dmb = { path = "../..", default-features = false }
 sha2 = "0.10"
 dm-ir = { path = "../dm-ir" }
 dm-syntax = { path = "../dm-syntax" }

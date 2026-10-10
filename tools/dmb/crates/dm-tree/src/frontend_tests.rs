@@ -871,3 +871,30 @@ fn borrowed_executor_reuses_frontend_workers_across_requests() {
     }
     assert_eq!(executor.workers(), 3);
 }
+
+#[test]
+fn absolute_argument_header_declares_type_without_parameter() {
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "/datum/marker_target\n    var/value = 7\n/proc/probe(/datum/marker_target/target)\n    return 1\n".to_string())]));
+    let frontend = build(Path::new("project.dme"), &provider, &BTreeMap::new(), 1).unwrap();
+    assert!(frontend
+        .snapshot
+        .tree
+        .lookup_type(SymbolId::of("/datum/marker_target/target"))
+        .is_some());
+    let metadata = frontend
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .find(|member| member.name == SymbolId::of("probe"))
+        .unwrap();
+    assert!(metadata
+        .metadata
+        .procedure
+        .as_ref()
+        .unwrap()
+        .signature
+        .parameters
+        .is_empty());
+}

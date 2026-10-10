@@ -79,7 +79,13 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
         .copied()
         .min()
         .unwrap_or(text.len());
-    let declaration = text[..name_end].trim().trim_start_matches('/');
+    let declaration = text[..name_end].trim();
+    // In BYOND a leading slash here issues an absolute type declaration and
+    // contributes no argument. The signature-only model cannot issue that
+    // declaration; do not silently reinterpret it as a relative typed argument.
+    if declaration.starts_with('/') {
+        return Err("unsupported absolute declaration in procedure argument list: requires an issued type declaration, not a parameter".into());
+    }
     let declaration = declaration.strip_prefix("var/").unwrap_or(declaration);
     let path = declaration.split('[').next().unwrap().trim();
     let parts: Vec<_> = path.trim_matches('/').split('/').map(str::trim).collect();
@@ -179,12 +185,33 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
         relative_span: Span::new(start, start + text.len()),
     })
 }
+pub(crate) struct HeaderTypeDeclaration {
+    pub(crate) path: SymbolId,
+    pub(crate) relative_span: Span,
+}
+pub(crate) struct ParsedSignature {
+    pub(crate) signature: ProcedureSignature,
+    pub(crate) declarations: Vec<HeaderTypeDeclaration>,
+}
+#[cfg(test)]
 pub(crate) fn parse_signature(
     arguments: &str,
     trailing: &str,
     symbols: &mut SymbolTable,
 ) -> Result<ProcedureSignature, String> {
+    let parsed = parse_signature_declarations(arguments, trailing, symbols)?;
+    if !parsed.declarations.is_empty() {
+        return Err("unsupported absolute declaration in signature-only adapter".into());
+    }
+    Ok(parsed.signature)
+}
+pub(crate) fn parse_signature_declarations(
+    arguments: &str,
+    trailing: &str,
+    symbols: &mut SymbolTable,
+) -> Result<ParsedSignature, String> {
     let mut parameters = Vec::new();
+    let mut declarations = Vec::new();
     let mut variadic = false;
     let mut start = 0;
     let mut stops: Vec<_> = top_level_tokens(arguments)
@@ -203,7 +230,32 @@ pub(crate) fn parse_signature(
             if variadic {
                 return Err("procedure argument follows variadic marker".into());
             }
-            parameters.push(parameter(text, start + leading, symbols)?);
+            if text.starts_with('/') {
+                // An absolute path in a formal header declares that type; it
+                // does not name a parameter (BYOND 516.1687 compile oracle).
+                // More elaborate declaration effects remain explicit gaps.
+                dm_ir::TypePath::parse(text).map_err(|_| {
+                    "unsupported absolute declaration in procedure argument list".to_string()
+                })?;
+                let lexed = LexedHeader::new(text);
+                if !lexed.valid()
+                    || text.trim_matches('/').split('/').any(|part| {
+                        let offset = part.as_ptr() as usize - text.as_ptr() as usize;
+                        matches!(part, "var" | "proc" | "verb")
+                            || !lexed.view().slice(offset, offset + part.len()).ident()
+                    })
+                {
+                    return Err(
+                        "unsupported absolute declaration in procedure argument list".into(),
+                    );
+                }
+                declarations.push(HeaderTypeDeclaration {
+                    path: intern(symbols, text)?,
+                    relative_span: Span::new(start + leading, start + leading + text.len()),
+                });
+            } else {
+                parameters.push(parameter(text, start + leading, symbols)?);
+            }
         }
         start = stop + 1;
     }
@@ -218,10 +270,13 @@ pub(crate) fn parse_signature(
             symbols,
         )?)
     };
-    Ok(ProcedureSignature {
-        parameters: parameters.into(),
-        variadic,
-        return_annotation,
+    Ok(ParsedSignature {
+        signature: ProcedureSignature {
+            parameters: parameters.into(),
+            variadic,
+            return_annotation,
+        },
+        declarations,
     })
 }
 pub(crate) fn parse_setting(
@@ -423,6 +478,73 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn absolute_header_declaration_is_not_a_relative_typed_parameter() {
+        let mut symbols = SymbolTable::default();
+        let relative = parse_signature("datum/marker_target/target", "", &mut symbols).unwrap();
+        assert_eq!(relative.parameters.len(), 1);
+        assert_eq!(relative.parameters[0].name, SymbolId::of("target"));
+        assert_eq!(
+            relative.parameters[0].declared_type,
+            Some(SymbolId::of("/datum/marker_target"))
+        );
+        let absolute =
+            parse_signature_declarations("/datum/marker_target/target", "", &mut symbols).unwrap();
+        assert!(absolute.signature.parameters.is_empty());
+        assert_eq!(absolute.declarations.len(), 1);
+        assert_eq!(
+            absolute.declarations[0].path,
+            SymbolId::of("/datum/marker_target/target")
+        );
+        assert_eq!(absolute.declarations[0].relative_span, Span::new(0, 27));
+        for declaration in [
+            "/var/value",
+            "/datum/marker_target/proc/call",
+            "/datum/marker_target/target = 1",
+        ] {
+            assert!(parse_signature_declarations(declaration, "", &mut symbols).is_err());
+        }
+    }
+
+    #[test]
+    fn absolute_header_effects_do_not_consume_surrounding_parameters() {
+        for arguments in [
+            "/datum/marker_target/target, other",
+            "other, /datum/marker_target/target",
+            "other,/datum/marker_target/target",
+            "other ,  /datum/marker_target/target",
+            "datum/marker_target/other, /datum/marker_target/target, actual_power=1",
+        ] {
+            let mut symbols = SymbolTable::default();
+            let parsed = parse_signature_declarations(arguments, "", &mut symbols).unwrap();
+            let expected: &[&str] = if arguments.ends_with("actual_power=1") {
+                &["other", "actual_power"]
+            } else {
+                &["other"]
+            };
+            let names: Vec<_> = parsed
+                .signature
+                .parameters
+                .iter()
+                .map(|parameter| parameter.name)
+                .collect();
+            assert_eq!(
+                names,
+                expected
+                    .iter()
+                    .map(|name| SymbolId::of(name))
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(parsed.declarations.len(), 1);
+            let effect = &parsed.declarations[0];
+            assert_eq!(effect.path, SymbolId::of("/datum/marker_target/target"));
+            assert_eq!(
+                &arguments[effect.relative_span.start..effect.relative_span.end],
+                "/datum/marker_target/target"
+            );
+        }
+    }
+
     #[test]
     fn trailing_argument_path_separator_preserves_name_and_type() {
         let mut symbols = SymbolTable::default();

@@ -525,3 +525,62 @@ fn native_sdk_macro_receipts_bind_sources_and_seed_exact_literals() {
         "var/a = DM_VERSION\n"
     );
 }
+
+#[test]
+fn pragma_multiple_reincludes_under_current_macro_modes() {
+    let plan = fixture(&[
+        ("project.dme", "#define PACK station\n#include \"body.dm\"\n#undef PACK\n#define PACK sif\n#include \"body.dm\"\n#undef PACK\n#define PACK thor\n#include \"body.dm\"\n"),
+        ("body.dm", "#pragma multiple\n/datum/turfpack/PACK\n"),
+    ]);
+    assert!(plan.diagnostics.is_empty());
+    assert!(plan.occurrences.iter().all(|item| !item.suppressed));
+    let expanded = expand_regions(&plan, 1);
+    assert_eq!(
+        expanded.text.as_ref(),
+        "/datum/turfpack/station\n/datum/turfpack/sif\n/datum/turfpack/thor\n"
+    );
+    assert_eq!(expanded.origins.len(), 3);
+    for origin in expanded.origins.iter() {
+        assert_eq!(origin.origin.path.as_path(), Path::new("body.dm"));
+        assert_eq!(origin.origin.source_line, 2);
+    }
+}
+
+#[test]
+fn inactive_multiple_pragma_preserves_first_include_suppression() {
+    let plan = fixture(&[
+        (
+            "project.dme",
+            "#include \"body.dm\"\n#include \"body.dm\"\n",
+        ),
+        ("body.dm", "#if 0\n#pragma multiple\n#endif\n/datum/once\n"),
+    ]);
+    assert!(plan.occurrences[2].suppressed);
+    assert_eq!(expand_regions(&plan, 1).text.as_ref(), "/datum/once\n");
+}
+
+#[test]
+fn recursive_multiple_include_has_bounded_diagnostic() {
+    let plan = fixture(&[
+        ("project.dme", "#include \"body.dm\"\n"),
+        ("body.dm", "#pragma multiple\n#include \"body.dm\"\n"),
+    ]);
+    assert_eq!(plan.diagnostics.len(), 1);
+    assert!(plan.diagnostics[0]
+        .message
+        .contains("repeatable include recursion exceeds"));
+}
+
+#[test]
+fn guarded_repeatable_recursion_keeps_current_macro_effects() {
+    let plan = fixture(&[
+        ("project.dme", "#include \"body.dm\"\n"),
+        ("body.dm", "#pragma multiple\n#ifndef ENTERED\n#define ENTERED 1\n#include \"body.dm\"\n#else\n/datum/recursive_leaf\n#endif\n"),
+    ]);
+    assert!(plan.diagnostics.is_empty());
+    assert!(!plan.occurrences[2].suppressed);
+    assert_eq!(
+        expand_regions(&plan, 1).text.as_ref(),
+        "/datum/recursive_leaf\n"
+    );
+}

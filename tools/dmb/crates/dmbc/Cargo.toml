@@ -22,7 +22,7 @@ dm-analysis = { path = "../dm-analysis" }
 dm-preprocess = { path = "../dm-preprocess" }
 dm-syntax = { path = "../dm-syntax" }
 
-byond-dmb = { path = "../.." }
+byond-dmb = { path = "../..", default-features = false }
 dm-ir = { path = "../dm-ir" }
 dm-session = { path = "../dm-session" }
 dm-cache = { path = "../dm-cache" }

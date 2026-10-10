@@ -7,7 +7,7 @@ use dm_ir::*;
 use dm_syntax::{Span as SyntaxSpan, TokenKind};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-const SCHEMA: u32 = 2;
+const SCHEMA: u32 = 3;
 #[derive(Serialize, Deserialize)]
 enum ScalarConstant {
     Null,

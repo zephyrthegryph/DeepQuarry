@@ -36,6 +36,8 @@ pub struct BuildHost {
     session_id: u64,
     engine_generation: u64,
     rich_generation: u64,
+    procedure_generation: u64,
+    procedure_policy_replacements: u64,
     prepared_sources: Option<Arc<crate::input_snapshot::PreparedInputArtifacts>>,
     shared_engines: Option<Arc<EnginePayloads>>,
     shared_executors: Option<Arc<ExecutorPools>>,
@@ -88,6 +90,8 @@ impl Default for BuildHost {
             session_id: next_session_id(),
             engine_generation: 0,
             rich_generation: 0,
+            procedure_generation: 0,
+            procedure_policy_replacements: 0,
             prepared_sources: Some(Arc::new(
                 crate::input_snapshot::PreparedInputArtifacts::default(),
             )),
@@ -119,6 +123,8 @@ impl BuildHost {
             "session": self.session_id,
             "engine_generation": self.engine_generation,
             "rich_generation": self.rich_generation,
+            "procedure_generation": self.procedure_generation,
+            "procedure_policy_replacements": self.procedure_policy_replacements,
             "enabled": self.retains_artifacts(),
         })
     }
@@ -192,6 +198,8 @@ impl BuildHost {
             session_id: next_session_id(),
             engine_generation: 0,
             rich_generation: 0,
+            procedure_generation: 0,
+            procedure_policy_replacements: 0,
             prepared_sources: None,
             shared_engines: None,
             shared_executors: None,
@@ -312,6 +320,11 @@ impl BuildHost {
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
+            self.procedure_generation = self.procedure_generation.saturating_add(1);
+            if self.procedures.is_some() {
+                self.procedure_policy_replacements =
+                    self.procedure_policy_replacements.saturating_add(1);
+            }
             self.procedures = Some((
                 policy,
                 Arc::new(crate::lowering_memo::LoweringMemo::default()),
@@ -700,14 +713,15 @@ mod tests {
     fn invalid_changed_engine_does_not_replace_authenticated_owner() {
         let mut host = BuildHost::default();
         let first = capture(&mut host, BTreeMap::new());
-        assert!(host
-            .engine(
+        assert!(
+            host.engine(
                 PathBuf::from("E:/fixture/world.dme"),
                 BTreeMap::new(),
                 true,
                 vec![0]
             )
-            .is_err());
+            .is_err()
+        );
         let again = capture(&mut host, BTreeMap::new());
         assert!(Arc::ptr_eq(&first, &again));
     }

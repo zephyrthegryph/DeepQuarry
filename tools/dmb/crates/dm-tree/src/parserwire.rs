@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 // changing them must invalidate both independent and region-enriched fragments.
 // Lexical proc settings are unconditional declarations; old guarded metadata
 // must never replay under the same fragment identity.
-pub(super) const VERSION: u32 = 5;
+pub(super) const VERSION: u32 = 6;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,

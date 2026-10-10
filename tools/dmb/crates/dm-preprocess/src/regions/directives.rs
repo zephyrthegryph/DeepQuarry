@@ -25,6 +25,7 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
             ..DirectivePlan::default()
         },
         visited: BTreeSet::new(),
+        repeatable: BTreeSet::new(),
         file_dir_definitions: Vec::new(),
         environment: MacroEnvironment::default(),
         file_dir_origins: Vec::new(),
@@ -234,6 +235,7 @@ struct DirectivePass<'a, P> {
     recording: Option<directive_memo::Recording>,
     plan: DirectivePlan,
     visited: BTreeSet<PathBuf>,
+    repeatable: BTreeSet<PathBuf>,
     file_dir_definitions: Vec<Macro>,
     environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
@@ -285,6 +287,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     });
                 }
                 directive_memo::Action::Freeze => self.freeze_lines(region, pending),
+                directive_memo::Action::Multiple => {
+                    self.repeatable
+                        .insert(self.plan.occurrences[occurrence].path.as_ref().clone());
+                }
                 directive_memo::Action::Define {
                     input,
                     name,
@@ -502,11 +508,31 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
 
     fn visit(&mut self, occurrence: usize) {
         let path = self.plan.occurrences[occurrence].path.clone();
-        // Paired same-file/distinct-file fixtures establish first-visit
-        // suppression. Alias/case policies remain explicitly unproven.
-        if !self.visited.insert(path.as_ref().clone()) {
+        // Ordinary files are included once; an active #pragma multiple opts
+        // this exact file path into subsequent inclusion under current macros.
+        if !self.visited.insert(path.as_ref().clone()) && !self.repeatable.contains(path.as_ref()) {
             self.plan.occurrences[occurrence].suppressed = true;
             return;
+        }
+        // Repeatable includes can recurse under macro guards. Bound only the
+        // active chain, allowing finite same-file recursion without risking a
+        // process stack overflow for an unguarded repeated include.
+        let mut ancestor = self.plan.occurrences[occurrence].parent;
+        let mut repeated_ancestors = 0;
+        while let Some(parent) = ancestor {
+            if self.plan.occurrences[parent].path == path {
+                repeated_ancestors += 1;
+            }
+            if repeated_ancestors >= 64 {
+                self.error(
+                    occurrence,
+                    1,
+                    DiagnosticKind::Unsupported,
+                    "repeatable include recursion exceeds 64 occurrences".into(),
+                );
+                return;
+            }
+            ancestor = self.plan.occurrences[parent].parent;
         }
         self.plan.dependencies.insert(path.as_ref().clone());
         let prepared = match self.provider.prepared_source(&path) {
@@ -677,7 +703,15 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     DiagnosticKind::UserError,
                     rest.trim_end_matches(['\r', '\n']).into(),
                 ),
-                "warning" | "warn" | "pragma" | "" => {}
+                "pragma" => {
+                    if rest.trim() == "multiple" {
+                        self.repeatable.insert(path.as_ref().clone());
+                        if let Some(recording) = self.recording.as_mut() {
+                            recording.actions.push(directive_memo::Action::Multiple);
+                        }
+                    }
+                }
+                "warning" | "warn" | "" => {}
                 other => self.error(
                     occurrence,
                     source_line,

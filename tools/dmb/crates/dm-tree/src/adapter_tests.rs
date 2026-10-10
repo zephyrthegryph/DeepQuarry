@@ -460,3 +460,35 @@ fn absolute_field_assignment_is_owned_by_its_target() {
         .unwrap();
     assert_eq!(tree.override_chain(field).len(), 2);
 }
+
+#[test]
+fn absolute_header_type_effect_uses_exact_current_header_origin() {
+    let source = "/datum/marker_target\n    var/value = 7\n/proc/probe(/datum/marker_target/target)\n    return 1\n";
+    let adapted = adapt(source);
+    let effect = adapted
+        .skeletons
+        .iter()
+        .position(|skeleton| {
+            matches!(skeleton,
+        Skeleton::Type {path, ..} if *path == SymbolId::of("/datum/marker_target/target"))
+        })
+        .unwrap();
+    let origin = &adapted.origins[effect];
+    assert_eq!(
+        &source[origin.span.start as usize..origin.span.end as usize],
+        "/datum/marker_target/target"
+    );
+    assert_eq!(origin.include_occurrence, 7);
+    assert_eq!(origin.region, 11);
+    let procedure = adapted
+        .skeletons
+        .iter()
+        .find_map(|skeleton| match skeleton {
+            Skeleton::Member { name, metadata, .. } if *name == SymbolId::of("probe") => {
+                metadata.procedure.as_ref()
+            }
+            _ => None,
+        })
+        .unwrap();
+    assert!(procedure.signature.parameters.is_empty());
+}

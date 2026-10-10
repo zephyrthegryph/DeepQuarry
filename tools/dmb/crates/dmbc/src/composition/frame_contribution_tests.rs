@@ -1,5 +1,96 @@
 //! One shared emitter; one-shot composition does not capture a retained frame.
 use super::*;
+
+#[test]
+fn frame_reuse_checks_used_ids_instead_of_unrelated_table_frontiers() {
+    use std::sync::Arc;
+    for has_local in [false, true] {
+        let (mut batch, _) = ownership_fixture_source("/proc/frontier_probe()\n    return 1\n");
+        if has_local {
+            batch.units[0].lowered.frame.local_count = 1;
+            batch.units[0].lowered.frame.local_names = vec!["frontier_local".into()];
+        }
+        let mut baseline =
+            Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+        let mut strings = StringIndex::build(&baseline).unwrap();
+        for spelling in ["/proc/frontier_probe", "frontier probe", "frontier_local"] {
+            strings.intern(&mut baseline, spelling.as_bytes()).unwrap();
+        }
+        let emit = |model: &mut Dmb| {
+            let mut index = StringIndex::build(model).unwrap();
+            frame_contribution::emit(
+                model,
+                &mut index,
+                &batch.units[0],
+                Arc::new(vec![1]),
+                procedure_plan::ProcedureMetadata {
+                    declared: Some(true),
+                    path: Ok(Arc::from("/proc/frontier_probe")),
+                    default_display: Ok(Arc::from("frontier probe")),
+                    value_sources: Vec::new(),
+                },
+                true,
+            )
+            .unwrap();
+        };
+        emit(&mut baseline.clone());
+        let owner = batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .clone()
+            .unwrap();
+        for change in 0..5 {
+            let mut current = baseline.clone();
+            match change {
+                0 => current.procs.push(current.procs[0].clone()),
+                1 => current.lists.push(vec![123]),
+                2 => current.strings.push(DmString {
+                    data: b"unrelated frontier text".to_vec(),
+                    long_chunks: 0,
+                }),
+                3 => current.variables.push(Variable {
+                    kind: 0,
+                    value: 0,
+                    name: 0,
+                }),
+                _ => {
+                    let display = current
+                        .strings
+                        .iter_mut()
+                        .find(|row| row.data == b"frontier probe")
+                        .unwrap();
+                    display.data = b"different binding".to_vec();
+                }
+            }
+            let original_owner = batch.units[0].metadata_recipe.frame_owner();
+            *original_owner.lock().unwrap() = Some(Arc::clone(&owner));
+            let mut fresh = current.clone();
+            let mut index = StringIndex::build(&fresh).unwrap();
+            frame_contribution::emit(
+                &mut fresh,
+                &mut index,
+                &batch.units[0],
+                Arc::new(vec![1]),
+                procedure_plan::ProcedureMetadata {
+                    declared: Some(true),
+                    path: Ok(Arc::from("/proc/frontier_probe")),
+                    default_display: Ok(Arc::from("frontier probe")),
+                    value_sources: Vec::new(),
+                },
+                false,
+            )
+            .unwrap();
+            emit(&mut current);
+            assert_eq!(current, fresh);
+            assert_eq!(
+                Arc::ptr_eq(&owner, original_owner.lock().unwrap().as_ref().unwrap()),
+                change != 4 && (change != 3 || !has_local)
+            );
+        }
+    }
+}
 #[test]
 fn one_shot_frame_emission_skips_retention_and_matches_retained_output() {
     use std::sync::Arc;

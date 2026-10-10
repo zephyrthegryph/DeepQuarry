@@ -66,7 +66,16 @@ impl Compiler<'_> {
                     error(statement, "global variable has no shared storage")
                 }
                 VariableResolutionError::Unresolved => {
-                    error(statement, &format!("unresolved variable name: {name}"))
+                    if self.lookup.is_some() {
+                        // Every namespace probe above completed authoritatively.
+                        // Unsupported/failed host answers exit through Host instead.
+                        LowerError {
+                            kind: LowerErrorKind::SourceError,
+                            ..error(statement, &format!("undefined var: {name}"))
+                        }
+                    } else {
+                        error(statement, &format!("unresolved variable name: {name}"))
+                    }
                 }
             }
         })
@@ -106,3 +115,7 @@ impl Compiler<'_> {
         })
     }
 }
+
+#[cfg(test)]
+#[path = "reference_resolution_tests.rs"]
+mod tests;

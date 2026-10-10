@@ -163,6 +163,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
             end: item.span.end as u32,
         };
         let header = item.header.trim();
+        let mut header_declarations = Vec::new();
         let adapted = (|| -> Result<Option<Skeleton>, String> {
             match item.kind {
                 ItemKind::Type => {
@@ -349,8 +350,13 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             }
                         }
                     }
-                    let typed_signature =
-                        crate::procedure::parse_signature(arguments, trailing, context.symbols)?;
+                    let parsed_signature = crate::procedure::parse_signature_declarations(
+                        arguments,
+                        trailing,
+                        context.symbols,
+                    )?;
+                    header_declarations = parsed_signature.declarations;
+                    let typed_signature = parsed_signature.signature;
                     let procedure = Some(Arc::new(crate::ProcedureMetadata {
                         signature: typed_signature,
                         settings: typed_settings,
@@ -434,6 +440,30 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         })();
         match adapted {
             Ok(Some(skeleton)) => {
+                for declaration in header_declarations {
+                    let (_, arguments, _) =
+                        signature_parts(header).expect("validated procedure signature");
+                    let argument_offset =
+                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+                    let start =
+                        item.header_span.start + argument_offset + declaration.relative_span.start;
+                    let end =
+                        item.header_span.start + argument_offset + declaration.relative_span.end;
+                    context.result.skeletons.push(Skeleton::Type {
+                        path: declaration.path,
+                        explicit_parent: None,
+                    });
+                    context.result.origins.push(Provenance {
+                        span: Span {
+                            file,
+                            start: start as u32,
+                            end: end as u32,
+                        },
+                        include_occurrence,
+                        region,
+                        expansion_stack: Arc::from([]),
+                    });
+                }
                 context.result.skeletons.push(skeleton);
                 context.result.origins.push(Provenance {
                     span,
@@ -458,7 +488,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
 #[path = "adapter_tests.rs"]
 mod tests;
 
-fn signature_parts(header: &str) -> Result<(&str, &str, &str), String> {
+pub(crate) fn signature_parts(header: &str) -> Result<(&str, &str, &str), String> {
     let tokens = dm_syntax::lex(header);
     let mut open = None;
     let mut depth = 0;

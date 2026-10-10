@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 2;
+pub const DIRECTIVE_VERSION: u32 = 3;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
     Text(usize),
@@ -28,6 +28,7 @@ pub(super) enum Action {
         kind: DiagnosticKind,
         message: String,
     },
+    Multiple,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Read {
@@ -74,7 +75,7 @@ impl DirectiveRecord {
                 } => name.capacity().saturating_add(macro_heap(definition)),
                 Action::Undef { name, .. } => name.capacity(),
                 Action::Error { message, .. } => message.capacity(),
-                Action::Text(_) | Action::Freeze => 0,
+                Action::Text(_) | Action::Freeze | Action::Multiple => 0,
             }))
     }
 
@@ -99,7 +100,7 @@ impl DirectiveRecord {
                 | Action::Define { input, .. }
                 | Action::Undef { input, .. }
                 | Action::Error { input, .. } => *input >= value.inputs,
-                Action::Freeze => false,
+                Action::Freeze | Action::Multiple => false,
             })
         {
             return Err("invalid directive interval receipt".into());
@@ -388,6 +389,61 @@ mod tests {
             format!("{:?}", second.origins)
         );
         assert_eq!(first.diagnostics, second.diagnostics);
+    }
+    #[test]
+    fn multiple_pragma_branch_toggle_replays_only_exact_current_conditions() {
+        let files = source(&[
+            (
+                "project.dme",
+                "#include \"body.dm\"\n#include \"body.dm\"\n",
+            ),
+            (
+                "body.dm",
+                "#if ENABLE_MULTIPLE\n#pragma multiple\n#endif\n/datum/repeated\n",
+            ),
+        ]);
+        let memo = Memo::default();
+        for (enabled, repeats) in [("0", false), ("1", true), ("0", false), ("1", true)] {
+            let defines = BTreeMap::from([("ENABLE_MULTIPLE".into(), enabled.into())]);
+            let fresh = plan_regions(Path::new("project.dme"), &files, &defines);
+            let reused = plan_regions_with_memo(Path::new("project.dme"), &files, &defines, &memo);
+            equivalent(&fresh, &reused);
+            assert_eq!(reused.occurrences[2].suppressed, !repeats);
+            assert_eq!(
+                expand_regions_text(&reused, 1).text.as_ref(),
+                if repeats {
+                    "/datum/repeated\n/datum/repeated\n"
+                } else {
+                    "/datum/repeated\n"
+                }
+            );
+        }
+    }
+    #[test]
+    fn multiple_pragma_is_replayed_from_disk_receipt_before_repeated_include() {
+        let files = source(&[
+            ("project.dme", "#define PACK station\n#include \"body.dm\"\n#undef PACK\n#define PACK sif\n#include \"body.dm\"\n"),
+            ("body.dm", "#pragma multiple\n/datum/turfpack/PACK\n"),
+        ]);
+        let memo = Memo::default();
+        let defines = BTreeMap::new();
+        let cold = plan_regions(Path::new("project.dme"), &files, &defines);
+        plan_regions_with_memo(Path::new("project.dme"), &files, &defines, &memo);
+        for records in memo.records.lock().unwrap().values_mut() {
+            for record in records {
+                *record =
+                    Arc::new(DirectiveRecord::from_bytes(&record.to_bytes().unwrap()).unwrap());
+            }
+        }
+        let count = memo.inserts.load(Ordering::Relaxed);
+        let reused = plan_regions_with_memo(Path::new("project.dme"), &files, &defines, &memo);
+        equivalent(&cold, &reused);
+        assert!(!reused.occurrences[2].suppressed);
+        assert_eq!(
+            expand_regions_text(&reused, 1).text.as_ref(),
+            "/datum/turfpack/station\n/datum/turfpack/sif\n"
+        );
+        assert_eq!(memo.inserts.load(Ordering::Relaxed), count);
     }
     #[test]
     fn directive_interval_replay_preserves_include_effects_cross_file_stack_and_diagnostics() {

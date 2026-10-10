@@ -7,7 +7,7 @@ description = "Symbolic native BYOND bytecode and deterministic relocation"
 
 [dependencies]
 dm-ir = { path = "../dm-ir" }
-byond-dmb = { path = "../.." }
+byond-dmb = { path = "../..", default-features = false }
 dm-syntax = { path = "../dm-syntax" }
 serde = { version = "1", features = ["derive"] }
 

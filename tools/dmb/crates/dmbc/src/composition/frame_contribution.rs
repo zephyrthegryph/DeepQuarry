@@ -5,18 +5,12 @@ use crate::symbolic::FrozenUnit;
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Frontier {
-    procedures: usize,
     variables: usize,
-    lists: usize,
-    strings: usize,
 }
 impl Frontier {
     fn current(dmb: &Dmb) -> Self {
         Self {
-            procedures: dmb.procs.len(),
             variables: dmb.variables.len(),
-            lists: dmb.lists.len(),
-            strings: dmb.strings.len(),
         }
     }
 }
@@ -128,7 +122,9 @@ impl FrameContribution {
         }
     }
     fn output_matches(&self, dmb: &Dmb, index: &StringIndex) -> bool {
-        if self.start != Frontier::current(dmb) {
+        // Procedure/list IDs are rebound during emission. Only local/argument
+        // rows embed append-position VarIDs; string bindings are checked below.
+        if !self.variables.is_empty() && self.start.variables != dmb.variables.len() {
             return false;
         }
         let mut next = dmb.strings.len();
@@ -171,7 +167,6 @@ impl FrameContribution {
         let frame = &unit.lowered.frame;
         if metadata.declared != Some(self.declared)
             || self.identity != unit.lowered.identity
-            || self.start != Frontier::current(dmb)
             || self.local_count != frame.local_count
             || self.locals_names != frame.local_names
             || self.argument_names != frame.argument_names
