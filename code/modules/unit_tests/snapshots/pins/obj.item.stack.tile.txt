@@ -71,5 +71,5 @@ human|/obj/item/stack menu: Move To Top
 human|/obj/item/stack menu: Split
 human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack click: Click: Combine
-keys: collect_item, combine, consolidate, drag_buckle, equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable, ui_open, use_welder
+keys: build, collect_item, combine, consolidate, drag_buckle, equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable, ui_open, use_welder
 

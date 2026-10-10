@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Appearance reader: TRUE while a scan task holds the cataloguer.
 /obj/item/cataloguer/proc/appearance_busy()
-	return work_busy(src) ? TRUE : FALSE
+	return (op_claimed(src) || work_busy(src)) ? TRUE : FALSE
 
 /// The look (the draw sweep: from its template).
 /obj/item/cataloguer/draw(datum/look/look)
@@ -65,7 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
-	if(work_busy(src))
+	if(op_claimed(src) || work_busy(src))
 		to_chat(user, span_warning("\The [src] is already scanning something."))
 		return
 
@@ -106,23 +106,30 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// The delay, and test for if the scan succeeds or not. The effects travel in a list so the
 	// beam (which ends itself) is never a captured argument.
 	var/list/effects = list(scan_beam, filter, box_segments)
-	// The scan claims the cataloguer: busy (task_busy()) until it ends.
-	var/started = task_start(/datum/task/timed/cataloguer_scan, user, target, duration = scan_delay, effects = effects, scan_start_time = world.time, max_distance = scan_range, busy = src)
-	if(istext(started))
+	// The scan claims the cataloguer (the "scan" op of its CAPABILITIES) until it ends.
+	var/datum/op_result/started = perform_op(user, src, "scan", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("scanned" = target, "delay" = scan_delay, "effects" = effects, "scan_start_time" = world.time))
+	if(started.outcome == ACT_REFUSED)
 		scan_cleanup(target, user, effects)
 		return
 
-/datum/task/timed/cataloguer_scan
-	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
-	complete_proc = /obj/item/cataloguer/proc/scan_succeeded
-	cancel_proc = /obj/item/cataloguer/proc/scan_failed
-	var/list/effects
-	var/scan_start_time
+/// How long the scan takes.
+/obj/item/cataloguer/proc/scan_time(datum/act/op/A)
+	return A.arg("delay")
 
-/obj/item/cataloguer/proc/scan_succeeded(datum/task/timed/cataloguer_scan/task)
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	var/list/effects = task.effects
+/// The scan's wait ended: the target must still be within range, else it fails like an interrupted one.
+/obj/item/cataloguer/proc/scan_finished(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	if(QDELETED(target) || get_dist(target, user) > scan_range)
+		scan_failed(A)
+		return OP_OK
+	scan_succeeded(A)
+	return OP_OK
+
+/obj/item/cataloguer/proc/scan_succeeded(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	var/list/effects = A.arg("effects")
 	if(target.can_catalogue(user))
 		to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
 		play_sfx(src, SFX_MACHINES_PING)
@@ -136,11 +143,11 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	partial_scan_time = 0
 	scan_cleanup(target, user, effects)
 
-/obj/item/cataloguer/proc/scan_failed(datum/task/timed/cataloguer_scan/task)
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	var/list/effects = task.effects
-	var/scan_start_time = task.scan_start_time
+/obj/item/cataloguer/proc/scan_failed(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	var/list/effects = A.arg("effects")
+	var/scan_start_time = A.arg("scan_start_time")
 	to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
 	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#FF0000", 3)

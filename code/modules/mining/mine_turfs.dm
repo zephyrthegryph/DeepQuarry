@@ -89,6 +89,10 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_many(nameof(finds))
 	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
 	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
+	// The timed parts mineral_item() starts with the held tool: the user stays, keeps the tool and the rock stays in reach.
+	op("mineral_dig_hole", ai(), wait(PROC_REF(dig_hole_time)), then(PROC_REF(dig_hole_done)))
+	op("mineral_measure", ai(), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
+	op("mineral_pick", ai(), wait(PROC_REF(pick_time)), then(PROC_REF(pick_done)))
 
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
 	clear_ore_effects()
@@ -362,7 +366,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 			to_chat(user, span_notice("You start digging."))
 			play_sfx(user, SFX_EFFECTS_RUSTLE1)
 
-			task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
+			perform_op(user, src, "mineral_dig_hole", W, ORIGIN_SYSTEM)
 
 		else if(istype(W,/obj/item/storage/bag/fossils))
 			var/obj/item/storage/bag/fossils/S = W
@@ -399,7 +403,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 			act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
 				item = P)
-			task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+			perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
 			return OP_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
@@ -410,7 +414,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 				act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					item = C)
-				task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
+				perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
 			return OP_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
@@ -478,23 +482,42 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-			task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
+			perform_op(user, src, "mineral_pick", W, ORIGIN_SYSTEM)
 			return OP_PASS
 
 	return attack_hand(user) ? OP_OK : OP_PASS
 
-/turf/simulated/mineral/proc/dig_hole_done(mob/user)
+/// How long the dig takes: the shovel's or the pickaxe's speed (forty when it is neither).
+/turf/simulated/mineral/proc/dig_hole_time(datum/act/op/A)
+	if(istype(A.held, /obj/item/shovel))
+		var/obj/item/shovel/S = A.held
+		return S.digspeed
+	if(istype(A.held, /obj/item/pickaxe))
+		var/obj/item/pickaxe/P = A.held
+		return P.digspeed
+	return 40
+
+/turf/simulated/mineral/proc/dig_hole_done(datum/act/op/A)
 	if(sand_dug)
 		return
-	to_chat(user, span_notice("You dug a hole."))
+	to_chat(A.actor, span_notice("You dug a hole."))
 	GetDrilled()
 
-/turf/simulated/mineral/proc/measure_done(mob/user)
-	to_chat(user, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
+/turf/simulated/mineral/proc/measure_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
 
-/turf/simulated/mineral/proc/pick_done(mob/user, obj/item/pickaxe/P)
-	if(!density)
+/// How long the pick takes: the pickaxe's dig speed.
+/turf/simulated/mineral/proc/pick_time(datum/act/op/A)
+	if(istype(A.held, /obj/item/pickaxe))
+		var/obj/item/pickaxe/P = A.held
+		return P.digspeed
+	return 40
+
+/turf/simulated/mineral/proc/pick_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!density || !istype(A.held, /obj/item/pickaxe))
 		return
+	var/obj/item/pickaxe/P = A.held
 	var/newDepth = excavation_level + P.excavation_amount
 	if(finds && finds.len)
 		var/datum/find/F = finds[1]

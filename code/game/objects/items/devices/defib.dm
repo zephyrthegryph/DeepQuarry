@@ -219,7 +219,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 		look.state("[stem][wielded]_cooldown")
 
 /obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
-	if(task_busy(src))
+	if(op_claimed(src))
 		return 0
 	if(!check_charge(chargecost))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
@@ -364,7 +364,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 
 	return ..()
 
-// The revive chain: each timed action claims the paddles (task_busy()) while it runs.
+// The revive chain: each timed op claims the paddles (op_claimed()) while it runs; the placing op starts the charging op when it ends.
 /obj/item/shockpaddles/proc/do_revive(mob/living/carbon/human/H, mob/user)
 	var/mob/observer/dead/ghost = H.get_ghost()
 	if(ghost)
@@ -372,10 +372,18 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	act_message(user, src, MSG_SELF(span_warning("You begin to place %T% on [H]'s chest...")), MSG_OTHERS(span_warning("%U% begins to place %T% on [H]'s chest.")))
-	task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
+	perform_op(user, src, "revive_place", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = get_turf(H)))
 	return TRUE
 
-/obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
+/// The patient walked off (or is gone) while the paddles were being placed or charged: the work ends.
+/obj/item/shockpaddles/proc/patient_left(mob/living/carbon/human/H, turf/spot)
+	return QDELETED(H) || get_turf(H) != spot
+
+/obj/item/shockpaddles/proc/do_revive_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 	act_message(user, src, MSG_SELF(span_warning("You place %T% on [H]'s chest.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " places %T% on [H]'s chest.")))
 	play_sfx(src, SFX_MACHINES_DEFIB_CHARGE)
 
@@ -383,28 +391,31 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 	if(error)
 		make_announcement(error, "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	if(check_blood_level(H))
 		make_announcement("buzzes, \"Warning - Patient is in hypovolemic shock.\"", "warning") //also includes heart damage
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	task_start(/datum/task/timed/shockpaddles_do_revive_charged, user, H, receiver = src, duration = chargetime / output_envelope, output_envelope = output_envelope, busy = src)
+	perform_op(user, src, "revive_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = A.arg("spot"), "envelope" = output_envelope))
+	return OP_OK
 
-/datum/task/timed/shockpaddles_do_revive_charged
-	complete_proc = /obj/item/shockpaddles/proc/do_revive_charged
-	var/output_envelope
+/// How long the charge takes: the base charge time shortened by the output envelope.
+/obj/item/shockpaddles/proc/charge_wait(datum/act/op/A)
+	return chargetime / A.arg("envelope")
 
-/obj/item/shockpaddles/proc/do_revive_charged(datum/task/timed/shockpaddles_do_revive_charged/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/output_envelope = task.output_envelope
+/obj/item/shockpaddles/proc/do_revive_charged(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/output_envelope = A.arg("envelope")
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	act_message(H, null, others = span_warning("%U%'s body convulses a bit."))
 	play_sfx(src, SFX_BODYFALL)
@@ -421,26 +432,26 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 			make_announcement("buzzes, \"Conversion failed. Continue CPR.\"", "warning")
 			play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		add_attack_logs(user, H, "Cardioverted using [name]")
-		return
+		return OP_OK
 
 	var/error = can_revive(H)
 	if(error)
 		make_announcement(error, "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
 	if(has_trait(H, TRAIT_UNLUCKY) && prob(5))
 		make_announcement("buzzes, \"Unknown error occurred. Please try again.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	// A fibrillating corpse needs its rhythm converted to come back.
 	var/datum/affliction/cardiac_arrhythmia/rhythm = H.cardiac_arrhythmia()
 	if(rhythm && !rhythm.is_perfusing() && !H.defibrillate_heart())
 		make_announcement("buzzes, \"Resuscitation failed - rhythm did not convert. Continue CPR.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	// Flush synthetic system faults (a no-op on organic parts).
 	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
@@ -449,7 +460,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 	if(revived != TRUE)
 		make_announcement("buzzes, \"Resuscitation failed - [revived]. Further attempts futile without treatment.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
@@ -474,25 +485,22 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	task_start(/datum/task/timed/shockpaddles_do_electrocute, user, H, receiver = src, duration = chargetime / output_envelope, target_zone_arg = target_zone, output_envelope = output_envelope, busy = src)
+	perform_op(user, src, "electrocute", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = get_turf(H), "zone" = target_zone, "envelope" = output_envelope))
 	return TRUE
 
-/datum/task/timed/shockpaddles_do_electrocute
-	complete_proc = /obj/item/shockpaddles/proc/do_electrocute_timed_done
-	var/target_zone_arg
-	var/output_envelope
-
-/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/task/timed/shockpaddles_do_electrocute/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/output_envelope = task.output_envelope
+/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/target_zone = A.arg("zone")
+	var/output_envelope = A.arg("envelope")
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	act_message(user, src, MSG_SELF(span_warning("You shock [H] with %T%!")), MSG_OTHERS(span_danger(span_italics("%U% shocks [H] with %T%!"))))
 	play_sfx(src, SFX_MACHINES_DEFIB_ZAP, 2)
@@ -505,6 +513,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 		H.emote("scream")
 
 	add_attack_logs(user,H,"Shocked using [name]")
+	return OP_OK
 
 /// Revive the patient through return_from_death(). Returns TRUE, or the refusal reason.
 /obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M)
@@ -555,6 +564,10 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 		return OP_OK
 
 CAPABILITIES(/obj/item/shockpaddles)
+	// The revive chain and the shock, started by do_revive() / do_electrocute() with the patient: each claims the paddles while it runs.
+	op("revive_place", ai(), takes("patient", "spot"), claims(CLAIM_TARGET), wait(3 SECONDS), then(PROC_REF(do_revive_timed_done)))
+	op("revive_charge", ai(), takes("patient", "spot", "envelope"), claims(CLAIM_TARGET), wait(PROC_REF(charge_wait)), then(PROC_REF(do_revive_charged)))
+	op("electrocute", ai(), takes("patient", "spot", "zone", "envelope"), claims(CLAIM_TARGET), wait(PROC_REF(charge_wait)), then(PROC_REF(do_electrocute_timed_done)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(paddles_emp)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 

@@ -125,6 +125,7 @@ CAPABILITIES(/obj/item/gun)
 	drag_onto(PROC_REF(mousedrop_input))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
+	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
 	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
@@ -749,13 +750,15 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	mouthshoot = 1
 	act_message(user, M, others = span_red("%U% sticks their gun in their mouth, ready to pull the trigger..."))
-	task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+	perform_op(M, src, "suicide", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
+/obj/item/gun/proc/suicide_reconsidered(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	M?.visible_message(span_blue("[M] decided life was worth living"))
 	mouthshoot = 0
 
-/obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
+/obj/item/gun/proc/suicide_trigger(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	var/mob/living/user = M
 	var/obj/item/projectile/in_chamber = consume_next_projectile(user)
 	if (istype(in_chamber))

@@ -64,6 +64,8 @@ CAPABILITIES(/obj/item/research_sample)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))
 	op("self_robot", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	// a short delay, so you can abort/cancel if you misclick
+	op("crush", ai(), wait(3 SECONDS), then(PROC_REF(crush_done)))
 
 /// A cyborg picks a sample up unharmed.
 /obj/item/research_sample/proc/sample_pick_up_robot(datum/act/op/A)
@@ -126,7 +128,8 @@ CAPABILITIES(/obj/item/research_sample)
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
 
-/obj/item/research_sample/proc/crush_done(mob/living/carbon/human/H)
+/obj/item/research_sample/proc/crush_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
 	act_message(H, src, others = span_notice("%U% crushes %T%, stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
 	var/i = rand(min_ore,max_ore)
 	while(i>0)
@@ -188,7 +191,7 @@ CAPABILITIES(/obj/item/research_sample)
 			return OP_OK
 
 		else	//short delay, so you can abort/cancel if you misclick
-			task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
+			perform_op(H, src, "crush", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 			return OP_OK
 
 	if(burn_user)

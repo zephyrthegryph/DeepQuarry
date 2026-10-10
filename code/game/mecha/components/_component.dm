@@ -150,17 +150,14 @@
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
 	if(get_integrity() >= max_integrity)
 		return
-	task_start(/datum/task/timed/component_paste_repair, user, site, receiver = src, NP = NP)
+	perform_op(user, src, "paste_repair", NP, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("site" = site))
 
-/datum/task/timed/component_paste_repair
-	duration = 1 SECOND
-	complete_proc = /obj/item/mecha_parts/component/proc/paste_repair_done
-	var/obj/item/stack/nanopaste/NP
-
-/obj/item/mecha_parts/component/proc/paste_repair_done(datum/task/timed/component_paste_repair/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/nanopaste/NP = task.NP
-	var/atom/site = task.target
+/obj/item/mecha_parts/component/proc/paste_repair_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/nanopaste/NP = A.held
+	var/atom/site = A.arg("site")
+	if(QDELETED(NP) || QDELETED(site))
+		return OP_REFUSED
 	NP.use(1)
 	adjust_integrity(NP.mech_repair)
 	if(get_integrity() >= max_integrity)
@@ -169,8 +166,11 @@
 		to_chat(user, span_warning("Insufficient nanopaste to complete repairs!"))
 	else
 		paste_repair_step(user, NP, site)
+	return OP_OK
 
 CAPABILITIES(/obj/item/mecha_parts/component)
+	// One nanopaste repair a second (paste_repair_step starts the next while the paste lasts).
+	op("paste_repair", ai(), takes("site"), wait(1 SECOND), then(PROC_REF(paste_repair_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(component_emp)))
 

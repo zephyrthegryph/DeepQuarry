@@ -574,12 +574,12 @@ CAPABILITIES(/datum/ai_brain)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		B.on_signal(arglist(list(src, sig_type) + tail))
 
-/// The loops check this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
-/// action, or a behavior that blocks reselection (code/datums/om/task.dm, task_busy()).
+/// The loops check this: TRUE while an op of the brain's mob is waiting (waits_on_op()) or the mob is busy work -- an ability's wind-up
+/// or a behavior that blocks reselection (code/library/jobs/busy.dm).
 /datum/ai_brain/proc/is_busy()
 	if(waits_on_op())
 		return TRUE
-	return holder ? (work_busy(holder) || task_busy(holder)) : FALSE
+	return holder ? (work_busy(holder)) : FALSE
 
 /// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its
 /// brain stops choosing, until ai_busy_end() or `cap` runs out. No-op without an AI.

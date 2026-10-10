@@ -159,5 +159,5 @@ human|/obj/item/cell menu: Toggle DNA Samples Allowance (refused: You can't do t
 human|/obj/item/cell menu: Use
 human|/obj/item/cell menu: Use Scope (refused: You can't do that.)
 human|/obj/item/cell click: Click: Insert cell
-keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, frontier_rifle_verb_scope, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, frontier_rifle_verb_scope, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, pump, suicide, toggle_digestable
 

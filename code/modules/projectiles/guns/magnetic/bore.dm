@@ -14,6 +14,8 @@ TRACKED(/obj/item/gun/magnetic/matfed, mat_storage)
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
 	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
+	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
+	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
 
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
@@ -86,32 +88,31 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
 
-/// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
-/datum/task/timed/load_sheets
-	steps = list(/obj/item/gun/magnetic/matfed/proc/sheet_loaded = 1.5 SECONDS)
-	complete_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
-	cancel_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
-	var/obj/item/stack/material/sheets
-	var/loaded_any = FALSE
-
 /obj/item/gun/magnetic/matfed/proc/can_load_sheet(obj/item/stack/material/M)
 	return mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M?.get_amount()
 
-/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/task/timed/load_sheets/task)
-	if(!can_load_sheet(task.sheets))
-		return STEP_DONE
+/// Another sheet follows while the gun has room and the stack has one.
+/obj/item/gun/magnetic/matfed/proc/sheets_more(datum/act/op/A)
+	return can_load_sheet(A.held)
+
+/// One sheet loaded per lap (the stack is cleaned up in sheets_done: a stack deleted mid-series would end the op as target gone).
+/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/act/op/A)
+	var/obj/item/stack/material/sheets = A.held
+	if(!can_load_sheet(sheets))
+		return
 	set_mat_storage(mat_storage + SHEET_MATERIAL_AMOUNT)
 	play_sfx(src, SFX_EFFECTS_PHASEIN, 0.15)
-	task.loaded_any = TRUE
-	task.sheets.use(1)
-	return can_load_sheet(task.sheets) ? STEP_REPEAT(1.5 SECONDS) : STEP_DONE
+	sheets.set_amount(sheets.get_amount() - 1, TRUE)
 
-/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/task/timed/load_sheets/task)
+/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/act/op/A)
 	loading = FALSE
-	var/mob/user = task.actor
-	if(task.loaded_any && user)
-		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [task.sheets]."))
+	var/mob/user = A.actor
+	var/obj/item/stack/material/sheets = A.held
+	if(A.laps() > 0 && user)
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [sheets]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
+	if(sheets && !QDELETED(sheets) && sheets.get_amount() <= 0)
+		spent(sheets)
 
 /// Old attackby: the parent's first, then its own.
 /obj/item/gun/magnetic/matfed/gun_item(datum/act/op/A)
@@ -143,7 +144,11 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			if(!can_load_sheet(M) || istext(task_start(/datum/task/timed/load_sheets, user, src, receiver = src, sheets = M)))
+			if(!can_load_sheet(M))
+				loading = FALSE
+				return
+			var/datum/op_result/loaded = perform_op(user, src, "load_sheets", M, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+			if(loaded.outcome == ACT_REFUSED)
 				loading = FALSE
 			return
 
@@ -196,6 +201,8 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
 	owns_one(nameof(soundloop), /datum/looping_sound/small_motor)
+	// Pulls the cord (2 seconds a pull) until the motor starts.
+	op("pull_cord", ai(), takes("pulls"), wait(2 SECONDS, repeats = PROC_REF(pull_more), after_step = PROC_REF(pull_lap)), on_interrupt(PROC_REF(pull_abandoned)), then(PROC_REF(start_motor)))
 
 /// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
 /obj/item/gun/magnetic/matfed/phoronbore/var/generator_state = GEN_OFF
@@ -278,19 +285,33 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		set_generator_state(GEN_OFF)
 
-/// Pulls the cord (2 seconds a pull, a timed action each) until the motor starts.
+/// Pulls the cord (2 seconds a pull) until the motor starts.
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
 	if(pulls > 0)
 		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
-		task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
+		var/datum/op_result/pulling = perform_op(user, src, "pull_cord", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("pulls" = pulls))
+		if(pulling.outcome == ACT_REFUSED)
+			set_generator_state(GEN_OFF)
 		return
+	start_motor()
+
+/// Another pull follows until the pulls this start needs are done.
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_more(datum/act/op/A)
+	return A.laps() < A.arg("pulls")
+
+/// One pull done; the next one is heard as it starts.
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_lap(datum/act/op/A)
+	if(A.laps() < A.arg("pulls"))
+		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
+
+/obj/item/gun/magnetic/matfed/phoronbore/proc/start_motor(datum/act/op/A)
 	soundloop.start()
 	COOLDOWN_START(src, stop_lockout_cooldown, 3 SECONDS)
 	cell?.use(100)
 	audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
 	set_generator_state(GEN_IDLE)
 
-/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned()
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned(datum/act/op/A)
 	set_generator_state(GEN_OFF)
 
 /obj/item/gun/magnetic/matfed/phoronbore/loaded

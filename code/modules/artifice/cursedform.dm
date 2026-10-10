@@ -20,35 +20,32 @@
 			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEY% [user.p_are()] trying to burn it!</span>"), \
 			item = P)
 
-		task_start(/datum/task/timed/cursed_burn, user, src, flame = P, class = class)
+		perform_op(user, src, "cursed_burn", P, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("class" = class))
 
-/// Holding a flame to the cursed form: letting go sears you.
-/datum/task/timed/cursed_burn
-	duration = 2 SECONDS
-	complete_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_done
-	cancel_proc = /obj/item/paper/carbon/cursedform/proc/cursed_burn_failed
-	var/obj/item/flame/flame
-	var/class
+/// Holding a flame to the cursed form for two seconds: letting go sears you.
+CAPABILITIES(/obj/item/paper/carbon/cursedform)
+	op("cursed_burn", ai(), takes("class"), wait(2 SECONDS), on_interrupt(PROC_REF(cursed_burn_failed)), then(PROC_REF(cursed_burn_done)))
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(datum/task/timed/cursed_burn/task)
-	var/mob/user = task.actor
-	to_chat(user, span_red("You must hold \the [task.flame] steady to burn \the [src]."))
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_failed(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_red("You must hold \the [A.held] steady to burn \the [src]."))
 	cursed_sear(user)
 
-/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(datum/task/timed/cursed_burn/task)
-	var/mob/user = task.actor
-	var/class = task.class
-	if(!task.flame?.lit)
-		cursed_burn_failed(task)
-		return
-	act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
-		MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
+/obj/item/paper/carbon/cursedform/proc/cursed_burn_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/class = A.arg("class")
+	var/obj/item/flame/flame = A.held
+	if(!flame?.lit)
+		cursed_burn_failed(A)
+		return OP_OK
+	act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
 	if(user.get_inactive_hand() == src)
 		user.drop_from_inventory(src)
 
 	cursed_sear(user)
 	replace_with(src, /obj/effect/decal/cleanable/ash)
+	return OP_OK
 
 /obj/item/paper/carbon/cursedform/proc/cursed_sear(mob/user)
 	if(isliving(user))

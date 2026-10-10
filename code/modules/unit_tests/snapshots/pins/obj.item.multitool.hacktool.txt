@@ -48,5 +48,5 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: collect_item, drag_buckle, equip_module, kit_customize, kit_customize_last, menu, move_to_top, pick_up_item, toggle_digestable, uplink, use_screwdriver
+keys: collect_item, drag_buckle, equip_module, hack_airlock, hack_locker, kit_customize, kit_customize_last, menu, move_to_top, pick_up_item, recalibrate, toggle_digestable, uplink, use_screwdriver
 

@@ -14,6 +14,11 @@
 
 TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes, list("lay", "force out", "push out"))
 
+/// Squeezing an egg out of the host takes twelve seconds beside them; with cascading on, the host then lays the rest, one every three seconds.
+CAPABILITIES(/obj/item/implant/reagent_generator/egg)
+	op("squeeze", ai(), takes("host"), wait(12 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(squeeze_done)))
+	op("cascade", ai(), takes("host", "egg"), wait(3 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(cascade_more), after_step = PROC_REF(cascade_lap)))
+
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
 	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
@@ -56,47 +61,59 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
 	act_message(usr, src, others = span_danger("%U% starts squeezing %T%'s lower body firmly..."))
-	task_timed(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
+	perform_op(usr, rimplant, "squeeze", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = src))
 
-/mob/living/carbon/human/proc/use_reagent_implant_egg_done(mob/usr_mob, obj/item/implant/reagent_generator/egg/rimplant)
-	if(src.Adjacent(usr_mob))
-		var/egg = rimplant.eggtype
-		new egg(get_turf(src))
-		src.status_set(STAT_STUNNED, 3)
-		play_sfx(src, SFX_VORE_INSERT)
-		var/index = rand(1,3)
+/// The squeeze is over: the egg is laid, and with cascading on the rest follow.
+/obj/item/implant/reagent_generator/egg/proc/squeeze_done(datum/act/op/A)
+	var/mob/living/carbon/human/host = A.arg("host")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(host) || !host.Adjacent(usr_mob))
+		return OP_FAILED
+	var/egg = eggtype
+	new egg(get_turf(host))
+	host.status_set(STAT_STUNNED, 3)
+	play_sfx(host, SFX_VORE_INSERT)
+	var/index = rand(1,3)
 
-		if (usr_mob != src)
-			var/emote = rimplant.emote_descriptor[index]
-			var/verb_desc = rimplant.verb_descriptor[index]
-			var/self_verb_desc = rimplant.self_verb_descriptor[index]
-			act_message(src, usr_mob, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), \
-				MSG_OTHERS(span_notice("%T% [verb_desc] [emote]")))
-		else
-			act_message(src, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] an egg.")), \
-				MSG_OTHERS(span_notice("%U% [pick(rimplant.short_emote_descriptor)] an egg.")))
+	if (usr_mob != host)
+		var/emote = emote_descriptor[index]
+		var/verb_desc = verb_descriptor[index]
+		var/self_verb_desc = self_verb_descriptor[index]
+		act_message(host, usr_mob, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), \
+			MSG_OTHERS(span_notice("%T% [verb_desc] [emote]")))
+	else
+		act_message(host, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(src, reagent_implant_self_emotes))] an egg.")), \
+			MSG_OTHERS(span_notice("%U% [pick(short_emote_descriptor)] an egg.")))
 
-		if(prob(15))
-			act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
-		rimplant.reagents.remove_any(rimplant.transfer_amount)
+	if(prob(15))
+		act_message(host, null, others = span_notice("%U% [pick(random_emote)]."))
+	reagents.remove_any(transfer_amount)
 
-		if(rimplant.cascade)
-			to_chat(src, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
-			egg_cascade_next(rimplant, egg)
+	if(cascade)
+		to_chat(host, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
+		cascade_next(host, egg)
+	return OP_OK
 
-/mob/living/carbon/human/proc/egg_cascade_next(obj/item/implant/reagent_generator/egg/rimplant, egg)
-	if(rimplant.reagents.total_volume >= rimplant.transfer_amount)
-		task_timed(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
+/// Another egg is laid in three seconds while there is enough left for one.
+/obj/item/implant/reagent_generator/egg/proc/cascade_next(mob/living/carbon/human/host, egg)
+	if(reagents.total_volume >= transfer_amount)
+		perform_op(host, src, "cascade", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = host, "egg" = egg))
 
-/mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
-	src.status_set(STAT_STUNNED, 3)
-	play_sfx(src, SFX_VORE_INSERT)
-	src.apply_effect(10,STUTTER,0)
-	new egg(get_turf(src))
-	rimplant.reagents.remove_any(rimplant.transfer_amount)
+/obj/item/implant/reagent_generator/egg/proc/cascade_more(datum/act/op/A)
+	return read_once(reagents.total_volume >= transfer_amount)
+
+/obj/item/implant/reagent_generator/egg/proc/cascade_lap(datum/act/op/A)
+	var/mob/living/carbon/human/host = A.arg("host")
+	if(QDELETED(host))
+		return
+	var/egg = A.arg("egg")
+	host.status_set(STAT_STUNNED, 3)
+	play_sfx(host, SFX_VORE_INSERT)
+	host.apply_effect(10,STUTTER,0)
+	new egg(get_turf(host))
+	reagents.remove_any(transfer_amount)
 	if(prob(25))
-		act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
-	egg_cascade_next(rimplant, egg)
+		act_message(host, null, others = span_notice("%U% [pick(random_emote)]."))
 
 /mob/living/carbon/human/proc/toggle_cascade()
 

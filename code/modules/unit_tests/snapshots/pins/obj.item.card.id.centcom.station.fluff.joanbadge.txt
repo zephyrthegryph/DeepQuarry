@@ -60,5 +60,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: collect_item, drag_buckle, equip_module, joanbadge_flash_self, kit_customize, kit_customize_last, move_to_top, pick_up_item, read, show, toggle_digestable
+keys: collect_item, drag_buckle, equip_module, joanbadge_flash_self, kit_customize, kit_customize_last, move_to_top, pick_up_item, read, show, threaten_eat, toggle_digestable
 

@@ -37,6 +37,14 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req(PROC_REF(self_drag), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
 		then(PROC_REF(interaction_drag)))
+	// The waits the choices above end in: reaching in, climbing in (by hand or by dragging oneself onto the hole), and moving to another tunnel.
+	op("tunnel_reach_wait", ai(), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(tunnel_reach_done)))
+	op("tunnel_climb_wait", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(tunnel_interact_timed_failed2)), then(PROC_REF(tunnel_interact_timed_done2)))
+	op("tunnel_drag_climb", ai(), wait(3 SECONDS), on_interrupt(PROC_REF(MouseDrop_T_timed_failed)), then(PROC_REF(MouseDrop_T_timed_done)))
+	op("tunnel_move_wait", ai(), takes("destination"), wait(10 SECONDS), then(PROC_REF(tunnel_interact_timed_done)))
+	op("micro_reach_wait", ai(), takes("contained_mobs"), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(micro_reach_done)))
+	op("micro_move_wait", ai(), takes("contained_mobs", "choice"), wait(10 SECONDS), then(PROC_REF(micro_interact_timed_done)))
+	op("micro_climb_wait", ai(), takes("contained_mobs"), wait(10 SECONDS), on_interrupt(PROC_REF(micro_interact_timed_failed2)), then(PROC_REF(micro_interact_timed_done2)))
 
 /obj/structure/micro_tunnel/Initialize(mapload)
 	. = ..()
@@ -198,11 +206,11 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 
 /obj/structure/micro_tunnel/proc/tunnel_reach(mob/living/user)
 	act_message(user, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
-	task_start(/datum/task/timed/micro_reach/tunnel, user, src)
+	perform_op(user, src, "tunnel_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /obj/structure/micro_tunnel/proc/tunnel_climb(mob/living/user)
 	act_message(user, src, others = span_notice("%U% begins climbing into %T%!"))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
+	perform_op(user, src, "tunnel_climb_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /datum/prompt/choice/tunnel_enter_or_reach
 	timeout = 0
@@ -254,7 +262,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 
 /obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
+	perform_op(user, src, "tunnel_move_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = choice))
 
 /obj/structure/micro_tunnel/proc/tunnel_eat(mob/living/user, mob/our_choice)
 	if(our_choice.loc != src)
@@ -262,32 +270,35 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		return
 	user.feed_grabbed_to_self(user,our_choice)
 
-/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done(mob/living/user, choice)
-	user.forceMove(choice)
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/structure/micro_tunnel/da_oddawun = A.arg("destination")
+	if(QDELETED(da_oddawun))
+		return OP_REFUSED
+	user.forceMove(da_oddawun)
 	user.cancel_camera()
-	var/obj/structure/micro_tunnel/da_oddawun = choice
 	da_oddawun.tunnel_notify(user)
-	return
-/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done2(mob/living/user)
+	return OP_OK
 
-	enter_tunnel(user)
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done2(datum/act/op/A)
+	enter_tunnel(A.actor)
+	return OP_OK
 
-/obj/structure/micro_tunnel/proc/tunnel_interact_timed_failed2(mob/living/user)
-	to_chat(user, span_warning("You didn't go into \the [src]!"))
-	return
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_failed2(datum/act/op/A)
+	to_chat(A.actor, span_warning("You didn't go into \the [src]!"))
 
 /// Reached into the tunnel: pull whatever is inside out.
-/obj/structure/micro_tunnel/proc/tunnel_reach_done(datum/task/timed/micro_reach/tunnel/task)
-	var/mob/living/user = task.actor
+/obj/structure/micro_tunnel/proc/tunnel_reach_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!contents_count(src))
 		to_chat(user, span_warning("There was nothing inside."))
 		act_message(user, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
-		return
+		return OP_OK
 	var/grabbed = pick(src.contents)
 	if(!grabbed)
 		to_chat(user, span_warning("There was nothing inside."))
 		act_message(user, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
-		return
+		return OP_OK
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/h = user
@@ -300,7 +311,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 			whatever.forceMove(get_turf(src.loc))
 
 		act_message(user, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
-		return
+		return OP_OK
 
 	else if(isanimal(user))
 		var/mob/living/simple_mob/a = user
@@ -312,7 +323,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
 		act_message(user, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
-		return
+	return OP_OK
 
 /obj/structure/micro_tunnel/proc/can_enter(mob/living/user)
 	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_accepted_scale)
@@ -339,15 +350,14 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 
 /obj/structure/micro_tunnel/proc/mouse_drop_climb(mob/living/k)
 	act_message(k, src, others = span_notice("%U% begins climbing into %T%!"))
-	task_timed(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
+	perform_op(k, src, "tunnel_drag_climb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(mob/living/k)
+/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(datum/act/op/A)
+	enter_tunnel(A.actor)
+	return OP_OK
 
-	enter_tunnel(k)
-
-/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_failed(mob/living/k)
-	to_chat(k, span_warning("You didn't go into \the [src]!"))
-	return
+/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("You didn't go into \the [src]!"))
 
 /obj/structure/micro_tunnel/proc/enter_tunnel(mob/living/k)
 	act_message(k, src, others = span_notice("%U% climbs into %T%!"))
@@ -440,7 +450,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	for(var/mob/living/issamob in contents_of(src))
 		contained_mobs |= issamob
 	to_chat(user,span_notice("You begin moving..."))
-	task_start(/datum/task/timed/obj_micro_interact, user, src, contained_mobs = contained_mobs, choice = choice)
+	perform_op(user, src, "micro_move_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs, "choice" = choice))
 
 /obj/proc/micro_interact()
 	set name = "Micro Interact"
@@ -462,41 +472,32 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
 		act_message(usr, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
-		task_start(/datum/task/timed/micro_reach, usr, src, contained_mobs = contained_mobs)
+		perform_op(usr, src, "micro_reach_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
 		return
 
 	act_message(usr, src, others = span_notice("%U% begins climbing into %T%!"))
-	task_start(/datum/task/timed/obj_micro_interact2, usr, src, contained_mobs = contained_mobs)
+	perform_op(usr, src, "micro_climb_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("contained_mobs" = contained_mobs))
 	return TRUE
 
 /// Reaching into something small for whoever is inside.
-/datum/task/timed/micro_reach
-	duration = 3 SECONDS
-	complete_proc = /obj/proc/micro_reach_done
-	cancel_proc = /obj/proc/micro_reach_failed
-	var/list/contained_mobs
-
-/datum/task/timed/micro_reach/tunnel
-	complete_proc = /obj/structure/micro_tunnel/proc/tunnel_reach_done
-
-/obj/proc/micro_reach_failed(datum/task/timed/micro_reach/task)
-	var/mob/usr_mob = task.actor
+/obj/proc/micro_reach_failed(datum/act/op/A)
+	var/mob/usr_mob = A.actor
 	act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
 
 /// Reached into the tunnel: pull a random occupant out.
-/obj/proc/micro_reach_done(datum/task/timed/micro_reach/task)
-	var/list/contained_mobs = task.contained_mobs
-	var/mob/usr_mob = task.actor
+/obj/proc/micro_reach_done(datum/act/op/A)
+	var/list/contained_mobs = A.arg("contained_mobs")
+	var/mob/usr_mob = A.actor
 
 	if(!contained_mobs.len)
 		to_chat(usr_mob, span_warning("There was nothing inside."))
 		act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
-		return
+		return OP_OK
 	var/grabbed = pick(contained_mobs)
 	if(!grabbed)
 		to_chat(usr_mob, span_warning("There was nothing inside."))
 		act_message(usr_mob, src, MSG_SELF(span_warning("You pull your hand out of %T%")), MSG_OTHERS(span_notice("%U% pulls their hand out of %T%.")))
-		return
+		return OP_OK
 
 	if(ishuman(usr_mob))
 		var/mob/living/carbon/human/h = usr_mob
@@ -510,7 +511,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 			whatever.forceMove(get_turf(src.loc))
 
 		act_message(usr_mob, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
-		return
+		return OP_OK
 
 	else if(isanimal(usr_mob))
 		var/mob/living/simple_mob/a = usr_mob
@@ -522,23 +523,19 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 			var/atom/movable/whatever = grabbed
 			whatever.forceMove(get_turf(src.loc))
 		act_message(usr_mob, src, others = span_warning("%U% pulls \the [grabbed] out of %T%! ! !"))
-		return
+	return OP_OK
 
-/datum/task/timed/obj_micro_interact
-	duration = 10 SECONDS
-	complete_proc = /obj/proc/micro_interact_timed_done
-	var/list/contained_mobs
-	var/choice
-
-/obj/proc/micro_interact_timed_done(datum/task/timed/obj_micro_interact/task)
-	var/list/contained_mobs = task.contained_mobs
-	var/choice = task.choice
-	var/mob/usr_mob = task.actor
+/obj/proc/micro_interact_timed_done(datum/act/op/A)
+	var/list/contained_mobs = A.arg("contained_mobs")
+	var/choice = A.arg("choice")
+	var/mob/usr_mob = A.actor
 	if(QDELETED(src))
-		return
+		return OP_REFUSED
 	if(usr_mob.loc != src)
-		return
+		return OP_REFUSED
 	var/obj/our_choice = choice
+	if(QDELETED(our_choice))
+		return OP_REFUSED
 
 	var/list/new_contained_mobs = list()
 	for(var/mob/living/issamob in contents_of(src))
@@ -564,16 +561,11 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		to_chat(usr_mob, span_notice("[our_message]inside of \the [src]!"))
 	if(prob(25))
 		our_choice.visible_message(span_warning("Something moves inside of \the [our_choice]. . ."))
-	return
-/datum/task/timed/obj_micro_interact2
-	duration = 10 SECONDS
-	complete_proc = /obj/proc/micro_interact_timed_done2
-	cancel_proc = /obj/proc/micro_interact_timed_failed2
-	var/list/contained_mobs
+	return OP_OK
 
-/obj/proc/micro_interact_timed_done2(datum/task/timed/obj_micro_interact2/task)
-	var/list/contained_mobs = task.contained_mobs
-	var/mob/usr_mob = task.actor
+/obj/proc/micro_interact_timed_done2(datum/act/op/A)
+	var/list/contained_mobs = A.arg("contained_mobs")
+	var/mob/usr_mob = A.actor
 
 	act_message(usr_mob, src, others = span_notice("%U% climbs into %T%!"))
 	usr_mob.forceMove(src)
@@ -594,11 +586,11 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		to_chat(usr_mob, span_notice("[our_message]inside of \the [src]!"))
 	if(prob(25))
 		visible_message(span_warning("Something moves inside of \the [src]. . ."))
+	return OP_OK
 
-/obj/proc/micro_interact_timed_failed2(datum/task/timed/obj_micro_interact2/task)
-	var/mob/usr_mob = task.actor
+/obj/proc/micro_interact_timed_failed2(datum/act/op/A)
+	var/mob/usr_mob = A.actor
 	to_chat(usr_mob, span_warning("You didn't go into \the [src]!"))
-	return
 
 /obj/effect/mouse_hole_spawner
 	name = "mouse hole spawner"

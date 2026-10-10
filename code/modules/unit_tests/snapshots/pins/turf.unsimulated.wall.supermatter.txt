@@ -79,5 +79,5 @@ human|/obj/item menu: Touch
 human|/obj/item menu: Touch with
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Touch with
-keys: supermatter_wall_ghost_examine, supermatter_wall_hand, supermatter_wall_item, supermatter_wall_robot, supermatter_wall_silicon_examine, turf_crawl, turf_item, turf_touch
+keys: crawl_drag, dig_grave, graffiti, supermatter_wall_ghost_examine, supermatter_wall_hand, supermatter_wall_item, supermatter_wall_robot, supermatter_wall_silicon_examine, turf_crawl, turf_item, turf_touch
 

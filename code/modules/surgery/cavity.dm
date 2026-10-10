@@ -215,24 +215,29 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 		if(!imp.islegal())
 			to_chat(user, span_notice("\The [imp] is anchored deep; you work it loose carefully..."))
 			wait = duration
-	task_start(/datum/task/timed/extract_foreign_body, user, target, duration = wait, receiver = src, part = part, removed = removed, tool = tool, max_distance = tool.reach)
+	if(!wait)
+		extract_body(user, target, part, removed)
+		return
+	var/datum/op_result/working = perform_op(user, src, "extract_body", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("target" = target, "part" = part, "removed" = removed, "duration" = wait))
+	if(working.outcome == ACT_REFUSED)
+		to_chat(user, span_warning("\The [removed] slips back out of your grip."))
 
-/// Working a foreign body (`removed`) out of `part`: at once, or slowly for an anchored implant.
-/datum/task/timed/extract_foreign_body
-	complete_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_done
-	cancel_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped
-	var/obj/item/organ/external/part
-	var/atom/movable/removed
-	var/obj/item/tool
+/// Working a foreign body out of a part slowly, for an anchored implant.
+CAPABILITIES(/datum/surgical_step/treat/extract_foreign_body)
+	op("extract_body", ai(), takes("target", "part", "removed", "duration"), wait(PROC_REF(extract_time)), on_interrupt(PROC_REF(extract_slipped)), then(PROC_REF(extract_done)))
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/task/timed/extract_foreign_body/task)
-	to_chat(task.actor, span_warning("\The [task.removed] slips back out of your grip."))
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_time(datum/act/op/A)
+	return A.arg("duration")
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(datum/task/timed/extract_foreign_body/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/obj/item/organ/external/part = task.part
-	var/atom/movable/removed = task.removed
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/act/op/A)
+	to_chat(A.actor, span_warning("\The [A.arg("removed")] slips back out of your grip."))
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(datum/act/op/A)
+	extract_body(A.actor, A.arg("target"), A.arg("part"), A.arg("removed"))
+
+/// Pulls the foreign body out of the part.
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_body(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, atom/movable/removed)
 	if(!(removed in part.implants))
 		return
 	rel_remove(part, nameof(part.implants), removed)

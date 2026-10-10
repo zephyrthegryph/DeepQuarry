@@ -50,8 +50,9 @@ human|/obj/item/mop_deploy menu: Touch mucus
 human|/obj/item/mop_deploy click: Click: Insert a mop
 human|/obj/item/soap menu: Insert a soap
 human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Scrub out
 human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/soap menu: Touch mucus
-human|/obj/item/soap click: Click: Insert a soap
+human|/obj/item/soap click: Click: Scrub out
 keys: drag_buckle, pass_insert, pass_insert_2, touch_mucus
 

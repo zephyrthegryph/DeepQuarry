@@ -61,6 +61,8 @@ CAPABILITIES(/datum/changeling)
 	owns_many(nameof(absorbed_dna), /datum/absorbed_dna)
 	every(4 SECONDS, then(PROC_REF(mimic_drain)), when = nameof(mimicing))
 	every(4 SECONDS, then(PROC_REF(camo_drain)), when = nameof(camo_draining))
+	// One stage of absorbing a victim: 15 seconds holding it in a kill grab (changeling_absorb_stage).
+	op("absorb_stage", ai(), takes("victim", "stage"), wait(15 SECONDS, keeps = HELD | ALIVE | STAY), on_interrupt(PROC_REF(absorb_interrupted)), then(PROC_REF(absorb_stage_done)))
 
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.

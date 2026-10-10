@@ -16,9 +16,9 @@
 //		complete_proc = /obj/item/lockpick/proc/pick_done
 //		var/obj/structure/simple_door/door
 //
-//	task_start(/datum/task/timed/lockpick, user, src, duration = 5 SECONDS, door = D)
+//	task_begin(/datum/task/timed/lockpick, user, list(src, "duration" = 5 SECONDS, "door" = D), src)
 //
-// task_timed() is the zero-state case: a proc and at most two plain arguments.
+// A player's timed action is an op with wait() (doc/rewrite/conversion_guide.md section 12); the one user of this task is use_tool().
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Unit tests that drive gameplay procs synchronously set this: every timed action completes at once.
@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/max_distance
 	/// Cancelled when the user aims at another zone.
 	var/target_zone
-	/// A datum (or list) the action also claims: the bot, tool or machine doing the work. It is busy (task_busy()) until the action ends;
+	/// A datum (or list) the action also claims: the bot, tool or machine doing the work. It is busy (task_claiming()) until the action ends;
 	/// if something already claims it, "busy".
 	var/busy
 
@@ -196,98 +196,6 @@ CAPABILITIES(/datum/task/timed)
 			LAZYREMOVE(user.do_afters, interaction_key)
 	if(captured)
 		PUBLISH_LEGACY(user, /datum/notice/do_after_ended)
-
-// ---------------------------------------------------------------- task_timed: the zero-state shape
-
-/// task_timed()'s task: a proc on the receiver with a short argument list.
-/datum/task/timed/simple
-	name = "timed_action"
-	var/done_proc
-	var/list/done_args
-	var/list/done_pos
-	var/fail_proc
-	var/list/fail_args
-	var/list/fail_pos
-	var/call_check_proc
-	var/list/check_args
-	var/list/check_pos
-
-/// The same, claiming its target: one timed action per target at a time.
-/datum/task/timed/simple/claiming
-	name = "timed_action_claiming"
-	claims = TRUE
-
-/datum/task/timed/simple/timed_done()
-	call_captured(receiver, done_proc, done_args, done_pos)
-
-/datum/task/timed/simple/timed_failed()
-	call_captured(receiver, fail_proc, fail_args, fail_pos, TRUE)
-
-/datum/task/timed/simple/timed_check()
-	return !call_check_proc || call_captured(receiver, call_check_proc, check_args, check_pos)
-
-/// Calls a captured proc: FALSE if the callee or an argument is gone, else the proc's result (TRUE for a null result). `nulls_for_gone`:
-/// a gone argument is passed as null instead (cleanup that must run).
-/proc/call_captured(datum/callee, proc_ref, list/captured, list/positions, nulls_for_gone = FALSE)
-	if(!proc_ref)
-		return TRUE
-	var/list/call_args = captured ? captured.Copy() : list()
-	if(!resolve_captured(call_args, positions, nulls_for_gone))
-		log_qdel("TASK: dropped timed-action call [proc_ref] on [callee]: a captured argument was deleted")
-		return FALSE
-	if(copytext("[proc_ref]", 1, 7) == "/proc/")
-		. = call(proc_ref)(arglist(call_args))
-		return isnull(.) ? TRUE : .
-	if(!callee || QDELETED(callee))
-		return FALSE
-	. = call(callee, proc_ref)(arglist(call_args))
-	return isnull(.) ? TRUE : .
-
-/**
- * A timed action with no state of its own: `user` works on `target` for `delay` deciseconds, then `on_done` runs on `receiver` with
- * `done_args`. At most two arguments across done_args, fail_args and check_args: anything more is state, and belongs on a named task
- * type (see the top of this file). Returns the task, null when a zero delay completed at once, or a text reason it did not start
- * (on_fail does not run then).
- *
- * timed_action_flags: IGNORE_* (flags.dm). The named arguments are the timed task's vars.
- */
-/proc/task_timed(mob/user, delay, atom/target, datum/receiver, on_done, list/done_args, timed_action_flags = NONE, on_fail, list/fail_args, check_proc, list/check_args, progress = TRUE, interaction_key, max_interact_count = 1, hidden = FALSE, icon = 'icons/effects/progressbar.dmi', iconstate = "cog", target_zone, max_distance, claims = FALSE, busy)
-	if(!istype(user) || QDELETED(user))
-		return "gone"
-	if(!isnum(delay))
-		CRASH("task_timed was passed a non-number delay: [delay || "null"].")
-	var/list/done = capture_args(done_args)
-	var/list/fail = capture_args(fail_args)
-	var/list/check = capture_args(check_args)
-	if((done_args && !done) || (fail_args && !fail) || (check_args && !check))
-		return "gone"
-	var/list/params = list(
-		"duration" = delay,
-		"flags" = timed_action_flags,
-		"progress" = progress,
-		"interaction_key" = interaction_key,
-		"max_interact_count" = max_interact_count,
-		"hidden" = hidden,
-		"icon" = icon,
-		"iconstate" = iconstate,
-		"target_zone" = target_zone,
-		"max_distance" = max_distance,
-		"busy" = busy,
-		"done_proc" = on_done,
-		"done_args" = done?[1],
-		"done_pos" = done?[2],
-		"fail_proc" = on_fail,
-		"fail_args" = fail?[1],
-		"fail_pos" = fail?[2],
-		"call_check_proc" = check_proc,
-		"check_args" = check?[1],
-		"check_pos" = check?[2])
-	// The callbacks run on `receiver`, else the user.
-	params["receiver"] = receiver || user
-	var/datum/task/timed/T = task_launch(claims ? /datum/task/timed/simple/claiming : /datum/task/timed/simple, user, (target && target != user) ? target : null, params, null)
-	if(istype(T) && T.state == TASK_DONE)
-		return null
-	return T
 
 /// Calls `proc_ref` on `receiver` with `call_args` (a /proc/ path is called globally). No-op without a proc.
 /proc/call_ref(datum/receiver, proc_ref, list/call_args)

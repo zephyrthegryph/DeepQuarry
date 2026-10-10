@@ -9,12 +9,12 @@
 //	/datum/task/timed/absorb
 //		duration = 15 SECONDS
 //		complete_proc = /mob/living/proc/absorb_done   // called on the receiver with the task
-//		var/obj/item/grab/grab                          // state, set from task_start()'s named arguments
+//		var/obj/item/grab/grab                          // state, set from task_begin()'s params
 //		var/stage
 //
-//	task_start(/datum/task/timed/absorb, user, victim, grab = G, stage = 2)
+//	task_begin(/datum/task/timed/absorb, user, list(victim, "grab" = G, "stage" = 2), src)
 //
-// task_start() is a macro (code/__defines/engine/tasks.dm): its named arguments set the task's typed vars (a name the type doesn't
+// task_begin()'s params set the task's typed vars (a name the type doesn't
 // declare is a CRASH). The receiver defaults to whichever of the caller's src, the target or the actor has the complete_proc. A
 // complete_proc/cancel_proc of the task's own type runs on the task with no arguments and reads the state as its own vars.
 //
@@ -40,7 +40,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	var/duration = 0
 	/// TRUE: the target is claimed while the task runs (a second claiming task is refused).
 	var/claims = FALSE
-	/// TRUE: the actor is busy while the task runs (task_busy()), and a second actor-claiming task is refused.
+	/// TRUE: the actor is busy while the task runs (task_claiming()), and a second actor-claiming task is refused.
 	var/claims_actor = FALSE
 	/// Steps: list(/type/proc/x = delay, ...), in order. A step proc of the task's own type runs on the task with no arguments; any other
 	/// runs on the receiver with the task. It returns STEP_NEXT, STEP_REPEAT(d), STEP_DONE or STEP_FAIL(reason). Past the last step the
@@ -49,7 +49,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	/// A proc called on the receiver with the task when it completes / is cancelled (a /proc/ path is called globally with the task).
 	var/complete_proc
 	var/cancel_proc
-	/// TRUE: a zero duration completes at once, inside task_start() (timed actions).
+	/// TRUE: a zero duration completes at once, inside task_begin() (timed actions).
 	var/instant_at_zero = FALSE
 	/// State vars that are not held (a beam or effect that ends itself): deleting what they hold doesn't cancel the task.
 	var/list/unheld
@@ -152,9 +152,8 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	return owner && istype(T, owner)
 
 /**
- * Starts task `type` with `actor` working on the target (the first positional entry of `rest`, optional). Called through the
- * task_start() macro, whose named arguments set the run's vars: its state, and any declaration var to override (duration, receiver,
- * ...). Every datum among them is held: deleting it cancels the task. `starter` is the caller's src. Returns the task, or a text reason
+ * Starts task `type` with `actor` working on the target (the first positional entry of `rest`, optional). The named entries of `rest`
+ * set the run's vars: its state, and any declaration var to override (duration, receiver, ...). Every datum among them is held: deleting it cancels the task. `starter` is the caller's src. Returns the task, or a text reason
  * it can't start.
  */
 /proc/task_begin(type, datum/actor, list/rest, datum/starter)
@@ -173,7 +172,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 			CRASH("task [type] was given a positional argument ([entry]); name it (var = value)")
 	return task_launch(type, actor, target, params, starter)
 
-/// Starts a task from a built params list (var name -> value): task_begin() and the helpers that build their own (task_timed(), use_tool()).
+/// Starts a task from a built params list (var name -> value): task_begin() and the helpers that build their own (use_tool()).
 /proc/task_launch(type, datum/actor, datum/target, list/params, datum/starter)
 	if(!ispath(type, /datum/task))
 		CRASH("unknown task [type]")
@@ -193,7 +192,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 		var/datum/D = value
 		if(isdatum(D) && QDELETED(D))
 			return "gone"
-		T.vars[key] = value // ALLOW(api): task_start() named arguments set the task's state by name
+		T.vars[key] = value // ALLOW(api): task_begin() params set the task's state by name
 	if(!T.receiver)
 		T.receiver = T.pick_receiver(starter) // ALLOW(ownership): the task kernel records who the task acts for; tasks end when that entity goes
 	if(isnull(T.duration))
@@ -394,16 +393,6 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	if(T && T.state == TASK_RUNNING)
 		return T
 	return task_claiming_target(D)
-
-/// TRUE while a running task claims `D`: as the thing doing the work (its actor, tool or machine) or as the exclusive target of someone's
-/// work.
-/proc/task_busy(datum/D)
-	READS_FROM() // whether a task claims it is asked when a choice is made, never cached
-	return !isnull(task_claiming(D))
-
-/// TRUE while a running task claims `D` as its exclusive target (someone is working on it), whatever `D` itself is doing.
-/proc/task_in_use(datum/D)
-	return !isnull(task_claiming_target(D))
 
 /// Cancels the task that claims `D`, if any (it stopped early). TRUE if one was cancelled.
 /proc/task_release_busy(datum/D, reason = "released")

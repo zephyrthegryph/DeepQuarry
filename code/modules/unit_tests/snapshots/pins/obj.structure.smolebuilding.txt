@@ -116,5 +116,5 @@ human|/obj/item menu: Take Building Apart
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use Color Pieces
 human|/obj/item click: Click: Smash
-keys: drag_buckle, melee_hit, smolebuilding_bang, smolebuilding_dismantle, smolebuilding_item, smolebuilding_knock_grab, smolebuilding_knock_help, smolebuilding_verb_color, smolebuilding_verb_dismantle
+keys: drag_buckle, melee_hit, micro_climb_wait, micro_move_wait, micro_reach_wait, smolebuilding_bang, smolebuilding_dismantle, smolebuilding_item, smolebuilding_knock_grab, smolebuilding_knock_help, smolebuilding_verb_color, smolebuilding_verb_dismantle
 

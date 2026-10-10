@@ -134,5 +134,5 @@ human|/obj/item menu: Shove with
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use on
 human|/obj/item click: Click: Scoop up
-keys: attack_variants.disarm, attack_variants.grab, drag_buckle, ghost_join, hit_disarm, hit_grab, hit_help, hit_hurt, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, mouse_hand_help, nutrition_heal, reload, touch_disarm, touch_grab, touch_help, touch_hurt
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, mouse_hand_help, nutrition_heal, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove
 

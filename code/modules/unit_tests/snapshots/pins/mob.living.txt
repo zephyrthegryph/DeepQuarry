@@ -108,5 +108,5 @@ human|/obj/item menu: Shove with
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use on
 human|/obj/item click: Click: Use on
-keys: attack_variants.disarm, attack_variants.grab, drag_buckle, hit_disarm, hit_grab, hit_help, hit_hurt, touch_disarm, touch_grab, touch_help, touch_hurt
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove
 

@@ -73,5 +73,5 @@ human|/obj/item/perfect_tele_beacon menu: Move To Top
 human|/obj/item/perfect_tele_beacon menu: Remove cell
 human|/obj/item/perfect_tele_beacon menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/perfect_tele_beacon click: Click: Insert
-keys: choose_beacon, collect_item, drag_buckle, equip_module, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable, unload
+keys: choose_beacon, collect_item, drag_buckle, equip_module, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable, translocate, unload
 

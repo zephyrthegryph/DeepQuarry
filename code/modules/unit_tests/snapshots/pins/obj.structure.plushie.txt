@@ -102,5 +102,5 @@ human|/obj/item menu: Punch
 human|/obj/item menu: Strangle
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item
-keys: drag_buckle, hug, item, melee_hit, poke, punch, strangle
+keys: drag_buckle, find_inside, hug, item, melee_hit, poke, punch, strangle
 

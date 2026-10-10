@@ -76,5 +76,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Load
-keys: cell_mag_load, collect_item, drag_buckle, empty, equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable
+keys: cell_mag_load, collect_item, collect_shells, drag_buckle, empty, equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable
 

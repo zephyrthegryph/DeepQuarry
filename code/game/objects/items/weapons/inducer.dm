@@ -97,6 +97,8 @@ CAPABILITIES(/obj/item/inducer)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
+	op("induce", ai(), takes("charged", "charging", "coefficient", "beam", "filter", "progress"), wait(2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(recharge_more), after_step = PROC_REF(recharge_pulse)), on_interrupt(PROC_REF(recharge_end)), then(PROC_REF(recharge_end)))
 
 /obj/item/inducer/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -154,46 +156,45 @@ CAPABILITIES(/obj/item/inducer)
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
 
-		task_start(/datum/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
+		var/datum/op_result/started = perform_op(user, src, "induce", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("charged" = A, "charging" = C, "coefficient" = coefficient, "beam" = charge_beam, "filter" = filter, "progress" = list("done_any" = FALSE)))
+		if(!started || (started.outcome & ACT_REFUSED))
+			recharge_finish(user, A, charge_beam, filter, FALSE)
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))
 
 	recharging = FALSE
 
-/// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
-/datum/task/timed/induce
-	steps = list(/obj/item/inducer/proc/recharge_pulse = 2 SECONDS)
-	complete_proc = /obj/item/inducer/proc/recharge_end
-	cancel_proc = /obj/item/inducer/proc/recharge_end
-	unheld = list("beam")
-	/// What is being charged, its cell, and the object whose icon shows the charge.
-	var/atom/charged
-	var/obj/item/cell/charging
-	var/obj/device
-	var/coefficient = 1
-	var/done_any = FALSE
-	/// Ends itself.
-	var/datum/beam/beam
-	var/filter
+/// Another pulse follows while the cell being charged is not full and the inducer still has charge.
+/obj/item/inducer/proc/recharge_more(datum/act/op/A)
+	var/obj/item/cell/C = A.arg("charging")
+	return !QDELETED(C) && cell?.charge && C.charge < C.maxcharge
 
-/obj/item/inducer/proc/recharge_pulse(datum/task/timed/induce/task)
+/// One pulse: charge moves from the inducer's cell to the one being charged.
+/obj/item/inducer/proc/recharge_pulse(datum/act/op/A)
 	if(!cell?.charge)
-		return STEP_DONE
-	var/obj/item/cell/C = task.charging
-	induce(C, task.coefficient)
-	if(task.charged)
-		fx_sparks(task.charged, 5, FALSE)
-	task.done_any = TRUE
-	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
+		return
+	var/obj/item/cell/C = A.arg("charging")
+	if(QDELETED(C))
+		return
+	induce(C, A.arg("coefficient"))
+	var/atom/charged = A.arg("charged")
+	if(charged)
+		fx_sparks(charged, 5, FALSE)
+	var/list/progress = A.arg("progress")
+	progress["done_any"] = TRUE
 
-/obj/item/inducer/proc/recharge_end(datum/task/timed/induce/task)
-	var/mob/user = task.actor
-	var/atom/A = task.charged
-	spent(task.beam)
+/obj/item/inducer/proc/recharge_end(datum/act/op/A)
+	var/list/progress = A.arg("progress")
+	recharge_finish(A.actor, A.arg("charged"), A.arg("beam"), A.arg("filter"), progress?["done_any"])
+	return OP_OK
+
+/// The charging is over (done, stopped or never started): the beam and the outline go, and the user hears of a charge that happened.
+/obj/item/inducer/proc/recharge_finish(mob/user, atom/A, datum/beam/charge_beam, filter, done_any)
+	spent(charge_beam)
 	if(A)
-		A.filters -= task.filter
-	if(task.done_any && user) // Only show a message if we succeeded at least once
+		A.filters -= filter
+	if(done_any && user) // Only show a message if we succeeded at least once
 		act_message(user, null, MSG_SELF(span_notice("You recharged [A]!")), MSG_OTHERS(span_notice("%U% recharged [A]!")))
 	recharging = FALSE
 

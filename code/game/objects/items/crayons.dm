@@ -130,19 +130,23 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 			to_chat(user, "You start drawing a rune on the [target.name].")
 		if("arrow")
 			to_chat(user, "You start drawing an arrow on the [target.name].")
-	task_start(/datum/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = ask.click_parameters)
+	perform_op(user, src, "draw", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("surface" = target, "drawtype" = drawtype, "click_parameters" = ask.click_parameters))
 
-/datum/task/timed/crayon_draw
-	complete_proc = /obj/item/pen/crayon/proc/draw_done
-	var/atom/surface
-	var/drawtype
-	var/click_parameters
+/// The drawing is a wait of the crayon's own (the surface, the picked drawing and the click come from the prompt chain that started it).
+CAPABILITIES(/obj/item/pen/crayon)
+	op("draw", ai(), takes("surface", "drawtype", "click_parameters"), wait(PROC_REF(draw_wait)), then(PROC_REF(draw_done)))
 
-/obj/item/pen/crayon/proc/draw_done(datum/task/timed/crayon_draw/task)
-	var/atom/target = task.surface
-	var/mob/user = task.actor
-	var/drawtype = task.drawtype
-	var/click_parameters = task.click_parameters
+/// How long the drawing takes: nothing for an instant crayon.
+/obj/item/pen/crayon/proc/draw_wait(datum/act/op/A)
+	return instant ? 0 : 5 SECONDS
+
+/obj/item/pen/crayon/proc/draw_done(datum/act/op/A)
+	var/atom/target = A.arg("surface")
+	var/mob/user = A.actor
+	var/drawtype = A.arg("drawtype")
+	var/click_parameters = A.arg("click_parameters")
+	if(QDELETED(target))
+		return OP_FAILED
 	var/list/mouse_control = params2list(click_parameters)
 	var/p_x = 0
 	var/p_y = 0
@@ -166,6 +170,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 		if(!uses)
 			to_chat(user, span_warning("You used up your crayon!"))
 			consume(src, user)
+	return OP_OK
 
 /obj/item/pen/crayon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)

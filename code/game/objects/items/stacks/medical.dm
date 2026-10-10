@@ -88,12 +88,9 @@
 /obj/item/stack/medical/proc/wound_treat_delay(datum/affliction/wound/W)
 	return W.damage / 5
 
-/// Someone else finished the job during the wait.
-/obj/item/stack/medical/proc/wound_already_treated(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
-	if(affecting.is_bandaged()) // We do a second check after the delay, in case it was bandaged after the first check.
-		balloon_alert(user, "[H]'s [affecting.name] is already bandaged.")
-		return TRUE
-	return FALSE
+/// Whether the limb has nothing left for this stack to do (someone else may finish the job during the wait).
+/obj/item/stack/medical/proc/wound_fully_treated(obj/item/organ/external/affecting)
+	return affecting.is_bandaged()
 
 /// Treats W; returns the new count of stack units used.
 /obj/item/stack/medical/proc/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
@@ -101,52 +98,74 @@
 	playsound(src, apply_sounds, 25)
 	return used + 1
 
-/obj/item/stack/medical/proc/wound_treat_step(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, list/wounds, index, used, available)
-	var/datum/affliction/wound/W
-	while(index <= length(wounds))
+/// One wound is treated per lap of a repeating wait, in the order the limb listed them when the work began; the cursor says where the next lap looks.
+CAPABILITIES(/obj/item/stack/medical)
+	op("treat_wounds", ai(), takes("patient", "limb", "wounds", "cursor"), needs(req(PROC_REF(wound_work_left), silent = TRUE)),
+		wait(PROC_REF(wound_lap_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(wound_more), after_step = PROC_REF(wound_lap_done)),
+		on_interrupt(PROC_REF(wound_interrupted)), then(PROC_REF(wound_finished)))
+
+/// The index of the first wound at or after `start` that this stack still has work on, or 0.
+/obj/item/stack/medical/proc/wound_find(list/wounds, start)
+	for(var/index in start to length(wounds))
 		var/datum/affliction/wound/candidate = wounds[index]
 		if(!QDELETED(candidate) && wound_needs_treatment(candidate))
-			W = candidate
-			break
-		index++
-	if(!W || (wound_limited_by_amount() && used == amount))
-		wound_treat_finish(H, user, affecting, used)
-		return
-	task_start(/datum/task/timed/medical_wound_treat, user, affecting, duration = wound_treat_delay(W), H = H, wounds = wounds, index = index, used = used, available = available)
+			return index
+	return 0
 
-/obj/item/stack/medical/proc/wound_treat_interrupted(datum/task/timed/medical_wound_treat/task)
-	var/mob/living/carbon/human/H = task.H
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/affecting = task.target
-	var/used = task.used
-	balloon_alert(user, "stand still to bandage wounds.")
-	wound_treat_finish(H, user, affecting, used)
+/obj/item/stack/medical/proc/wound_next_index(datum/act/op/A)
+	var/list/cursor = A.arg("cursor")
+	return wound_find(A.arg("wounds"), cursor[1])
 
-/datum/task/timed/medical_wound_treat
-	complete_proc = /obj/item/stack/medical/proc/wound_treat_done
-	cancel_proc = /obj/item/stack/medical/proc/wound_treat_interrupted
-	var/mob/living/carbon/human/H
-	var/list/wounds
-	var/index
-	var/used
-	var/available
+/// Starts treating the limb: the wait is the stack's op, a lap per wound (nothing to treat ends at once).
+/obj/item/stack/medical/proc/wound_treat_start(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
+	var/list/wounds = affecting.get_wounds().Copy()
+	if(!wound_find(wounds, 1))
+		wound_treat_finish(H, user, affecting, 0)
+		return
+	perform_op(user, src, "treat_wounds", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "limb" = affecting, "wounds" = wounds, "cursor" = list(1)))
 
-/obj/item/stack/medical/proc/wound_treat_done(datum/task/timed/medical_wound_treat/task)
-	var/mob/living/carbon/human/H = task.H
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/affecting = task.target
-	var/list/wounds = task.wounds
-	var/index = task.index
-	var/used = task.used
-	var/available = task.available
-	if(wound_already_treated(H, user, affecting))
+/obj/item/stack/medical/proc/wound_work_left(datum/act/op/A)
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	return !QDELETED(affecting) && !read_once(wound_fully_treated(affecting))
+
+/// A lap takes as long as the wound is bad.
+/obj/item/stack/medical/proc/wound_lap_time(datum/act/op/A)
+	var/index = wound_next_index(A)
+	if(!index)
+		return 1 TICK
+	var/list/wounds = A.arg("wounds")
+	return max(1 TICK, wound_treat_delay(wounds[index]))
+
+/// Another lap follows while a wound is left and the stack has a unit for it.
+/obj/item/stack/medical/proc/wound_more(datum/act/op/A)
+	if(wound_limited_by_amount() && A.laps() >= amount)
+		return FALSE
+	return wound_next_index(A) > 0
+
+/// One wound treated.
+/obj/item/stack/medical/proc/wound_lap_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	var/list/wounds = A.arg("wounds")
+	var/list/cursor = A.arg("cursor")
+	var/index = wound_next_index(A)
+	if(!index || QDELETED(H) || QDELETED(affecting))
 		return
-	if(used >= available)
-		balloon_alert(user, "you run out of [src]!")
-		wound_treat_finish(H, user, affecting, used)
-		return
-	used = apply_wound_treatment(wounds[index], H, user, affecting, used)
-	wound_treat_step(H, user, affecting, wounds, index + 1, used, available)
+	apply_wound_treatment(wounds[index], H, A.actor, affecting, A.laps() - 1)
+	cursor[1] = index + 1
+
+/obj/item/stack/medical/proc/wound_interrupted(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	if(!QDELETED(affecting) && wound_fully_treated(affecting))
+		balloon_alert(A.actor, "[H]'s [affecting.name] is already bandaged.") // someone else finished the job during the wait
+	else
+		balloon_alert(A.actor, "stand still to bandage wounds.")
+	wound_treat_finish(H, A.actor, affecting, A.laps())
+
+/obj/item/stack/medical/proc/wound_finished(datum/act/op/A)
+	wound_treat_finish(A.arg("patient"), A.actor, A.arg("limb"), A.laps())
+	return OP_OK
 
 /obj/item/stack/medical/proc/wound_treat_finish(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
 	if(!affecting)
@@ -186,11 +205,8 @@
 /obj/item/stack/medical/advanced/bruise_pack/wound_needs_treatment(datum/affliction/wound/W)
 	return !W.internal && !(W.bandaged && W.disinfected)
 
-/obj/item/stack/medical/advanced/bruise_pack/wound_already_treated(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
-	if(affecting.is_bandaged() && affecting.is_disinfected()) // We do a second check after the delay, in case it was bandaged after the first check.
-		balloon_alert(user, "[H]'s [affecting.name] is already bandaged.")
-		return TRUE
-	return FALSE
+/obj/item/stack/medical/advanced/bruise_pack/wound_fully_treated(obj/item/organ/external/affecting)
+	return affecting.is_bandaged() && affecting.is_disinfected()
 
 /obj/item/stack/medical/advanced/bruise_pack/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
 	if (W.current_stage <= W.max_bleeding_stage)
@@ -251,10 +267,9 @@
 			balloon_alert(user, "[M]'s [affecting.name] is already bandaged.")
 			return ITEM_INTERACT_FAILURE
 		else
-			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts bandaging [M]'s [affecting.name].", \
 											"bandaging [M]'s [affecting.name]." )
-			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
+			wound_treat_start(H, user, affecting)
 			return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/bruise_pack
@@ -285,10 +300,9 @@
 			balloon_alert(user, "[M]'s [affecting.name] is already bandaged.")
 			return ITEM_INTERACT_FAILURE
 		else
-			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
-			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
+			wound_treat_start(H, user, affecting)
 			return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/ointment
@@ -321,33 +335,30 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			task_start(/datum/task/timed/ointment_attack, user, affecting, M = M)
+			perform_op(user, src, "salve", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M, "limb" = affecting))
 			return ITEM_INTERACT_SUCCESS
 
-/datum/task/timed/ointment_attack
-	duration = 1 SECOND
-	complete_proc = /obj/item/stack/medical/ointment/proc/attack_timed_done
-	cancel_proc = /obj/item/stack/medical/ointment/proc/attack_timed_failed
-	var/mob/living/M
+CAPABILITIES(/obj/item/stack/medical/ointment)
+	op("salve", ai(), takes("patient", "limb"), wait(1 SECOND, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(salve_failed)), then(PROC_REF(salve_done)))
 
-/obj/item/stack/medical/ointment/proc/attack_timed_done(datum/task/timed/ointment_attack/task)
-	var/mob/living/M = task.M
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/affecting = task.target
+/obj/item/stack/medical/ointment/proc/salve_done(datum/act/op/A)
+	var/mob/living/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	if(QDELETED(affecting))
+		return OP_FAILED
 	if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
 		user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 	user.balloon_alert_visible("[user] salved wounds on [M]'s [affecting.name].", \
 								"salved wounds on [M]'s [affecting.name]." )
 	use(1)
 	affecting.salve()
 	playsound(src, apply_sounds, 25)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/stack/medical/ointment/proc/attack_timed_failed(datum/task/timed/ointment_attack/task)
-	var/mob/living/user = task.actor
-	user.balloon_alert(user, "stand still to salve wounds.")
-	return ITEM_INTERACT_FAILURE
+/obj/item/stack/medical/ointment/proc/salve_failed(datum/act/op/A)
+	A.actor.balloon_alert(A.actor, "stand still to salve wounds.")
 
 /obj/item/stack/medical/ointment/simple
 	name = "ointment paste"
@@ -379,10 +390,9 @@
 			balloon_alert(user, "[M]'s [affecting.name] have already been treated.")
 			return 1
 		else
-			var/available = get_amount()
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
-			wound_treat_step(H, user, affecting, affecting.get_wounds().Copy(), 1, 0, available)
+			wound_treat_start(H, user, affecting)
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
@@ -412,37 +422,33 @@
 		else
 			user.balloon_alert_visible("\the [user] starts salving wounds on [M]'s [affecting.name].", \
 										"salving the wounds on [M]'s [affecting.name]." )
-			task_start(/datum/task/timed/ointment_attack2, user, affecting, M = M, H = H)
+			perform_op(user, src, "salve", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "limb" = affecting))
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
-/datum/task/timed/ointment_attack2
-	duration = 1 SECOND
-	complete_proc = /obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2
-	cancel_proc = /obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2
-	var/mob/living/M
-	var/mob/living/carbon/human/H
+CAPABILITIES(/obj/item/stack/medical/advanced/ointment)
+	op("salve", ai(), takes("patient", "limb"), wait(1 SECOND, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(salve_failed)), then(PROC_REF(salve_done)))
 
-/obj/item/stack/medical/advanced/ointment/proc/attack_timed_done2(datum/task/timed/ointment_attack2/task)
-	var/mob/living/M = task.M
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.H
-	var/obj/item/organ/external/affecting = task.target
+/obj/item/stack/medical/advanced/ointment/proc/salve_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/living/M = H
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	if(QDELETED(H) || QDELETED(affecting))
+		return OP_FAILED
 	if(affecting.is_salved()) // We do a second check after the delay, in case it was bandaged after the first check.
 		user.balloon_alert(user, "[M]'s [affecting.name] have already been salved.")
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 	user.balloon_alert_visible("[user] covers wounds on [M]'s [affecting.name] with regenerative membrane.", \
 							"covered wounds on [M]'s [affecting.name] with regenerative membrane." )
 	H.mend(TREAT_BURN_CARE, heal_burn, affecting.organ_tag)
 	use(1)
 	affecting.salve()
 	playsound(src, apply_sounds, 25)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2(datum/task/timed/ointment_attack2/task)
-	var/mob/living/user = task.actor
-	user.balloon_alert(user, "stand still to salve wounds.")
-	return ITEM_INTERACT_FAILURE
+/obj/item/stack/medical/advanced/ointment/proc/salve_failed(datum/act/op/A)
+	A.actor.balloon_alert(A.actor, "stand still to salve wounds.")
 
 /obj/item/stack/medical/splint
 	name = "medical splints"
@@ -480,26 +486,25 @@ TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, 
 				balloon_alert(user, "you can't apply a splint to the arm you're using!")
 				return ITEM_INTERACT_FAILURE
 			user.balloon_alert_visible("[user] starts to apply \the [src] to their [limb].", "applying \the [src] to your [limb].", "You hear something being wrapped.")
-		task_start(/datum/task/timed/splint_attack, user, affecting, M = M, limb = limb)
+		perform_op(user, src, "splint", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M, "limb" = affecting))
 		return ITEM_INTERACT_FAILURE
 
-/datum/task/timed/splint_attack
-	duration = 5 SECONDS
-	complete_proc = /obj/item/stack/medical/splint/proc/attack_timed_done3
-	var/mob/living/M
-	var/limb
+CAPABILITIES(/obj/item/stack/medical/splint)
+	op("splint", ai(), takes("patient", "limb"), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(splint_done)))
 
-/obj/item/stack/medical/splint/proc/attack_timed_done3(datum/task/timed/splint_attack/task)
-	var/mob/living/M = task.M
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/affecting = task.target
-	var/limb = task.limb
+/obj/item/stack/medical/splint/proc/splint_done(datum/act/op/A)
+	var/mob/living/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	if(QDELETED(M) || QDELETED(affecting))
+		return OP_FAILED
+	var/limb = affecting.name
 	if(affecting.splinted)
 		balloon_alert(user, "[M]'s [limb] is already splinted!")
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 	if(M == user && prob(75))
 		user.balloon_alert_visible("\the [user] fumbles [src].", "fumbling [src].", "You hear something being wrapped.")
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 	if(ishuman(user))
 		var/obj/item/stack/medical/splint/S = split(1)
 		if(S)
@@ -509,17 +514,18 @@ TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, 
 					user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finished applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
 				else
 					user.balloon_alert_visible("\the [user] successfully applies [src] to their [limb].", "successfully applied \the [src] to your [limb].", "You hear something being wrapped.")
-				return ITEM_INTERACT_FAILURE
+				return OP_OK
 			S.dropInto(src.loc) //didn't get applied, so just drop it
-	if(isrobot(user))
+	if(!ishuman(user))
 		var/obj/item/stack/medical/splint/B = src
 		if(B)
 			if(affecting.apply_splint(B))
 				B.forceMove(affecting)
 				user.balloon_alert_visible("\the [user] finishes applying [src] to [M]'s [limb].", "finish applying \the [src] to [M]'s [limb].", "You hear something being wrapped.")
 				B.use(1)
-				return ITEM_INTERACT_SUCCESS
+				return OP_OK
 	user.balloon_alert_visible("\the [user] fails to apply [src].", "failed to apply [src].", "You hear something being wrapped.")
+	return OP_FAILED
 
 /obj/item/stack/medical/splint/ghetto
 	name = "makeshift splints"

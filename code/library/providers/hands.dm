@@ -58,6 +58,8 @@ CAPABILITIES(/mob/living/carbon)
 	op("buckle_escape", ai(), begins(PROC_REF(buckle_escape_text)), wait(2 MINUTES), then(PROC_REF(buckle_escape_done)))
 	op("slit_throat", ai(), begins(MSG(throat/slit)), wait(2 SECONDS), then(PROC_REF(attack_throat_carbon_done)))
 	op("pat_out_flames", ai(), begins(MSG(pat_out/begin)), wait(1.5 SECONDS), then(PROC_REF(help_shake_act_carbon_done)))
+	// A trait injection (station_special_abilities.dm): five seconds next to the one injected, the injector's reagent and verb.
+	op("trait_injection", ai(), reach(REACH_ADJACENT), takes("synth"), wait(5 SECONDS), then(PROC_REF(injection_living_done)))
 	op("vv_addorgan", topic_in(VV_TOPIC, VV_HK_ADDORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to add.", "choices" = computed(PROC_REF(vv_organ_type_choices))), step = "organ"), then(PROC_REF(vv_organ_added_apply)))
 	op("vv_remorgan", topic_in(VV_TOPIC, VV_HK_REMOVEORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to remove.", "choices" = computed(PROC_REF(vv_organ_choices))), step = "organ"), then(PROC_REF(vv_organ_removed_apply)))
 

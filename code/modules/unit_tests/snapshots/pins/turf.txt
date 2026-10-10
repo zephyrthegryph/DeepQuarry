@@ -66,5 +66,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Turf item
-keys: turf_crawl, turf_item, turf_touch
+keys: crawl_drag, dig_grave, graffiti, turf_crawl, turf_item, turf_touch
 

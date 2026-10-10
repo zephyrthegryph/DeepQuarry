@@ -16,6 +16,8 @@
 CAPABILITIES(/obj/structure/disposalholder)
 	owns_one(nameof(gas), /datum/gas_mixture)
 	every(1 DECISECONDS, then(PROC_REF(move)), when = nameof(active))
+	// Pushing against the pipe walls until the pipe bursts: twenty seconds.
+	op("burst_pipe", ai(), takes("pipe"), wait(20 SECONDS), then(PROC_REF(burst_pipe)))
 
 // C11: one slot, accepting anything (a holder in transit carries whatever was
 // flushed into it). Legacy forceMove()s into and out of the holder (move(),
@@ -139,9 +141,10 @@ TRACKED(/obj/structure/disposalholder, active)
 	to_chat(escapee, span_warning("You push against the thin pipe walls..."))
 	play_sfx(loc, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.3, vary = FALSE, extrarange = 3) //yeah I know but at least it sounds like metal being bent.
 
-	task_timed(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
+	perform_op(escapee, src, "burst_pipe", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("pipe" = transport_cylinder))
 
-/obj/structure/disposalholder/proc/burst_pipe(obj/structure/disposalpipe/transport_cylinder)
+/obj/structure/disposalholder/proc/burst_pipe(datum/act/op/A)
+	var/obj/structure/disposalpipe/transport_cylinder = A.arg("pipe")
 	if(loc != transport_cylinder || active)
 		return
 	for(var/mob/living/jailbird in contents)

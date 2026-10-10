@@ -83,7 +83,7 @@
 	setup_scene()
 	start_click()
 	var/datum/T = running(user)
-	TEST_ASSERT(!isnull(T), "the click starts a timed action")
+	TEST_ASSERT(!isnull(T), "the click starts a timed action (chat: [english_list(test_chat_of(user))])")
 	var/declared = declared_duration(T)
 	TEST_ASSERT(isnull(declared) || declared == duration, "it lasts as long as it should")
 	if(began)

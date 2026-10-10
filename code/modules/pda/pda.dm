@@ -64,6 +64,8 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
+	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
+	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
 	owns_one(nameof(pai), /obj/item/paicard)
 	drag_onto(PROC_REF(mousedrop_input))

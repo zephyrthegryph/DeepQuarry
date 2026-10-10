@@ -116,5 +116,5 @@ human|/obj/item/pickaxe/plasmacutter menu: Touch
 human|/obj/item/pickaxe/plasmacutter menu: Turf item
 human|/obj/item/pickaxe/plasmacutter menu: Wall item
 human|/obj/item/pickaxe/plasmacutter click: Click: Cut through the outer plating
-keys: burn_rot, cut_grille, cut_plain, cut_plain_blade, cut_plain_pickaxe, light_thermite, loosen_bolts, mend_grille, pry_cover, pry_sheath, screw_lines, slice_cover, slice_cover_cutter, slice_rods, slice_rods_cutter, turf_crawl, turf_item, turf_touch, unscrew_lines, wall_graffiti, wall_item, wall_touch, weld_repair
+keys: burn_rot, crawl_drag, cut_grille, cut_plain, cut_plain_blade, cut_plain_pickaxe, dig_grave, graffiti, light_thermite, loosen_bolts, mend_grille, pry_cover, pry_sheath, screw_lines, slice_cover, slice_cover_cutter, slice_rods, slice_rods_cutter, turf_crawl, turf_item, turf_touch, unscrew_lines, wall_dissolve, wall_graffiti, wall_item, wall_touch, weld_repair
 

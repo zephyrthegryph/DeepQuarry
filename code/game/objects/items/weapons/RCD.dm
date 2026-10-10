@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 // Used to call rcd_act() on the atom hit.
 /obj/item/rcd/proc/use_rcd(atom/A, mob/living/user)
-	if(!allow_concurrent_building && task_busy(src)) // an operation in progress claims the RCD
+	if(!allow_concurrent_building && op_claimed(src)) // an operation in progress claims the RCD
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
@@ -90,23 +90,16 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 
 	perform_effect(A, true_delay)
-	var/started = task_start(/datum/task/timed/rcd_build, user, A, duration = true_delay, receiver = src, rcd_results = rcd_results, output_envelope = output_envelope, beam = rcd_beam, busy = (allow_concurrent_building ? null : src))
-	if(istext(started))
+	var/datum/op_result/started = perform_op(user, src, allow_concurrent_building ? "build_concurrent" : "build", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "delay" = true_delay, "rcd_results" = rcd_results, "output_envelope" = output_envelope, "beam" = rcd_beam))
+	if(!started || (started.outcome & ACT_REFUSED))
 		use_rcd_interrupted(A, rcd_beam)
 	return FALSE
 
-/// An RCD operation on the target: its beam shows while it runs.
-/datum/task/timed/rcd_build
-	complete_proc = /obj/item/rcd/proc/use_rcd_timed_done
-	cancel_proc = /obj/item/rcd/proc/use_rcd_cancelled
-	unheld = list("beam")
-	var/list/rcd_results
-	var/output_envelope
-	/// Ends itself.
-	var/datum/beam/beam
+/obj/item/rcd/proc/build_delay(datum/act/op/A)
+	return A.arg("delay")
 
-/obj/item/rcd/proc/use_rcd_cancelled(datum/task/timed/rcd_build/task)
-	use_rcd_interrupted(task.target, task.beam)
+/obj/item/rcd/proc/use_rcd_cancelled(datum/act/op/A)
+	use_rcd_interrupted(A.arg("target"), A.arg("beam"))
 
 /// The operation stopped (they moved, or it never started): kill the beam and the effect.
 /obj/item/rcd/proc/use_rcd_interrupted(atom/A, datum/beam/rcd_beam)
@@ -115,25 +108,28 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	if(A)
 		cleanup_effect(A)
 
-/obj/item/rcd/proc/use_rcd_timed_done(datum/task/timed/rcd_build/task)
-	var/atom/A = task.target
-	var/mob/living/user = task.actor
-	var/list/rcd_results = task.rcd_results
-	var/output_envelope = task.output_envelope
-	var/datum/beam/rcd_beam = task.beam
+/obj/item/rcd/proc/use_rcd_timed_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/living/user = op_act.actor
+	var/list/rcd_results = op_act.arg("rcd_results")
+	var/output_envelope = op_act.arg("output_envelope")
+	var/datum/beam/rcd_beam = op_act.arg("beam")
 	if(!QDELETED(rcd_beam))
 		rcd_beam.End()
+	if(QDELETED(A)) // the target went while the work ran
+		return OP_FAILED
 	// Doing another check in case we lost matter during the delay for whatever reason.
 	if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
 		to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
 		cleanup_effect(A)
-		return FALSE
+		return OP_FAILED
 	if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 		consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
 		record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
 		play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 		cleanup_effect(A)
-		return TRUE
+		return OP_OK
+	return OP_FAILED
 
 // RCD variants.
 
@@ -323,6 +319,9 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 CAPABILITIES(/obj/item/rcd)
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	owns_many(nameof(effects))
+	// An operation on the target: its beam shows while it runs. The RCD is claimed meanwhile (the concurrent kind is not).
+	op("build", ai(), claims(CLAIM_TARGET), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
+	op("build_concurrent", ai(), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
 	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
 	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
 	op("close", topic("close"), then(PROC_REF(topic_close)))

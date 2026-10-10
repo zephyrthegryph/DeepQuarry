@@ -22,6 +22,8 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 CAPABILITIES(/obj/item/aiModule)
 	owns_one(nameof(laws), /datum/ai_laws)
+	// A cyborg takes the board ten seconds after it is slid in; the board has to stay in hand.
+	op("install_in_robot", ai(), takes("robot"), wait(10 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(install_timed_failed)), then(PROC_REF(install_timed_done)))
 
 /obj/item/aiModule/examine(mob/user)
 	. = ..()
@@ -107,25 +109,22 @@ CAPABILITIES(/obj/item/aiModule)
 		act_message(user, R, others = span_danger("%U% slides a law module into %T%."))
 		to_chat(R, span_danger("Local law upload in progress."))
 		to_chat(user, span_notice("Uploading laws from board.  This will take a moment..."))
-		task_start(/datum/task/timed/aimodule_install, user, src, receiver = src, R = R)
+		perform_op(user, src, "install_in_robot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("robot" = R))
 
-/datum/task/timed/aimodule_install
-	duration = 10 SECONDS
-	complete_proc = /obj/item/aiModule/proc/install_timed_done
-	cancel_proc = /obj/item/aiModule/proc/install_timed_failed
-	var/mob/living/silicon/robot/R
-
-/obj/item/aiModule/proc/install_timed_done(datum/task/timed/aimodule_install/task)
-	var/mob/living/user = task.actor
-	var/mob/living/silicon/robot/R = task.R
+/obj/item/aiModule/proc/install_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/silicon/robot/R = A.arg("robot")
+	if(QDELETED(R))
+		return OP_FAILED
 	transmitInstructions(R, user)
 	to_chat(R, "These are your laws now:")
 	R.show_laws()
 	to_chat(user, span_notice("Law upload complete.  Unit's laws have been modified."))
+	return OP_OK
 
-/obj/item/aiModule/proc/install_timed_failed(datum/task/timed/aimodule_install/task)
-	var/mob/living/user = task.actor
-	var/mob/living/silicon/robot/R = task.R
+/obj/item/aiModule/proc/install_timed_failed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/silicon/robot/R = A.arg("robot")
 	to_chat(user, span_warning("Law Upload Error: Law board was removed before upload was complete.  Aborting."))
 	to_chat(R, span_notice("Law upload aborted."))
 
