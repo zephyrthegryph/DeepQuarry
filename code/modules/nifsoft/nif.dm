@@ -416,7 +416,7 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 
 /// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
 /obj/item/nif/proc/install_refusal(datum/nifsoft/path)
-	if(stat == NIF_TEMPFAIL) // ALLOW(reads): a NIF's state and software are asked when the software is chosen, never cached
+	if(stat == NIF_TEMPFAIL)
 		return /datum/msg/nif/tempfail
 	if(nifsofts[initial(path.list_pos)])
 		return /datum/msg/nif/already_installed

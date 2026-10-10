@@ -40,7 +40,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 /// needs: the buyer has a working NIF.
 /obj/machinery/vending/nifsoft_shop/proc/nif_ready(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
-	return istype(H) && H.nif?.stat == NIF_WORKING // ALLOW(reads): a NIF's state is asked when the software is chosen, never cached
+	return istype(H) && H.nif?.stat == NIF_WORKING
 
 /// needs: the buyer's NIF can take the software.
 /obj/machinery/vending/nifsoft_shop/proc/nif_can_take(datum/act/op/A)
