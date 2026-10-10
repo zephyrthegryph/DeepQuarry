@@ -829,12 +829,6 @@ initialize	code/modules/reagents/reagent_containers/spray.dm	/obj/item/reagent_c
 initialize	code/modules/reagents/reagent_containers/spray.dm	/obj/item/reagent_containers/spray/sterilizine/Initialize(mapload)
 initialize	code/modules/reagents/reagent_containers/spray.dm	/obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 initialize	code/modules/reagents/reagent_containers/syringes.dm	/obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/cold/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/flu/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/blobspores/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/macrophages/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/Initialize(mapload)
-initialize	code/modules/reagents/reagent_containers/virology.dm	/obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor/Initialize(mapload)
 initialize	code/modules/recycling/disposal_junctions.dm	/obj/structure/disposalpipe/sortjunction/Initialize(mapload)
 initialize	code/modules/recycling/disposal_outlet.dm	/obj/structure/disposaloutlet/Initialize(mapload)
 initialize	code/modules/recycling/disposal_tagger.dm	/obj/structure/disposalpipe/tagger/Initialize(mapload)
@@ -1062,9 +1056,6 @@ world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_gl
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-world_reads	code/modules/multiz/stairs.dm	if(!GetAbove(src))
-world_reads	code/modules/multiz/stairs.dm	if(!GetAbove(src))
-world_reads	code/modules/multiz/stairs.dm	if(!GetBelow(src))
 world_reads	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 world_reads	code/modules/overmap/events/overmap_event.dm	GLOB.overmap_event_handler.update_hazards(loc)
 world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]

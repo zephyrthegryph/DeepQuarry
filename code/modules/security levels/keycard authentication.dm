@@ -229,7 +229,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 
 /obj/machinery/keycard_auth/proc/is_ert_blocked()
 	if(CONFIG_GET(flag/ert_admin_call_only)) return 1
-	return ticker_mode() && SSticker.mode.ert_disabled
+	return ticker_mode() && ticker_mode().ert_disabled
 
 GLOBAL_VAR_INIT(maint_all_access, FALSE)
 

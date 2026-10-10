@@ -126,7 +126,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/mob/user = A.actor
 	var/datum/antagonist/antag = antag_all_antag_types()[A.step_value("type")]
 	if(antag)
-		if(!(antag in SSticker.mode.antag_templates))
+		if(!(antag in ticker_mode().antag_templates))
 			rel_add(ticker_mode(), nameof(/datum/game_mode::antag_templates), antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
@@ -246,7 +246,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
-	if(SSticker && SSticker.mode)
+	if(SSticker && ticker_mode())
 		feedback_set_details("game_mode","[ticker_mode()]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")
 	return 1
