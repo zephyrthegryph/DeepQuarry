@@ -1,8 +1,8 @@
 //! Per-type independent evaluation; token issuance and output ordering remain serial.
 use super::*;
 use std::sync::{
-    Mutex,
     atomic::{AtomicUsize, Ordering},
+    Mutex,
 };
 struct Bucket {
     ordinals: Vec<usize>,
@@ -170,6 +170,10 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     // No evaluation begins unless every modifier boundary was admitted.
     // Request-local physical sharing only. The pool disappears after this pass;
     // admitted receipts hold their leaves and replay every original observation.
+    let mut tokens = super::token_owner::RequestTokens::new(
+        debug_defined,
+        reuse.map(|reuse| &reuse.store.roster),
+    );
     let receipt_pool = reuse.map(|_| artifact::ReceiptPool::default());
     let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
@@ -193,6 +197,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                         modifier_keys
                             .as_ref()
                             .map(|keys| keys[global].shared_input()),
+                        Some(&tokens),
                     )
                 })
                 .collect()
@@ -234,13 +239,13 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         .into_iter()
         .map(|pending| pending.expect("all successful initializer buckets cover source roster"));
     let result = match reuse {
-        Some(reuse) if reuse.store.roster_enabled => {
-            reuse
-                .store
-                .roster
-                .finish(pending.collect(), debug_defined, &mut source_ordinal)
-        }
-        _ => finish_pending(pending, debug_defined, &mut source_ordinal),
+        Some(reuse) if reuse.store.roster_enabled => reuse.store.roster.finish_shared(
+            pending.collect(),
+            debug_defined,
+            &mut source_ordinal,
+            tokens.issuer(),
+        ),
+        _ => finish_pending_shared(pending, &mut source_ordinal, tokens.issuer()),
     };
     result.map_err(|reason| ClassificationError {
         issues: vec![ClassificationIssue {

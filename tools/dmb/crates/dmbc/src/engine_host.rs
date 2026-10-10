@@ -320,6 +320,10 @@ impl<R: Resolver> EngineResolverHost<R> {
     }
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
+    fn observes_reads(&self) -> bool {
+        self.tree.observes_reads()
+    }
+
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         if let Some(version) = self.catalog_domain(domain) {
             return version;

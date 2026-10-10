@@ -26,7 +26,7 @@ pub(crate) struct SemanticClassification {
     default: DefaultValue,
     phase: Option<Phase>,
     runtime: Option<RuntimeRecipe>,
-    key: Option<Vec<u8>>,
+    key: Option<Arc<[u8]>>,
 }
 #[derive(PartialEq, Eq)]
 pub(crate) struct ClassificationInput {
@@ -124,6 +124,12 @@ impl InitializerArtifacts {
         )
     }
     #[allow(clippy::type_complexity)]
+    pub(crate) fn visit_token_index(
+        &self,
+        visitor: impl FnOnce(&crate::initializer_tokens::CanonicalTokens),
+    ) {
+        self.roster.visit_canonical(visitor);
+    }
     pub(crate) fn visit_token_roster(
         &self,
         visitor: impl FnOnce(
@@ -231,7 +237,7 @@ impl SemanticClassification {
         &self,
         visitor: impl FnOnce(
             &DefaultValue,
-            Option<&Vec<u8>>,
+            Option<&Arc<[u8]>>,
             Option<&Arc<[u16]>>,
             Option<(&Arc<str>, Option<&Arc<dm_syntax::Expr>>)>,
         ),
@@ -269,7 +275,7 @@ impl SemanticClassification {
         }
     }
 
-    pub(super) fn token_key(&self) -> Option<&Vec<u8>> {
+    pub(super) fn token_key(&self) -> Option<&Arc<[u8]>> {
         self.key.as_ref()
     }
     fn capture(pending: &mut PendingWrite, symbols: &SymbolTable) -> Option<Self> {
@@ -426,6 +432,7 @@ pub(super) fn classify_one_keyed(
         prepared_key,
         None,
         None,
+        None,
     )
 }
 #[allow(clippy::too_many_arguments)]
@@ -440,6 +447,7 @@ pub(super) fn classify_one_keyed_grouped(
     prepared_key: Option<&Arc<[u8]>>,
     receipt_pool: Option<&ReceiptPool>,
     shared_write: Option<&Arc<InitializerWrite>>,
+    tokens: Option<&super::token_owner::RequestTokens>,
 ) -> Result<PendingWrite, ClassificationFailure> {
     let Some(factory_policy) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
@@ -545,6 +553,11 @@ pub(super) fn classify_one_keyed_grouped(
     if captured && hit {
         reuse.store.hits.fetch_add(1, Ordering::Relaxed);
     } else if captured {
+        if let Some(tokens) = tokens {
+            if let Some(key) = pending.key.take() {
+                pending.key = Some(tokens.share_key(key));
+            }
+        }
         let Some(mut value) = SemanticClassification::capture(&mut pending, symbols) else {
             reuse.store.declined.fetch_add(1, Ordering::Relaxed);
             reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);

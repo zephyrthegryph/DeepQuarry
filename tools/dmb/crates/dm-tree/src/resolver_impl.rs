@@ -1,6 +1,10 @@
 use super::*;
 
 impl dm_ir::Resolver for SemanticTree {
+    fn observes_reads(&self) -> bool {
+        false
+    }
+
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         if let dm_ir::ReadDomain::OwnerHierarchy(owner) = domain {
             let base = self.owner_hierarchy.get(&owner)?;

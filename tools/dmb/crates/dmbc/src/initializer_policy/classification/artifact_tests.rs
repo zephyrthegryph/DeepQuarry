@@ -1,3 +1,5 @@
+#[path = "token_owner_tests.rs"]
+mod token_owner_tests;
 use super::*;
 use std::sync::atomic::AtomicU32;
 #[path = "ancestry_receipts_tests.rs"]

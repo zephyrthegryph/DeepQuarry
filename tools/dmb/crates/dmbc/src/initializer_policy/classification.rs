@@ -1,9 +1,11 @@
+#[path = "classification/token_owner.rs"]
+mod token_owner;
 #[path = "classification/transform.rs"]
 mod transform;
 use super::*;
 pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
-    pub(super) key: Option<Vec<u8>>,
+    pub(super) key: Option<Arc<[u8]>>,
     pub(super) accepted: Option<Arc<artifact::SemanticClassification>>,
     pub(super) parsed_runtime_source: Option<String>,
 }
@@ -208,7 +210,7 @@ fn classify_pending<'a>(
                             crate::initializer_tokens::construction_key(
                                 expr, &text, &write, symbols, evaluator,
                             )? {
-                            pending_key = Some(key);
+                            pending_key = Some(key.into());
                             DefaultValue::Scalar(SemanticValue::Null)
                         } else {
                             DefaultValue::Scalar(SemanticValue::Null)
@@ -257,6 +259,13 @@ fn finish_pending(
     source_ordinal: &mut usize,
 ) -> Result<ClassifiedInitializers, String> {
     let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
+    finish_pending_shared(pending, source_ordinal, &mut tokens)
+}
+fn finish_pending_shared(
+    pending: impl ExactSizeIterator<Item = PendingWrite>,
+    source_ordinal: &mut usize,
+    tokens: &mut crate::initializer_tokens::Tokens,
+) -> Result<ClassifiedInitializers, String> {
     let mut classified = Vec::with_capacity(pending.len());
     let mut admitted_owners = Vec::with_capacity(pending.len());
     for PendingWrite {
@@ -273,7 +282,7 @@ fn finish_pending(
         });
         *source_ordinal = write.source_ordinal;
         if let Some(key) = key {
-            let (token, canonical) = tokens.issue(key)?;
+            let (token, canonical) = tokens.issue_shared(key)?;
             write.default = DefaultValue::InitializerExpression { token, canonical };
         }
         admitted_owners.push(accepted.map(ClassificationOwner::new));

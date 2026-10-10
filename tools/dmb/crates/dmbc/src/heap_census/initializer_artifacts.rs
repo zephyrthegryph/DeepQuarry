@@ -64,7 +64,7 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
             }
         }
         if let Some(key) = key {
-            c.vec_payload("initializer_classification.token_key", key);
+            c.slice("initializer_classification.token_key", key, true);
         }
         if let Some(dimensions) = dimensions {
             c.slice("initializer_classification.dimensions", dimensions, true);
@@ -98,6 +98,18 @@ impl HeapCensus {
                     c.shared_initializer_write("initializer_modifiers.inputs", &value.input);
                 }
             })
+        });
+        store.visit_token_index(|owner| {
+            if self.arc_object("initializer_token_roster.index", owner) {
+                let index = owner.lock().unwrap_or_else(|error| error.into_inner());
+                self.observe_items("initializer_token_roster.index", index.len());
+                if index.capacity() != 0 {
+                    self.unknown("initializer_token_roster.index", "private HashMap bucket/control backing excluded; logical entry count and exposed canonical owners counted");
+                }
+                for key in index.keys() {
+                    self.slice("initializer_token_roster.canonical", key, true);
+                }
+            }
         });
         store.visit_token_roster(|accepted, tokens, groups| {
             if self.vec_payload("initializer_token_roster.accepted", accepted) {

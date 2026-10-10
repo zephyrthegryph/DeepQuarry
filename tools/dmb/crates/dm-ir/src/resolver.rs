@@ -350,6 +350,14 @@ pub fn procedure_value_query(path: &str) -> Option<ResolveQuery> {
 /// The sole view of other declarations and resource search available to lowering.
 /// Implementations must answer from one immutable build snapshot.
 pub trait Resolver: Sync {
+    /// True unless this immutable host has no dependency/semantic read observer.
+    /// Exact replay may bypass resolve only when false. Internal memo counters
+    /// and issuer storage are not observers; custom wrappers
+    /// conservatively retain ordinary resolve calls unless explicitly delegated.
+    fn observes_reads(&self) -> bool {
+        true
+    }
+
     /// Certifies every answer (including negatives and Unsupported) in this
     /// domain for this immutable issuer. Custom/mutable hosts remain uncertified.
     /// Include resolver schema and every precedence/overlay input; compute once.

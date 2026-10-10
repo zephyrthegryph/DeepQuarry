@@ -464,15 +464,25 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         assert_eq!(rendered(&fresh), rendered(&moved_resident));
         assert_eq!(rendered(&fresh), rendered(&moved_disk));
         let artifact = value.shared_artifact();
-        let resident = crate::symbolic::PreparedContribution::rebind(
+        let resident = crate::symbolic::PreparedContribution::rebind_with_modified(
             &artifact,
             &front,
             body,
             ready,
             crate::lowering_memo::rebase_debug(&front, body, &offsets).unwrap(),
-            &[],
+            std::sync::Arc::clone(value.required_types_owner()),
+            Vec::new(),
+            value.modified_recipes_owner().map(std::sync::Arc::clone),
         )
         .unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            value.required_types_owner(),
+            resident.required_types_owner()
+        ));
+        assert!(std::sync::Arc::ptr_eq(
+            value.modified_recipes_owner().unwrap(),
+            resident.modified_recipes_owner().unwrap()
+        ));
         assert_eq!(
             crate::initializer_policy::warnings::render(
                 &resident

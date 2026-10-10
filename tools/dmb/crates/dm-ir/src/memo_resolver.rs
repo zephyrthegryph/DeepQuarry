@@ -125,6 +125,10 @@ fn fixed_retainable(meaning: &ResolvedMeaning) -> bool {
     )
 }
 impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
+    fn observes_reads(&self) -> bool {
+        self.host.observes_reads()
+    }
+
     fn domain_version(&self, domain: crate::ReadDomain) -> Option<u128> {
         self.host.domain_version(domain)
     }

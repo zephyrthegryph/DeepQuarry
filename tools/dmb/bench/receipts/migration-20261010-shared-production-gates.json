@@ -1,0 +1,70 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "c1dc8e67f23c49554a19142d8f59e75612a131f63ac1de51904ce470ba743d99",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "lowering::symbolic_input::receipt_groups::tests::",
+      "selected": [
+        "lowering::symbolic_input::receipt_groups::tests::conflicting_query_answers_are_not_discarded_and_opaque_observers_resolve",
+        "lowering::symbolic_input::receipt_groups::tests::grouped_procedure_reads_share_exact_owner_leaves_and_replay_every_edge"
+      ],
+      "exit": 0,
+      "seconds": 0.043459199951030314,
+      "stdout": "\nrunning 2 tests\ntest lowering::symbolic_input::receipt_groups::tests::conflicting_query_answers_are_not_discarded_and_opaque_observers_resolve ... ok\ntest lowering::symbolic_input::receipt_groups::tests::grouped_procedure_reads_share_exact_owner_leaves_and_replay_every_edge ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 664 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_policy::classification::artifact::tests::token_owner_tests::",
+      "selected": [
+        "initializer_policy::classification::artifact::tests::token_owner_tests::published_classifications_and_tokens_share_exact_prepublication_owner"
+      ],
+      "exit": 0,
+      "seconds": 0.043179100030101836,
+      "stdout": "\nrunning 1 test\ntest initializer_policy::classification::artifact::tests::token_owner_tests::published_classifications_and_tokens_share_exact_prepublication_owner ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 665 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "initializer_tokens::tests::token_partition_obeys_final_debug_presence",
+      "selected": [
+        "initializer_tokens::tests::token_partition_obeys_final_debug_presence"
+      ],
+      "exit": 0,
+      "seconds": 0.038699000026099384,
+      "stdout": "\nrunning 1 test\ntest initializer_tokens::tests::token_partition_obeys_final_debug_presence ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 665 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts",
+      "selected": [
+        "lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts"
+      ],
+      "exit": 0,
+      "seconds": 0.25362309999763966,
+      "stdout": "\nrunning 1 test\ntest lowering_memo_compact::tests::compact_disk_preserves_current_local_array_warning_receipts ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 665 filtered out; finished in 0.21s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::resident_initializer::tests::",
+      "selected": [
+        "heap_census::resident_initializer::tests::actual_token_capacity_and_nested_semantic_owners_raise_initializer_charge",
+        "heap_census::resident_initializer::tests::unknown_modified_instance_ownership_declines_initializer_retention"
+      ],
+      "exit": 0,
+      "seconds": 0.03925400000298396,
+      "stdout": "\nrunning 2 tests\ntest heap_census::resident_initializer::tests::actual_token_capacity_and_nested_semantic_owners_raise_initializer_charge ... ok\ntest heap_census::resident_initializer::tests::unknown_modified_instance_ownership_declines_initializer_retention ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 664 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering::symbolic_input::retained::tests::",
+      "selected": [
+        "lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection",
+        "lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members"
+      ],
+      "exit": 0,
+      "seconds": 0.04762750002555549,
+      "stdout": "\nrunning 2 tests\ntest lowering::symbolic_input::retained::tests::replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection ... ok\ntest lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 664 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    }
+  ]
+}

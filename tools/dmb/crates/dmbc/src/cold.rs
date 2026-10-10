@@ -709,8 +709,8 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
             .map_err(ColdError::InitializerInvariant)?);
     }
     let body_types: Vec<_> = contributions
-        .iter_mut()
-        .flat_map(crate::symbolic::PreparedContribution::take_required_types)
+        .iter()
+        .flat_map(|value| value.required_types().iter().copied())
         .collect();
     let body_seeds: Vec<_> = contributions
         .iter_mut()

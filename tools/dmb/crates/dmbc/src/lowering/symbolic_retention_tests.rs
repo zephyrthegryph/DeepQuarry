@@ -83,9 +83,17 @@ fn symbolic_census_deduplicates_shared_records_and_counts_pruned_members() {
         versions: Arc::from([]),
         value: super::super::RecordValue::Executable(contribution.shared_artifact()),
         relative_debug: vec![0],
-        required_types: contribution.required_types().to_vec(),
-        modified_recipes: Vec::new(),
+        required_types: Arc::clone(contribution.required_types_owner()),
+        modified_recipes: Arc::clone(contribution.modified_recipes_owner().unwrap()),
     });
+    assert!(Arc::ptr_eq(
+        &record.required_types,
+        contribution.required_types_owner()
+    ));
+    assert!(Arc::ptr_eq(
+        &record.modified_recipes,
+        contribution.modified_recipes_owner().unwrap()
+    ));
     let memo = SessionSymbolicMemo::default();
     memo.records
         .lock()

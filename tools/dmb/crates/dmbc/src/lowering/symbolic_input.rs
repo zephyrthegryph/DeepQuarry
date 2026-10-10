@@ -5,8 +5,11 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
 };
+#[path = "receipt_groups.rs"]
+mod receipt_groups;
 #[path = "symbolic_retention.rs"]
 mod retained;
+pub(super) use receipt_groups::RequestAdmission;
 pub use retained::SymbolicRetentionStats;
 
 #[derive(Default)]
@@ -16,6 +19,7 @@ pub(crate) struct SessionSymbolicMemo {
     reused: AtomicU64,
     pruned: AtomicU64,
     declines: DeclineCounters,
+    receipt_groups: receipt_groups::ProcedureGroups,
 }
 #[derive(Default)]
 struct DeclineCounters {
@@ -35,8 +39,8 @@ struct Record {
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
     relative_debug: Vec<usize>,
-    required_types: Vec<dm_ir::SymbolId>,
-    modified_recipes: Vec<crate::modified_initializers::SourceRecipe>,
+    required_types: Arc<[dm_ir::SymbolId]>,
+    modified_recipes: Arc<[crate::modified_initializers::SourceRecipe]>,
 }
 enum RecordValue {
     Executable(Arc<crate::symbolic::ReusableProcedureArtifact>),
@@ -200,11 +204,12 @@ impl CompletedInput {
                         versions: admission.versions,
                         value: RecordValue::Executable(value.shared_artifact()),
                         relative_debug: admission.relative_debug,
-                        required_types: value.required_types().to_vec(),
-                        modified_recipes: value
-                            .modified_recipes()
-                            .expect("reusable contribution has source recipes")
-                            .to_vec(),
+                        required_types: Arc::clone(value.required_types_owner()),
+                        modified_recipes: Arc::clone(
+                            value
+                                .modified_recipes_owner()
+                                .expect("reusable contribution has source recipes"),
+                        ),
                     };
                     store
                         .records
@@ -255,12 +260,16 @@ impl SessionSymbolicMemo {
         records.retain(|identity, _| identities.contains(identity));
         self.pruned
             .fetch_add((before - records.len()) as u64, Ordering::Relaxed);
+        drop(records);
+        self.receipt_groups.prune();
     }
     #[allow(clippy::too_many_arguments)]
     pub(super) fn lookup<R: Resolver>(
         &self,
         key: &[u8],
         host: &R,
+        request_admission: Option<&RequestAdmission<'_, R>>,
+        observer: &crate::lowering_memo::RecordingResolver<'_, R>,
         frontend: &ColdFrontend,
         body: &BodyOccurrence,
         prepared: &PreparedUnit,
@@ -290,10 +299,34 @@ impl SessionSymbolicMemo {
             return None;
         }
         let matching = crate::lowering_memo::matching_domains(&record.versions, host);
-        if record.reads.iter().any(|read| {
-            !matching.contains(&read.query.domain())
-                && !same_meaning(&host.resolve(read.query), &read.answer)
-        }) {
+        let fully_certified = !host.observes_reads()
+            && record
+                .reads
+                .iter()
+                .all(|read| read.domain == read.query.domain() && matching.contains(&read.domain));
+        let changed = if fully_certified {
+            // Candidate-specific complete certificates do not populate a shared
+            // leaf verdict. Each accepted leaf still reaches the observer.
+            record.reads.visit_storage(|view| {
+                if let dm_session::ReceiptStorageView::Flat(leaf) = view {
+                    observer.record_admitted(leaf);
+                }
+            });
+            false
+        } else if let Some(admission) = request_admission {
+            // Partial candidate certificates cannot authorize this leaf. First
+            // use resolves the entire exact leaf; later request-local hits share
+            // that full proof and preserve every observer edge.
+            admission
+                .first_changed(&record.reads, |leaf| observer.record_admitted(leaf))
+                .is_some()
+        } else {
+            record
+                .reads
+                .iter()
+                .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
+        };
+        if changed {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
@@ -356,9 +389,9 @@ impl SessionSymbolicMemo {
             body,
             prepared,
             debug,
-            &record.required_types,
+            Arc::clone(&record.required_types),
             modified_seeds,
-            Some(record.modified_recipes.clone()),
+            Some(Arc::clone(&record.modified_recipes)),
         )
         .or_else(|| {
             // Includes ABI/identity, current helper-origin and source-binding
@@ -394,11 +427,15 @@ pub(super) fn admission(
     if store.is_none() && disk.is_none() {
         return None;
     }
+    let reads = store.as_ref().map_or_else(
+        || reads.clone().into(),
+        |store| receipt_groups::grouped(&store.receipt_groups, reads.iter().cloned().collect()),
+    );
     Some(Admission {
         store,
         disk,
         key,
-        reads: reads.into(),
+        reads,
         versions,
         relative_debug,
     })
@@ -409,20 +446,22 @@ pub(super) fn disk_admission<R: Resolver>(
     host: &R,
     promotion: &crate::lowering_memo_wire::ResidentPromotion,
 ) -> Option<Admission> {
+    let store = Arc::clone(memo.symbolic.as_ref()?);
+    let reads = promotion
+        .queries
+        .iter()
+        .map(|query| ResolverRead {
+            query: *query,
+            domain: query.domain(),
+            answer: host.resolve(*query),
+        })
+        .collect();
+    let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
-        store: Some(Arc::clone(memo.symbolic.as_ref()?)),
+        store: Some(store),
         disk: None,
         key: key.into(),
-        reads: promotion
-            .queries
-            .iter()
-            .map(|query| ResolverRead {
-                query: *query,
-                domain: query.domain(),
-                answer: host.resolve(*query),
-            })
-            .collect::<Vec<_>>()
-            .into(),
+        reads,
         versions: promotion.versions.clone().into(),
         relative_debug: promotion.relative_debug.clone(),
     })
@@ -454,8 +493,8 @@ pub(super) fn remember_selections<R: Resolver>(
             abi: abi.canonical_bytes(),
         },
         relative_debug: Vec::new(),
-        required_types: Vec::new(),
-        modified_recipes: Vec::new(),
+        required_types: Arc::from([]),
+        modified_recipes: Arc::from([]),
     };
     store
         .records
@@ -469,11 +508,16 @@ pub(super) fn accepted_admission(
     key: Vec<u8>,
     accepted: &dm_session::AcceptedArtifact<crate::lowering_memo::CachedProcedure>,
 ) -> Option<Admission> {
+    let store = Arc::clone(memo.symbolic.as_ref()?);
+    let reads = receipt_groups::grouped(
+        &store.receipt_groups,
+        accepted.reads.iter().cloned().collect(),
+    );
     Some(Admission {
-        store: Some(Arc::clone(memo.symbolic.as_ref()?)),
+        store: Some(store),
         disk: None,
         key: key.into(),
-        reads: accepted.reads.clone(),
+        reads,
         versions: Arc::clone(&accepted.versions),
         relative_debug: accepted.value.relative_debug.clone(),
     })

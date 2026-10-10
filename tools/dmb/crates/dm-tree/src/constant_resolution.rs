@@ -374,6 +374,10 @@ impl ScalarSnapshot {
 }
 
 impl Resolver for ScalarSnapshot {
+    fn observes_reads(&self) -> bool {
+        false
+    }
+
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
             return self.scalar_certificate(query).map(u128::from);

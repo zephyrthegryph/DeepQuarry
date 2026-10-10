@@ -9,9 +9,9 @@ pub struct PreparedContribution {
     identity: UnitIdentity,
     effective: bool,
     contribution: super::procedure_artifact::Contribution,
-    required_types: Vec<SymbolId>,
+    required_types: Arc<[SymbolId]>,
     modified_seeds: Vec<PreparedModifiedSeed>,
-    modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
+    modified_recipes: Option<Arc<[crate::modified_initializers::SourceRecipe]>>,
     selected_facts: Option<Arc<dm_ir::SelectedReferences>>,
 }
 impl PreparedContribution {
@@ -38,6 +38,14 @@ impl PreparedContribution {
     pub(crate) fn modified_recipes(&self) -> Option<&[crate::modified_initializers::SourceRecipe]> {
         self.modified_recipes.as_deref()
     }
+    pub(crate) fn modified_recipes_owner(
+        &self,
+    ) -> Option<&Arc<[crate::modified_initializers::SourceRecipe]>> {
+        self.modified_recipes.as_ref()
+    }
+    pub(crate) fn required_types_owner(&self) -> &Arc<[SymbolId]> {
+        &self.required_types
+    }
     #[cfg(test)]
     pub(crate) fn rebind(
         artifact: &Arc<ReusableProcedureArtifact>,
@@ -53,9 +61,9 @@ impl PreparedContribution {
             body,
             prepared,
             debug,
-            required_types,
+            Arc::from(required_types),
             Vec::new(),
-            Some(Vec::new()),
+            Some(Arc::from([])),
         )
     }
     pub(crate) fn rebind_with_modified(
@@ -64,9 +72,9 @@ impl PreparedContribution {
         body: &dm_tree::frontend::BodyOccurrence,
         prepared: &crate::procedure_policy::PreparedUnit,
         debug: crate::debug_sources::DebugOrigins,
-        required_types: &[SymbolId],
+        required_types: Arc<[SymbolId]>,
         modified_seeds: Vec<PreparedModifiedSeed>,
-        modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
+        modified_recipes: Option<Arc<[crate::modified_initializers::SourceRecipe]>>,
     ) -> Option<Self> {
         let identity = crate::lowering::source_unit_identity(frontend, body)
             .ok()?
@@ -92,7 +100,7 @@ impl PreparedContribution {
                 prepared.abi.clone(),
                 helpers,
             ),
-            required_types: required_types.to_vec(),
+            required_types,
             modified_seeds,
             modified_recipes,
             selected_facts: None,
@@ -114,7 +122,14 @@ impl PreparedContribution {
                 }
             }
         }
-        census.vec_payload("prepared_type_requests", &self.required_types);
+        census.slice("prepared_type_requests", &self.required_types, true);
+        if let Some(recipes) = &self.modified_recipes {
+            if census.slice("prepared_modified_recipes", recipes, true) {
+                for recipe in recipes.iter() {
+                    recipe.retained_census(census);
+                }
+            }
+        }
         census.vec_payload("prepared_modified_seeds", &self.modified_seeds);
         for seed in &self.modified_seeds {
             seed.census(census);
@@ -140,9 +155,6 @@ impl PreparedContribution {
     }
     pub fn take_modified_seeds(&mut self) -> Vec<PreparedModifiedSeed> {
         std::mem::take(&mut self.modified_seeds)
-    }
-    pub fn take_required_types(&mut self) -> Vec<SymbolId> {
-        std::mem::take(&mut self.required_types)
     }
 }
 fn sidecars(
@@ -232,9 +244,9 @@ pub fn prepare_contribution(
         identity,
         effective,
         contribution,
-        required_types,
+        required_types: required_types.into(),
         modified_seeds,
-        modified_recipes,
+        modified_recipes: modified_recipes.map(Arc::from),
         selected_facts,
     })
 }

@@ -5,6 +5,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
     host: &R,
+    request_admission: Option<&symbolic_input::RequestAdmission<'_, R>>,
     policy: &P,
     startup: Option<&crate::startup::CapturedStartup>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
@@ -153,6 +154,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             if let Some(input) = store.lookup(
                 &key,
                 host,
+                request_admission,
+                &recording,
                 frontend,
                 body,
                 &prepared,

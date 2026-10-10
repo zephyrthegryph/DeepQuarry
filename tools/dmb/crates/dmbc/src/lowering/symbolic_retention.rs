@@ -94,16 +94,29 @@ impl SessionSymbolicMemo {
                 }
             }
             census.vec_payload("session_symbolic.debug_offsets", &record.relative_debug);
-            census.vec_payload("session_symbolic.required_types", &record.required_types);
-            if census.vec_payload(
+            census.slice(
+                "session_symbolic.required_types",
+                &record.required_types,
+                true,
+            );
+            if census.slice(
                 "session_symbolic.modified_recipes",
                 &record.modified_recipes,
+                true,
             ) {
-                for recipe in &record.modified_recipes {
+                for recipe in record.modified_recipes.iter() {
                     recipe.retained_census(&mut census);
                 }
             }
         }
+        self.receipt_groups
+            .visit_storage(|pointer, payload, capacity| {
+                census.exposed_buffer("session_symbolic.receipt_pool", pointer, payload, capacity);
+            });
+        census.unknown(
+            "session_symbolic.receipt_pool",
+            "weak leaf locators retain no read payload; private BTree node layout is not exposed",
+        );
         census.unknown("session_symbolic.records", "BTreeMap index node capacity, Arc control blocks, allocator overhead and freed pages are not exposed; this is not private-memory measurement");
         records.len()
     }

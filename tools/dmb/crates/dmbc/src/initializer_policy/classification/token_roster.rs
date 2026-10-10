@@ -2,8 +2,8 @@
 //! No current syntax, origins, dense table IDs, or independent dependency cache.
 use super::*;
 use std::sync::{
-    Mutex,
     atomic::{AtomicU64, Ordering},
+    Mutex,
 };
 #[derive(Default)]
 pub(super) struct CurrentRoster {
@@ -13,11 +13,28 @@ pub(super) struct CurrentRoster {
 }
 struct Roster {
     debug_defined: bool,
+    canonical: crate::initializer_tokens::CanonicalTokens,
     accepted: Vec<Arc<artifact::SemanticClassification>>,
     tokens: Vec<Option<(u32, Arc<[u8]>)>>,
     groups: Vec<RuntimeGroup>,
 }
 impl CurrentRoster {
+    pub(super) fn canonical_owner(&self) -> Option<crate::initializer_tokens::CanonicalTokens> {
+        self.value
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .as_ref()
+            .map(|value| Arc::clone(&value.canonical))
+    }
+    pub(super) fn visit_canonical(
+        &self,
+        visitor: impl FnOnce(&crate::initializer_tokens::CanonicalTokens),
+    ) {
+        let guard = self.value.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(value) = guard.as_ref() {
+            visitor(&value.canonical);
+        }
+    }
     pub(super) fn clear(&self) {
         *self.value.lock().unwrap_or_else(|error| error.into_inner()) = None;
     }
@@ -36,11 +53,22 @@ impl CurrentRoster {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn finish(
         &self,
         pending: Vec<PendingWrite>,
         debug_defined: bool,
         ordinal: &mut usize,
+    ) -> Result<ClassifiedInitializers, String> {
+        let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
+        self.finish_shared(pending, debug_defined, ordinal, &mut tokens)
+    }
+    pub(super) fn finish_shared(
+        &self,
+        pending: Vec<PendingWrite>,
+        debug_defined: bool,
+        ordinal: &mut usize,
+        tokens: &mut crate::initializer_tokens::Tokens,
     ) -> Result<ClassifiedInitializers, String> {
         let accepted = pending
             .iter()
@@ -85,9 +113,10 @@ impl CurrentRoster {
             }
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
-        let classified = finish_pending(pending.into_iter(), debug_defined, ordinal)?;
+        let classified = finish_pending_shared(pending.into_iter(), ordinal, tokens)?;
         let value = accepted.map(|accepted| Roster {
             debug_defined,
+            canonical: tokens.canonical_owner(),
             accepted,
             tokens: classified
                 .writes

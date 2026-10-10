@@ -2,7 +2,7 @@
 use crate::lowering_memo::{ReplayDecline, ResolverRead};
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::Arc};
 // Includes the certified src-cache operand encoding policy.
 pub(crate) const SCHEMA: u32 = 0x0206_000f;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
@@ -369,13 +369,14 @@ impl Payload<'_> {
             context.body,
             prepared,
             debug,
-            &self.required_types.0,
+            self.required_types.0.into(),
             modified,
             self.recipes
                 .0
                 .iter()
                 .map(|recipe| recipe.resident_recipe())
-                .collect(),
+                .collect::<Option<Vec<_>>>()
+                .map(Arc::from),
         )
         .ok_or(ReplayDecline::ExecutableIssuer)
     }

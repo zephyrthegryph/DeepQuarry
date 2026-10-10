@@ -7,7 +7,7 @@ use dm_ir::ReadDomain;
 pub(crate) fn weight(
     default: &DefaultValue,
     dimensions: Option<&Arc<[u16]>>,
-    token_key: Option<&Vec<u8>>,
+    token_key: Option<&Arc<[u8]>>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
@@ -24,7 +24,7 @@ pub(crate) fn weight(
         census.slice("resident_initializer.dimensions", dimensions, true);
     }
     if let Some(token_key) = token_key {
-        census.vec_payload("resident_initializer.token_key", token_key);
+        census.slice("resident_initializer.token_key", token_key, true);
     }
     // The store converts these vectors to exact Arc slices. Charging original
     // capacities conservatively covers either reused or newly allocated backing.
@@ -47,7 +47,7 @@ pub(crate) fn weight(
     let envelope = size_of::<DefaultValue>()
         .saturating_add(size_of::<Option<crate::initializer_policy::Phase>>())
         .saturating_add(size_of::<Option<(bool, Arc<[u16]>)>>())
-        .saturating_add(size_of::<Option<Vec<u8>>>());
+        .saturating_add(size_of::<Option<Arc<[u8]>>>());
     Some(
         capacity
             .saturating_add(encounters.saturating_mul(64))
@@ -95,9 +95,8 @@ mod tests {
     #[test]
     fn actual_token_capacity_and_nested_semantic_owners_raise_initializer_charge() {
         let default = DefaultValue::Scalar(dm_ir::SemanticValue::Null);
-        let small = Vec::new();
-        let mut large = Vec::new();
-        large.reserve_exact(10000);
+        let small: Arc<[u8]> = Arc::from([]);
+        let large: Arc<[u8]> = vec![0; 10000].into();
         let empty = (Vec::new(), Vec::new());
         let before = weight(&default, None, Some(&small), b"key", &empty.0, &empty.1).unwrap();
         let after = weight(&default, None, Some(&large), b"key", &empty.0, &empty.1).unwrap();

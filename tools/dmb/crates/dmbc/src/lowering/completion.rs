@@ -74,6 +74,11 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
             store.retain_current(frontend);
         }
     }
+    let request_admission = memo
+        .and_then(|memo| memo.symbolic.as_ref())
+        .filter(|_| !host.observes_reads())
+        .map(|_| symbolic_input::RequestAdmission::new(host));
+    let request_admission = request_admission.as_ref();
     let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
@@ -136,6 +141,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                             frontend,
                                             body,
                                             host,
+                                            request_admission,
                                             policy,
                                             startup,
                                             memo,

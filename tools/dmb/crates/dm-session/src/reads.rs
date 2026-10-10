@@ -29,6 +29,23 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
     pub fn domain_receipts(&self) -> Vec<(ReadDomain, u128)> {
         self.ledger.domain_receipts()
     }
+    /// Preserve every edge after exact replay against this same immutable host.
+    /// Observing/opaque hosts are resolved normally so their instrumentation is
+    /// never bypassed; nonobserving hosts can reuse the validated answer owner.
+    pub fn record_admitted(&self, reads: &[ResolverRead]) {
+        for read in reads {
+            if self.resolver.observes_reads() {
+                self.resolve(read.query);
+            } else {
+                let version = self
+                    .ledger
+                    .domain_receipt(&read.domain)
+                    .unwrap_or_else(|| self.resolver.domain_version(read.domain));
+                self.ledger
+                    .record(read.query, read.answer.clone(), read.domain, version);
+            }
+        }
+    }
     /// These reads are mandatory even for bodies that use no inherited names.
     pub fn record_occurrence(&self, identity: dm_ir::ProcedureIdentity) {
         self.resolve(ResolveQuery::Ancestry(identity.owner));

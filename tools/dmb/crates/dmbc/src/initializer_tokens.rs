@@ -3,25 +3,72 @@
 use crate::initializer_policy::{CapturedInitializerEvaluator, Evaluation};
 use dm_ir::{InitializerWrite, SemanticValue, SymbolTable};
 use dm_syntax::{Expr, ExprKind};
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+pub(crate) type CanonicalTokens = Arc<Mutex<HashMap<Arc<[u8]>, Option<u32>>>>;
 
 pub struct Tokens {
     unique: bool,
     next: u32,
-    shared: HashMap<Arc<[u8]>, u32>,
+    shared: CanonicalTokens,
+    previous: Option<CanonicalTokens>,
 }
 impl Tokens {
     pub fn new(debug_defined: bool) -> Self {
         Self {
             unique: debug_defined,
             next: 0,
-            shared: HashMap::new(),
+            shared: Arc::new(Mutex::new(HashMap::new())),
+            previous: None,
         }
     }
+    pub(crate) fn with_previous(debug: bool, previous: Option<CanonicalTokens>) -> Self {
+        Self {
+            previous,
+            ..Self::new(debug)
+        }
+    }
+    pub(crate) fn canonical_owner(&self) -> CanonicalTokens {
+        Arc::clone(&self.shared)
+    }
+    /// Select immutable bytes before classification publication. This assigns
+    /// no token identity; worker completion order cannot affect emitted IDs.
+    pub(crate) fn share_key(&self, key: Arc<[u8]>) -> Arc<[u8]> {
+        let mut shared = self
+            .shared
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if let Some((existing, _)) = shared.get_key_value(key.as_ref()) {
+            return Arc::clone(existing);
+        }
+        let key = self
+            .previous
+            .as_ref()
+            .and_then(|previous| {
+                let previous = previous.lock().unwrap_or_else(|error| error.into_inner());
+                previous
+                    .get_key_value(key.as_ref())
+                    .map(|(key, _)| Arc::clone(key))
+            })
+            .unwrap_or(key);
+        shared.insert(Arc::clone(&key), None);
+        key
+    }
     pub fn issue(&mut self, key: Vec<u8>) -> Result<(u32, Arc<[u8]>), String> {
+        self.issue_shared(key.into())
+    }
+    pub(crate) fn issue_shared(&mut self, key: Arc<[u8]>) -> Result<(u32, Arc<[u8]>), String> {
+        let key = self.share_key(key);
+        let mut shared = self
+            .shared
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         if !self.unique {
-            if let Some((retained, &token)) = self.shared.get_key_value(key.as_slice()) {
-                return Ok((token, retained.clone()));
+            if let Some(Some(token)) = shared.get(key.as_ref()) {
+                return Ok((*token, key));
             }
         }
         let token = self.next;
@@ -29,9 +76,8 @@ impl Tokens {
             .next
             .checked_add(1)
             .ok_or("initializer token space exhausted")?;
-        let key: Arc<[u8]> = key.into();
         if !self.unique {
-            self.shared.insert(key.clone(), token);
+            shared.insert(Arc::clone(&key), Some(token));
         }
         Ok((token, key))
     }
