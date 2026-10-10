@@ -1,13 +1,16 @@
 # Incremental runtime contract
 
-This standalone corpus declares eight exact runtime values: inherited instance
+This standalone corpus declares nine exact runtime values: inherited instance
 default, parent call with omitted and explicit arguments, global procedure
 argument defaults, global initializer, first and second procedure-static calls,
-and a field/procedure structural extension. It has no game boot, assets or FFI.
+and a field/procedure structural extension, plus the numeric contents of an
+embedded resource. It has no game boot or FFI. Runtime directories contain only
+the DMB and RSC; the resource observation must come from the archive.
 
-The nine revisions are initial, unchanged, body edit, inherited default edit,
+The eleven revisions are initial, unchanged, body edit, inherited default edit,
 argument default edit, procedure-static initializer edit, global initializer
-edit, field/procedure addition, and removal. Edits are cumulative and identify
+edit, field/procedure addition, removal, resource replacement and an unchanged
+resource build. Edits are cumulative and identify
 one exact source site. `scenarios.json` contains the expected values for each
 revision. Both compilers returning the same wrong result is a failure.
 
@@ -32,7 +35,7 @@ python tools/dmb/fixtures/native/incremental_runtime_contract/run.py `
 
 All four input pins and committed source/manifest/scenario hashes are checked
 before and after. Owned source copies use UTF-8 LF lines; each revision records
-their actual SHA-256. There is no compiler fallback in this helper. It refuses
+their actual source and resource SHA-256. There is no compiler fallback in this helper. It refuses
 a pre-existing account daemon and verifies its own daemon PID before/after every
 native compile. Retained clients disable autostart. It leaves foreign daemons
 untouched if ownership changes.

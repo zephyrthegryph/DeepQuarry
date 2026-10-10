@@ -15,7 +15,7 @@ class RuntimeContractHelperTests(unittest.TestCase):
     def test_matching_compiler_outputs_are_insufficient_without_expected_values(self):
         with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
             log = Path(directory) / "probe.log"
-            expected = helper.expected_markers([3, 18, 15, 9, 11, 21, 22, 0])
+            expected = helper.expected_markers([3, 18, 15, 9, 11, 21, 22, 0, 14])
             log.write_text("\n".join(expected) + "\n", encoding="utf-8")
             self.assertTrue(helper.observations(log, expected)["matches_expected"])
             wrong = expected.copy()
@@ -31,11 +31,17 @@ class RuntimeContractHelperTests(unittest.TestCase):
     def test_cumulative_edits_and_full_expectations_are_exact_and_bounded(self):
         source = (HERE / "probe.dm").read_text(encoding="utf-8")
         steps = helper.read_steps(HERE / "scenarios.json")
-        self.assertEqual(len(steps), 9)
+        self.assertEqual(len(steps), 11)
+        resource = (HERE / "contract-resource.txt").read_text(encoding="utf-8")
         initial = source
         for step in steps:
             source = helper.apply_step(source, step)
-            self.assertEqual(len(helper.expected_markers(step["expected"])), 9)
+            self.assertEqual(len(helper.expected_markers(step["expected"])), 10)
+            if "resource_before" in step:
+                before_source = source
+                resource = helper.apply_step(resource, {"before": step["resource_before"], "after": step["resource_after"]})
+                self.assertEqual(source, before_source)
+                self.assertEqual(int(resource), step["expected"][-1])
             if step["name"] in ("initial", "unchanged"):
                 self.assertEqual(source, initial)
             if step["name"] == "structural_add":
@@ -48,7 +54,8 @@ class RuntimeContractHelperTests(unittest.TestCase):
         self.assertIn("var/static/counter = 40", source)
         with self.assertRaisesRegex(ValueError, "one exact"):
             helper.apply_step("duplicate duplicate", {"before": "duplicate", "after": "x"})
-        with self.assertRaisesRegex(ValueError, "eight integer"):
+        self.assertEqual(int(resource), 29)
+        with self.assertRaisesRegex(ValueError, "nine integer"):
             helper.expected_markers([0] * 7)
 
     def test_owned_namespace_matches_probe_daemon_and_client_despite_ambient_namespace(self):

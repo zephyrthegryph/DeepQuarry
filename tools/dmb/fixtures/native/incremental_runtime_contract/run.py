@@ -18,7 +18,7 @@ from iteration_memory import OwnedMemory
 from watchdog import record_daemon_cleanup, terminate_owned
 
 LABELS = ("inherited", "parent_default", "parent_explicit", "argument_defaults",
-          "global", "static_first", "static_second", "structural")
+          "global", "static_first", "static_second", "structural", "resource")
 
 
 def load(name, file):
@@ -37,7 +37,7 @@ def read_text(file):
 
 def expected_markers(values):
     if not isinstance(values, list) or len(values) != len(LABELS) or any(type(value) is not int for value in values):
-        raise ValueError("scenario must declare all eight integer expectations")
+        raise ValueError("scenario must declare all nine integer expectations")
     return [f"DQ_CONTRACT {name} {value}" for name, value in zip(LABELS, values)] + ["DQ_CONTRACT finished"]
 
 
@@ -113,10 +113,10 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 1, "scope": "eight explicit standalone semantic observations across nine compilation revisions",
+    receipt = {"schema": 1, "scope": "nine explicit standalone semantic observations including embedded resource replacement",
                "acceptance_profile": False, "complete": False, "matches": False,
                "root": str(root), "steps": [], "executions": {}}
-    receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme", "scenarios.json")}
+    receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme", "scenarios.json", "contract-resource.txt")}
     daemon = None
     memory = None
     previous_memory = h._owned_memory
@@ -134,6 +134,7 @@ def main():
             retirement.record_pin(receipt, name, file, expected)
         steps = read_steps(HERE / "scenarios.json")
         source = (HERE / "probe.dm").read_text(encoding="utf-8")
+        resource = (HERE / "contract-resource.txt").read_text(encoding="utf-8")
         native_source, byond_source = root / "native-source", root / "byond-source"
         for directory in (native_source, byond_source):
             directory.mkdir()
@@ -173,6 +174,8 @@ def main():
 
         for index, step in enumerate(steps):
             source = apply_step(source, step)
+            if "resource_before" in step or "resource_after" in step:
+                resource = apply_step(resource, {"before": step.get("resource_before"), "after": step.get("resource_after")})
             expected = expected_markers(step["expected"])
             label = f"{index:02d}-{step['name']}"
             row = {"name": step["name"], "status": "pending", "expected": expected}
@@ -182,9 +185,13 @@ def main():
                 temporary = directory / "probe.next"
                 temporary.write_text(source, encoding="utf-8", newline="\n")
                 os.replace(temporary, target)
+                (directory / "contract-resource.txt").write_text(resource, encoding="utf-8", newline="\n")
             row["source_sha256"] = h.sha(native_source / "probe.dm")
+            row["resource_sha256"] = h.sha(native_source / "contract-resource.txt")
             if h.sha(byond_source / "probe.dm") != row["source_sha256"]:
                 raise ValueError("compiler fixture source copies differ")
+            if h.sha(byond_source / "contract-resource.txt") != row["resource_sha256"]:
+                raise ValueError("compiler resource copies differ")
 
             run(label + "/byond-compile", args.dm, [str(byond_source / "probe.dme")], 30)
             if not re.search(r"\b516\.1687\b", read_text(root / label / "byond-compile/stdout.log")):
@@ -196,10 +203,6 @@ def main():
             row["byond_outputs"] = {}
             for extension in ("dmb", "rsc"):
                 original = byond_source / ("probe." + extension)
-                if extension == "rsc" and not original.exists():
-                    # This resource-free corpus does not require BYOND to emit an archive.
-                    row["byond_outputs"][extension] = {"present": False}
-                    continue
                 h.regular(original)
                 shutil.copyfile(original, byond_runtime / original.name)
                 row["byond_outputs"][extension] = {"present": True, "sha256": h.sha(original), "bytes": original.stat().st_size}
@@ -247,6 +250,8 @@ def main():
             for directory in (native_source, byond_source):
                 if h.sha(directory / "probe.dm") != row["source_sha256"] or h.sha(directory / "probe.dme") != receipt["fixture_sources"]["probe.dme"]:
                     raise ValueError("current fixture input changed during a request")
+                if h.sha(directory / "contract-resource.txt") != row["resource_sha256"]:
+                    raise ValueError("current resource input changed during a request")
             row["status"] = "passed"
         for name in receipt["fixture_sources"]:
             if h.sha(HERE / name) != receipt["fixture_sources"][name]:

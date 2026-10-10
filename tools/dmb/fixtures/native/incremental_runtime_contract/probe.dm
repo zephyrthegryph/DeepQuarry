@@ -1,4 +1,4 @@
-// Standalone compiler contract, with no game boot, assets or FFI.
+// Standalone compiler contract, with no game boot or FFI.
 var/global/runtime_contract_global = 11
 
 /datum/runtime_contract/base
@@ -34,5 +34,6 @@ var/global/runtime_contract_global = 11
     world.log << "DQ_CONTRACT static_first [runtime_contract_tick()]"
     world.log << "DQ_CONTRACT static_second [runtime_contract_tick()]"
     world.log << "DQ_CONTRACT structural [probe.extra()]"
+    world.log << "DQ_CONTRACT resource [text2num(file2text('contract-resource.txt'))]"
     world.log << "DQ_CONTRACT finished"
     shutdown()
