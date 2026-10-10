@@ -82,11 +82,15 @@
 			playsound(src, fire_sound, 50, 1)
 			act_message(user, src, MSG_SELF(span_danger("The rifle goes off in your face!")), MSG_OTHERS(span_danger("%T% goes off!")))
 			return
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user))
+		perform_op(user, src, "saw_off", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	else
 		return ..()
 
-/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/proc/saw_off_done(mob/user)
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
+	op("saw_off", ai(), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
+
+/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/proc/saw_off_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sawn_off)
 		return
 	icon_state = "sawn_rifle"

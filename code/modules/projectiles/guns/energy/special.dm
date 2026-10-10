@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 		act_message(user, src, others = span_cult("%U% aims %T% at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		task_start(/datum/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
+		howitzer_charge(user, A, target_turf, TRUE, target_zone, attack_modifier, beameffect, FALSE)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
@@ -317,48 +317,44 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		task_start(/datum/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = FALSE, arg3 = adjacent, arg4 = params, beam_holder = list(beameffect), click_empty = TRUE)
+		howitzer_charge(user, A, target_turf, FALSE, adjacent, params, beameffect, TRUE)
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
 /obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
 
-/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/task/timed/maghowitzer_howitzer_charged/task)
-	var/list/beam_holder = task.beam_holder
-	var/mob/living/user = task.actor
-	var/click_empty = task.click_empty
-	var/datum/beam = beam_holder[1]
+CAPABILITIES(/obj/item/gun/energy/maghowitzer)
+	op("howitzer_charge", ai(), takes("aim", "target_turf", "melee", "arg3", "arg4", "beam", "click_empty"), wait(3 SECONDS), on_interrupt(PROC_REF(howitzer_aborted)), then(PROC_REF(howitzer_charged)))
+
+/// The three-second charge-up before the shot; the click's arguments ride along for the shot that follows.
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charge(mob/living/user, atom/A, turf/target_turf, melee, arg3, arg4, beam, click_empty)
+	var/datum/op_result/charging = perform_op(user, src, "howitzer_charge", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = A, "target_turf" = target_turf, "melee" = melee, "arg3" = arg3, "arg4" = arg4, "beam" = beam, "click_empty" = click_empty))
+	if(charging.outcome == ACT_REFUSED)
+		if(beam && !QDELETED(beam))
+			spent(beam)
+		power_cycle = FALSE
+
+/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/datum/beam = A.arg("beam")
 	if(beam && !QDELETED(beam))
 		spent(beam)
-	if(click_empty && user)
+	if(A.arg("click_empty") && user)
 		handle_click_empty(user)
 	power_cycle = FALSE
 
-/datum/task/timed/maghowitzer_howitzer_charged
-	duration = 3 SECONDS
-	complete_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_charged
-	cancel_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_aborted
-	var/atom/A
-	var/turf/target_turf
-	var/melee
-	var/arg3
-	var/arg4
-	var/list/beam_holder
-	var/click_empty
-
 /// Charged: attack() or afterattack() again, past the charge-up.
-/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/task/timed/maghowitzer_howitzer_charged/task)
-	var/atom/A = task.A
-	var/mob/living/user = task.actor
-	var/turf/target_turf = task.target_turf
-	var/melee = task.melee
-	var/arg3 = task.arg3
-	var/arg4 = task.arg4
-	var/atom/aim = A
-	if(A.loc != target_turf)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/act/op/A)
+	var/atom/target = A.arg("aim")
+	var/mob/living/user = A.actor
+	var/turf/target_turf = A.arg("target_turf")
+	var/arg3 = A.arg("arg3")
+	var/arg4 = A.arg("arg4")
+	var/atom/aim = target
+	if(target.loc != target_turf)
 		aim = pick_random_target(target_turf) || target_turf
 	charged_shot = TRUE
-	if(melee)
+	if(A.arg("melee"))
 		attack(aim, user, arg3, arg4)
 	else
 		afterattack(aim, user, arg3, arg4)
@@ -423,34 +419,26 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
 	act_message(user, src, MSG_SELF(span_notice("You start charging %T%!")), MSG_OTHERS(span_notice("%U% starts charging %T%!")))
-	task_start(/datum/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
+	var/datum/op_result/spinning = perform_op(user, src, "spin_up", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = target, "clickparams" = clickparams, "pointblank" = pointblank, "reflex" = reflex, "stance" = stance))
+	if(spinning.outcome == ACT_REFUSED)
+		spinning_up = FALSE
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 
-/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/task/timed/bfgtaser_spun_up/task)
+/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/act/op/A)
 	spinning_up = FALSE
-
-/datum/task/timed/bfgtaser_spun_up
-	duration = 0.8 SECONDS
-	complete_proc = /obj/item/gun/energy/bfgtaser/proc/spun_up
-	cancel_proc = /obj/item/gun/energy/bfgtaser/proc/spin_ended
-	var/atom/target_arg
-	var/clickparams
-	var/pointblank
-	var/reflex
-	var/stance
 
 /// Charged: Fire() again, past the spin-up.
-/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/task/timed/bfgtaser_spun_up/task)
-	var/atom/target = task.target_arg
-	var/mob/living/user = task.actor
-	var/clickparams = task.clickparams
-	var/pointblank = task.pointblank
-	var/reflex = task.reflex
+/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/act/op/A)
+	var/atom/target = A.arg("aim")
+	var/mob/living/user = A.actor
 	spinning_up = FALSE
 	spun = TRUE
-	Fire(target, user, clickparams, pointblank, reflex, task.stance)
+	Fire(target, user, A.arg("clickparams"), A.arg("pointblank"), A.arg("reflex"), A.arg("stance"))
 	spun = FALSE
+
+CAPABILITIES(/obj/item/gun/energy/bfgtaser)
+	op("spin_up", ai(), takes("aim", "clickparams", "pointblank", "reflex", "stance"), wait(0.8 SECONDS), on_interrupt(PROC_REF(spin_ended)), then(PROC_REF(spun_up)))
 
 /obj/item/projectile/beam/stun/weak/BFG
 	fire_sound = SFX_EFFECTS_SPARKS6

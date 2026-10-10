@@ -76,6 +76,7 @@ TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 
 CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("draw_bow", ai(), wait(2.5 SECONDS), then(PROC_REF(drawn_fully)))
 
 /// Old attack_hand.
 /obj/item/gun/launcher/crossbow/bow/proc/interaction_hand(datum/act/op/A)
@@ -114,9 +115,10 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
-	task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
+	perform_op(user, src, "draw_bow", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)
+/obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(datum/act/op/A)
+	var/mob/user = A.actor
 	set_drawn(TRUE)
 	act_message(user, src, MSG_SELF(span_infoplain("You draw the string on %T% back fully!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "draws the string on %T% back fully!")))

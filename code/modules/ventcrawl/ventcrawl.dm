@@ -118,6 +118,14 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 /mob/living/var/ventcrawl_layer = 3
 
+/obj/machinery/atmospherics/proc/ventcrawl_enter_time(datum/act/op/A)
+	var/mob/living/crawler = A.actor
+	return crawler.vent_crawl_time
+
+/obj/machinery/atmospherics/proc/ventcrawl_entered(datum/act/op/A)
+	var/mob/living/crawler = A.actor
+	crawler.ventcrawl_in_done(src)
+
 /mob/living/proc/ventcrawl_in_done(obj/machinery/atmospherics/unary/vent_found)
 	if(!can_ventcrawl())
 		return
@@ -129,7 +137,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	add_ventcrawl(vent_found)
 
 /mob/living/proc/handle_ventcrawl(atom/clicked_on)
-	if(!can_ventcrawl() || task_busy(src))
+	if(!can_ventcrawl() || op_pending_for(src, "ventcrawl_enter"))
 		return
 
 	var/obj/machinery/atmospherics/unary/vent_found
@@ -180,7 +188,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
-			task_timed(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
+			perform_op(src, vent_found, "ventcrawl_enter", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 		else
 			to_chat(src, "This vent is not connected to anything.")
 
