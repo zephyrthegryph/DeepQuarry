@@ -42,6 +42,9 @@
 
 
 /obj/item/organ
+	/// FBP_MECHANICAL or FBP_ASSISTED: the organ is made robotic (robotize()) or assisted (mechassist()) as it initializes. A type sets it instead of
+	/// an Initialize() that only called one of them.
+	var/starts_prosthetic = null
 	/// Organ condition bits (ORGAN_DEAD, ORGAN_BROKEN, ...).
 	var/status = 0
 	/// Current damage to the organ.
@@ -97,6 +100,11 @@ TRACKED(/obj/item/organ, robotic)
 		data.setup_from_species(GLOB.all_species["Human"])
 
 	handle_organ_mod_special()
+	switch(starts_prosthetic)
+		if(FBP_MECHANICAL)
+			robotize()
+		if(FBP_ASSISTED)
+			mechassist()
 
 /obj/item/organ/proc/set_initial_meat()
 	if(owner)
