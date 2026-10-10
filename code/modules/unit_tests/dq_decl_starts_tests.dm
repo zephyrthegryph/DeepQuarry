@@ -62,3 +62,15 @@
 	var/obj/structure/noticeboard/medical/board = allocate(/obj/structure/noticeboard/medical, T)
 	var/obj/item/paper/P = locate() in board
 	TEST_ASSERT(length(P?.stamp_marks), "a noticeboard's memo carries its stamp as a stamp mark")
+
+/// reagents() and typed fills replace create_reagents() / add_reagent() in Initialize().
+/datum/unit_test/dq_decl_reagent_fills/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/machinery/microwave/MW = allocate(/obj/machinery/microwave, T)
+	TEST_ASSERT_EQUAL(MW.reagents?.maximum_volume, 100, "the microwave holds 100 units")
+	var/obj/item/grenade/chem_grenade/frost/G = allocate(/obj/item/grenade/chem_grenade/frost, T)
+	TEST_ASSERT_EQUAL(length(G.beakers), 2, "the frost grenade starts with two beakers")
+	var/obj/item/reagent_containers/B = G.beakers[1]
+	TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_CRYOSLURRY), 150, "its first beaker holds the cryoslurry")
+	var/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/E = allocate(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher, T)
+	TEST_ASSERT_EQUAL(E.reagents.get_reagent_amount(REAGENT_ID_FIREFOAM), E.max_water, "the exosuit extinguisher starts full of foam")
