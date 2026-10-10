@@ -20,6 +20,14 @@ export function observeRuntimeLibrary(source: string): HostedLibraryIdentity {
   return { source, hosted: source, sha256: sha(captured), bytes: captured.length };
 }
 
+/** A current observation may certify this run only while its input stays fixed. */
+export function verifyObservedRuntimeLibrary(identity: HostedLibraryIdentity): void {
+  const current = observeRuntimeLibrary(identity.hosted);
+  if (current.sha256 !== identity.sha256 || current.bytes !== identity.bytes) {
+    throw new Error('Observed runtime library changed during hosted world execution.');
+  }
+}
+
 /** Destination must be an already authenticated acquired slot. Never overwrite a leaf. */
 export function stageRuntimeLibrary(source: string, slot: string): { identity: HostedLibraryIdentity; remove: () => void } {
   source = path.resolve(source);

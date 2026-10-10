@@ -10,7 +10,7 @@ import { regQuery } from './winreg';
 import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
-import { observeRuntimeLibrary, stageRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
+import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -575,6 +575,7 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
     ? stageRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
     : undefined;
   let runtimeFailed = false;
+  let conventionalLibrary: HostedLibraryIdentity | undefined;
   try {
   await approveWorldDlls(options.dmbFile);
   const ddExePath = await resolveDreamDaemonExecutable(options.namedDmVersion, getDmPath);
@@ -582,6 +583,7 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
     // Hash the actual resolved file; unresolved PATH commands cannot certify it.
     if (!path.isAbsolute(ddExePath)) throw new CompilerProvenanceError('runtime identity requires an absolute DreamDaemon executable');
     const libraryIdentity = library?.identity ?? observeRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'));
+    if (!library) conventionalLibrary = libraryIdentity;
     options.onRuntimeIdentity({ executable: ddExePath, sha256: createHash('sha256').update(fs.readFileSync(ddExePath)).digest('hex'),
       version: null, security: args.find(arg => ['-safe', '-trusted', '-ultrasafe'].includes(arg)) ?? 'unspecified', library: libraryIdentity });
   }
@@ -602,7 +604,10 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
     runtimeFailed = true;
     throw error;
   } finally {
-    try { library?.remove(); }
+    try {
+      if (conventionalLibrary) verifyObservedRuntimeLibrary(conventionalLibrary);
+      library?.remove();
+    }
     catch (error) {
       if (!runtimeFailed) throw error;
       console.warn('Runtime library cleanup failed; preserving the original runtime failure:', error);

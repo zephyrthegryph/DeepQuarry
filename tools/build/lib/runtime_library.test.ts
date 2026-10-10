@@ -1,7 +1,7 @@
 import { test, expect } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { observeRuntimeLibrary, stageRuntimeLibrary } from './runtime_library';
+import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary } from './runtime_library';
 import { sameSuiteRuntime } from './normal_suite_plan';
 
 function fixture(body: (source: string, slot: string) => void) {
@@ -40,6 +40,7 @@ test('changed hosted library is preserved on cleanup failure', () => fixture((so
 
 test('conventional observation matches staged current bytes without staging or historical attribution', () => fixture((source, slot) => {
   const observed = observeRuntimeLibrary(source);
+  expect(() => verifyObservedRuntimeLibrary(observed)).not.toThrow();
   expect(observed.hosted).toBe(path.resolve(source));
   expect(fs.readdirSync(slot)).toEqual([]);
   const staged = stageRuntimeLibrary(source, slot);
@@ -47,6 +48,7 @@ test('conventional observation matches staged current bytes without staging or h
   expect(sameSuiteRuntime({ ...runtime, library: observed }, { ...runtime, library: staged.identity })).toBe(true);
   expect(sameSuiteRuntime(runtime, { ...runtime, library: observed })).toBe(false);
   fs.writeFileSync(source, 'new current library');
+  expect(() => verifyObservedRuntimeLibrary(observed)).toThrow('changed during');
   expect(sameSuiteRuntime({ ...runtime, library: observed }, { ...runtime, library: observeRuntimeLibrary(source) })).toBe(false);
   staged.remove();
   expect(fs.readFileSync(source, 'utf8')).toBe('new current library');
