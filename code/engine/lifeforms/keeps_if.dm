@@ -35,7 +35,7 @@ GLOBAL_REAL_VAR(list/init_discard_pending)
 		return
 	for(var/datum/centry/C as anything in P.keeps_if)
 		var/datum/entry/E = C.item
-		if(holder_call(holder, E.args["cond"]))
+		if(call(holder, E.args["cond"])())
 			continue
 		var/warn = E.args["warn"]
 		if(warn)
