@@ -46,6 +46,7 @@ class OwnedMemory:
         self.stopped = threading.Event()
         self.failed = threading.Event()
         self.peak = 0
+        self.peak_processes = []
         self.samples = 0
         self.errors = []
         self.reason = None
@@ -64,7 +65,10 @@ class OwnedMemory:
         with self.lock:
             children = list(self.children.values())
         try:
-            total = sum(self.probe(child) for child in children if child.poll() is None)
+            processes = [{"pid": getattr(child, "pid", None),
+                "private_bytes": self.probe(child)}
+                for child in children if child.poll() is None]
+            total = sum(row["private_bytes"] for row in processes)
         except Exception as error:
             with self.lock:
                 if len(self.errors) < 8:
@@ -74,7 +78,9 @@ class OwnedMemory:
             return
         with self.lock:
             self.samples += 1
-            self.peak = max(self.peak, total)
+            if total > self.peak:
+                self.peak = total
+                self.peak_processes = processes
             if total > self.budget:
                 self.reason = "sampled owned private-memory budget exceeded"
                 self.failed.set()
@@ -102,6 +108,7 @@ class OwnedMemory:
                 self.failed.set()
             return {"schema": "dm-owned-memory-samples-v1", "budget_bytes": self.budget,
                 "sampled_peak_private_bytes": self.peak, "samples": self.samples,
+                "processes_at_sampled_peak": list(self.peak_processes),
                 "sample_interval_s": 0.2, "status": "failed" if self.failed.is_set() else "sampled",
                 "reason": self.reason, "errors": list(self.errors),
                 "strict_peak_proved": False,

@@ -22,6 +22,7 @@ class MemoryTests(unittest.TestCase):
             guard.check()
         receipt = guard.finish()
         self.assertEqual(receipt["sampled_peak_private_bytes"], 110)
+        self.assertEqual([row["private_bytes"] for row in receipt["processes_at_sampled_peak"]], [70, 40])
         self.assertFalse(receipt["strict_peak_proved"])
 
     def test_exited_and_unregistered_children_do_not_duplicate_ownership(self):
