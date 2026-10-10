@@ -5,6 +5,7 @@ import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
+import { resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
 
@@ -555,16 +556,7 @@ export async function DreamDaemon(
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
   checkVerdigrisAbi();
   await approveWorldDlls(options.dmbFile);
-  const compiler = prepared ?? await prepareDreamMaker(options);
-  if (compiler.namedDmVersion !== (options.namedDmVersion ?? null) || JSON.stringify(compiler.defines) !== JSON.stringify(options.defines ?? [])) {
-    throw new Error('Prepared DreamMaker configuration differs from compilation request.');
-  }
-  checkDreamMakerIdentity(compiler);
-  const dmPath = compiler.executable;
-  const baseDir = path.dirname(dmPath);
-  const ddExeName =
-    process.platform === 'win32' ? 'dreamdaemon.exe' : 'DreamDaemon';
-  const ddExePath = baseDir === '.' ? ddExeName : path.join(baseDir, ddExeName);
+  const ddExePath = await resolveDreamDaemonExecutable(options.namedDmVersion, getDmPath);
 
   if (options.watchdogFile) {
     // On Windows dreamdaemon.exe writes nothing to our stdout, so a world that
