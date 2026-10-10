@@ -675,3 +675,10 @@ their `RefreshParts()` reads state the pipe init makes after the capabilities' i
 | DC3 (DONE) | `/datum/looping_sound/New()` takes one atom as well as a list | A sound loop is a starting occupant (`owns_one(nameof(soundloop), /datum/looping_sound/x, starts = /datum/looping_sound/x)`): `new type(holder)` passes the holder, which the loop now wraps into its output list. |
 | DC4 (open) | A per-instance random roll on a field a `starts =` reads (a blood decal's random virus, a mouse's diseases, `rand()` in constructor args) | `starts = PROC_REF(make_x)` covers it (the proc builds the instance), but the roll then draws from the world RNG; a `starts_args` form reading a rolled var is the clean answer. |
 | DC5 (DONE) | `reagents(holder = nameof(var))` (`code/library/reagents/reagents.dm`) | The holder's `/datum/reagents` subtype read from a holder var, so a family whose subtypes set `reagent_type` (the refinery machines; the reactor distils) declares one `reagents(nameof(default_max_vol), holder = nameof(reagent_type))`; the hub with no tank declares `without(CAP_REAGENTS)`. |
+**Child creation and light at init (ratchet-fw).** A `rel_set(src, nameof(v), new /T)` right in `Initialize()` whose type already declares
+`owns_one(nameof(v), /T)` becomes `owns_one(nameof(v), /T, starts = /T)` (datums, and atoms made in `src`). A constant `set_light()` at init is
+the type's static light vars with `light_on = TRUE`: `/atom/movable/on_materialize()` already calls `update_light()` for STATIC_LIGHT, so the
+commented-out auto-light in `/atom/Initialize()` is not needed for them (a flashlight, whose own init switches it, keeps its `set_light()`).
+Open gap found doing it: `owns_one(nameof(v), /datum/gas_mixture, starts = /datum/gas_mixture)` (algae farm, bomb tester, compressor) and the
+camera's `starts = /obj/item/camera_assembly` leave the holder undeletable in the i7 harness, or make the assembly late for the camera's own
+init, so those four keep their `rel_set()` in `Initialize()` until the starts= path handles a gas mixture and a part the type's init reads.

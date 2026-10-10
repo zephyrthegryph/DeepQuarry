@@ -248,6 +248,7 @@ CAPABILITIES(/obj/item/slime_crystal)
 	light_color = "#00FF00"
 	light_power = 0.4
 	light_range = 2
+	light_on = TRUE // lit from the start: static light vars are applied when it materializes (on_materialize() -> update_light())
 	w_class = ITEMSIZE_TINY
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
@@ -255,10 +256,6 @@ CAPABILITIES(/obj/item/slime_crystal)
 
 CAPABILITIES(/obj/item/slime_irradiator)
 	every(2 SECONDS, then(PROC_REF(slime_irradiator_step)))
-
-/obj/item/slime_irradiator/Initialize(mapload)
-	. = ..()
-	set_light(light_range, light_power, light_color)
 
 /// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
 /obj/item/slime_irradiator/proc/slime_irradiator_step(datum/act/timer/A)
