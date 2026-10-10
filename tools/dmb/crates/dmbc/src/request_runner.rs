@@ -64,14 +64,13 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    runner_freshness::run(request, |request, allow_moving| {
-        run_build_attempt(request, host, allow_moving)
+    runner_freshness::run(request, |request| {
+        run_build_attempt(request, host)
     })
 }
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
-    allow_moving: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
         host.query_state(),
@@ -267,7 +266,6 @@ fn run_build_attempt(
                     )?;
                     runner_freshness::admit_live(
                         &validated.record().inputs,
-                        allow_moving,
                         generated_paths,
                     )?;
                     dmbc::daemon::control::begin_publication()?;
@@ -813,7 +811,7 @@ fn run_build_attempt(
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
-        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, allow_moving, generated_paths)?;
+        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?;
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
         dmbc::daemon::control::begin_publication()?;
