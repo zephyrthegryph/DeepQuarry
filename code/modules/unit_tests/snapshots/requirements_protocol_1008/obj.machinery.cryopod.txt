@@ -6,8 +6,10 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Pod
 robot|none menu: Enter Pod (refused: )
 robot|none menu: Put grabbed victim in (refused: )
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject Pod (refused: You can't reach that.)
 ghost|none menu: Enter Pod (refused: You can't reach that.)
 ghost|none menu: Put grabbed victim in (refused: )
@@ -74,5 +76,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Put grabbed victim in (refused: )
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
-keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
 

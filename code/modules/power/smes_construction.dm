@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	// A failing unit swallows whatever touches it and says why: nothing is done to it.
 	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))))
 	op("install_coil", item(/obj/item/smes_coil), at(SPACE_PANEL),
-		needs(req_bool(PROC_REF(modify_allowed), because = PROC_REF(modify_refusal)), req_bool(PROC_REF(coil_room), because = MSG(smes/coils_full))),
+		needs(req(PROC_REF(modify_refusal)), req(PROC_REF(coil_room))),
 		then(PROC_REF(coil_installed)))
 	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), at(SPACE_PANEL),
 		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))),
@@ -339,12 +339,9 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 		return /datum/msg/smes/turn_it_off
 	return null
 
-/obj/machinery/power/smes/buildable/proc/modify_allowed(datum/act/op/A)
-	return isnull(modify_refusal(A))
-
 /// There is room for another coil.
 /obj/machinery/power/smes/buildable/proc/coil_room(datum/act/A)
-	return cur_coils < max_coils
+	return cur_coils < max_coils ? null : MSG(smes/coils_full)
 
 /// The coil goes in: with the safety circuit off and charge held, the modification can fail badly (the coil stays in hand and the unit discharges
 /// into whoever touched it).

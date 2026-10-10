@@ -26,10 +26,10 @@ TRACKED(/obj/item/reagent_containers/cooking_container, food_items)
 // examine text, and a load of things is drawn on it.
 CAPABILITIES(/obj/item/reagent_containers/cooking_container)
 	configure(reagents(volume = nameof(max_reagents)))
-	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(takes_item))), label("Put in"),
+	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"),
 		needs(req_bool(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted)))
 	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"),
-		needs(req_bool(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), then(PROC_REF(emptied)))
+		needs(req(PROC_REF(holds_solids))), then(PROC_REF(emptied)))
 	examine_line(PROC_REF(solids_line))
 	examine_line(PROC_REF(liquid_line))
 
@@ -48,11 +48,11 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 /obj/item/reagent_containers/cooking_container/proc/takes_item(datum/act/op/A)
 	var/obj/item/thing = held_thing(A)
 	if(isnull(thing))
-		return FALSE
+		return /datum/msg/req_failed
 	for(var/possible_type in insertable)
 		if(istype(thing, possible_type))
-			return TRUE
-	return FALSE
+			return null
+	return /datum/msg/req_failed
 
 /// There is room for the held thing.
 /obj/item/reagent_containers/cooking_container/proc/has_room(datum/act/op/A)
@@ -72,7 +72,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 /// There is a solid thing in it to take out.
 /obj/item/reagent_containers/cooking_container/proc/holds_solids(datum/act/op/A)
-	return length(contents) > 0 // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
+	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 
 /// Everything solid comes out.
 /obj/item/reagent_containers/cooking_container/proc/emptied(datum/act/op/A)

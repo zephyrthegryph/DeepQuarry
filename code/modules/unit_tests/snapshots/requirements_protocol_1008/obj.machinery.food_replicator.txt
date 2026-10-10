@@ -5,7 +5,8 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Beaker
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject Beaker (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Beaker
@@ -86,5 +87,5 @@ human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Insert container
-keys: drag_buckle, eject_beaker, insert_container, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, scan, use
+keys: drag_buckle, eject_beaker, insert_container, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, scan, silicon_hand, use
 

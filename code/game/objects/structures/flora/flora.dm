@@ -288,8 +288,8 @@ CAPABILITIES(/obj/structure/flora/pottedplant)
 	without("item")
 	without("uproot")
 	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req_bool(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
-	op("search", hand(), label("Search"), needs(req_bool(PROC_REF(pot_full), because = MSG(pottedplant/nothing))), wait(1 SECOND), then(PROC_REF(item_found)))
+		needs(req(PROC_REF(pot_empty)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
+	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full))), wait(1 SECOND), then(PROC_REF(item_found)))
 
 /obj/structure/flora/pottedplant/examine(mob/user)
 	. = ..()
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/structure/flora/pottedplant)
 
 /// Requirement: nothing is hidden in the pot yet.
 /obj/structure/flora/pottedplant/proc/pot_empty(datum/act/op/A)
-	return !stored_item
+	return (!stored_item) ? null : MSG(pottedplant/full)
 
 MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be something in here.")
 
@@ -317,7 +317,7 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 
 /// Requirement: something is hidden in the pot.
 /obj/structure/flora/pottedplant/proc/pot_full(datum/act/op/A)
-	return !!stored_item
+	return (!!stored_item) ? null : MSG(pottedplant/nothing)
 
 /// Finding whatever is hidden in the pot.
 /obj/structure/flora/pottedplant/proc/item_found(datum/act/op/A)

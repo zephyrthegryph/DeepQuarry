@@ -1,0 +1,143 @@
+human|none menu: Move To Top
+human|none menu: Open or close the lid
+human|none menu: Pick up
+human|none menu: Set transfer amount
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Open or close the lid
+robot|none menu: Pick up
+robot|none menu: Set transfer amount
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Open or close the lid
+ghost|none menu: Set transfer amount
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Dip into it
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open or close the lid
+human|/obj/item/tool/screwdriver menu: Set transfer amount
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Dip into it
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Open or close the lid
+human|/obj/item/tool/crowbar menu: Set transfer amount
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Dip into it
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Open or close the lid
+human|/obj/item/tool/wrench menu: Set transfer amount
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Cut a hole in it
+human|/obj/item/tool/wirecutters menu: Dip into it
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Open or close the lid
+human|/obj/item/tool/wirecutters menu: Set transfer amount
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Cut a hole in it
+human|/obj/item/multitool menu: Dip into it
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Open or close the lid
+human|/obj/item/multitool menu: Set transfer amount
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Dip into it
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Open or close the lid
+human|/obj/item/weldingtool menu: Set transfer amount
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Dip into it
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Open or close the lid
+human|/obj/item/stack/cable_coil menu: Set transfer amount
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Arm the robot frame
+human|/obj/item/stack/material/steel menu: Dip into it
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Open or close the lid
+human|/obj/item/stack/material/steel menu: Set transfer amount
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Arm the robot frame
+human|/obj/item/card/id menu: Dip into it
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Open or close the lid
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Set transfer amount
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Dip into it
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Open or close the lid
+human|/obj/item/kit menu: Set transfer amount
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Dip into it
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Open or close the lid
+human|/obj/item/storage menu: Set transfer amount
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
+human|/obj/item/pen menu: Dip into it
+human|/obj/item/pen menu: Label it
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Open or close the lid
+human|/obj/item/pen menu: Set transfer amount
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Label it
+human|/obj/item/flashlight/pen menu: Dip into it
+human|/obj/item/flashlight/pen menu: Label it
+human|/obj/item/flashlight/pen menu: Move To Top
+human|/obj/item/flashlight/pen menu: Open or close the lid
+human|/obj/item/flashlight/pen menu: Set transfer amount
+human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/flashlight/pen click: Click: Label it
+human|/obj/item menu: Dip into it
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Open or close the lid
+human|/obj/item menu: Set transfer amount
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+human|/obj/item/assembly/prox_sensor menu: Add the sensor (refused: This wooden bucket doesn't play well with electronics.)
+human|/obj/item/assembly/prox_sensor menu: Dip into it
+human|/obj/item/assembly/prox_sensor menu: Move To Top
+human|/obj/item/assembly/prox_sensor menu: Open or close the lid
+human|/obj/item/assembly/prox_sensor menu: Set transfer amount
+human|/obj/item/assembly/prox_sensor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/prox_sensor click: Click: Add the sensor
+human|/obj/item/mop menu: Dip into it
+human|/obj/item/mop menu: Move To Top
+human|/obj/item/mop menu: Open or close the lid
+human|/obj/item/mop menu: Set transfer amount
+human|/obj/item/mop menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mop menu: Wet it (refused: The bucket is empty!)
+human|/obj/item/mop click: Click: Wet it
+human|/obj/item/soap menu: Clean
+human|/obj/item/soap menu: Dip into it
+human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Open or close the lid
+human|/obj/item/soap menu: Set transfer amount
+human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/soap menu: Wet it (refused: The bucket is empty!)
+human|/obj/item/soap click: Click: Wet it
+human|/obj/item/material/knife/machete/hatchet menu: Cut a hole in it
+human|/obj/item/material/knife/machete/hatchet menu: Dip into it
+human|/obj/item/material/knife/machete/hatchet menu: Move To Top
+human|/obj/item/material/knife/machete/hatchet menu: Open or close the lid
+human|/obj/item/material/knife/machete/hatchet menu: Set transfer amount
+human|/obj/item/material/knife/machete/hatchet menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/material/knife/machete/hatchet click: Click: Cut a hole in it
+keys: collect_item, cut_helmet, drag_buckle, gen_silicon_item_silicon_equip_module, glass_container.milk, glass_handling.blood_test, glass_handling.dip, glass_handling.label, hatchet_helmet, kit_customize, kit_customize_last, move_to_top, pick_up_item, reagent_container.drink, reagent_container.feed, reagent_container.fill, reagent_container.lid, reagent_container.pour, reagent_container.set_amount, reagent_container.splash, robot_frame, sensor, toggle_digestable, wet
+

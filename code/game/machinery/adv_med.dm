@@ -278,12 +278,12 @@ CAPABILITIES(/obj/machinery/body_scanconsole)
 	machine_basics(repair = NONE)
 	paired_console(/obj/machinery/bodyscanner, nameof(scanner), faces = TRUE)
 	interface("BodyScanner", title = "Body Scanner", forwards = nameof(scanner))
-	extend("ui_open", binds(item(/obj/item)), needs(req_paired(nameof(scanner)), req_bool(PROC_REF(scanner_panel_closed), because = MSG(body_scanner/close_scanner_panel))))
+	extend("ui_open", binds(item(/obj/item)), needs(req_paired(nameof(scanner)), req(PROC_REF(scanner_panel_closed))))
 	op("link_scanner", tool(TOOL_MULTITOOL), label("Link"), wait(0), then(PROC_REF(multitool_link)))
 
 /// The scanner it works is closed up (an open maintenance panel keeps the console's window shut).
 /obj/machinery/body_scanconsole/proc/scanner_panel_closed(datum/act/op/A)
-	return !scanner?.panel_open
+	return (!scanner?.panel_open) ? null : MSG(body_scanner/close_scanner_panel)
 
 /// A multitool links the console to the scanner in its buffer, or stores the console in the buffer for the scanner to come.
 /obj/machinery/body_scanconsole/proc/multitool_link(datum/act/op/A)

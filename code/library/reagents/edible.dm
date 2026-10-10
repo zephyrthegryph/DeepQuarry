@@ -40,29 +40,29 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 
 /datum/capability/lib/edible/entries()
 	return list(
-		op("used_up", at_target(/mob/living/carbon), when(cond_all(CAP_PROC(targets_self), cond_not(CAP_PROC(has_reagents)))), priority(OP_PRIORITY_PART + 2), label("Eat"),
+		op("used_up", at_target(/mob/living/carbon), when(cond_all(CAP_PROC(targets_self), cond_not(req(CAP_PROC(has_reagents))))), priority(OP_PRIORITY_PART + 2), label("Eat"),
 			then(CAP_PROC(thrown_away))),
 		op("eat", at_target(/mob/living/carbon), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Eat"),
-			needs(req_bool(CAP_PROC(is_open), because = CAP_PROC(shut_reason)), req_bool(CAP_PROC(belly_free), because = MSG(edible/from_belly)),
-				req_bool(CAP_PROC(mouth_present), because = MSG(edible/no_mouth)), req_bool(CAP_PROC(mouth_clear), because = MSG(edible/mouth_covered)),
-				req_bool(CAP_PROC(room_in_stomach), because = MSG(edible/too_full))),
+			needs(req(CAP_PROC(is_open)), req(CAP_PROC(belly_free)),
+				req(CAP_PROC(mouth_present)), req(CAP_PROC(mouth_clear)),
+				req(CAP_PROC(room_in_stomach))),
 			costs(RES_REAGENTS, CAP_PROC(bite_amount)), then(CAP_PROC(eaten))),
 		op("feed", at_target(/mob/living/carbon/human), when(cond_all(cond_not(CAP_PROC(targets_self)), cond_not(CAP_PROC(feeds_whole)))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Feed"),
 			begins(MSG(edible/begin_feed)), wait(CAP_PROC(feed_time)),
-			needs(req_bool(CAP_PROC(is_open), because = CAP_PROC(shut_reason)), req_bool(CAP_PROC(has_reagents), because = MSG(edible/none_left)), req_bool(CAP_PROC(belly_free), because = MSG(edible/from_belly)),
-				req_bool(CAP_PROC(mouth_present), because = MSG(edible/no_mouth)), req_bool(CAP_PROC(mouth_clear), because = MSG(edible/mouth_covered)),
-				req_bool(CAP_PROC(awake_or_open_mouthed), because = MSG(edible/unconscious))),
+			needs(req(CAP_PROC(is_open)), req(CAP_PROC(has_reagents)), req(CAP_PROC(belly_free)),
+				req(CAP_PROC(mouth_present)), req(CAP_PROC(mouth_clear)),
+				req(CAP_PROC(awake_or_open_mouthed))),
 			costs(RES_REAGENTS, CAP_PROC(bite_amount)), then(CAP_PROC(fed)), says(MSG(edible/fed))),
 		op("stuff", at_target(/mob/living/carbon/human), when(cond_all(cond_not(CAP_PROC(targets_self)), CAP_PROC(feeds_whole))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART + 1), label("Feed whole"),
 			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices)))),
 			begins(MSG(edible/begin_stuff)), wait(CAP_PROC(whole_time)),
-			needs(req_bool(CAP_PROC(is_open), because = CAP_PROC(shut_reason)), req_bool(CAP_PROC(awake_or_open_mouthed), because = MSG(edible/unconscious)), req_bool(CAP_PROC(mouth_present), because = MSG(edible/no_mouth)),
-				req_bool(CAP_PROC(mouth_clear), because = MSG(edible/mouth_covered)), req_bool(CAP_PROC(takes_whole_feeding), because = MSG(edible/no_whole_feeding))),
+			needs(req(CAP_PROC(is_open)), req(CAP_PROC(awake_or_open_mouthed)), req(CAP_PROC(mouth_present)),
+				req(CAP_PROC(mouth_clear)), req(CAP_PROC(takes_whole_feeding))),
 			then(CAP_PROC(swallowed_whole)), says(MSG(edible/stuffed))),
 		op("stuff_other", at_target(/mob/living), when(cond_all(cond_not(CAP_PROC(is_carbon_target)), CAP_PROC(feeds_whole))), priority(OP_PRIORITY_PART + 1), label("Feed whole"),
 			asks(/datum/prompt/choice, fields = list("question" = "Choose Belly", "title" = "Belly Choice", "choices" = computed(CAP_PROC(belly_choices)))),
 			begins(MSG(edible/begin_stuff)), wait(CAP_PROC(other_time)),
-			needs(req_bool(CAP_PROC(takes_whole_feeding), because = MSG(edible/no_whole_feeding))),
+			needs(req(CAP_PROC(takes_whole_feeding))),
 			then(CAP_PROC(swallowed_whole)), says(MSG(edible/stuffed))))
 
 // ---- settings ----
@@ -96,46 +96,42 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 	return null
 
 /datum/capability/lib/edible/proc/is_open(datum/act/op/A)
-	return isnull(shut_var(A.holder))
-
-/// Why it is shut: the message the first true var gave.
-/datum/capability/lib/edible/proc/shut_reason(datum/act/op/A)
 	var/var_name = shut_var(A.holder)
-	return isnull(var_name) ? /datum/msg/edible/none_left : shut[var_name]
+	return isnull(var_name) ? null : req_refusal_value(shut[var_name], /datum/msg/req_failed)
 
 /datum/capability/lib/edible/proc/has_reagents(datum/act/op/A)
 	var/atom/holder = A.holder
-	return !!holder.reagents?.total_volume
+	return (!!holder.reagents?.total_volume) ? null : /datum/msg/edible/none_left
 
 /// What is in it may be given to this one: a mob that does not take what a belly made refuses it.
 /datum/capability/lib/edible/proc/belly_free(datum/act/op/A)
 	var/mob/target = A.target
-	return !istype(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)
+	return (!istype(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/edible/from_belly
 
 /// The one eaten by has a mouth (only a person can lack one).
 /datum/capability/lib/edible/proc/mouth_present(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
-	return !istype(target) || !!target.check_has_mouth()
+	return (!istype(target) || !!target.check_has_mouth()) ? null : /datum/msg/edible/no_mouth
 
 /// Nothing over the mouth that stops this food (survival food passes what allows survival rations).
 /datum/capability/lib/edible/proc/mouth_clear(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	if(!istype(target))
-		return TRUE
+		return null
 	var/atom/holder = A.holder
 	if(setting(holder, survival, FALSE))
-		return isnull(target.check_mouth_coverage_survival())
-	return isnull(target.check_mouth_coverage())
+		return (isnull(target.check_mouth_coverage_survival())) ? null : /datum/msg/edible/mouth_covered
+	return (isnull(target.check_mouth_coverage())) ? null : /datum/msg/edible/mouth_covered
 
 /// Survival food is fed to an unconscious person only when nothing at all covers the mouth.
 /datum/capability/lib/edible/proc/awake_or_open_mouthed(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	if(!istype(target))
-		return TRUE
+		return null
 	var/atom/holder = A.holder
 	if(setting(holder, survival, FALSE) && target.stat && target.check_mouth_coverage())
-		return FALSE
-	return TRUE
+		return /datum/msg/edible/unconscious
+	return null
 
 /// How full the stomach is: its nutrition and the nutriment in it, as the old messages counted.
 /datum/capability/lib/edible/proc/fullness_of(mob/living/eater)
@@ -143,12 +139,12 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 
 /datum/capability/lib/edible/proc/room_in_stomach(datum/act/op/A)
 	var/mob/living/eater = A.target
-	return !istype(eater) || fullness_of(eater) <= fullness_limit
+	return (!istype(eater) || fullness_of(eater) <= fullness_limit) ? null : /datum/msg/edible/too_full
 
 /// The one fed takes whole things: they permit it, and have a belly to take it.
 /datum/capability/lib/edible/proc/takes_whole_feeding(datum/act/op/A)
 	var/mob/living/target = A.target
-	return !!target.feeding && length(target.feedable_bellies()) > 0
+	return (!!target.feeding && length(target.feedable_bellies()) > 0) ? null : /datum/msg/edible/no_whole_feeding
 
 /// The bellies the one fed has that take food.
 /datum/capability/lib/edible/proc/belly_choices(datum/act/op/A)

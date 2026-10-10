@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 
 /// The injector comes off its pipe whether it runs or not (only its gas holds it).
 /obj/machinery/atmospherics/unary/outlet_injector/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/toggled(datum/act/op/A)
 	injecting = !injecting

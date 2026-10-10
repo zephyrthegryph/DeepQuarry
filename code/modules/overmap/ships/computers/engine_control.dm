@@ -21,15 +21,15 @@ CAPABILITIES(/obj/machinery/computer/ship/engines)
 	op("set_global_limit", ui_act("set_global_limit"), asks(/datum/prompt/number/ship_console_global_limit, fields = list("default" = computed(PROC_REF(global_limit_default))), step = "limit"),
 		then(PROC_REF(ui_act_set_global_limit)))
 	op("global_limit", ui_act("global_limit", arg("global_limit", num())), then(PROC_REF(ui_act_global_limit)))
-	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), needs(req_bool(PROC_REF(engine_named), silent = TRUE)),
+	op("set_limit", ui_act("set_limit", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Input new thrust limit (0..100)", "title" = "Thrust limit", "default" = computed(PROC_REF(engine_limit_default)), "max_value" = 100, "timeout" = 0), step = "limit"),
 		then(PROC_REF(ui_act_set_limit)))
-	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), needs(req_bool(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_limit)))
-	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), needs(req_bool(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_toggle_engine)))
+	op("limit", ui_act("limit", arg("engine", schema_ref(/datum/ship_engine)), arg("limit", num())), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_limit)))
+	op("toggle_engine", ui_act("toggle_engine", arg("engine", schema_ref(/datum/ship_engine))), needs(req(PROC_REF(engine_named), silent = TRUE)), then(PROC_REF(ui_act_toggle_engine)))
 
 /// A button that names an engine names one.
 /obj/machinery/computer/ship/engines/proc/engine_named(datum/act/op/A)
-	return !isnull(A.args["engine"])
+	return (!isnull(A.args["engine"])) ? null : /datum/msg/req_failed
 
 /obj/machinery/computer/ship/engines/proc/global_limit_default(datum/act/op/A)
 	return linked()?.thrust_limit * 100

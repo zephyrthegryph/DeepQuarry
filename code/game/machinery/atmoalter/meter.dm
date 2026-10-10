@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/meter)
 	extend("read", inputs(remote()))
 	op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS), says(MSG(meter/unfastened)), then(PROC_REF(unfastened)))
 	op("panel", tool(TOOL_SCREWDRIVER), wait(0), toggles(nameof(open)), says(PROC_REF(panel_message)))
-	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req_bool(PROC_REF(panel_open_now), because = MSG(meter/panel_shut))),
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req(PROC_REF(panel_open_now))),
 		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(id_entered)))
 	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req_bool(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/machinery/meter)
 
 /// Its panel is open (asked again when the tag is answered).
 /obj/machinery/meter/proc/panel_open_now(datum/act/A)
-	return open
+	return (open) ? null : MSG(meter/panel_shut)
 
 /obj/machinery/meter/proc/pipe_here(datum/act/A)
 	return !!locate_within(loc, /obj/machinery/atmospherics/pipe) // ALLOW(reads): asked when the multitool is used, never from a cached menu

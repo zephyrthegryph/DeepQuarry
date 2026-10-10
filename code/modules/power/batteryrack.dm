@@ -61,7 +61,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	part_replacement()
 	interface("Batteryrack")
 	extend("ui_open", ungated()) // the window opens on an inoperable rack too; its buttons stay behind the operable gate
-	op("insert_cell", item(/obj/item/cell), needs(req_bool(PROC_REF(cell_room), because = MSG(batteryrack/full))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
+	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
 	op("disable", ui_act(), then(PROC_REF(ui_disable)))
 	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable)))
 	op("equaliseon", ui_act(), sets(nameof(equalise), TRUE))
@@ -269,7 +269,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 
 /// There is a free slot for another cell.
 /obj/machinery/power/smes/batteryrack/proc/cell_room(datum/act/A)
-	return length(internal_cells) < max_cells
+	return (length(internal_cells) < max_cells) ? null : MSG(batteryrack/full)
 
 /// The cell in hand goes into the rack.
 /obj/machinery/power/smes/batteryrack/proc/cell_inserted(datum/act/op/A)

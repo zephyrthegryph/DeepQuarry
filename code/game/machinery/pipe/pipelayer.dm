@@ -40,12 +40,12 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	examine_line(PROC_REF(status_text))
 	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(cond_not(req(/obj/item))), needs(req_bool(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
 		says(MSG(pipelayer/switched)), then(PROC_REF(toggled)))
-	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(cond_not(req(/obj/item))), needs(req_bool(PROC_REF(has_metal), because = MSG(pipelayer/empty))),
+	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(has_metal))),
 		asks(/datum/prompt/yes_no, fields = list("question" = "Do you want to eject all the metal?", "title" = "Eject?", "timeout" = 0)), then(PROC_REF(eject_answered)))
 	op("recycle", item(/obj/item/pipe), label("Recycle pipe"), wait(0),
 		needs(req_bool(PROC_REF(pipe_has_steel), because = MSG(pipelayer/thin_pipe)), req_bool(PROC_REF(room_for_pipe), because = MSG(pipelayer/full))),
 		says(MSG(pipelayer/recycled)), then(PROC_REF(recycled)))
-	op("load", item(/obj/item/stack/material), label("Load metal"), wait(0), needs(req_bool(PROC_REF(held_steel), because = MSG(pipelayer/not_steel)), req_bool(PROC_REF(room_for_sheet), because = MSG(pipelayer/full))),
+	op("load", item(/obj/item/stack/material), label("Load metal"), wait(0), needs(req(PROC_REF(held_steel)), req(PROC_REF(room_for_sheet))),
 		says(MSG(pipelayer/loaded)), then(PROC_REF(loaded)))
 	op("pipe_type", tool(TOOL_WRENCH), label("Choose pipe type"), wait(0), when(PROC_REF(panel_shut)),
 		asks(/datum/prompt/choice, fields = list("question" = "Choose pipe type", "title" = "Pipe type", "choices" = computed(PROC_REF(pipe_choices)), "timeout" = 0)), then(PROC_REF(pipe_type_chosen)))
@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	return on || metal // ALLOW(reads): the store is read when it is switched, never from a cached menu
 
 /obj/machinery/pipelayer/proc/has_metal(datum/act/A)
-	return metal >= 1 // ALLOW(reads): the store is read when it is touched, never from a cached menu
+	return (metal >= 1) ? null : MSG(pipelayer/empty) // ALLOW(reads): the store is read when it is touched, never from a cached menu
 
 /obj/machinery/pipelayer/proc/toggled(datum/act/op/A)
 	set_on(!on)
@@ -115,10 +115,10 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	return OP_OK
 
 /obj/machinery/pipelayer/proc/held_steel(datum/act/op/A)
-	return istype(A.held, /obj/item/stack/material/steel)
+	return (istype(A.held, /obj/item/stack/material/steel)) ? null : MSG(pipelayer/not_steel)
 
 /obj/machinery/pipelayer/proc/room_for_sheet(datum/act/A)
-	return round(metal) < max_metal // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
+	return (round(metal) < max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when sheets are fed in, never from a cached menu
 
 /obj/machinery/pipelayer/proc/loaded(datum/act/op/A)
 	load_metal(A.held)

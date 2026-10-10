@@ -1252,6 +1252,7 @@
 
 #include "dq_requirement_protocol_pin.dm"
 #include "dq_requirement_protocol_tests.dm"
+#include "dq_requirement_boundary_pin_tests.dm"
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
 

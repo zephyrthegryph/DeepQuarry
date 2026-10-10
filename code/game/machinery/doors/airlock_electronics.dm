@@ -29,14 +29,14 @@ MSG_DEF(airlock_electronics/emagged, "You remove the access restrictions on %T%!
 
 CAPABILITIES(/obj/item/airlock_electronics)
 	interface("AirlockElectronics", title = "Airlock Electronics", input = in_hand())
-	emag(list(needs(req_bool(PROC_REF(not_hardened), because = MSG(airlock_electronics/hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged))
+	emag(list(needs(req(PROC_REF(not_hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged))
 	op("login", ui_act("login"), then(PROC_REF(ui_login)))
-	op("logout", ui_act("logout"), needs(req_bool(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_logout)))
-	op("one_access", ui_act("one_access"), needs(req_bool(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_one_access)))
-	op("access_all", ui_act("access_all"), needs(req_bool(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access_all)))
-	op("access", ui_act("access", arg("access", int(0, 999))), needs(req_bool(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_user_ok), because = MSG(airlock_electronics/cant_use))))
-	extend("ui_open", when(req_bool(PROC_REF(user_may_open))))
+	op("logout", ui_act("logout"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_logout)))
+	op("one_access", ui_act("one_access"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_one_access)))
+	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access_all)))
+	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in))), then(PROC_REF(ui_access)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok))))
+	extend("ui_open", when(PROC_REF(user_may_open)))
 
 /// Only a person or a cyborg takes the device in hand to program it.
 /obj/item/airlock_electronics/proc/user_may_open(datum/act/op/A)
@@ -44,13 +44,13 @@ CAPABILITIES(/obj/item/airlock_electronics)
 
 /obj/item/airlock_electronics/proc/ui_user_ok(datum/act/op/A)
 	var/mob/user = A.actor
-	return !user.stat && !user.restrained() && (ishuman(user) || istype(user, /mob/living/silicon))
+	return (!user.stat && !user.restrained() && (ishuman(user) || istype(user, /mob/living/silicon))) ? null : MSG(airlock_electronics/cant_use)
 
 /obj/item/airlock_electronics/proc/logged_in(datum/act/A)
-	return !locked
+	return (!locked) ? null : MSG(airlock_electronics/logged_out)
 
 /obj/item/airlock_electronics/proc/not_hardened(datum/act/A)
-	return !secure // ALLOW(reads): the hardened kind is a different type; the flag never changes
+	return (!secure) ? null : MSG(airlock_electronics/hardened) // ALLOW(reads): the hardened kind is a different type; the flag never changes
 
 /// A cryptographic sequencer removes the access restrictions (a hardened device cannot be bypassed).
 /obj/item/airlock_electronics/proc/emag_effect(datum/act/op/A)

@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
-	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req_bool(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
+	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req(PROC_REF(no_rig))),
 		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
 
 /obj/structure/reagent_dispensers/fueltank/high
@@ -206,7 +206,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 
 /// Requirement: nothing is rigged to the tank yet.
 /obj/structure/reagent_dispensers/fueltank/proc/no_rig(datum/act/op/A)
-	return !rig
+	return (!rig) ? null : MSG(fueltank/in_the_way)
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(datum/act/op/A)
 	var/mob/user = A.actor
@@ -360,9 +360,9 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
-	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
+	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted)), req(PROC_REF(cooler_no_bottle))),
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
-	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req_bool(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req_bool(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
+	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted)), req(PROC_REF(cooler_no_cupholder))),
 		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 
 /// A cooler with its bottle starts full (reagents()).
@@ -382,15 +382,15 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 
 /// Requirement: the cooler is bolted down.
 /obj/structure/reagent_dispensers/water_cooler/proc/cooler_bolted(datum/act/op/A)
-	return anchored
+	return (anchored) ? null : MSG(water_cooler/unbolted)
 
 /// Requirement: no bottle is on it yet.
 /obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_bottle(datum/act/op/A)
-	return !bottle
+	return (!bottle) ? null : MSG(water_cooler/has_bottle)
 
 /// Requirement: no cup dispenser is on it yet.
 /obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_cupholder(datum/act/op/A)
-	return !cupholder
+	return (!cupholder) ? null : MSG(water_cooler/has_cupholder)
 
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(datum/act/op/A)
 	var/mob/user = A.actor

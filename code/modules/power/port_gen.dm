@@ -333,7 +333,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	part_replacement()
 	extend("part_replacement.replace", needs(req_is(nameof(active), FALSE, because = MSG(pacman/running))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
-	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(req_bool(PROC_REF(sheet_match))),
+	op("add_fuel", item(/obj/item/stack/material), label("Add fuel"), wait(0), when(PROC_REF(sheet_match)),
 		needs(req_bool(PROC_REF(has_room), because = MSG(pacman/full))), then(PROC_REF(sheets_added)))
 	interface("PortableGenerator")
 	extend("ui_open", when(nameof(anchored)))

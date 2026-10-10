@@ -95,7 +95,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
 	op("set_catalyst", item(/obj/item/reagent_containers/glass), label("Set catalyst"),
-		needs(req_bool(PROC_REF(no_catalyst), silent = TRUE), req_bool(PROC_REF(clamp_works), because = MSG(chemical_synthesizer/machine_down)), req_bool(PROC_REF(can_extract_from), because = MSG(chemical_synthesizer/not_open))),
+		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works)), req(PROC_REF(can_extract_from))),
 		then(PROC_REF(catalyst_set)))
 	interface("ChemSynthesizer", observe = TRUE)
 	extend("ui_observe", needs(req_operable()))
@@ -252,15 +252,15 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 
 /// No catalyst is set. (No busy check: the catalyst slot must be occupied for the machine to work.)
 /obj/machinery/chemical_synthesizer/proc/no_catalyst(datum/act/op/A)
-	return !catalyst
+	return (!catalyst) ? null : /datum/msg/req_failed
 
 /// The machine works, so the clamp secures the catalyst.
 /obj/machinery/chemical_synthesizer/proc/clamp_works(datum/act/op/A)
-	return operable()
+	return (operable()) ? null : MSG(chemical_synthesizer/machine_down)
 
 /// The held container must be open for reagents to be drawn from it.
 /obj/machinery/chemical_synthesizer/proc/can_extract_from(datum/act/op/A)
-	return A.held?.is_open_container()
+	return (A.held?.is_open_container()) ? null : MSG(chemical_synthesizer/not_open)
 
 /// The old attackby: the catalyst container is clamped on.
 /obj/machinery/chemical_synthesizer/proc/catalyst_set(datum/act/op/A)

@@ -10,8 +10,10 @@ robot|none menu: Enter Recharger
 robot|none menu: Put in recharger (refused: needs a grab)
 robot|none menu: Put in recharger (refused: needs a mob)
 robot|none menu: Replace parts (refused: needs a rapid part exchange device)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject Recharger (refused: You can't reach that.)
 ghost|none menu: Enter Recharger (refused: You can't reach that.)
 ghost|none menu: Put in recharger (refused: needs a grab)
@@ -112,5 +114,5 @@ human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer click: Click: Replace parts
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked, silicon_hand
 

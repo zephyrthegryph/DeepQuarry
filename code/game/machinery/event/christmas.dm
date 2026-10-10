@@ -50,7 +50,7 @@ CAPABILITIES(/obj/structure/event/present)
 
 
 CAPABILITIES(/obj/structure/event/santa_sack)
-	op("give_present", hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bool(PROC_REF(santa_present_allowed), because = MSG(santa/present_unavailable))), asks(/datum/prompt/choice, fields = list("title" = "Give Present", "question" = "Choose who to give a present to.", "choices" = computed(PROC_REF(santa_present_receivers)), "timeout" = 0)), then(PROC_REF(present_receiver_chosen)))
+	op("give_present", hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(santa_present_allowed))), asks(/datum/prompt/choice, fields = list("title" = "Give Present", "question" = "Choose who to give a present to.", "choices" = computed(PROC_REF(santa_present_receivers)), "timeout" = 0)), then(PROC_REF(present_receiver_chosen)))
 	op("bind_sack", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Bind/unbind sack"), needs(req_adjacent(), req_capable()), then(PROC_REF(santa_sack_setanchor)))
 
 /// Requirement: only Santa hands out presents.
@@ -83,7 +83,7 @@ CAPABILITIES(/obj/structure/event/santa_sack)
 
 /obj/structure/event/santa_sack/proc/santa_present_allowed(datum/act/op/A)
 	// Recheck the answering actor identity while retaining the tracked sack owner.
-	return read_once(A.actor?.ckey) == santa_ckey
+	return (read_once(A.actor?.ckey) == santa_ckey) ? null : MSG(santa/present_unavailable)
 
 /obj/structure/event/santa_sack/proc/santa_present_receivers(datum/act/op/A)
 	return mobs_in_view(1, A.actor)

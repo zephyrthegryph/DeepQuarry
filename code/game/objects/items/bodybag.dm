@@ -210,7 +210,7 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	extend("door", when(cond_not(nameof(used))))
 	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req_bool(PROC_REF(bare_hand_or_menu))),
 		confirms("Are you sure you want to open it? It will expire upon opening it."),
-		needs(req_bool(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
+		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
 	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
 	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
 		needs(req_bool(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))

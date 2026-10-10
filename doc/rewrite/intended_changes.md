@@ -4301,6 +4301,10 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
   `dx_cap_library_api_tests`, the construction primitive tests of `dq_foundation_look_tests`, `dx_condition_blocks`, `dx_core_form`,
   `dx_core_entry_ids_per_type`, `dx_review_menu_ids_and_applies`, `dq_forms_library_requirements` and `dq_sys_messages_interaction_feedback`.
   The "Why Refused" admin verb walked resolver entries and is deleted too.
+### Requirements burn-down merge: oxygen-pump silicon menu pin (2026-10-10)
+
+* **/obj/machinery/oxygen_pump:** master's native-only interaction routing (86a5998d5b) exposes the already-declared silicon_ui operation in the robot and AI menus as Use. The timed pin adds those two menu rows and silicon_ui to the keys, replacing the old key row (four differing rows total). Human, robot and AI plain-click choices remain unchanged. This refresh records the resolver retirement on master, not a Boolean-requirement behavior change.
+
 ### ratchet-fw lane (2026-10-10)
 
 - **Silicon plain clicks are ops** (`silicon_hand()` / `silicon_ui()`, `code/library/mob/silicon.dm`): the 27 types that set `silicon_use` declare a `remote()` op instead. The interaction pins now list `Use` for the AI and cyborg rows (and `ai|none click: Click: Use`) where the old fallback lived outside the op system and the snapshots said `nothing`. A cyborg whose link is down (bolted, remote viewing) no longer reaches them.
@@ -4335,6 +4339,14 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **after_init() timers** replace `after(src, ...)` in `Initialize()` for foam hardening, an always-on shield projector and the integrated signaler's retune: a map-loaded instance counts the delay from the close of its map-load frame instead of from its own `Initialize()`.
 - **Declared destroy messages** (`DESTROY_EFFECTS`): the crystal, micro tunnel and artifact blade show their destruction message in phase 6, after `on_destroy()` (the blade's message now follows its lightning strike instead of preceding it).
 - The frost grenade's beakers are typed fills (`grenade_fill_frost_a/b`) made by `owns_many(starts =)`, like every other premade chem grenade.
+### Requirement protocol pin follows master's rotation migration (2026-10-10)
+
+* **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
+* **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.
+
+### Batch 42 merge of requirements-zero-1010-d (2026-10-10)
+
+The requirement pins Codex recorded before rf-silicon landed (`dq_requirement_protocol_pin`, `dq_requirement_third_pin`, `dq_requirement_fourth_pin`) and `dq_conversion_pin` are re-blessed only for master's silicon Use: the `robot|none`/`ai|none` `Use` rows and clicks and the `silicon_hand` key. The holder runtime rows' `params.dm` line moves 234 -> 237 (master's file, stale pin). The extinguisher cabinet's wrench row flips between `Use` and `Unwrench` with probe order (whether the cabinet still holds its extinguisher); it is left as recorded.
 - **Produce and grown items fill from their seed at the root of init** (`reagents(contents_from =)`, the nutriment's taste by `data = PROC_REF`), before the item's own `Initialize()` reads them, instead of after it. The wish soup's wish is rolled (seeded), its nutriment a computed amount.
 - **Drawn instead of written once**: the metal bench's padding and the modern chair's back are look overlays (the chair's look rebuilt them away before), an area's empty in-game sprite, a wall's `blank` base, the carry turfs' in-game sprite, the glass floor's empty base and the fake space star field are set by `draw()`.
 - **More starting children are declared** (`owns_* starts =`): uplink devices and the uplink implant, the refinery machines' holders (`reagents(holder = nameof(reagent_type))`), the fryer's oil (made and filled in `make_oil()`), a full grower pod's biomass, a bluespace toilet's crystal, the bluespace beacon, the overmap objects' map screens (only when `render_map`), the hydroponics tray's scratch holder, the quad bike's cell (not for one built from an assembly) and the mapped mucus's virus. An anomaly counts down its lifespan by `after_init()`.

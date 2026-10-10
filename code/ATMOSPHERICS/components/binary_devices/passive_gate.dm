@@ -170,11 +170,11 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
 
 /// A regulator runs while its valve is open: the wrench waits for it to be shut.
 /obj/machinery/atmospherics/binary/passive_gate/pipe_device_idle(datum/act/A)
-	return !unlocked
+	return (!unlocked) ? null : MSG(pipe_device/running)
 
 /// It needs no power: its window opens unless it is broken.
 /obj/machinery/atmospherics/binary/passive_gate/device_works(datum/act/A)
-	return !broken_now()
+	return (!broken_now()) ? null : MSG(machine/inoperable)
 
 /// The window's data.
 /obj/machinery/atmospherics/binary/passive_gate/ui_data(datum/act/eval/A)

@@ -146,16 +146,16 @@ CAPABILITIES(/obj/machinery/vending)
 	section(window, "The vendor's window and the buttons in it")
 	interface("Vending")
 	extend("ui_open", when(PROC_REF(bare_touch)), needs(req_on_authority(AUTH_PHYSICAL), req_operable()), then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
-	extend(TAG_UI, needs(req_operable(), req_bool(PROC_REF(customer_capable), because = MSG(op/failed))))
+	extend(TAG_UI, needs(req_operable(), req(PROC_REF(customer_capable))))
 	op("vend", ui_act(arg("vend")),
 		needs(
-			req_bool(PROC_REF(vend_listed), because = MSG(vending/unavailable)),
-			req_bool(PROC_REF(vend_idle), because = MSG(vending/busy)),
-			req_bool(PROC_REF(vend_shut), because = MSG(vending/panel_open)),
-			req_bool(PROC_REF(vend_access_for_actor), because = MSG(vending/denied)),
-			req_bool(PROC_REF(vend_in_stock), because = MSG(vending/unavailable)),
-			req_bool(PROC_REF(vend_coin_ready), because = MSG(vending/need_coin)),
-			req_bool(PROC_REF(vend_payable), because = PROC_REF(vend_payment_refusal))),
+			req(PROC_REF(vend_listed)),
+			req(PROC_REF(vend_idle)),
+			req(PROC_REF(vend_shut)),
+			req(PROC_REF(vend_access_for_actor)),
+			req(PROC_REF(vend_in_stock)),
+			req(PROC_REF(vend_coin_ready)),
+			req(PROC_REF(vend_payment_refusal))),
 		asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)),
 		costs(RES_CREDITS, PROC_REF(vend_price)),
 		then(PROC_REF(vend_started)), logs(LOG_GAME))
@@ -165,15 +165,15 @@ CAPABILITIES(/obj/machinery/vending)
 
 	section(intake, "What it takes in, and the log")
 	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_operable(), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin)))
-	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), needs(req_bool(PROC_REF(never), because = MSG(vending/fake_coin))))
+	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), needs(req(PROC_REF(never))))
 	op("refill", item(/obj/item/refill_cartridge),
-		needs(req_closed(SPACE_PANEL), req_operable(), req_bool(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req_bool(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req_bool(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))),
+		needs(req_closed(SPACE_PANEL), req_operable(), req(PROC_REF(refill_port)), req(PROC_REF(refill_secured)), req(PROC_REF(cartridge_fits))),
 		then(PROC_REF(refilled)), says(MSG(vending/refilled)), consumes())
 	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
 	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
 	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")),
-		needs(req_bool(PROC_REF(log_access_ok), because = MSG(vending/log_denied))), then(PROC_REF(check_logs_op)))
+		needs(req(PROC_REF(log_access_ok))), then(PROC_REF(check_logs_op)))
 
 /// The timed work is wanted (with the vendor working): it is switched on, and is shooting its stock or has slogans to pitch.
 /obj/machinery/vending/proc/timed_work_wanted(datum/act/A)
@@ -298,7 +298,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// A requirement that never holds: the op exists only to refuse with its reason (a fake coin does not fit the slot, and is kept).
 /obj/machinery/vending/proc/never(datum/act/A)
-	return FALSE
+	return MSG(vending/fake_coin)
 
 // ---- stocking and refilling ----
 
@@ -328,16 +328,16 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// The refill port is there.
 /obj/machinery/vending/proc/refill_port(datum/act/A)
-	return refillable
+	return (refillable) ? null : MSG(vending/no_refill_port)
 
 /// The machine is bolted down.
 /obj/machinery/vending/proc/refill_secured(datum/act/A)
-	return anchored
+	return (anchored) ? null : MSG(vending/unsecured)
 
 /// The cartridge in hand is made for this kind of vendor.
 /obj/machinery/vending/proc/cartridge_fits(datum/act/op/A)
 	var/obj/item/refill_cartridge/cart = A.held
-	return istype(cart) && cart.can_refill(src)
+	return (istype(cart) && cart.can_refill(src)) ? null : MSG(vending/wrong_cartridge)
 
 /// The cartridge refills every product.
 /obj/machinery/vending/proc/refilled(datum/act/op/A)
@@ -380,12 +380,12 @@ GLOBAL_LIST_EMPTY(vending_products)
 /// The customer can use a window (awake, not restrained).
 /obj/machinery/vending/proc/customer_capable(datum/act/op/A)
 	var/mob/user = A.actor
-	return user.stat == CONSCIOUS && !user.restrained()
+	return (user.stat == CONSCIOUS && !user.restrained()) ? null : MSG(op/failed)
 
 /// The card the actor carries has the log access.
 /obj/machinery/vending/proc/log_access_ok(datum/act/op/A)
 	var/obj/item/card/id/card = A.actor?.GetIdCard()
-	return !!card && (req_log_access in card.GetAccess())
+	return (!!card && (req_log_access in card.GetAccess())) ? null : MSG(vending/log_denied)
 
 /// The log button (a vendor that keeps a log, someone with its access): the log panel opens.
 /obj/machinery/vending/proc/check_logs_op(datum/act/op/A)
@@ -473,29 +473,29 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// needs: the key names a product that is listed now.
 /obj/machinery/vending/proc/vend_listed(datum/act/op/A)
-	return !isnull(vend_record_of(A.args["vend"]))
+	return (!isnull(vend_record_of(A.args["vend"]))) ? null : MSG(vending/unavailable)
 
 /// needs: nothing is being vended.
 /obj/machinery/vending/proc/vend_idle(datum/act/op/A)
-	return vend_ready
+	return (vend_ready) ? null : MSG(vending/busy)
 
 /// needs: the service panel is shut.
 /obj/machinery/vending/proc/vend_shut(datum/act/op/A)
-	return !panel_open(src)
+	return (!panel_open(src)) ? null : MSG(vending/panel_open)
 
 /// needs: the customer is let buy (ID access, an emagged vendor, a cut scanner wire, or no access requirement).
 /obj/machinery/vending/proc/vend_access_for_actor(datum/act/op/A)
-	return !!A.actor && vend_access_ok(A.actor)
+	return (!!A.actor && vend_access_ok(A.actor)) ? null : MSG(vending/denied)
 
 /// needs: the product is on the shelf.
 /obj/machinery/vending/proc/vend_in_stock(datum/act/op/A)
 	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
-	return R?.get_amount() > 0
+	return (R?.get_amount() > 0) ? null : MSG(vending/unavailable)
 
 /// needs: a premium product has a coin in the slot.
 /obj/machinery/vending/proc/vend_coin_ready(datum/act/op/A)
 	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
-	return !R || !(R.category & CAT_COIN) || !isnull(coin)
+	return (!R || !(R.category & CAT_COIN) || !isnull(coin)) ? null : MSG(vending/need_coin)
 
 /// The price of the chosen product (RES_CREDITS: what the customer pays at the commit).
 /obj/machinery/vending/proc/vend_price(datum/act/op/A)
@@ -503,9 +503,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 	return R ? max(R.price, 0) : 0
 
 /// needs: a product that costs money can be paid for here: no law-bound unit buys, the vendor account is up, and the customer has cash or a card.
-/obj/machinery/vending/proc/vend_payable(datum/act/op/A)
-	return isnull(vend_payment_refusal(A))
-
 /// Why the customer cannot pay for the product, or null (a free product needs nothing).
 /obj/machinery/vending/proc/vend_payment_refusal(datum/act/op/A)
 	if(vend_price(A) <= 0)
@@ -521,7 +518,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 /// The card's account is protected by a PIN, the product costs money and no cash is held: the customer is asked for it.
 /obj/machinery/vending/proc/pin_wanted(datum/act/op/A)
 	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
-	if(!R || R.price <= 0 || !vend_access_for_actor(A))
+	if(!R || R.price <= 0 || !isnull(vend_access_for_actor(A)))
 		return FALSE
 	return customer_pays_by_pin_card(A.actor)
 

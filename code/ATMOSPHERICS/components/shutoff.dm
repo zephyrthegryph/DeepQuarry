@@ -38,7 +38,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	without("toggle")
 	op("circuit", hand(), label("Toggle automatic control"), wait(0), says(PROC_REF(circuit_message)), then(PROC_REF(circuit_toggled)))
 	op("manual", hand(), gesture(GESTURE_ALT), label("Manually toggle valve"), wait(0), when(PROC_REF(actor_living)),
-		needs(req_bool(PROC_REF(circuit_off), because = MSG(shutoff/automatic))), says(PROC_REF(manual_message)), then(PROC_REF(manual_toggled)))
+		needs(req(PROC_REF(circuit_off))), says(PROC_REF(manual_message)), then(PROC_REF(manual_toggled)))
 
 /obj/machinery/atmospherics/valve/shutoff/Initialize(mapload)
 	. = ..()
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	return isliving(A.actor)
 
 /obj/machinery/atmospherics/valve/shutoff/proc/circuit_off(datum/act/A)
-	return !close_on_leaks
+	return close_on_leaks ? /datum/msg/shutoff/automatic : null
 
 /obj/machinery/atmospherics/valve/shutoff/proc/manual_toggled(datum/act/op/A)
 	if(open)
@@ -172,4 +172,3 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 	// We broke out of the loop, so we see no leaks
 	// The leaks therefore must be on the other side of another shutoff valve
 	return
-
