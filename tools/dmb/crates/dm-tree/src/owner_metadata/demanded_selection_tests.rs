@@ -310,3 +310,62 @@ fn callable_presence_observes_both_namespaces_and_negative_ancestors() {
         dm_ir::ResolvedMeaning::Presence(true)
     );
 }
+
+#[test]
+fn provisional_selection_owner_cannot_prune_or_replace_current_issuer() {
+    let mut symbols = SymbolTable::default();
+    let root = symbols.intern("/").unwrap();
+    let name = symbols.intern("callback").unwrap();
+    let renamed = symbols.intern("renamed").unwrap();
+    let before = symbols.intern("before_publish").unwrap();
+    let after = symbols.intern("after_publish").unwrap();
+    let retained = crate::owner_normalization::RetainedNormalization::default();
+    let build = |name, deferred| {
+        let rows = [Skeleton::Member {
+            owner: root,
+            name,
+            kind: MemberKind::Proc,
+            mode: DefinitionMode::Declare,
+            metadata: Arc::new(MemberMetadata::default()),
+            content: 1,
+        }];
+        let (index, _) =
+            crate::declaration_contributions::KeyedDeclarations::capture(None, &rows).unwrap();
+        crate::build_with_intrinsic_members_indexed_publication(
+            symbols.clone(),
+            rows.as_slice().into(),
+            &[],
+            &[],
+            false,
+            Some((&index, &retained)),
+            deferred,
+        )
+        .unwrap()
+    };
+    let old = build(name, false);
+    let query = ResolveQuery::GlobalProc(name);
+    let token = old.domain_version(query.domain()).unwrap();
+    let mut pending = build(renamed, true);
+    assert_eq!(pending.domain_version(query.domain()), None);
+    assert_eq!(old.domain_version(query.domain()), Some(token));
+    assert!(
+        old.domain_version(ResolveQuery::GlobalProc(before).domain())
+            .is_some(),
+        "unpublished candidate cannot detach actual current immutable issuer"
+    );
+    // Abandon another provisional candidate without admitting it.
+    drop(build(name, true));
+    assert_eq!(old.domain_version(query.domain()), Some(token));
+    pending.publish_selection_owner();
+    assert_ne!(pending.domain_version(query.domain()), Some(token));
+    assert_eq!(
+        old.domain_version(ResolveQuery::GlobalProc(after).domain()),
+        None,
+        "only final publication detaches the old unqueried issuer"
+    );
+    assert_eq!(
+        old.domain_version(query.domain()),
+        Some(token),
+        "old-issued token remains immutable"
+    );
+}

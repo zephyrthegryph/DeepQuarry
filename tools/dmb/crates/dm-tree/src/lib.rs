@@ -138,6 +138,7 @@ pub struct SemanticTree {
     owner_callable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>>,
     owner_variable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>>,
     owner_certificate_issuer: Option<Arc<owner_metadata::RetainedMetadata>>,
+    selection_publication_deferred: bool,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -398,6 +399,27 @@ pub(crate) fn build_with_intrinsic_members_inventory(
     )
 }
 pub(crate) fn build_with_intrinsic_members_indexed(
+    symbols: SymbolTable,
+    skeletons: skeleton_roster::SkeletonView<'_>,
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
+    normalization: Option<(
+        &declaration_contributions::KeyedDeclarations,
+        &owner_normalization::RetainedNormalization,
+    )>,
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_indexed_publication(
+        symbols,
+        skeletons,
+        fields,
+        intrinsics,
+        rebuild_inventory,
+        normalization,
+        false,
+    )
+}
+pub(crate) fn build_with_intrinsic_members_indexed_publication(
     mut symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
     fields: &[dm_ir::OpaqueFieldBase],
@@ -407,6 +429,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         &declaration_contributions::KeyedDeclarations,
         &owner_normalization::RetainedNormalization,
     )>,
+    selection_publication_deferred: bool,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -545,6 +568,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         owner_callable_selections: Arc::new(Default::default()),
         owner_variable_selections: Arc::new(Default::default()),
         owner_certificate_issuer: None,
+        selection_publication_deferred,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),

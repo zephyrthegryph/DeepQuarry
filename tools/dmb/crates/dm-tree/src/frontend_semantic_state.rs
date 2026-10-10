@@ -315,6 +315,7 @@ impl RetainedSemanticTree {
             )
         });
         if let Some(mut tree) = updated {
+            tree.selection_publication_deferred = true;
             let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
                 index
                     .as_ref()
@@ -327,7 +328,6 @@ impl RetainedSemanticTree {
                 error
             })?;
             tree.refresh_metadata_identity(identity, hierarchy);
-            let tree = Arc::new(tree);
             let prior_index = self
                 .entry
                 .as_ref()
@@ -342,6 +342,8 @@ impl RetainedSemanticTree {
                 on_error(&error, &adapted.skeletons.to_vec(), &[]);
                 error
             })?;
+            tree.publish_selection_owner();
+            let tree = Arc::new(tree);
             let entry = self
                 .entry
                 .as_mut()

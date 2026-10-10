@@ -121,6 +121,11 @@ impl RetainedMetadata {
         })
     }
     pub(super) fn begin_selection_revision(&self, tree: &SemanticTree) {
+        // Deferral belongs to this provisional tree, never shared issuer state:
+        // another worktree can publish its own admitted owner independently.
+        if tree.selection_publication_deferred {
+            return;
+        }
         let mut current = self
             .current_demands
             .lock()
@@ -190,6 +195,9 @@ impl RetainedMetadata {
         tree: &SemanticTree,
         selection: (SymbolId, SymbolId, u8),
     ) -> Option<u128> {
+        if tree.selection_publication_deferred {
+            return None;
+        }
         if let Some(token) = tree
             .owner_callable_demands
             .tokens

@@ -110,7 +110,8 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         }
     }
     fn finish(&self, queries: &[ScalarQuery]) {
-        let keys: Vec<_> = queries.iter().copied().map(key).collect();
+        let mut keys: Vec<_> = queries.iter().copied().map(key).collect();
+        keys.extend(self.owner.fallback_keys());
         self.owner
             .values
             .retain_current_keys(keys.iter().map(Vec::as_slice).chain([
@@ -118,6 +119,8 @@ impl ScalarArtifacts for CurrentScalars<'_> {
                 catalogs::CONSTANTS_KEY,
                 catalogs::RUNTIME_KEY,
                 engine_providers::KEY,
+                callable_coverage::KEY,
+                variable_coverage::KEY,
             ]));
     }
 }

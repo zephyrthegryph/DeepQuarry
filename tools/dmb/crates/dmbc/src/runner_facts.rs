@@ -57,7 +57,9 @@ fn prepare_from_catalogs(
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
 ) -> Result<Components, String> {
-    prepare_from_catalogs_with_artifacts(frontend, engine, constants, runtime, None, None)
+    prepare_from_catalogs_with_artifacts(
+        frontend, engine, constants, runtime, None, None, None, None,
+    )
 }
 fn prepare_from_catalogs_with_artifacts(
     frontend: &ColdFrontend,
@@ -66,9 +68,19 @@ fn prepare_from_catalogs_with_artifacts(
     runtime: RuntimeAliasCatalog,
     artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
     providers: Option<&crate::engine_host::PinnedEngineProviders>,
+    callable_coverage: Option<&Arc<std::collections::HashSet<dm_ir::SymbolId>>>,
+    variable_coverage: Option<&Arc<crate::engine_host::VariableCoverage>>,
 ) -> Result<Components, String> {
     let pinned = if let Some(providers) = providers {
-        PinnedHostFacts::capture_with_providers(engine, frontend, &constants, &runtime, providers)?
+        PinnedHostFacts::capture_with_callable_coverage(
+            engine,
+            frontend,
+            &constants,
+            &runtime,
+            providers,
+            callable_coverage,
+            variable_coverage,
+        )?
     } else {
         PinnedHostFacts::capture(engine, frontend, &constants, &runtime)?
     };

@@ -112,22 +112,52 @@ fn variable_owner_certificate_requires_current_source_and_provider_issuer() {
     let query = Q::HasMemberVar { owner, name };
     let mut host =
         EngineResolverHost::new(Arc::new(Source(true)), constants.clone(), runtime.clone());
-    let source = Arc::new(dm_tree::build(SymbolTable::default(), &[]).unwrap());
+    struct Authored;
+    impl dm_preprocess::SourceProvider for Authored {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok("/var/value = 1\n".into())
+        }
+    }
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        std::path::Path::new("variable-domain.dme"),
+        &Authored,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let providers = PinnedEngineProviders::capture(&engine).unwrap();
+    let payload = EngineResolverHost::<dm_tree::SemanticTree>::capture_variable_coverage(
+        &frontend, &providers, &constants,
+    );
+    assert!(payload.names.contains(&name));
+    // This fixture still isolates wrapper issuer qualification with a synthetic
+    // delegated domain, but its source-neutral payload uses the actual producer.
     host.variable_absence = Some(Arc::new(VariableAbsence {
         issuer: Some(11),
-        names: HashSet::from([name]),
-        positive_constants: BTreeMap::new(),
+        payload,
         identity: 1,
-        source,
+        source: Arc::clone(&frontend.snapshot.tree),
     }));
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 11)
+        Some((9u128 << 64) | 22)
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = Some(12);
     assert_eq!(
         host.domain_version(query.domain()),
-        Some((9u128 << 64) | 12)
+        Some((9u128 << 64) | 24)
     );
     Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = None;
     assert_eq!(host.domain_version(query.domain()), None);

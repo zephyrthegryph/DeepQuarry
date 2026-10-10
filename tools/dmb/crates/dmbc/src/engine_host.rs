@@ -3,9 +3,15 @@ mod catalog_domains;
 #[path = "engine_constants.rs"]
 mod constants;
 mod engine_providers;
+mod variable_coverage;
+mod variable_negative;
+pub(crate) use variable_coverage::VariableCoverage;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
 mod pinned_facts;
+pub(crate) trait CallableFallbackReceipts: Send + Sync + std::fmt::Debug {
+    fn version(&self, name: SymbolId) -> Option<u64>;
+}
 use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };
@@ -15,6 +21,21 @@ use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
     sync::Arc,
 };
+
+fn callable_exclusion_names(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    intrinsic: &BTreeSet<SymbolId>,
+) -> Arc<HashSet<SymbolId>> {
+    Arc::new(
+        frontend
+            .snapshot
+            .tree
+            .host_declaration_selections()
+            .flat_map(|(_, selection)| selection.callable_names.iter().copied())
+            .filter(|name| !intrinsic.contains(name))
+            .collect(),
+    )
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Completeness {
@@ -166,8 +187,7 @@ impl RuntimeAliasCatalog {
 #[derive(Clone, Debug)]
 struct VariableAbsence {
     issuer: Option<u64>,
-    names: HashSet<SymbolId>,
-    positive_constants: BTreeMap<SymbolId, SemanticValue>,
+    payload: Arc<VariableCoverage>,
     identity: u128,
     source: Arc<dm_tree::SemanticTree>,
 }
@@ -176,6 +196,7 @@ pub struct EngineResolverHost<R> {
     answer_domain: std::sync::OnceLock<Option<u128>>,
     source_versions: Vec<u128>,
     callable_issuer: Option<u64>,
+    callable_fallback: Option<Arc<dyn CallableFallbackReceipts>>,
     tree: Arc<R>,
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
@@ -190,6 +211,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             answer_domain: std::sync::OnceLock::new(),
             source_versions: Vec::new(),
             callable_issuer: None,
+            callable_fallback: None,
             tree,
             constants,
             runtime,
@@ -198,6 +220,25 @@ impl<R: Resolver> EngineResolverHost<R> {
             retained_methods: None,
             variable_absence: None,
         }
+    }
+    pub(crate) fn with_callable_fallback(
+        mut self,
+        receipt: Arc<dyn CallableFallbackReceipts>,
+    ) -> Self {
+        self.callable_fallback = Some(receipt);
+        self
+    }
+    pub(crate) fn fallback_provider_issued(&self, providers: &PinnedEngineProviders) -> bool {
+        self.callable_issuer.is_some()
+            && self.callable_issuer == providers.callables.issuer
+            && self
+                .retained_methods
+                .as_ref()
+                .is_some_and(|methods| methods.identity() == providers.engine)
+            && self.intrinsic_methods.is_some()
+    }
+    pub(crate) fn callable_exclusions(&self) -> Option<&Arc<HashSet<SymbolId>>> {
+        self.callable_absence.as_ref()
     }
     /// Certify the opposite callable namespace for authored names outside the
     /// pinned intrinsic exclusion catalog. This does not certify arbitrary
@@ -214,15 +255,24 @@ impl<R: Resolver> EngineResolverHost<R> {
         )
     }
     fn bind_callables(
+        self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &engine_providers::CallableProviders,
+    ) -> Result<Self, String> {
+        self.bind_callables_with_coverage(frontend, providers, None)
+    }
+    fn bind_callables_with_coverage(
         mut self,
         frontend: &dm_tree::frontend::ColdFrontend,
         providers: &engine_providers::CallableProviders,
+        coverage: Option<&Arc<HashSet<SymbolId>>>,
     ) -> Result<Self, String> {
         let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
         symbols
             .merge_from(&providers.spellings)
             .map_err(|error| format!("native symbol {error:?}"))?;
         self.answer_domain = std::sync::OnceLock::new();
+        self.callable_fallback = None;
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.retained_methods = Some(Arc::new(
             crate::engine::procedure_abi::RetainedMethods::from_entries(
@@ -236,16 +286,18 @@ impl<R: Resolver> EngineResolverHost<R> {
             Arc::clone(&providers.methods),
         )));
         self.callable_issuer = providers.issuer;
-        self.callable_absence = Some(Arc::new(
-            frontend
-                .snapshot
-                .tree
-                .host_declaration_selections()
-                .flat_map(|(_, selection)| selection.callable_names.iter().copied())
-                .filter(|name| !providers.intrinsic.contains(name))
-                .collect(),
-        ));
+        self.callable_absence = Some(
+            coverage
+                .cloned()
+                .unwrap_or_else(|| callable_exclusion_names(frontend, &providers.intrinsic)),
+        );
         Ok(self)
+    }
+    pub(crate) fn capture_callable_exclusions(
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &PinnedEngineProviders,
+    ) -> Arc<HashSet<SymbolId>> {
+        callable_exclusion_names(frontend, &providers.callables.intrinsic)
     }
     pub fn with_pinned_variables(
         self,
@@ -259,44 +311,47 @@ impl<R: Resolver> EngineResolverHost<R> {
         )
     }
     fn bind_variables(
+        self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &engine_providers::VariableProviders,
+    ) -> Result<Self, String> {
+        self.bind_variables_with_coverage(frontend, providers, None)
+    }
+    fn bind_variables_with_coverage(
         mut self,
         frontend: &dm_tree::frontend::ColdFrontend,
         providers: &engine_providers::VariableProviders,
+        payload: Option<&Arc<VariableCoverage>>,
     ) -> Result<Self, String> {
         let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
         symbols
             .merge_from(&providers.spellings)
             .map_err(|error| format!("native variable symbol {error:?}"))?;
-        let mut names: HashSet<_> = frontend
-            .snapshot
-            .tree
-            .host_declaration_selections()
-            .flat_map(|(_, selection)| selection.declared_variable_names.iter().copied())
-            .filter(|name| !providers.intrinsic.contains(name))
-            .collect();
-        names.insert(SymbolId::of("__TYPE__"));
-        for (name, value) in providers.constants.values.iter() {
-            if !providers.intrinsic.contains(name) && self.constants.values.get(name) == Some(value)
-            {
-                names.insert(*name);
-            }
-        }
-        let positive_constants = providers
-            .positive_constants
-            .iter()
-            .filter(|(name, value)| self.constants.values.get(*name) == Some(*value))
-            .map(|(name, value)| (*name, value.clone()))
-            .collect();
+        let payload = payload
+            .cloned()
+            .unwrap_or_else(|| VariableCoverage::capture(frontend, providers, &self.constants));
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.variable_absence = Some(Arc::new(VariableAbsence {
             issuer: providers.issuer,
-            names,
-            positive_constants,
+            payload,
             identity: providers.identity,
             source: Arc::clone(&frontend.snapshot.tree),
         }));
         Ok(self)
+    }
+    pub(crate) fn capture_variable_coverage(
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &PinnedEngineProviders,
+        constants: &ConstantCatalog,
+    ) -> Arc<VariableCoverage> {
+        VariableCoverage::capture(frontend, &providers.variables, constants)
+    }
+    #[cfg(test)]
+    pub(crate) fn variable_coverage_owner(&self) -> Option<&Arc<VariableCoverage>> {
+        self.variable_absence
+            .as_ref()
+            .map(|coverage| &coverage.payload)
     }
     /// Compiler policy only. Source membership and alias mapping are RuntimeType
     /// and declaration query inputs, never blanket procedure invalidation keys.
@@ -329,6 +384,9 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
             return version;
         }
         if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
+            if let Some(version) = self.variable_negative_version(query) {
+                return Some(version);
+            }
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
             // Only a positive enriched source answer bypasses engine fallback.
             // Its admitted scalar owner already records the exact engine read.
@@ -339,13 +397,16 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 Some(coverage) => coverage.issuer?,
                 None => 0,
             };
-            return Some((u128::from(base) << 64) | u128::from(provider));
+            return variable_negative::qualified(base, provider, false);
         }
         if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
+            if let Some(version) = self.variable_negative_version(query) {
+                return Some(version);
+            }
             if let Q::UniqueStaticVar(name) = query {
                 let (base, provider) = if matches!(self.tree.resolve(query), M::Unsupported(_)) {
                     let coverage = self.variable_absence.as_ref()?;
-                    if !coverage.names.contains(&name) {
+                    if !coverage.payload.names.contains(&name) {
                         return None;
                     }
                     (coverage.source.domain_version(domain)?, coverage.issuer?)
@@ -356,7 +417,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     };
                     (self.tree.domain_version(domain)?, provider)
                 };
-                return Some((u128::from(u64::try_from(base).ok()?) << 64) | u128::from(provider));
+                return variable_negative::qualified(u64::try_from(base).ok()?, provider, false);
             }
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
             // Only an unchanged positive/current source answer may use the
@@ -368,7 +429,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 Some(coverage) => coverage.issuer?,
                 None => 0,
             };
-            return Some((u128::from(base) << 64) | u128::from(provider));
+            return variable_negative::qualified(base, provider, false);
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
@@ -376,7 +437,19 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
             // when this owner's source declarations are unchanged. Such reads
             // are not certified by a local owner token.
             if matches!(self.tree.resolve(query), M::Unsupported(_)) {
-                return None;
+                let name = match query {
+                    Q::Proc { name, .. } | Q::HasMemberProc { name, .. } | Q::GlobalProc(name) => {
+                        name
+                    }
+                    _ => return None,
+                };
+                // The finite exclusion branch is checked against this exact
+                // current host, including native positive-provider precedence.
+                if !matches!(self.resolve(query), M::Missing | M::Presence(false)) {
+                    return None;
+                }
+                let receipt = self.callable_fallback.as_ref()?.version(name)?;
+                return Some((u128::from(base) << 64) | u128::from(receipt));
             }
             let provider = if self.callable_absence.is_some()
                 || self.intrinsic_methods.is_some()
@@ -464,7 +537,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     // is partial. Only the pinned intrinsic-name exclusion
                     // can close that gap; unknown/native names stay unsupported.
                     if let Some(coverage) = &self.variable_absence {
-                        if coverage.names.contains(&name) {
+                        if coverage.payload.names.contains(&name) {
                             return coverage.source.captured_variable_uniqueness(name);
                         }
                     }
@@ -512,7 +585,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                                 M::Member { .. }
                             )
                         {
-                            if let Some(value) = coverage.positive_constants.get(&name) {
+                            if let Some(value) = coverage.payload.positive_constants.get(&name) {
                                 // Even a mutable authored field without a scalar
                                 // Constant answer shadows the native constant.
                                 return M::Value(value.clone());
@@ -529,7 +602,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         }
                     }
                     if self.variable_absence.as_ref().is_some_and(|coverage| {
-                        coverage.names.contains(&name)
+                        coverage.payload.names.contains(&name)
                             && coverage.source.lookup_type(owner).is_some()
                     }) && self.runtime.ordinary.contains(&owner)
                     {

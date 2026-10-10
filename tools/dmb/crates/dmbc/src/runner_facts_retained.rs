@@ -2,7 +2,8 @@
 use super::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub(crate) struct RetainedHostFacts {
-    values: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
+    values: Arc<dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>>,
+    fallback_scope: fallback::ScopeOwner,
     hits: AtomicU64,
     recomputed: AtomicU64,
     constant_hits: AtomicU64,
@@ -16,18 +17,27 @@ struct Entry {
     source: EngineResolverHost<dm_tree::SemanticTree>,
     scalar: dm_tree::constant_resolution::ScalarFacts,
 }
+#[path = "runner_facts_callable_coverage.rs"]
+mod callable_coverage;
 #[path = "runner_facts_catalogs.rs"]
 mod catalogs;
 #[path = "runner_facts_engine_providers.rs"]
 mod engine_providers;
+#[path = "runner_facts_callable_fallback.rs"]
+mod fallback;
 #[path = "runner_facts_scalars.rs"]
 mod scalars;
+#[path = "runner_facts_variable_coverage.rs"]
+mod variable_coverage;
 enum Artifact {
     Constants(Arc<catalogs::Constants>),
     Runtime(RuntimeAliasCatalog),
     Prepared(Entry),
     EngineProviders(Arc<crate::engine_host::PinnedEngineProviders>),
     Scalar(Arc<dm_tree::constant_resolution::ScalarArtifact>),
+    CallableFallback(u64),
+    CallableCoverage(Arc<std::collections::HashSet<dm_ir::SymbolId>>),
+    VariableCoverage(Arc<crate::engine_host::VariableCoverage>),
 }
 const KEY: &[u8] = b"dmbc-native-host-preparation-v1";
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -36,6 +46,11 @@ enum Query {
     Source,
     TypePaths,
     Scalar(dm_tree::constant_resolution::ScalarReadQuery),
+    CallableProvider,
+    CallableExclusion(dm_ir::SymbolId),
+    CallableRoster,
+    VariableRoster,
+    ConstantOwner,
 }
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Domain {
@@ -47,6 +62,11 @@ enum Answer {
     Source(Arc<dm_tree::SemanticTree>),
     TypePaths(Arc<Vec<dm_ir::SymbolId>>),
     Scalar(dm_tree::constant_resolution::ScalarReadAnswer),
+    CallableProvider(Arc<crate::engine_host::PinnedEngineProviders>),
+    CallableExclusion(bool),
+    CallableRoster(callable_coverage::Roster),
+    VariableRoster(variable_coverage::Roster),
+    ConstantOwner(Arc<catalogs::Constants>),
 }
 impl PartialEq for Answer {
     fn eq(&self, other: &Self) -> bool {
@@ -55,6 +75,11 @@ impl PartialEq for Answer {
             (Self::Source(a), Self::Source(b)) => Arc::ptr_eq(a, b),
             (Self::TypePaths(a), Self::TypePaths(b)) => a == b,
             (Self::Scalar(a), Self::Scalar(b)) => a == b,
+            (Self::CallableProvider(a), Self::CallableProvider(b)) => Arc::ptr_eq(a, b),
+            (Self::CallableExclusion(a), Self::CallableExclusion(b)) => a == b,
+            (Self::CallableRoster(a), Self::CallableRoster(b)) => a == b,
+            (Self::VariableRoster(a), Self::VariableRoster(b)) => a == b,
+            (Self::ConstantOwner(a), Self::ConstantOwner(b)) => Arc::ptr_eq(a, b),
             _ => false,
         }
     }
@@ -89,13 +114,21 @@ impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
             Query::Source => Answer::Source(Arc::clone(&self.frontend.snapshot.tree)),
             Query::TypePaths => Answer::TypePaths(Arc::clone(self.type_paths())),
             Query::Scalar(_) => unreachable!("scalar reads require current evaluator host"),
+            Query::CallableProvider
+            | Query::CallableExclusion(_)
+            | Query::CallableRoster
+            | Query::VariableRoster
+            | Query::ConstantOwner => {
+                unreachable!("fallback reads require current pinned provider")
+            }
         }
     }
 }
 impl Default for RetainedHostFacts {
     fn default() -> Self {
         Self {
-            values: dm_session::ObservedArtifactStore::current_revision(),
+            values: Arc::new(dm_session::ObservedArtifactStore::current_revision()),
+            fallback_scope: Default::default(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             constant_hits: AtomicU64::new(0),
@@ -131,7 +164,8 @@ impl RetainedHostFacts {
                         Arc::clone(&previous.pinned),
                     )?;
                     self.hits.fetch_add(1, Ordering::Relaxed);
-                    return Ok((host, scalar));
+                    let providers = self.engine_providers(&current)?;
+                    return Ok((self.attach_fallback(host, &providers), scalar));
                 }
             }
         }
@@ -139,6 +173,8 @@ impl RetainedHostFacts {
         self.retain_catalog_stages();
         let (constants, runtime) = self.catalogs(&current)?;
         let engine_providers = self.engine_providers(&current)?;
+        let callable_coverage = self.callable_coverage(&current, &engine_providers);
+        let variable_coverage = self.variable_coverage(&current, &engine_providers)?;
         let Components {
             constants,
             runtime,
@@ -155,6 +191,8 @@ impl RetainedHostFacts {
                 engine,
             }),
             Some(&engine_providers),
+            Some(&callable_coverage),
+            Some(&variable_coverage),
         )?;
         let host = EngineResolverHost::new(Arc::clone(&scalar), constants.clone(), runtime.clone())
             .with_pinned_facts(&engine.snapshot, frontend, Arc::clone(&pinned))?;
@@ -174,7 +212,7 @@ impl RetainedHostFacts {
             );
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
-        Ok((host, scalar))
+        Ok((self.attach_fallback(host, &engine_providers), scalar))
     }
     fn insert_stage(&self, key: &[u8], current: &Current<'_>, queries: &[Query], value: Artifact) {
         use dm_session::ObservationHost;
@@ -231,6 +269,18 @@ impl RetainedHostFacts {
                 census.slice("host.facts.keys", key, true);
                 census.receipt("host.facts.reads", reads);
                 for read in reads.iter() {
+                    if let Answer::VariableRoster(roster) = &read.answer {
+                        roster.census(&mut census);
+                    }
+                    if let Answer::ConstantOwner(owner) = &read.answer {
+                        variable_coverage::inspect_constants(owner, &mut census);
+                    }
+                    if let Answer::CallableRoster(roster) = &read.answer {
+                        roster.census(&mut census);
+                    }
+                    if let Answer::CallableProvider(provider) = &read.answer {
+                        provider.census(&mut census);
+                    }
                     if let Answer::Scalar(answer) = &read.answer {
                         scalars::inspect_answer(answer, &mut census);
                     }
@@ -253,6 +303,11 @@ impl RetainedHostFacts {
                                 "shared catalog and spelling-map backing/control layout excluded",
                             );
                         }
+                        Artifact::CallableFallback(_) => (),
+                        Artifact::VariableCoverage(coverage) => coverage.census(&mut census),
+                        Artifact::CallableCoverage(names) => {
+                            callable_coverage::inspect_names(names, &mut census)
+                        }
                         Artifact::Runtime(_) => census.unknown(
                             "host.runtime",
                             "shared alias/membership map backing/control layout excluded",
@@ -261,6 +316,7 @@ impl RetainedHostFacts {
                 }
             }
         });
+        self.census_fallback(&mut census);
         census.finish()
     }
 }

@@ -14,7 +14,7 @@ impl RetainedHostFacts {
         let constants = self.constants(current)?;
         self.runtime_after_constants(current, &constants)
     }
-    fn constants(&self, current: &Current<'_>) -> Result<Arc<Constants>, String> {
+    pub(super) fn constants(&self, current: &Current<'_>) -> Result<Arc<Constants>, String> {
         let previous = self.values.lookup(CONSTANTS_KEY, current);
         let constants = match previous.as_deref() {
             Some(Artifact::Constants(constants)) => {

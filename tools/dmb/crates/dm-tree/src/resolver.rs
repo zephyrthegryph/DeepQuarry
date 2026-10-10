@@ -197,6 +197,12 @@ impl SemanticTree {
         }
         Ok(self)
     }
+    pub(crate) fn publish_selection_owner(&mut self) {
+        self.selection_publication_deferred = false;
+        if let Some(issuer) = &self.owner_certificate_issuer {
+            issuer.bind_selection_owner(self);
+        }
+    }
     pub(crate) fn refresh_metadata_identity(
         &mut self,
         source_identity: u128,

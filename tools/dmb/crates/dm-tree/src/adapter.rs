@@ -675,13 +675,14 @@ impl SharedAdaptedDeclarations {
         skeletons.append(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
-        let mut tree = crate::build_with_intrinsic_members_indexed(
+        let mut tree = crate::build_with_intrinsic_members_indexed_publication(
             self.symbols,
             skeletons.view(),
             fields,
             intrinsics,
             seed.is_none(),
             normalization,
+            normalization.is_some(),
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);
@@ -730,7 +731,6 @@ impl SharedAdaptedDeclarations {
                 error
             })?;
         }
-        let tree = Arc::new(tree);
         let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, origins).map_err(
             |error| {
                 let error = SnapshotError::Origins(error);
@@ -747,6 +747,8 @@ impl SharedAdaptedDeclarations {
                 error
             },
         )?);
+        tree.publish_selection_owner();
+        let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })
     }
 }

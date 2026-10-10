@@ -106,6 +106,19 @@ impl PinnedHostFacts {
         runtime: &RuntimeAliasCatalog,
         providers: &PinnedEngineProviders,
     ) -> Result<Arc<Self>, String> {
+        Self::capture_with_callable_coverage(
+            engine, frontend, constants, runtime, providers, None, None,
+        )
+    }
+    pub(crate) fn capture_with_callable_coverage(
+        engine: &crate::engine::EngineSnapshot,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        constants: &ConstantCatalog,
+        runtime: &RuntimeAliasCatalog,
+        providers: &PinnedEngineProviders,
+        coverage: Option<&Arc<HashSet<SymbolId>>>,
+        variables: Option<&Arc<VariableCoverage>>,
+    ) -> Result<Arc<Self>, String> {
         check_provider_source(engine, frontend)?;
         if providers.engine != engine.identity() {
             return Err("engine providers belong to another capture".into());
@@ -115,8 +128,8 @@ impl PinnedHostFacts {
             constants.clone(),
             runtime.clone(),
         )
-        .bind_callables(frontend, &providers.callables)?
-        .bind_variables(frontend, &providers.variables)?;
+        .bind_callables_with_coverage(frontend, &providers.callables, coverage)?
+        .bind_variables_with_coverage(frontend, &providers.variables, variables)?;
         Ok(Arc::new(Self {
             engine: engine.identity(),
             source: Arc::clone(&frontend.snapshot.tree),
@@ -138,11 +151,8 @@ impl<R: PinnedSource> EngineResolverHost<R> {
         census.vec_payload("host.source_versions", &self.source_versions);
         if let Some(names) = &self.callable_absence {
             if census.arc_object("host.callable_absence", names) {
-                census.collection_entries::<SymbolId>(
-                    "host.callable_absence",
-                    names.as_ref() as *const _ as usize,
-                    names.len(),
-                );
+                census.observe_items("host.callable_absence", names.len());
+                census.unknown("host.callable_absence", "private HashSet backing excluded");
             }
         }
         if let Some(methods) = &self.intrinsic_methods {
@@ -157,19 +167,7 @@ impl<R: PinnedSource> EngineResolverHost<R> {
         }
         if let Some(variables) = &self.variable_absence {
             if census.arc_object("host.variable_absence", variables) {
-                census.collection_entries::<SymbolId>(
-                    "host.variable_absence.names",
-                    &variables.names as *const _ as usize,
-                    variables.names.len(),
-                );
-                census.collection_entries::<(SymbolId, SemanticValue)>(
-                    "host.variable_absence.constants",
-                    &variables.positive_constants as *const _ as usize,
-                    variables.positive_constants.len(),
-                );
-                for value in variables.positive_constants.values() {
-                    census.semantic_value("host.variable_absence.constants", value);
-                }
+                variables.payload.census(census);
             }
         }
     }
@@ -194,6 +192,7 @@ impl<R: PinnedSource> EngineResolverHost<R> {
         }
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions = facts.source_versions.clone();
+        self.callable_fallback = None;
         self.callable_issuer = facts.callable_issuer;
         self.callable_absence = facts.callable_absence.clone();
         self.intrinsic_methods = facts.intrinsic_methods.clone();
