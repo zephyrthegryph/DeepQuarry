@@ -12,6 +12,14 @@ function readRegular(file: string): Buffer {
 }
 function sha(bytes: Buffer): string { return createHash('sha256').update(bytes).digest('hex'); }
 
+/** Observe the current conventional runtime input; this does not authenticate earlier runs. */
+export function observeRuntimeLibrary(source: string): HostedLibraryIdentity {
+  source = path.resolve(source);
+  assertDirectoryChain(path.dirname(source));
+  const captured = readRegular(source);
+  return { source, hosted: source, sha256: sha(captured), bytes: captured.length };
+}
+
 /** Destination must be an already authenticated acquired slot. Never overwrite a leaf. */
 export function stageRuntimeLibrary(source: string, slot: string): { identity: HostedLibraryIdentity; remove: () => void } {
   source = path.resolve(source);

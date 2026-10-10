@@ -10,7 +10,7 @@ import { regQuery } from './winreg';
 import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
-import { stageRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
+import { observeRuntimeLibrary, stageRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -581,8 +581,9 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
   if (options.onRuntimeIdentity) {
     // Hash the actual resolved file; unresolved PATH commands cannot certify it.
     if (!path.isAbsolute(ddExePath)) throw new CompilerProvenanceError('runtime identity requires an absolute DreamDaemon executable');
+    const libraryIdentity = library?.identity ?? observeRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'));
     options.onRuntimeIdentity({ executable: ddExePath, sha256: createHash('sha256').update(fs.readFileSync(ddExePath)).digest('hex'),
-      version: null, security: args.find(arg => ['-safe', '-trusted', '-ultrasafe'].includes(arg)) ?? 'unspecified', ...(library ? { library: library.identity } : {}) });
+      version: null, security: args.find(arg => ['-safe', '-trusted', '-ultrasafe'].includes(arg)) ?? 'unspecified', library: libraryIdentity });
   }
 
   if (options.watchdogFile) {
