@@ -15,6 +15,8 @@ MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 CAPABILITIES(/obj/item/implanter)
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(implanter_self)))
 	op("remove_implant", menu(), label("Remove Implant"), needs(carried()), then(PROC_REF(remove_implant_effect)))
+	// Implanting the target: at once into yourself, else five seconds while it holds still (it has to be on the tile it was on when the work began).
+	op("implant", ai(), takes("patient", "start_turf"), wait(PROC_REF(implant_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(implant_done)))
 
 /// Toggle the implanter. Subtypes with special_handling fall through.
 /obj/item/implanter/proc/implanter_self(datum/act/op/A)
@@ -51,17 +53,15 @@ CAPABILITIES(/obj/item/implanter)
 	src.icon_state += "_[active]"
 	return
 
-/// Implanting the target: at once into yourself, else five seconds while it holds still.
-/datum/task/timed/implant
-	complete_proc = /obj/item/implanter/proc/implant_done
-	var/turf/start_turf
+/obj/item/implanter/proc/implant_time(datum/act/op/A)
+	return A.arg("patient") == A.actor ? 0 : 5 SECONDS
 
-/obj/item/implanter/proc/implant_done(datum/task/timed/implant/task)
-	var/mob/living/M = task.target
-	var/mob/living/user = task.actor
-	var/turf/T1 = task.start_turf
+/obj/item/implanter/proc/implant_done(datum/act/op/A)
+	var/mob/living/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	var/turf/T1 = A.arg("start_turf")
 	if(!(user && M && (get_turf(M) == T1) && src && src.imp))
-		return
+		return OP_FAILED
 	act_message(user, M, others = span_warning("%T% has been implanted by %U%."))
 
 	add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
@@ -76,6 +76,7 @@ CAPABILITIES(/obj/item/implanter)
 
 	rel_take(src, nameof(imp))
 	update()
+	return OP_OK
 
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!istype(M, /mob/living/carbon))
@@ -89,7 +90,7 @@ CAPABILITIES(/obj/item/implanter)
 
 			var/turf/T1 = get_turf(M)
 			if(T1)
-				task_start(/datum/task/timed/implant, user, M, duration = (M == user ? 0 : 5 SECONDS), receiver = src, start_turf = T1)
+				perform_op(user, src, "implant", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M, "start_turf" = T1))
 				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))

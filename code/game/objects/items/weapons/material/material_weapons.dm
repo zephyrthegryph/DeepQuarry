@@ -97,6 +97,9 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
+	// The whetstone's repair and the sharpening kit's re-edging take the time the tool says; the amount and the new material come from the tool.
+	op("repair", ai(), takes("repair_amount", "repair_time"), wait(PROC_REF(repair_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_timed_done)))
+	op("sharpen", ai(), takes("material", "sharpen_time"), wait(PROC_REF(sharpen_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(sharpen_timed_done)))
 	param(nameof(default_material), pos = 1)
 
 /// Old attackby: repairs with a whetstone or sharpening kit, then falls through as its ..() did.
@@ -151,19 +154,23 @@ CAPABILITIES(/obj/item/material)
 	if(!fragile)
 		if(get_integrity() < max_integrity)
 			act_message(user, src, MSG_SELF("You begin repairing %T%."), MSG_OTHERS("%U% begins repairing %T%."))
-			task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
+			perform_op(user, src, "repair", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("repair_amount" = repair_amount, "repair_time" = repair_time))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
 	else
 		to_chat(user, span_warning("You can't repair \the [src]."))
 		return
 
-/obj/item/material/proc/repair_timed_done(repair_amount, mob/living/user)
-	act_message(user, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
-	repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
+/obj/item/material/proc/repair_wait(datum/act/op/A)
+	return A.arg("repair_time")
+
+/obj/item/material/proc/repair_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
+	repair_damage(A.arg("repair_amount") * MATERIAL_WEAR_UNIT)
 	dulled = 0
 	sharp = initial(sharp)
 	edge = initial(edge)
+	return OP_OK
 
 /obj/item/material/proc/sharpen(material, sharpen_time, kit, mob/living/M)
 	if(!fragile && src.material.can_sharpen)
@@ -171,13 +178,16 @@ CAPABILITIES(/obj/item/material)
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		act_message(M, src, MSG_SELF("You begin to replace parts of %T% with [kit]."), MSG_OTHERS("%U% begins to replace parts of %T% with [kit]."))
-		task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
+		perform_op(M, src, "sharpen", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("material" = material, "sharpen_time" = sharpen_time))
 		return TRUE
 	else
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))
 		return FALSE
 
-/obj/item/material/proc/sharpen_timed_done(material, mob/living/M)
-	act_message(M, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
-	src.set_material(material)
-	return TRUE
+/obj/item/material/proc/sharpen_wait(datum/act/op/A)
+	return A.arg("sharpen_time")
+
+/obj/item/material/proc/sharpen_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
+	src.set_material(A.arg("material"))
+	return OP_OK

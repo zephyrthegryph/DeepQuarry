@@ -13,15 +13,10 @@
 /obj/item/stack/nanopaste/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M) || !istype(user))
 		return ITEM_INTERACT_FAILURE
-	if(istype(M,/mob/living/silicon/robot) && can_use(1))	//Repairing cyborgs
+	if(istype(M,/mob/living/silicon/robot) && can_use(1))	//Repairing cyborgs; the repair itself is the robot_repair op when there is damage to mend
 		var/mob/living/silicon/robot/R = M
-		var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
-		if(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
-			task_timed(user, 7 * toolspeed, target = R, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, R))
-			return ITEM_INTERACT_SUCCESS
-		else
-			balloon_alert(user, "all [R]'s systems are nominal.")
-			return ITEM_INTERACT_FAILURE
+		balloon_alert(user, "all [R]'s systems are nominal.")
+		return ITEM_INTERACT_FAILURE
 
 	if(ishuman(M))		//Repairing robolimbs
 		var/mob/living/carbon/human/H = M
@@ -50,34 +45,52 @@
 				user.setClickCooldown(user.get_attack_speed(src))
 				// Nanites rebuild plating and wiring alike.
 				var/restoration = S.open >= 2 ? restoration_internal : restoration_external
-				task_start(/datum/task/timed/nanopaste_repair_limb, user, S, receiver = src, duration = 5 * toolspeed, H = H, restoration = restoration)
+				perform_op(user, src, "repair_limb", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "limb" = S, "restoration" = restoration))
 				return ITEM_INTERACT_SUCCESS
 
-/obj/item/stack/nanopaste/proc/attack_timed_done(mob/living/user, mob/living/silicon/robot/R)
+/// Cyborgs are mended at the target (it must stay beside the user); a limb is mended by the stack's own op, started from attack() once the zone has been checked.
+CAPABILITIES(/obj/item/stack/nanopaste)
+	op("robot_repair", at_target(/mob/living/silicon/robot), answers(INTENT_USE, INTENT_ATTACK), when(req(PROC_REF(robot_needs_repair))), needs(req_adjacent()), wait(PROC_REF(robot_repair_time)), then(PROC_REF(robot_repaired)))
+	op("repair_limb", ai(), takes("patient", "limb", "restoration"), wait(PROC_REF(limb_repair_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_limb_done)))
+
+/// There is plating or wiring to mend on the cyborg and a unit to spend.
+/obj/item/stack/nanopaste/proc/robot_needs_repair(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.target
+	if(!read_once(can_use(1)))
+		return FALSE
+	var/list/demand = R.treatment_demand(/datum/diagnostic_profile/robot_analyzer)
+	return !!(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])
+
+/obj/item/stack/nanopaste/proc/robot_repair_time(datum/act/op/A)
+	return 7 * toolspeed
+
+/obj/item/stack/nanopaste/proc/robot_repaired(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.target
+	var/mob/living/user = A.actor
 	R.mend(TREAT_PLATING_REPAIR, 15)
 	R.mend(TREAT_WIRING_REPAIR, 15)
 	use(1)
 	user.balloon_alert_visible("\the [user] applied some [src] on [R]'s damaged areas.",\
 	"you apply some [src] at [R]'s damaged areas.")
-	return ITEM_INTERACT_SUCCESS
-/datum/task/timed/nanopaste_repair_limb
-	complete_proc = /obj/item/stack/nanopaste/proc/repair_limb_done
-	var/mob/living/carbon/human/H
-	var/restoration
+	return OP_OK
 
-/obj/item/stack/nanopaste/proc/repair_limb_done(datum/task/timed/nanopaste_repair_limb/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.H
-	var/obj/item/organ/external/S = task.target
-	var/restoration = task.restoration
-	if(!can_use(1))
-		return
+/obj/item/stack/nanopaste/proc/limb_repair_time(datum/act/op/A)
+	return 5 * toolspeed
+
+/obj/item/stack/nanopaste/proc/repair_limb_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/obj/item/organ/external/S = A.arg("limb")
+	var/restoration = A.arg("restoration")
+	if(QDELETED(H) || QDELETED(S) || !can_use(1))
+		return OP_FAILED
 	if(restoration)
 		H.mend(TREAT_PLATING_REPAIR, restoration, S.organ_tag)
 		H.mend(TREAT_WIRING_REPAIR, restoration, S.organ_tag)
 	use(1)
 	user.balloon_alert_visible("\the [user] applies some nanite paste on [user != H ? "[H]'s [S.name]" : "[S]"] with [src].",\
 	"you apply some nanite paste on [user == H ? "your" : "[H]'s"] [S.name].")
+	return OP_OK
 
 /obj/item/stack/nanopaste
 	var/restoration_external = 5

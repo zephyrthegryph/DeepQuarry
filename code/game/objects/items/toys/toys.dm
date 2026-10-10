@@ -728,6 +728,8 @@ CAPABILITIES(/obj/structure/plushie)
 	op("poke", hand(), ungated(), stance(I_DISARM), label("Poke"), then(PROC_REF(interaction_poke)))
 	op("strangle", hand(), ungated(), stance(I_GRAB), label("Strangle"), then(PROC_REF(interaction_strangle)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	// A touch of an opened plushie takes a second to find what is stitched inside; the plushie is claimed meanwhile.
+	op("find_inside", ai(), claims(CLAIM_TARGET), wait(1 SECOND), then(PROC_REF(found_inside)))
 
 /// Old attack_hand's harm branch: punch the plushie (combat mode only).
 /obj/structure/plushie/proc/interaction_punch(datum/act/op/A)
@@ -741,8 +743,8 @@ CAPABILITIES(/obj/structure/plushie)
 /// A touch of any kind: take out whatever is hidden inside.
 /obj/structure/plushie/proc/touch_started(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(stored_item && opened && !task_busy(src))
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
+	if(stored_item && opened && !op_claimed(src))
+		perform_op(user, src, "find_inside", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /obj/structure/plushie/proc/interaction_hug(datum/act/op/A)
 	return plushie_touched(A.actor, I_HELP)
@@ -766,11 +768,14 @@ CAPABILITIES(/obj/structure/plushie)
 		atom_say("[phrase]")
 	return OP_OK
 
-/obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
+/obj/structure/plushie/proc/found_inside(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!stored_item)
+		return OP_FAILED
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
 	rel_take(src, nameof(stored_item))
-	return
+	return OP_OK
 
 /// Old attackby: sew it shut, cut it open, or hide a small thing inside.
 /obj/structure/plushie/proc/interaction_item(datum/act/op/A)
@@ -883,8 +888,8 @@ CAPABILITIES(/obj/structure/plushie)
 /obj/item/toy/plushie/proc/squeezed(mob/user, stance)
 	if(special_handling)
 		return OP_OK
-	if(stored_item && opened && !task_busy(src))
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), claims = TRUE)
+	if(stored_item && opened && !op_claimed(src))
+		perform_op(user, src, "find_inside", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 1 SECOND)
 		return OP_OK
@@ -904,11 +909,14 @@ CAPABILITIES(/obj/structure/plushie)
 	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 	return OP_OK
 
-/obj/item/toy/plushie/proc/attack_self_timed_done(mob/user)
+/obj/item/toy/plushie/proc/found_inside(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!stored_item)
+		return OP_FAILED
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
 	rel_take(src, nameof(stored_item))
-	return
+	return OP_OK
 
 /obj/item/toy/plushie/proc/say_phrase()
 	//If we don't prevent impersonation, we just speak like normal!
@@ -946,6 +954,8 @@ CAPABILITIES(/obj/item/toy/plushie)
 	op("strangle", in_hand(), stance(I_GRAB), label("Strangle"), then(PROC_REF(interaction_strangle)))
 	op("punch", in_hand(), stance(I_HURT), label("Punch"), then(PROC_REF(interaction_punch)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	// A squeeze of an opened plushie takes a second to find what is stitched inside; the plushie is claimed meanwhile.
+	op("find_inside", ai(), claims(CLAIM_TARGET), wait(1 SECOND), then(PROC_REF(found_inside)))
 	// the old Name Plushie verb, carried, by someone with a mind (a unique plushie refuses)
 	op("rename", menu(), label("Name Plushie"), needs(carried(), req(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the plushie?", "default" = "", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),

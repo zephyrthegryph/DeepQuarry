@@ -63,6 +63,13 @@
 				return 1
 	return 0
 
+/// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
+CAPABILITIES(/obj/item/handcuffs)
+	op("cuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(attempt_to_cuff_timed_done)))
+
+/obj/item/handcuffs/proc/cuff_time(datum/act/op/A)
+	return use_time
+
 /obj/item/handcuffs/proc/attempt_to_cuff(mob/living/carbon/victim, mob/user)
 	playsound(src, cuff_sound, 30, 1, -2)
 
@@ -80,13 +87,14 @@
 
 	act_message(user, victim, others = span_danger("%U% is attempting to put [cuff_type] on %T%!"))
 
-	task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
+	perform_op(user, src, "cuff", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = victim))
 	return TRUE
 
-/obj/item/handcuffs/proc/attempt_to_cuff_timed_done(mob/living/carbon/victim, mob/user)
-
-	if(!can_place(victim, user)) //victim may have resisted out of the grab in the meantime
-		return 0
+/obj/item/handcuffs/proc/attempt_to_cuff_timed_done(datum/act/op/A)
+	var/mob/living/carbon/victim = A.arg("victim")
+	var/mob/user = A.actor
+	if(QDELETED(victim) || !can_place(victim, user)) //victim may have resisted out of the grab in the meantime
+		return OP_FAILED
 
 	add_attack_logs(user,victim,"Handcuffed (attempt)")
 	feedback_add_details("handcuffs","victim")
@@ -106,7 +114,7 @@
 	victim.drop_r_hand()
 	victim.drop_l_hand()
 	victim.stop_pulling()
-	return 1
+	return OP_OK
 
 /obj/item/handcuffs/equipped(mob/living/user,slot)
 	. = ..()
@@ -256,21 +264,20 @@
 
 	act_message(user, null, others = span_danger("%U% is attempting to put [cuff_type] on \the [H]!"))
 
-	task_start(/datum/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
+	perform_op(user, src, "legcuff", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target))
 	return TRUE
 
-/datum/task/timed/legcuffs_place_legcuffs
-	complete_proc = /obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done
-	var/mob/living/carbon/target_arg
-	var/mob/living/carbon/human/H
+/// Putting them on takes `use_time`; the legcuffs have to stay in hand.
+CAPABILITIES(/obj/item/handcuffs/legcuffs)
+	op("legcuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(place_legcuffs_timed_done)))
 
-/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/task/timed/legcuffs_place_legcuffs/task)
-	var/mob/living/carbon/target = task.target_arg
-	var/mob/user = task.actor
-	var/mob/living/carbon/human/H = task.H
+/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/act/op/A)
+	var/mob/living/carbon/target = A.arg("victim")
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = target
 
-	if(!can_place(target, user)) //victim may have resisted out of the grab in the meantime
-		return 0
+	if(QDELETED(target) || !can_place(target, user)) //victim may have resisted out of the grab in the meantime
+		return OP_FAILED
 
 	add_attack_logs(user,H,"Legcuffed (attempt)")
 	feedback_add_details("legcuffs","H")
@@ -291,7 +298,7 @@
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
-	return 1
+	return OP_OK
 
 /obj/item/handcuffs/legcuffs/equipped(mob/living/user,slot)
 	. = ..()

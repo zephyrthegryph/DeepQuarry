@@ -75,19 +75,13 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	task_start(/datum/task/timed/sandbag_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	start_build(user, recipe, required, produced)
 
-/datum/task/timed/sandbag_build
-	complete_proc = /obj/item/stack/sandbags/proc/produce_sandbag_done
-	var/datum/stack_recipe/recipe
-	var/required
-	var/produced
-
-/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/task/timed/sandbag_build/task)
-	var/datum/stack_recipe/recipe = task.recipe
-	var/mob/user = task.actor
-	var/required = task.required
-	var/produced = task.produced
+/obj/item/stack/sandbags/produce_recipe_done(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/mob/user = A.actor
+	var/required = A.arg("required")
+	var/produced = A.arg("produced")
 	if (use(required))
 		var/atom/O = new recipe.result_type(user.loc, bag_material)
 
@@ -117,9 +111,11 @@ CAPABILITIES(/obj/item/stack/sandbags)
 					if(MAT.icon_colour)
 						O.color = MAT.icon_colour
 				else
-					return
+					return OP_OK
 			else
 				O.color = color
+		return OP_OK
+	return OP_FAILED
 
 // Empty bags. Yes, you need to fill them.
 
@@ -149,25 +145,21 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 CAPABILITIES(/obj/item/stack/emptysandbag)
 	without("ui_open")
-	op("emptysandbag_self", in_hand(), label("Fill"), then(PROC_REF(emptysandbag_self)))
+	// A bag is filled each second while the user stays put; the series stops when the pile is gone or the ground is no longer outdoors.
+	op("emptysandbag_self", in_hand(), label("Fill"), wait(1 SECOND, repeats = PROC_REF(fill_more), after_step = PROC_REF(fill_bag_done)))
 	param(nameof(bag_material), pos = 2)
 
-/// Old attack_self.
-/obj/item/stack/emptysandbag/proc/emptysandbag_self(datum/act/op/A)
-	var/mob/user = A.actor
-	fill_next_bag(user)
+/// Another bag follows while there is a bag left and the ground is outdoors.
+/obj/item/stack/emptysandbag/proc/fill_more(datum/act/op/A)
+	return !QDELETED(src) && can_use(1) && istype(get_turf(src), /turf/simulated/floor/outdoors)
 
-/// Fills one sandbag a second while the user stays put on outdoor ground.
-/obj/item/stack/emptysandbag/proc/fill_next_bag(mob/user)
-	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
-
-/obj/item/stack/emptysandbag/proc/fill_bag_done(mob/user)
+/// A bag filled: one used, one sandbag made where the pile lies.
+/obj/item/stack/emptysandbag/proc/fill_bag_done(datum/act/op/A)
 	if(!can_use(1) || !istype(get_turf(src), /turf/simulated/floor/outdoors))
 		return
+	var/mob/user = A.actor
 	use(1)
 	var/obj/item/stack/sandbags/SB = new (get_turf(src), 1, bag_material)
 	SB.color = color
 	if(user)
 		to_chat(user, span_notice("You fill a sandbag."))
-	if(!QDELETED(src))
-		fill_next_bag(user)
