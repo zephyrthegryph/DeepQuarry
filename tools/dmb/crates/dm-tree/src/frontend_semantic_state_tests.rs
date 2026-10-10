@@ -489,3 +489,97 @@ fn mutated_overlay_cannot_reuse_or_store_the_old_catalog_receipt() {
         .iter()
         .any(|(_, text)| text == "new_current_spelling"));
 }
+
+/// Retained frontend state only: this does not exercise daemon transport or exits.
+#[test]
+fn retained_resolution_failure_repeat_shift_and_repair_match_fresh_diagnostics() {
+    use crate::frontend::Diagnostic;
+    fn attempt(
+        state: &mut RetainedSemanticTree,
+        source: &'static str,
+        path: &str,
+        executor: &dm_exec::BuildExecutor,
+    ) -> Result<crate::frontend::ColdFrontend, Vec<Diagnostic>> {
+        build_with_executor_and_semantic_state(
+            Path::new(path),
+            &Source(source),
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            None,
+            executor,
+            Some(state),
+        )
+    }
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut retained = RetainedSemanticTree::new();
+    let valid = "/datum/a\n/datum/b\n/datum/child\n    parent_type = /datum/a\n";
+    let invalid = "/datum/a\n/datum/b\n/datum/child\n    parent_type = /datum/a\n/datum/child\n    parent_type = /datum/b\n";
+    let shifted = "// current prefix\n// second prefix\n/datum/a\n/datum/b\n/datum/child\n    parent_type = /datum/a\n/datum/child\n    parent_type = /datum/b\n";
+    let initial = attempt(&mut retained, valid, "old.dme", &executor).unwrap();
+    let mut first_line = None;
+    for (source, path) in [
+        (invalid, "old.dme"),
+        (invalid, "old.dme"),
+        (shifted, "current.dme"),
+    ] {
+        let current = attempt(&mut retained, source, path, &executor).unwrap_err();
+        let fresh = attempt(&mut RetainedSemanticTree::new(), source, path, &executor).unwrap_err();
+        assert_eq!(format!("{current:?}"), format!("{fresh:?}"));
+        let error = current
+            .iter()
+            .find(|error| error.message.contains("ConflictingParent"))
+            .expect("independent conflicting parent source must fail resolution");
+        assert_eq!(error.kind, crate::frontend::DiagnosticKind::SourceError);
+        let location = error
+            .location
+            .as_ref()
+            .expect("current authored failure location");
+        assert_eq!(location.path.as_path(), Path::new(path));
+        if path == "old.dme" {
+            if let Some(previous) = first_line {
+                assert_eq!(location.line, previous);
+            }
+            first_line = Some(location.line);
+        } else {
+            assert_eq!(location.line, first_line.unwrap() + 2);
+        }
+    }
+    let repaired = attempt(&mut retained, valid, "current.dme", &executor).unwrap();
+    let fresh = attempt(
+        &mut RetainedSemanticTree::new(),
+        valid,
+        "current.dme",
+        &executor,
+    )
+    .unwrap();
+    assert_eq!(
+        repaired.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        repaired.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    let current_order = repaired.snapshot.occurrences.source_order();
+    let fresh_order = fresh.snapshot.occurrences.source_order();
+    assert_eq!(current_order.len(), fresh_order.len());
+    for (current, expected) in current_order.iter().zip(fresh_order) {
+        assert_eq!(current.target, expected.target);
+        assert_eq!(current.provenance, expected.provenance);
+    }
+    for &target in repaired.snapshot.tree.declarations() {
+        assert_eq!(
+            repaired.snapshot.occurrences.for_target(target),
+            fresh.snapshot.occurrences.for_target(target)
+        );
+    }
+    assert_eq!(
+        initial.snapshot.tree.identity(),
+        repaired.snapshot.tree.identity()
+    );
+    assert!(retained.declaration_retention_stats().hits > 0);
+}

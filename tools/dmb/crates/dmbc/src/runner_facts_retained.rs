@@ -2,9 +2,11 @@
 use super::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub(crate) struct RetainedHostFacts {
-    values: dm_session::ObservedArtifactStore<Entry, Query, Answer, Domain>,
+    values: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
     hits: AtomicU64,
     recomputed: AtomicU64,
+    constant_hits: AtomicU64,
+    runtime_hits: AtomicU64,
 }
 struct Entry {
     constants: ConstantCatalog,
@@ -13,11 +15,19 @@ struct Entry {
     source: EngineResolverHost<dm_tree::SemanticTree>,
     scalar: dm_tree::constant_resolution::ScalarFacts,
 }
+#[path = "runner_facts_catalogs.rs"]
+mod catalogs;
+enum Artifact {
+    Constants(Arc<catalogs::Constants>),
+    Runtime(RuntimeAliasCatalog),
+    Prepared(Entry),
+}
 const KEY: &[u8] = b"dmbc-native-host-preparation-v1";
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Query {
     Engine,
     Source,
+    TypePaths,
 }
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Domain {
@@ -27,12 +37,14 @@ enum Domain {
 enum Answer {
     Engine(Arc<crate::runner_host::RetainedEngine>),
     Source(Arc<dm_tree::SemanticTree>),
+    TypePaths(Arc<Vec<dm_ir::SymbolId>>),
 }
 impl PartialEq for Answer {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Engine(a), Self::Engine(b)) => Arc::ptr_eq(a, b),
             (Self::Source(a), Self::Source(b)) => Arc::ptr_eq(a, b),
+            (Self::TypePaths(a), Self::TypePaths(b)) => a == b,
             _ => false,
         }
     }
@@ -41,12 +53,31 @@ impl Eq for Answer {}
 struct Current<'a> {
     frontend: &'a ColdFrontend,
     engine: &'a Arc<crate::runner_host::RetainedEngine>,
+    paths: std::sync::OnceLock<Arc<Vec<dm_ir::SymbolId>>>,
+}
+impl Current<'_> {
+    fn type_paths(&self) -> &Arc<Vec<dm_ir::SymbolId>> {
+        self.paths.get_or_init(|| {
+            let mut paths: Vec<_> = self
+                .frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|ty| ty.path)
+                .collect();
+            paths.sort_unstable();
+            paths.dedup();
+            Arc::new(paths)
+        })
+    }
 }
 impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
     fn answer(&self, query: &Query) -> Answer {
         match query {
             Query::Engine => Answer::Engine(Arc::clone(self.engine)),
             Query::Source => Answer::Source(Arc::clone(&self.frontend.snapshot.tree)),
+            Query::TypePaths => Answer::TypePaths(Arc::clone(self.type_paths())),
         }
     }
 }
@@ -56,6 +87,8 @@ impl Default for RetainedHostFacts {
             values: dm_session::ObservedArtifactStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
+            constant_hits: AtomicU64::new(0),
+            runtime_hits: AtomicU64::new(0),
         }
     }
 }
@@ -65,33 +98,41 @@ impl RetainedHostFacts {
         frontend: &ColdFrontend,
         engine: &Arc<crate::runner_host::RetainedEngine>,
     ) -> Result<PreparedHost, String> {
-        let current = Current { frontend, engine };
+        let current = Current {
+            frontend,
+            engine,
+            paths: Default::default(),
+        };
         if let Some(previous) = self.values.lookup(KEY, &current) {
-            if let Some(scalar) = previous.scalar.bind_current(&frontend.snapshot) {
-                let scalar = Arc::new(scalar);
-                let host = EngineResolverHost::new(
-                    Arc::clone(&scalar),
-                    previous.constants.clone(),
-                    previous.runtime.clone(),
-                )
-                .with_pinned_facts(
-                    &engine.snapshot,
-                    frontend,
-                    Arc::clone(&previous.pinned),
-                )?;
-                self.hits.fetch_add(1, Ordering::Relaxed);
-                return Ok((host, scalar));
+            if let Artifact::Prepared(previous) = previous.as_ref() {
+                self.admit_constant_spellings(&current)?;
+                if let Some(scalar) = previous.scalar.bind_current(&frontend.snapshot) {
+                    let scalar = Arc::new(scalar);
+                    let host = EngineResolverHost::new(
+                        Arc::clone(&scalar),
+                        previous.constants.clone(),
+                        previous.runtime.clone(),
+                    )
+                    .with_pinned_facts(
+                        &engine.snapshot,
+                        frontend,
+                        Arc::clone(&previous.pinned),
+                    )?;
+                    self.hits.fetch_add(1, Ordering::Relaxed);
+                    return Ok((host, scalar));
+                }
             }
         }
         // A failed preparation must not preserve an inapplicable latest owner.
-        self.values.retain_current_keys(std::iter::empty::<&[u8]>());
+        self.retain_catalog_stages();
+        let (constants, runtime) = self.catalogs(&current)?;
         let Components {
             constants,
             runtime,
             pinned,
             source,
             scalar,
-        } = prepare_components(frontend, &engine.snapshot)?;
+        } = prepare_from_catalogs(frontend, &engine.snapshot, constants, runtime)?;
         let host = EngineResolverHost::new(Arc::clone(&scalar), constants.clone(), runtime.clone())
             .with_pinned_facts(&engine.snapshot, frontend, Arc::clone(&pinned))?;
         if let Some(facts) = scalar.retain_facts() {
@@ -102,30 +143,36 @@ impl RetainedHostFacts {
                 source,
                 scalar: facts,
             };
-            let ledger = dm_session::ObservationLedger::default();
-            for query in [Query::Engine, Query::Source] {
-                use dm_session::ObservationHost;
-                ledger.record(
-                    query.clone(),
-                    current.answer(&query),
-                    Domain::ExactOwners,
-                    None,
-                );
-            }
-            // Current-revision retention is key-scoped, not byte-budget admission.
-            // This charge covers only the accessible inline entry and locator;
-            // it is not a resident-heap estimate. Full census remains opt-in.
-            let inline_charge = std::mem::size_of::<Entry>().saturating_add(KEY.len());
-            self.values.insert_with(
-                Arc::from(KEY),
-                ledger.reads(),
-                ledger.domain_receipts(),
-                inline_charge,
-                || entry,
+            self.insert_stage(
+                KEY,
+                &current,
+                &[Query::Engine, Query::Source],
+                Artifact::Prepared(entry),
             );
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         Ok((host, scalar))
+    }
+    fn insert_stage(&self, key: &[u8], current: &Current<'_>, queries: &[Query], value: Artifact) {
+        use dm_session::ObservationHost;
+        let ledger = dm_session::ObservationLedger::default();
+        for query in queries {
+            ledger.record(
+                query.clone(),
+                current.answer(query),
+                Domain::ExactOwners,
+                None,
+            );
+        }
+        // Inline charge only; current-stage retention has no byte admission budget.
+        let charge = std::mem::size_of::<Artifact>().saturating_add(key.len());
+        self.values.insert_with(
+            Arc::from(key),
+            ledger.reads(),
+            ledger.domain_receipts(),
+            charge,
+            || value,
+        );
     }
     pub(crate) fn census(&self) -> crate::heap_census::HeapCensusReport {
         let mut census = crate::heap_census::HeapCensus::new("retained.host_facts");
@@ -160,9 +207,29 @@ impl RetainedHostFacts {
             } => {
                 census.slice("host.facts.keys", key, true);
                 census.slice("host.facts.reads", reads, true);
+                for read in reads.iter() {
+                    if let Answer::TypePaths(paths) = &read.answer {
+                        if census.arc_object("host.runtime.type_paths", paths) {
+                            census.vec_payload("host.runtime.type_paths", paths);
+                        }
+                    }
+                }
                 census.slice("host.facts.versions", versions, true);
                 if census.arc_object("host.facts.value", value) {
-                    inspect_entry(value, &mut census);
+                    match value.as_ref() {
+                        Artifact::Prepared(entry) => inspect_entry(entry, &mut census),
+                        Artifact::Constants(constants) => {
+                            census.arc_object("host.constants", constants);
+                            census.unknown(
+                                "host.constants",
+                                "shared catalog and spelling-map backing/control layout excluded",
+                            );
+                        }
+                        Artifact::Runtime(_) => census.unknown(
+                            "host.runtime",
+                            "shared alias/membership map backing/control layout excluded",
+                        ),
+                    }
                 }
             }
         });
@@ -314,3 +381,7 @@ mod tests {
             .is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "runner_facts_catalog_tests.rs"]
+mod catalog_tests;

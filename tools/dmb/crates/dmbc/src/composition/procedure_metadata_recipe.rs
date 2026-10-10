@@ -5,6 +5,7 @@ use dm_codegen_byond::procedure_abi::ArgumentSource;
 use std::sync::Arc;
 
 pub(crate) struct ProcedureMetadataRecipe {
+    frame: std::sync::Mutex<Option<Arc<super::frame_contribution::FrameContribution>>>,
     identity: UnitIdentity,
     formal_path: Arc<str>,
     implicit_path: Arc<str>,
@@ -40,6 +41,7 @@ impl ProcedureMetadataRecipe {
             .into()
         };
         Ok(Self {
+            frame: Default::default(),
             identity,
             formal_path,
             implicit_path,
@@ -48,6 +50,11 @@ impl ProcedureMetadataRecipe {
             locals: Default::default(),
             arguments: Default::default(),
         })
+    }
+    pub(super) fn frame_owner(
+        &self,
+    ) -> &std::sync::Mutex<Option<Arc<super::frame_contribution::FrameContribution>>> {
+        &self.frame
     }
     pub(crate) fn path(
         &self,
@@ -77,6 +84,16 @@ impl ProcedureMetadataRecipe {
     }
     pub(crate) fn census(recipe: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
         if census.arc_object("procedure_metadata.recipe", recipe) {
+            if let Some(frame) = recipe
+                .frame
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .as_ref()
+            {
+                if census.arc_object("procedure_metadata.frame", frame) {
+                    frame.census(census);
+                }
+            }
             census.arc_text("procedure_metadata.paths", &recipe.formal_path);
             census.arc_text("procedure_metadata.paths", &recipe.implicit_path);
             census.arc_text("procedure_metadata.display", &recipe.display);

@@ -26,8 +26,10 @@ class BuildReceiptTests(unittest.TestCase):
             self.assertEqual(proof["dmbc_opt_level"], 1)
             self.assertFalse(proof["benchmark_acceptance_admitted"])
             self.assertFalse(proof["declared_acceptance_profile"])
+            path.write_text(json.dumps(dict(value, dmbc_opt_level=0)))
+            self.assertEqual(build_receipt.authenticate(path, executable, sha)["dmbc_opt_level"], 0)
             for changes in ({"exit_code": 124}, {"exit_code": False},
-                            {"binary_sha256": "0" * 64}, {"dmbc_opt_level": 0},
+                            {"binary_sha256": "0" * 64}, {"dmbc_opt_level": -1},
                             {"acceptance_profile": "false"}):
                 path.write_text(json.dumps(dict(value, **changes)))
                 with self.assertRaises(ValueError):

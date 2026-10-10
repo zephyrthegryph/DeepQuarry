@@ -49,6 +49,14 @@ fn prepare_components(
         Completeness::Partial,
     )
     .map_err(|error| format!("runtime type catalog: {error:?}"))?;
+    prepare_from_catalogs(frontend, engine, constants, runtime)
+}
+fn prepare_from_catalogs(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    constants: ConstantCatalog,
+    runtime: RuntimeAliasCatalog,
+) -> Result<Components, String> {
     let pinned = PinnedHostFacts::capture(engine, frontend, &constants, &runtime)?;
     let source = EngineResolverHost::new(
         frontend.snapshot.tree.clone(),

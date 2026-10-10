@@ -691,7 +691,7 @@ impl HeapCensus {
     fn frozen_debug(&mut self, owner: &str, debug: &crate::debug_sources::FrozenDebugOrigins) {
         debug.census(self, owner);
     }
-    fn abi(&mut self, abi: &Arc<crate::procedure_policy::PreparedAbi>) {
+    pub(crate) fn abi(&mut self, abi: &Arc<crate::procedure_policy::PreparedAbi>) {
         let owner = "procedure_abi";
         if !self.arc_object(owner, abi) {
             return;

@@ -18,7 +18,7 @@ def authenticate(path, executable, sha):
         raise ValueError("build receipt executable SHA mismatch")
     level = value.get("dmbc_opt_level")
     units = value.get("dmbc_codegen_units")
-    if level is not None and (type(level) is not int or level not in (1, 2, 3)):
+    if level is not None and (type(level) is not int or level not in (0, 1, 2, 3)):
         raise ValueError("invalid build receipt optimization level")
     if units is not None and (type(units) is not int or units <= 0):
         raise ValueError("invalid build receipt codegen units")

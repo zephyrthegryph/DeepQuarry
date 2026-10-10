@@ -594,83 +594,14 @@ fn compose_records_access(
             .map_err(CompositionError::Link)?;
         let metadata = metadata?;
         let unit = &batch.units[unit_index];
-        let abi = unit
-            .lowered
-            .abi
-            .as_ref()
-            .ok_or_else(|| unsupported("procedure ABI was not authoritative"))?;
-        let proc = &unit.lowered.frame;
-        let code_id = append_list(&mut dmb, linked_words)?;
-        let mut first_local = 0;
-        for (local, name) in proc.local_names.iter().enumerate() {
-            let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
-            let variable_id = u32::try_from(dmb.variables.len())
-                .map_err(|_| unsupported("variable record overflow"))?;
-            dmb.variables.push(Variable {
-                kind: 0,
-                value: 0,
-                name: name_id,
-            });
-            if local == 0 {
-                first_local = variable_id;
-            }
-        }
-        let locals = unit
-            .metadata_recipe
-            .local_list(first_local, proc.local_names.len());
-        let locals_id = append_list(&mut dmb, locals)?;
-        let mut first_argument = 0;
-        let mut resolved_sources = Vec::with_capacity(proc.argument_names.len());
-        let mut value_sources = metadata.value_sources.into_iter();
-        for (argument, name) in proc.argument_names.iter().enumerate() {
-            let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
-            let variable_id = u32::try_from(dmb.variables.len())
-                .map_err(|_| unsupported("argument record overflow"))?;
-            dmb.variables.push(Variable {
-                kind: 0,
-                value: 0,
-                name: name_id,
-            });
-            let value_source = value_sources
-                .next()
-                .expect("prepared argument count checked")?;
-            if argument == 0 {
-                first_argument = variable_id;
-            }
-            resolved_sources.push(value_source);
-        }
-        let args = unit.metadata_recipe.argument_list(
-            first_argument,
-            &proc.argument_type_flags,
-            resolved_sources,
-        );
-        let args_id = append_list(&mut dmb, args)?;
-        let path = metadata.path?;
-        let path_id = string_index.intern(&mut dmb, path.as_bytes())?;
-        let default_display = metadata.default_display?;
-        let display = abi
-            .layout
-            .display_name
-            .as_deref()
-            .unwrap_or(default_display.as_bytes());
-        let display_id = string_index.intern(&mut dmb, display)?;
-        let description_id = match &abi.layout.description {
-            Some(value) => string_index.intern(&mut dmb, value)?,
-            None => NONE,
-        };
-        let category_id = match &abi.layout.category {
-            Category::Text(value) => string_index.intern(&mut dmb, value)?,
-            Category::Default | Category::Null => NONE,
-        };
-        let (flags, extended_flags) = abi.layout.encoded_flags();
-        dmb.procs.push(Proc {
-            strings: [path_id, display_id, description_id, category_id],
-            source_parameter: abi.layout.source_parameter,
-            source_kind: abi.layout.source_kind,
-            flags,
-            extended_flags,
-            code_locals_args: [code_id, locals_id, args_id],
-        });
+        frame_contribution::emit(
+            &mut dmb,
+            &mut string_index,
+            unit,
+            linked_words,
+            metadata,
+            generation.is_some(),
+        )?;
     }
     for slot in plan.helpers?.iter() {
         let index = slot.table_index;
@@ -917,6 +848,7 @@ pub use owned::{
     compose_projected_owned_with_symbols_on_executor,
 };
 
+mod frame_contribution;
 mod procedure_plan;
 
 mod generation;

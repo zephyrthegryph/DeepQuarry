@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--seconds", type=int, default=300)
     parser.add_argument("--dmbc-codegen-units", type=int, choices=(16, 64, 256), default=16,
                         help="prototype-only dmbc LLVM partitioning; dependencies remain unchanged")
-    parser.add_argument("--dmbc-opt-level", type=int, choices=(1, 2, 3), default=3,
+    parser.add_argument("--dmbc-opt-level", type=int, choices=(0, 1, 2, 3), default=3,
                         help="prototype-only dmbc optimization level; default 3 preserves release settings")
     args = parser.parse_args()
     if not 1 <= args.seconds <= 300:

@@ -23,6 +23,9 @@ impl StringIndex {
         }
         Ok(result)
     }
+    pub(super) fn lookup(&self, dmb: &Dmb, data: &[u8]) -> Option<u32> {
+        self.find(dmb, xxhash_rust::xxh3::xxh3_128(data), data)
+    }
     pub(crate) fn intern(&mut self, dmb: &mut Dmb, data: &[u8]) -> Result<u32, CompositionError> {
         self.intern_hashed(dmb, data, xxhash_rust::xxh3::xxh3_128(data))
     }

@@ -399,6 +399,28 @@
       "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190101-deba2f00.json"
     }
   },
+  "catalog_and_frame_contribution_migration": {
+    "status": "production hooks compile; four focused dmbc fixtures and retained diagnostic shift/repair fixture passed",
+    "diagnostic_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195907-2d833051.json",
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195522-2d056087.json",
+    "frame_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-195647-a04ef4c5.json",
+    "implemented": [
+      "constants, runtime membership and prepared host facts share one current-revision observation store with stage-local exact dependencies",
+      "current namespaces always perform exact constant spelling collision admission",
+      "proc, var and default edits reuse runtime catalog only for an equal current type set",
+      "procedure recipe owns one latest frame contribution checked against exact current ABI, string assignments, numeric frontiers and helper sources",
+      "current bytecode always binds against current mob assignments before frame emission",
+      "one-shot output uses the same emitter while skipping retained frame lookup and capture copies"
+    ],
+    "limitations": [
+      "structural requests still collect current type membership and recompute pinned/scalar facts",
+      "full procedure metadata validation and output model visitation remain",
+      "raw output, whole-program BYOND baseline and Phase5 runtime gates remain open",
+      "all optimized compiler build attempts hit their 300-second watchdog; no new end-to-end benchmark",
+      "unoptimized prototype timing is explicitly not release-profile performance acceptance"
+    ],
+    "new_end_to_end_timings": null
+  },
   "host_fact_and_snapshot_proof_migration": {
     "status": "workspace all-target check, four focused dmbc fixtures and scalar rebind fixture passed; no new end-to-end timings",
     "dm_tree_focused_passed": 1,

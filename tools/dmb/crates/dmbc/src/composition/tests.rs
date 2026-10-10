@@ -809,3 +809,173 @@ fn artifact_emission_lists_share_output_backing_after_current_variable_allocatio
     assert!(Arc::ptr_eq(&rows[0][0], &rows[1][0]));
     assert!(Arc::ptr_eq(&rows[0][1], &rows[1][1]));
 }
+#[test]
+fn frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority() {
+    use std::sync::Arc;
+    fn metadata() -> procedure_plan::ProcedureMetadata {
+        procedure_plan::ProcedureMetadata {
+            path: Ok(Arc::from("/proc/frame_probe")),
+            default_display: Ok(Arc::from("frame probe")),
+            value_sources: Vec::new(),
+        }
+    }
+    let (mut batch, _) = ownership_fixture_source("/proc/frame_probe()\n    return 1\n");
+    let mut baseline =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let mut pool = StringIndex::build(&baseline).unwrap();
+    let path_id = pool.intern(&mut baseline, b"/proc/frame_probe").unwrap();
+    let emit = |model: &mut Dmb, unit: &crate::symbolic::FrozenUnit, word| {
+        let mut index = StringIndex::build(model).unwrap();
+        frame_contribution::emit(
+            model,
+            &mut index,
+            unit,
+            Arc::new(vec![word]),
+            metadata(),
+            true,
+        )
+        .unwrap();
+    };
+    let mut first = baseline.clone();
+    emit(&mut first, &batch.units[0], 1);
+    let owner = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    let mut changed_code = baseline.clone();
+    emit(&mut changed_code, &batch.units[0], 2);
+    assert!(Arc::ptr_eq(
+        &owner,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    assert_eq!(first.procs, changed_code.procs);
+    let code = changed_code.procs.last().unwrap().code_locals_args[0];
+    assert_eq!(&changed_code.lists[code as usize], &[2]);
+    let mut altered = baseline.clone();
+    altered.strings[path_id as usize].data = b"different exact bytes".to_vec();
+    emit(&mut altered, &batch.units[0], 2);
+    assert!(!Arc::ptr_eq(
+        &owner,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    let current = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    let mut frontier = baseline.clone();
+    frontier.variables.push(Variable {
+        kind: 0,
+        value: 0,
+        name: 0,
+    });
+    emit(&mut frontier, &batch.units[0], 2);
+    assert!(!Arc::ptr_eq(
+        &current,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    let current = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    let abi = Arc::make_mut(batch.units[0].lowered.abi.as_mut().unwrap());
+    abi.layout.description = Some(b"current description".to_vec());
+    let mut fresh = baseline.clone();
+    emit(&mut fresh, &batch.units[0], 2);
+    assert!(!Arc::ptr_eq(
+        &current,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    let description = fresh.procs.last().unwrap().strings[2];
+    assert_eq!(
+        fresh.string(description),
+        Some(b"current description".as_slice())
+    );
+}
+#[test]
+fn frame_contribution_requires_current_resolved_argument_source_numbers() {
+    use std::sync::Arc;
+    let (mut batch, _) = ownership_fixture_source("/proc/frame_argument_probe()\n    return 1\n");
+    batch.units[0].lowered.frame.argument_names = vec!["argument".into()];
+    batch.units[0].lowered.frame.argument_type_flags = vec![0];
+    Arc::make_mut(batch.units[0].lowered.abi.as_mut().unwrap()).argument_sources =
+        vec![dm_codegen_byond::procedure_abi::ArgumentSource::Helper { argument: 0 }];
+    let baseline =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let emit = |source| {
+        let mut dmb = baseline.clone();
+        let mut index = StringIndex::build(&dmb).unwrap();
+        frame_contribution::emit(
+            &mut dmb,
+            &mut index,
+            &batch.units[0],
+            Arc::new(vec![1]),
+            procedure_plan::ProcedureMetadata {
+                path: Ok(Arc::from("/proc/frame_argument_probe")),
+                default_display: Ok(Arc::from("frame argument probe")),
+                value_sources: vec![Ok(source)],
+            },
+            true,
+        )
+        .unwrap();
+        dmb
+    };
+    let first = emit(0x140);
+    let owner = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    let second = emit(0x240);
+    assert!(!Arc::ptr_eq(
+        &owner,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    let first_id = first.procs.last().unwrap().code_locals_args[2];
+    let second_id = second.procs.last().unwrap().code_locals_args[2];
+    assert_eq!(first.lists[first_id as usize][1], 0x140);
+    assert_eq!(second.lists[second_id as usize][1], 0x240);
+}
+
+#[path = "frame_contribution_tests.rs"]
+mod frame_retention;
