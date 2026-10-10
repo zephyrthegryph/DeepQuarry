@@ -513,9 +513,9 @@
 	M.reagents.add_reagent(REAGENT_ID_WATER, 5)
 	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
 		check(M, H, key, "makes_drugs", null)
-	M.condi = TRUE
+	M.set_condi(TRUE)
 	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
-	M.condi = FALSE
+	M.set_condi(FALSE)
 	check(M, H, "create_pill_multiple", "makes_drugs", null)
 	M.reagents.clear_reagents()
 	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)

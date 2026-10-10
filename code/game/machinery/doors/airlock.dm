@@ -214,9 +214,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("disrupt_main", ui_act("disrupt-main"), needs(req_is(STAT_MAIN_POWER_OUT, FALSE, because = MSG(airlock/main_offline))), then(PROC_REF(lose_main_power)))
 	op("disrupt_backup", ui_act("disrupt-backup"), needs(req(PROC_REF(backup_available), because = MSG(airlock/backup_offline))), then(PROC_REF(lose_backup_power)))
 	op("shock_restore", ui_act("shock-restore"), releases(STAT_ELECTRIFIED, source = ON_ACTOR), says(MSG(airlock/unelectrified)))
-	op("shock_temp", ui_act("shock-temp"), needs(req(PROC_REF(power_available), because = MSG(airlock/unpowered))),
+	op("shock_temp", ui_act("shock-temp"), needs(req(PROC_REF(airlock_power_ready), because = MSG(airlock/unpowered))),
 		holds(STAT_ELECTRIFIED, TRUE, lasts = 30 SECONDS, source = ON_ACTOR), then(PROC_REF(electrified_by)), says(MSG(airlock/electrified)), logs(LOG_GAME))
-	op("shock_perm", ui_act("shock-perm"), needs(req(PROC_REF(power_available), because = MSG(airlock/unpowered))),
+	op("shock_perm", ui_act("shock-perm"), needs(req(PROC_REF(airlock_power_ready), because = MSG(airlock/unpowered))),
 		holds(STAT_ELECTRIFIED, TRUE, source = ON_ACTOR), then(PROC_REF(electrified_by)), says(MSG(airlock/electrified)), logs(LOG_GAME))
 	op("idscan_toggle", ui_act("idscan-toggle"), needs(req_wire(WIRE_IDSCAN, because = MSG(airlock/idscan_wire_cut))),
 		toggles_hold(STAT_AIDISABLEDIDSCANNER, source = SRC_AI_CONTROL))
@@ -1389,5 +1389,5 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 /obj/machinery/door/airlock/proc/backup_available(datum/act/A)
 	return backup_carries(A) ? null : MSG(airlock/backup_offline)
 
-/obj/machinery/door/airlock/proc/power_available(datum/act/A)
+/obj/machinery/door/airlock/proc/airlock_power_ready(datum/act/A)
 	return power_systems_on(A) ? null : MSG(airlock/unpowered)

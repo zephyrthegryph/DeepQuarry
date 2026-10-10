@@ -26,6 +26,8 @@
 	flags = OPENCONTAINER
 	clicksound = SFX_BUTTON
 
+TRACKED(/obj/machinery/chem_master, condi)
+
 /obj/machinery/chem_master/draw(datum/look/look)
 	..()
 	look.state(beaker ? "mixer1" : "mixer0")
