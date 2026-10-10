@@ -33,6 +33,7 @@
 /datum/unit_test/dq_p2_apc/frame/apc_frame_mounts_a_bare_frame/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	if(p2_area.get_apc())
 		restore_wall()
 		return // the test map's area has its own APC: the frame would be refused (the next test pins that)
@@ -58,6 +59,7 @@
 /datum/unit_test/dq_p2_apc/frame/apc_frame_refused_where_the_area_has_one/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/power/apc/existing = p2_apc(run_loc_floor_top_right)
 	TEST_ASSERT_EQUAL(p2_area.get_apc(), existing, "the area has its APC")
 	var/turf/wall = wall_beside(T)
@@ -75,6 +77,7 @@
 /datum/unit_test/dq_p2_apc/frame/light_frame_mounts_a_fixture_frame/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/turf/wall = wall_beside(T)
 	var/mob/living/carbon/human/H = p2_actor(T)
 	var/obj/item/frame/light/frame = allocate(/obj/item/frame/light, T)
@@ -92,6 +95,7 @@
 /datum/unit_test/dq_p2_apc/frame/frame_needs_a_floor_to_stand_on/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	p2_area.set_requires_power(FALSE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/turf/wall = wall_beside(T)
 	var/mob/living/carbon/human/H = p2_actor(T)
 	var/obj/item/frame/light/frame = allocate(/obj/item/frame/light, T)

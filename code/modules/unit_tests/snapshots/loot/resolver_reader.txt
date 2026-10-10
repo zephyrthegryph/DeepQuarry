@@ -9,7 +9,7 @@
 /obj/effect/floor_decal/fancy_shuttle => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/floor_decal/reset => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/gibspawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core
-/obj/effect/gibspawner/human => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core, 0,0 /obj/effect/decal/cleanable/blood/gibs/down
+/obj/effect/gibspawner/human => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core, 0,0 /obj/effect/decal/cleanable/blood/gibs/down
 /obj/effect/graffitispawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/crayon
 /obj/effect/instantboom {devastation = 0; heavyboom = 0; lightboom = 0; flash = 0} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/landmark {name = "blobstart"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
@@ -18,7 +18,7 @@
 /obj/effect/map_helper => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/map_helper/airlock => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/map_helper/airlock {name = "dq pin helper"; command = "cycle"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
-/obj/effect/mouse_hole_spawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/structure/micro_tunnel
+/obj/effect/mouse_hole_spawner => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/recycler_beacon => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/spawner/onetankbomb => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/tank/phoron/onetankbomb
 /obj/effect/spawner/parts/t2 => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/capacitor, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/manipulator, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/matter_bin, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/micro_laser, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module, 0,0 /obj/item/stock_parts/scanning_module

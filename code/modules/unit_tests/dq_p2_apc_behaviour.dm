@@ -178,6 +178,7 @@
 	if(F.flooring != p2_flooring)
 		F.install_flooring(p2_flooring)
 	p2_area.set_requires_power(p2_area_requires)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	p2_area.power_light = p2_area_light
 	p2_area.power_equip = p2_area_equip
 	p2_area.power_environ = p2_area_environ
@@ -317,6 +318,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, run_loc_floor_bottom_left)
 	p2_apc_resync(A)
 	p2_settle()
@@ -1028,6 +1030,7 @@
 	var/obj/machinery/power/terminal/Tm = A.terminal
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.operating = TRUE
 	A.chargemode = TRUE
 	A.equipment = POWERCHAN_ON_AUTO
@@ -1071,6 +1074,7 @@
 	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	p2_apc_resync(A)
@@ -1105,6 +1109,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	A.cell.charge = A.cell.maxcharge * 0.5
@@ -1133,6 +1138,7 @@
 	var/datum/wires_test_adapter/W = p2_apc_wires(A)
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
+	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	p2_apc_resync(A)
