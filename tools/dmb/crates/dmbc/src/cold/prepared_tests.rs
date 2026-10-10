@@ -134,6 +134,8 @@ fn prepared_seal_releases_source_before_byte_identical_composition() {
             &bodies,
         )
         .unwrap();
+        let mut memo = crate::lowering_memo::ProcedureMemo::new(17);
+        memo.symbolic = Some(Arc::new(Default::default()));
         let prepared = prepare_with_startup(
             &frontend,
             &host,
@@ -150,11 +152,17 @@ fn prepared_seal_releases_source_before_byte_identical_composition() {
             None,
             &startup,
             None,
-            None,
+            Some(&memo),
             &executor,
             bodies,
         )
         .unwrap();
+        assert!(memo.symbolic.as_ref().unwrap().retention_stats().records > 0);
+        assert_eq!(
+            memo.values.admitted_bytes(),
+            0,
+            "compact symbolic completion must not also retain a rich IR graph"
+        );
         let domains = prepared.domains();
         let values = Arc::new(crate::resource_values::PreparedResourceValues::capture(
             &NoTypeDefaults,

@@ -91,6 +91,25 @@ impl<'a> SkeletonView<'a> {
     pub(crate) fn to_vec(self) -> Vec<Skeleton> {
         self.iter().cloned().collect()
     }
+    pub(crate) fn borrowed_slice(self) -> Option<&'a [Skeleton]> {
+        match self.backing {
+            Backing::Flat(rows) => Some(&rows[self.begin..self.begin + self.len]),
+            Backing::Shared(roster) => {
+                if self.len == 0 {
+                    return Some(&[]);
+                }
+                let chunk = roster.prefix.partition_point(|&begin| begin <= self.begin) - 1;
+                let start = self.begin - roster.prefix[chunk];
+                roster.chunks[chunk].get(start..start + self.len)
+            }
+        }
+    }
+    pub(crate) fn diagnostic_rows(self) -> std::borrow::Cow<'a, [Skeleton]> {
+        match self.borrowed_slice() {
+            Some(rows) => std::borrow::Cow::Borrowed(rows),
+            None => std::borrow::Cow::Owned(self.to_vec()),
+        }
+    }
     pub(crate) fn iter(self) -> SkeletonIter<'a> {
         SkeletonIter {
             view: self,
@@ -219,6 +238,25 @@ impl Eq for SkeletonRoster {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn diagnostics_borrow_contiguous_leaves_and_copy_only_cross_leaf_views() {
+        let row = |name| Skeleton::Type {
+            path: dm_ir::SymbolId::of(name),
+            explicit_parent: None,
+        };
+        let rows = vec![row("/a"), row("/b")];
+        let pointer = rows.as_ptr();
+        let mut roster = SkeletonRoster::from_owned(rows);
+        assert_eq!(roster.view().diagnostic_rows().as_ptr(), pointer);
+        roster.push_leaf(Arc::new(vec![row("/c")]));
+        let within = roster.view().slice(1..2).diagnostic_rows();
+        assert!(matches!(within, std::borrow::Cow::Borrowed(_)));
+        assert_eq!(within.as_ptr(), roster.chunks[0][1..].as_ptr());
+        let across = roster.view().slice(1..3).diagnostic_rows();
+        assert!(matches!(across, std::borrow::Cow::Owned(_)));
+        assert_eq!(across.as_ref(), &[row("/b"), row("/c")]);
+        assert!(roster.view().slice(3..3).diagnostic_rows().is_empty());
+    }
     #[test]
     fn shared_roster_slices_and_mixed_direction_preserve_order() {
         let row = |id| Skeleton::Type {

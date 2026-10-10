@@ -40,15 +40,16 @@ test('native uses current manifest/defines and successful compilation does not r
   expect(recorded).not.toContain('--artifact-directory');
   expect(recorded).toContain('--compile-result-file');
 });
-test('transitional native nonzero status explicitly falls back exactly once', async () => {
+test('native infrastructure status never falls back', async () => {
   process.env.DQ_COMPILER = 'native';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   const execute = async () => ({ code: 1, combined: 'diagnostic', stdout: '', stderr: 'diagnostic', signal: null });
   let byondCalls = 0;
-  const output = await selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute);
-  expect(output.kind).toBe('conventional');
-  expect(byondCalls).toBe(1);
+  const failure = await selectedCompiler('project.dme', {}, async () => { byondCalls++; }, execute).then(() => null, error => error);
+  expect(failure).toBeInstanceOf(Juke.ExitCode);
+  expect(failure.code).toBe(1);
+  expect(byondCalls).toBe(0);
 });
 
 test('typed source and cancellation statuses never fall back', async () => {
@@ -83,12 +84,12 @@ test('native cannot silently discard requested compiler version or warning polic
   ]) {
     let nativeCalls = 0;
     let byondCalls = 0;
-    await selectedCompiler('project.dme', options, async () => { byondCalls++; }, async () => {
+    await expect(selectedCompiler('project.dme', options, async () => { byondCalls++; }, async () => {
       nativeCalls++;
       return { code: 0, combined: '' };
-    });
+    })).rejects.toThrow('Native compiler does not support requested DreamMaker options:');
     expect(nativeCalls).toBe(0);
-    expect(byondCalls).toBe(1);
+    expect(byondCalls).toBe(0);
   }
 });
 
@@ -169,6 +170,27 @@ test('native internal status 70 falls back once and propagates BYOND failure', a
   expect(calls).toBe(1);
   expect(failure).toBe(expected);
   expect(failure.code).toBe(37);
+});
+
+test('native setup and transport failures preserve errors without fallback', async () => {
+  process.env.DQ_COMPILER = 'native';
+  let calls = 0;
+  let executions = 0;
+  delete process.env.DQ_NATIVE_COMPILER;
+  delete process.env.DQ_NATIVE_ENGINE_TEMPLATE;
+  await expect(selectedCompiler('project.dme', {}, async () => { calls++; }, async () => {
+    executions++;
+    return { code: 70, combined: '' };
+  })).rejects.toThrow('requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE');
+  expect(executions).toBe(0);
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  const transport = new Error('cannot start native compiler');
+  const failure = await selectedCompiler('project.dme', {}, async () => { calls++; }, async () => {
+    throw transport;
+  }).then(() => null, error => error);
+  expect(failure).toBe(transport);
+  expect(calls).toBe(0);
 });
 
 test('typed and unknown native statuses preserve exact exit and never fall back', async () => {

@@ -40,6 +40,8 @@ pub struct BytecodeProcedureReport {
 
 #[derive(Serialize)]
 pub struct StructuralReport {
+    #[serde(skip)]
+    debug_scratch: (String, String),
     pub schema_version: u32,
     pub snapshot_id: String,
     /// Exhaustive traversal finished, independent of semantic coverage.
@@ -153,6 +155,7 @@ impl StructuralReport {
     }
     fn new(snapshot_id: &str) -> Self {
         Self {
+            debug_scratch: Default::default(),
             schema_version: 1, snapshot_id: snapshot_id.into(),
             traversal_complete: false, complete: false,
             tool_complete: false, semantic_coverage: "incomplete",
@@ -167,6 +170,25 @@ impl StructuralReport {
         }
     }
     pub(super) fn record(&mut self, path: &str, field: &str, expected: String, actual: String) {
+        self.record_text(path, field, &expected, &actual);
+    }
+    pub(super) fn record_debug(
+        &mut self,
+        path: &str,
+        field: &str,
+        expected: impl std::fmt::Debug,
+        actual: impl std::fmt::Debug,
+    ) {
+        use std::fmt::Write;
+        let (mut left, mut right) = std::mem::take(&mut self.debug_scratch);
+        left.clear();
+        right.clear();
+        write!(&mut left, "{expected:?}").expect("String formatting");
+        write!(&mut right, "{actual:?}").expect("String formatting");
+        self.record_text(path, field, &left, &right);
+        self.debug_scratch = (left, right);
+    }
+    fn record_text(&mut self, path: &str, field: &str, expected: &str, actual: &str) {
         let category = if field == "string.use" {
             "strings_by_use"
         } else if field == "class.count" {
@@ -192,7 +214,7 @@ impl StructuralReport {
         self.total_discrepancies += 1;
         self.unexplained_discrepancies += 1;
         let mut digest = md5::Context::new();
-        for value in [path, field, expected.as_str(), actual.as_str()] {
+        for value in [path, field, expected, actual] {
             digest.consume((value.len() as u64).to_le_bytes());
             digest.consume(value.as_bytes());
         }
@@ -213,8 +235,8 @@ impl StructuralReport {
             entry.examples.push(Discrepancy {
                 path: path.into(),
                 field: field.into(),
-                expected: excerpt(expected),
-                actual: excerpt(actual),
+                expected: excerpt(expected.to_owned()),
+                actual: excerpt(actual.to_owned()),
             });
         }
     }
@@ -283,7 +305,8 @@ fn serialize_signatures<S: serde::Serializer>(
         fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
             let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
             for digest in self.0 {
-                seq.serialize_element(&format!("{:x}", md5::Digest(*digest)))?;
+                let hex = signature_hex(digest);
+                seq.serialize_element(std::str::from_utf8(&hex).expect("ASCII hex"))?;
             }
             seq.end()
         }
@@ -295,10 +318,66 @@ fn serialize_signatures<S: serde::Serializer>(
     map.end()
 }
 
+fn signature_hex(digest: &[u8; 16]) -> [u8; 32] {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut result = [0; 32];
+    for (index, byte) in digest.iter().copied().enumerate() {
+        result[index * 2] = DIGITS[(byte >> 4) as usize];
+        result[index * 2 + 1] = DIGITS[(byte & 15) as usize];
+    }
+    result
+}
+
+#[cfg(test)]
+mod exact_reporting_tests {
+    use super::*;
+    #[test]
+    fn stack_hex_matches_legacy_format_for_every_byte() {
+        for byte in 0..=u8::MAX {
+            let digest = [byte; 16];
+            assert_eq!(
+                std::str::from_utf8(&signature_hex(&digest)).unwrap(),
+                format!("{:x}", md5::Digest(digest))
+            );
+        }
+    }
+    #[test]
+    fn reused_debug_buffers_preserve_full_fingerprints_and_capped_examples() {
+        let mut actual = StructuralReport::new("exact");
+        let mut expected = StructuralReport::new("exact");
+        for index in 0..EXAMPLES + 10 {
+            let left = (index, "λ".repeat(5000), vec![0u8, 15, 255]);
+            let right = (index + 1, "different", Some(-17));
+            actual.record_debug("/datum/a", "class.default.value", &left, &right);
+            expected.record(
+                "/datum/a",
+                "class.default.value",
+                format!("{left:?}"),
+                format!("{right:?}"),
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(&actual).unwrap(),
+            serde_json::to_value(&expected).unwrap()
+        );
+        assert_eq!(
+            actual.categories["variable_defaults"].examples.len(),
+            EXAMPLES
+        );
+        assert_eq!(
+            actual.category_signatures["variable_defaults"].len(),
+            EXAMPLES + 10
+        );
+    }
+}
+
 /// Whole-program comparison with no discrepancy cap and no path filter.
 /// `snapshot_id` is a caller's independently authenticated shared-input receipt,
 /// not proof inferred from either DMB. The caller must verify that receipt.
 pub fn structural_report(expected: &Dmb, actual: &Dmb, snapshot_id: &str) -> StructuralReport {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     let mut out = Collector {
         output: Vec::new(),
         limit: usize::MAX,
@@ -367,7 +446,7 @@ fn excerpt(mut text: String) -> String {
     text
 }
 
-fn physical_paths(dmb: &Dmb) -> BTreeMap<Vec<u8>, usize> {
+fn physical_paths(dmb: &memo::NormalizationContext<'_>) -> BTreeMap<Vec<u8>, usize> {
     let mut paths = BTreeMap::new();
     for proc_ in &dmb.procs {
         if let Some(path) = optional_proc_string(dmb, proc_.strings[0]) {
@@ -377,7 +456,11 @@ fn physical_paths(dmb: &Dmb) -> BTreeMap<Vec<u8>, usize> {
     paths
 }
 
-fn compare_members(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
+fn compare_members(
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
+    out: &mut Collector,
+) {
     let options = CompareOptions::default();
     let left = class_index(expected, &options);
     let right = class_index(actual, &options);
@@ -400,7 +483,7 @@ fn compare_members(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
                     actual.classes[b].verb_list_id(),
                 ),
             ] {
-                let resolve = |dmb: &Dmb, id| {
+                let resolve = |dmb: &memo::NormalizationContext<'_>, id| {
                     if id == 0xffff {
                         return Some(Vec::new());
                     }
@@ -457,7 +540,7 @@ fn audit_value(value: &NormalValue, site: &str, report: &mut StructuralReport) {
 }
 
 fn audit_coverage(
-    dmb: &Dmb,
+    dmb: &memo::NormalizationContext<'_>,
     side: &str,
     report: &mut StructuralReport,
     ownership: &BTreeMap<String, u32>,
@@ -727,7 +810,7 @@ fn audit_variable(variable: &NormalVariable, site: &str, report: &mut Structural
     }
 }
 
-fn string_uses(dmb: &Dmb) -> BTreeMap<String, Vec<Vec<u8>>> {
+fn string_uses(dmb: &memo::NormalizationContext<'_>) -> BTreeMap<String, Vec<Vec<u8>>> {
     let mut uses = BTreeMap::new();
     for (name, ids) in class_index(dmb, &CompareOptions::default()) {
         for (rank, id) in ids.into_iter().enumerate() {

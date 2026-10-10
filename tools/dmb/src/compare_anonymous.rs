@@ -2,7 +2,7 @@
 use super::*;
 use std::collections::VecDeque;
 
-pub(super) fn procedure_ownership(dmb: &Dmb) -> BTreeMap<String, u32> {
+pub(super) fn procedure_ownership(dmb: &memo::NormalizationContext<'_>) -> BTreeMap<String, u32> {
     let mut owned = BTreeMap::new();
     for (name, ids) in proc_index(dmb, &CompareOptions::default()) {
         for (rank, id) in ids.into_iter().enumerate() {
@@ -133,19 +133,34 @@ pub(super) fn procedure_ownership(dmb: &Dmb) -> BTreeMap<String, u32> {
     owned
 }
 
-fn insert_proc(dmb: &Dmb, owned: &mut BTreeMap<String, u32>, site: String, id: u32) {
+fn insert_proc(
+    dmb: &memo::NormalizationContext<'_>,
+    owned: &mut BTreeMap<String, u32>,
+    site: String,
+    id: u32,
+) {
     if id != 0xffff && dmb.procs.get(id as usize).is_some() {
         owned.insert(site, id);
     }
 }
 
-fn instance_value(dmb: &Dmb, owned: &mut BTreeMap<String, u32>, site: &str, value: Value) {
+fn instance_value(
+    dmb: &memo::NormalizationContext<'_>,
+    owned: &mut BTreeMap<String, u32>,
+    site: &str,
+    value: Value,
+) {
     if value.kind() == ValueKind::InstanceTypePath {
         instance_initializer(dmb, owned, site, value.id());
     }
 }
 
-fn instance_initializer(dmb: &Dmb, owned: &mut BTreeMap<String, u32>, site: &str, id: u32) {
+fn instance_initializer(
+    dmb: &memo::NormalizationContext<'_>,
+    owned: &mut BTreeMap<String, u32>,
+    site: &str,
+    id: u32,
+) {
     if let Some(instance) = dmb.instances.get(id as usize) {
         let class = if instance.kind == 8 {
             dmb.mobs.get(instance.class as usize).map(|mob| mob.class)
@@ -177,8 +192,8 @@ fn operand_values(operand: Operand) -> Vec<Value> {
 }
 
 pub(super) fn compare_anonymous(
-    expected: &Dmb,
-    actual: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
     out: &mut Collector,
     left: &BTreeMap<String, u32>,
     right: &BTreeMap<String, u32>,

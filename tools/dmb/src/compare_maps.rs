@@ -1,6 +1,9 @@
 use super::*;
 
-pub(super) fn map_instance(dmb: &Dmb, id: u32) -> Option<(u8, Option<Vec<u8>>, bool)> {
+pub(super) fn map_instance(
+    dmb: &memo::NormalizationContext<'_>,
+    id: u32,
+) -> Option<(u8, Option<Vec<u8>>, bool)> {
     dmb.instances.get(id as usize).map(|instance| {
         let class = if instance.kind == 8 {
             dmb.mobs.get(instance.class as usize).map(|mob| mob.class)
@@ -26,7 +29,15 @@ pub(super) enum MapConstant {
 /// with branches, calls, reads, or other effects is left to strict bytecode
 /// comparison, since reordering those operations may change behavior.
 pub(super) fn constant_map_assignments(
-    dmb: &Dmb,
+    dmb: &memo::NormalizationContext<'_>,
+    proc_id: u32,
+) -> Option<std::sync::Arc<BTreeMap<Vec<u8>, MapConstant>>> {
+    dmb.assignments(proc_id, || {
+        constant_map_assignments_uncached(dmb, proc_id).map(std::sync::Arc::new)
+    })
+}
+fn constant_map_assignments_uncached(
+    dmb: &memo::NormalizationContext<'_>,
     proc_id: u32,
 ) -> Option<BTreeMap<Vec<u8>, MapConstant>> {
     let code = dmb.proc_code_words(proc_id as usize)?;
@@ -106,6 +117,8 @@ pub(super) fn constant_map_assignments(
 /// field names, values, and ordered list contents. Effectful initializers return
 /// None rather than being treated as equivalent.
 pub fn constant_instance_signature(dmb: &Dmb, instance_id: u32) -> Option<String> {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     let instance = dmb.instances.get(instance_id as usize)?;
     let assignments = constant_map_assignments(dmb, instance.initializer)?;
     Some(format!(
@@ -117,14 +130,16 @@ pub fn constant_instance_signature(dmb: &Dmb, instance_id: u32) -> Option<String
 /// Read-only diagnostic for a procedure containing independent constant stores.
 /// Effectful or unrecognized initializer bodies retain an unknown signature.
 pub fn constant_initializer_signature(dmb: &Dmb, proc_id: u32) -> Option<String> {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     Some(format!("{:?}", constant_map_assignments(dmb, proc_id)?))
 }
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn compare_map_instance(
-    expected: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
     left: u32,
-    actual: &Dmb,
+    actual: &memo::NormalizationContext<'_>,
     right: u32,
     name: &str,
     independent_constants: bool,
@@ -174,8 +189,8 @@ pub(super) fn compare_map_instance(
 /// instance and class IDs. Anonymous map override initializers are paired by
 /// their first shared cell or object and compared once per procedure pair.
 pub(super) fn compare_maps_mode(
-    expected: &Dmb,
-    actual: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
     max_discrepancies: usize,
     independent_constants: bool,
 ) -> Vec<Discrepancy> {
@@ -185,7 +200,7 @@ pub(super) fn compare_maps_mode(
         report: None,
     };
     out.check("/map", "dimensions", expected.dimensions, actual.dimensions);
-    let expand = |dmb: &Dmb| {
+    let expand = |dmb: &memo::NormalizationContext<'_>| {
         dmb.grid
             .iter()
             .flat_map(|run| {
@@ -233,7 +248,7 @@ pub(super) fn compare_maps_mode(
             );
         }
     }
-    let objects = |dmb: &Dmb| {
+    let objects = |dmb: &memo::NormalizationContext<'_>| {
         let mut at = 0usize;
         dmb.map_objects
             .iter()
@@ -247,7 +262,7 @@ pub(super) fn compare_maps_mode(
     let right = objects(actual);
     out.check("/map", "object_count", left.len(), right.len());
     if independent_constants {
-        let grouped = |objects: Vec<(usize, u32)>, dmb: &Dmb| {
+        let grouped = |objects: Vec<(usize, u32)>, dmb: &memo::NormalizationContext<'_>| {
             let mut cells = BTreeMap::<usize, Vec<u32>>::new();
             for (cell, instance) in objects {
                 cells.entry(cell).or_default().push(instance);
@@ -307,6 +322,9 @@ pub(super) fn compare_maps_mode(
 
 /// Strictly compare map instance initializer metadata and bytecode order.
 pub fn compare_maps(expected: &Dmb, actual: &Dmb, max_discrepancies: usize) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     compare_maps_mode(expected, actual, max_discrepancies, false)
 }
 
@@ -318,5 +336,8 @@ pub fn compare_maps_semantic(
     actual: &Dmb,
     max_discrepancies: usize,
 ) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     compare_maps_mode(expected, actual, max_discrepancies, true)
 }

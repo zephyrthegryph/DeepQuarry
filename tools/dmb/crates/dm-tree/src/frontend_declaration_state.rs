@@ -1,12 +1,20 @@
 //! Owned root-context declaration contributions; all stored coordinates are relative.
 use super::*;
+#[path = "frontend_declaration_state/authored.rs"]
+mod authored;
+#[path = "frontend_declaration_state/shared.rs"]
+pub(crate) mod shared;
 use crate::allocation_ledger::{AllocationKind, AllocationLedger, EventBuilder};
 use dm_session::{ArtifactStorageView, ArtifactStore};
+pub use shared::ChunkSourceAnswer;
+use shared::DeclarationValues;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Default)]
 pub struct DeclarationRetentionStats {
     pub current_keys: usize,
+    /// Borrowed storage visits the engine-wide core; counts here remain host-local.
+    pub shared_census_scope: bool,
     /// Full metadata/index capacities have not yet been traversed by the census.
     pub unknown_retained_record_upper_bound: usize,
     pub hits: usize,
@@ -14,7 +22,9 @@ pub struct DeclarationRetentionStats {
 }
 pub(super) struct RetainedDeclarations {
     pub(super) grammar: super::grammar_roster::RetainedGrammar,
-    values: ArtifactStore<Contribution>,
+    values: DeclarationValues,
+    authored: Option<crate::declaration_contributions::authored::AuthoredLease>,
+    authored_current: std::sync::Mutex<Option<authored::AdmittedAuthored>>,
     keys: AtomicUsize,
     hits: AtomicUsize,
     symbols: std::sync::Mutex<ActiveSymbols>,
@@ -23,7 +33,9 @@ impl Default for RetainedDeclarations {
     fn default() -> Self {
         Self {
             grammar: super::grammar_roster::RetainedGrammar::default(),
-            values: ArtifactStore::current_revision(),
+            values: DeclarationValues::default(),
+            authored: None,
+            authored_current: std::sync::Mutex::new(None),
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
             symbols: std::sync::Mutex::new(ActiveSymbols::default()),
@@ -36,10 +48,11 @@ impl dm_ir::Resolver for NoReads {
         dm_ir::ResolvedMeaning::Unsupported(query)
     }
 }
+#[derive(Clone)]
 pub(crate) struct Contribution {
     // A locator is not source authority. Every current binding checks these bytes.
     source: Arc<str>,
-    facts: crate::AdaptedDeclarations,
+    facts: Arc<crate::AdaptedDeclarations>,
     syntax: Arc<RelativeSyntax>,
     skeletons: Arc<Vec<crate::Skeleton>>,
     ledger: AllocationLedger,
@@ -54,6 +67,7 @@ pub struct DeclarationContributionView<'a> {
     pub source: &'a Arc<str>,
     pub skeletons: &'a Arc<Vec<crate::Skeleton>>,
     pub facts: &'a crate::AdaptedDeclarations,
+    pub facts_owner: &'a Arc<crate::AdaptedDeclarations>,
     pub ledger: &'a AllocationLedger,
     event_leaf: &'a crate::allocation_ledger::ValidatedEventLeaf,
 }
@@ -63,6 +77,16 @@ impl DeclarationContributionView<'_> {
     }
 }
 pub enum DeclarationStorageView<'a> {
+    /// Host-local descriptor backing; payload leaves may also belong to shared entries.
+    AuthoredLeafRoster {
+        leaves: &'a Vec<Arc<Vec<crate::Skeleton>>>,
+    },
+    SharedEntry {
+        key: &'a Arc<[u8]>,
+        reads: &'a Arc<[dm_session::Observation<(), ChunkSourceAnswer, ()>]>,
+        versions: &'a Arc<[((), u128)]>,
+        contribution: DeclarationContributionView<'a>,
+    },
     SymbolCatalog {
         symbols: &'a SymbolTable,
         counts: usize,
@@ -87,6 +111,17 @@ pub enum DeclarationStorageView<'a> {
 }
 impl RetainedDeclarations {
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
+        {
+            let authored = self
+                .authored_current
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            if let Some(authored) = authored.as_ref() {
+                visit(DeclarationStorageView::AuthoredLeafRoster {
+                    leaves: &authored.leaves,
+                });
+            }
+        }
         let symbols = self
             .symbols
             .lock()
@@ -110,43 +145,9 @@ impl RetainedDeclarations {
                 });
             }
         }
-        self.values.visit_storage(|storage| match storage {
-            ArtifactStorageView::Store { buckets, entries } => {
-                visit(DeclarationStorageView::Store { buckets, entries })
-            }
-            ArtifactStorageView::Bucket {
-                address,
-                len,
-                capacity,
-                element_size,
-            } => visit(DeclarationStorageView::Bucket {
-                address,
-                len,
-                capacity,
-                element_size,
-            }),
-            ArtifactStorageView::Entry {
-                key,
-                reads,
-                versions,
-                value,
-            } => visit(DeclarationStorageView::Entry {
-                key,
-                reads,
-                versions,
-                contribution: DeclarationContributionView {
-                    allocation_address: Arc::as_ptr(value) as usize,
-                    allocation_size: std::mem::size_of::<Contribution>(),
-                    syntax: &value.syntax,
-                    source: &value.source,
-                    skeletons: &value.skeletons,
-                    facts: &value.facts,
-                    ledger: &value.ledger,
-                    event_leaf: &value.event_leaf,
-                },
-            }),
-        });
+        self.values.visit_storage(visit);
     }
+
     pub(super) fn key(text: &str) -> Vec<u8> {
         let mut key = b"owned-root-declarations-locator-v2".to_vec();
         key.extend_from_slice(&parserwire::VERSION.to_le_bytes());
@@ -155,12 +156,18 @@ impl RetainedDeclarations {
         key
     }
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
-        self.values
-            .retain_current_keys(keys.iter().map(Vec::as_slice));
+        self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
     }
     pub(super) fn clear(&self) {
         self.retain(&[]);
+        if let Some(authored) = &self.authored {
+            authored.clear();
+        }
+        *self
+            .authored_current
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = None;
         self.grammar.clear();
         *self
             .symbols
@@ -173,8 +180,7 @@ impl RetainedDeclarations {
         text: &str,
         offset: usize,
     ) -> Option<CurrentContribution> {
-        let value = self.values.lookup(key, &NoReads)?;
-        let bound = CurrentContribution::bind(value, text, offset)?;
+        let bound = self.values.get(key, text, offset)?;
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(bound)
     }
@@ -188,9 +194,11 @@ impl RetainedDeclarations {
         ledger: AllocationLedger,
     ) -> Option<CurrentContribution> {
         let value = Contribution::capture_owned(text, offset, items, facts, ledger)?;
-        self.values
-            .insert_with(Arc::from(key), Vec::new(), Vec::new(), 0, || value);
-        CurrentContribution::bind(self.values.lookup(key, &NoReads)?, text, offset)
+        let mut current = CurrentContribution::bind(Arc::new(value), text, offset)?;
+        if !self.values.is_shared() {
+            self.values.publish(key, &mut current)?;
+        }
+        Some(current)
     }
     #[cfg(test)]
     fn get(
@@ -250,6 +258,7 @@ impl RetainedDeclarations {
     pub(super) fn stats(&self) -> DeclarationRetentionStats {
         DeclarationRetentionStats {
             current_keys: self.keys.load(Ordering::Relaxed),
+            shared_census_scope: self.values.is_shared(),
             unknown_retained_record_upper_bound: self.keys.load(Ordering::Relaxed),
             hits: self.hits.load(Ordering::Relaxed),
             grammar_roster_hits: self.grammar.hits(),
@@ -538,7 +547,7 @@ impl Contribution {
             .unwrap_or(0);
         Some(Self {
             source: Arc::from(text),
-            facts,
+            facts: Arc::new(facts),
             ledger,
             event_leaf,
             origin_max,
@@ -566,7 +575,7 @@ impl Contribution {
             return None;
         }
         let mut items = self.syntax.relative_items().to_vec();
-        let mut facts = self.facts.clone();
+        let mut facts = self.facts.as_ref().clone();
         facts.skeletons = self.skeletons.as_ref().clone();
         items_spans(&mut items, text, 0, offset)?;
         let ledger = rebase(&mut facts, &self.ledger, text, 0, offset)?;

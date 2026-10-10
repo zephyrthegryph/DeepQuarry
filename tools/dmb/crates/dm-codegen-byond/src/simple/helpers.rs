@@ -95,7 +95,9 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
             let rest = &value[at..];
             if rest.starts_with("\r\n") || rest.starts_with('\n') {
                 at += if rest.starts_with("\r\n") { 2 } else { 1 };
-                while at < value.len() && matches!(value.as_bytes()[at], b' ' | b'\t') {
+                while at < value.len()
+                    && matches!(value.as_bytes()[at], b' ' | b'\t' | b'\r' | b'\n')
+                {
                     at += 1;
                 }
                 continue;

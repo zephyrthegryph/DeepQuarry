@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 // changing them must invalidate both independent and region-enriched fragments.
 // Lexical proc settings are unconditional declarations; old guarded metadata
 // must never replay under the same fragment identity.
-pub(super) const VERSION: u32 = 6;
+// Revision 7 includes lexical-owner qualification for sibling field defaults.
+// Older fragments may contain semantically misplaced declaration facts.
+pub(super) const VERSION: u32 = 7;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -201,7 +203,7 @@ mod tests {
     }
     #[test]
     fn previous_fact_schema_cannot_reuse_parser_fragment_identity() {
-        const PREVIOUS_VERSION: u32 = 4;
+        const PREVIOUS_VERSION: u32 = 6;
         let source = "/datum/probe\n    var/value = 1\n";
         let ast = dm_syntax::parse_declaration_skeleton(source);
         let items = super::super::compact_declarations(ast.items, 0);

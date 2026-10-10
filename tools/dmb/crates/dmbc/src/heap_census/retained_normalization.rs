@@ -61,6 +61,37 @@ pub(super) fn answer(census: &mut HeapCensus, value: &SourceAnswer) {
     }
 }
 pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
+    use dm_session::ObservedArtifactStorageView as View;
+    state.visit_authored_storage(|view| match view {
+        View::Store { buckets, entries } => {
+            census.owner("retained_authored.index").observed_items += entries as u64;
+            if buckets != 0 {
+                census.unknown("retained_authored.index", "private observed-store BTree nodes, lease indexes and Arc control blocks excluded");
+            }
+        }
+        View::Bucket { address, len, capacity, element_size } => {
+            census.buffer("retained_authored.buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
+        }
+        View::Entry { key, reads, versions, value } => {
+            census.slice("retained_authored.keys", key, true);
+            census.slice("retained_authored.reads", reads, true);
+            census.slice("retained_authored.versions", versions, true);
+            contribution(census, value);
+            for read in reads.iter() {
+                if let Some(rows) = &read.answer {
+                    if census.slice("retained_authored.answer_rows", rows, true) {
+                        for row in rows.iter() {
+                            if let dm_tree::Skeleton::Member { metadata, .. } = &row.skeleton {
+                                if census.arc_object("semantic_metadata", metadata) {
+                                    census.declaration(metadata);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
     state.visit_normalization_storage(|view| match view {
         NormalizationStorageView::Store { buckets, entries } => {
             census.owner("retained_normalization.index").observed_items += entries as u64;

@@ -4,6 +4,9 @@ use dm_tree::frontend::{DeclarationStorageView, RetainedSemanticTree};
 
 pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_declarations");
+    if state.declaration_retention_stats().shared_census_scope {
+        census.unknown("retained_declarations.scope", "contribution storage is engine-wide across host leases; shared allocations counted once in this census, not per-host retained bytes");
+    }
     let mut has_index = false;
     state.visit_occurrence_index_storage(|pointer, _, bytes| {
         has_index = true;
@@ -23,6 +26,14 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     super::lexical_callable::inspect(&mut census, state);
     super::storage_inventory::inspect(&mut census, state);
     state.visit_declaration_storage(|view| match view {
+        DeclarationStorageView::AuthoredLeafRoster { leaves } => {
+            let owner = "retained_declarations.authored_leaf_roster";
+            if census.vec_payload(owner, leaves) {
+                for leaf in leaves {
+                    skeleton_leaf(&mut census, owner, leaf);
+                }
+            }
+        }
         DeclarationStorageView::SymbolCatalog { symbols, counts, contributions } => {
             census.symbol_table_storage("retained_declarations.active_symbols", symbols);
             census.owner("retained_declarations.symbol_refcounts").observed_items += counts as u64;
@@ -41,6 +52,19 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
             census.buffer("retained_declarations.buckets", address,
                 len.saturating_mul(element_size), capacity.saturating_mul(element_size));
         }
+        DeclarationStorageView::SharedEntry { key, reads, versions, contribution } => {
+            let owner = "retained_declarations.payload";
+            census.slice(owner, key, true);
+            census.slice(owner, reads, true);
+            census.slice(owner, versions, true);
+            for read in reads.iter() {
+                match &read.answer {
+                    dm_tree::frontend::ChunkSourceAnswer::Owned(source) => census.arc_text(owner, source),
+                    dm_tree::frontend::ChunkSourceAnswer::Live(_) => census.unknown(owner, "live source marker is not a retained owned-source receipt"),
+                }
+            }
+            contribution_payload(&mut census, contribution);
+        }
         DeclarationStorageView::Entry { key, reads, versions, contribution } => {
             let owner = "retained_declarations.payload";
             census.arc_text(owner, contribution.source);
@@ -50,34 +74,57 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
             for read in reads.iter() {
                 super::resident_weight::answer(&mut census, &read.answer);
             }
-            if !census.buffer(owner, contribution.allocation_address,
-                contribution.allocation_size, contribution.allocation_size) {
-                return;
-            }
-            census.relative_syntax(owner, contribution.syntax);
-            census.symbol_table_storage(owner, &contribution.facts.symbols);
-            census.unknown(owner, "private symbol HashMap buckets and shared Arc control blocks are not exposed; all spelling owners are counted");
-            if census.arc_object(owner, contribution.skeletons) && census.vec_payload(owner, contribution.skeletons.as_ref()) {
-                for skeleton in contribution.skeletons.iter() {
-                    if let dm_tree::Skeleton::Member { metadata, .. } = skeleton {
-                        if census.arc_object(owner, metadata) {
-                            census.declaration(metadata);
-                        }
-                    }
-                }
-            }
-            if census.vec_payload(owner, &contribution.facts.origins) {
-                for origin in &contribution.facts.origins {
-                    census.slice(owner, &origin.expansion_stack, true);
-                }
-            }
-            contribution.visit_allocation_storage(|address, len, bytes| {
-                census.owner(owner).observed_items += len as u64;
-                census.buffer(owner, address, bytes, bytes);
-            });
+            contribution_payload(&mut census, contribution);
         }
     });
     census.finish()
+}
+
+fn contribution_payload(
+    census: &mut HeapCensus,
+    contribution: dm_tree::frontend::DeclarationContributionView<'_>,
+) {
+    let owner = "retained_declarations.payload";
+    census.arc_text(owner, contribution.source);
+    if !census.buffer(
+        owner,
+        contribution.allocation_address,
+        contribution.allocation_size,
+        contribution.allocation_size,
+    ) {
+        return;
+    }
+    census.relative_syntax(owner, contribution.syntax);
+    if census.arc_object(owner, contribution.facts_owner) {
+        census.symbol_table_storage(owner, &contribution.facts.symbols);
+        census.unknown(owner, "private symbol HashMap buckets and shared Arc control blocks are not exposed; all spelling owners are counted");
+        if census.vec_payload(owner, &contribution.facts.origins) {
+            for origin in &contribution.facts.origins {
+                census.slice(owner, &origin.expansion_stack, true);
+            }
+        }
+    }
+    skeleton_leaf(census, owner, contribution.skeletons);
+    contribution.visit_allocation_storage(|address, len, bytes| {
+        census.owner(owner).observed_items += len as u64;
+        census.buffer(owner, address, bytes, bytes);
+    });
+}
+
+fn skeleton_leaf(
+    census: &mut HeapCensus,
+    owner: &'static str,
+    leaf: &std::sync::Arc<Vec<dm_tree::Skeleton>>,
+) {
+    if census.arc_object(owner, leaf) && census.vec_payload(owner, leaf.as_ref()) {
+        for skeleton in leaf.iter() {
+            if let dm_tree::Skeleton::Member { metadata, .. } = skeleton {
+                if census.arc_object(owner, metadata) {
+                    census.declaration(metadata);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]

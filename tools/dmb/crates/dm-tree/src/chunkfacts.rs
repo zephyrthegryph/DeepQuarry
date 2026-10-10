@@ -7,7 +7,8 @@ use dm_ir::*;
 use dm_syntax::{Span as SyntaxSpan, TokenKind};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-const SCHEMA: u32 = 3;
+// Sibling defaults now retain their original lexical owner after flattening.
+const SCHEMA: u32 = 4;
 #[derive(Serialize, Deserialize)]
 enum ScalarConstant {
     Null,

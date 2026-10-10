@@ -2,8 +2,8 @@
 use super::*;
 
 pub(super) fn compare_missing_procedures(
-    expected: &Dmb,
-    actual: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
     out: &mut Collector,
     left: &BTreeMap<String, u32>,
     right: &BTreeMap<String, u32>,
@@ -28,7 +28,7 @@ pub(super) fn compare_missing_procedures(
 }
 
 fn payload_tree(
-    dmb: &Dmb,
+    dmb: &memo::NormalizationContext<'_>,
     site: &str,
     id: u32,
     ownership: &BTreeMap<String, u32>,
@@ -44,7 +44,7 @@ fn payload_tree(
     result
 }
 
-fn payload(dmb: &Dmb, id: u32) -> String {
+fn payload(dmb: &memo::NormalizationContext<'_>, id: u32) -> String {
     let proc_ = &dmb.procs[id as usize];
     let strings: Vec<_> = proc_
         .strings

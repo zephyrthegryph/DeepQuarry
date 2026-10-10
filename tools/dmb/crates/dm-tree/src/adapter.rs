@@ -630,7 +630,7 @@ impl SharedAdaptedDeclarations {
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
         let hierarchy = seed_hierarchy_rows(self.skeletons.iter(), seed).map_err(|error| {
             let error = SnapshotError::Tree(error);
-            on_error(&error, &self.skeletons.to_vec(), &origins);
+            on_error(&error, &self.skeletons.view().diagnostic_rows(), &origins);
             error
         })?;
         if let Some(hierarchy) = &hierarchy {
@@ -664,7 +664,7 @@ impl SharedAdaptedDeclarations {
                 &skeletons
                     .view()
                     .slice(engine_count..skeletons.len())
-                    .to_vec(),
+                    .diagnostic_rows(),
                 &origins,
             );
             error
@@ -698,7 +698,7 @@ impl SharedAdaptedDeclarations {
                     &skeletons
                         .view()
                         .slice(engine_count..skeletons.len())
-                        .to_vec(),
+                        .diagnostic_rows(),
                     &origins,
                 );
                 error
@@ -715,7 +715,7 @@ impl SharedAdaptedDeclarations {
                     &skeletons
                         .view()
                         .slice(engine_count..skeletons.len())
-                        .to_vec(),
+                        .diagnostic_rows(),
                     &[],
                 );
                 error

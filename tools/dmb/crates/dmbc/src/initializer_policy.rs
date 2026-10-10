@@ -13,8 +13,56 @@ pub enum Evaluation {
 /// Request-local syntax prepared by the evaluator's existing admission path.
 /// It contains no cached resolution result or independent dependency domain.
 pub struct PreparedInitializerExpression {
-    pub source: String,
-    pub ast: dm_syntax::Expr,
+    source: String,
+    ast: dm_syntax::Expr,
+    authored: Option<SymbolicExpression>,
+}
+impl PreparedInitializerExpression {
+    /// Compatibility syntax supplied by an evaluator; retention verifies it.
+    pub fn new(source: String, ast: dm_syntax::Expr) -> Self {
+        Self {
+            source,
+            ast,
+            authored: None,
+        }
+    }
+    /// Issue syntax directly from the common parser without mutable access.
+    pub fn parse(source: String) -> Result<Self, String> {
+        Self::parse_optional(source)?.ok_or_else(|| "missing initializer expression".into())
+    }
+    pub(crate) fn parse_optional(source: String) -> Result<Option<Self>, String> {
+        let parsed = dm_syntax::parse_expression(&source);
+        if !parsed.diagnostics.is_empty() {
+            return Err("invalid initializer expression".into());
+        }
+        Ok(parsed.expr.map(|ast| Self {
+            source,
+            ast,
+            authored: None,
+        }))
+    }
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+    pub fn ast(&self) -> &dm_syntax::Expr {
+        &self.ast
+    }
+    pub(crate) fn parse_captured(
+        value: &SymbolicExpression,
+        symbols: &SymbolTable,
+    ) -> Result<Option<Self>, String> {
+        let source = value
+            .source_text(symbols)
+            .ok_or("expression spelling is not captured")?;
+        let mut prepared = Self::parse_optional(source)?;
+        if let Some(prepared) = &mut prepared {
+            prepared.authored = Some(value.clone());
+        }
+        Ok(prepared)
+    }
+    fn into_parts(self) -> (String, dm_syntax::Expr, Option<SymbolicExpression>) {
+        (self.source, self.ast, self.authored)
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BindingKnowledge {

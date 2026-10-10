@@ -79,13 +79,21 @@ pub(super) fn contextual_fixed_word_is_scalar(
         || (opcode == 0xad && index == 0 && raw_words.first() == Some(&0xae))
         // Pinned native input_selection fixture: view/oview encode their literal
         // radius here; world/usr encode the numeric unrestricted sentinel127.
-        // Other selectors (including generic lists and InputColor) stay unknown.
+        // Unproved filter/radius/list combinations remain unknown.
         || (opcode == 0xc1 && index == 1 && raw_words.len() == 3
             && match raw_words[2] {
                 1 | 2 => raw_words[1] <= 127,
                 8 | 16 => raw_words[1] == 127,
+                // Native controls establish absent-radius metadata for these
+                // ordinary prompts; generic choices preserve proved radius.
+                0 => raw_words[1] == 0 && matches!(raw_words[0], 640 | 132 | 2176),
+                64 => (raw_words[0] == 2 && matches!(raw_words[1], 0 | 5 | 125))
+                    || (raw_words[0] == 4224 && raw_words[1] == 0),
                 _ => false,
             })
+        // Compile-only color probes: no radius, optional evaluated choices.
+        || (opcode == 0xc6 && index == 1 && raw_words.len() == 3
+            && raw_words[0] == 0 && raw_words[1] == 0 && matches!(raw_words[2], 0 | 64))
 }
 
 #[cfg(test)]
@@ -138,8 +146,8 @@ mod input_selection_tests {
         }
         for words in [
             [2, 0, 0],
-            [2, 0, 64],
-            [2, 125, 64],
+            [2, 7, 64],
+            [2, 126, 64],
             [2, 128, 1],
             [2, 0, 16],
             [2, 127, 32],
@@ -151,3 +159,7 @@ mod input_selection_tests {
         assert!(!contextual_fixed_word_is_scalar(0xc1, 3, &[2, 5, 1]));
     }
 }
+
+#[cfg(test)]
+#[path = "compare_input_coverage_tests.rs"]
+mod native_input_coverage_tests;

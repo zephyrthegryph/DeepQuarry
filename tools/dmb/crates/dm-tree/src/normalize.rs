@@ -140,6 +140,23 @@ fn walk(items: &[Item], owner: &str, namespace: Option<&str>, out: &mut Vec<Item
                     member.header = format!("{name} = {}", header[index + 1..].trim());
                 }
             }
+        } else if matches!(item.kind, ItemKind::Unknown | ItemKind::Statement) {
+            if let Some(index) = dm_syntax::top_level_assignment_index(header) {
+                let target = header[..index].trim();
+                // Flattening a nested type must not change the lexical owner of
+                // its following siblings. parent_type remains attached to the
+                // type projection rather than becoming an ordinary field.
+                if target != "parent_type" {
+                    // Preserve the target exactly: type path normalization
+                    // would erase a malformed trailing slash before validation.
+                    member.header = format!(
+                        "{}/{}{}",
+                        owner.trim_end_matches('/'),
+                        target,
+                        &header[index..]
+                    );
+                }
+            }
         } else if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
             member.header = path(owner, header);
         }

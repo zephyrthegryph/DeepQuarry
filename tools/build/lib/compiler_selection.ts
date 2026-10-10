@@ -124,20 +124,13 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   const mode = compilerMode();
   if (mode === 'byond') { await byond(); return conventionalOutput(dme); }
   if (mode === 'native') {
-    let reason: string;
-    try {
-      const result = await nativeCompile(dme, options, execute);
-      if (result.code === 0) return result.output!;
-      // Typed CLI source and cancellation errors must never invoke another compiler.
-      if (result.code === 2 || result.code === 75) throw new Juke.ExitCode(result.code);
-      if (result.code !== 1 && result.code !== 70) throw new Juke.ExitCode(result.code ?? 1);
-      reason = `native compiler exited ${result.code}; diagnostics are above`;
-    } catch (error) {
-      if (error instanceof Juke.ExitCode || error instanceof NativeResultError) throw error;
-      reason = String(error);
-    }
-    // Explicit internal/unsupported and infrastructure failure statuses allow fallback.
-    Juke.logger.warn(`Native fallback to DreamMaker: ${reason}.`);
+    const result = await nativeCompile(dme, options, execute);
+    if (result.code === 0) return result.output!;
+    // Only the typed compiler internal failure status admits fallback.
+    // Setup, transport, source, cancellation and infrastructure failures retain
+    // their original error/status and never invoke another compiler.
+    if (result.code !== 70) throw new Juke.ExitCode(result.code ?? 1);
+    Juke.logger.warn('Native fallback to DreamMaker: native compiler exited 70; diagnostics are above.');
     await byond();
     return conventionalOutput(dme);
   }

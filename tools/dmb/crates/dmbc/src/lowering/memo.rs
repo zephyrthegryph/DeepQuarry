@@ -405,10 +405,10 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
                 == Some(&unit.debug_origins)
         {
-            let compact = symbolic
+            let compact_eligible = symbolic
                 && disk_replay_bindings
-                    .is_some_and(|bindings| crate::lowering_memo_compact::eligible(unit, bindings))
-                && memo.completion_writer().is_some();
+                    .is_some_and(|bindings| crate::lowering_memo_compact::eligible(unit, bindings));
+            let compact = compact_eligible && memo.completion_writer().is_some();
             if symbolic {
                 admission = symbolic_input::admission(
                     memo,
@@ -431,7 +431,14 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                     memo.queue_disk(&key, &reads, unit, &relative_debug, &versions);
                 }
             }
-            if memo.retains_resident() {
+            // The completion producer retains the reusable symbolic artifact.
+            // Keeping another RichIR graph for the same compact-eligible unit
+            // duplicates its instructions, origins and dependency ledger and
+            // walks that graph solely to charge a second cache. Noncompact
+            // units and compatibility callers retain the rich fallback. A
+            // declined symbolic completion remains a normal cold miss.
+            let symbolic_resident = compact_eligible && memo.symbolic.is_some();
+            if memo.retains_resident() && !symbolic_resident {
                 let retained_key = admission.as_ref().map_or_else(
                     || Arc::from(key.as_slice()),
                     |admission| admission.shared_key(),

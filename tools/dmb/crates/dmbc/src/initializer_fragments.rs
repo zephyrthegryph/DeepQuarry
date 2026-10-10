@@ -138,18 +138,10 @@ impl InitializerFragments {
                 )
             })
             .collect::<Option<Vec<_>>>();
-        let weight = recipes.as_ref().and_then(|recipes| {
-            crate::heap_census::resident_initializer_fragment_weight(
-                stripped.code(),
-                key,
-                &reads,
-                &versions,
-                recipes,
-                stripped.modified_references(),
-            )
-        });
-        if let Some(weight) = weight {
-            let recipes = recipes.expect("weight requires complete current expression recipes");
+        // Only current-roster retention is constructed here. This inline charge
+        // is not a resident byte estimate; full ownership remains census-only.
+        if let Some(recipes) = recipes {
+            let weight = std::mem::size_of::<RetainedFragment>();
             self.values
                 .insert_with(key.into(), reads, versions, weight, || RetainedFragment {
                     code: stripped,

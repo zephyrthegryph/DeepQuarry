@@ -22,6 +22,13 @@ impl SharedExpression {
             expression: Mutex::new(Some(Arc::clone(supplied))),
         })
     }
+    // Only the classification parser receipt may call this constructor.
+    pub(super) fn from_parser(source: String, supplied: &Arc<dm_syntax::Expr>) -> Self {
+        Self {
+            source: source.into(),
+            expression: Mutex::new(Some(Arc::clone(supplied))),
+        }
+    }
     pub(super) fn bind(&self, current_source: &str) -> Option<Arc<dm_syntax::Expr>> {
         if self.source.as_ref() != current_source {
             return None;
@@ -70,6 +77,31 @@ mod tests {
         assert!(Arc::ptr_eq(&expression, &leaf.bind(source).unwrap()));
         assert!(leaf.bind("list(1, list(2, 4))").is_none());
         assert!(leaf.bind(" list(1, list(2, 3))").is_none());
+    }
+    #[test]
+    fn parser_issued_receipt_shares_owner_and_custom_syntax_stays_uncertified() {
+        let source = "list(1, list(2, 3))";
+        let mut symbols = dm_ir::SymbolTable::default();
+        let captured = crate::initializer_policy::expression(source, &mut symbols).unwrap();
+        let issued = crate::initializer_policy::PreparedInitializerExpression::parse_captured(
+            &captured, &symbols,
+        )
+        .unwrap()
+        .unwrap();
+        let (text, ast, certified) = issued.into_parts();
+        assert_eq!(certified.as_ref(), Some(&captured));
+        let different = crate::initializer_policy::expression("list(9)", &mut symbols).unwrap();
+        assert_ne!(certified.as_ref(), Some(&different));
+        let expression = Arc::new(ast);
+        let leaf = SharedExpression::from_parser(text, &expression);
+        assert!(Arc::ptr_eq(&expression, &leaf.bind(source).unwrap()));
+        let mut custom = (*expression).clone();
+        custom.span.start += 1;
+        let supplied =
+            crate::initializer_policy::PreparedInitializerExpression::new(source.into(), custom);
+        let (text, ast, certified) = supplied.into_parts();
+        assert!(certified.is_none());
+        assert!(SharedExpression::capture(text, &Arc::new(ast)).is_none());
     }
     #[test]
     fn changed_nested_coordinate_cannot_be_certified() {

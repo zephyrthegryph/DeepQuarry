@@ -84,10 +84,10 @@ fn prepared_runtime_syntax_matches_compatibility_classification_and_diagnostics(
         } else {
             let (_, prepared) = wrapped.evaluate_prepared_write(&captured, &value).unwrap();
             let prepared = prepared.expect("engine wrapper forwards prepared syntax");
-            assert_eq!(prepared.source, value.source_text(&symbols).unwrap());
+            assert_eq!(prepared.source(), value.source_text(&symbols).unwrap());
             assert_eq!(
-                prepared.ast,
-                dm_syntax::parse_expression(&prepared.source).expr.unwrap()
+                *prepared.ast(),
+                dm_syntax::parse_expression(prepared.source()).expr.unwrap()
             );
         }
     }

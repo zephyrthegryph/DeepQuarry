@@ -58,7 +58,14 @@ fn debug_only_changes_do_not_change_normalized_bytecode() {
         limit: 0,
         report: Some(StructuralReport::new("snapshot")),
     };
-    compare_code(&expected, 0, &actual, 0, "/test", &mut out);
+    compare_code(
+        &memo::NormalizationContext::new(&expected),
+        0,
+        &memo::NormalizationContext::new(&actual),
+        0,
+        "/test",
+        &mut out,
+    );
     assert_eq!(out.report.unwrap().total_discrepancies, 0);
 }
 
@@ -168,8 +175,8 @@ fn anonymous_modified_type_initializers_pair_by_use_across_table_renumbering() {
         .push(actual.instances[instance as usize].clone());
     actual.instances[actual_instance as usize].initializer = actual_init;
     actual.lists[actual.procs[0].code_locals_args[0] as usize][2] = actual_instance;
-    let left = anonymous::procedure_ownership(&expected);
-    let right = anonymous::procedure_ownership(&actual);
+    let left = anonymous::procedure_ownership(&memo::NormalizationContext::new(&expected));
+    let right = anonymous::procedure_ownership(&memo::NormalizationContext::new(&actual));
     let site = "/proc/anchor#0::<modified-type use 0>::<instance /datum init>";
     assert_eq!(left.get(site), Some(&init));
     assert_eq!(right.get(site), Some(&actual_init));
@@ -178,7 +185,13 @@ fn anonymous_modified_type_initializers_pair_by_use_across_table_renumbering() {
         limit: 0,
         report: Some(StructuralReport::new("snapshot")),
     };
-    anonymous::compare_anonymous(&expected, &actual, &mut out, &left, &right);
+    anonymous::compare_anonymous(
+        &memo::NormalizationContext::new(&expected),
+        &memo::NormalizationContext::new(&actual),
+        &mut out,
+        &left,
+        &right,
+    );
     assert_eq!(out.report.unwrap().total_discrepancies, 0);
 }
 
@@ -253,7 +266,7 @@ fn supported_body_change_in_unmatched_named_proc_changes_case_signature() {
     baseline.procs.push(proc_);
     let mut candidate = baseline.clone();
     candidate.lists[candidate.procs[id].code_locals_args[0] as usize][1] = 2;
-    let left = anonymous::procedure_ownership(&expected);
+    let left = anonymous::procedure_ownership(&memo::NormalizationContext::new(&expected));
     let compare = |dmb: &Dmb| {
         let mut out = Collector {
             output: Vec::new(),
@@ -261,11 +274,11 @@ fn supported_body_change_in_unmatched_named_proc_changes_case_signature() {
             report: Some(StructuralReport::new("snapshot")),
         };
         missing::compare_missing_procedures(
-            &expected,
-            dmb,
+            &memo::NormalizationContext::new(&expected),
+            &memo::NormalizationContext::new(dmb),
             &mut out,
             &left,
-            &anonymous::procedure_ownership(dmb),
+            &anonymous::procedure_ownership(&memo::NormalizationContext::new(dmb)),
         );
         out.report.unwrap()
     };
@@ -349,10 +362,10 @@ fn malformed_argument_metadata_cannot_become_an_empty_valid_payload() {
     dmb.lists.push(vec![42]);
     let mut report = StructuralReport::new("snapshot");
     audit_coverage(
-        &dmb,
+        &memo::NormalizationContext::new(&dmb),
         "actual",
         &mut report,
-        &anonymous::procedure_ownership(&dmb),
+        &anonymous::procedure_ownership(&memo::NormalizationContext::new(&dmb)),
     );
     report.finalize_coverage();
     assert!(report.uncovered.contains_key("procedure_argument_list"));
@@ -405,8 +418,8 @@ fn supported_unmatched_payload_is_invariant_under_reference_renumbering() {
             report: Some(StructuralReport::new("snapshot")),
         };
         missing::compare_missing_procedures(
-            &expected,
-            dmb,
+            &memo::NormalizationContext::new(&expected),
+            &memo::NormalizationContext::new(dmb),
             &mut out,
             &BTreeMap::new(),
             &BTreeMap::from([("/proc/unmatched#0".into(), id)]),

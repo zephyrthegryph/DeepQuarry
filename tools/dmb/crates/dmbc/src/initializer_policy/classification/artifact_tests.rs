@@ -60,7 +60,14 @@ fn scalar_reads_revalidate_and_current_ordinal_does_not_enter_payload() {
         policy: 1,
         resource_search_context: None,
     };
-    let first = classify_one(
+    let prepared_key: Arc<[u8]> = key(
+        &write,
+        ModifierFact::Known(8),
+        reuse,
+        factory.factory.recording_policy_identity().unwrap(),
+    )
+    .into();
+    let first = classify_one_keyed(
         &write,
         &symbols,
         &evaluator,
@@ -68,8 +75,11 @@ fn scalar_reads_revalidate_and_current_ordinal_does_not_enter_payload() {
         0,
         factory,
         reuse,
+        Some(&prepared_key),
     )
     .unwrap();
+    // The admission owns the exact prepared key buffer, rather than re-encoding it.
+    assert!(Arc::strong_count(&prepared_key) >= 2);
     let second = classify_one(
         &write,
         &symbols,
@@ -501,4 +511,16 @@ fn roster_hit_updates_current_error_ordinal_without_using_it_as_token_seed() {
         .finish(Vec::new(), false, &mut empty_scratch)
         .unwrap();
     assert_eq!(empty_scratch, 87);
+}
+
+#[test]
+fn current_roster_skips_full_weight_but_bounded_admission_preserves_unknown_decline() {
+    let current = InitializerArtifacts::default();
+    assert_eq!(
+        current.admission_charge(|| panic!("current roster must not walk payload")),
+        Some(std::mem::size_of::<SemanticClassification>())
+    );
+    let bounded = InitializerArtifacts::with_limit(100);
+    assert_eq!(bounded.admission_charge(|| None), None);
+    assert_eq!(bounded.admission_charge(|| Some(123)), Some(123));
 }

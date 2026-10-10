@@ -240,20 +240,9 @@ impl InitializerAssemblies {
         stripped.modified_instances.clear();
         let reads = recorder.reads();
         let versions = recorder.domain_receipts();
-        let Some(weight) = crate::heap_census::resident_initializer_fragment_weight(
-            &stripped,
-            key,
-            &reads,
-            &versions,
-            &recipes,
-            &references,
-        )
-        .and_then(|weight| {
-            weight.checked_add(root_indexes.capacity() * std::mem::size_of::<usize>())
-        }) else {
-            self.declined.fetch_add(1, Ordering::Relaxed);
-            return None;
-        };
+        // This store retains the current roster without a byte admission budget.
+        // Full resident ownership is measured only by the opt-in census.
+        let weight = std::mem::size_of::<RetainedAssembly>();
         let encoding = std::sync::Arc::new(crate::symbolic::InitializerEncoding::default());
         self.values
             .insert_with(key.into(), reads, versions, weight, || RetainedAssembly {

@@ -2,8 +2,22 @@
 use std::{collections::BTreeMap, path::Path};
 #[test]
 fn literal_continuations_match_captured_byond_globals() {
+    compare_globals(
+        "line_continuation_strings",
+        &["quoted", "adjacent", "macro", "block"],
+    );
+}
+#[test]
+fn blank_physical_lines_after_continuations_match_captured_byond_globals() {
+    compare_globals(
+        "line_continuation_blank_lines",
+        &["quoted", "block", "multiple", "raw_control"],
+    );
+}
+fn compare_globals(fixture: &str, names: &[&str]) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../fixtures/native_compiler/line_continuation_strings");
+        .join("../../fixtures/native_compiler")
+        .join(fixture);
     let plan = dm_preprocess::regions::plan_regions(
         &root.join("probe.dme"),
         &dm_preprocess::FileSystem,
@@ -16,10 +30,9 @@ fn literal_continuations_match_captured_byond_globals() {
         "{:?}",
         expanded.diagnostics
     );
-    let reference = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
-        "../../../fixtures/native_compiler/line_continuation_strings/probe.native.bin"
-    ))
-    .unwrap();
+    let reference =
+        byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(root.join("probe.native.bin")).unwrap())
+            .unwrap();
     let mut actual = BTreeMap::new();
     let text = expanded.text.as_str();
     let mut end = 0;
@@ -42,7 +55,7 @@ fn literal_continuations_match_captured_byond_globals() {
         actual.insert(name.to_owned(), value);
         end = token.span.end;
     }
-    for name in ["quoted", "adjacent", "macro", "block"] {
+    for &name in names {
         let variable = reference
             .variables
             .iter()

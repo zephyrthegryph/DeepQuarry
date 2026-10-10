@@ -84,14 +84,15 @@ impl StartupArtifacts {
             self.recomputed.fetch_add(1, Ordering::Relaxed);
             return;
         };
-        if let Some(weight) = crate::heap_census::resident_startup_weight(&payload, &key) {
-            self.values
-                .insert_with(key.into(), Vec::new(), Vec::new(), weight, || {
-                    Artifact::Syntax(payload)
-                });
-        } else {
-            self.declined.fetch_add(1, Ordering::Relaxed);
-        }
+        // Current-roster retention has no byte admission budget. The issued
+        // relative payload remains mandatory; this is only an inline charge.
+        self.values.insert_with(
+            key.into(),
+            Vec::new(),
+            Vec::new(),
+            std::mem::size_of::<Artifact>(),
+            || Artifact::Syntax(payload),
+        );
         self.recomputed.fetch_add(1, Ordering::Relaxed);
     }
 }

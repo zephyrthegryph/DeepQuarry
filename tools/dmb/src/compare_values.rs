@@ -20,12 +20,18 @@ pub(super) enum NormalValue {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum InstanceInitializer {
     Absent,
-    Constants(String),
+    Constants(std::sync::Arc<str>),
     // Preserve the allocation and wire body when constant semantics are unknown.
-    Opaque(u32, Option<Vec<u32>>),
+    Opaque(u32, Option<std::sync::Arc<[u32]>>),
 }
 
-pub(super) fn value(dmb: &Dmb, value: Value) -> NormalValue {
+pub(super) fn value(dmb: &memo::NormalizationContext<'_>, raw: Value) -> NormalValue {
+    if raw.kind() == ValueKind::InstanceTypePath {
+        return dmb.instance(raw.id(), || value_uncached(dmb, raw));
+    }
+    value_uncached(dmb, raw)
+}
+fn value_uncached(dmb: &memo::NormalizationContext<'_>, value: Value) -> NormalValue {
     match value.kind() {
         ValueKind::Null => NormalValue::Null,
         ValueKind::Number => NormalValue::Number(value.number_bits().unwrap_or(0)),
@@ -72,12 +78,12 @@ pub(super) fn value(dmb: &Dmb, value: Value) -> NormalValue {
             let initializer = if instance.initializer == 0xffff {
                 InstanceInitializer::Absent
             } else if let Some(assignments) = constant_map_assignments(dmb, instance.initializer) {
-                InstanceInitializer::Constants(format!("{assignments:?}"))
+                InstanceInitializer::Constants(format!("{assignments:?}").into())
             } else {
                 InstanceInitializer::Opaque(
                     instance.initializer,
                     dmb.proc_code_words(instance.initializer as usize)
-                        .map(<[u32]>::to_vec),
+                        .map(std::sync::Arc::from),
                 )
             };
             NormalValue::InstanceType(
@@ -115,7 +121,7 @@ pub(super) enum NormalVariable {
     ),
 }
 
-pub(super) fn variable(dmb: &Dmb, input: &Variable) -> NormalVariable {
+pub(super) fn variable(dmb: &memo::NormalizationContext<'_>, input: &Variable) -> NormalVariable {
     use Variable::*;
     match input {
         Field(id) => NormalVariable::Field(bytes(dmb, *id)),

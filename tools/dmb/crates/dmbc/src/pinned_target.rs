@@ -12,7 +12,7 @@ pub fn admit_defines(defines: &mut BTreeMap<String, String>) -> Result<(), Reque
     for (name, expected) in [("DM_VERSION", DM_VERSION), ("DM_BUILD", DM_BUILD)] {
         if let Some(actual) = defines.get(name) {
             if actual != expected {
-                return Err(RequestFailure::internal(format!(
+                return Err(RequestFailure::invalid_request(format!(
                     "native unsupported: pinned BYOND {DM_VERSION}.{DM_BUILD} requires {name}={expected}; requested {actual:?}"
                 )));
             }
@@ -66,7 +66,7 @@ mod tests {
             let mut defines = BTreeMap::from([(name.into(), value.into())]);
             let previous = defines.clone();
             let failure = admit_defines(&mut defines).unwrap_err();
-            assert_eq!(failure.kind.exit_code(), 70);
+            assert_eq!(failure.kind.exit_code(), 64);
             assert!(failure.message.contains(name));
             assert_eq!(defines, previous);
         }

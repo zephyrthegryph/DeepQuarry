@@ -23,6 +23,7 @@ pub struct InitializerArtifacts {
     pub(in crate::initializer_policy) modifiers:
         crate::initializer_policy::modifier_facts::ModifierArtifacts,
     values: dm_session::ArtifactStore<SemanticClassification>,
+    bounded: bool,
     pub(super) roster: super::token_roster::CurrentRoster,
     pub(super) roster_enabled: bool,
     pub hits: AtomicU64,
@@ -33,6 +34,7 @@ impl Default for InitializerArtifacts {
     fn default() -> Self {
         Self {
             values: dm_session::ArtifactStore::current_revision(),
+            bounded: false,
             modifiers: Default::default(),
             roster: Default::default(),
             roster_enabled: true,
@@ -92,9 +94,17 @@ impl InitializerArtifacts {
         )
     }
 
+    fn admission_charge(&self, full_weight: impl FnOnce() -> Option<usize>) -> Option<usize> {
+        if self.bounded {
+            full_weight()
+        } else {
+            Some(std::mem::size_of::<SemanticClassification>())
+        }
+    }
     pub fn with_limit(bytes: usize) -> Self {
         Self {
             values: dm_session::ArtifactStore::with_limit(bytes),
+            bounded: true,
             // Preserve the explicit compatibility budget; the new full-current
             // modifier owner is enabled only by retained-session defaults.
             modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
@@ -153,11 +163,11 @@ pub(super) fn key(
     write.write_canonical(|bytes| key.extend_from_slice(bytes));
     key
 }
-pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Vec<u8>]) {
+pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Arc<[u8]>]) {
     reuse
         .store
         .values
-        .retain_current_keys(keys.iter().map(Vec::as_slice));
+        .retain_current_keys(keys.iter().map(AsRef::as_ref));
 }
 impl SemanticClassification {
     #[allow(clippy::type_complexity)]
@@ -189,7 +199,8 @@ impl SemanticClassification {
     pub(super) fn token_key(&self) -> Option<&Vec<u8>> {
         self.key.as_ref()
     }
-    fn capture(pending: &PendingWrite, symbols: &SymbolTable) -> Option<Self> {
+    fn capture(pending: &mut PendingWrite, symbols: &SymbolTable) -> Option<Self> {
+        let parsed_source = pending.parsed_runtime_source.take();
         let runtime = match pending.write.runtime_value.as_ref() {
             None => None,
             Some(RuntimeValue::SizedArray(dimensions)) => {
@@ -199,10 +210,16 @@ impl SemanticClassification {
                 let InitializerValue::Expression(value) = &pending.write.write.value else {
                     return None;
                 };
-                let source = value.source_text(symbols)?;
-                Some(RuntimeRecipe::Expression(
-                    shared_expression::SharedExpression::capture(source, expression)?,
-                ))
+                let syntax = match parsed_source {
+                    Some(source) => {
+                        shared_expression::SharedExpression::from_parser(source, expression)
+                    }
+                    None => shared_expression::SharedExpression::capture(
+                        value.source_text(symbols)?,
+                        expression,
+                    )?,
+                };
+                Some(RuntimeRecipe::Expression(syntax))
             }
         };
         Some(Self {
@@ -251,9 +268,11 @@ impl SemanticClassification {
             },
             key: None,
             accepted: None,
+            parsed_runtime_source: None,
         })
     }
 }
+#[cfg(test)]
 pub(super) fn classify_one(
     write: &InitializerWrite,
     symbols: &SymbolTable,
@@ -263,7 +282,33 @@ pub(super) fn classify_one(
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
 ) -> Result<PendingWrite, String> {
-    let Some(factory_policy) = factory.factory.recording_policy_identity() else {
+    let prepared = factory
+        .factory
+        .recording_policy_identity()
+        .map(|policy| Arc::<[u8]>::from(key(write, fact, reuse, policy)));
+    classify_one_keyed(
+        write,
+        symbols,
+        evaluator,
+        fact,
+        ordinal,
+        factory,
+        reuse,
+        prepared.as_ref(),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn classify_one_keyed(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    fact: ModifierFact,
+    ordinal: usize,
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    prepared_key: Option<&Arc<[u8]>>,
+) -> Result<PendingWrite, String> {
+    let Some(_) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
         let mut pending = classify_pending(
@@ -278,7 +323,7 @@ pub(super) fn classify_one(
         pending.write.source_ordinal = ordinal;
         return Ok(pending);
     };
-    let key = key(write, fact, reuse, factory_policy);
+    let key = prepared_key.expect("certified classification has a prepared key");
     let host = ResolverView(reuse.resolver);
     let recorder = crate::lowering_memo::RecordingResolver::new(&host);
     let mut result = None;
@@ -291,7 +336,7 @@ pub(super) fn classify_one(
                     result.is_none(),
                     "initializer recording factory invoked twice"
                 );
-                if let Some(value) = reuse.store.values.lookup(&key, &host) {
+                if let Some(value) = reuse.store.values.lookup(key, &host) {
                     if let Some(mut current) = value.bind(write, symbols, ordinal) {
                         current.accepted = Some(Arc::clone(&value));
                         hit = true;
@@ -348,7 +393,7 @@ pub(super) fn classify_one(
     if captured && hit {
         reuse.store.hits.fetch_add(1, Ordering::Relaxed);
     } else if captured {
-        let Some(value) = SemanticClassification::capture(&pending, symbols) else {
+        let Some(value) = SemanticClassification::capture(&mut pending, symbols) else {
             reuse.store.declined.fetch_add(1, Ordering::Relaxed);
             reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);
             return Ok(pending);
@@ -359,30 +404,36 @@ pub(super) fn classify_one(
             Some(RuntimeRecipe::SizedArray(dimensions)) => Some(dimensions),
             _ => None,
         };
-        let admitted = crate::heap_census::resident_initializer_weight(
-            &value.default,
-            dimensions,
-            value.key.as_ref(),
-            &key,
-            &reads,
-            &versions,
-        )
-        .and_then(|weight| match &value.runtime {
-            Some(RuntimeRecipe::Expression(syntax)) => {
-                syntax.visit_retained(|source, expression| {
-                    expression.and_then(|expression| {
-                        crate::heap_census::resident_initializer_syntax_weight(source, expression)
+        // Current-roster retention has no byte admission budget. This charge
+        // describes inline storage only; opt-in census still visits all owners.
+        let charge = reuse.store.admission_charge(|| {
+            crate::heap_census::resident_initializer_weight(
+                &value.default,
+                dimensions,
+                value.key.as_ref(),
+                key,
+                &reads,
+                &versions,
+            )
+            .and_then(|weight| match &value.runtime {
+                Some(RuntimeRecipe::Expression(syntax)) => {
+                    syntax.visit_retained(|source, expression| {
+                        expression.and_then(|expression| {
+                            crate::heap_census::resident_initializer_syntax_weight(
+                                source, expression,
+                            )
                             .and_then(|extra| weight.checked_add(extra))
+                        })
                     })
-                })
-            }
-            _ => Some(weight),
-        })
-        .and_then(|weight| {
+                }
+                _ => Some(weight),
+            })
+        });
+        let admitted = charge.and_then(|weight| {
             reuse
                 .store
                 .values
-                .insert_with_owned(key.into(), reads, versions, weight, || value)
+                .insert_with_owned(Arc::clone(key), reads, versions, weight, || value)
         });
         if let Some(value) = admitted {
             pending.accepted = Some(value);

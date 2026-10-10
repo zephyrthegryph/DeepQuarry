@@ -10,7 +10,7 @@ pub(super) struct NormalArgument {
     pub(super) reserved: u32,
 }
 
-pub(super) fn argument(dmb: &Dmb, arg: &ProcArgument) -> NormalArgument {
+pub(super) fn argument(dmb: &memo::NormalizationContext<'_>, arg: &ProcArgument) -> NormalArgument {
     let expression = dmb
         .argument_source_proc_id(arg)
         .and_then(|id| proc_path(dmb, id));
@@ -70,7 +70,7 @@ pub(super) struct NormalInstruction {
     pub(super) operands: Vec<NormalOperand>,
 }
 
-pub(super) fn operand(dmb: &Dmb, operand: Operand) -> NormalOperand {
+pub(super) fn operand(dmb: &memo::NormalizationContext<'_>, operand: Operand) -> NormalOperand {
     match operand {
         Operand::Word(word) => NormalOperand::Word(word),
         Operand::Value(v) => NormalOperand::Value(value(dmb, v)),
@@ -111,7 +111,7 @@ pub(super) fn operand(dmb: &Dmb, operand: Operand) -> NormalOperand {
 }
 
 pub(super) fn instruction(
-    dmb: &Dmb,
+    dmb: &memo::NormalizationContext<'_>,
     input: &bytecode::Instruction,
 ) -> Result<NormalInstruction, bytecode::DecodeError> {
     if input.opcode == 0x50 {
@@ -155,9 +155,9 @@ pub(super) fn instruction(
 }
 
 pub(super) fn compare_code(
-    a: &Dmb,
+    a: &memo::NormalizationContext<'_>,
     ai: usize,
-    b: &Dmb,
+    b: &memo::NormalizationContext<'_>,
     bi: usize,
     name: &str,
     out: &mut Collector,
@@ -167,9 +167,9 @@ pub(super) fn compare_code(
 }
 
 pub(super) fn compare_code_options(
-    a: &Dmb,
+    a: &memo::NormalizationContext<'_>,
     ai: usize,
-    b: &Dmb,
+    b: &memo::NormalizationContext<'_>,
     bi: usize,
     name: &str,
     out: &mut Collector,
@@ -231,18 +231,22 @@ pub(super) fn compare_code_options(
         ] {
             normalize_instruction_targets(normalized, targets);
         }
-        out.check(
-            name,
-            &format!("bytecode[{index}].opcode"),
-            a_instruction.opcode,
-            b_instruction.opcode,
-        );
-        out.check(
-            name,
-            &format!("bytecode[{index}].operands"),
-            a_instruction.operands,
-            b_instruction.operands,
-        );
+        if a_instruction.opcode != b_instruction.opcode {
+            out.add(
+                name,
+                &format!("bytecode[{index}].opcode"),
+                a_instruction.opcode,
+                b_instruction.opcode,
+            );
+        }
+        if a_instruction.operands != b_instruction.operands {
+            out.add(
+                name,
+                &format!("bytecode[{index}].operands"),
+                a_instruction.operands,
+                b_instruction.operands,
+            );
+        }
     }
 }
 
@@ -256,6 +260,9 @@ pub fn compare_proc_code(
     limit: usize,
     ignore_debug: bool,
 ) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     let mut out = Collector {
         output: Vec::new(),
         limit,
@@ -274,8 +281,8 @@ pub fn compare_proc_code(
 }
 
 pub(super) fn compare_proc(
-    expected: &Dmb,
-    actual: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
     ids: (usize, usize),
     name: &str,
     options: &CompareOptions,
@@ -321,7 +328,7 @@ pub(super) fn compare_proc(
         left.invisibility_setting(),
         right.invisibility_setting(),
     );
-    let arguments = |dmb: &Dmb, id| {
+    let arguments = |dmb: &memo::NormalizationContext<'_>, id| {
         dmb.proc_arguments(id)
             .unwrap_or_default()
             .iter()
@@ -365,7 +372,7 @@ pub(super) fn compare_proc(
             }
         }
     }
-    let locals = |dmb: &Dmb, proc_: &crate::dmb::Proc| {
+    let locals = |dmb: &memo::NormalizationContext<'_>, proc_: &crate::dmb::Proc| {
         dmb.lists
             .get(proc_.code_locals_args[1] as usize)
             .into_iter()
@@ -389,9 +396,9 @@ pub(super) fn compare_proc(
 }
 
 pub(super) fn compare_initializer(
-    expected: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
     ai: u32,
-    actual: &Dmb,
+    actual: &memo::NormalizationContext<'_>,
     bi: u32,
     name: &str,
     options: &CompareOptions,
@@ -466,7 +473,7 @@ fn normalize_instruction_targets(
 
 /// Shared grammar/resolution and branch normalization for complete payload receipts.
 pub(super) fn normalized_code(
-    dmb: &Dmb,
+    dmb: &memo::NormalizationContext<'_>,
     id: usize,
 ) -> Result<Vec<NormalInstruction>, bytecode::DecodeError> {
     let words = dmb.proc_code_words(id).unwrap_or_default();

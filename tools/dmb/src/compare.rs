@@ -51,7 +51,7 @@ impl Collector {
         actual: impl std::fmt::Debug,
     ) {
         if let Some(report) = &mut self.report {
-            report.record(path, field, format!("{expected:?}"), format!("{actual:?}"));
+            report.record_debug(path, field, expected, actual);
             return;
         }
         if self.output.len() < self.limit {
@@ -151,6 +151,8 @@ fn proc_index(dmb: &Dmb, options: &CompareOptions) -> BTreeMap<Vec<u8>, Vec<usiz
 /// Resolve the exact duplicate rank used by structural reports, without decoding code.
 /// Explicit /proc/ and /verb/ path markers use the comparator's canonical spelling.
 pub fn ranked_proc_by_path(dmb: &Dmb, path: &[u8], rank: usize) -> Option<usize> {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     let wanted = canonical_proc_path(path.to_vec());
     let mut group: Vec<_> = dmb
         .procs
@@ -180,6 +182,8 @@ fn canonical_proc_path(mut path: Vec<u8>) -> Vec<u8> {
 /// Pair duplicate procedure paths by their ordered owning-class bindings.
 /// Unbound groups retain table order; body metadata is never a pairing key.
 pub fn order_proc_group_by_binding(dmb: &Dmb, ids: &mut [usize]) {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     let mut group = ids.to_vec();
     order_proc_groups_by_binding(dmb, std::iter::once(&mut group));
     ids.copy_from_slice(&group);
@@ -190,6 +194,8 @@ pub fn order_proc_groups_by_binding<'a>(
     dmb: &Dmb,
     groups: impl Iterator<Item = &'a mut Vec<usize>>,
 ) {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     let groups: Vec<_> = groups.filter(|ids| ids.len() > 1).collect();
     if groups.is_empty() {
         return;
@@ -223,7 +229,10 @@ pub fn order_proc_groups_by_binding<'a>(
         }
     }
 }
-fn declaration(dmb: &Dmb, class_id: usize) -> Option<BTreeMap<Vec<u8>, (u32, NormalValue)>> {
+fn declaration(
+    dmb: &memo::NormalizationContext<'_>,
+    class_id: usize,
+) -> Option<BTreeMap<Vec<u8>, (u32, NormalValue)>> {
     let mut result = BTreeMap::new();
     for (var_id, flags) in dmb
         .class_variable_declarations(class_id)
@@ -250,8 +259,8 @@ fn declaration(dmb: &Dmb, class_id: usize) -> Option<BTreeMap<Vec<u8>, (u32, Nor
 /// Dedicated appearance fields are separate from the declaration/override lists.
 /// Resolve compiler-allocated IDs, but preserve every scalar and optional payload.
 fn compare_class_header(
-    expected: &Dmb,
-    actual: &Dmb,
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
     ids: (usize, usize),
     name: &str,
     out: &mut Collector,
@@ -281,7 +290,9 @@ fn compare_class_header(
             bytes(actual, b),
         );
     }
-    let resource = |dmb: &Dmb, id| dmb.resources.get(id as usize).map(|r| (r.kind, r.id));
+    let resource = |dmb: &memo::NormalizationContext<'_>, id| {
+        dmb.resources.get(id as usize).map(|r| (r.kind, r.id))
+    };
     out.check(
         name,
         "class.header.icon",
@@ -327,7 +338,10 @@ fn compare_class_header(
     );
 }
 
-fn defaults(dmb: &Dmb, class_id: usize) -> Option<BTreeMap<Vec<u8>, NormalValue>> {
+fn defaults(
+    dmb: &memo::NormalizationContext<'_>,
+    class_id: usize,
+) -> Option<BTreeMap<Vec<u8>, NormalValue>> {
     let mut result = BTreeMap::new();
     for initial in dmb.class_initial_values(class_id).unwrap_or_default() {
         let variable = dmb.variables.get(initial.variable_id as usize)?;
@@ -342,10 +356,14 @@ fn defaults(dmb: &Dmb, class_id: usize) -> Option<BTreeMap<Vec<u8>, NormalValue>
     Some(result)
 }
 
-fn compare_world(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
+fn compare_world(
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
+    out: &mut Collector,
+) {
     let a = &expected.world;
     let b = &actual.world;
-    let mob_path = |dmb: &Dmb, id: u32| {
+    let mob_path = |dmb: &memo::NormalizationContext<'_>, id: u32| {
         dmb.mobs
             .get(id as usize)
             .and_then(|mob| path(dmb, mob.class))
@@ -397,7 +415,7 @@ fn compare_world(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
             .get(b.skin_resource_id() as usize)
             .map(|resource| (resource.kind, resource.id)),
     );
-    let procedures = |dmb: &Dmb| {
+    let procedures = |dmb: &memo::NormalizationContext<'_>| {
         dmb.lists
             .get(dmb.world.proc_list_id() as usize)
             .map(|ids| ids.iter().map(|&id| proc_path(dmb, id)).collect::<Vec<_>>())
@@ -468,7 +486,7 @@ fn compare_world(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
 
 type NormalDeclarations = BTreeMap<Vec<u8>, Vec<(u32, NormalValue)>>;
 
-fn global_declarations(dmb: &Dmb) -> Option<NormalDeclarations> {
+fn global_declarations(dmb: &memo::NormalizationContext<'_>) -> Option<NormalDeclarations> {
     let mut result = BTreeMap::<Vec<u8>, Vec<(u32, NormalValue)>>::new();
     for (var_id, flags) in dmb.global_variable_flags()? {
         let variable = dmb.variables.get(var_id as usize)?;
@@ -515,7 +533,11 @@ fn mob_types(dmb: &Dmb) -> NormalMobs {
     result
 }
 
-fn compare_mob_types(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
+fn compare_mob_types(
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
+    out: &mut Collector,
+) {
     let left = mob_types(expected);
     let right = mob_types(actual);
     for key in left.keys().chain(right.keys()).collect::<BTreeSet<_>>() {
@@ -526,7 +548,11 @@ fn compare_mob_types(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
     }
 }
 
-fn compare_global_declarations(expected: &Dmb, actual: &Dmb, out: &mut Collector) {
+fn compare_global_declarations(
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
+    out: &mut Collector,
+) {
     let left = global_declarations(expected);
     let right = global_declarations(actual);
     let (Some(left), Some(right)) = (left.as_ref(), right.as_ref()) else {
@@ -554,6 +580,9 @@ fn compare_global_declarations(expected: &Dmb, actual: &Dmb, out: &mut Collector
 /// Compare logical classes and procedures. The first DMB is the expected
 /// reference; the second is the translation. Results are bounded by options.
 pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     let mut out = Collector {
         output: Vec::new(),
         limit: options.max_discrepancies,
@@ -563,7 +592,12 @@ pub fn compare_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions) -> V
     out.output
 }
 
-fn collect_dmbs(expected: &Dmb, actual: &Dmb, options: &CompareOptions, out: &mut Collector) {
+fn collect_dmbs(
+    expected: &memo::NormalizationContext<'_>,
+    actual: &memo::NormalizationContext<'_>,
+    options: &CompareOptions,
+    out: &mut Collector,
+) {
     let ac = class_index(expected, options);
     let bc = class_index(actual, options);
     let keys: BTreeSet<_> = ac.keys().chain(bc.keys()).cloned().collect();
@@ -706,6 +740,9 @@ pub fn compare_class_tables(
     actual: &Dmb,
     max_discrepancies: usize,
 ) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     let mut out = Collector {
         output: Vec::new(),
         limit: max_discrepancies,
@@ -799,6 +836,9 @@ pub fn compare_proc_tables(
     actual: &Dmb,
     max_discrepancies: usize,
 ) -> Vec<Discrepancy> {
+    let expected = &memo::NormalizationContext::new(expected);
+    let actual = &memo::NormalizationContext::new(actual);
+
     let mut out = Collector {
         output: Vec::new(),
         limit: max_discrepancies,
@@ -828,7 +868,7 @@ pub fn compare_proc_tables(
                 ("class.procs", left.proc_list_id(), right.proc_list_id()),
                 ("class.verbs", left.verb_list_id(), right.verb_list_id()),
             ] {
-                let members = |dmb: &Dmb, id| {
+                let members = |dmb: &memo::NormalizationContext<'_>, id| {
                     if id == 0xffff {
                         return Vec::new();
                     }
@@ -902,6 +942,8 @@ fn marker_integrity(dmb: &Dmb) -> (usize, usize) {
 /// Count class and procedure paths selected by the supplied prefixes.
 /// Callers can reject a mistyped filter instead of reporting a vacuous match.
 pub fn selected_path_count(dmb: &Dmb, options: &CompareOptions) -> usize {
+    let dmb = &memo::NormalizationContext::new(dmb);
+
     class_index(dmb, options).len() + proc_index(dmb, options).len()
 }
 
@@ -919,3 +961,6 @@ mod operand_roles;
 #[cfg(test)]
 #[path = "compare_tests.rs"]
 mod tests;
+
+#[path = "compare_memo.rs"]
+mod memo;

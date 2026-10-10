@@ -17,8 +17,8 @@ fn debug_file_string_ids_are_resolved() {
         operands: vec![id],
     };
     assert_eq!(
-        instruction(&dmb, &make(first)).unwrap(),
-        instruction(&dmb, &make(second)).unwrap()
+        instruction(&memo::NormalizationContext::new(&dmb), &make(first)).unwrap(),
+        instruction(&memo::NormalizationContext::new(&dmb), &make(second)).unwrap()
     );
 }
 
@@ -61,7 +61,14 @@ fn branch_targets_normalize_across_instruction_widths() {
         limit: 10,
         report: None,
     };
-    compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
+    compare_code(
+        &memo::NormalizationContext::new(&expected),
+        0,
+        &memo::NormalizationContext::new(&actual),
+        0,
+        "/test",
+        &mut collector,
+    );
     assert!(collector.output.is_empty(), "{:?}", collector.output);
 }
 
@@ -112,7 +119,14 @@ fn try_catch_targets_normalize_across_instruction_widths() {
         limit: 10,
         report: None,
     };
-    compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
+    compare_code(
+        &memo::NormalizationContext::new(&expected),
+        0,
+        &memo::NormalizationContext::new(&actual),
+        0,
+        "/test",
+        &mut collector,
+    );
     assert!(collector.output.is_empty(), "{:?}", collector.output);
 }
 
@@ -129,7 +143,14 @@ fn safe_reference_jump_targets_normalize_across_instruction_widths() {
         limit: 10,
         report: None,
     };
-    compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
+    compare_code(
+        &memo::NormalizationContext::new(&expected),
+        0,
+        &memo::NormalizationContext::new(&actual),
+        0,
+        "/test",
+        &mut collector,
+    );
     assert!(collector.output.is_empty(), "{:?}", collector.output);
 }
 
@@ -148,7 +169,14 @@ fn weighted_pick_targets_normalize_across_instruction_widths() {
         limit: 10,
         report: None,
     };
-    compare_code(&expected, 0, &actual, 0, "/test", &mut collector);
+    compare_code(
+        &memo::NormalizationContext::new(&expected),
+        0,
+        &memo::NormalizationContext::new(&actual),
+        0,
+        "/test",
+        &mut collector,
+    );
     assert!(collector.output.is_empty(), "{:?}", collector.output);
 }
 
@@ -328,10 +356,15 @@ fn mob_map_instance_uses_mob_table_before_class_table() {
         initializer: 0xffff,
     });
     let instance_id = (dmb.instances.len() - 1) as u32;
-    assert_eq!(map_instance(&dmb, instance_id).unwrap().1, path(&dmb, 1));
+    assert_eq!(
+        map_instance(&memo::NormalizationContext::new(&dmb), instance_id)
+            .unwrap()
+            .1,
+        path(&dmb, 1)
+    );
     assert_eq!(
         value(
-            &dmb,
+            &memo::NormalizationContext::new(&dmb),
             Value {
                 tag_word: 8,
                 data_word: mob_id,
@@ -342,7 +375,7 @@ fn mob_map_instance_uses_mob_table_before_class_table() {
     );
     assert_eq!(
         value(
-            &dmb,
+            &memo::NormalizationContext::new(&dmb),
             Value {
                 tag_word: 41,
                 data_word: instance_id,
@@ -366,9 +399,12 @@ fn anonymous_proc_sentinel_is_not_string_id_65535() {
     dmb.procs[0].strings = [0xffff; 4];
     assert_eq!(dmb.string(0xffff), Some(b"real string" as &[u8]));
     assert_eq!(proc_path(&dmb, 0), None);
-    assert!(!proc_index(&dmb, &CompareOptions::default())
-        .values()
-        .any(|ids| ids.contains(&0)));
+    assert!(!proc_index(
+        &memo::NormalizationContext::new(&dmb),
+        &CompareOptions::default()
+    )
+    .values()
+    .any(|ids| ids.contains(&0)));
 }
 
 #[test]

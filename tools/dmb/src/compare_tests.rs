@@ -4,7 +4,10 @@ fn duplicate_proc_pairing_uses_bindings_and_detects_body_swaps() {
         "../fixtures/translation/procedure_membership_order.native.bin"
     ))
     .unwrap();
-    let index = proc_index(&native, &CompareOptions::default());
+    let index = proc_index(
+        &memo::NormalizationContext::new(&native),
+        &CompareOptions::default(),
+    );
     let (path, group) = index
         .iter()
         .find(|(_, ids)| {
@@ -110,7 +113,10 @@ fn procedure_and_verb_selectors_are_not_field_reads() {
             ) {
                 continue;
             }
-            assert_ne!(variable(&dmb, left), variable(&dmb, right));
+            assert_ne!(
+                variable(&memo::NormalizationContext::new(&dmb), left),
+                variable(&memo::NormalizationContext::new(&dmb), right)
+            );
         }
     }
 }
@@ -130,21 +136,45 @@ fn static_proc_normalization_requires_its_actual_display_name() {
     });
     dmb.procs[0].strings[1] = display;
     assert_eq!(
-        variable(&dmb, &Variable::StaticProc(0)),
-        variable(&dmb, &Variable::DynamicProc(display))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticProc(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicProc(display)
+        )
     );
     assert_ne!(
-        variable(&dmb, &Variable::StaticProc(0)),
-        variable(&dmb, &Variable::DynamicProc(wrong))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticProc(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicProc(wrong)
+        )
     );
     assert_ne!(
-        variable(&dmb, &Variable::StaticProc(0)),
-        variable(&dmb, &Variable::StaticVerb(0))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticProc(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticVerb(0)
+        )
     );
     dmb.procs[0].strings[1] = 0xffff;
     assert_ne!(
-        variable(&dmb, &Variable::StaticProc(0)),
-        variable(&dmb, &Variable::DynamicProc(0xffff))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticProc(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicProc(0xffff)
+        )
     );
 }
 
@@ -163,8 +193,14 @@ fn static_verb_normalization_preserves_namespace_and_actual_display_name() {
     });
     dmb.procs[0].strings[1] = display;
     assert_eq!(
-        variable(&dmb, &Variable::StaticVerb(0)),
-        variable(&dmb, &Variable::DynamicVerb(display))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticVerb(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicVerb(display)
+        )
     );
     for other in [
         Variable::DynamicVerb(wrong),
@@ -172,18 +208,33 @@ fn static_verb_normalization_preserves_namespace_and_actual_display_name() {
         Variable::StaticProc(0),
     ] {
         assert_ne!(
-            variable(&dmb, &Variable::StaticVerb(0)),
-            variable(&dmb, &other)
+            variable(
+                &memo::NormalizationContext::new(&dmb),
+                &Variable::StaticVerb(0)
+            ),
+            variable(&memo::NormalizationContext::new(&dmb), &other)
         );
     }
     dmb.procs[0].strings[1] = 0xffff;
     assert_ne!(
-        variable(&dmb, &Variable::StaticVerb(0)),
-        variable(&dmb, &Variable::DynamicVerb(0xffff))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticVerb(0)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicVerb(0xffff)
+        )
     );
     assert_ne!(
-        variable(&dmb, &Variable::StaticVerb(u32::MAX)),
-        variable(&dmb, &Variable::DynamicVerb(0xffff))
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::StaticVerb(u32::MAX)
+        ),
+        variable(
+            &memo::NormalizationContext::new(&dmb),
+            &Variable::DynamicVerb(0xffff)
+        )
     );
 }
 
@@ -236,7 +287,7 @@ fn colliding_display_aliases_follow_native_dynamic_call_encoding() {
             }
             (
                 instruction.opcode,
-                variable(dmb, &selector),
+                variable(&memo::NormalizationContext::new(dmb), &selector),
                 operands[1].clone(),
             )
         };
@@ -280,8 +331,8 @@ fn global_call_proc_allocations_resolve_without_erasing_argument_counts() {
             operands,
         };
         assert_eq!(
-            instruction(&expected, &ins(native)).unwrap(),
-            instruction(&actual, &ins(moved)).unwrap()
+            instruction(&memo::NormalizationContext::new(&expected), &ins(native)).unwrap(),
+            instruction(&memo::NormalizationContext::new(&actual), &ins(moved)).unwrap()
         );
     }
     let ins = |count| bytecode::Instruction {
@@ -291,8 +342,8 @@ fn global_call_proc_allocations_resolve_without_erasing_argument_counts() {
         operands: vec![count, 0],
     };
     assert_ne!(
-        instruction(&expected, &ins(2)).unwrap(),
-        instruction(&expected, &ins(3)).unwrap()
+        instruction(&memo::NormalizationContext::new(&expected), &ins(2)).unwrap(),
+        instruction(&memo::NormalizationContext::new(&expected), &ins(3)).unwrap()
     );
 }
 
@@ -309,14 +360,14 @@ fn switch_case_string_allocations_do_not_change_semantics() {
     };
     assert_eq!(
         operand(
-            &expected,
+            &memo::NormalizationContext::new(&expected),
             Operand::Switch {
                 cases: vec![(case(0), 9)],
                 default: 11
             }
         ),
         operand(
-            &actual,
+            &memo::NormalizationContext::new(&actual),
             Operand::Switch {
                 cases: vec![(case(relocated), 9)],
                 default: 11
@@ -325,7 +376,7 @@ fn switch_case_string_allocations_do_not_change_semantics() {
     );
     assert_eq!(
         operand(
-            &expected,
+            &memo::NormalizationContext::new(&expected),
             Operand::RangeSwitch {
                 ranges: vec![],
                 exact: vec![(case(0), 9)],
@@ -333,7 +384,7 @@ fn switch_case_string_allocations_do_not_change_semantics() {
             }
         ),
         operand(
-            &actual,
+            &memo::NormalizationContext::new(&actual),
             Operand::RangeSwitch {
                 ranges: vec![],
                 exact: vec![(case(relocated), 9)],
@@ -353,7 +404,7 @@ fn builtin_type_singletons_do_not_resolve_class_zero() {
     ] {
         assert_eq!(
             value(
-                &dmb,
+                &memo::NormalizationContext::new(&dmb),
                 Value {
                     tag_word: tag,
                     data_word: 0,
@@ -385,11 +436,20 @@ fn modified_type_constants_include_override_values() {
         extra_word: None,
     };
     let mut actual = expected.clone();
-    assert_eq!(value(&expected, raw), value(&actual, raw));
+    assert_eq!(
+        value(&memo::NormalizationContext::new(&expected), raw),
+        value(&memo::NormalizationContext::new(&actual), raw)
+    );
     actual.lists[code as usize][1] = 2;
-    assert_ne!(value(&expected, raw), value(&actual, raw));
+    assert_ne!(
+        value(&memo::NormalizationContext::new(&expected), raw),
+        value(&memo::NormalizationContext::new(&actual), raw)
+    );
     actual.instances[instance as usize].initializer = 0xffff;
-    assert_ne!(value(&expected, raw), value(&actual, raw));
+    assert_ne!(
+        value(&memo::NormalizationContext::new(&expected), raw),
+        value(&memo::NormalizationContext::new(&actual), raw)
+    );
 }
 
 #[test]
@@ -410,7 +470,7 @@ fn unknown_modified_type_initializers_retain_identity_and_avoid_cycles() {
         data_word: instance,
         extra_word: None,
     };
-    let before = value(&dmb, raw);
+    let before = value(&memo::NormalizationContext::new(&dmb), raw);
     assert!(matches!(
         before,
         NormalValue::InstanceType(_, _, InstanceInitializer::Opaque(_, _))
@@ -418,7 +478,7 @@ fn unknown_modified_type_initializers_retain_identity_and_avoid_cycles() {
     let second = dmb.procs.len() as u32;
     dmb.procs.push(dmb.procs[0].clone());
     dmb.instances[instance as usize].initializer = second;
-    assert_ne!(before, value(&dmb, raw));
+    assert_ne!(before, value(&memo::NormalizationContext::new(&dmb), raw));
 }
 
 #[test]
@@ -520,30 +580,24 @@ fn dedicated_header_ids_are_normalized_but_payload_changes_remain_visible() {
     actual.resources.push(actual.resources[0].clone());
     actual.classes[id].initial_ids[4] = 1;
     assert!(compare_class_tables(&expected, &actual, 100).is_empty());
-    assert!(
-        compare_dmbs(
-            &expected,
-            &actual,
-            &CompareOptions {
-                compare_bytecode: false,
-                ..Default::default()
-            }
-        )
-        .is_empty()
-    );
+    assert!(compare_dmbs(
+        &expected,
+        &actual,
+        &CompareOptions {
+            compare_bytecode: false,
+            ..Default::default()
+        }
+    )
+    .is_empty());
     actual.resources[1].id ^= 1;
-    assert!(
-        compare_class_tables(&expected, &actual, 100)
-            .iter()
-            .any(|d| d.field == "class.header.icon")
-    );
+    assert!(compare_class_tables(&expected, &actual, 100)
+        .iter()
+        .any(|d| d.field == "class.header.icon"));
     actual.resources[1].id ^= 1;
     actual.classes[id].direction ^= 1;
-    assert!(
-        compare_class_tables(&expected, &actual, 100)
-            .iter()
-            .any(|d| d.field == "class.header.direction")
-    );
+    assert!(compare_class_tables(&expected, &actual, 100)
+        .iter()
+        .any(|d| d.field == "class.header.direction"));
 }
 #[test]
 fn client_path_is_a_singleton_not_class_zero() {
@@ -554,14 +608,17 @@ fn client_path_is_a_singleton_not_class_zero() {
         extra_word: None,
     };
     assert_eq!(
-        value(&dmb, singleton),
+        value(&memo::NormalizationContext::new(&dmb), singleton),
         NormalValue::Type(59, Some(b"/client".to_vec()))
     );
     let invalid = Value {
         data_word: 9,
         ..singleton
     };
-    assert_eq!(value(&dmb, invalid), NormalValue::Raw(invalid));
+    assert_eq!(
+        value(&memo::NormalizationContext::new(&dmb), invalid),
+        NormalValue::Raw(invalid)
+    );
 }
 
 #[test]
@@ -582,10 +639,9 @@ fn class_parent_change_uses_logical_path() {
             ..Default::default()
         },
     );
-    assert!(
-        diff.iter()
-            .any(|d| d.path == "/datum" && d.field == "class.parent")
-    );
+    assert!(diff
+        .iter()
+        .any(|d| d.path == "/datum" && d.field == "class.parent"));
 }
 
 #[test]
@@ -620,8 +676,8 @@ fn equivalent_integer_pushes_normalize_to_same_float() {
         operands: vec![42, 0x4000, 0],
     };
     assert_eq!(
-        instruction(&dmb, &compact).unwrap(),
-        instruction(&dmb, &float).unwrap()
+        instruction(&memo::NormalizationContext::new(&dmb), &compact).unwrap(),
+        instruction(&memo::NormalizationContext::new(&dmb), &float).unwrap()
     );
 }
 
@@ -636,7 +692,7 @@ fn compact_integer_normalization_uses_native_unsigned_word() {
             operands: vec![raw],
         };
         assert_eq!(
-            instruction(&dmb, &compact).unwrap(),
+            instruction(&memo::NormalizationContext::new(&dmb), &compact).unwrap(),
             NormalInstruction {
                 opcode: 0x60,
                 operands: vec![NormalOperand::Value(NormalValue::Number(
@@ -670,8 +726,8 @@ fn format_string_ids_are_resolved() {
         operands: vec![second, 1],
     };
     assert_eq!(
-        instruction(&dmb, &left).unwrap(),
-        instruction(&dmb, &right).unwrap()
+        instruction(&memo::NormalizationContext::new(&dmb), &left).unwrap(),
+        instruction(&memo::NormalizationContext::new(&dmb), &right).unwrap()
     );
 }
 
@@ -684,7 +740,10 @@ fn explicit_procedure_rank_matches_structural_duplicate_roster() {
         "../fixtures/translation/procedure_membership_order.native.bin"
     ))
     .unwrap();
-    let index = proc_index(&dmb, &CompareOptions::default());
+    let index = proc_index(
+        &memo::NormalizationContext::new(&dmb),
+        &CompareOptions::default(),
+    );
     let (path, group) = index.iter().find(|(_, ids)| ids.len() > 1).unwrap();
     for (rank, &id) in group.iter().enumerate() {
         assert_eq!(ranked_proc_by_path(&dmb, path, rank), Some(id));

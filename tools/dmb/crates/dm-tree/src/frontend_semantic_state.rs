@@ -42,6 +42,21 @@ impl RetainedSemanticTree {
     ) -> Option<&crate::declaration_contributions::KeyedDeclarations> {
         self.entry.as_ref().map(|entry| &entry.index)
     }
+    /// Explicit shared authored owner census; current source bindings are separate.
+    pub fn visit_authored_storage(
+        &self,
+        visit: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                crate::declaration_contributions::TypeContribution,
+                dm_ir::SymbolId,
+                Option<Arc<[crate::declaration_contributions::DeclarationRow]>>,
+                (),
+            >,
+        ),
+    ) {
+        self.declarations.visit_authored_storage(visit);
+    }
     pub fn visit_normalization_storage(
         &self,
         visit: impl FnMut(crate::owner_normalization::NormalizationStorageView<'_>),
@@ -155,6 +170,9 @@ impl RetainedSemanticTree {
         owner: Arc<crate::owner_normalization::SharedNormalizedDeclarations>,
     ) -> Self {
         Self {
+            declarations: super::declaration_state::RetainedDeclarations::with_shared_authored(
+                Arc::clone(&owner),
+            ),
             normalization: crate::owner_normalization::RetainedNormalization::with_shared(owner),
             ..Self::default()
         }
@@ -239,12 +257,17 @@ impl RetainedSemanticTree {
         let symbols = symbols.unwrap_or_else(|| adapted.symbols.ordered());
         // Exact per-owner equality shares immutable declaration contributions;
         // this index never carries a previous request's source authority.
-        let index = crate::declaration_contributions::KeyedDeclarations::capture_view(
-            self.entry.as_ref().map(|entry| &entry.index),
-            adapted.skeletons.view(),
-        )
-        .ok()
-        .map(|(index, _)| index);
+        let index = self
+            .declarations
+            .take_authored_index(adapted.skeletons.view())
+            .or_else(|| {
+                crate::declaration_contributions::KeyedDeclarations::capture_view(
+                    self.entry.as_ref().map(|entry| &entry.index),
+                    adapted.skeletons.view(),
+                )
+                .ok()
+                .map(|(index, _)| index)
+            });
         let updated = self.entry.as_ref().and_then(|entry| {
             index.as_ref()?;
             if !same_engine(entry.engine.as_ref(), engine) {

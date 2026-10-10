@@ -137,20 +137,25 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         issues.sort_by_key(|issue| issue.source_ordinal);
         return Err(ClassificationError { issues });
     }
-    if let Some(reuse) = reuse {
-        let mut keys = Vec::with_capacity(writes.len());
+    let prepared_keys = reuse.map(|reuse| {
+        let mut keys = vec![None; writes.len()];
         for (bucket, facts) in buckets.iter().zip(&admitted) {
             for (&ordinal, &fact) in bucket.ordinals.iter().zip(facts) {
-                keys.push(artifact::key(
+                keys[ordinal] = Some(Arc::<[u8]>::from(artifact::key(
                     &writes[ordinal],
                     fact,
                     reuse,
                     factory_policy.expect("certified reuse policy"),
-                ));
+                )));
             }
         }
+        let keys: Vec<_> = keys
+            .into_iter()
+            .map(|key| key.expect("modifier buckets cover the write roster"))
+            .collect();
         artifact::retain_roster(reuse, &keys);
-    }
+        keys
+    });
     // No evaluation begins unless every modifier boundary was admitted.
     let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
@@ -161,7 +166,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .enumerate()
                 .map(|(local, &global)| {
                     ordinal = local;
-                    artifact::classify_one(
+                    artifact::classify_one_keyed(
                         &writes[global],
                         symbols,
                         worker,
@@ -169,6 +174,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                         global,
                         evaluator,
                         reuse,
+                        prepared_keys.as_ref().map(|keys| &keys[global]),
                     )
                 })
                 .collect()

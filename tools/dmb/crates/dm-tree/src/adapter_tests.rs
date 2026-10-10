@@ -1,6 +1,99 @@
 use super::*;
 use crate::{build, MemberKind, OccurrenceTable};
 #[test]
+fn bare_nested_type_does_not_capture_following_sibling_defaults() {
+    // Matches the captured clown declaration shape: the bare child and the
+    // parent's defaults have equal indentation.
+    let source = "/datum/base\n    var/value = 0\n    child\n        value = 2\n    value = 1\n    sibling\n    value = 3\n";
+    let adapted = adapt(source);
+    let assignments: Vec<_> = adapted
+        .skeletons
+        .iter()
+        .zip(&adapted.origins)
+        .filter_map(|(skeleton, origin)| match skeleton {
+            Skeleton::Member {
+                owner,
+                name,
+                mode: DefinitionMode::Override,
+                ..
+            } if *name == SymbolId::of("value") => Some((
+                *owner,
+                &source[origin.span.start as usize..origin.span.end as usize],
+            )),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        assignments,
+        vec![
+            (SymbolId::of("/datum/base/child"), "value = 2"),
+            (SymbolId::of("/datum/base"), "value = 1"),
+            (SymbolId::of("/datum/base"), "value = 3"),
+        ]
+    );
+    let tree = build(adapted.symbols, &adapted.skeletons).unwrap();
+    let base = tree.lookup_type(SymbolId::of("/datum/base")).unwrap();
+    let child = tree.lookup_type(SymbolId::of("/datum/base/child")).unwrap();
+    let value = SymbolId::of("value");
+    let parent_field = tree.resolve(base, value, MemberKind::Var).unwrap();
+    let child_field = tree.resolve(child, value, MemberKind::Var).unwrap();
+    assert_ne!(parent_field, child_field);
+    assert_eq!(tree.override_chain(parent_field).len(), 3);
+}
+#[test]
+fn qualified_sibling_initializer_tokens_keep_original_expression_coordinates() {
+    let source = "/datum/base\n    child\n    value = list(/proc/callback, \"literal /datum/path\", list(1, 2))\n";
+    let adapted = adapt(source);
+    let (expression, origin) = adapted
+        .skeletons
+        .iter()
+        .zip(&adapted.origins)
+        .find_map(|(skeleton, origin)| match skeleton {
+            Skeleton::Member {
+                owner,
+                name,
+                metadata,
+                ..
+            } if *owner == SymbolId::of("/datum/base") && *name == SymbolId::of("value") => {
+                Some((metadata.initializer.as_ref().unwrap(), origin))
+            }
+            _ => None,
+        })
+        .unwrap();
+    let original_header = &source[origin.span.start as usize..origin.span.end as usize];
+    assert_eq!(
+        original_header,
+        "value = list(/proc/callback, \"literal /datum/path\", list(1, 2))"
+    );
+    let original_expression = original_header.split_once('=').unwrap().1.trim();
+    for token in expression.tokens.iter() {
+        assert_eq!(
+            &original_expression[token.relative_span.start..token.relative_span.end],
+            adapted.symbols.text(token.text).unwrap(),
+        );
+    }
+}
+#[test]
+fn relative_assignment_trailing_slash_remains_an_invalid_target() {
+    let source = "/datum/base\n    child\n    value/ = 1\n";
+    let errors = from_ast(
+        &dm_syntax::parse(source),
+        SymbolTable::default(),
+        FileId(3),
+        7,
+        11,
+    )
+    .unwrap_err();
+    assert_eq!(errors.len(), 1);
+    assert!(errors[0]
+        .message
+        .starts_with("unsupported field assignment:"));
+    assert_eq!(
+        &source[errors[0].span.start as usize..errors[0].span.end as usize],
+        "value/ = 1"
+    );
+}
+#[test]
 fn absolute_root_members_do_not_inherit_last_type_anchor() {
     let adapted=adapt("/datum/anchor\n    var/local_value = 1\n    var/scoped_value = 3\n    proc/scoped_read()\n        return scoped_value\n/var/global_value = 2\n/proc/root_read()\n    return global_value\n");
     let root = SymbolId::of("/");

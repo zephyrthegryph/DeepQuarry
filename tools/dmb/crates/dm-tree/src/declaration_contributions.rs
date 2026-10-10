@@ -1,5 +1,6 @@
 //! Exact immutable declaration contributions, separated from the global authored
 //! roster. Keys describe source families, never resolved member/output IDs.
+pub(crate) mod authored;
 use crate::{MemberKind, Skeleton};
 use dm_ir::SymbolId;
 use std::collections::{BTreeMap, HashMap};

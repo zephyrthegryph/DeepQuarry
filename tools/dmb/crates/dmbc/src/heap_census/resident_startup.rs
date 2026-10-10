@@ -35,6 +35,7 @@ impl HeapCensus {
         charge
     }
 }
+#[cfg(test)]
 pub(crate) fn weight(
     receipt: &Arc<dm_tree::frontend::RelativeStaticPlan>,
     key: &[u8],

@@ -5,6 +5,7 @@ pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
     pub(super) key: Option<Vec<u8>>,
     pub(super) accepted: Option<Arc<artifact::SemanticClassification>>,
+    pub(super) parsed_runtime_source: Option<String>,
 }
 fn classify_pending<'a>(
     writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
@@ -61,6 +62,7 @@ fn classify_pending<'a>(
                 },
                 key: None,
                 accepted: None,
+                parsed_runtime_source: None,
             });
             continue;
         }
@@ -111,11 +113,13 @@ fn classify_pending<'a>(
                     },
                     key: None,
                     accepted: None,
+                    parsed_runtime_source: None,
                 });
                 continue;
             }
         }
         let mut parsed_runtime = None;
+        let mut parsed_runtime_source = None;
         let mut pending_key = None;
         let (default, phase) = match &write.value {
             InitializerValue::NoAuthoredValue => (DefaultValue::Scalar(SemanticValue::Null), None),
@@ -138,22 +142,13 @@ fn classify_pending<'a>(
                         let scalar_list =
                             matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)));
                         drop(evaluation);
-                        let PreparedInitializerExpression { source: text, ast } = match prepared {
+                        let prepared = match prepared {
                             Some(prepared) => prepared,
-                            None => {
-                                let text = value
-                                    .source_text(symbols)
-                                    .ok_or("initializer spelling missing")?;
-                                let parsed = dm_syntax::parse_expression(&text);
-                                if !parsed.diagnostics.is_empty() {
-                                    return Err("invalid initializer expression".into());
-                                }
-                                PreparedInitializerExpression {
-                                    source: text,
-                                    ast: parsed.expr.ok_or("missing initializer expression")?,
-                                }
-                            }
+                            None => PreparedInitializerExpression::parse_captured(value, symbols)?
+                                .ok_or("missing initializer expression")?,
                         };
+                        let (text, ast, authored) = prepared.into_parts();
+                        let parser_issued = authored.as_ref() == Some(value);
                         let expr = &ast;
                         if let Some(matrix) =
                             transform::fold(&write, expr, &text, symbols, evaluator)?
@@ -168,6 +163,7 @@ fn classify_pending<'a>(
                                 },
                                 key: None,
                                 accepted: None,
+                                parsed_runtime_source: None,
                             });
                             continue;
                         }
@@ -182,6 +178,9 @@ fn classify_pending<'a>(
                         } else {
                             DefaultValue::Scalar(SemanticValue::Null)
                         };
+                        if parser_issued {
+                            parsed_runtime_source = Some(text);
+                        }
                         parsed_runtime = Some(ast);
                         (
                             default,
@@ -212,6 +211,7 @@ fn classify_pending<'a>(
             },
             key: pending_key,
             accepted: None,
+            parsed_runtime_source,
         });
     }
     Ok(classified)
@@ -227,6 +227,7 @@ fn finish_pending(
         mut write,
         key,
         accepted,
+        parsed_runtime_source: _,
     } in pending
     {
         let key = key.or_else(|| {

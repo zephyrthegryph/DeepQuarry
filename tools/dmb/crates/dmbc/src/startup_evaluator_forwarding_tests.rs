@@ -54,10 +54,10 @@ impl CapturedInitializerEvaluator for Recording {
         ast.span = dm_syntax::Span::new(123, 456);
         Ok((
             Evaluation::Runtime,
-            Some(PreparedInitializerExpression {
-                source: "already captured runtime source".into(),
+            Some(PreparedInitializerExpression::new(
+                "already captured runtime source".into(),
                 ast,
-            }),
+            )),
         ))
     }
     fn evaluate_ast_write(
@@ -103,10 +103,10 @@ fn worker_startup_and_engine_wrappers_preserve_issued_prepared_syntax_and_ast_ca
         let (value, prepared) = wrapped.evaluate_prepared_write(write, expression).unwrap();
         assert!(matches!(value, Evaluation::Runtime));
         let prepared = prepared.unwrap();
-        assert_eq!(prepared.source, "already captured runtime source");
-        assert_eq!(prepared.ast.span, dm_syntax::Span::new(123, 456));
+        assert_eq!(prepared.source(), "already captured runtime source");
+        assert_eq!(prepared.ast().span, dm_syntax::Span::new(123, 456));
         assert!(matches!(wrapped.evaluate_ast_write(
-            write, &prepared.ast, &prepared.source, &startup.plan().symbols,
+            write, &prepared.ast(), &prepared.source(), &startup.plan().symbols,
         ).unwrap(), Evaluation::Scalar(SemanticValue::NumberBits(bits)) if bits == 21f32.to_bits()));
     });
     assert_eq!(factory.prepared.load(Ordering::Relaxed), 1);
@@ -167,9 +167,9 @@ fn procedure_static_prepared_and_ast_evaluation_use_captured_lexical_resolver() 
         matches!(value, Evaluation::Scalar(SemanticValue::NumberBits(bits)) if bits == 7f32.to_bits())
     );
     let prepared = prepared.unwrap();
-    assert_eq!(prepared.source, "base");
+    assert_eq!(prepared.source(), "base");
     assert!(matches!(evaluator.evaluate_ast_write(
-        write, &prepared.ast, &prepared.source, &startup.plan().symbols,
+        write, &prepared.ast(), &prepared.source(), &startup.plan().symbols,
     ).unwrap(), Evaluation::Scalar(SemanticValue::NumberBits(bits)) if bits == 7f32.to_bits()));
     assert_eq!(ordinary.prepared.load(Ordering::Relaxed), 0);
     assert_eq!(ordinary.ast.load(Ordering::Relaxed), 0);

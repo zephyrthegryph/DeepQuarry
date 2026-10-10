@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn normalize(dmb: &Dmb, id: u32) -> NormalVariable {
+pub(super) fn normalize(dmb: &memo::NormalizationContext<'_>, id: u32) -> NormalVariable {
     // Pinned DreamMaker static_icon_probe emits Global(178) for VarID178,
     // while its footer has only 68 declaration pairs. Global is never a slot.
     let Some(record) = dmb.variables.get(id as usize) else {
@@ -52,24 +52,30 @@ mod tests {
         let mut byond = native.clone();
         byond.variables[178] = native.variables[179].clone();
         byond.lists[byond.variable_footer as usize][134] = 178;
-        assert_eq!(normalize(&native, 179), normalize(&byond, 178));
-        assert_ne!(normalize(&native, 67), normalize(&byond, 178));
         assert_eq!(
-            normalize(&native, 177),
+            normalize(&memo::NormalizationContext::new(&native), 179),
+            normalize(&memo::NormalizationContext::new(&byond), 178)
+        );
+        assert_ne!(
+            normalize(&memo::NormalizationContext::new(&native), 67),
+            normalize(&memo::NormalizationContext::new(&byond), 178)
+        );
+        assert_eq!(
+            normalize(&memo::NormalizationContext::new(&native), 177),
             NormalVariable::Named("builtin-global-vars")
         );
         native.variable_footer = u32::MAX;
         assert_eq!(
-            normalize(&native, 179),
+            normalize(&memo::NormalizationContext::new(&native), 179),
             NormalVariable::Global(Some(b"flat_template".to_vec()))
         );
         assert_eq!(
-            normalize(&native, 999),
+            normalize(&memo::NormalizationContext::new(&native), 999),
             NormalVariable::InvalidGlobal("variable-out-of-range", 999, None)
         );
         native.variables[179].name = u32::MAX;
         assert_eq!(
-            normalize(&native, 179),
+            normalize(&memo::NormalizationContext::new(&native), 179),
             NormalVariable::InvalidGlobal("missing-variable-name", 179, Some(u32::MAX))
         );
     }

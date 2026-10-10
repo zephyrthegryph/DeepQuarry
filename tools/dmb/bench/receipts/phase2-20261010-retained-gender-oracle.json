@@ -13,7 +13,7 @@
   },
   "root_cause": "The retained header recipe field whitelist omitted gender; fresh output inherited authored gender correctly.",
   "correction": "Use one shared header-field catalog for fresh inheritance and retained recipes, including gender; version the recipe policy. Captured golden compares complete fresh, first-retained and warm-retained DMB bytes.",
-  "correction_status": "Captured gender and full-catalog inheritance fixtures passed; full DeepQuarry fresh-native oracle remains pending.",
+  "correction_status": "Captured gender/full-catalog fixtures and all seven captured DeepQuarry retained-versus-fresh DMB/RSC byte oracles passed. Final structural inspector timed out; BYOND acceptance remains open.",
   "cleanup": {
     "owned_daemon_pid": 44792,
     "reaped": true
@@ -22,5 +22,6 @@
     "This run produced no admitted iteration timings.",
     "Whole-program BYOND structural and runtime acceptance remain open."
   ],
-  "focused_validation_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-003226-7ef8c8d4.json"
+  "focused_validation_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-003226-7ef8c8d4.json",
+  "correction_cohort_receipt": "bench/receipts/phase2-20261010-prototype-iteration.json"
 }

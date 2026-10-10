@@ -343,6 +343,17 @@ pub(super) fn parse_declarations_with_state(
     let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
     ordered.sort_by_key(|(index, _, _, _, _)| *index);
+    if let Some(state) = retained {
+        if ordered.iter().all(|(_, _, _, _, current)| current.is_ok()) {
+            state
+                .adopt_authored(
+                    ordered
+                        .iter_mut()
+                        .filter_map(|(_, _, _, _, current)| current.as_mut().ok()),
+                )
+                .ok_or_else(|| vec![internal("exact authored declaration adoption failed")])?;
+        }
+    }
     let merge_start = Instant::now();
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
     let mut updated = std::collections::BTreeMap::new();
