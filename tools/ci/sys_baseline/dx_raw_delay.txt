@@ -1,5 +1,3 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_raw_delay.py (doc/rewrite/systems.md); shrink-only, target 0
 dx_raw_delay	code/game/mecha/equipment/weapons/weapons.dm	after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), with = list(P, target, params))
-dx_raw_delay	code/game/objects/effects/chem/foam.dm	after(src, 3 + metal * 3, PROC_REF(post_spread))
-dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 dx_raw_delay	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))

@@ -4,8 +4,10 @@ human|none click: Click: Remove container
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Remove container
 robot|none menu: Toggle Mode
+robot|none menu: Use
 robot|none click: Click: Remove container
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Toggle Mode (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -67,5 +69,5 @@ human|/obj/item/reagent_containers menu: Remove container
 human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers menu: Toggle Mode
 human|/obj/item/reagent_containers click: Click: Attach container
-keys: drag_buckle, iv_drip_interaction_hand, iv_drip_interaction_item, iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_screwdriver
+keys: drag_buckle, iv_drip_interaction_hand, iv_drip_interaction_item, iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_screwdriver
 
