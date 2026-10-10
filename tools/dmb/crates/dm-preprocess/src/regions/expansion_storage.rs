@@ -47,9 +47,9 @@ pub(in crate::regions) fn slice_storage<T>(value: &[T]) -> ExpansionStorageView<
 }
 impl ExpansionRecord {
     pub fn visit_storage(&self, mut visit: impl FnMut(ExpansionStorageView<'_>)) {
-        visit(ExpansionStorageView::Text(&self.source));
+        visit(ExpansionStorageView::Source(&self.source));
         visit(slice_storage(&self.control));
-        visit(ExpansionStorageView::Text(&self.text));
+        visit(ExpansionStorageView::Source(&self.text));
         visit(vector_storage(&self.reads));
         for read in &self.reads {
             visit(ExpansionStorageView::Text(&read.name));

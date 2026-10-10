@@ -27,15 +27,24 @@ pub enum StorageQuery {
     Owner(SymbolId),
     Predecessor(DeclarationKey),
     Intrinsic(SymbolId, SymbolId),
+    Unique(SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StorageAnswer {
     Owner(Option<Arc<[StorageInput]>>),
     Predecessor(Option<StorageFact>),
     Intrinsic(Option<IntrinsicMember>),
+    Unique(UniqueStorageInputs),
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct UniqueStorageInputs {
+    pub slot: Option<(SymbolId, SymbolId)>,
+    pub non_unique: bool,
+    pub complete: bool,
 }
 pub struct StorageOwner {
     pub facts: Arc<[(DeclarationKey, StorageFact)]>,
+    pub unique_token: Option<u64>,
 }
 type Store = ObservedArtifactStore<StorageOwner, StorageQuery, StorageAnswer, ()>;
 pub(crate) struct RetainedStorage {
@@ -58,6 +67,7 @@ struct Host<'a> {
 impl ObservationHost<StorageQuery, StorageAnswer, ()> for Host<'_> {
     fn answer(&self, query: &StorageQuery) -> StorageAnswer {
         match *query {
+            StorageQuery::Unique(name) => StorageAnswer::Unique(unique_inputs(self.tree, name)),
             StorageQuery::Owner(owner) => StorageAnswer::Owner(self.inputs.get(&owner).cloned()),
             StorageQuery::Predecessor(key) => {
                 StorageAnswer::Predecessor(self.resolved.get(&key).copied())
@@ -135,9 +145,13 @@ impl RetainedStorage {
                 0,
                 || StorageOwner {
                     facts: Arc::clone(&facts),
+                    unique_token: None,
                 },
             );
-            Arc::new(StorageOwner { facts })
+            Arc::new(StorageOwner {
+                facts,
+                unique_token: None,
+            })
         }
     }
     #[cfg(test)]
@@ -187,7 +201,14 @@ impl RetainedStorage {
             .into_iter()
             .map(|(owner, rows)| (owner, rows.into()))
             .collect();
-        let keys: Vec<_> = inputs.keys().map(|owner| key(*owner)).collect();
+        let mut keys: Vec<_> = inputs.keys().map(|owner| key(*owner)).collect();
+        self.store.visit_storage(|view| {
+            if let ObservedArtifactStorageView::Entry { key, .. } = view {
+                if key.starts_with(UNIQUE_PREFIX) {
+                    keys.push(Arc::clone(key));
+                }
+            }
+        });
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
@@ -276,7 +297,7 @@ impl RetainedStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn source(source: &str) -> (SemanticTree, KeyedDeclarations) {
+    pub(super) fn source(source: &str) -> (SemanticTree, KeyedDeclarations) {
         let adapted = crate::from_ast(
             &dm_syntax::parse(source),
             SymbolTable::default(),
@@ -450,3 +471,7 @@ mod tests {
         }
     }
 }
+
+#[path = "storage_uniqueness.rs"]
+mod uniqueness;
+use uniqueness::{unique_inputs, UNIQUE_PREFIX};

@@ -3,7 +3,7 @@ use crate::lowering_memo::{ReplayDecline, ResolverRead};
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
-pub(crate) const SCHEMA: u32 = 0x0206_0009;
+pub(crate) const SCHEMA: u32 = 0x0206_000b;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]
@@ -13,14 +13,30 @@ pub(crate) fn eligible(
     unit: &crate::lowering::LoweredUnit,
     bindings: crate::lowering::DiskReplayBindings<'_>,
 ) -> bool {
-    if unit.abi.is_none() || unit.selected_references.is_some() || !unit.code.instances.is_empty() {
+    if unit.abi.is_none() || unit.selected_references.is_some() {
         return false;
     }
-    if unit
-        .source_helpers
-        .iter()
-        .any(|h| !h.code.instances.is_empty() || !h.code.modified_instances.is_empty())
-    {
+    if unit.code.instances.iter().any(|(alias, value)| {
+        *alias != value.alias
+            || *alias == value.runtime_type
+            || unit
+                .code
+                .modified_instances
+                .contains_key(&dm_ir::SymRef::Instance(*alias))
+    }) {
+        return false;
+    }
+    if unit.source_helpers.iter().any(|h| {
+        !h.code.modified_instances.is_empty()
+            || h.code.instances.iter().any(|(alias, value)| {
+                *alias != value.alias
+                    || *alias == value.runtime_type
+                    || unit
+                        .code
+                        .modified_instances
+                        .contains_key(&dm_ir::SymRef::Instance(*alias))
+            })
+    }) {
         return false;
     }
     if unit
@@ -59,8 +75,13 @@ pub(crate) fn eligible(
                 (at as usize) < unit.debug_origins.entries.len()
             }
             dm_ir::SymRef::Instance(_) => {
-                selected_instances.insert(reference);
-                unit.code.modified_instances.contains_key(&reference)
+                if unit.code.modified_instances.contains_key(&reference) {
+                    selected_instances.insert(reference);
+                    true
+                } else {
+                    bindings.source.contains(&reference)
+                        || bindings.external.references.contains(&reference)
+                }
             }
             _ => {
                 licensed.contains(&reference)
@@ -97,6 +118,11 @@ pub(crate) fn eligible(
                 valid &= match reference {
                     dm_ir::SymRef::SourceFile(at) | dm_ir::SymRef::SourceLine(at) => {
                         (at as usize) < helper.debug_origins.entries.len()
+                    }
+                    dm_ir::SymRef::Instance(alias) => {
+                        helper.code.instances.contains_key(&alias)
+                            && (bindings.source.contains(&reference)
+                                || bindings.external.references.contains(&reference))
                     }
                     _ => {
                         licensed.contains(&reference)
@@ -171,6 +197,7 @@ pub(crate) struct Payload<'a> {
     helpers: BoundedVec<crate::symbolic::procedure_artifact::disk::HelperWire<'a>>,
     #[serde(borrow)]
     recipes: BoundedVec<crate::modified_initializers::RecipeWire<'a>>,
+    instances: BoundedVec<(SymbolId, SymbolId)>,
 }
 pub(crate) fn encode(
     key: &[u8],
@@ -222,12 +249,22 @@ pub(crate) fn encode(
         executable,
         helpers: BoundedVec(artifact.disk_helpers()?),
         recipes: BoundedVec(recipes.iter().map(|r| r.disk_evidence()).collect()),
+        instances: BoundedVec(artifact.disk_instances().to_vec()),
     };
     dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD).ok()
 }
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     let value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
     crate::lowering_memo_wire::validate_versions(&value.versions.0)?;
+    if !valid_plain_instances(&value.instances.0, &value.reads.0)
+        || value
+            .helpers
+            .0
+            .iter()
+            .any(|helper| !valid_plain_instances(helper.instances(), &value.reads.0))
+    {
+        return Err("malformed or unobserved plain instance tuple".into());
+    }
     let mut references = std::collections::BTreeSet::new();
     if value
         .recipes
@@ -237,7 +274,27 @@ pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     {
         return Err("malformed/duplicate compact modifier recipe".into());
     }
+    if value
+        .instances
+        .0
+        .iter()
+        .chain(value.helpers.0.iter().flat_map(|helper| helper.instances()))
+        .any(|(alias, _)| references.contains(&dm_ir::SymRef::Instance(*alias)))
+    {
+        return Err("plain and modified instance rosters overlap".into());
+    }
     Ok(value)
+}
+fn valid_plain_instances(instances: &[(SymbolId, SymbolId)], reads: &[ReadWire<'_>]) -> bool {
+    !instances.windows(2).any(|pair| pair[0].0 >= pair[1].0)
+        && instances.iter().all(|(alias, runtime)| {
+            alias != runtime
+                && reads.iter().any(|read| {
+                    read.query == ResolveQuery::RuntimeType(*alias)
+                        && read.answer.as_ref()
+                            == dm_ir::ResolvedMeaning::Symbol(*runtime).canonical_bytes()
+                })
+        })
 }
 impl Payload<'_> {
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
@@ -290,6 +347,7 @@ impl Payload<'_> {
                 bindings,
                 debug.entries.len(),
                 &instances,
+                &self.instances.0,
             )
             .ok_or(ReplayDecline::ExecutableIssuer)?;
         crate::symbolic::ReusableProcedureArtifact::disk_bind_helpers(

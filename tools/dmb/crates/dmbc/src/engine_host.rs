@@ -330,6 +330,22 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
             return Some((u128::from(base) << 64) | u128::from(provider));
         }
         if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
+            if let Q::UniqueStaticVar(name) = query {
+                let (base, provider) = if matches!(self.tree.resolve(query), M::Unsupported(_)) {
+                    let coverage = self.variable_absence.as_ref()?;
+                    if !coverage.names.contains(&name) {
+                        return None;
+                    }
+                    (coverage.source.domain_version(domain)?, coverage.issuer?)
+                } else {
+                    let provider = match &self.variable_absence {
+                        Some(coverage) => coverage.issuer?,
+                        None => 0,
+                    };
+                    (self.tree.domain_version(domain)?, provider)
+                };
+                return Some((u128::from(u64::try_from(base).ok()?) << 64) | u128::from(provider));
+            }
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
             // Only an unchanged positive/current source answer may use the
             // local certificate. Native absence fallback remains uncertified.

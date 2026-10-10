@@ -11,11 +11,12 @@ impl HeapCensus {
         let owner = "retained_expansion_inputs";
         inputs.visit_storage(|view| match view {
             ExpansionStorageView::Buffer { address,payload_bytes,capacity_bytes } => {
-                self.buffer(owner,address,payload_bytes,capacity_bytes);
+                self.buffer("retained_expansion_inputs.buffers",address,payload_bytes,capacity_bytes);
             }
-            ExpansionStorageView::Source(source) => self.source_text(owner,source),
-            ExpansionStorageView::Text(text) => self.arc_text(owner,text),
+            ExpansionStorageView::Source(source) => self.source_text("retained_expansion_inputs.source",source),
+            ExpansionStorageView::Text(text) => self.arc_text("retained_expansion_inputs.text",text),
             ExpansionStorageView::Macro(definition) => {
+                let owner = "retained_expansion_inputs.macros";
                 if self.arc_object(owner,definition) {
                     self.string(owner,&definition.replacement);
                     if let Some(parameters)=&definition.parameters { self.strings(owner,parameters); }
@@ -95,7 +96,7 @@ mod tests {
             .iter()
             .find(|owner| owner.owner == "retained_expansion_inputs")
             .unwrap();
-        assert!(owner.shared_encounters > 0);
+        assert!(twice.owners.iter().any(|owner| owner.shared_encounters > 0));
         assert!(owner
             .unknown
             .iter()

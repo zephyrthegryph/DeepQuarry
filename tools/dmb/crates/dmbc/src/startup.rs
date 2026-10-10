@@ -7,6 +7,7 @@ use dm_tree::{
 };
 #[path = "startup_artifacts.rs"]
 mod artifacts;
+pub(crate) use artifacts::Artifact as StartupArtifact;
 pub use artifacts::StartupArtifacts;
 #[cfg(test)]
 #[path = "startup_artifacts_tests.rs"]
@@ -171,6 +172,7 @@ fn capture_impl_with_bodies_and_artifacts(
         artifacts.retain_keys(
             keys.values()
                 .filter_map(|result| result.as_ref().ok()?.as_deref()),
+            identities.values().copied(),
         );
     }
     let capture_body = |body: &dm_tree::frontend::BodyOccurrence| {
@@ -270,10 +272,15 @@ fn capture_impl_with_bodies_and_artifacts(
         .enumerate()
         .map(|(index, (occurrence, _))| (*occurrence, index))
         .collect();
-    let static_inventory =
-        std::sync::Arc::new(dm_tree::procedure_statics::StaticInventory::from_plans(
-            procedures.iter().map(|(_, plan)| (plan.procedure, &**plan)),
-        )?);
+    let mut static_inventory = dm_tree::procedure_statics::StaticInventory::from_plans(
+        procedures.iter().map(|(_, plan)| (plan.procedure, &**plan)),
+    )?;
+    if let Some(artifacts) = artifacts {
+        static_inventory
+            .certify(|procedure, declarations| artifacts.admit_layout(procedure, declarations));
+    }
+    let static_inventory = std::sync::Arc::new(static_inventory);
+
     Ok(StartupFacts {
         issuance: None,
         plan,
@@ -791,3 +798,7 @@ mod spelling_tests {
 #[cfg(test)]
 #[path = "startup_evaluator_forwarding_tests.rs"]
 mod evaluator_forwarding_tests;
+
+#[cfg(test)]
+#[path = "startup_static_certificate_tests.rs"]
+mod static_certificate_tests;

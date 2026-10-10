@@ -1,6 +1,7 @@
 //! Explicit intrinsic completeness and name-indexed shared-variable inventory.
 use super::*;
 use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
+use std::collections::BTreeMap;
 
 /// Authoritative intrinsic member inventory for one pinned engine configuration.
 /// Supply all intrinsic fields/procs/verbs, including untyped fields. A shared
@@ -48,6 +49,7 @@ pub(crate) struct ResolverInventory {
     // Positive counterexamples remain valid even when other engine rows are
     // uncaptured. Absence and a single shared candidate still need completeness.
     non_unique: HashSet<SymbolId>,
+    pub(crate) unique_certificates: BTreeMap<SymbolId, u64>,
 }
 impl SemanticTree {
     /// The caller certifies this is the complete intrinsic inventory for the

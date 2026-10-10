@@ -463,6 +463,7 @@ pub(crate) fn materialize_members_with_roster(
         }
         dmb.variable_footer = list(dmb, footer)?;
     }
+    let mut mob_settings = BTreeMap::<u32, Vec<(u8, u32)>>::new();
     for field in projection
         .fields
         .iter()
@@ -515,6 +516,30 @@ pub(crate) fn materialize_members_with_roster(
                     })?;
                 Ok(number)
             };
+            if field.declaring_owner == SymbolId::of("/mob")
+                && values.mobs.contains_key(&field.owner)
+            {
+                let setting = match name {
+                    "sight" => Some(0),
+                    "see_in_dark" => Some(1),
+                    "see_invisible" => Some(2),
+                    _ => None,
+                };
+                if let Some(setting) = setting {
+                    let number = integer(0.0, u32::MAX as f32)?;
+                    // f32 rounds u32::MAX upward; reject that unrepresentable boundary.
+                    if number as f64 > u32::MAX as f64 {
+                        return Err(ProjectionError::Unsupported(format!(
+                            "invalid intrinsic {name} numeric value"
+                        )));
+                    }
+                    mob_settings
+                        .entry(class)
+                        .or_default()
+                        .push((setting, number as u32));
+                    continue;
+                }
+            }
             // BYOND retains invisibility as a builtin default as well as its
             // zero/nonzero appearance-header bit. Keep the normal default arm.
             if name == "invisibility" {
@@ -559,6 +584,29 @@ pub(crate) fn materialize_members_with_roster(
                     }
                     dmb.classes[class as usize].initial_ids[4] =
                         if kind == 0 { NONE } else { value };
+                }
+                "gender" if field.declaring_owner == SymbolId::of("/atom") => {
+                    let code = match &field.value {
+                        DefaultValue::Scalar(SemanticValue::Text(value)) => match value.as_ref() {
+                            b"neuter" => 0,
+                            b"male" => 1,
+                            b"female" => 2,
+                            b"plural" => 3,
+                            _ => {
+                                return Err(ProjectionError::Unsupported(
+                                    "invalid gender default".into(),
+                                ))
+                            }
+                        },
+                        _ => {
+                            return Err(ProjectionError::Unsupported(
+                                "gender default is not text".into(),
+                            ))
+                        }
+                    };
+                    dmb.classes[class as usize]
+                        .set_gender_code(code)
+                        .map_err(|error| ProjectionError::Unsupported(error.to_string()))?;
                 }
                 "density" => dmb.classes[class as usize].set_dense(integer(0.0, 1.0)? != 0.0),
                 "opacity" => dmb.classes[class as usize].set_opaque(integer(0.0, 1.0)? != 0.0),
@@ -632,6 +680,7 @@ pub(crate) fn materialize_members_with_roster(
         let id = extend(dmb, old, words)?;
         dmb.classes[class as usize].lists_and_procs[3] = id;
     }
+    crate::mob_writer::apply_settings(dmb, &mob_settings).map_err(ProjectionError::Unsupported)?;
     let proc_lists = methods::procedure_membership(projection, tables)?;
     for ((owner, verb), mut entries) in proc_lists {
         if owner == SymbolId::of("/world") {
@@ -681,3 +730,11 @@ mod transform_tests;
 #[cfg(test)]
 #[path = "members_visibility_tests.rs"]
 mod visibility_tests;
+
+#[cfg(test)]
+#[path = "members_mob_tests.rs"]
+mod mob_tests;
+
+#[cfg(test)]
+#[path = "members_gender_tests.rs"]
+mod gender_tests;

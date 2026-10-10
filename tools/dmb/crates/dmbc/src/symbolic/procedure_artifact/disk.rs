@@ -2,6 +2,18 @@
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+pub(crate) fn plain_instance_licensed(
+    alias: SymbolId,
+    plain: &[(SymbolId, SymbolId)],
+    bindings: crate::lowering::DiskReplayBindings<'_>,
+) -> bool {
+    let reference = SymRef::Instance(alias);
+    plain
+        .binary_search_by_key(&alias, |(alias, _)| *alias)
+        .is_ok()
+        && (bindings.source.contains(&reference)
+            || bindings.external.references.contains(&reference))
+}
 
 #[derive(Serialize, Deserialize)]
 struct StringWire<'a> {
@@ -31,6 +43,9 @@ pub(crate) struct Encoded<'a> {
     suffix: Cow<'a, [u8]>,
 }
 impl ReusableProcedureArtifact {
+    pub(crate) fn disk_instances(&self) -> &[(SymbolId, SymbolId)] {
+        &self.instances
+    }
     pub(crate) fn disk_abi(&self) -> Option<Vec<u8>> {
         Some(self.abi.as_ref()?.canonical_bytes())
     }
@@ -50,6 +65,7 @@ impl ReusableProcedureArtifact {
                 Some(HelperWire {
                     argument: helper.argument,
                     code: Encoded::capture_helper(helper)?,
+                    instances: crate::lowering_memo_compact::BoundedVec(helper.instances.clone()),
                 })
             })
             .collect()
@@ -66,6 +82,7 @@ impl ReusableProcedureArtifact {
         }
         let mut requests = Vec::new();
         append(&self.frozen, &mut requests);
+        requests.extend(self.instances.iter().map(|(_, runtime)| *runtime));
         let modified: std::collections::BTreeMap<_, _> = recipes
             .iter()
             .map(|r| (r.reference(), r.runtime_type()))
@@ -73,6 +90,7 @@ impl ReusableProcedureArtifact {
         requests.extend(modified.into_values());
         for helper in &self.helpers {
             append(&helper.frozen, &mut requests);
+            requests.extend(helper.instances.iter().map(|(_, runtime)| *runtime));
         }
         requests
     }
@@ -82,6 +100,16 @@ pub(crate) struct HelperWire<'a> {
     pub(crate) argument: u32,
     #[serde(borrow)]
     code: Encoded<'a>,
+    instances: crate::lowering_memo_compact::BoundedVec<(SymbolId, SymbolId)>,
+}
+impl HelperWire<'_> {
+    pub(crate) fn instances(&self) -> &[(SymbolId, SymbolId)] {
+        &self.instances.0
+    }
+    #[cfg(test)]
+    pub(crate) fn corrupt_instance_runtime(&mut self) {
+        self.instances.0[0].1 = SymbolId::of("/datum");
+    }
 }
 impl<'a> Encoded<'a> {
     fn capture_helper(helper: &'a HelperArtifact) -> Option<Self> {
@@ -89,7 +117,7 @@ impl<'a> Encoded<'a> {
             .frozen
             .code()
             .relocations()
-            .any(|r| matches!(r.reference, SymRef::Instance(_)))
+            .any(|r| matches!(r.reference, SymRef::Instance(alias) if helper.instances.binary_search_by_key(&alias, |(id, _)| *id).is_err()))
         {
             return None;
         }
@@ -203,6 +231,7 @@ impl Encoded<'_> {
     pub(crate) fn corrupt_string(&mut self) {
         self.strings.0[0].id = SymbolId::of("forged string payload");
     }
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn restore(
         self,
         frontend: &dm_tree::frontend::ColdFrontend,
@@ -211,6 +240,7 @@ impl Encoded<'_> {
         bindings: crate::lowering::DiskReplayBindings<'_>,
         debug_count: usize,
         instances: &std::collections::BTreeSet<SymRef>,
+        plain: &[(SymbolId, SymbolId)],
     ) -> Option<Arc<ReusableProcedureArtifact>> {
         self.restore_mode(
             frontend,
@@ -220,6 +250,7 @@ impl Encoded<'_> {
             debug_count,
             false,
             instances,
+            plain,
         )
     }
     #[allow(clippy::too_many_arguments)]
@@ -232,6 +263,7 @@ impl Encoded<'_> {
         debug_count: usize,
         helper: bool,
         instances: &std::collections::BTreeSet<SymRef>,
+        plain: &[(SymbolId, SymbolId)],
     ) -> Option<Arc<ReusableProcedureArtifact>> {
         let source_len = body
             .expanded_span
@@ -303,9 +335,13 @@ impl Encoded<'_> {
         for (offset, reference, tag) in self.relocations.0 {
             let valid = match reference {
                 SymRef::SourceFile(at) | SymRef::SourceLine(at) => (at as usize) < debug_count,
-                SymRef::Instance(_) => {
-                    selected_instances.insert(reference);
-                    !helper && instances.contains(&reference)
+                SymRef::Instance(alias) => {
+                    if instances.contains(&reference) {
+                        selected_instances.insert(reference);
+                        !helper
+                    } else {
+                        plain_instance_licensed(alias, plain, bindings)
+                    }
                 }
                 _ => {
                     licensed.contains(&reference)
@@ -408,6 +444,7 @@ impl Encoded<'_> {
             abi: prepared.abi.clone(),
             strings: OwnedStrings(strings),
             slots: Slots(slots),
+            instances: plain.to_vec(),
             content: expected,
             helpers: Vec::new(),
         }))
@@ -462,6 +499,7 @@ impl ReusableProcedureArtifact {
                 debug.entries.len(),
                 true,
                 &std::collections::BTreeSet::new(),
+                &helper.instances.0,
             )?;
             let code = Arc::try_unwrap(code).ok()?;
             restored.push(HelperArtifact {
@@ -472,6 +510,7 @@ impl ReusableProcedureArtifact {
                 local_names: code.frame.local_names,
                 strings: code.strings,
                 slots: code.slots,
+                instances: code.instances,
                 content: code.content,
             });
         }

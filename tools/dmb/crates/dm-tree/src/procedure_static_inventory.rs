@@ -3,6 +3,7 @@ use super::*;
 /// Issued from exact plans; read-only users cannot replace declarations or keys.
 pub struct StaticInventory {
     pub(super) procedures: HashSet<ProcedureIdentity>,
+    certificates: std::collections::BTreeMap<ProcedureIdentity, Arc<StaticLayout>>,
     pub(super) declarations:
         std::collections::BTreeMap<ProcedureStaticIdentity, Arc<ProcedureStaticDeclaration>>,
 }
@@ -34,7 +35,51 @@ impl StaticInventory {
         Ok(Self {
             procedures,
             declarations,
+            certificates: Default::default(),
         })
+    }
+    /// Revalidate any returned owner against this exact current captured roster.
+    /// An absent/incorrect receipt only disables scoped certification.
+    pub fn certify(
+        &mut self,
+        mut admit: impl FnMut(
+            ProcedureIdentity,
+            Arc<[Arc<ProcedureStaticDeclaration>]>,
+        ) -> Option<Arc<StaticLayout>>,
+    ) {
+        self.certificates.clear();
+        let mut rosters = std::collections::BTreeMap::<
+            ProcedureIdentity,
+            Vec<Arc<ProcedureStaticDeclaration>>,
+        >::new();
+        for &procedure in &self.procedures {
+            rosters.insert(procedure, Vec::new());
+        }
+        for declaration in self.declarations.values() {
+            rosters
+                .get_mut(&declaration.identity.procedure)
+                .expect("validated static procedure")
+                .push(Arc::clone(declaration));
+        }
+        for (procedure, declarations) in rosters {
+            let declarations: Arc<[_]> = declarations.into();
+            if let Some(layout) = admit(procedure, Arc::clone(&declarations)) {
+                if layout.matches(procedure, &declarations) {
+                    self.certificates.insert(procedure, layout);
+                }
+            }
+        }
+    }
+    pub(super) fn certificate(&self, procedure: ProcedureIdentity) -> Option<u128> {
+        self.certificates
+            .get(&procedure)
+            .map(|layout| layout.certificate())
+    }
+    pub fn certificates(&self) -> impl Iterator<Item = &Arc<StaticLayout>> {
+        self.certificates.values()
+    }
+    pub fn certificate_count(&self) -> usize {
+        self.certificates.len()
     }
     pub fn procedure_storage(&self) -> (usize, usize) {
         (self.procedures.len(), self.procedures.capacity())

@@ -13,6 +13,8 @@ mod idle;
 mod idle_census;
 #[path = "runner_host_memo.rs"]
 mod memo;
+#[path = "runner_query_snapshot.rs"]
+pub(crate) mod query_snapshot;
 pub(crate) use engine_payload::EnginePayloads;
 #[path = "runner_executor_pool.rs"]
 mod executor_pool;
@@ -48,6 +50,7 @@ pub struct BuildHost {
     executor: Option<dm_exec::BuildExecutor>,
     procedures: Option<(u128, ProcedureValues)>,
     semantic: Option<dm_tree::frontend::RetainedSemanticTree>,
+    query_state: Arc<std::sync::Mutex<query_snapshot::QueryState>>,
     maps: Option<(u128, Arc<crate::map_memo::RetainedMaps>)>,
     initializers: Option<(u128, Arc<crate::initializer_policy::InitializerArtifacts>)>,
     startup: Option<(u128, Arc<crate::startup::StartupArtifacts>)>,
@@ -105,6 +108,7 @@ impl Default for BuildHost {
             procedures: None,
             memo: Some(memo::ResidentMemo::default()),
             semantic: Some(dm_tree::frontend::RetainedSemanticTree::new()),
+            query_state: Arc::default(),
             maps: None,
             symbolic: None,
             initializers: None,
@@ -176,6 +180,9 @@ impl BuildHost {
     ) -> Option<Arc<crate::input_snapshot::PreparedInputArtifacts>> {
         self.prepared_sources.clone()
     }
+    pub(crate) fn query_state(&self) -> Arc<std::sync::Mutex<query_snapshot::QueryState>> {
+        Arc::clone(&self.query_state)
+    }
     pub(crate) fn query_tree(&self) -> Option<&Arc<dm_tree::SemanticTree>> {
         self.semantic
             .as_ref()
@@ -212,6 +219,7 @@ impl BuildHost {
             procedures: None,
             memo: None,
             semantic: None,
+            query_state: Arc::default(),
             maps: None,
             symbolic: None,
             initializers: None,
@@ -423,6 +431,10 @@ impl BuildHost {
         }
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
+            *self
+                .query_state
+                .lock()
+                .unwrap_or_else(|error| error.into_inner()) = Default::default();
         }
     }
 
@@ -524,6 +536,10 @@ impl BuildHost {
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
+            *self
+                .query_state
+                .lock()
+                .unwrap_or_else(|error| error.into_inner()) = Default::default();
         }
         self.engine = Some(Arc::clone(&retained));
         Ok(retained)

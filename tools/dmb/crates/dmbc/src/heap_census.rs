@@ -33,6 +33,7 @@ mod latest_images;
 mod resident_maps;
 pub(crate) use expansion_inputs::inspect as expansion_input_census;
 mod resident_startup;
+pub(crate) mod startup_artifacts;
 pub(crate) use resident_maps::{
     geometry_weight as resident_map_geometry_weight, plan_weight as resident_map_plan_weight,
 };
@@ -240,7 +241,7 @@ impl HeapCensus {
             value.capacity(),
         );
     }
-    fn arc_path(&mut self, owner: &str, value: &Arc<PathBuf>) {
+    pub(crate) fn arc_path(&mut self, owner: &str, value: &Arc<PathBuf>) {
         if self.arc_object(owner, value) {
             self.path(owner, value);
         }
@@ -630,28 +631,7 @@ impl HeapCensus {
             self.owner("startup.unit_members").observed_items += units.len() as u64;
             self.unknown("startup.unit_members", "private BTreeMap node capacity excluded; one shared authoritative procedure identity index");
         }
-        let inventory = startup.static_inventory();
-        if self.arc_object("startup.static_inventory", inventory) {
-            let (len, capacity) = inventory.procedure_storage();
-            self.owner("startup.static_inventory").observed_items += len as u64;
-            self.unknown("startup.static_inventory", &format!("private procedure HashSet backing: {len} entries, {capacity} capacity; BTreeMap node backing unavailable"));
-            for declaration in inventory.declarations() {
-                if self.arc_object("startup.static_inventory", declaration) {
-                    match &declaration.initializer {
-                        dm_ir::InitializerValue::Expression(expression) => {
-                            self.expression("startup.static_inventory", expression)
-                        }
-                        dm_ir::InitializerValue::ArrayAllocation(array) => {
-                            self.array("startup.static_inventory", array)
-                        }
-                        dm_ir::InitializerValue::NoAuthoredValue => (),
-                    }
-                    if let Some(array) = &declaration.declared_array {
-                        self.array("startup.static_inventory", array);
-                    }
-                }
-            }
-        }
+        startup_artifacts::inventory(self, startup.static_inventory());
         let plan = startup.plan();
         self.snapshot(&plan.source);
         self.symbols(&plan.symbols);

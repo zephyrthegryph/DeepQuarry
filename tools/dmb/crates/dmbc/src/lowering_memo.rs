@@ -1,7 +1,7 @@
 //! Exact lowering variants with retained dependency answers and source replay.
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
-pub const PROCEDURE_VERSION: u32 = 8;
+pub const PROCEDURE_VERSION: u32 = 10;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};

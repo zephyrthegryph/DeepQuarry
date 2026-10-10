@@ -18,6 +18,8 @@ pub enum ReadDomain {
     OwnerVariable(ResolveQuery),
     /// Exact admitted scalar result; process-local and never a disk receipt.
     OwnerScalar(ResolveQuery),
+    /// Exact admitted procedure static declaration roster, process-local only.
+    OwnerProcedureStatic(crate::ProcedureIdentity),
 }
 
 impl ReadDomain {
@@ -29,6 +31,7 @@ impl ReadDomain {
                 | Self::OwnerCallable(_)
                 | Self::OwnerVariable(_)
                 | Self::OwnerScalar(_)
+                | Self::OwnerProcedureStatic(_)
         )
     }
 }
@@ -124,6 +127,7 @@ pub enum ResolveQuery {
 impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
+            Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
             Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {
                 ReadDomain::OwnerHierarchy(owner)
@@ -131,7 +135,8 @@ impl ResolveQuery {
             Self::HasMemberVar { .. }
             | Self::DeclaredVarType { .. }
             | Self::VarStorage { .. }
-            | Self::StaticVar { .. } => ReadDomain::OwnerVariable(self),
+            | Self::StaticVar { .. }
+            | Self::UniqueStaticVar(_) => ReadDomain::OwnerVariable(self),
             Self::GlobalProc(_)
             | Self::Signature(_)
             | Self::HasMemberProc { .. }
@@ -408,7 +413,7 @@ mod tests {
         assert_ne!(first, second);
         assert_eq!(
             ResolveQuery::UniqueStaticVar(SymbolId::of("counter")).domain(),
-            ReadDomain::Tree
+            ReadDomain::OwnerVariable(ResolveQuery::UniqueStaticVar(SymbolId::of("counter")))
         );
         assert_eq!(
             ResolveQuery::PredefinedConstant(SymbolId::of("UNIX")).domain(),

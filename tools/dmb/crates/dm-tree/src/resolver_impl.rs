@@ -56,6 +56,14 @@ impl dm_ir::Resolver for SemanticTree {
                 .or_else(|| self.owner_callables.get(&selection.0).copied());
         }
         if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
+            if let dm_ir::ResolveQuery::UniqueStaticVar(name) = query {
+                return self
+                    .inventory
+                    .unique_certificates
+                    .get(&name)
+                    .copied()
+                    .map(u128::from);
+            }
             let (owner, name) = match query {
                 dm_ir::ResolveQuery::HasMemberVar { owner, name }
                 | dm_ir::ResolveQuery::DeclaredVarType { owner, name }

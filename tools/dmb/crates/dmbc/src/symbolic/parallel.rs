@@ -30,6 +30,7 @@ pub(super) struct HelperContribution {
     pub(super) strings: OwnedStrings,
     pub(super) slots: Slots,
     pub(super) content: dm_link::EntryContent,
+    pub(super) instances: Vec<(SymbolId, SymbolId)>,
 }
 pub(super) struct BoundContribution {
     pub(super) unit: FrozenUnit,
@@ -37,6 +38,7 @@ pub(super) struct BoundContribution {
     pub(super) helpers: Vec<HelperContribution>,
     pub(super) slots: Slots,
     pub(super) content: dm_link::EntryContent,
+    pub(super) instances: Vec<(SymbolId, SymbolId)>,
 }
 fn compact_vec<T>(values: &mut Vec<T>) {
     if values.capacity() > values.len() {
@@ -54,6 +56,7 @@ fn compact_names(values: &mut Vec<String>) {
 impl BoundContribution {
     /// Only retained completion payloads are compacted; discarded rich IR is untouched.
     fn compact_retained(&mut self) {
+        compact_vec(&mut self.instances);
         let frame = &mut self.unit.lowered.frame;
         compact_names(&mut frame.local_names);
         compact_names(&mut frame.argument_names);
@@ -61,6 +64,7 @@ impl BoundContribution {
         compact_vec(&mut self.strings.0);
         compact_vec(&mut self.slots.0);
         for helper in &mut self.helpers {
+            compact_vec(&mut helper.instances);
             compact_names(&mut helper.helper.local_names);
             compact_vec(&mut helper.strings.0);
             compact_vec(&mut helper.slots.0);
@@ -173,6 +177,12 @@ pub(super) fn freeze_unit(
         let content = dm_link::EntryContent::symbolic(prefix.into(), code, suffix.into());
         let helper_strings = OwnedStrings::take(&mut helper.code.procedure);
         helpers.push(HelperContribution {
+            instances: helper
+                .code
+                .instances
+                .iter()
+                .map(|(alias, value)| (*alias, value.runtime_type))
+                .collect(),
             strings: helper_strings,
             slots: helper_slots,
             content,
@@ -197,6 +207,12 @@ pub(super) fn freeze_unit(
         unit: lowered.identity,
         message: format!("procedure metadata recipe {error:?}"),
     })?;
+    let instances = lowered
+        .code
+        .instances
+        .iter()
+        .map(|(alias, value)| (*alias, value.runtime_type))
+        .collect();
     let unit = FrozenUnit {
         metadata_recipe: Arc::new(metadata_recipe),
         features: BytecodeFeatures::of(&lowered.code.procedure.code),
@@ -211,6 +227,7 @@ pub(super) fn freeze_unit(
         helpers,
         slots,
         content,
+        instances,
     };
     contribution.compact_retained();
     Ok(Contribution::from_bound(contribution))

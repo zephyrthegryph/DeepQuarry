@@ -17,8 +17,7 @@ fn shared() -> Arc<Shared> {
 }
 fn key(destination: &str) -> RequestKey {
     RequestKey {
-        compile: true,
-        executable_analysis: false,
+        command: RequestCommand::Compile,
         defines: BTreeMap::new(),
         engine: None,
         bootstrap: true,
@@ -94,5 +93,43 @@ fn independent_output_destinations_do_not_cancel_each_other() {
     a.cancel();
     assert!(!b.is_cancelled());
     drop((first, second));
+    assert!(slot.newest.lock().unwrap().is_empty());
+}
+
+#[test]
+fn distinct_analysis_commands_do_not_supersede_each_other_but_same_mode_does() {
+    let shared = shared();
+    let manifest = PathBuf::from("E:/fixture/analysis/project.dme");
+    let slot = shared.slot(manifest.clone(), &BTreeMap::new(), None);
+    let args = vec!["analyze".into(), manifest.to_string_lossy().into_owned()];
+    let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
+        panic!("analysis build expected")
+    };
+    let mut request = *request;
+    request.command = crate::request::BuildCommand::AnalyzeBodies;
+    let body_key = RequestKey::of(&request, &manifest);
+    request.command = crate::request::BuildCommand::AnalyzeResolved;
+    let resolved_key = RequestKey::of(&request, &manifest);
+    assert_ne!(body_key, resolved_key);
+    let body_token = control::Cancellation::default();
+    let body = LatestRequest::register(&slot, body_key, body_token.clone());
+    let resolved_token = control::Cancellation::default();
+    let resolved = LatestRequest::register(&slot, resolved_key.clone(), resolved_token.clone());
+    assert!(!body_token.is_cancelled());
+    assert!(!resolved_token.is_cancelled());
+    let replacement_token = control::Cancellation::default();
+    let replacement =
+        LatestRequest::register(&slot, resolved_key.clone(), replacement_token.clone());
+    assert!(resolved_token.is_cancelled());
+    assert!(!body_token.is_cancelled());
+    drop(resolved);
+    assert!(slot
+        .newest
+        .lock()
+        .unwrap()
+        .get(&resolved_key)
+        .unwrap()
+        .same_request(&replacement_token));
+    drop((body, replacement));
     assert!(slot.newest.lock().unwrap().is_empty());
 }

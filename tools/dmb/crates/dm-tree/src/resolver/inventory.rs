@@ -101,6 +101,8 @@ pub(super) fn rebuild_retained(
         .facts_on_executor(tree, declarations, executor)
         .unwrap_or_else(|| facts(tree, executor, None));
     reduce(tree, facts, None);
+    let certificates = retained.certify_uniqueness(tree);
+    Arc::make_mut(&mut tree.inventory).unique_certificates = certificates;
 }
 fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&HashSet<SymbolId>>) {
     let mut unique = HashMap::new();
@@ -162,6 +164,7 @@ fn reduce(tree: &mut SemanticTree, facts: Vec<Option<Fact>>, selected: Option<&H
         }
     }
     let inventory = Arc::make_mut(&mut tree.inventory);
+    inventory.unique_certificates.clear();
     if let Some(selected) = selected {
         inventory.unique.retain(|name, _| !selected.contains(name));
         inventory.non_unique.retain(|name| !selected.contains(name));

@@ -227,10 +227,10 @@ loader parses real compiler output, and the DMB/RSC reader/writer round-trips
 the two DeepQuarry builds byte for byte. These checks cover the constructs in
 the fixtures; they do not prove general semantic equivalence. The translator
 retains explicit errors for unproved OpenDream bytecode and constant forms.
-Native probes identify the header fields observed in these builds. The current
-DeepQuarry export passes lowering for all 59,982 procedures. Its complete
-DMB/RSC emission passes reference, instruction and branch audits. The latest
-completed package gate passes 564 tests (453 core), including the
+Native probes identify the header fields observed in these builds. The historical
+translated DeepQuarry export passed lowering for all 59,982 procedures. Its complete
+DMB/RSC emission passed reference, instruction and branch audits. That historical
+package gate passed 564 tests (453 core), including the
 wide-string-ID regression. Resource registration order matches all 3,856
 native entries. Paired trusted full-game servers complete initialization;
 shared baseline runtime errors remain. The translated-only lighting null turf

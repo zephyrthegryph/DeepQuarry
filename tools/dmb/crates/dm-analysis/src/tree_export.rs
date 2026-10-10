@@ -232,6 +232,49 @@ fn source(location: &SourceLocation) -> Value {
 /// ordinal. Meaning fingerprints are separate, so changing a default preserves
 /// its declaration ID. Source offsets
 /// and executable body text never participate in those IDs.
+/// Identity of the exact current source/provenance projection, independent of tree identity.
+/// This is a join token, never a filesystem freshness or artifact admission proof.
+pub fn source_revision(frontend: &ColdFrontend) -> u128 {
+    use xxhash_rust::xxh3::Xxh3;
+    let mut hash = Xxh3::new();
+    hash.update(b"dm-analysis-source-revision-v1\0");
+    hash.update(&frontend.snapshot.tree.identity().to_le_bytes());
+    for file in frontend.files.iter() {
+        let path = file.path.to_string_lossy();
+        hash.update(&(path.len() as u64).to_le_bytes());
+        hash.update(path.as_bytes());
+        hash.update(&[u8::from(file.captured)]);
+        hash.update(
+            &file
+                .text
+                .span_fingerprint(0..file.text.len())
+                .expect("whole source range")
+                .to_le_bytes(),
+        );
+    }
+    hash.update(
+        &frontend
+            .expanded
+            .text
+            .span_fingerprint(0..frontend.expanded.text.len())
+            .expect("whole expanded range")
+            .to_le_bytes(),
+    );
+    for origin in frontend.expanded.origins.iter() {
+        for value in [
+            origin.output_span.start,
+            origin.output_span.end,
+            origin.source_span.start,
+            origin.source_span.end,
+            origin.region,
+            origin.origin.source_line,
+        ] {
+            hash.update(&(value as u64).to_le_bytes());
+        }
+    }
+    hash.digest128()
+}
+
 pub fn write_jsonl(
     frontend: &ColdFrontend,
     writer: &mut impl Write,
@@ -247,7 +290,9 @@ pub fn write_jsonl(
     }));
     emit(
         writer,
-        json!({"row":"schema","schema":SCHEMA,"source_span_precision":"logical_line",
+        json!({"row":"schema","schema":SCHEMA,"semantic_revision":format!("{:032x}",tree.identity()),
+        "source_revision":format!("{:032x}",source_revision(frontend)),"snapshot_outcome":"frontend_analyzed",
+        "source_span_precision":"logical_line",
         "model":if frontend.engine.is_some() { "engine_hierarchy_and_source_declarations" } else { "source_declarations" },
         "engine":engine,"engine_inventory":if frontend.engine.is_some() { "authoritative_hierarchy_partial_intrinsic_catalog" } else { "not_certified_by_export" },
         "unsupported_domains":["resource_resolution","executable_reference_resolution","opaque_intrinsic_metadata"],

@@ -4,6 +4,7 @@
 pub(super) mod retained_size;
 #[cfg(test)]
 mod retained_size_tests;
+mod source_wire;
 #[path = "expansion_storage.rs"]
 pub(super) mod storage;
 use super::{DirectivePlan, MacroEnvironment, MacroExpansion};
@@ -195,9 +196,11 @@ struct Error {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ExpansionRecord {
     key: u128,
-    source: Arc<str>,
+    #[serde(with = "source_wire")]
+    source: crate::SourceText,
     control: Arc<[u8]>,
-    text: Arc<str>,
+    #[serde(with = "source_wire")]
+    text: crate::SourceText,
     reads: Vec<MacroRead>,
     locations: Vec<(usize, bool, String)>,
     lines: Vec<Line>,
@@ -210,9 +213,9 @@ impl ExpansionRecord {
     /// Duplicate shared allocations are conservatively charged per occurrence.
     pub fn retained_size_bytes(&self) -> usize {
         record::<Self>()
-            .saturating_add(slice::<u8>(self.source.len()))
+            .saturating_add(source_wire::retained_size(&self.source))
             .saturating_add(slice::<u8>(self.control.len()))
-            .saturating_add(slice::<u8>(self.text.len()))
+            .saturating_add(source_wire::retained_size(&self.text))
             .saturating_add(vector(&self.reads, |read| {
                 slice::<u8>(read.name.len()).saturating_add(
                     read.definition
@@ -364,13 +367,12 @@ fn framed_key(source: &str, control: &[u8]) -> u128 {
     hash.update(control);
     hash.digest128()
 }
-fn context(plan: &DirectivePlan, index: usize) -> Option<(&str, Arc<[u8]>, u128)> {
+fn context(plan: &DirectivePlan, index: usize) -> Option<(crate::SourceText, Arc<[u8]>, u128)> {
     let region = &plan.regions[index];
     let path = &plan.occurrences[region.occurrence].path;
-    let source = plan
-        .source_texts
-        .get(path.as_ref())?
-        .get(region.source_span.start..region.source_span.end)?;
+    let owner = plan.source_texts.get(path.as_ref())?;
+    owner.get(region.source_span.range())?;
+    let source = owner.view(region.source_span.range());
     let mut control = EXPANSION_VERSION.to_le_bytes().to_vec();
     for (segment, line) in plan.regions[index]
         .segments
@@ -389,7 +391,7 @@ fn context(plan: &DirectivePlan, index: usize) -> Option<(&str, Arc<[u8]>, u128)
         control.extend_from_slice(&(line.text.len() as u64).to_le_bytes());
         control.extend_from_slice(line.text.as_bytes());
     }
-    let identity = framed_key(source, &control);
+    let identity = framed_key(&source, &control);
     Some((source, control.into(), identity))
 }
 pub(super) fn expand(
@@ -409,7 +411,7 @@ pub(super) fn expand(
     let input = inputs(plan, index);
     let mut accepted = None;
     memo.visit_candidates(key, &mut |record| {
-        if record.key != key || record.source.as_ref() != source || record.control != control {
+        if record.key != key || record.source != source || record.control != control {
             return false;
         }
         if record.reads.iter().any(|read| {
@@ -536,9 +538,9 @@ pub(super) fn expand(
         .collect();
     let record = Arc::new(ExpansionRecord {
         key,
-        source: Arc::from(source),
+        source,
         control,
-        text: Arc::from(output.text.as_str()),
+        text: output.text.clone(),
         reads,
         locations,
         lines,
@@ -550,7 +552,7 @@ pub(super) fn expand(
     }
     memo.insert(Arc::clone(&record));
     let mut output = output;
-    output.text = crate::SourceText::from(Arc::clone(&record.text));
+    output.text = record.text.clone();
     output.receipt = Some(record);
     output
 }
@@ -563,7 +565,7 @@ fn hydrate(
     let region = &plan.regions[index];
     let path = plan.occurrences[region.occurrence].path.as_ref();
     let mut output = super::expansion::RegionOutput {
-        text: crate::SourceText::from(Arc::clone(&record.text)),
+        text: record.text.clone(),
         receipt: Some(Arc::clone(record)),
         lines: Default::default(),
         diagnostics: Vec::new(),
@@ -684,17 +686,23 @@ mod tests {
         let memo = Memo::default();
         let fresh = expand(&plan, 0, &memo);
         let record = Arc::clone(fresh.receipt.as_ref().unwrap());
+        let region = &plan.regions[0];
+        let path = &plan.occurrences[region.occurrence].path;
+        let source = plan.source_texts[path.as_ref()].view(region.source_span.range());
+        assert!(record.source.same_view(&source));
+        let decoded = ExpansionRecord::from_bytes(&record.to_bytes().unwrap()).unwrap();
+        assert_eq!(decoded, *record);
+        assert!(!decoded.source.same_view(&record.source));
+        assert!(!decoded.text.same_view(&record.text));
+        let disk_memo = Memo::default();
+        disk_memo.insert(Arc::new(decoded));
+        let disk_output = expand(&plan, 0, &disk_memo);
+        assert_eq!(disk_output.text, fresh.text);
+        assert_eq!(disk_memo.inserts.load(Ordering::Relaxed), 1);
         let reused = expand(&plan, 0, &memo);
         for output in [&fresh, &reused] {
             assert_eq!(output.text.as_str(), record.text());
-            output.text.visit_storage(|_, _, storage| match storage {
-                crate::source_text::SourceTextStorage::Original(text) => {
-                    assert!(Arc::ptr_eq(text, &record.text))
-                }
-                crate::source_text::SourceTextStorage::Transformed(_) => {
-                    panic!("issued region output copied the certified immutable text")
-                }
-            });
+            assert!(output.text.same_view(&record.text));
         }
         assert_eq!(fresh.lines.len(), reused.lines.len());
         for ((span, line, input, traces), (other_span, other_line, other_input, other_traces)) in

@@ -87,6 +87,13 @@ def isolate(source, destination, detached=()):
 
 
 def replace_edit(project, edit):
+    labels = {}
+    for label in ("kind", "structural_kind"):
+        if label in edit:
+            value = edit[label]
+            if not isinstance(value, str) or not value or len(value) > 64:
+                raise ValueError(f"invalid edit label: {label}")
+            labels[label] = value
     relative = Path(edit["path"])
     if relative.is_absolute() or relative.drive or ".." in relative.parts:
         raise ValueError("edit path must be a contained relative source path")
@@ -111,8 +118,14 @@ def replace_edit(project, edit):
     finally:
         if temporary.exists():
             temporary.unlink()
-    return {"path": str(relative), "before_sha256": hashlib.sha256(data).hexdigest(),
-            "after_sha256": hashlib.sha256(result).hexdigest()}
+    receipt = {"path": str(relative), "before_sha256": hashlib.sha256(data).hexdigest(),
+               "after_sha256": hashlib.sha256(result).hexdigest(),
+               "replacement_before_sha256": hashlib.sha256(before).hexdigest(),
+               "replacement_after_sha256": hashlib.sha256(after).hexdigest()}
+    # Preserve scenario labels in every session and edit-history receipt. These
+    # describe the requested mutation; output admission still uses byte hashes.
+    receipt.update(labels)
+    return receipt
 
 
 class Endpoint:

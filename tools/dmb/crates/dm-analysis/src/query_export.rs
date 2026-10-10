@@ -121,6 +121,7 @@ pub fn write_queries_jsonl<'a>(
             ReadDomain::OwnerCallable(_) => "owner_callable",
             ReadDomain::OwnerVariable(_) => "owner_variable",
             ReadDomain::OwnerScalar(_) => "owner_scalar",
+            ReadDomain::OwnerProcedureStatic(_) => "owner_procedure_static",
         };
         emit(
             writer,

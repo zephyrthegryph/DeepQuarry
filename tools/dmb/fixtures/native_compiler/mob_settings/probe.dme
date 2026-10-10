@@ -1,0 +1,9 @@
+/mob/sight_probe/reset
+    see_in_dark = 0
+/mob/sight_probe
+    see_in_dark = 12
+    see_invisible = 42
+/mob/sight_probe/child
+/mob/sight_probe
+    see_in_dark = 1000000
+    sight = 4

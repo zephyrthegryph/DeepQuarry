@@ -273,13 +273,21 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             }
             state.bytes -= removed;
             let value = Arc::new(create());
-            state.buckets.entry(hash).or_default().push(Variant {
-                key,
-                reads,
-                versions,
-                value: Arc::clone(&value),
-                weight,
-            });
+            // Current-revision keys normally own one variant. Vec's implicit
+            // first push reserves four large entries per key; hundreds of
+            // thousands of owner facts would retain that unused capacity.
+            // Collisions still grow normally and preserve exact-key siblings.
+            state
+                .buckets
+                .entry(hash)
+                .or_insert_with(|| Vec::with_capacity(1))
+                .push(Variant {
+                    key,
+                    reads,
+                    versions,
+                    value: Arc::clone(&value),
+                    weight,
+                });
             state.bytes += weight;
             return Some(value);
         }
@@ -361,6 +369,24 @@ mod tests {
         }
     }
     struct Value(Arc<AtomicUsize>);
+    #[test]
+    fn current_revision_singleton_bucket_has_no_variant_growth_slack() {
+        let store: ArtifactStore<usize> = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"singleton".as_slice());
+        for value in 0..3 {
+            store.insert_with(Arc::clone(&key), vec![], vec![], 1, || value);
+            let mut buckets = 0;
+            store.visit_storage(|view| {
+                if let ObservedArtifactStorageView::Bucket { len, capacity, .. } = view {
+                    buckets += 1;
+                    assert_eq!(len, 1);
+                    assert_eq!(capacity, 1);
+                }
+            });
+            assert_eq!(buckets, 1);
+            assert_eq!(*store.lookup(&key, &Host).unwrap(), value);
+        }
+    }
     #[test]
     fn shared_admission_preserves_exact_key_and_ledger_owners() {
         let store: ArtifactStore<()> = ArtifactStore::current_revision();

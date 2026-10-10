@@ -9,7 +9,6 @@ use std::time::Instant;
 pub(crate) mod runner_facts;
 #[path = "runner_report.rs"]
 mod runner_report;
-
 #[path = "runner_resources.rs"]
 mod runner_resources;
 use runner_resources::{OutputResourceSink, ResourceOutputs};
@@ -20,7 +19,6 @@ mod runner_freshness;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
 use runner_cache_records::publish_cache_records;
-
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
         Command::Query { request, jsonl } => {
@@ -52,7 +50,6 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
         Command::Build(request) => run_build(*request).map(CommandOutcome::Build),
     }
 }
-
 fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
     let project = std::fs::canonicalize(project)?;
     dmbc::daemon_println!(
@@ -61,7 +58,6 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
     );
     Ok(())
 }
-
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
 }
@@ -75,12 +71,12 @@ pub fn run_build_with_host(
         run_build_attempt(request, host, allow_moving)
     })
 }
-
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
     allow_moving: bool,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(host.query_state(), host.retains_artifacts());
     let _build_profile = dm_profile::stage("build");
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
@@ -314,9 +310,11 @@ fn run_build_attempt(
                         "last-run",
                         &serde_json::json!({"session_hit":true,"seconds":total.elapsed().as_secs_f64(),"rehashed":rehashed,"pair":pair.name()}),
                     );
+                    let store_path = std::fs::canonicalize(store.root_path())?;
+                    query_attempt.finish_published(&pair);
                     return Ok(BuildOutcome::Published {
                         pair,
-                        store: std::fs::canonicalize(store.root_path())?,
+                        store: store_path,
                         output_project,
                         session_hit: true,
                         seconds: total.elapsed().as_secs_f64(),
@@ -490,6 +488,7 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
+    query_attempt.capture(&frontend);
     if command == BuildCommand::Compile {
         let frontend_report = runner_report::FrontendReport::capture(&frontend);
         let retained_engine = engine_capture
@@ -933,9 +932,11 @@ fn run_build_attempt(
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
+        let store_path = std::fs::canonicalize(store.root_path())?;
+        query_attempt.finish_published(&pair);
         return Ok(BuildOutcome::Published {
             pair,
-            store: std::fs::canonicalize(store.root_path())?,
+            store: store_path,
             output_project,
             session_hit: false,
             seconds: total.elapsed().as_secs_f64(),
@@ -976,6 +977,7 @@ fn run_build_attempt(
         timings.total.as_secs_f64(),
     );
     // Partial analysis exports do not certify a fully populated compile session.
+    query_attempt.finish_analyzed();
     Ok(BuildOutcome::Analyzed {
         semantic_rows: counts.semantic_rows,
         occurrence_rows: counts.occurrence_rows,

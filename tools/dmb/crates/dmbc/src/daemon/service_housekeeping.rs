@@ -67,12 +67,16 @@ impl Shared {
             if next == 3 {
                 let removed = slots.remove(&key);
                 drop(slots);
+                let before = transport::private_bytes();
+                let started = Instant::now();
                 // Pool joins and artifact destructors never run under slot roster lock.
                 drop(removed);
                 drop(slot);
                 super::super::emit_stderr(format_args!(
-                    "dmbd idle release tier=session project={} pressure={pressured}",
-                    key.manifest.display()
+                    "dmbd idle release tier=session project={} pressure={pressured} private-before={before:?} private-after={:?} seconds={:.6}",
+                    key.manifest.display(),
+                    transport::private_bytes(),
+                    started.elapsed().as_secs_f64()
                 ));
                 continue;
             }

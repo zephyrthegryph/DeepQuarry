@@ -18,6 +18,7 @@ pub struct ReusableProcedureArtifact {
     abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
     strings: OwnedStrings,
     slots: Slots,
+    instances: Vec<(SymbolId, SymbolId)>,
     content: dm_link::EntryContent,
     helpers: Vec<HelperArtifact>,
 }
@@ -29,6 +30,7 @@ struct HelperArtifact {
     local_names: Vec<String>,
     strings: OwnedStrings,
     slots: Slots,
+    instances: Vec<(SymbolId, SymbolId)>,
     content: dm_link::EntryContent,
 }
 /// Current source occurrence, kept outside the reusable payload. Fields remain
@@ -141,6 +143,7 @@ impl Clone for HelperArtifact {
             local_names: self.local_names.clone(),
             strings: self.strings.clone(),
             slots: self.slots.clone(),
+            instances: self.instances.clone(),
             content: self.content.clone(),
         }
     }
@@ -154,6 +157,7 @@ impl Clone for ReusableProcedureArtifact {
             image_owner: Arc::clone(&self.image_owner),
             features: self.features,
             frame: clone_frame(&self.frame),
+            instances: self.instances.clone(),
             abi: self.abi.clone(),
             strings: self.strings.clone(),
             slots: self.slots.clone(),
@@ -224,6 +228,7 @@ impl Contribution {
                 local_names,
                 strings: entry.strings,
                 slots: entry.slots,
+                instances: entry.instances,
                 content: entry.content,
             });
         }
@@ -239,6 +244,7 @@ impl Contribution {
                 abi,
                 strings: bound.strings,
                 slots: bound.slots,
+                instances: bound.instances,
                 content: bound.content,
                 helpers: helper_artifacts,
             }),
@@ -289,6 +295,7 @@ impl Contribution {
                 },
                 strings: helper.strings,
                 slots: helper.slots,
+                instances: helper.instances,
                 content: helper.content,
             })
             .collect();
@@ -298,6 +305,7 @@ impl Contribution {
             strings: artifact.strings,
             slots: artifact.slots,
             content: artifact.content,
+            instances: artifact.instances,
         }
     }
     pub(super) fn replay(

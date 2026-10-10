@@ -23,10 +23,27 @@ mod queue_tests;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
 /// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+enum RequestCommand {
+    Analyze,
+    AnalyzeBodies,
+    AnalyzeResolved,
+    Compile,
+}
+impl From<crate::request::BuildCommand> for RequestCommand {
+    fn from(command: crate::request::BuildCommand) -> Self {
+        use crate::request::BuildCommand;
+        match command {
+            BuildCommand::Analyze => Self::Analyze,
+            BuildCommand::AnalyzeBodies => Self::AnalyzeBodies,
+            BuildCommand::AnalyzeResolved => Self::AnalyzeResolved,
+            BuildCommand::Compile => Self::Compile,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
-    compile: bool,
-    executable_analysis: bool,
+    command: RequestCommand,
     defines: BTreeMap<String, String>,
     engine: Option<PathBuf>,
     bootstrap: bool,
@@ -37,12 +54,7 @@ struct RequestKey {
 impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
         Self {
-            compile: request.command == crate::request::BuildCommand::Compile,
-            executable_analysis: matches!(
-                request.command,
-                crate::request::BuildCommand::AnalyzeBodies
-                    | crate::request::BuildCommand::AnalyzeResolved
-            ),
+            command: request.command.into(),
             defines: request.defines.clone(),
             engine: request.engine_template.clone(),
             bootstrap: request.bootstrap_catalog,
@@ -338,6 +350,17 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             }
             let result = (|| -> io::Result<super::query::QueryReply> {
                 request.validate()?;
+                if !request.project.is_absolute()
+                    || request
+                        .engine_template
+                        .as_ref()
+                        .is_some_and(|path| !path.is_absolute())
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "daemon query paths must be caller-resolved absolute paths",
+                    ));
+                }
                 let key = SessionKey {
                     manifest: std::fs::canonicalize(&request.project)?,
                     defines: request.defines.clone(),
@@ -365,13 +388,19 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                         "query semantic snapshot unavailable or evicted",
                     )
                 })?;
-                super::query::evaluate(&request, tree)
+                let state = host.query_state();
+                let state = state.lock().unwrap_or_else(|error| error.into_inner());
+                super::query::evaluate_snapshot(&request, tree, &state)
             })();
             match result {
                 Ok(reply) => protocol::send(&mut stream, &Reply::Query(reply)),
                 Err(error) => protocol::send(
                     &mut stream,
-                    &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                    &Reply::Rejected(if error.kind() == io::ErrorKind::InvalidInput {
+                        crate::request_failure::RequestFailure::invalid_request(error.to_string())
+                    } else {
+                        crate::request_failure::RequestFailure::from_error(&error)
+                    }),
                 ),
             }
         }
@@ -537,8 +566,7 @@ mod tests {
             None,
         );
         let key = RequestKey {
-            compile: true,
-            executable_analysis: false,
+            command: RequestCommand::Compile,
             defines: BTreeMap::new(),
             engine: None,
             bootstrap: true,

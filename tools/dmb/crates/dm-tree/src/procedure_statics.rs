@@ -10,6 +10,9 @@ use std::{collections::HashSet, sync::Arc};
 #[path = "procedure_static_inventory.rs"]
 mod inventory;
 pub use inventory::StaticInventory;
+#[path = "procedure_static_layout.rs"]
+mod layout;
+pub use layout::StaticLayout;
 
 /// Immutable lexical overlay. A miss is authoritative only for the exact
 /// captured procedure inventory; other procedure contexts stay unsupported.
@@ -73,6 +76,9 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
 impl<R: dm_ir::Resolver> dm_ir::Resolver for StaticResolver<'_, R> {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         match domain {
+            dm_ir::ReadDomain::OwnerProcedureStatic(procedure) => {
+                self.inventory.certificate(procedure)
+            }
             dm_ir::ReadDomain::Tree => {
                 if self.underlying.domain_version(domain) == self.underlying_version {
                     self.domain_version

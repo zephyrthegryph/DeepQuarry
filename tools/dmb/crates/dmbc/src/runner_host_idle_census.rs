@@ -3,6 +3,20 @@ use super::BuildHost;
 use std::io::{self, Write};
 
 impl BuildHost {
+    fn query_snapshot_retention_census(&self) -> crate::heap_census::HeapCensusReport {
+        let mut census = crate::heap_census::HeapCensus::new("retained.query_snapshot");
+        census.arc_object("query_snapshot.state", &self.query_state);
+        {
+            let state = self
+                .query_state
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            if let Some(snapshot) = &state.snapshot {
+                snapshot.census(&mut census);
+            }
+        }
+        census.finish()
+    }
     pub(super) fn emit_idle_census(&self, boundary: &str) {
         let Some(path) = std::env::var_os("DMB_IDLE_CENSUS_PATH").filter(|path| !path.is_empty())
         else {
@@ -62,6 +76,11 @@ impl BuildHost {
             emit(
                 "host_facts",
                 serde_json::to_value(self.host_facts_retention_census())
+                    .map_err(io::Error::other)?,
+            )?;
+            emit(
+                "query_snapshot",
+                serde_json::to_value(self.query_snapshot_retention_census())
                     .map_err(io::Error::other)?,
             )?;
             Ok(())

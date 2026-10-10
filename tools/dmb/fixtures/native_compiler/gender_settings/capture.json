@@ -1,0 +1,16 @@
+{
+  "compiler": "516.1687",
+  "compiler_sha": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "compiler_path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "source_sha": "9e94721912970d62f0b9dc303a38a765f5697158bf4f08f553c5566682dd2fc1",
+  "dmb_sha": "30a258d1c38c643edb42166194a481259f98a116babe40c64179aeb2cde8b4b6",
+  "compile_only": true,
+  "exit": 0,
+  "seconds": 0.3141720999847166,
+  "command": [
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "probe.dme"
+  ],
+  "banner": "DM compiler version 516.1687\nloading probe.dme\nsaving probe.dmb\nprobe.dmb - 0 errors, 0 warnings (10/10/26 12:04 am)\nTotal time: 0:00\n",
+  "evidence_directory": "E:\\dq-cache\\dmb-native-v2\\gender-settings-valid-20261010-golden"
+}

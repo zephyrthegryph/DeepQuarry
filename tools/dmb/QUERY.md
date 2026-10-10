@@ -18,7 +18,9 @@ An exact discovery request (an empty batch is valid):
   "engine_template": "E:/dq-cache/native-engine.dmb",
   "bootstrap_catalog": true,
   "expected_revision": null,
-  "queries": []
+  "queries": [],
+  "expected_source_revision": null,
+  "source_queries": []
 }
 ```
 
@@ -26,9 +28,27 @@ The reply's `revision` is the retained semantic tree's 32-digit hexadecimal
 identity. Supply it as `expected_revision` on later requests to reject stale
 semantic snapshots. A source edit does **not** refresh that snapshot: build or
 analyze first. The revision is semantic identity, not a publication pair ID or
-proof that the filesystem is unchanged.
+proof that the filesystem is unchanged. The schema is `dm-session-query-v2`.
+`source_revision` separately identifies the last admitted frontend source projection;
+it changes for body edits and source shifts even when semantic identity stays equal.
+`snapshot_outcome` distinguishes `frontend_analyzed`, `analyzed`, `published`, and
+`frontend_analyzed_build_failed`. `last_request_outcome` reports the latest request
+separately: failure before a frontend is available does not retag the older snapshot.
+`publication_pair` contains the exact pair ID only after successful publication
+and conventional installation. Compare it to the compile result's `Published.pair.id`
+(formatted as 32 hexadecimal digits). It is independent of the source revision:
+asset-only edits can publish a different pair with the same source projection.
+The field clears when a new request begins or fails.
+
+An output-only session hit does not issue a fresh frontend and leaves source
+queries unavailable until a frontend build/analysis runs, while still reporting
+the successfully installed `publication_pair`. No outcome certifies current filesystem freshness.
 
 ## Python lint callers
+
+First compare the analysis schema row's `semantic_revision` with the query reply's
+`revision`. For source joins, also compare its `source_revision`. Reject mismatches;
+do not combine rows from different projections.
 
 Discover symbols from the existing `dmbc analyze` JSON-lines export. Do not hash
 names independently or use dense tree/member indexes. For a `type` row, the
@@ -41,10 +61,14 @@ import json
 from pathlib import Path
 
 rows = [json.loads(line) for line in Path("analysis.jsonl").read_text().splitlines()]
+metadata = next(row for row in rows if row.get("row") == "schema")
 type_row = next(row for row in rows if row.get("row") == "type")
 symbol_id = int(type_row["id"].split(":", 1)[1], 16)
 request = json.loads(Path("discovery.json").read_text())
-request["expected_revision"] = json.loads(Path("discovery-reply.json").read_text())["revision"]
+discovery = json.loads(Path("discovery-reply.json").read_text())
+if metadata["semantic_revision"] != discovery["revision"]:
+    raise ValueError("analysis/query semantic revisions differ; refresh deliberately")
+request["expected_revision"] = metadata["semantic_revision"]
 request["queries"] = [{"subject": type_row["id"], "query": {"Parent": symbol_id}}]
 Path("request.json").write_text(json.dumps(request))
 ```
@@ -55,13 +79,33 @@ is rejected; rediscover only after deliberately updating/rechecking the session.
 
 ## Bounds and coverage
 
-- At most 128 queries and 256 UTF-8 bytes per optional subject.
+- At most 128 combined semantic and source queries and 256 UTF-8 bytes per optional subject.
 - Request JSON at most 64 KiB; answer JSON-lines at most 512 KiB.
+- A source row may expose at most 1,024 definition-origin spans; deeper provenance fails explicitly.
 - Client transport deadline: 20 seconds. No automatic retry or build occurs.
 - `complete` is always `false`: this endpoint exposes the retained semantic tree.
-  Current source occurrences/provenance, selected executable references, and
-  pinned resource/runtime host facts are outside this endpoint's coverage.
+  Selected executable references, full macro traces and pinned resource/runtime
+  host facts remain outside its coverage.
 - `missing`, proven negative answers, and `unsupported` remain distinct. Unknown
   inherited modifiers are exported as `null` plus an explicit unknown status.
 - A missing/evicted session fails; run the ordinary build/analysis path before
   querying. The endpoint never creates an empty session to manufacture answers.
+
+## Current source occurrences
+
+After discovering both revisions, send a bounded source selection:
+
+```json
+"expected_revision": "<semantic revision from matching analysis schema row>",
+"expected_source_revision": "<source revision from matching analysis schema row>",
+"source_queries": [{"Occurrence": {"ordinal": 0}}, {"Provenance": {"ordinal": 0}}]
+```
+
+`ordinal` is the analysis export's `occurrence` field. Both revision pins are
+mandatory for source selections. Both typed selections use the same issued occurrence/provenance producer.
+Each answer uses `dm-session-source-query-v1`
+and contains the issued declaration target, source range, include occurrence,
+region and macro definition origin ranges from the existing occurrence table.
+Unknown ordinals and stale pins fail the batch; source rows are not silently
+omitted. `provenance_complete` remains false because expanded macro traces and
+executable node coordinates are not served here. No body parsing occurs.

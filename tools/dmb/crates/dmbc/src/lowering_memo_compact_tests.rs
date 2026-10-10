@@ -34,6 +34,37 @@ fn compact_disk_reissues_modified_descriptor_from_current_source() {
     );
 }
 fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
+    check_replay_mode(source, helpers, modifiers, false);
+}
+#[test]
+fn compact_disk_replays_plain_instance_with_separate_current_binding_authority() {
+    check_replay_mode(
+        "/obj/plain\n/proc/compact_probe()\n    return /obj/plain\n",
+        false,
+        false,
+        true,
+    );
+}
+#[test]
+fn compact_disk_replays_plain_instance_helper_with_current_abi_and_receipts() {
+    check_replay_mode(
+        "/obj/plain\n/proc/compact_probe(x in list(/obj/plain))\n    return \"hello\"\n",
+        true,
+        false,
+        true,
+    );
+}
+struct InstanceHost<'a, R>(&'a R, bool);
+impl<R: Resolver> Resolver for InstanceHost<'_, R> {
+    fn resolve(&self, query: ResolveQuery) -> dm_ir::ResolvedMeaning {
+        if self.1 && query == ResolveQuery::RuntimeType(SymbolId::of("/obj/plain")) {
+            dm_ir::ResolvedMeaning::Symbol(SymbolId::of("/obj"))
+        } else {
+            self.0.resolve(query)
+        }
+    }
+}
+fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain: bool) {
     let engine = crate::engine::EngineSnapshot::from_bytes(
         include_bytes!("../../../fixtures/native_template.bin"),
         1,
@@ -53,7 +84,8 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
         },
     )
     .unwrap();
-    let (host, _) = crate::request_runner::runner_facts::prepare(&front, &engine).unwrap();
+    let (base_host, _) = crate::request_runner::runner_facts::prepare(&front, &engine).unwrap();
+    let host = InstanceHost(&base_host, plain);
     let recorder = crate::lowering_memo::RecordingResolver::new(&host);
     recorder.resolve(ResolveQuery::GlobalVar(SymbolId::of("absent")));
     let startup = crate::startup::capture(&front).unwrap();
@@ -64,13 +96,16 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
         )
         .unwrap();
     let policy = crate::driver_facts::FrozenPreparedPolicy::new(&front, &abi.prepared).unwrap();
-    let source: std::collections::BTreeSet<_> = front
+    let mut source: std::collections::BTreeSet<_> = front
         .snapshot
         .tree
         .types()
         .iter()
         .map(|n| dm_ir::SymRef::Type(n.path))
         .collect();
+    if plain {
+        source.insert(dm_ir::SymRef::Instance(SymbolId::of("/obj/plain")));
+    }
     let external = crate::symbolic::ReferenceBindings::default();
     let bindings = DiskReplayBindings {
         source: &source,
@@ -139,6 +174,15 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
     assert!(payload.changed_read(&host).is_none());
     assert_eq!(!payload.helpers.0.is_empty(), helpers);
     assert_eq!(!payload.recipes.0.is_empty(), modifiers);
+    assert_eq!(
+        !payload.instances.0.is_empty()
+            || payload
+                .helpers
+                .0
+                .iter()
+                .any(|helper| !helper.instances().is_empty()),
+        plain
+    );
     if helpers {
         let mut bad = decode(&bytes).unwrap();
         bad.helpers.0[0].argument = u32::MAX;
@@ -179,7 +223,7 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
         assert!(decode(&bytes)
             .unwrap()
             .executable
-            .restore(&front, body, ready, bindings, offsets.len(), &extra)
+            .restore(&front, body, ready, bindings, offsets.len(), &extra, &[])
             .is_none());
     }
     let context = || crate::lowering_memo_wire::ProcedureReplayContext {
@@ -190,6 +234,51 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
         selections_only: false,
         modified: Some(&issuer),
     };
+    if plain && !helpers {
+        let mut bad = decode(&bytes).unwrap();
+        bad.instances.0.push(bad.instances.0[0]);
+        let duplicate = dm_wire::encode_bounded(SCHEMA, &bad, MAX_RECORD).unwrap();
+        assert!(
+            decode(&duplicate).is_err(),
+            "plain roster keys must be strictly ordered and unique"
+        );
+        let mut unlicensed = source.clone();
+        unlicensed.remove(&dm_ir::SymRef::Instance(SymbolId::of("/obj/plain")));
+        let alias = SymbolId::of("/obj/plain");
+        assert!(
+            crate::symbolic::procedure_artifact::disk::plain_instance_licensed(
+                alias,
+                &payload.instances.0,
+                bindings
+            )
+        );
+        assert!(
+            !crate::symbolic::procedure_artifact::disk::plain_instance_licensed(
+                alias,
+                &payload.instances.0,
+                DiskReplayBindings {
+                    source: &unlicensed,
+                    external: &external
+                }
+            )
+        );
+        let mut bad = decode(&bytes).unwrap();
+        bad.instances.0[0].1 = SymbolId::of("/datum");
+        let bytes = dm_wire::encode_bounded(SCHEMA, &bad, MAX_RECORD).unwrap();
+        assert!(
+            decode(&bytes).is_err(),
+            "tuple must match the recorded runtime answer"
+        );
+    }
+    if plain && helpers {
+        let mut bad = decode(&bytes).unwrap();
+        bad.helpers.0[0].corrupt_instance_runtime();
+        let bytes = dm_wire::encode_bounded(SCHEMA, &bad, MAX_RECORD).unwrap();
+        assert!(
+            decode(&bytes).is_err(),
+            "helper tuple must match the recorded runtime answer"
+        );
+    }
     let identity = payload.identity;
     let framed = dm_cache::encode_variants(std::slice::from_ref(&bytes)).unwrap();
     let selected = crate::lowering_memo_wire::candidates(&framed)
@@ -232,6 +321,8 @@ fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
     let mut bad = decode(&bytes).unwrap();
     if modifiers {
         bad.recipes.0[0].corrupt_canonical();
+    } else if plain {
+        bad.required_types.0.clear();
     } else {
         bad.executable.corrupt_string();
     }

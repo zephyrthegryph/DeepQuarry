@@ -157,3 +157,76 @@ mod tests {
         }
     }
 }
+
+/// Replay already validated authored writes after allocation, so descendants
+/// inherit the final parent settings even when their records were allocated first.
+pub(crate) fn apply_settings(
+    dmb: &mut Dmb,
+    writes: &std::collections::BTreeMap<u32, Vec<(u8, u32)>>,
+) -> Result<(), String> {
+    if writes.is_empty() {
+        return Ok(());
+    }
+    let indexes: HashMap<_, _> = dmb
+        .mobs
+        .iter()
+        .enumerate()
+        .map(|(index, record)| (record.class, index))
+        .collect();
+    let mut finished = HashSet::new();
+    let mut changed = HashSet::new();
+    for start in 0..dmb.mobs.len() {
+        let mut chain = Vec::new();
+        let mut visiting = HashSet::new();
+        let mut next = Some(start);
+        while let Some(index) = next {
+            if finished.contains(&index) {
+                break;
+            }
+            if !visiting.insert(index) {
+                return Err("cyclic mob ancestry".into());
+            }
+            chain.push(index);
+            let parent = dmb
+                .classes
+                .get(dmb.mobs[index].class as usize)
+                .ok_or("mob class missing")?
+                .parent_class_id();
+            next = indexes.get(&parent).copied();
+        }
+        while let Some(index) = chain.pop() {
+            let class = dmb.mobs[index].class;
+            let parent = dmb.classes[class as usize].parent_class_id();
+            if let Some(&parent_index) = indexes.get(&parent) {
+                if changed.contains(&parent_index) {
+                    dmb.mobs[index].sight = dmb.mobs[parent_index].sight;
+                    dmb.mobs[index].extended_sight = dmb.mobs[parent_index].extended_sight;
+                    changed.insert(index);
+                }
+            }
+            if let Some(settings) = writes.get(&class) {
+                let record = &mut dmb.mobs[index];
+                for &(setting, value) in settings {
+                    let mut flags = record.sight_bits();
+                    let mut dark = record.see_in_dark_setting().unwrap_or(2);
+                    let mut invisible = record.see_invisible_setting().unwrap_or(0);
+                    match setting {
+                        0 => flags = value,
+                        1 => dark = value as u8,
+                        2 => invisible = value as u8,
+                        _ => return Err("invalid mob setting selector".into()),
+                    }
+                    if record.extended_sight.is_some() || setting != 0 || flags > 0x7f {
+                        record.sight = 0x80;
+                        record.extended_sight = Some((flags, dark, invisible));
+                    } else {
+                        record.sight = flags as u8;
+                    }
+                }
+                changed.insert(index);
+            }
+            finished.insert(index);
+        }
+    }
+    Ok(())
+}

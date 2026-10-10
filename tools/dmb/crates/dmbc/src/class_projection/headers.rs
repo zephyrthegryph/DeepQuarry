@@ -490,6 +490,11 @@ fn inherit_record_selected(
     if inherit("invisibility") {
         child.set_normally_visible(parent.is_normally_visible());
     }
+    if inherit("gender") {
+        child
+            .set_gender_code(parent.gender_code())
+            .map_err(|error| ProjectionError::Unsupported(error.to_string()))?;
+    }
     if inherit("density") {
         child.set_dense(parent.is_dense());
     }
@@ -546,6 +551,7 @@ fn native_header_differences(engine: &Dmb, child: &Class, parent: &Class, own: &
             "invisibility",
             child.is_normally_visible() != parent.is_normally_visible(),
         ),
+        ("gender", child.gender_code() != parent.gender_code()),
         ("density", child.is_dense() != parent.is_dense()),
         ("opacity", child.is_opaque() != parent.is_opaque()),
         (
