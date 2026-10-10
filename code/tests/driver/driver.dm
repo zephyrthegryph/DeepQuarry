@@ -296,6 +296,10 @@ GLOBAL_VAR(test_prompts)
 /proc/test_op_committed(datum/op_result/R)
 	return R?.outcome == ACT_COMMITTED
 
+/// How many timed actions and waiting ops `actor` has running: what a timed entry leaves behind while its wait runs.
+/proc/test_actor_busy(mob/actor)
+	return length(timed_tasks_of(actor)) + length(op_pendings_of(actor))
+
 /// Calls an op handler directly, as the engine would: x(datum/act/op/A, args...) with the actor, the holder (also the target) and the held item set.
 /// For a test of what the handler itself does; a click is test_click().
 /proc/test_op_handler(datum/holder, proc_name, mob/actor, obj/item/held = null, ...)

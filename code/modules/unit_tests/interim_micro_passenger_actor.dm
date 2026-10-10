@@ -6,6 +6,12 @@
 /obj/interim_micro_passenger_actor_click/Click(location, control, params)
 	test_menu(actor, mech, "mecha_enter_passenger")
 
+/// A passenger bay whose hatch link is open to the clientless test actor: the real equipment gate admits only the conscious pilot, which is not what the boarding checks.
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe/topic_usable(datum/act/op/A)
+	return !!A.actor && !A.actor.stat
+
 /datum/unit_test/interim_micro_passenger_actor/Run()
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
@@ -19,7 +25,7 @@
 	TEST_ASSERT(actor.get_effective_size(TRUE) < 0.5, "actual resize produces a human admitted by the existing micro size gate")
 	TEST_ASSERT(bystander.get_effective_size(TRUE) >= 0.5, "actual unrelated human fails the unchanged micro size gate")
 	var/obj/mecha/micro/utility/gopher/mech = allocate(/obj/mecha/micro/utility/gopher, T)
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/bay = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger, T)
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/bay = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe, T)
 	TEST_ASSERT(bay.can_attach(mech), "actual passenger component fits the real hull equipment capacity")
 	bay.attach(mech)
 	TEST_ASSERT_EQUAL(bay.chassis, mech, "actual attachment associates the exact chassis")

@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	var/scrubber_icon = "scrubber"
 	if(weld_shut_welded(src, null))
 		scrubber_icon += "weld"
-	else if(!powered())
+	else if(!operable())
 		scrubber_icon += "off"
 	else
 		scrubber_icon += "[use_power ? "[scrubbing ? "on" : "in"]" : "off"]"

@@ -55,10 +55,10 @@
 	var/list/catalog = tracks.all_tracks
 	catalog += retained
 	TEST_ASSERT_EQUAL(tracks.all_tracks[1], retained, "the actual test catalog contains its exact track before denial")
-	TEST_ASSERT_EQUAL(tracks.vv_topic_add_track(actor, list()), TRUE, "the actual VV add wrapper preserves its handled return")
+	TEST_ASSERT_EQUAL(test_op_handler(tracks, "vv_topic_add_track", actor), TRUE, "the actual VV add wrapper preserves its handled return")
 	TEST_ASSERT_EQUAL(tracks.add_actor, actor, "the actual VV add wrapper forwards its explicit actor to the real guarded helper")
 	TEST_ASSERT_EQUAL(tracks.add_calls, 1, "the add wrapper really invokes the inherited guard once")
-	TEST_ASSERT_EQUAL(tracks.vv_topic_remove_track(actor, list()), TRUE, "the actual VV remove wrapper preserves its handled return")
+	TEST_ASSERT_EQUAL(test_op_handler(tracks, "vv_topic_remove_track", actor), TRUE, "the actual VV remove wrapper preserves its handled return")
 	TEST_ASSERT_EQUAL(tracks.remove_actor, actor, "the actual VV remove wrapper forwards its explicit actor")
 	TEST_ASSERT_EQUAL(tracks.remove_calls, 1, "the remove wrapper really invokes the inherited guard once")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "the real required-rights refusals open no media prompts")

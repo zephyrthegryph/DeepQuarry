@@ -208,7 +208,11 @@
 	var/datum/op_resolution/R7 = op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)
 	var/datum/op_cand/winner = op_resolution_winner(R7)
 	var/after_first = length(T.op_row_cache)
-	var/candidates_with_key7 = length(R7.all)
+	// the stack's own thirty-one ops: the base types of the stack and the actor bring candidates of their own that this index does not prune
+	var/candidates_with_key7 = 0
+	for(var/datum/op_cand/stack_cand as anything in R7.all)
+		if(stack_cand.holder == S && (stack_cand.oplan.key == "hand_use" || copytext(stack_cand.oplan.key, 1, 4) == "key"))
+			candidates_with_key7++
 	op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)
 	var/after_same_shape = length(T.op_row_cache)
 	var/datum/op_resolution/R9 = op_resolve(M, S, key9, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)

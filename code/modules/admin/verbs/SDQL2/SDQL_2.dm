@@ -989,8 +989,8 @@ CAPABILITIES(/datum/SDQL2_query)
 			if("src")
 				v = source
 			if("marked")
-				if(user?.client?.holder?.marked_datum())
-					v = user.client.holder.marked_datum()
+				if(user?.client?.admin_datum()?.marked_datum())
+					v = user.client.admin_datum().marked_datum()
 				else
 					return null
 			if("world")

@@ -124,6 +124,10 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	// was committed, told or published by the ones that declined; when every one declines a player's click is as if none had answered (null) and a driver-built click returns the last declined result.
 	var/datum/op_cand/tried = winner
 	while(result?.outcome == ACT_DECLINED)
+		// A decline that deleted its input (a lit cigarette trodden into a butt) leaves nothing for the next candidate, or the legacy handling, to act on:
+		// the click is spent.
+		if(op_input_consumed(R))
+			return result
 		var/datum/op_cand/next = null
 		var/seen = FALSE
 		for(var/datum/op_cand/C as anything in R.ordered)
@@ -147,6 +151,9 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/op_cand/last = winner
 	while((last.oplan.passes || result?.passed) && result?.outcome == ACT_COMMITTED)
+		// What ran used the input up (a consumed grenade, a cigarette trodden into a butt): nothing is left to hand to the next candidate.
+		if(op_input_consumed(R))
+			return result
 		var/datum/op_cand/next = null
 		var/seen = FALSE
 		for(var/datum/op_cand/C as anything in R.ordered)
@@ -161,6 +168,10 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 		result = op_begin(next, R, null, FALSE)
 		last = next
 	return result
+
+/// Whether the held item or the target of a resolved input was deleted by the op that ran.
+/proc/op_input_consumed(datum/op_resolution/R)
+	return (R.held && QDELETED(R.held)) || (R.target && QDELETED(R.target))
 
 /// Shows a gate refusal to an actor, at most once per GATE_FEEDBACK_INTERVAL.
 /proc/op_gate_feedback(mob/actor, reason)
