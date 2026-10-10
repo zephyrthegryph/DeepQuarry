@@ -635,9 +635,11 @@ recorded an empty resolver row for every type. Clicks go to the op engine (`try_
 `op_menu()` rows; the ghost, AI and telekinesis adapters rely on their op route. Every removed name is hard-banned (`[lint.legacy_forms.lists] banned`).
 `use_tool()` stays (live callers) without its interaction argument. Behaviour notes: `doc/rewrite/intended_changes.md`, "Interaction bridge retirement".
 
-Still there, dead or engine-owned: the op engine's legacy-candidate hooks (`compatibility_candidates/menu/screentip/run` in
-`code/engine/parts/input_adapter.dm`, `C.legacy` in `resolve.dm` / `run.dm`) now always answer nothing; the engine's `refine()` support in
-`capability_tables.dm` has no constructor; `/datum/op_ctx`'s legacy stage pipeline is used only by the requirement tests and `cap_needs_reason()`.
+Then the engine's side of the bridge (same lane, second batch): the legacy-candidate protocol (`compatibility_candidates/menu/screentip/run`,
+`op_run_compatibility()`, `op_cand.legacy`, `op_resolve(include_legacy)`), the text-route shapes of `action_options()`, `screentip_for()` and
+`perform_op()`, `operation_compatibility().named()/perform()` and the text-named ladder `stage()` (now a declaration error). Still there: the
+engine's `refine()` support in `capability_tables.dm` has no constructor, and `/datum/op_ctx`'s stage pipeline is used only by the requirement
+tests and `cap_needs_reason()`.
 
 
 ## M. Small forms (rewrite/small-forms)

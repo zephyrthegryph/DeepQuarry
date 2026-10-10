@@ -4,7 +4,7 @@
 
 /// The key of the op a click by `actor` on `target` with `held` would run, or null when nothing answers.
 /proc/paths_winner_key(mob/actor, atom/target, obj/item/held)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), GESTURE_CLICK, null, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), GESTURE_CLICK, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	return winner?.oplan?.key
 

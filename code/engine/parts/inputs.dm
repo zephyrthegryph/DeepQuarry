@@ -10,8 +10,7 @@
 // plus topic links: op_topic() runs the op whose topic("key", args...) binding names the key.
 //
 // A player's click on a target none of whose ops belong to the new engine runs the legacy mob click exactly as before: nothing changes for a type
-// until it declares an op. A click on a target that has one resolves among the new ops and the legacy interaction entries beside them in ONE
-// pass (legacy entries are candidates carrying the tier and intent of their macro).
+// until it declares an op. A click on a target that has one resolves among its ops (and the held item's and the actor's) in one pass.
 
 /// The gesture a click's params mean, for the gestures the new resolver takes: a plain left click, an alt-, shift-, ctrl- and middle-click. A
 /// shift-, ctrl- or middle-click that no op answers (no op pins it, as a silicon's remote controls do) goes on to the legacy click (shift
@@ -80,7 +79,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	return FALSE
 
 /// The drag seam. A driver-built drag is always the new resolver's; a player's is when the target or the dragged atom has an op, and what no op answers goes
-/// on to the legacy chain (the gesture entries, then MouseDrop_T) exactly as before.
+/// on to MouseDrop_T exactly as before.
 /proc/input_resolve_drag(datum/input_event/drag/E)
 	RETURN_TYPE(/datum/op_result)
 	var/mob/actor = E.actor
@@ -98,15 +97,15 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 	return null
 
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
-/// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain
-/// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.
+/// `defer_legacy`: when every candidate declines or passes, the result is null, so the mob's own click handling takes the input from there, as it
+/// did before the type declared an op. A player's click takes it; a driver-built one does not.
 /proc/op_resolve_click(mob/actor, atom/target, obj/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE, quality = null, no_tool = FALSE)
 	RETURN_TYPE(/datum/op_result)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, actor_authority(actor), gesture, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	// `quality` / `no_tool`: a tool's own act (crowbar_act) or an item's plain use (item_interaction) asks for the winner of that kind only; any other winner is
 	// not this call's to run.
-	if(winner && !winner.legacy)
+	if(winner)
 		if(quality && !(winner.binding?.bind_kind == BIND_TOOL && (quality in winner.binding.args["quality"])))
 			return null
 		if(no_tool && winner.binding?.bind_kind == BIND_TOOL)
@@ -116,8 +115,6 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 			// nothing survived: show the best near-miss's reason (rate limited), so a click never just does nothing
 			var/why = op_resolution_refusal(R)
 			op_gate_feedback(actor, why)
-		return null
-	if(defer_legacy && winner.legacy)
 		return null
 	var/datum/op_result/result = op_begin(winner, R, null, FALSE)
 	// OP_DECLINE: the handler said "not handled": the next candidate whose conditions hold gets the click, then the next, until one takes it. Nothing
@@ -137,7 +134,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 			if(seen && op_cand_when(R, C))
 				next = C
 				break
-		if(!next || (defer_legacy && next.legacy))
+		if(!next)
 			return defer_legacy ? null : result
 		winner = next
 		tried = next
@@ -163,7 +160,7 @@ GLOBAL_LIST_EMPTY(op_click_resolved)
 			if(seen && op_cand_when(R, C))
 				next = C
 				break
-		if(!next || next.legacy)
+		if(!next)
 			return defer_legacy ? null : result
 		result = op_begin(next, R, null, FALSE)
 		last = next

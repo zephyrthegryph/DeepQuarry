@@ -34,7 +34,7 @@
 
 /// The three strings of one scenario, joined with " | ".
 /proc/dx_menu_order_line(mob/living/carbon/human/H, atom/target, obj/item/held)
-	var/datum/op_resolution/R = op_resolve(H, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE, TRUE)
+	var/datum/op_resolution/R = op_resolve(H, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, TRUE)
 	var/datum/op_resolution/S = new
 	S.ordered = R.all.Copy()
 	op_resolution_sort(S)

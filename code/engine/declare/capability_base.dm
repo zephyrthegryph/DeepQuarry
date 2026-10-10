@@ -3,23 +3,6 @@
 /datum/capability
 	/// Identity for without(): defaults to the type. Two entries with one key cannot coexist.
 	var/key
-	/// This capability's entries need these CAP_* bits SET (behind = COVER|PANEL: reachable only with
-	/// the cover / panel open). Merged onto its entries by cap_apply_gating().
-	var/behind = NONE
-	/// Entries refused while this lock bit is set (LOCK).
-	var/locked_by = NONE
-	/// PROC_REF on the holder, (mob/user, obj/item/held): TRUE, FALSE (else_say) or a reason text.
-	var/needs
-	var/else_say
-	/// Capability-level: FALSE makes every entry this capability builds refuse while the holder is
-	/// broken / unpowered (merged onto the entries by cap_apply_gating()). TRUE (the default) leaves
-	/// each entry's own works_broken / works_unpowered in charge.
-	var/works_broken = TRUE
-	var/works_unpowered = TRUE
-	/// LOG_GAME, LOG_ADMIN or null: the dispatcher logs each successful entry at this level.
-	var/log
-	/// The compartment (BAY_*) the capability's entries are used at, or null (see op_at_reason()).
-	var/bay_at
 
 /datum/capability/proc/owned()
 	RETURN_TYPE(/list)

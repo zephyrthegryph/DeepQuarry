@@ -83,9 +83,9 @@
 
 /// A candidate's one line: its key, binding, intent, tier, where it came from and what happened to it.
 /proc/op_cand_line(datum/op_cand/C, datum/op_resolution/R, index, datum/op_cand/winner, list/passed_chain)
-	var/binding_text = C.binding ? C.binding.describe() : "legacy"
-	var/key = C.oplan ? C.oplan.key : "legacy:[C.legacy?.type]"
-	var/origin_text = C.oplan ? C.oplan.origin : "legacy"
+	var/binding_text = C.binding ? C.binding.describe() : "unbound"
+	var/key = C.oplan?.key
+	var/origin_text = C.oplan?.origin
 	var/line = "[index ? "[index]. " : ""][key] [binding_text] tier=[op_tier_name(C.tier)] claims=[op_claims_text(C.oplan)] side=[C.side == CAND_TARGET ? "target" : (C.side == CAND_HELD ? "held" : "actor")] @ [origin_text]"
 	var/path_why = (!C.dropped_by && C.oplan?.space) ? op_cand_path_reason(R, C) : null
 	if(C.oplan?.space)
@@ -140,7 +140,7 @@
 		index++
 		. += "    [op_cand_line(C, R, index, winner)]"
 	if(winner)
-		. += "  winner: [winner.oplan ? winner.oplan.key : "legacy"] (tier [op_tier_name(winner.tier)])"
+		. += "  winner: [winner.oplan?.key] (tier [op_tier_name(winner.tier)])"
 		for(var/datum/op_cand/C as anything in R.ordered)
 			if(C != winner && op_cand_when(R, C) && winner.oplan?.passes)
 				. += "  passes() chain: then [C.oplan.key]"
@@ -152,13 +152,13 @@
 
 /// explain_click(): the explanation of a click as text lines (one string, newline separated), or a list when `as_list`.
 /proc/explain_click(mob/actor, atom/target, obj/held, gesture = GESTURE_CLICK, as_list = FALSE)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE)
 	var/list/lines = op_explain_lines(R)
 	return as_list ? lines : jointext(lines, "\n")
 
 /// Asserts in a unit test that a click resolves to `key`. Returns TRUE when it does; a test calls it inside TEST_ASSERT.
 /proc/assert_resolves(mob/actor, atom/target, obj/held, gesture, key)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	return !!winner && winner.oplan?.key == key
 

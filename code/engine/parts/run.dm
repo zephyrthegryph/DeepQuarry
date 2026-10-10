@@ -115,20 +115,14 @@
 
 /// The final perform_op(): runs the op named `key` on `target` through whichever binding accepts `origin` (default ORIGIN_AI) and returns a
 /// /datum/op_result. An op that still waits comes back with a null outcome and the same record is filled in later. `authority` is an AUTH_*
-/// (AUTH_ADMIN with an authority datum for an admin call); `trace` prints the resolution. The legacy perform_op(user, target, text, route, held)
-/// keeps its own implementation for the ops that still are legacy cap_op() entries.
+/// (AUTH_ADMIN with an authority datum for an admin call); `trace` prints the resolution. `held` that is not an obj answers null.
 /// `with`: the values a game hook passes an op that says takes("name", ...) (a destination, an escape time, a strength); the op reads them with A.arg("name").
-/proc/perform_op(mob/actor, datum/target, key, held_or_route = null, origin = ORIGIN_AI, authority = null, trace = FALSE, list/with = null)
-	// The legacy shape names a ROUTE_* text as the fourth argument.
-	if(!isnull(held_or_route) && !isobj(held_or_route))
-		return operation_compatibility().perform(actor, target, key, held_or_route, isobj(origin) ? origin : null)
-	var/obj/held = held_or_route
+/proc/perform_op(mob/actor, datum/target, key, obj/held = null, origin = ORIGIN_AI, authority = null, trace = FALSE, list/with = null)
+	if(!isnull(held) && !isobj(held))
+		return null
 	if(!isatom(target) && !isdatum(target))
 		return null
 	if(!istext(key) || !op_known_anywhere(actor, target, held, key))
-		// a legacy op named by its key or text keeps running the legacy way
-		if(isatom(target) && istext(key) && operation_compatibility().named(actor, target, key))
-			return operation_compatibility().perform(actor, target, key, ROUTE_PHYSICAL, held)
 		var/datum/op_result/unknown = new
 		unknown.key = key
 		unknown.origin = origin
@@ -154,7 +148,7 @@
 /proc/op_perform_by_key(mob/actor, atom/target, obj/held, key, origin, authority, trace, list/arg_values = null, list/with = null)
 	RETURN_TYPE(/datum/op_result)
 	OP_PURE_GUARD("perform_op(\"[key]\") on [target?.type] was run")
-	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, authority, null, key)
 	if(trace)
 		op_trace_print(R, "perform_op [key]")
 	var/datum/op_cand/winner = op_resolution_winner(R)
@@ -197,7 +191,7 @@
 /// perform_intent(actor, target, INTENT_X, held): the same path through the ops with a physical binding; returns the key of the op that ran,
 /// or null.
 /proc/perform_intent(mob/actor, atom/target, intent, obj/held)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, null, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, null, null)
 	for(var/datum/op_cand/C as anything in R.all)
 		if(C.dropped_by || !C.binding.physical())
 			continue
@@ -235,8 +229,6 @@
 	var/datum/op_result/result = new
 	result.key = C.oplan.key
 	result.origin = R.origin
-	if(C.legacy)
-		return op_run_compatibility(C, R, result)
 	// An actor has any number of pending ops: a question never keeps another input out. What conflicts is claims: the pending ops of the actor that
 	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
 	// (and tells them), an AI's is refused as busy. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's pending ops nor ends

@@ -51,7 +51,7 @@
 	row = find_row(op_menu(H, P, invalid), "insert_beaker")
 	TEST_ASSERT(row && !row["enabled"], "An inappropriate item retains the gray insertion row")
 	TEST_ASSERT_EQUAL(row["reason"], "not possible right now", "Invalid items retain the exact refusal")
-	var/datum/op_resolution/R = op_resolve(H, P, invalid, ORIGIN_CLICK, actor_authority(H), null, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(H, P, invalid, ORIGIN_CLICK, actor_authority(H), null, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	TEST_ASSERT(winner?.oplan?.key != "insert_beaker", "Invalid physical item clicks still fall through instead of selecting insertion")
 	rejected = test_menu(H, P, "insert_beaker")

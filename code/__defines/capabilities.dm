@@ -118,9 +118,6 @@
 /// Every 0.2 seconds (continuous lanes need a reason).
 #define CADENCE_FAST /datum/cadence/fast
 
-/// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
-#define ALL_ENTRIES "all_entries"
-
 // ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
 /// power_channels(): channel indices (Rust's channel order).
 #define POWER_CHANNEL_EQUIPMENT 0

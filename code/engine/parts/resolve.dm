@@ -32,8 +32,6 @@
 	var/intent
 	/// The provider chosen by the reach gate.
 	var/datum/prov/provider
-	/// A legacy interaction wrapped as a candidate (a /datum/interaction), or null.
-	var/datum/legacy
 	/// The filter that dropped it (GATE_*), the reason that filter gave, and the condition that was false.
 	var/dropped_by
 	var/dropped_reason
@@ -343,7 +341,7 @@
 	return seq
 
 /// Builds the candidate list of an input. `gesture` null means a pick by key or a menu read (no intent filter). Pass 1: cheap gates only.
-/proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, include_legacy = FALSE, keep_dropped = FALSE)
+/proc/op_resolve(mob/actor, atom/target, obj/held, origin, authority, gesture = null, key = null, keep_dropped = FALSE)
 	RETURN_TYPE(/datum/op_resolution)
 	// A resolution that names a key, or explains itself, keeps every candidate and the filter that dropped it; the rest never allocate a
 	// candidate for one the binding's own input or the intent drops silently.
@@ -366,8 +364,6 @@
 		seq = op_collect_side(R, held, CAND_HELD, key, gesture, keep_dropped, seq)
 	if(actor && !QDELETED(actor) && actor != target)
 		seq = op_collect_side(R, actor, CAND_ACTOR, key, gesture, keep_dropped, seq)
-	if(include_legacy)
-		input_compatibility().compatibility_candidates(R)
 	op_resolution_sort(R)
 	if(!length(R.ordered))
 		for(var/datum/op_cand/C as anything in R.all)
@@ -467,7 +463,7 @@
 
 /// Pass 2 for one candidate: its when conditions, in the context the op would run in. Sets dropped_by = GATE_MATCH and dropped_cond when one is false.
 /proc/op_cand_when(datum/op_resolution/R, datum/op_cand/C)
-	if(C.legacy || !length(C.oplan.conds))
+	if(!length(C.oplan.conds))
 		return TRUE
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
@@ -708,15 +704,11 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	return isnull(K?.test_now) ? world.time : K.test_now
 
 /// The final action_options(): every candidate op on `target` for `actor` holding `held`, as a list of assoc lists with "key", "label", "enabled"
-/// and "reason". Evaluated lazily and cached on (actor, target, held, their act generations, the actor's provider set generation); the legacy
-/// radial menu's rows keep their shape ("id", "name") beside the final ones.
-/proc/action_options(mob/actor, atom/target, held_or_route, route = null)
-	// The legacy shape action_options(user, target, route) passes a ROUTE_* text; it keeps its own implementation.
-	if(!isnull(held_or_route) && !isobj(held_or_route) && !ismob(held_or_route))
-		return input_compatibility().compatibility_menu(actor, target, held_or_route)
-	if(isnull(held_or_route) && isnull(route) && !op_has_ops(target) && !op_has_ops(actor))
-		return input_compatibility().compatibility_menu(actor, target)
-	var/obj/held = held_or_route
+/// and "reason" (and the radial menu's "id" and "name"). Evaluated lazily and cached on (actor, target, held, their act generations, the
+/// actor's provider set generation). Empty when neither the target nor the actor has an op and nothing is held.
+/proc/action_options(mob/actor, atom/target, obj/held)
+	if(isnull(held) && !op_has_ops(target) && !op_has_ops(actor))
+		return list()
 	return op_menu(actor, target, held)
 
 /// Does the entity have any op of the new engine?
@@ -758,7 +750,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/list/cached_rows = cached[1]
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
 	var/list/rows = list()
 	var/list/seen = list()
 	var/timed = FALSE
@@ -779,21 +771,6 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			enabled = FALSE
 			reason = reason_text(why)
 		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
-	// A modern actor can inspect an unconverted target: retain that target's legacy radial
-	// rows (and their route/state refusals) beside the actual engine candidates.
-	var/list/legacy_rows = input_compatibility().compatibility_menu(actor, target, ROUTE_PHYSICAL, operations_only = TRUE)
-	for(var/list/legacy_row as anything in legacy_rows)
-		var/key = legacy_row["id"]
-		if(seen[key])
-			continue
-		seen[key] = TRUE
-		var/list/row = legacy_row.Copy()
-		row["key"] = key
-		row["label"] = legacy_row["name"]
-		rows += list(row)
-	// Legacy requirements can read uncached data: evaluate their current refusals each tick.
-	if(length(legacy_rows))
-		timed = TRUE
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		GLOB.op_menu_cache.Cut()
 	if(!frame[2])
@@ -802,23 +779,16 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
 /proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C)
-	if(C.legacy)
-		return null
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/why = op_require_reason(A, C.oplan, C.binding)
 	A.release()
 	return why
 
-/// The final screentip_for(): the text of the op a gesture would run, or null. The legacy screentip_for(user, target, gesture) keeps its shape.
-/proc/screentip_for(mob/actor, atom/target, held_or_gesture, gesture = null)
-	if(isnull(gesture))
-		if(istext(held_or_gesture))
-			return input_compatibility().compatibility_screentip(actor, target, held_or_gesture)
-		gesture = GESTURE_CLICK
-	var/obj/held = held_or_gesture
-	if(!istext(held_or_gesture) && !isnull(held_or_gesture) && !isobj(held_or_gesture))
+/// The final screentip_for(): the text of the op a gesture (default: a plain click) would run, or null.
+/proc/screentip_for(mob/actor, atom/target, obj/held, gesture = GESTURE_CLICK)
+	if(!isnull(held) && !isobj(held))
 		return null
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, FALSE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	if(!winner)
 		return null

@@ -59,8 +59,6 @@ GLOBAL_DATUM(construction_stage_provider, /datum/construction_stage_provider)
 		GLOB.construction_stage_provider = new /datum/construction_stage_provider
 	return GLOB.construction_stage_provider
 
-/datum/construction_stage_provider/proc/build_legacy(list/options)
-	return null
 
 /datum/transfer_feedback_provider
 
