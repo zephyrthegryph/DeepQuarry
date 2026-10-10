@@ -31,7 +31,33 @@ Five new behavior tests assert exact requirement refusal and real state:
 storage insertion after its acceptance rules change, occupied pod menu entry,
 injector missing limb, dose mouth/limb coverage, and resleever linked-passenger
 refusal plus recovery. Existing focused tests cover the other converted paths.
-Post-edit lane-ready results are pending and will be recorded after the run.
+Production compilation passed with zero errors (39 existing warnings),
+DreamChecker reported zero diagnostics, and ratchets/analyze passed at
+`bbe5899c7e`. The initial test selection failed before running because it named
+16 snack tests explicitly excluded from the build on master. Active food-click,
+condiment and feeding tests replaced those selectors. Exact excluded snack-state
+and fullness-refusal tests remain a coverage gap, beyond the conversion pins.
+
+The corrected batch completed its first 104 tests: the conversion pin,
+machinery timed pin, requirement protocol pin and other behavior/smoke checks
+completed, with two failures in newly added fixtures. The storage expectation
+contained a malformed escape; the dose coverage fixture reused an amputated
+patient. Both fixtures were corrected. An existing door test also now restores
+the coalescing counter reported as leaked. A failure-only repair passed **3/3**
+with clean boot: `data/test-runs/20261010T195718_f72d5b076b.json`.
+
+The corrected batch has no final JSON: my `--no-split-slow` option inadvertently
+bypassed look-pin narrowing and started a full look sweep. I stopped only that
+owned world after preserving its completed test log, rather than spending the
+shared machine on the unintended sweep. Evidence is
+`data/codex-machinery/requirements-zero-1010/second-completed-behavior-tests.log`;
+the interrupted runner log is `second-focused-repair.log` in the same directory.
+The analyzer then compared the current look plan with the recorded keys and
+found **zero changed types**, so correctly narrowed incremental look validation
+requires no world. No appearance rows or behavior pins were re-blessed.
+
+This handoff is **unstamped**, using combined logs and the clean repair result;
+it does not claim a successful final lane-ready run or manufacture a stamp.
 
 ## Remaining work and boundaries
 
