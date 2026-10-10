@@ -99,6 +99,7 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
         "ordinary bodies must not invalidate ABI"
     );
     for ((_, old), (_, current)) in before.prepared.units.iter().zip(&reused.prepared.units) {
+        assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
         assert!(Arc::ptr_eq(
             old.abi.as_ref().unwrap(),
             current.abi.as_ref().unwrap()

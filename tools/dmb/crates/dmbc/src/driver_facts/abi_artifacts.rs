@@ -9,7 +9,7 @@ use std::sync::{
 };
 pub(crate) struct Artifact {
     pub(crate) canonical: Option<Arc<crate::procedure_policy::PreparedCanonical>>,
-    pub(crate) inputs: ProcedureInputs,
+    pub(crate) inputs: Arc<ProcedureInputs>,
     pub(crate) abi: Arc<PreparedAbi>,
 }
 pub struct AbiArtifacts {

@@ -116,7 +116,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         verb: identity.namespace == Namespace::Verb,
         occurrence: identity.occurrence,
     };
-    let mut inputs = prepared.inputs;
+    // Mutation belongs to cold lowering, never the admitted immutable ABI owner.
+    let mut inputs = Arc::unwrap_or_clone(prepared.inputs);
     if inputs
         .procedure_identity
         .is_some_and(|supplied| supplied != procedure_identity)

@@ -7,7 +7,7 @@ impl HeapCensus {
     ) {
         if self.arc_object("prepared_abi.certificate", certificate) {
             certificate.visit_storage(|inputs, bytes, abi| {
-                self.procedure_inputs(inputs);
+                self.shared_procedure_inputs(inputs);
                 self.slice("prepared_abi.canonical_bytes", bytes, true);
                 if let Some(abi) = abi {
                     self.abi(abi);
@@ -48,7 +48,7 @@ impl HeapCensus {
                 self.slice("prepared_abi.artifact_keys", key, true);
                 self.retained_symbolic_ledger(reads, versions);
                 if self.arc_object("prepared_abi.artifact_payload", value) {
-                    self.procedure_inputs(&value.inputs);
+                    self.shared_procedure_inputs(&value.inputs);
                     self.abi(&value.abi);
                     if let Some(certificate) = &value.canonical {
                         self.prepared_canonical(certificate);

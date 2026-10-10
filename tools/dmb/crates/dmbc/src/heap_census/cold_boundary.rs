@@ -102,6 +102,14 @@ impl HeapCensus {
             });
         }
     }
+    pub(crate) fn shared_procedure_inputs(
+        &mut self,
+        inputs: &Arc<dm_codegen_byond::lower_resolver::ProcedureInputs>,
+    ) {
+        if self.arc_object("resident_abi.input_owner", inputs) {
+            self.procedure_inputs(inputs);
+        }
+    }
     pub(crate) fn procedure_inputs(
         &mut self,
         inputs: &dm_codegen_byond::lower_resolver::ProcedureInputs,
@@ -141,7 +149,7 @@ impl HeapCensus {
         self.vec_payload("prepared_source_abi.units", &prepared.units);
         self.vec_payload("prepared_source_abi.diagnostics", &prepared.diagnostics);
         for (_, unit) in &prepared.units {
-            self.procedure_inputs(&unit.inputs);
+            self.shared_procedure_inputs(&unit.inputs);
             self.items("prepared_source_abi.executable_body", &unit.executable_body);
             if let Some(abi) = &unit.abi {
                 self.abi(abi);

@@ -2,19 +2,19 @@
 use super::*;
 use std::collections::BTreeMap;
 pub(crate) struct PreparedCanonical {
-    inputs: ProcedureInputs,
+    inputs: Arc<ProcedureInputs>,
     abi: Option<Arc<PreparedAbi>>,
     pub(super) bytes: Arc<[u8]>,
 }
 impl PreparedCanonical {
     pub(crate) fn visit_storage(
         &self,
-        visitor: impl FnOnce(&ProcedureInputs, &Arc<[u8]>, Option<&Arc<PreparedAbi>>),
+        visitor: impl FnOnce(&Arc<ProcedureInputs>, &Arc<[u8]>, Option<&Arc<PreparedAbi>>),
     ) {
         visitor(&self.inputs, &self.bytes, self.abi.as_ref());
     }
     pub(super) fn capture(
-        inputs: &ProcedureInputs,
+        inputs: &Arc<ProcedureInputs>,
         abi: Option<&Arc<PreparedAbi>>,
     ) -> Option<Self> {
         Some(Self {
@@ -23,18 +23,19 @@ impl PreparedCanonical {
             bytes: encode(inputs, abi.map(AsRef::as_ref))?.into(),
         })
     }
-    pub(super) fn matches(&self, b: &ProcedureInputs, abi: Option<&Arc<PreparedAbi>>) -> bool {
+    pub(super) fn matches(&self, b: &Arc<ProcedureInputs>, abi: Option<&Arc<PreparedAbi>>) -> bool {
         let a = &self.inputs;
-        a.procedure_identity == b.procedure_identity
-            && a.current_proc_path == b.current_proc_path
-            && a.current_type_path == b.current_type_path
-            && a.parameters == b.parameters
-            && a.parameter_type_flags == b.parameter_type_flags
-            && a.parameter_value_sources == b.parameter_value_sources
-            && a.parameter_defaults == b.parameter_defaults
-            && a.parameter_types == b.parameter_types
-            && a.readonly_parameters == b.readonly_parameters
-            && a.resource_search_context == b.resource_search_context
+        (Arc::ptr_eq(a, b)
+            || (a.procedure_identity == b.procedure_identity
+                && a.current_proc_path == b.current_proc_path
+                && a.current_type_path == b.current_type_path
+                && a.parameters == b.parameters
+                && a.parameter_type_flags == b.parameter_type_flags
+                && a.parameter_value_sources == b.parameter_value_sources
+                && a.parameter_defaults == b.parameter_defaults
+                && a.parameter_types == b.parameter_types
+                && a.readonly_parameters == b.readonly_parameters
+                && a.resource_search_context == b.resource_search_context))
             && match (&self.abi, abi) {
                 (None, None) => true,
                 (Some(a), Some(b)) => Arc::ptr_eq(a, b) || a == b,
@@ -88,8 +89,8 @@ mod tests {
             children: Vec::new(),
         };
         let mut unit = PreparedUnit::local_only(ProcedureInputs::default(), &parsed);
-        unit.inputs.parameters.push("x".into());
-        unit.inputs
+        Arc::make_mut(&mut unit.inputs).parameters.push("x".into());
+        Arc::make_mut(&mut unit.inputs)
             .parameter_types
             .insert("x".into(), "/datum".into());
         // Independent legacy tuple/framing oracle, including sorted type names.
@@ -117,7 +118,9 @@ mod tests {
         let before = unit.canonical_metadata().unwrap();
         assert_eq!(before.as_ref(), expected.as_slice());
         assert!(Arc::ptr_eq(&before, &unit.canonical_metadata().unwrap()));
-        unit.inputs.parameter_defaults.push(Some("7".into()));
+        Arc::make_mut(&mut unit.inputs)
+            .parameter_defaults
+            .push(Some("7".into()));
         let changed = unit.canonical_metadata().unwrap();
         assert!(!Arc::ptr_eq(&before, &changed));
         unit.abi = Some(Arc::new(PreparedAbi {
@@ -131,5 +134,47 @@ mod tests {
             changed.as_ref(),
             encode(&unit.inputs, None).unwrap().as_slice()
         );
+    }
+    #[test]
+    fn prepared_replay_shares_input_owner_and_mutable_compatibility_detaches() {
+        let parsed = Item {
+            kind: dm_syntax::ItemKind::Proc,
+            header: "p(x)".into(),
+            span: Default::default(),
+            header_span: Default::default(),
+            indent: 0,
+            children: Vec::new(),
+        };
+        let mut unit = PreparedUnit::local_only(ProcedureInputs::default(), &parsed);
+        Arc::make_mut(&mut unit.inputs).parameters.push("x".into());
+        unit.abi = Some(Arc::new(PreparedAbi {
+            layout: ProcLayout::default(),
+            argument_sources: Vec::new(),
+            source_helpers: Vec::new(),
+        }));
+        unit.issue_canonical();
+        let bytes = unit.canonical_metadata().unwrap();
+        let certificate = unit.canonical.as_ref().unwrap();
+        certificate.visit_storage(|inputs, _, _| assert!(Arc::ptr_eq(inputs, &unit.inputs)));
+        let replay = PreparedReplay::from_unit(&unit).unwrap().into_view();
+        assert!(Arc::ptr_eq(&unit.inputs, &replay.inputs));
+        assert!(Arc::ptr_eq(&bytes, &replay.canonical_metadata().unwrap()));
+        let mut once = crate::heap_census::HeapCensus::new("input.once");
+        once.shared_procedure_inputs(&unit.inputs);
+        let once = once.finish();
+        let mut twice = crate::heap_census::HeapCensus::new("input.twice");
+        twice.shared_procedure_inputs(&unit.inputs);
+        twice.shared_procedure_inputs(&replay.inputs);
+        assert_eq!(
+            once.unique_known_capacity_bytes,
+            twice.finish().unique_known_capacity_bytes
+        );
+        Arc::make_mut(&mut unit.inputs)
+            .parameters
+            .push("changed".into());
+        assert!(!Arc::ptr_eq(&unit.inputs, &replay.inputs));
+        assert_eq!(replay.inputs.parameters, ["x"]);
+        assert!(Arc::ptr_eq(&bytes, &replay.canonical_metadata().unwrap()));
+        assert_ne!(bytes.as_ref(), unit.canonical_metadata().unwrap().as_ref());
     }
 }

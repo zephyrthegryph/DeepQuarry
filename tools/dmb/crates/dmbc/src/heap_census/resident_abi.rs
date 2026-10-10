@@ -5,7 +5,7 @@ use dm_codegen_byond::lower_resolver::ProcedureInputs;
 use dm_ir::ReadDomain;
 
 pub(crate) fn weight(
-    inputs: &ProcedureInputs,
+    inputs: &Arc<ProcedureInputs>,
     abi: &Arc<PreparedAbi>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
@@ -14,7 +14,7 @@ pub(crate) fn weight(
     let parameter_types = &inputs.parameter_types;
     let readonly_parameters = &inputs.readonly_parameters;
     let mut census = HeapCensus::new("resident_abi_admission");
-    census.procedure_inputs(inputs);
+    census.shared_procedure_inputs(inputs);
     // std exposes usable HashMap capacity, not its private bucket allocation.
     // The bucket upper bound and deliberately loose BTree node allowance are
     // admission charges, never presented as exact census payload measurements.
@@ -49,7 +49,9 @@ pub(crate) fn weight(
             .ok()?
             .saturating_add(map_charge)
             .saturating_add(set_charge)
-            .saturating_add(size_of::<ProcedureInputs>())
+            // Conservative admission includes shared Arc control overhead;
+            // diagnostic census still reports actual exposed payload only.
+            .saturating_add(2 * size_of::<usize>() + std::mem::align_of::<ProcedureInputs>())
             .saturating_add(encounters.saturating_mul(64))
             .saturating_add(key.len())
             .saturating_add(4096),
@@ -66,18 +68,18 @@ mod tests {
             argument_sources: Vec::new(),
             source_helpers: Vec::new(),
         });
-        let mut inputs = ProcedureInputs::default();
+        let mut inputs = Arc::new(ProcedureInputs::default());
         let reads = Vec::new();
         let versions = Vec::new();
         let base = weight(&inputs, &abi, b"key", &reads, &versions).unwrap();
-        inputs.parameters.reserve_exact(100);
-        inputs
+        Arc::make_mut(&mut inputs).parameters.reserve_exact(100);
+        Arc::make_mut(&mut inputs)
             .parameter_defaults
             .push(Some(String::with_capacity(10000)));
-        inputs
+        Arc::make_mut(&mut inputs)
             .parameter_types
             .insert("argument".into(), "/obj".into());
-        inputs.readonly_parameters.insert(0);
+        Arc::make_mut(&mut inputs).readonly_parameters.insert(0);
         let expanded = weight(&inputs, &abi, b"key", &reads, &versions).unwrap();
         assert!(expanded >= base + 10000 + 100 * size_of::<String>());
         let mut larger_abi = (*abi).clone();

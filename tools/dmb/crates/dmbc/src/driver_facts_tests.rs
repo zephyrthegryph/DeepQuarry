@@ -15,7 +15,7 @@ fn initializer_instance_storage_requires_exact_receiver_and_declaring_tuple() {
     let name = SymbolId::of("density");
     let write = dm_ir::InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::Instance {
+        target: dm_ir::InitializerTarget::Instance {
             declaring_owner: owner,
             receiver_owner: receiver,
             name,
@@ -209,7 +209,7 @@ fn startup_evaluation_respects_procedure_static_shadowing() {
     };
     let write = dm_ir::InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+        target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
         lexical_owner: procedure.owner,
         lexical_procedure: Some(procedure),
         value: value.initializer.clone(),
@@ -772,7 +772,7 @@ fn authored_static_lexical_and_global_type_names_shadow_intrinsic() {
     };
     let write = dm_ir::InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+        target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
         lexical_owner: procedure.owner,
         lexical_procedure: Some(procedure),
         value: value.initializer.clone(),

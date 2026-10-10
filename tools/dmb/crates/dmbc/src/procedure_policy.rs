@@ -50,7 +50,8 @@ pub(crate) use canonical::PreparedCanonical;
 
 pub struct PreparedUnit {
     pub(crate) canonical: Option<Arc<PreparedCanonical>>,
-    pub inputs: ProcedureInputs,
+    /// Immutable admitted inputs. Compatibility mutation must use Arc::make_mut.
+    pub inputs: Arc<ProcedureInputs>,
     pub executable_body: Vec<Item>,
     /// None supports existing local-only lowering tests, not a production DMB.
     pub abi: Option<Arc<PreparedAbi>>,
@@ -60,7 +61,7 @@ pub struct PreparedUnit {
 /// body's complete authored bytes remain in the memo key. On a miss the real
 /// parser and setting-strip transform still run before lowering.
 pub struct PreparedReplay {
-    inputs: ProcedureInputs,
+    inputs: Arc<ProcedureInputs>,
     abi: Arc<PreparedAbi>,
     canonical: Option<Arc<PreparedCanonical>>,
 }
@@ -99,7 +100,7 @@ impl PreparedUnit {
     pub fn local_only(inputs: ProcedureInputs, parsed: &Item) -> Self {
         Self {
             canonical: None,
-            inputs,
+            inputs: Arc::new(inputs),
             executable_body: parsed.children.clone(),
             abi: None,
         }
@@ -187,7 +188,7 @@ impl CapturedProcedurePolicy<'_> {
         )?;
         Ok(PreparedUnit {
             canonical: None,
-            inputs: prepared.inputs,
+            inputs: Arc::new(prepared.inputs),
             executable_body: prepared.executable_body,
             abi: Some(Arc::new(PreparedAbi {
                 layout: prepared.layout,

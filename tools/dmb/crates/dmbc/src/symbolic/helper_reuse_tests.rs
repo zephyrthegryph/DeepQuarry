@@ -73,10 +73,10 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
     let current = moved_batch.units.remove(0);
     let prepared = crate::procedure_policy::PreparedUnit {
         canonical: None,
-        inputs: dm_codegen_byond::ProcedureInputs {
+        inputs: Arc::new(dm_codegen_byond::ProcedureInputs {
             parameters: vec!["value".into()],
             ..Default::default()
-        },
+        }),
         executable_body: Vec::new(),
         abi: current.abi.clone(),
     };

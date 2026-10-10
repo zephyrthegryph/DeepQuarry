@@ -852,7 +852,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         origin: &dm_tree::frontend::SourceLocation,
     ) -> Result<dm_codegen_byond::ProcedureInputs, String> {
         self.validate(identity, metadata, symbols, origin)?;
-        Ok(self.unit(identity)?.inputs.clone())
+        Ok((*self.unit(identity)?.inputs).clone())
     }
     fn prepare(
         &self,
