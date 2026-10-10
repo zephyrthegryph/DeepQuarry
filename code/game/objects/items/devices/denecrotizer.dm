@@ -189,7 +189,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 			return FALSE
 		if(!target.mind)
 			act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-			perform_op(user, src, "tame", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
+			perform_op(user, src, "tame", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	perform_op(user, src, "ghostjoin_rez", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
+	perform_op(user, src, "ghostjoin_rez", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 	return
 
 /obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(datum/act/op/A)
@@ -235,7 +235,7 @@ CAPABILITIES(/obj/item/denecrotizer)
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	act_message(user, target, others = "%U% presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	perform_op(user, src, "basic_rez", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
+	perform_op(user, src, "basic_rez", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 
 /obj/item/denecrotizer/proc/basic_rez_timed_done(datum/act/op/A)
 	var/mob/living/simple_mob/target = A.arg("target")

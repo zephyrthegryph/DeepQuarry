@@ -76,6 +76,8 @@
 	for(var/obj/item/reagent_containers/food/snacks/meat/M in contents_of(get_turf(carcass)))
 		cuts++
 	TEST_ASSERT_EQUAL(cuts, 2, "two pieces of meat lie on the carcass's tile")
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right)) // the cuts leave meat and blood
+		own_turf_contents(T)
 
 // ---- Egg laying: thirty seconds, then an egg is made ----
 

@@ -128,7 +128,7 @@
 // ---- Thieves' gloves, a disarm touch: a second's rummage, a second to take the left pocket's item ----
 
 /datum/unit_test/dq_timed_pin_w11D/pickpocket_swap
-	duration = 2 SECONDS
+	duration = 3 SECONDS // rummage, take and give are a second each
 
 /datum/unit_test/dq_timed_pin_w11D/pickpocket_swap/setup_scene()
 	user = person()
