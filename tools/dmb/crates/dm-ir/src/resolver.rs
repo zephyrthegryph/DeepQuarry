@@ -128,6 +128,21 @@ pub enum ResolveQuery {
         name: SymbolId,
         verb: bool,
     },
+    /// Ordered source declaration identities and metadata, excluding executable bodies.
+    DeclarationChain {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    },
+}
+
+/// Source declaration form is independent of its executable implementation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProcedureDefinition {
+    Declare,
+    Override,
+    Reopen,
+    Implicit,
 }
 
 impl ResolveQuery {
@@ -149,7 +164,8 @@ impl ResolveQuery {
             | Self::Proc { .. }
             | Self::ProcedureValue { .. }
             | Self::MethodProcedureValue { .. }
-            | Self::OverrideChain { .. } => ReadDomain::OwnerCallable(self),
+            | Self::OverrideChain { .. }
+            | Self::DeclarationChain { .. } => ReadDomain::OwnerCallable(self),
             Self::Var { .. } | Self::GlobalVar(_) | Self::Constant { .. } => {
                 ReadDomain::OwnerScalar(self)
             }
@@ -209,6 +225,14 @@ pub enum ResolvedMeaning {
     Resource {
         path: SymbolId,
         content: u128,
+    },
+    /// Exact source structural answer; occurrence and predecessor are symbolic,
+    /// never dense arena/output indices. Executable content is intentionally absent.
+    Declaration {
+        identity: crate::ProcedureIdentity,
+        definition: ProcedureDefinition,
+        previous: Option<crate::ProcedureIdentity>,
+        data: Arc<DeclarationMeaning>,
     },
 }
 
@@ -317,6 +341,32 @@ impl ResolvedMeaning {
                 out.push(13);
                 symbol(&mut out, *path);
                 out.extend_from_slice(&content.to_le_bytes());
+            }
+            Self::Declaration {
+                identity,
+                definition,
+                previous,
+                data,
+            } => {
+                out.push(15);
+                out.push(u8::from(previous.is_some()));
+                let mut declaration = |identity: &crate::ProcedureIdentity| {
+                    symbol(&mut out, identity.owner);
+                    symbol(&mut out, identity.name);
+                    out.push(u8::from(identity.verb));
+                    out.extend_from_slice(&identity.occurrence.to_le_bytes());
+                };
+                declaration(identity);
+                if let Some(previous) = previous {
+                    declaration(previous);
+                }
+                out.push(match definition {
+                    ProcedureDefinition::Declare => 0,
+                    ProcedureDefinition::Override => 1,
+                    ProcedureDefinition::Reopen => 2,
+                    ProcedureDefinition::Implicit => 3,
+                });
+                frame(&mut out, &data.canonical_bytes());
             }
             Self::ProcedureStatic(value) => {
                 out.push(14);

@@ -30,7 +30,7 @@ pub(super) fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
             }
         }
         ResolvedMeaning::Value(value) => c.semantic_value(owner, value),
-        ResolvedMeaning::Member { data, .. } => {
+        ResolvedMeaning::Member { data, .. } | ResolvedMeaning::Declaration { data, .. } => {
             if c.arc_object(owner, data) {
                 c.declaration(data)
             }

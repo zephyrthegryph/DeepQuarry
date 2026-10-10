@@ -52,7 +52,12 @@ pub fn contribute(
             .collect();
         missing.sort_unstable();
         extra.sort_unstable();
-        return Err(format!("source class order must explicitly cover all fresh classes exactly once; missing={missing:?}; extra={extra:?}; ordered={}, unique={}, required={}",source_type_order.len(),supplied.len(),source_types.len()));
+        return Err(format!(
+            "source class order must explicitly cover all fresh classes exactly once; missing={missing:?}; extra={extra:?}; ordered={}, unique={}, required={}",
+            source_type_order.len(),
+            supplied.len(),
+            source_types.len()
+        ));
     }
     let mut variable_order = Vec::new();
     for field in plan
@@ -196,30 +201,33 @@ pub(crate) fn bind_global_records(
     next = next
         .checked_add(frame_records)
         .ok_or("procedure variable overflow")?;
-    for field in plan
-        .fields
-        .iter()
-        .filter(|field| field.role == FieldRole::Declaration)
-    {
-        let index = u32::try_from(next).map_err(|_| "field variable overflow")?;
-        next = next.checked_add(1).ok_or("field variable overflow")?;
-        if field.shared {
-            let key = Key::Variable {
-                owner: field.owner,
-                name: field.name,
-            };
-            if inventory.fixed.iter().any(|(existing, _)| *existing == key) {
-                return Err("source field redeclares retained record".into());
+    let roster = plan.variable_record_roster();
+    for record in roster.iter() {
+        match record {
+            crate::class_projection::VariableRecord::Field(index) => {
+                let field = &plan.fields[index];
+                let index = u32::try_from(next).map_err(|_| "field variable overflow")?;
+                next = next.checked_add(1).ok_or("field variable overflow")?;
+                if field.shared {
+                    let key = Key::Variable {
+                        owner: field.owner,
+                        name: field.name,
+                    };
+                    if inventory.fixed.iter().any(|(existing, _)| *existing == key) {
+                        return Err("source field redeclares retained record".into());
+                    }
+                    inventory.fixed.push((key, index));
+                }
             }
-            inventory.fixed.push((key, index));
+            crate::class_projection::VariableRecord::ProcedureStatic(index) => {
+                let local = &plan.procedure_statics[index];
+                let index = u32::try_from(next).map_err(|_| "static variable overflow")?;
+                next = next.checked_add(1).ok_or("static variable overflow")?;
+                inventory
+                    .fixed
+                    .push((Key::ProcedureStatic(local.identity), index));
+            }
         }
-    }
-    for local in plan.procedure_statics.iter() {
-        let index = u32::try_from(next).map_err(|_| "static variable overflow")?;
-        next = next.checked_add(1).ok_or("static variable overflow")?;
-        inventory
-            .fixed
-            .push((Key::ProcedureStatic(local.identity), index));
     }
     inventory.append_orders.remove(&Table::Variable);
     Ok(())
@@ -246,10 +254,11 @@ mod global_record_tests {
             name: SymbolId::of("local_static"),
         };
         let plan = ClassProjection {
+            variable_records: Default::default(),
             field_placements: Default::default(),
             types: Arc::from([]),
             chains: Arc::from([]),
-        procedure_membership: Arc::from([]),
+            procedure_membership: Arc::from([]),
             fields: [false, true]
                 .into_iter()
                 .enumerate()
@@ -281,6 +290,34 @@ mod global_record_tests {
             tree_identity: 0,
             occurrence_count: 0,
         };
+        let roster = plan.variable_record_roster();
+        assert!(Arc::ptr_eq(&roster, &plan.variable_record_roster()));
+        assert_eq!(
+            roster.iter().collect::<Vec<_>>(),
+            [
+                crate::class_projection::VariableRecord::Field(0),
+                crate::class_projection::VariableRecord::Field(1),
+                crate::class_projection::VariableRecord::ProcedureStatic(0),
+            ]
+        );
+        let mut equivalent = plan.clone();
+        equivalent.fields = plan.fields.to_vec().into();
+        assert!(Arc::ptr_eq(&roster, &equivalent.variable_record_roster()));
+        let mut replaced = plan.clone();
+        let mut fields = replaced.fields.to_vec();
+        let mut changed = (*fields[0]).clone();
+        changed.role = FieldRole::Assignment;
+        fields[0] = Arc::new(changed);
+        replaced.fields = fields.into();
+        let replacement = replaced.variable_record_roster();
+        assert!(!Arc::ptr_eq(&roster, &replacement));
+        assert_eq!(
+            replacement.iter().collect::<Vec<_>>(),
+            [
+                crate::class_projection::VariableRecord::Field(1),
+                crate::class_projection::VariableRecord::ProcedureStatic(0),
+            ]
+        );
         let mut inventory = LinkInventory::default();
         inventory
             .reserved_prefixes

@@ -47,6 +47,16 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
         }
     }
     /// These reads are mandatory even for bodies that use no inherited names.
+    /// Structural ABI consumers observe declarations, not executable bodies.
+    /// Body-sensitive consumers must continue using record_occurrence.
+    pub fn record_declaration_occurrence(&self, identity: dm_ir::ProcedureIdentity) {
+        self.resolve(ResolveQuery::Ancestry(identity.owner));
+        self.resolve(ResolveQuery::DeclarationChain {
+            owner: identity.owner,
+            name: identity.name,
+            verb: identity.verb,
+        });
+    }
     pub fn record_occurrence(&self, identity: dm_ir::ProcedureIdentity) {
         self.resolve(ResolveQuery::Ancestry(identity.owner));
         self.resolve(ResolveQuery::OverrideChain {

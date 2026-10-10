@@ -59,15 +59,20 @@ pub struct AllocationLedger {
 impl AllocationLedger {
     /// Root-global semantics and allocation registration are separate: a bare
     /// declaration following a non-root procedure joins its late registrations.
-    /// An explicitly qualified var declaration resets that registration context.
+    /// Once registered, subsequent bare root fields keep that allocation group.
+    /// An explicitly qualified var or root procedure resets that context.
     pub fn root_field_registrations(&self) -> impl Iterator<Item = (Span, Option<SymbolId>)> + '_ {
         let root = SymbolId::of("/");
         let mut procedure = None;
+        let mut root_registration = None;
         self.events
             .iter()
             .filter_map(move |event| match event.kind {
                 AllocationKind::Procedure { owner, .. } => {
                     procedure = Some(owner);
+                    if owner == root {
+                        root_registration = None;
+                    }
                     None
                 }
                 AllocationKind::Type { .. } | AllocationKind::Namespace { .. } => {
@@ -81,9 +86,14 @@ impl AllocationLedger {
                 } => {
                     if var_namespace {
                         procedure = None;
+                        root_registration = None;
                     }
-                    (owner == root)
-                        .then_some((event.header_span, procedure.filter(|owner| *owner != root)))
+                    if owner != root {
+                        return None;
+                    }
+                    let registration = *root_registration
+                        .get_or_insert_with(|| procedure.filter(|owner| *owner != root));
+                    Some((event.header_span, registration))
                 }
                 AllocationKind::Parent { .. } => None,
             })
@@ -458,7 +468,9 @@ mod tests {
     }
     #[test]
     fn trailing_signature_separator_does_not_become_allocation_owner() {
-        let ast = dm_syntax::parse("/obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)\n    return signal\n");
+        let ast = dm_syntax::parse(
+            "/obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)\n    return signal\n",
+        );
         let mut symbols = SymbolTable::default();
         let ledger = capture(&ast.items, "/", &mut symbols).unwrap();
         let procedure = ledger
@@ -485,7 +497,7 @@ mod tests {
     }
     #[test]
     fn grammar_groups_and_source_values_survive_normalization_distinctions() {
-        let source="/datum/owner\n    var/list\n        empty\n        asset='A.txt'\n/datum/owner/var/x=null\n/datum/owner/proc/p()\n    return 'B.txt'\n/datum/owner/New()\n    return 'C.txt'\n/datum/owner/parent_type=/datum/base\n/datum/owner/a='D.txt'\n";
+        let source = "/datum/owner\n    var/list\n        empty\n        asset='A.txt'\n/datum/owner/var/x=null\n/datum/owner/proc/p()\n    return 'B.txt'\n/datum/owner/New()\n    return 'C.txt'\n/datum/owner/parent_type=/datum/base\n/datum/owner/a='D.txt'\n";
         let ast = dm_syntax::parse(source);
         assert!(ast.diagnostics.is_empty());
         let mut symbols = SymbolTable::default();

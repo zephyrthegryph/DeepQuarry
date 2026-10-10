@@ -182,6 +182,22 @@ impl HeapCensus {
         }
     }
     pub(crate) fn current_projection(&mut self, projection: &ClassProjection) {
+        if let Some(roster) = projection.retained_variable_record_roster() {
+            if self.arc_object("current_projection.variable_record_roster", roster) {
+                let (fields, statics, entries) = roster.storage();
+                self.vec_payload("current_projection.variable_record_entries", entries);
+                if self.slice("current_projection.fields", fields, true) {
+                    for field in fields.iter() {
+                        super::resident_owner_projection::inspect_field(self, field);
+                    }
+                }
+                if self.slice("current_projection.statics", statics, true) {
+                    for value in statics.iter() {
+                        self.projection_default(&value.value);
+                    }
+                }
+            }
+        }
         self.slice("current_projection.types", &projection.types, true);
         if self.slice("current_projection.fields", &projection.fields, true) {
             for field in projection.fields.iter() {
@@ -296,6 +312,7 @@ mod tests {
             ))),
         });
         let projection = ClassProjection {
+            variable_records: Default::default(),
             field_placements: FieldPlacements::default(),
             procedure_declarations: Arc::new(Default::default()),
             shared_slot_order: Arc::from([]),

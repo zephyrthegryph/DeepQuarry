@@ -71,6 +71,25 @@ fn answer(symbols: &SymbolTable, meaning: &ResolvedMeaning) -> Result<Value, Exp
                 "list_element_type_status":if opaque.is_some() {"unknown"} else {"known"},
                 "initializer":expression(data.initializer.as_ref(),symbols)?,"opaque":opaque.is_some()})
         }
+        M::Declaration {
+            identity,
+            definition,
+            previous,
+            data,
+        } => {
+            let mut metadata = answer(
+                symbols,
+                &M::Member {
+                    owner: identity.owner,
+                    name: identity.name,
+                    fingerprint: 0,
+                    data: data.clone(),
+                },
+            )?;
+            metadata.as_object_mut().unwrap().remove("fingerprint");
+            metadata["kind"] = json!("declaration_metadata");
+            json!({"status":"known","kind":"declaration","owner":symbol(symbols,identity.owner),"name":symbol(symbols,identity.name),"verb":identity.verb,"occurrence":identity.occurrence,"definition":format!("{definition:?}"),"previous":previous.map(|id|json!({"owner":symbol(symbols,id.owner),"name":symbol(symbols,id.name),"verb":id.verb,"occurrence":id.occurrence})),"metadata":metadata})
+        }
         M::Resource { path, content } => {
             json!({"status":"known","kind":"resource","path":symbol(symbols,*path),"content":format!("{content:032x}")})
         }

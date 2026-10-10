@@ -65,6 +65,69 @@ fn input_filter_warnings_match_authenticated_matrix_and_current_ordinals() {
 }
 
 #[test]
+fn anything_without_list_matches_authenticated_pure_null_and_duplicate_masks() {
+    struct Debug;
+    impl DebugSourceProvider for Debug {
+        fn entry_ordinal(&self) -> Result<u32, String> {
+            Ok(0)
+        }
+        fn ordinal(&self, offset: usize) -> Result<u32, String> {
+            u32::try_from(offset).map_err(|error| error.to_string())
+        }
+    }
+    let source =
+        include_str!("../../../../../fixtures/native/diagnostic_anchor_cursor/type_masks.dm");
+    let log = include_str!(
+        "../../../../../fixtures/native/diagnostic_anchor_cursor/type-masks-compile.log"
+    );
+    let ast = dm_syntax::parse(source);
+    assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+    // Pinned BYOND lookahead coordinates and multiplicity, independently of
+    // the native current-statement origin (exact token-cursor parity is open).
+    let captured = [5, 7, 9, 9, 11, 13, 15, 17, 19];
+    let observed = log
+        .lines()
+        .filter(|line| line.contains("warning (anything_no_list)"))
+        .map(|line| line.split(':').nth(1).unwrap().parse::<usize>().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(observed, captured);
+    let mut total = 0;
+    for item in &ast.items {
+        let compiled = compile_with_lookup(
+            &item.children,
+            None,
+            &LowerBindings::default(),
+            None,
+            Some(&Debug),
+        )
+        .unwrap_or_else(|errors| panic!("{}: {errors:?}", item.header));
+        let expected = if item.header.contains("pure_anything")
+            || item.header.contains("null_only")
+            || item.header.contains("after(")
+        {
+            0
+        } else if item.header.contains("anything_anything") {
+            2
+        } else {
+            1
+        };
+        assert_eq!(compiled.warnings.len(), expected, "{}", item.header);
+        let offset = item.children[0].header_span.start;
+        for warning in compiled.warnings {
+            assert_eq!(warning.code, dm_ir::WarningCode::AnythingWithoutList);
+            assert_eq!(
+                warning.code.message(),
+                "'anything' has no meaning without a list"
+            );
+            assert_eq!(warning.name, None);
+            assert_eq!(warning.source_ordinal, Some(offset as u32));
+            total += 1;
+        }
+    }
+    assert_eq!(total, captured.len());
+}
+
+#[test]
 fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
     struct Debug;
     impl DebugSourceProvider for Debug {
@@ -78,10 +141,23 @@ fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
     let source = include_str!("../../../../../fixtures/native/input_filter_order/matrix.dm");
     let ast = dm_syntax::parse(source);
     assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
-    // Ordered actual BYOND filter_rightmost lines in receipt.json. The distinct
-    // anything_no_list warnings are outside this producer's current scope.
+    // Ordered actual BYOND filter_rightmost and anything_no_list lines in receipt.json.
     let object_lines = [4, 12, 20, 28, 36, 44, 52, 68, 72, 76, 88, 88, 92];
     let anything_lines = [56, 60];
+    // BYOND reports its lookahead token (the following procedure header), not
+    // the expression. Keep those authenticated coordinates distinct from the
+    // current statement ordinal that this producer is licensed to issue.
+    let without_list_locations = [(50, 51), (54, 55), (58, 59), (62, 63)];
+    let captured_log =
+        include_str!("../../../../../fixtures/native/input_filter_order/compile.log");
+    for (expression_line, byond_line) in without_list_locations {
+        let expression = source.lines().nth(expression_line - 1).unwrap();
+        let lookahead = source.lines().nth(byond_line - 1).unwrap();
+        assert!(expression.contains("input(\"prompt\")") && expression.contains("anything"));
+        assert!(!expression.contains(" in choices"));
+        assert!(lookahead.starts_with("/proc/"));
+        assert!(captured_log.contains(&format!("matrix.dm:{byond_line}:warning (anything_no_list): 'anything' has no meaning without a list")));
+    }
     for item in &ast.items {
         let bindings = LowerBindings {
             parameters: vec!["choices".into()],
@@ -102,6 +178,12 @@ fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
         for _ in anything_lines.iter().filter(|&&value| value == line) {
             expected.push(dm_ir::WarningCode::AnythingFilterRightmost);
         }
+        let without_list = without_list_locations
+            .iter()
+            .any(|(expression, _)| *expression == line);
+        if without_list {
+            expected.push(dm_ir::WarningCode::AnythingWithoutList);
+        }
         assert_eq!(
             compiled
                 .warnings
@@ -115,7 +197,20 @@ fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
         for warning in &compiled.warnings {
             assert_eq!(warning.name, None);
             assert_eq!(warning.source_ordinal, Some(offset as u32));
-            assert_eq!(warning.code.name(), "filter_rightmost");
+            assert_eq!(
+                warning.code.name(),
+                if without_list {
+                    "anything_no_list"
+                } else {
+                    "filter_rightmost"
+                }
+            );
+            if without_list {
+                assert_eq!(
+                    warning.code.message(),
+                    "'anything' has no meaning without a list"
+                );
+            }
             assert!(!warning.code.requires_name());
         }
     }

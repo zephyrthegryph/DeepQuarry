@@ -39,9 +39,9 @@ fn negative_reads_invalidate_and_exact_keys_never_alias() {
         .is_none());
 }
 #[test]
-fn mandatory_reads_include_ancestry_and_override_position() {
+fn mandatory_reads_include_ancestry_and_structural_declaration_position() {
     let recorder = RecordingResolver::new(&Host(false));
-    recorder.record_occurrence(dm_ir::ProcedureIdentity {
+    recorder.record_declaration_occurrence(dm_ir::ProcedureIdentity {
         owner: dm_ir::SymbolId::of("/datum/a"),
         name: dm_ir::SymbolId::of("run"),
         verb: false,
@@ -50,7 +50,22 @@ fn mandatory_reads_include_ancestry_and_override_position() {
     let reads = recorder.reads();
     assert_eq!(reads.len(), 2);
     assert!(matches!(reads[0].query, ResolveQuery::Ancestry(_)));
-    assert!(matches!(reads[1].query, ResolveQuery::OverrideChain { .. }));
+    assert!(matches!(
+        reads[1].query,
+        ResolveQuery::DeclarationChain { .. }
+    ));
+    // The explicit legacy recorder remains available to body-sensitive clients.
+    let legacy = RecordingResolver::new(&Host(false));
+    legacy.record_occurrence(dm_ir::ProcedureIdentity {
+        owner: dm_ir::SymbolId::of("/datum/a"),
+        name: dm_ir::SymbolId::of("run"),
+        verb: false,
+        occurrence: 2,
+    });
+    assert!(matches!(
+        legacy.reads()[1].query,
+        ResolveQuery::OverrideChain { .. }
+    ));
 }
 struct VersionHost {
     tree: Option<u128>,

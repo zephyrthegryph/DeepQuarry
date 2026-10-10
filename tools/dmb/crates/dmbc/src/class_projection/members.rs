@@ -279,7 +279,7 @@ pub(crate) fn materialize_members_with_roster(
             DefaultValue::Transform(_) => {
                 return Err(ProjectionError::Unsupported(
                     "transform default outside intrinsic transform".into(),
-                ))
+                ));
             }
             DefaultValue::Scalar(value) => value,
             DefaultValue::InitializerExpression { token, .. } => return Ok((62, *token)),
@@ -353,85 +353,89 @@ pub(crate) fn materialize_members_with_roster(
         }
     }
     let mut shared_records = BTreeMap::new();
-    for field in projection
-        .fields
-        .iter()
-        .filter(|field| field.role == FieldRole::Declaration)
-    {
-        let flags = field.wire_flags.ok_or_else(|| {
-            ProjectionError::Unsupported("formal declaration wire flags unavailable".into())
-        })?;
-        if declarations.contains_key(&(field.owner, field.name)) {
-            return Err(ProjectionError::Unsupported(
-                "source field redeclares retained record".into(),
-            ));
-        }
-        let name = pool
-            .intern(dmb, text(field.name)?.as_bytes())
-            .map_err(|e| ProjectionError::Unsupported(format!("field name {e:?}")))?;
-        let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
-        let variable = u32::try_from(dmb.variables.len())
-            .map_err(|_| ProjectionError::Unsupported("variable record overflow".into()))?;
-        dmb.variables.push(Variable { kind, value, name });
-        declarations.insert((field.owner, field.name), variable);
-        if field.shared {
-            let key = Key::Variable {
-                owner: field.owner,
-                name: field.name,
-            };
-            let index = tables.index(key).ok_or_else(|| {
-                ProjectionError::Unsupported("shared slot binding missing".into())
-            })?;
-            if index != variable {
-                return Err(ProjectionError::Unsupported(
-                    "shared VarID disagrees with record allocation".into(),
-                ));
+    let record_roster = projection.variable_record_roster();
+    for record in record_roster.iter() {
+        match record {
+            VariableRecord::Field(index) => {
+                let field = &projection.fields[index];
+                let flags = field.wire_flags.ok_or_else(|| {
+                    ProjectionError::Unsupported("formal declaration wire flags unavailable".into())
+                })?;
+                if declarations.contains_key(&(field.owner, field.name)) {
+                    return Err(ProjectionError::Unsupported(
+                        "source field redeclares retained record".into(),
+                    ));
+                }
+                let name = pool
+                    .intern(dmb, text(field.name)?.as_bytes())
+                    .map_err(|e| ProjectionError::Unsupported(format!("field name {e:?}")))?;
+                let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
+                let variable = u32::try_from(dmb.variables.len())
+                    .map_err(|_| ProjectionError::Unsupported("variable record overflow".into()))?;
+                dmb.variables.push(Variable { kind, value, name });
+                declarations.insert((field.owner, field.name), variable);
+                if field.shared {
+                    let key = Key::Variable {
+                        owner: field.owner,
+                        name: field.name,
+                    };
+                    let index = tables.index(key).ok_or_else(|| {
+                        ProjectionError::Unsupported("shared slot binding missing".into())
+                    })?;
+                    if index != variable {
+                        return Err(ProjectionError::Unsupported(
+                            "shared VarID disagrees with record allocation".into(),
+                        ));
+                    }
+                    if shared_records.insert(key, (variable, flags)).is_some() {
+                        return Err(ProjectionError::Unsupported(
+                            "duplicate shared slot record".into(),
+                        ));
+                    }
+                }
+                if field.owner != SymbolId::of("/") {
+                    let class = *classes
+                        .get(&field.owner)
+                        .ok_or(ProjectionError::MissingMember)?;
+                    let old = dmb.classes[class as usize].lists_and_procs[4];
+                    let id = extend(dmb, old, vec![variable, flags])?;
+                    dmb.classes[class as usize].lists_and_procs[4] = id;
+                }
             }
-            if shared_records.insert(key, (variable, flags)).is_some() {
-                return Err(ProjectionError::Unsupported(
-                    "duplicate shared slot record".into(),
-                ));
+            VariableRecord::ProcedureStatic(index) => {
+                let local = &projection.procedure_statics[index];
+                let index = tables
+                    .index(Key::ProcedureStatic(local.identity))
+                    .ok_or_else(|| {
+                        ProjectionError::Unsupported("procedure static slot binding missing".into())
+                    })?;
+                let name = pool
+                    .intern(dmb, text(local.identity.name)?.as_bytes())
+                    .map_err(|error| {
+                        ProjectionError::Unsupported(format!("procedure static name {error:?}"))
+                    })?;
+                let (kind, value) = scalar(dmb, pool, &local.value, tables, value_types)?;
+                let variable = u32::try_from(dmb.variables.len()).map_err(|_| {
+                    ProjectionError::Unsupported("procedure static record overflow".into())
+                })?;
+                dmb.variables.push(Variable { kind, value, name });
+                if index != variable {
+                    return Err(ProjectionError::Unsupported(
+                        "procedure static VarID disagrees with record allocation".into(),
+                    ));
+                }
+                if shared_records
+                    .insert(
+                        Key::ProcedureStatic(local.identity),
+                        (variable, local.wire_flags),
+                    )
+                    .is_some()
+                {
+                    return Err(ProjectionError::Unsupported(
+                        "duplicate procedure static shared slot".into(),
+                    ));
+                }
             }
-        }
-        if field.owner != SymbolId::of("/") {
-            let class = *classes
-                .get(&field.owner)
-                .ok_or(ProjectionError::MissingMember)?;
-            let old = dmb.classes[class as usize].lists_and_procs[4];
-            let id = extend(dmb, old, vec![variable, flags])?;
-            dmb.classes[class as usize].lists_and_procs[4] = id;
-        }
-    }
-    for local in projection.procedure_statics.iter() {
-        let index = tables
-            .index(Key::ProcedureStatic(local.identity))
-            .ok_or_else(|| {
-                ProjectionError::Unsupported("procedure static slot binding missing".into())
-            })?;
-        let name = pool
-            .intern(dmb, text(local.identity.name)?.as_bytes())
-            .map_err(|error| {
-                ProjectionError::Unsupported(format!("procedure static name {error:?}"))
-            })?;
-        let (kind, value) = scalar(dmb, pool, &local.value, tables, value_types)?;
-        let variable = u32::try_from(dmb.variables.len())
-            .map_err(|_| ProjectionError::Unsupported("procedure static record overflow".into()))?;
-        dmb.variables.push(Variable { kind, value, name });
-        if index != variable {
-            return Err(ProjectionError::Unsupported(
-                "procedure static VarID disagrees with record allocation".into(),
-            ));
-        }
-        if shared_records
-            .insert(
-                Key::ProcedureStatic(local.identity),
-                (variable, local.wire_flags),
-            )
-            .is_some()
-        {
-            return Err(ProjectionError::Unsupported(
-                "duplicate procedure static shared slot".into(),
-            ));
         }
     }
     if !shared_records.is_empty() {
@@ -608,13 +612,13 @@ pub(crate) fn materialize_members_with_roster(
                             _ => {
                                 return Err(projection
                                     .field_placements
-                                    .error(field_index, "invalid gender".into()))
+                                    .error(field_index, "invalid gender".into()));
                             }
                         },
                         _ => {
                             return Err(ProjectionError::Unsupported(
                                 "gender default is not text".into(),
-                            ))
+                            ));
                         }
                     };
                     dmb.classes[class as usize]
@@ -627,7 +631,9 @@ pub(crate) fn materialize_members_with_roster(
                     dmb.classes[class as usize].layer_bits = match field.value {
                         DefaultValue::Scalar(SemanticValue::NumberBits(bits)) => bits,
                         _ => {
-                            return Err(ProjectionError::Unsupported("layer is not numeric".into()))
+                            return Err(ProjectionError::Unsupported(
+                                "layer is not numeric".into(),
+                            ));
                         }
                     }
                 }

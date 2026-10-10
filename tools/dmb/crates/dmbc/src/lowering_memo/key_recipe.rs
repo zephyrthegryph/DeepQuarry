@@ -1,6 +1,6 @@
 //! Borrowed current key inputs; exact bytes remain the sole persisted format.
 use std::{ops::Range, sync::Arc};
-const PREFIX: &[u8] = b"dmbc-procedure-memo-v5-issued-body-src-cache\0";
+const PREFIX: &[u8] = b"dmbc-procedure-memo-v6-structural-declarations\0";
 pub(crate) struct CurrentKey<'a> {
     prefix: [u8; 41],
     pub metadata: &'a Arc<dm_ir::ProcedureMetadata>,

@@ -443,6 +443,60 @@ mod tests {
             .collect();
         assert_eq!(names, ["first", "late"]);
     }
+    struct ExistingRootSource;
+    impl dm_preprocess::SourceProvider for ExistingRootSource {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok("/proc/reset()\n\treturn 1\nvar/global/cache = 1\n/datum/custom/proc/prior()\n\treturn 1\nvar/global/config = 2\n".into())
+        }
+    }
+    #[test]
+    fn existing_root_registration_survives_a_nonroot_procedure() {
+        let frontend = dm_tree::frontend::build_with_config(
+            std::path::Path::new("probe.dme"),
+            &ExistingRootSource,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+        )
+        .unwrap();
+        let registrations: Vec<_> = frontend
+            .allocation_ledger
+            .root_field_registrations()
+            .collect();
+        assert_eq!(registrations.len(), 2);
+        assert!(registrations.iter().all(|(_, owner)| owner.is_none()));
+        let declarations = dm_tree::initializers::capture_declaration_plan(
+            &frontend.snapshot,
+            &frontend.emission_order,
+        )
+        .unwrap();
+        let plan = declarations.plan();
+        let roster = StartupAllocationRoster::issue_current(
+            plan,
+            &[SymbolId::of("/datum/custom")],
+            &frontend,
+        )
+        .unwrap();
+        let mut membership: Arc<[Key]> = plan
+            .writes
+            .iter()
+            .map(key)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+            .into();
+        roster.order_membership(&mut membership).unwrap();
+        let names: Vec<_> = membership
+            .iter()
+            .map(|entry| match entry {
+                Key::Variable { name, .. } => plan.symbols.text(*name).unwrap(),
+                _ => panic!("unexpected static"),
+            })
+            .collect();
+        assert_eq!(names, ["cache", "config"]);
+    }
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {
             Ok("/var/global/root_first = 1\n/datum/empty\n/datum/later\n/datum/later/var/static/later_first = 2\n/var/global/root_second = 3\n/datum/empty/var/static/empty_late = 4\n".into())

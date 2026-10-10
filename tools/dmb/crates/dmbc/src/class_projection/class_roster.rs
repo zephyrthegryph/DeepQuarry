@@ -25,6 +25,7 @@ mod tests {
     use super::super::*;
     fn projection() -> ClassProjection {
         ClassProjection {
+            variable_records: Default::default(),
             field_placements: Default::default(),
             shared_slot_order: Arc::from([]),
             procedure_statics: Arc::from([]),
@@ -34,7 +35,7 @@ mod tests {
             types: Arc::from([]),
             fields: Arc::from([]),
             chains: Arc::from([]),
-        procedure_membership: Arc::from([]),
+            procedure_membership: Arc::from([]),
             procedure_declarations: Default::default(),
         }
     }

@@ -50,6 +50,7 @@ fn fresh_and_retained_null_names_match_captured_descendants() {
     }
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        variable_records: Default::default(),
         field_placements: Default::default(),
         procedure_declarations: Default::default(),
         shared_slot_order: Arc::from([]),

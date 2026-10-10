@@ -75,7 +75,7 @@ pub(super) fn produce(
                             return Err(ProjectionError::OpaqueField {
                                 owner: base.owner,
                                 name: member.name,
-                            })
+                            });
                         }
                     }
                 } else {
@@ -113,7 +113,7 @@ pub(super) fn produce(
                     None => {
                         return Err(ProjectionError::Unsupported(
                             "assignment has no authored value".into(),
-                        ))
+                        ));
                     }
                 })
             };

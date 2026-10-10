@@ -89,6 +89,7 @@ fn authored_visibility_and_inheritance_match_captured_byond_headers() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        variable_records: Default::default(),
         field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),

@@ -3,8 +3,8 @@ use dm_session::{Observation, ObservationHost};
 use std::{
     collections::BTreeSet,
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
 };
 /// Immutable membership layers; only names authored at this level are owned here.
@@ -401,10 +401,12 @@ mod tests {
             BTreeSet::new(),
             &unauthored,
         );
-        assert!(!ordinary
-            .inherited_fields
-            .iter()
-            .any(|name| name == "name" || name == "text"));
+        assert!(
+            !ordinary
+                .inherited_fields
+                .iter()
+                .any(|name| name == "name" || name == "text")
+        );
     }
     #[test]
     fn membership_layers_match_flat_legacy_union_and_share_empty_branches() {

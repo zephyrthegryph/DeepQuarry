@@ -30,7 +30,7 @@ pub(super) fn procedure_membership(
             _ => {
                 return Err(ProjectionError::Unsupported(
                     "nonmethod in procedure membership order".into(),
-                ))
+                ));
             }
         };
         if owner != SymbolId::of("/") {

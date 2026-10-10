@@ -7,6 +7,10 @@ pub enum WarningCode {
     ListWithoutFilter,
     ObjectFilterRightmost,
     AnythingFilterRightmost,
+    AnythingWithoutList,
+    NoParent,
+    OverrideBeforeDefinition,
+    DefinitionAfterOverride,
 }
 impl WarningCode {
     pub fn name(self) -> &'static str {
@@ -14,19 +18,29 @@ impl WarningCode {
             Self::ListDoubleInit => "list_double_init",
             Self::ListWithoutFilter => "list_without_filter",
             Self::ObjectFilterRightmost | Self::AnythingFilterRightmost => "filter_rightmost",
+            Self::AnythingWithoutList => "anything_no_list",
+            Self::NoParent => "no_parent",
+            Self::OverrideBeforeDefinition | Self::DefinitionAfterOverride => "override_before_def",
         }
     }
 }
 
 impl WarningCode {
     pub fn requires_name(self) -> bool {
-        matches!(self, Self::ListDoubleInit)
+        matches!(
+            self,
+            Self::ListDoubleInit | Self::OverrideBeforeDefinition | Self::DefinitionAfterOverride
+        )
     }
     pub fn message(self) -> &'static str {
         match self {
             Self::ListDoubleInit => "list doubly initialized",
             Self::ObjectFilterRightmost => "object type filter should be right-most",
             Self::AnythingFilterRightmost => "'anything' should be right-most",
+            Self::AnythingWithoutList => "'anything' has no meaning without a list",
+            Self::NoParent => "..: ..() has no parent proc to call",
+            Self::OverrideBeforeDefinition => "procedure override precedes definition",
+            Self::DefinitionAfterOverride => "definition is here",
             Self::ListWithoutFilter => "it is recommended that you use an object filter or 'anything' when combining constant input types with lists",
         }
     }

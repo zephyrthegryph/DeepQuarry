@@ -636,6 +636,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let mut warnings =
         crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
             .map_err(initializer_lowering_error)?;
+    warnings.extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.

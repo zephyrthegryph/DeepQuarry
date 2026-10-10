@@ -162,7 +162,7 @@ pub(super) fn prepare(
         }
     }
     let recording = dm_session::RecordingResolver::new(&base);
-    recording.record_occurrence(dm_ir::ProcedureIdentity {
+    recording.record_declaration_occurrence(dm_ir::ProcedureIdentity {
         owner: context.identity.owner,
         name: context.identity.name,
         verb: context.identity.namespace == Namespace::Verb,

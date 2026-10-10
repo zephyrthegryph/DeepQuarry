@@ -1,8 +1,8 @@
 //! Sparse current source positions beside source-neutral retained contributions.
 use super::{ClassProjection, FieldProjection, ProjectionError};
 use dm_tree::{
-    frontend::{ColdFrontend, SourceLocation},
     OccurrenceId,
+    frontend::{ColdFrontend, SourceLocation},
 };
 use std::{collections::BTreeMap, sync::Arc};
 #[derive(Clone, Debug, Default)]

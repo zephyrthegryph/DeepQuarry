@@ -221,7 +221,9 @@ impl Endpoint {
     pub(in crate::daemon) fn current() -> io::Result<Self> {
         let sid = user_sid()?;
         Ok(Self {
-            name: wide(&format!(r"\\.\pipe\dmbd-{sid}")),
+            name: wide(&super::namespace::current_name(&format!(
+                r"\\.\pipe\dmbd-{sid}"
+            ))?),
             sid,
         })
     }

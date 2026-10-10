@@ -116,6 +116,22 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
         );
     }
     let before = prepared(&original, &engine, Some(&store));
+    let mut structural = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+            for read in reads {
+                if let observations::Query::Semantic(query) = &read.query {
+                    assert!(!matches!(query, ResolveQuery::OverrideChain { .. }));
+                    structural +=
+                        usize::from(matches!(query, ResolveQuery::DeclarationChain { .. }));
+                }
+            }
+        }
+    });
+    assert_eq!(
+        structural, 2,
+        "one declaration-chain receipt per current ABI"
+    );
     same(&before, &prepared(&original, &engine, None));
     let edited=frontend("// moved provenance\n/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x+1\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     let reused = prepared(&edited, &engine, Some(&store));
@@ -251,3 +267,61 @@ fn typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units() {
 
 #[path = "formal_abi_tests.rs"]
 mod formal_abi_tests;
+
+#[test]
+fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
+    let engine_owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &engine_owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
+    let original = frontend("/datum/probe/New()\n    return ..()\n", engine);
+    let before = prepared(&original, engine, Some(&store));
+    same(&before, &prepared(&original, engine, None));
+    let current = frontend(
+        "// current source\n/datum/probe/New()\n    return ..()+1\n",
+        engine,
+    );
+    let reused = prepared(&current, engine, Some(&store));
+    same(&reused, &prepared(&current, engine, None));
+    assert_eq!(before.prepared.units.len(), 1);
+    assert!(Arc::ptr_eq(
+        &before.prepared.units[0].1.inputs,
+        &reused.prepared.units[0].1.inputs
+    ));
+    let query = ResolveQuery::DeclarationChain {
+        owner: SymbolId::of("/datum/probe"),
+        name: SymbolId::of("New"),
+        verb: false,
+    };
+    let meaning = dm_ir::Resolver::resolve(current.snapshot.tree.as_ref(), query);
+    assert!(matches!(meaning, ResolvedMeaning::Members(_)));
+    let engine_only = ResolveQuery::DeclarationChain {
+        owner: SymbolId::of("/datum"),
+        name: SymbolId::of("New"),
+        verb: false,
+    };
+    // The binary intrinsic inventory supplies presence, not source declaration
+    // metadata. No invented declaration chain is returned for the engine body.
+    assert_eq!(
+        dm_ir::Resolver::resolve(current.snapshot.tree.as_ref(), engine_only),
+        ResolvedMeaning::Unsupported(engine_only)
+    );
+    let mut inputs = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+            for read in reads {
+                if let observations::Answer::Inputs(current) = &read.answer {
+                    assert!(!matches!(current.boundary, observations::Boundary::Absent));
+                    assert!(Arc::ptr_eq(&current.engine, &engine_owner));
+                    inputs += 1;
+                }
+            }
+        }
+    });
+    assert_eq!(inputs, 1);
+}

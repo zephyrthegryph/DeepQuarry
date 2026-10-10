@@ -878,3 +878,6 @@ mod native_root_parent_tests {
 #[cfg(test)]
 #[path = "shared_indexes_tests.rs"]
 mod shared_indexes_tests;
+
+#[cfg(test)]
+mod declaration_chain_tests;

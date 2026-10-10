@@ -139,6 +139,74 @@ pub(crate) struct ProjectResolver<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl ProjectResolver<'_> {
+    /// Optional diagnostic proof. Unknown shapes stay silent; every fact is
+    /// obtained through the ordinary recorder, including negative parent reads.
+    pub fn parent_presence(&self, identity: dm_ir::ProcedureIdentity) -> Option<bool> {
+        let M::Members(chain) = self.resolver.resolve(Q::DeclarationChain {
+            owner: identity.owner,
+            name: identity.name,
+            verb: identity.verb,
+        }) else {
+            return None;
+        };
+        let mut selected = None;
+        for (index, value) in chain.iter().enumerate() {
+            let M::Declaration {
+                identity: declaration,
+                previous,
+                ..
+            } = value
+            else {
+                return None;
+            };
+            if declaration.name != identity.name || declaration.verb != identity.verb {
+                return None;
+            }
+            // Only a complete, consistently linked source chain is a proof.
+            let next = match chain.get(index + 1) {
+                Some(M::Declaration { identity, .. }) => Some(*identity),
+                Some(_) => return None,
+                None => None,
+            };
+            if *previous != next {
+                return None;
+            }
+            if *declaration == identity {
+                if selected.replace(previous.is_some()).is_some() {
+                    return None;
+                }
+            }
+        }
+        if selected? {
+            return Some(true);
+        }
+        let M::Symbols(ancestry) = self.resolver.resolve(Q::Ancestry(identity.owner)) else {
+            return None;
+        };
+        if ancestry.first() != Some(&identity.owner) {
+            return None;
+        }
+        for owner in ancestry.iter().skip(1) {
+            match self.resolver.resolve(Q::Proc {
+                owner: *owner,
+                name: identity.name,
+                verb: identity.verb,
+            }) {
+                M::Missing => {}
+                M::Member { name, .. } | M::IntrinsicProc { name, .. } if name == identity.name => {
+                    return Some(true)
+                }
+                M::RetainedProc { name, verb, .. }
+                    if name == identity.name && verb == identity.verb =>
+                {
+                    return Some(true)
+                }
+                _ => return None,
+            }
+        }
+        Some(false)
+    }
+
     pub fn modified_instance(
         &self,
         path: &str,
@@ -346,6 +414,7 @@ impl ProjectResolver<'_> {
             | Q::ProcedureValue { owner, name, .. }
             | Q::MethodProcedureValue { owner, name, .. }
             | Q::OverrideChain { owner, name, .. }
+            | Q::DeclarationChain { owner, name, .. }
             | Q::Constant { owner, name }
             | Q::StaticVar { owner, name }
             | Q::HasMemberProc { owner, name } => {
@@ -563,3 +632,7 @@ impl ProjectResolver<'_> {
 #[cfg(test)]
 #[path = "lower_resolver_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "parent_warning_tests.rs"]
+mod parent_warning_tests;

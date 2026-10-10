@@ -59,7 +59,7 @@ impl Binding {
         duplicate: usize,
         writes: Vec<GroupWrite>,
     ) -> Self {
-        let mut key = b"initializer-assembly-placement-v7".to_vec();
+        let mut key = b"initializer-assembly-placement-v8".to_vec();
         match receiver {
             None => key.push(0),
             Some(receiver) => {

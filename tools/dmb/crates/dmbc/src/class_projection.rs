@@ -15,6 +15,8 @@ pub(crate) mod type_roster;
 pub(crate) use class_roster::MaterializedClassRoster;
 pub use retained::ClassProjections;
 mod methods;
+mod variable_records;
+pub(crate) use variable_records::{VariableRecord, VariableRecordRoster};
 mod routing;
 pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
@@ -68,6 +70,7 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    pub(crate) variable_records: std::sync::OnceLock<Arc<VariableRecordRoster>>,
     /// Current source binding is excluded from retained semantic field payloads.
     pub field_placements: FieldPlacements,
     /// Exact source occurrence mode for physical proc/verb namespace paths.
@@ -86,7 +89,7 @@ pub struct ClassProjection {
     /// Independent of hashed linker table indexes and semantic super chains.
     pub procedure_membership: Arc<[Key]>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProcedureStaticProjection {
     pub identity: dm_ir::ProcedureStaticIdentity,
     pub wire_flags: u32,
@@ -354,6 +357,7 @@ fn project_inner(
         })
         .collect::<Vec<_>>();
     Ok(ClassProjection {
+        variable_records: Default::default(),
         field_placements,
         procedure_declarations: Arc::new(procedure_declarations),
         shared_slot_order: fields
@@ -703,10 +707,12 @@ mod construction_order_tests {
         let parents = (1..=4096).map(|index| (index, index - 1)).collect();
         let waves = class_construction_waves(&parents, 1).unwrap();
         assert_eq!(waves.len(), 4096);
-        assert!(waves
-            .iter()
-            .enumerate()
-            .all(|(i, wave)| wave == &vec![i as u32 + 1]));
+        assert!(
+            waves
+                .iter()
+                .enumerate()
+                .all(|(i, wave)| wave == &vec![i as u32 + 1])
+        );
         assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), 1).is_err());
         assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), 1).is_err());
     }

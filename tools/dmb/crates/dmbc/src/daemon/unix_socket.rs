@@ -53,7 +53,8 @@ unsafe extern "C" {
 impl Endpoint {
     pub(in crate::daemon) fn current() -> io::Result<Self> {
         let uid = unsafe { getuid() };
-        let directory = std::env::temp_dir().join(format!("dmbd-{uid}"));
+        let directory =
+            std::env::temp_dir().join(super::namespace::current_name(&format!("dmbd-{uid}"))?);
         match fs::symlink_metadata(&directory) {
             Ok(metadata) => {
                 if !metadata.is_dir()
@@ -88,7 +89,7 @@ pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
                 return Err(io::Error::new(
                     io::ErrorKind::AddrInUse,
                     "daemon already running",
-                ))
+                ));
             }
             Err(_) => fs::remove_file(&endpoint.0)?,
         }

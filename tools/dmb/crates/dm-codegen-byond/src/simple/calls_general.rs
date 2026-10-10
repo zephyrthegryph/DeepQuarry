@@ -316,6 +316,11 @@ impl Compiler<'_> {
             return Ok(());
         }
         if name == ".." {
+            let source_ordinal = self.debug_current;
+            let no_parent = self.bindings.procedure_identity.and_then(|identity| {
+                self.lookup
+                    .and_then(|lookup| lookup.parent_presence(identity))
+            }) == Some(false);
             if named_arguments {
                 self.named_arguments(args, statement)?;
                 self.emit(0xc9, vec![]);
@@ -333,6 +338,13 @@ impl Compiler<'_> {
                         }
                         self.expression(&list_args[0], statement)?;
                         self.emit(0xc9, vec![]);
+                        if no_parent {
+                            self.result.warnings.push(ProcedureWarning {
+                                code: dm_ir::WarningCode::NoParent,
+                                name: None,
+                                source_ordinal,
+                            });
+                        }
                         return Ok(());
                     }
                 }
@@ -343,6 +355,13 @@ impl Compiler<'_> {
                     self.expression(arg, statement)?;
                 }
                 self.emit(0x2d, vec![Word::Immediate(args.len() as u32)]);
+            }
+            if no_parent {
+                self.result.warnings.push(ProcedureWarning {
+                    code: dm_ir::WarningCode::NoParent,
+                    name: None,
+                    source_ordinal,
+                });
             }
             return Ok(());
         }

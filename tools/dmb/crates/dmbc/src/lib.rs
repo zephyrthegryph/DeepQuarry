@@ -14,6 +14,7 @@ pub mod frozen_inputs;
 pub mod heap_census;
 pub mod input_snapshot;
 mod procedure_warnings;
+mod callable_warnings;
 pub use runner_host::disk as runner_disk;
 pub mod map_memo;
 pub mod output_cli;

@@ -33,7 +33,8 @@ impl dm_ir::Resolver for SemanticTree {
                 | dm_ir::ResolveQuery::ProcedureValue {
                     owner, name, verb, ..
                 }
-                | dm_ir::ResolveQuery::MethodProcedureValue { owner, name, verb } => {
+                | dm_ir::ResolveQuery::MethodProcedureValue { owner, name, verb }
+                | dm_ir::ResolveQuery::DeclarationChain { owner, name, verb } => {
                     (owner, name, verb)
                 }
                 dm_ir::ResolveQuery::GlobalProc(name) => (SymbolId::of("/"), name, false),
@@ -253,6 +254,59 @@ impl dm_ir::Resolver for SemanticTree {
             }
             Q::GlobalVar(name) => member(root, name, MemberKind::Var),
             Q::GlobalProc(name) => member(root, name, MemberKind::Proc),
+            Q::DeclarationChain { owner, name, verb } => {
+                let kind = if verb {
+                    MemberKind::Verb
+                } else {
+                    MemberKind::Proc
+                };
+                let identity = |id: MemberId| -> Option<dm_ir::ProcedureIdentity> {
+                    let node = self.member(id)?;
+                    Some(dm_ir::ProcedureIdentity {
+                        owner: self.types[node.owner.index()].path,
+                        name: node.name,
+                        verb: node.kind == MemberKind::Verb,
+                        occurrence: self.member_occurrence(id)?,
+                    })
+                };
+                self.lookup_type(owner)
+                    .and_then(|id| self.resolve(id, name, kind))
+                    .map(|id| {
+                        let declarations = self
+                            .override_chain(id)
+                            .iter()
+                            .map(|&id| {
+                                let node = self.member(id)?;
+                                Some(M::Declaration {
+                                    identity: identity(id)?,
+                                    definition: match node.definition {
+                                        DefinitionMode::Declare => {
+                                            dm_ir::ProcedureDefinition::Declare
+                                        }
+                                        DefinitionMode::Override => {
+                                            dm_ir::ProcedureDefinition::Override
+                                        }
+                                        DefinitionMode::Reopen => {
+                                            dm_ir::ProcedureDefinition::Reopen
+                                        }
+                                        DefinitionMode::Implicit => {
+                                            dm_ir::ProcedureDefinition::Implicit
+                                        }
+                                    },
+                                    previous: match node.previous {
+                                        Some(previous) => Some(identity(previous)?),
+                                        None => None,
+                                    },
+                                    data: Arc::clone(&node.metadata),
+                                })
+                            })
+                            .collect::<Option<Vec<_>>>();
+                        declarations
+                            .map(|rows| M::Members(rows.into()))
+                            .unwrap_or(M::Unsupported(query))
+                    })
+                    .unwrap_or(M::Missing)
+            }
             Q::OverrideChain { owner, name, verb } => {
                 let kind = if verb {
                     MemberKind::Verb

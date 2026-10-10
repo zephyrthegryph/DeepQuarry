@@ -76,6 +76,7 @@ fn mob_settings_use_native_records_and_inherit_final_ordered_parent_writes() {
         }));
     }
     let projection = ClassProjection {
+        variable_records: Default::default(),
         field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),

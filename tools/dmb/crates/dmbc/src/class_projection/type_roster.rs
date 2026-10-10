@@ -55,7 +55,7 @@ impl TypeRoster {
         if let Some(value) = self.values.lookup(KEY, &current) {
             return Arc::clone(&value);
         }
-        let projected = produce(&current.0 .0);
+        let projected = produce(&current.0.0);
         let value = self
             .values
             .insert_with_owned(

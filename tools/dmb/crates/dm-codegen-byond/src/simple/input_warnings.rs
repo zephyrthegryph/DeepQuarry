@@ -20,6 +20,19 @@ impl Compiler<'_> {
             });
         }
         if !choices {
+            // A sole anything filter is silent. The pinned compiler warns for
+            // each anything token in a multi-token filter, even duplicates;
+            // the combined numeric mask therefore cannot decide multiplicity.
+            for _ in types
+                .iter()
+                .filter(|ty| types.len() > 1 && *ty == "anything")
+            {
+                self.result.warnings.push(ProcedureWarning {
+                    code: dm_ir::WarningCode::AnythingWithoutList,
+                    name: None,
+                    source_ordinal,
+                });
+            }
             return;
         }
         let mut object_seen = false;

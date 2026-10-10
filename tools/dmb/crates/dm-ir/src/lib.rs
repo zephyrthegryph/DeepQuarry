@@ -21,7 +21,8 @@ pub use declarations::{
 };
 mod initializer;
 pub use initializer::{
-    InitializerSite, InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
+    InitializerScope, InitializerSite, InitializerTarget, InitializerUnit, InitializerValue,
+    InitializerWrite,
 };
 pub mod map;
 mod modified_instance;
@@ -38,7 +39,9 @@ pub mod receiver_resolution;
 pub mod reference_resolution;
 mod resolver;
 mod selected_references;
-pub use resolver::{procedure_value_query, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+pub use resolver::{
+    procedure_value_query, ProcedureDefinition, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver,
+};
 pub use selected_references::{
     SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,
     SELECTED_REFERENCES_POLICY,

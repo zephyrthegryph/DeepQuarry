@@ -42,6 +42,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
         },
     );
     let projection = ClassProjection {
+        variable_records: Default::default(),
         field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),
@@ -125,8 +126,10 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
         image.string(lowest_name_id),
         Some(b"shared writer name".as_slice())
     );
-    assert!(image.strings[0xffcd..=0xfff1]
-        .iter()
-        .all(|string| string.data.is_empty()));
+    assert!(
+        image.strings[0xffcd..=0xfff1]
+            .iter()
+            .all(|string| string.data.is_empty())
+    );
     assert_eq!(image.to_bytes().unwrap(), independent.to_bytes().unwrap());
 }

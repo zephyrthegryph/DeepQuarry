@@ -390,7 +390,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     let occurrence_start = std::time::Instant::now();
     {
         let _profile = dm_profile::item("lowering.occurrence_reads");
-        recording.record_occurrence(identity);
+        recording.record_declaration_occurrence(identity);
     }
     memo.counts.occurrence_reads_ns.fetch_add(
         occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
