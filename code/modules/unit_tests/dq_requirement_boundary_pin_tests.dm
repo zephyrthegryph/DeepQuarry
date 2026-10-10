@@ -454,6 +454,9 @@
 	check(L, H, "add_fuel", "has_room", null)
 	L.set_sheets(L.max_sheets)
 	check(L, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	// The real destruction path spills remaining fuel; leave no synthetic fuel behind.
+	P.set_sheets(0)
+	L.set_sheets(0)
 
 /datum/unit_test/dq_requirement_fifth_machinery/portable/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
@@ -486,11 +489,11 @@
 	var/obj/item/cell/initial_cell = P.cell
 	TEST_ASSERT_NOTNULL(initial_cell, "The default parts initialize their real cell view")
 	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
-	rel_take(P, nameof(P.cell), initial_cell)
+	rel_set(P, nameof(P.cell), null)
 	check(P, H, "insert_cell", "no_cell", null, C)
 	rel_set(P, nameof(P.cell), C)
 	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
-	rel_take(P, nameof(P.cell), C)
+	rel_set(P, nameof(P.cell), null)
 	check(P, H, "insert_cell", "no_cell", null, C)
 
 /datum/unit_test/dq_requirement_industry_boundary/syringe/Run()

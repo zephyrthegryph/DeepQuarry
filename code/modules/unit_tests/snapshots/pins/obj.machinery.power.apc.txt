@@ -1,0 +1,95 @@
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Breaker
+robot|none menu: Toggle worn
+robot|none menu: Ui open
+robot|none click: Click: Toggle worn
+ai|none menu: Breaker
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Open (refused: The cover is locked and cannot be opened.)
+human|/obj/item/tool/crowbar menu: Remove cover (refused: The cover is locked and cannot be opened.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar click: Click: Open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Lay cable
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
+human|/obj/item/module/power_control menu: Move To Top
+human|/obj/item/module/power_control menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/module/power_control menu: Ui open
+human|/obj/item/module/power_control click: Click: Ui open
+human|/obj/item/frame/apc menu: Move To Top
+human|/obj/item/frame/apc menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/frame/apc menu: Ui open
+human|/obj/item/frame/apc click: Click: Ui open
+human|/obj/item/pda menu: Move To Top
+human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
+human|/obj/item/pda menu: Remove id (refused: You can't do that.)
+human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
+human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pda menu: Ui open
+human|/obj/item/pda click: Click: Toggle
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Ui open
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Ui open
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Ui open
+human|/obj/item/assembly/signaler click: Click: Ui open
+wires: AI Control, ID Scan, Primary Power, Secondary Power
+keys: breaker, cable_place, cell_bay.cell.insert, cell_bay.cell.take, chargemode, construction.build:apc_board, construction.build:apc_secured, construction.build:apc_wired, construction.dismantle, construction.undo:apc_board, construction.undo:apc_secured, construction.undo:apc_wired, cover.open, cover.remove, cover.replace, coverlock, drag_buckle, emag.subvert, emag.use, emergency_lighting, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, nightshift, overload, panel.open, reboot, robot_remote_blocked, set_channel, subversion_reset.use, ui_open, wires.cut, wires.open, wires.pulse, wires_signaler
+

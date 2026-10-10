@@ -1,0 +1,152 @@
+human|none menu: Alternate use
+human|none menu: Draw Boot Knife (refused: You can't do that.)
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Shoes draw knife hand
+human|none menu: Switch Shoe Layer (refused: You can't do that.)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Use
+human|none click: Click: Shoes draw knife hand
+robot|none menu: Alternate use
+robot|none menu: Draw Boot Knife (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Shoes draw knife hand
+robot|none menu: Switch Shoe Layer (refused: You can't do that.)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Use
+robot|none click: Click: Shoes draw knife hand
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Draw Boot Knife (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Switch Shoe Layer (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alternate use
+human|/obj/item/tool/screwdriver menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Drop onto
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Shoes draw knife hand
+human|/obj/item/tool/screwdriver menu: Shoes stuff item
+human|/obj/item/tool/screwdriver menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Shoes draw knife hand
+human|/obj/item/tool/crowbar menu: Alternate use
+human|/obj/item/tool/crowbar menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Drop onto
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Shoes draw knife hand
+human|/obj/item/tool/crowbar menu: Shoes stuff item
+human|/obj/item/tool/crowbar menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Shoes draw knife hand
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Drop onto
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Shoes draw knife hand
+human|/obj/item/tool/wrench menu: Shoes stuff item
+human|/obj/item/tool/wrench menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Shoes draw knife hand
+human|/obj/item/tool/wirecutters menu: Alternate use
+human|/obj/item/tool/wirecutters menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Drop onto
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Shoes draw knife hand
+human|/obj/item/tool/wirecutters menu: Shoes stuff item
+human|/obj/item/tool/wirecutters menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Shoes draw knife hand
+human|/obj/item/multitool menu: Alternate use
+human|/obj/item/multitool menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/multitool menu: Drop onto
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Shoes draw knife hand
+human|/obj/item/multitool menu: Shoes stuff item
+human|/obj/item/multitool menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Shoes draw knife hand
+human|/obj/item/weldingtool menu: Alternate use
+human|/obj/item/weldingtool menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Drop onto
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Shoes draw knife hand
+human|/obj/item/weldingtool menu: Shoes stuff item
+human|/obj/item/weldingtool menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Shoes draw knife hand
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Drop onto
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Shoes draw knife hand
+human|/obj/item/stack/cable_coil menu: Shoes stuff item
+human|/obj/item/stack/cable_coil menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Shoes draw knife hand
+human|/obj/item/stack/material/steel menu: Alternate use
+human|/obj/item/stack/material/steel menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Drop onto
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Shoes draw knife hand
+human|/obj/item/stack/material/steel menu: Shoes stuff item
+human|/obj/item/stack/material/steel menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Shoes draw knife hand
+human|/obj/item/card/id menu: Alternate use
+human|/obj/item/card/id menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/card/id menu: Drop onto
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Shoes draw knife hand
+human|/obj/item/card/id menu: Shoes stuff item
+human|/obj/item/card/id menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Shoes draw knife hand
+human|/obj/item/kit menu: Alternate use
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/kit menu: Drop onto
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Shoes draw knife hand
+human|/obj/item/kit menu: Shoes stuff item
+human|/obj/item/kit menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Use
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alternate use
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/storage menu: Drop onto
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Shoes draw knife hand
+human|/obj/item/storage menu: Shoes stuff item
+human|/obj/item/storage menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Use
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item menu: Drop onto
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Shoes draw knife hand
+human|/obj/item menu: Shoes stuff item
+human|/obj/item menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Shoes draw knife hand
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, micro_climb_out, micro_escape_macro, move_to_top, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable
+

@@ -1,0 +1,84 @@
+human|none menu: Move Inside (refused: The cell is not correctly connected to its pipe network!)
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Move Inside (refused: It is not designed for that organism.)
+robot|none menu: Ui open
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none menu: Move Inside (refused: You can't do that right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/crowbar menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
+human|/obj/item/stack/material menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Ui open
+human|/obj/item/stack/material click: Click: Ui open
+human|/obj/item/pipe_painter menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/pipe_painter menu: Move To Top
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe_painter menu: Ui open
+human|/obj/item/pipe_painter click: Click: Painter
+human|/obj/item/reagent_containers/glass menu: Insert
+human|/obj/item/reagent_containers/glass menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/reagent_containers/glass menu: Move To Top
+human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass menu: Ui open
+human|/obj/item/reagent_containers/glass click: Click: Insert
+keys: beaker_bay.beaker.eject, beaker_bay.beaker.insert, drag_buckle, ejectOccupant, fit_material, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, painter, power_toggle, robot_remote_blocked, switchOff, switchOn, ui_open
+
