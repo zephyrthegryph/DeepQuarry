@@ -29,4 +29,11 @@
 	TEST_ASSERT(insert.perform(H, A, cell), "inserting runs through cap_dispatch")
 	TEST_ASSERT_EQUAL(A.cell, cell, "inserted")
 	refresh_flush()
-	TEST_ASSERT(cap_test_has_layer(A, LOOK_CELL), "the slot's part is drawn while filled")
+	var/datum/look/L = allocate(/datum/look)
+	A.draw(L)
+	var/shows_cell = LOOK_CELL in L.overlays
+	for(var/list/part in L.parts)
+		if(part[1] == LOOK_CELL || (!isnull(part[2]) && "[part[1]]-[part[2]]" == LOOK_CELL))
+			shows_cell = TRUE
+	TEST_ASSERT(shows_cell, "the slot's part is drawn while filled")
+	L.reset()
