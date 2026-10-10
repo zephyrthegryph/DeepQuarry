@@ -576,14 +576,14 @@ CAPABILITIES(/obj/item/organ)
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(organ_emp)))
-	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(req_bool(PROC_REF(bite_offered))), then(PROC_REF(bite_op)))
+	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(req(PROC_REF(bite_offered))), then(PROC_REF(bite_op)))
 	op("butcher", item(/obj/item), label("Butcher"), when(req_bool(PROC_REF(butcher_offered))), begins(MSG(organ/butcher_begin)), wait(PROC_REF(butcher_wait)), on_interrupt(PROC_REF(butcher_failed)), then(PROC_REF(butcher_op_done)))
 	op("revive", item(/obj/item/reagent_containers), label("Revive"), then(PROC_REF(revive_op)))
 
 /// The organ can be bitten: flesh, and the eater aims at the mouth.
 /obj/item/organ/proc/bite_offered(datum/act/op/A)
 	var/mob/user = A.actor
-	return !is_robotic() && user?.zone_sel?.selecting == O_MOUTH
+	return (!is_robotic() && user?.zone_sel?.selecting == O_MOUTH) ? null : /datum/msg/req_failed
 
 /obj/item/organ/proc/bite_op(datum/act/op/A)
 	bitten(A.actor)

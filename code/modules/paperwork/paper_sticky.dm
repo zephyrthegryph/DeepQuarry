@@ -35,10 +35,10 @@ MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 
 /// Old attackby with a pen: the pad may be written on by someone not banned from graffiti while it has room.
 /obj/item/sticky_pad/proc/can_write(datum/act/op/A)
-	return !jobban_isbanned(A.actor, JOB_GRAFFITI)
+	return (!jobban_isbanned(A.actor, JOB_GRAFFITI)) ? null : MSG(sticky_pad/banned)
 
 /obj/item/sticky_pad/proc/has_room(datum/act/op/A)
-	return writing_space() > 0
+	return (writing_space() > 0) ? null : MSG(sticky_pad/full)
 
 /obj/item/sticky_pad/proc/writing_space()
 	return MAX_MESSAGE_LEN - length(written_text)
@@ -88,7 +88,7 @@ MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 CAPABILITIES(/obj/item/sticky_pad)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("sticky_pad_hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("sticky_pad_item", item(/obj/item/pen), label("Use"), needs(req_bool(PROC_REF(can_write), because = MSG(sticky_pad/banned)), req_bool(PROC_REF(has_room), because = MSG(sticky_pad/full))), asks(/datum/prompt/text/paperwork_review, fields = list("question" = "What would you like to write?", "max_len" = computed(PROC_REF(write_max_len)), "encode" = FALSE, "name_text" = computed(PROC_REF(write_name_text))), step = "write"), then(PROC_REF(sticky_write)))
+	op("sticky_pad_item", item(/obj/item/pen), label("Use"), needs(req(PROC_REF(can_write)), req(PROC_REF(has_room))), asks(/datum/prompt/text/paperwork_review, fields = list("question" = "What would you like to write?", "max_len" = computed(PROC_REF(write_max_len)), "encode" = FALSE, "name_text" = computed(PROC_REF(write_name_text))), step = "write"), then(PROC_REF(sticky_write)))
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/sticky_pad/proc/mousedrop_input(datum/act/input/A)

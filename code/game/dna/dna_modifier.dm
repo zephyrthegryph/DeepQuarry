@@ -373,8 +373,8 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
 	interface("DNAModifier")
-	extend("ui_open", needs(req_bool(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req_bool(PROC_REF(not_the_occupant), because = MSG(dna_console/occupant))))
-	extend(TAG_UI, needs(req_bool(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req_bool(PROC_REF(not_irradiating), because = MSG(dna_console/busy))))
+	extend("ui_open", needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_the_occupant))))
+	extend(TAG_UI, needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_irradiating))))
 	extend(TAG_UI, then(PROC_REF(window_touched), early = TRUE))
 	op("selectMenuKey", ui_act("selectMenuKey", arg("key", schema_text(32))), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_selectmenukey)))
 	op("toggleLock", ui_act("toggleLock"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_togglelock)))
@@ -444,15 +444,15 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 /// The scanner beside the console is still there.
 /obj/machinery/computer/scan_consolenew/proc/scanner_connected(datum/act/A)
-	return !!connected()
+	return (!!connected()) ? null : MSG(dna_console/no_scanner)
 
 /// The one opening the window is not lying in the scanner.
 /obj/machinery/computer/scan_consolenew/proc/not_the_occupant(datum/act/op/A)
-	return A.actor != connected()?.get_occupant()
+	return (A.actor != connected()?.get_occupant()) ? null : MSG(dna_console/occupant)
 
 /// The console is not in the middle of a pulse (buttons wait until it is done).
 /obj/machinery/computer/scan_consolenew/proc/not_irradiating(datum/act/A)
-	return !irradiating
+	return (!irradiating) ? null : MSG(dna_console/busy)
 
 /// The user works the console from a tile (not from inside a locker, a mech or the scanner); a silicon works it over its link.
 /obj/machinery/computer/scan_consolenew/proc/user_standing(datum/act/op/A)

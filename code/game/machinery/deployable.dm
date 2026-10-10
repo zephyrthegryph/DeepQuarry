@@ -80,15 +80,15 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(barrier_emp))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	// Two stages (the access lock, then the anchoring); a fully shorted mechanism takes no third card use.
-	extend("emag.use", needs(req_bool(PROC_REF(emag_stage_left), because = MSG(emag/already))))
-	extend("emag.subvert", needs(req_bool(PROC_REF(emag_stage_left), because = MSG(emag/already))))
+	extend("emag.use", needs(req(PROC_REF(emag_stage_left))))
+	extend("emag.subvert", needs(req(PROC_REF(emag_stage_left))))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
 	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
 /// Is there an emag stage left to break (emagged 0: the access lock, 1: the anchoring)?
 /obj/machinery/deployable/barrier/proc/emag_stage_left(datum/act/A)
-	return emagged < 2
+	return (emagged < 2) ? null : MSG(emag/already)
 
 /// An EMP may flip the barrier's lock and anchors.
 /obj/machinery/deployable/barrier/proc/barrier_emp(datum/act/hit/emp/A)

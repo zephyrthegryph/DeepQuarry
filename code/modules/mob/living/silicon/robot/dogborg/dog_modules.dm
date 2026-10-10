@@ -126,12 +126,12 @@ CAPABILITIES(/obj/item/robot_tongue)
 	// a lick of anything but a person is five seconds of standing still; a person's face is instant (afterattack)
 	op("tongue_drink_sink", at_target(/obj/structure/sink), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_thirsty), silent = TRUE)), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
 	op("tongue_drink_toilet", at_target(/obj/structure/toilet), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_thirsty), because = MSG(tongue/full))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
-	op("tongue_lick_up", at_target(/obj/effect/decal/cleanable), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_up)), wait(5 SECONDS), then(PROC_REF(tongue_licked_up)))
-	op("tongue_eat_trash", at_target(/obj/item/trash), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_trash)))
-	op("tongue_eat_food", at_target(/obj/item/reagent_containers/food), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_food)))
-	op("tongue_eat_cell", at_target(/obj/item/cell), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/cram)), wait(5 SECONDS), then(PROC_REF(tongue_ate_cell)))
-	op("tongue_clean_item", at_target(/obj/item), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_item)))
-	op("tongue_clean_other", at_target(), priority(OP_PRIORITY_DEFAULT), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(not_a_person)), needs(req_bool(PROC_REF(tongue_wet), because = MSG(tongue/dry))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_other)))
+	op("tongue_lick_up", at_target(/obj/effect/decal/cleanable), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_up)), wait(5 SECONDS), then(PROC_REF(tongue_licked_up)))
+	op("tongue_eat_trash", at_target(/obj/item/trash), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_trash)))
+	op("tongue_eat_food", at_target(/obj/item/reagent_containers/food), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_food)))
+	op("tongue_eat_cell", at_target(/obj/item/cell), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/cram)), wait(5 SECONDS), then(PROC_REF(tongue_ate_cell)))
+	op("tongue_clean_item", at_target(/obj/item), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_item)))
+	op("tongue_clean_other", at_target(), priority(OP_PRIORITY_DEFAULT), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(not_a_person)), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_other)))
 
 /// Old attack_self.
 /obj/item/robot_tongue/proc/interaction_self(datum/act/op/A)
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/robot_tongue)
 
 /// The tongue has enough water for a lick of anything but a sink (a person's face, a mess, a meal).
 /obj/item/robot_tongue/proc/tongue_wet(datum/act/op/A)
-	return read_once(water.energy >= 5)
+	return (read_once(water.energy >= 5)) ? null : MSG(tongue/dry)
 
 /// A sink is lapped from while the reserve has room.
 /obj/item/robot_tongue/proc/tongue_thirsty(datum/act/op/A)

@@ -164,11 +164,11 @@ CAPABILITIES(/obj/item/extraction_pack)
 MSG_DEF_SELF(fulton/needs_ground, "you must be standing on solid ground to deploy an extraction beacon")
 
 CAPABILITIES(/obj/item/fulton_core)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bool(PROC_REF(actor_on_turf_holds), because = MSG(fulton/needs_ground))), wait(1.5 SECONDS), then(PROC_REF(deploy_done)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(actor_on_turf_holds))), wait(1.5 SECONDS), then(PROC_REF(deploy_done)))
 
 /// Requirement: the actor stands on a real turf.
 /obj/item/fulton_core/proc/actor_on_turf_holds(datum/act/op/A)
-	return !!get_turf(A.actor)
+	return (!!get_turf(A.actor)) ? null : MSG(fulton/needs_ground)
 
 /obj/item/fulton_core/proc/deploy_done(datum/act/op/A)
 	replace_with(src, /obj/structure/extraction_point)

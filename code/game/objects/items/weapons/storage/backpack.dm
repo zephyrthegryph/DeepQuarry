@@ -187,13 +187,13 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 MSG_DEF_SELF(backpack/cant_tilt, "It can't be adjusted like that.")
 
 CAPABILITIES(/obj/item/storage/backpack/dufflebag)
-	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req_bool(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), then(PROC_REF(dufflebag_tilt_effect)))
+	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt))), then(PROC_REF(dufflebag_tilt_effect)))
 	rolls(nameof(tilted), chance(50))
 	rolls(nameof(icon_state), PROC_REF(roll_tilted_look), from = list(nameof(tilted)))
 
 /// Only some duffelbags tilt.
 /obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(datum/act/op/A)
-	return can_tilt
+	return (can_tilt) ? null : MSG(backpack/cant_tilt)
 
 /obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(datum/act/op/A)
 	var/mob/user = A.actor

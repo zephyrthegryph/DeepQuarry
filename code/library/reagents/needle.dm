@@ -45,29 +45,29 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 /datum/capability/lib/needle/entries()
 	return list(
 		modes ? op("mode", in_hand(), label("Change mode"),
-			needs(req_bool(CAP_PROC(not_broken), because = MSG(needle/broken))), then(CAP_PROC(cycled))) : null,
+			needs(req(CAP_PROC(not_broken))), then(CAP_PROC(cycled))) : null,
 		modes ? op("jammed", at_target(), when(CAP_PROC(target_is_jammed)), priority(OP_PRIORITY_PART + 2), label("Jammed"), then(CAP_PROC(told_broken))) : null,
 		modes ? op("settle", at_target(), when(CAP_PROC(target_settles)), priority(OP_PRIORITY_PART + 3), label("Settle"), then(CAP_PROC(settled))) : null,
 		op("draw", at_target(), when(CAP_PROC(target_drawable)), priority(OP_PRIORITY_PART + 1), label("Draw"),
-			needs(req_bool(CAP_PROC(target_has_reagents), because = MSG(needle/target_empty)), req_bool(CAP_PROC(target_gives), because = MSG(needle/cannot_remove))),
+			needs(req(CAP_PROC(target_has_reagents)), req(CAP_PROC(target_gives))),
 			then(CAP_PROC(drew))),
 		op("put_in", at_target(), when(CAP_PROC(target_fillable)), priority(OP_PRIORITY_PART), label("Put in"),
-			needs(req_bool(CAP_PROC(target_takes), because = MSG(needle/cannot_fill)), req_bool(CAP_PROC(target_has_room), because = MSG(needle/target_full))),
+			needs(req(CAP_PROC(target_takes)), req(CAP_PROC(target_has_room))),
 			then(CAP_PROC(put_in_done))),
 		modes ? op("draw_blood", at_target(/mob/living/carbon), when(CAP_PROC(target_bleeds_at_once)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Draw blood"),
-			needs(req_bool(CAP_PROC(blood_absent), because = MSG(needle/blood_present)), req_bool(CAP_PROC(target_has_dna), because = MSG(needle/no_dna)),
-				req_bool(CAP_PROC(target_not_noclone), because = MSG(needle/no_blood)), req_bool(CAP_PROC(target_not_synthetic), because = MSG(needle/synthetic))),
+			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(target_has_dna)),
+				req(CAP_PROC(target_not_noclone)), req(CAP_PROC(target_not_synthetic))),
 			then(CAP_PROC(blood_drawn))) : null,
 		modes ? op("take_blood", at_target(/mob/living/carbon), when(CAP_PROC(target_bleeds_after_a_wait)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART + 1), label("Take blood"),
 			wait(CAP_PROC(blood_wait)),
-			needs(req_bool(CAP_PROC(blood_absent), because = MSG(needle/blood_present)), req_bool(CAP_PROC(target_has_dna), because = MSG(needle/no_dna)),
-				req_bool(CAP_PROC(target_not_noclone), because = MSG(needle/no_blood)), req_bool(CAP_PROC(target_not_synthetic), because = MSG(needle/synthetic))),
+			needs(req(CAP_PROC(blood_absent)), req(CAP_PROC(target_has_dna)),
+				req(CAP_PROC(target_not_noclone)), req(CAP_PROC(target_not_synthetic))),
 			then(CAP_PROC(blood_drawn))) : null,
 		modes ? op("inject", at_target(/mob/living), when(CAP_PROC(target_injectable_person)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Inject"),
 			begins(CAP_PROC(begin_message)), wait(CAP_PROC(inject_wait)),
-			needs(req_bool(CAP_PROC(target_has_room), because = MSG(needle/target_full)), req_bool(CAP_PROC(belly_free), because = MSG(needle/from_belly)),
-				req_bool(CAP_PROC(limb_there), because = MSG(needle/limb_missing)), req_bool(CAP_PROC(limb_not_robotic), because = MSG(needle/limb_robotic)),
-				req_bool(CAP_PROC(limb_not_lifelike), because = MSG(needle/limb_lifelike)), req_bool(CAP_PROC(skin_open), because = MSG(needle/too_tough))),
+			needs(req(CAP_PROC(target_has_room)), req(CAP_PROC(belly_free)),
+				req(CAP_PROC(limb_there)), req(CAP_PROC(limb_not_robotic)),
+				req(CAP_PROC(limb_not_lifelike)), req(CAP_PROC(skin_open))),
 			then(CAP_PROC(injected))) : null)
 
 // ---- the mode ----
@@ -151,59 +151,59 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 // ---- requirements: why not (x(datum/act/op/A), pure) ----
 
 /datum/capability/lib/needle/proc/not_broken(datum/act/op/A)
-	return mode_of(A.holder) != NEEDLE_BROKEN
+	return (mode_of(A.holder) != NEEDLE_BROKEN) ? null : /datum/msg/needle/broken
 
 /datum/capability/lib/needle/proc/target_has_reagents(datum/act/op/A)
 	var/atom/target = A.target
-	return !!target?.reagents?.total_volume
+	return (!!target?.reagents?.total_volume) ? null : /datum/msg/needle/target_empty
 
 /// What the container may draw from: any open container, a tank or what else it was declared to draw from.
 /datum/capability/lib/needle/proc/target_gives(datum/act/op/A)
 	var/atom/target = A.target
 	if(target.is_open_container())
-		return TRUE
+		return null
 	for(var/type in draws_from)
 		if(istype(target, type))
-			return TRUE
-	return FALSE
+			return null
+	return /datum/msg/needle/cannot_remove
 
 /// What the container may put into: any open container, and what it was declared to fill.
 /datum/capability/lib/needle/proc/target_takes(datum/act/op/A)
 	var/atom/target = A.target
 	if(target.is_open_container())
-		return TRUE
+		return null
 	if(fills == TRUE)
 		var/atom/movable/thing = target
-		return istype(thing) && thing.is_injectable_container()
+		return (istype(thing) && thing.is_injectable_container()) ? null : /datum/msg/needle/cannot_fill
 	for(var/type in fills)
 		if(istype(target, type))
-			return TRUE
-	return FALSE
+			return null
+	return /datum/msg/needle/cannot_fill
 
 /datum/capability/lib/needle/proc/target_has_room(datum/act/op/A)
 	var/atom/target = A.target
-	return !!target?.reagents && target.reagents.get_free_space() > 0
+	return (!!target?.reagents && target.reagents.get_free_space() > 0) ? null : /datum/msg/needle/target_full
 
 /datum/capability/lib/needle/proc/blood_absent(datum/act/op/A)
 	var/atom/holder = A.holder
-	return !holder.reagents.has_reagent(REAGENT_ID_BLOOD)
+	return (!holder.reagents.has_reagent(REAGENT_ID_BLOOD)) ? null : /datum/msg/needle/blood_present
 
 /datum/capability/lib/needle/proc/target_has_dna(datum/act/op/A)
 	var/mob/living/carbon/target = A.target
-	return !!target.dna
+	return (!!target.dna) ? null : /datum/msg/needle/no_dna
 
 /datum/capability/lib/needle/proc/target_not_noclone(datum/act/op/A)
 	var/mob/living/carbon/target = A.target
-	return !target.has_mutation(NOCLONE)
+	return (!target.has_mutation(NOCLONE)) ? null : /datum/msg/needle/no_blood
 
 /datum/capability/lib/needle/proc/target_not_synthetic(datum/act/op/A)
 	var/mob/living/carbon/target = A.target
-	return !HAS_SYNTHETIC_BIOLOGY(target)
+	return (!HAS_SYNTHETIC_BIOLOGY(target)) ? null : /datum/msg/needle/synthetic
 
 /// Whatever the container holds was not produced from a belly, or the one injected takes such things.
 /datum/capability/lib/needle/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return !ishuman(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)
+	return (!ishuman(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/needle/from_belly
 
 /// The limb the injector aims at (a person other than the one injecting): the aimed organ, or null.
 /datum/capability/lib/needle/proc/limb_aimed(datum/act/op/A)
@@ -220,25 +220,25 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 
 /datum/capability/lib/needle/proc/limb_there(datum/act/op/A)
 	if(!aimed_at_a_human(A))
-		return TRUE
+		return null
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	return !!target.get_organ(user.zone_sel.selecting)
+	return (!!target.get_organ(user.zone_sel.selecting)) ? null : /datum/msg/needle/limb_missing
 
 /datum/capability/lib/needle/proc/limb_not_robotic(datum/act/op/A)
 	var/obj/item/organ/external/affected = limb_aimed(A)
-	return isnull(affected) || affected.robotic != ORGAN_ROBOT
+	return (isnull(affected) || affected.robotic != ORGAN_ROBOT) ? null : /datum/msg/needle/limb_robotic
 
 /datum/capability/lib/needle/proc/limb_not_lifelike(datum/act/op/A)
 	var/obj/item/organ/external/affected = limb_aimed(A)
-	return isnull(affected) || affected.robotic < ORGAN_LIFELIKE || affected.robotic == ORGAN_ROBOT
+	return (isnull(affected) || affected.robotic < ORGAN_LIFELIKE || affected.robotic == ORGAN_ROBOT) ? null : /datum/msg/needle/limb_lifelike
 
 /// The needle can get into this one: a living thing that is not a person next to the injector says by its own can_inject() (armour, an armoured plating).
 /datum/capability/lib/needle/proc/skin_open(datum/act/op/A)
 	var/mob/living/target = A.target
 	if(ishuman(target) || target == A.actor)
-		return TRUE
-	return !!target.can_inject(null, 0)
+		return null
+	return (!!target.can_inject(null, 0)) ? null : /datum/msg/needle/too_tough
 
 // ---- waits ----
 

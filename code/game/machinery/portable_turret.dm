@@ -154,7 +154,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	anchor()
 	extend("anchor.toggle", wait(5 SECONDS), claims(), needs(
 		req_bool(PROC_REF(intact), because = MSG(porta_turret/wrecked)),
-		req_bool(PROC_REF(idle_for_the_wrench), because = MSG(porta_turret/active)),
+		req(PROC_REF(idle_for_the_wrench)),
 		req_bool(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
 	op("salvage", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/machinery, stat_is_broken)), wait(2 SECONDS), then(PROC_REF(salvaged)))
 	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), then(PROC_REF(struck)))
@@ -262,7 +262,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// The wrench moves only a switched-off turret with its cover down.
 /obj/machinery/porta_turret/proc/idle_for_the_wrench(datum/act/op/A)
-	return !enabled && !popup_cover_raised(src)
+	return (!enabled && !popup_cover_raised(src)) ? null : MSG(porta_turret/active)
 
 /// A loose turret cannot be bolted down in space.
 /obj/machinery/porta_turret/proc/not_anchoring_in_space(datum/act/op/A)

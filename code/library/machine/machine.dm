@@ -83,12 +83,12 @@ CAPABILITY_TYPE(breakable, CAP_BREAKABLE, /datum/capability/lib/breakable, key =
 		look_layer(LOOK_BROKEN, when = TYPE_PROC_REF(/obj/machinery, stat_is_broken), reads = list("stat")),
 		examine_line(MSG(breakable/examine), when = TYPE_PROC_REF(/obj/machinery, stat_is_broken), reads = list("stat")))
 	if(repair && repair != NONE)
-		entries += op("repair", tool(repair), needs(req_bool(CAP_PROC(is_broken), because = MSG(breakable/not_broken))), fixes(), says(MSG(breakable/repaired)))
+		entries += op("repair", tool(repair), needs(req(CAP_PROC(is_broken))), fixes(), says(MSG(breakable/repaired)))
 	return entries
 
 /datum/capability/lib/breakable/proc/is_broken(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return istype(M) && M.broken_now()
+	return (istype(M) && M.broken_now()) ? null : MSG(breakable/not_broken)
 
 // ---- the wall mount ----
 

@@ -87,7 +87,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 			examine_line(MSG(weld/examine), when = WELD_SHUT_WELDED))
 	return list(
 		op("toggle", tool(tool), label("Weld shut"), when(offered), wait(0), costs(RES_FUEL, 0), toggles(WELD_SHUT_WELDED), says(CAP_PROC(toggled_message)), \
-			needs(req_bool(CAP_PROC(welder_lit), because = MSG(weld/needs_lit)))),
+			needs(req(CAP_PROC(welder_lit)))),
 		look_layer(LOOK_WELDED, when = WELD_SHUT_WELDED),
 		examine_line(MSG(weld/examine), when = WELD_SHUT_WELDED))
 
@@ -101,7 +101,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 /// The welder is lit.
 /datum/capability/lib/weld_shut/proc/welder_lit(datum/act/op/A)
 	var/obj/item/weldingtool/welder = A.held?.get_welder()
-	return !welder || welder.isOn()
+	return (!welder || welder.isOn()) ? null : MSG(weld/needs_lit)
 
 /// What weld_shut.toggle just did.
 /datum/capability/lib/weld_shut/proc/toggled_message(datum/act/A)

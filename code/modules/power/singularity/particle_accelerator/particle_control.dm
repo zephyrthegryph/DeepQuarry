@@ -181,7 +181,7 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /// Its window answers only when it is built and its interface wire is whole.
 /obj/machinery/particle_accelerator/control_box/proc/interface_works(datum/act/A)
-	return interface_control && pa_stage() == 3
+	return (interface_control && pa_stage() == 3) ? null : MSG(pa_control/timed_out)
 
 /obj/machinery/particle_accelerator/control_box/proc/is_built(datum/act/A)
 	return pa_stage() == 3
@@ -241,7 +241,7 @@ CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
 	on_wire(WIRE_PARTICLE_INTERFACE, cut = PROC_REF(interface_wire_cut), pulse = PROC_REF(interface_wire_pulsed))
 	on_wire(WIRE_PARTICLE_POWER_LIMIT, cut = PROC_REF(limit_wire_cut), pulse = PROC_REF(limit_wire_pulsed))
 	interface("ParticleAccelerator")
-	extend("ui_open", when(PROC_REF(is_built)), needs(req_bool(PROC_REF(interface_works), because = MSG(pa_control/timed_out))))
+	extend("ui_open", when(PROC_REF(is_built)), needs(req(PROC_REF(interface_works))))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("add_strength", ui_act("add_strength"), then(PROC_REF(ui_act_add_strength)))

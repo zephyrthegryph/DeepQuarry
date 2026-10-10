@@ -38,7 +38,7 @@ MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
-	op("cut", topic("cut"), needs(req_bool(PROC_REF(reel_has_cable), because = MSG(mecha_cable/no_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
+	op("cut", topic("cut"), needs(req(PROC_REF(reel_has_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
 	set_ready_state(!equip_ready)
@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 
 /// Requirement: there is cable on the reel to cut.
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/reel_has_cable(datum/act/op/A)
-	return cable_length > 0
+	return (cable_length > 0) ? null : MSG(mecha_cable/no_cable)
 
 /// Brings the tracked cable_length in line with the stack on the reel (call after any change to it).
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/sync_cable_length()

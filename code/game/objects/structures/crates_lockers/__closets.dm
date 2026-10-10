@@ -89,7 +89,7 @@ CAPABILITIES(/obj/structure/closet)
 		needs(req_capable(), req_bool(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),
 		begins(MSG(closet/break_begin)), then(PROC_REF(broke_out)), logs(LOG_GAME))
 	op("devour", menu(), label("Devour Occupants"), when(req_bool(PROC_REF(actor_shut_in))),
-		needs(req_bool(PROC_REF(has_prey), because = MSG(closet/no_targets))),
+		needs(req(PROC_REF(has_prey))),
 		asks(/datum/prompt/choice/prey),
 		then(PROC_REF(devoured)))
 
@@ -588,7 +588,7 @@ CAPABILITIES(/obj/structure/closet)
 	return by_name
 
 /obj/structure/closet/proc/has_prey(datum/act/op/A)
-	return length(prey_by_name(A.actor)) > 0
+	return (length(prey_by_name(A.actor)) > 0) ? null : MSG(closet/no_targets)
 
 /// The choice a hidden devour offers: the ones shut in with the asker that can be eaten.
 /datum/prompt/choice/prey

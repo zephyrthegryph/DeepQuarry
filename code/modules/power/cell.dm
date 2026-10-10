@@ -71,8 +71,8 @@ MSG_DEF_SELF(cell/not_in_hand, "not in your hand")
 
 CAPABILITIES(/obj/item/cell)
 	op("inject_cell", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(cell/needs_item)), req_adjacent(), req_capable()), then(PROC_REF(interaction_item)))
-	op("electrovore_charge", inputs(in_hand(), menu()), needs(req_bool(PROC_REF(electrovore_in_hand), because = MSG(cell/not_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP), label("Charge with your body"), then(PROC_REF(electrovore_charge)))
-	op("electrovore_drain", inputs(in_hand(), menu()), needs(req_bool(PROC_REF(electrovore_in_hand), because = MSG(cell/not_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Drain its charge"), then(PROC_REF(electrovore_drain)))
+	op("electrovore_charge", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP), label("Charge with your body"), then(PROC_REF(electrovore_charge)))
+	op("electrovore_drain", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Drain its charge"), then(PROC_REF(electrovore_drain)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(cell_emp_drain)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
@@ -474,4 +474,4 @@ CAPABILITIES(/obj/item/cell)
 
 /// Immediate admission samples the real hand getters, including robot virtual hands; these effects never suspend.
 /obj/item/cell/proc/electrovore_in_hand(datum/act/op/A)
-	return A.actor && (read_once(A.actor.get_active_hand()) == src || read_once(A.actor.get_inactive_hand()) == src)
+	return (A.actor && (read_once(A.actor.get_active_hand()) == src || read_once(A.actor.get_inactive_hand()) == src)) ? null : MSG(cell/not_in_hand)

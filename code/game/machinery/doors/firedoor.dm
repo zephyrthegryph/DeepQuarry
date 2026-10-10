@@ -204,26 +204,26 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	ref_one(nameof(turbolift_floor), /datum/turbolift_floor)
 	op("busy", inputs(hand(), item(/obj/item)), priority(OP_PRIORITY_CLAW + 8), when(nameof(operating)), wait(0), then(PROC_REF(nothing_done)))
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
-		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req_bool(PROC_REF(can_work), because = MSG(firedoor/dead)),
-			req_bool(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
+		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work)),
+			req(PROC_REF(not_locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
 	// A silicon link and a pilot bump ask the same question by this key.
 	op("remote_use", remote(), wait(0),
-		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req_bool(PROC_REF(can_work), because = MSG(firedoor/dead)),
-			req_bool(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))),
+		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work)),
+			req(PROC_REF(not_locked_out))),
 		asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(use_question)), "yes_text" = computed(PROC_REF(use_yes)))), then(PROC_REF(used)))
-	op("force_claws", hand(), label("Force"), when(req_bool(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
+	op("force_claws", hand(), label("Force"), when(PROC_REF(claws_force)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_CLAW + 5), wait(0), then(PROC_REF(nothing_done)))
 	op("welded", item(/obj/item), priority(OP_PRIORITY_CLAW + 4), when(nameof(blocked)), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_shut))), then(PROC_REF(nothing_done)))
-	op("pry", item(/obj/item), label("Force"), when(req_bool(PROC_REF(prying_item))), priority(OP_PRIORITY_CLAW + 3), wait(3 SECONDS), claims(),
+	op("pry", item(/obj/item), label("Force"), when(PROC_REF(prying_item)), priority(OP_PRIORITY_CLAW + 3), wait(3 SECONDS), claims(),
 		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), then(PROC_REF(item_forced)))
 	op("weld", tool(TOOL_WELDER), label("Weld"), when(cond_not(PROC_REF(repairable))), priority(OP_PRIORITY_CLAW + 6), wait(0), costs(RES_FUEL, 0),
 		needs(req_unclaimed(because = MSG(firedoor/busy_prying))), then(PROC_REF(weld_toggled)))
 	op("hatch", tool(TOOL_SCREWDRIVER), label("Maintenance hatch"), when(nameof(density)), priority(OP_PRIORITY_CLAW + 6), wait(0), then(PROC_REF(hatch_toggled)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(nameof(blocked)), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS),
-		needs(req_bool(PROC_REF(hatch_reachable), because = MSG(firedoor/hatch_first))), then(PROC_REF(electronics_out)))
+		needs(req(PROC_REF(hatch_reachable))), then(PROC_REF(electronics_out)))
 	op("pry_tool", tool(TOOL_CROWBAR), label("Force"), when(cond_not(nameof(blocked))), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS), claims(),
 		needs(req_bool(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), then(PROC_REF(tool_forced)))
 
@@ -244,11 +244,11 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// It is not a shut door with no power (a shut door with none must be forced; one that is open can still be closed).
 /obj/machinery/door/firedoor/proc/can_work(datum/act/A)
-	return !density || operable()
+	return (!density || operable()) ? null : MSG(firedoor/dead)
 
 /// An alarm, a lockdown and no access keep a shut door shut (for whoever has no access).
 /obj/machinery/door/firedoor/proc/not_locked_out(datum/act/op/A)
-	return !(density && lockdown && alarmed() && !allowed(A.actor)) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
+	return (!(density && lockdown && alarmed() && !allowed(A.actor))) ? null : MSG(firedoor/locked_out) // ALLOW(reads): the alarm and the lockdown are read when the question is asked and again when it is answered
 
 /// What is asked: to open or close it, with the warning that opening it in an alarm is on whoever does.
 /// The yes button names what it does.
@@ -422,7 +422,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// The hatch is open on a shut door (the electronics can be reached).
 /obj/machinery/door/firedoor/proc/hatch_reachable(datum/act/A)
-	return blocked && density && hatch_open
+	return (blocked && density && hatch_open) ? null : MSG(firedoor/hatch_first)
 
 /// A crowbar takes the electronics out of a welded, shut door with its hatch open: an assembly stands where it was.
 /obj/machinery/door/firedoor/proc/electronics_out(datum/act/op/A)

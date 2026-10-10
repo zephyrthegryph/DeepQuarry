@@ -47,7 +47,7 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 		op("gather", item(/obj/item/storage), when(CAP_PROC(gathers_here)), label("Gather"), \
 			then(CAP_PROC(gather_here)), passes()),
 		op("put_in", item(/obj/item), when(CAP_PROC(takes_it)), label("Put in"), \
-			needs(req_bool(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \
+			needs(req(CAP_PROC(fits))), \
 			then(CAP_PROC(put_in_item))),
 		op("refuse", item(/obj/item), priority(OP_PRIORITY_DEFAULT), when(CAP_PROC(refuses_it)), label("Put in"), \
 			then(CAP_PROC(say_refusal)), passes()),
@@ -246,10 +246,8 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	return offered(A) && !isnull(entry_refusal(A.holder, A.held, A.actor))
 
 /datum/capability/lib/storage/proc/fits(datum/act/op/A)
-	return isnull(entry_refusal(A.holder, A.held, A.actor))
-
-/datum/capability/lib/storage/proc/unfit_reason(datum/act/op/A)
-	return refusal_text(A.holder, A.held, entry_refusal(A.holder, A.held, A.actor))
+	var/why = entry_refusal(A.holder, A.held, A.actor)
+	return isnull(why) ? null : refusal_text(A.holder, A.held, why)
 
 /// "The pen won't go in the box: it doesn't take that."
 /datum/capability/lib/storage/proc/refusal_text(atom/holder, obj/item/W, reason)

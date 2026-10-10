@@ -17,7 +17,7 @@ CAPABILITY_TYPE(two_hands, CAP_TWO_HANDS, /datum/capability/lib/two_hands, key =
 /datum/capability/lib/two_hands/entries()
 	return list(
 		op("lift", hand(), priority(OP_PRIORITY_PART), when(CAP_PROC(empty_handed)), label("Pick up"), \
-			needs(req_bool(CAP_PROC(has_hand), because = MSG(two_hands/no_hands)), req_bool(CAP_PROC(other_hand_free), because = MSG(two_hands/other_hand))), passes()))
+			needs(req(CAP_PROC(has_hand)), req(CAP_PROC(other_hand_free))), passes()))
 
 /datum/capability/lib/two_hands/proc/empty_handed(datum/act/op/A)
 	return isnull(A.held)
@@ -29,9 +29,9 @@ CAPABILITY_TYPE(two_hands, CAP_TWO_HANDS, /datum/capability/lib/two_hands, key =
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.get_organ(user.hand ? BP_L_HAND : BP_R_HAND)
 		if(!temp)
-			return FALSE
-	return TRUE
+			return MSG(two_hands/no_hands)
+	return null
 
 /// The other hand is empty.
 /datum/capability/lib/two_hands/proc/other_hand_free(datum/act/op/A)
-	return !A.actor.get_inactive_hand()
+	return (!A.actor.get_inactive_hand()) ? null : MSG(two_hands/other_hand)

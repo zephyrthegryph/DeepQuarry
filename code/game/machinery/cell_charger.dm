@@ -40,7 +40,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	extend("part_replacement.replace", needs(req_operable()))
 	owns_one(nameof(charging), /obj/item/cell)
 	op("insert", item(/obj/item/cell), when(nameof(anchored)),
-		needs(req_bool(PROC_REF(can_insert), because = PROC_REF(insert_refusal))),
+		needs(req(PROC_REF(insert_refusal))),
 		put_in(nameof(charging)), says(MSG(charger/inserted)))
 	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_cell)))
 	examine_line(PROC_REF(examine_contents))
@@ -76,8 +76,6 @@ CAPABILITIES(/obj/machinery/cell_charger)
 		return /datum/msg/charger/no_area_power
 	return null
 
-/obj/machinery/cell_charger/proc/can_insert(datum/act/op/A)
-	return isnull(insert_refusal(A))
 
 /// The empty hand takes the cell out. A cyborg takes it with its gripper.
 /obj/machinery/cell_charger/proc/take_cell(datum/act/op/A)

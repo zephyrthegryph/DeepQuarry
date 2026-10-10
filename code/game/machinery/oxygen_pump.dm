@@ -27,7 +27,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	interface("Tank")
 	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(req_bool(PROC_REF(placement_actor))), needs(req_bool(PROC_REF(placement_ready), because = PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
-	op("oxygen_pump_hand", hand(), ungated(), needs(req_bool(PROC_REF(can_use_pump), because = MSG(oxygen_pump/no_tank))), then(PROC_REF(oxygen_pump_interaction_hand)))
+	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump))), then(PROC_REF(oxygen_pump_interaction_hand)))
 	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
 	op("oxygen_pump_settings", menu(), label("Show Tank Settings"), then(PROC_REF(oxygen_pump_settings)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
@@ -83,7 +83,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 
 /// Requirement: the mask needs a tank behind it (removing the tank in maintenance is always fine).
 /obj/machinery/oxygen_pump/proc/can_use_pump(datum/act/op/A)
-	return A.actor.is_incorporeal() || under_maintenance() || tank
+	return (A.actor.is_incorporeal() || under_maintenance() || tank) ? null : MSG(oxygen_pump/no_tank)
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(datum/act/op/A)

@@ -1841,6 +1841,7 @@
 /datum/unit_test/dq_p2_door/blast_door_dead_button_does_nothing
 
 /datum/unit_test/dq_p2_door/blast_door_dead_button_does_nothing/run_gate()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular/p2_test)
 	var/obj/machinery/button/remote/blast_door/button = allocate(/obj/machinery/button/remote/blast_door/p2_test, tile(4, 2))
 	p2_door_set_power(button, FALSE)

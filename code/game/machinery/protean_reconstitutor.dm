@@ -121,7 +121,7 @@
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove component"),
-		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req_bool(PROC_REF(has_components), because = MSG(protean_reconstitutor/no_components))),
+		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req(PROC_REF(has_components))),
 		asks(/datum/prompt/choice, fields = list("title" = "Remove Component", "question" = "What component would you like to remove?", "choices" = computed(PROC_REF(component_choices)), "timeout" = 0)),
 		then(PROC_REF(component_chosen)))
 	op("reconstitutor_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/processing_revive))), then(PROC_REF(reconstitutor_interaction_hand)))
@@ -180,7 +180,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 
 /// Requirement of the wrench: a component to take out.
 /obj/machinery/protean_reconstitutor/proc/has_components(datum/act/op/A)
-	return protean_brain || protean_orchestrator || protean_refactory
+	return (protean_brain || protean_orchestrator || protean_refactory) ? null : MSG(protean_reconstitutor/no_components)
 
 /// The components the wrench's question offers.
 /obj/machinery/protean_reconstitutor/proc/component_choices(datum/act/A)
