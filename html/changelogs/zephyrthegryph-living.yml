@@ -1,5 +1,5 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "Living mobs have an ability root: species, trait and vore abilities (healing rainbows, injection, succubus bite, egg laying, shred limb, absorb devour, beast forms, shapeshifting, protean powers, hand games, butchering and more) are ops with a declared wait instead of timed tasks"
+  - refactor: "Living mobs have an ability root: species, trait and vore abilities (healing rainbows, injection, succubus bite, egg laying, shred limb, absorb devour, beast forms, shapeshifting, protean powers, hand games, butchering, climbing, vent crawling, level moves and more) are ops with a declared wait instead of timed tasks"
   - bugfix: "Healing rainbows refuses with a message when you cannot use it or nobody is in sight, instead of opening an empty target prompt"

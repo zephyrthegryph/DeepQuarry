@@ -30,6 +30,8 @@
 				break
 
 CAPABILITIES(/obj/structure/ladder)
+	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
+	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 	op("hand", hand(), label("Use"), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
@@ -154,14 +156,22 @@ CAPABILITIES(/obj/structure/ladder)
 		var/mob/living/carbon/human/MS = M
 		climb_modifier = MS.species.climb_mult
 
-	task_timed(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
+	perform_op(M, src, "climb_ladder", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target_ladder" = target_ladder, "time" = climb_time * climb_modifier))
 	return FALSE
 
-/obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)
+/// How long the climb takes: the ladder's time scaled by the climber's species.
+/obj/structure/ladder/proc/ladder_climb_time(datum/act/op/A)
+	return A.arg("time")
+
+/obj/structure/ladder/proc/climb_done(datum/act/op/A)
+	var/mob/M = A.actor
+	var/obj/target_ladder = A.arg("target_ladder")
+	if(QDELETED(target_ladder))
+		return
 	var/turf/T = get_turf(target_ladder)
-	for(var/atom/A in turf_contents_of_type(T, /atom))
-		if(!A.CanPass(M, M.loc, 1.5, 0))
-			to_chat(M, span_notice("\The [A] is blocking \the [src]."))
+	for(var/atom/blocker in turf_contents_of_type(T, /atom))
+		if(!blocker.CanPass(M, M.loc, 1.5, 0))
+			to_chat(M, span_notice("\The [blocker] is blocking \the [src]."))
 			return
 	M.forceMove(T) // Fixes adminspawned ladders
 

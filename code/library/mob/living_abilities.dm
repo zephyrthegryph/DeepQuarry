@@ -10,7 +10,7 @@
 // living_abilities() returns the groups of entries; a group is a plain proc of entries so a file with many abilities can keep its own.
 
 /proc/living_abilities()
-	return living_vore_abilities() + living_care_abilities() + living_butchering() + living_combat_abilities() + living_trait_abilities() + living_form_abilities()
+	return living_vore_abilities() + living_care_abilities() + living_butchering() + living_combat_abilities() + living_climbing() + living_ventcrawling() + living_trait_abilities() + living_form_abilities()
 
 /// Abilities that act on another creature: the vore and trait powers whose targets are picked or handed over.
 /proc/living_vore_abilities()
@@ -50,6 +50,17 @@
 /proc/living_combat_abilities()
 	return list(
 		op("melee_swing", ai(), claims(0), needs(req_capable()), takes("target", "weapon", "tiles", "windup"), silent_wait(), wait(TYPE_PROC_REF(/mob/living, melee_swing_windup)), on_interrupt(TYPE_PROC_REF(/mob/living, begin_melee_swing_living_failed)), then(TYPE_PROC_REF(/mob/living, begin_melee_swing_living_done))))
+
+/// Climbing a wall (multiz/movement.dm): the one climbing is still for as long as it takes, and falls if it is broken off late.
+/proc/living_climbing()
+	return list(
+		op("climb_wall", ai(), needs(req_capable()), takes("wall", "time", "above_mob", "above_wall", "fall_chance", "drop_held", "nutrition_cost", "fall_at"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_wall_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_wall_done))),
+		op("climb_down", ai(), needs(req_capable()), takes("time", "front_of_us", "destination", "below_wall", "fall_chance", "nutrition_cost", "fall_at"), wait(TYPE_PROC_REF(/mob/living, climb_time_of)), on_interrupt(TYPE_PROC_REF(/mob/living, climb_down_interrupted)), then(TYPE_PROC_REF(/mob/living, climb_down_done))))
+
+/// Climbing into a vent (ventcrawl.dm): the crawler is claimed while the animation fades them in, and stays where they are.
+/proc/living_ventcrawling()
+	return list(
+		op("ventcrawl_in", ai(), claims(CLAIM_TARGET), needs(req_capable()), takes("vent", "time"), wait(TYPE_PROC_REF(/mob/living, ventcrawl_time)), then(TYPE_PROC_REF(/mob/living, ventcrawl_in_done))))
 
 /// Abilities that only change the actor.
 /proc/living_trait_abilities()

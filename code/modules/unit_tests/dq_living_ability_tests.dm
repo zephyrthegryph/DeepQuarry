@@ -242,3 +242,19 @@ GLOBAL_LIST_EMPTY(grab_drain_test_stages)
 	test_time(2.5 SECONDS)
 	TEST_ASSERT(!F.in_rig(), "walking off stopped the condensing")
 	TEST_ASSERT_NULL(op_pending_of(H), "nothing is pending")
+
+/// A micro inside a pair of shoes on the floor climbs out after five seconds: the op is the shoes', the actor is the one inside.
+/datum/unit_test/dq_living_ability/micro_climbs_out_of_shoes
+
+/datum/unit_test/dq_living_ability/micro_climbs_out_of_shoes/exercise()
+	var/turf/floor = run_loc_floor_bottom_left
+	var/obj/item/clothing/shoes/boots = allocate(/obj/item/clothing/shoes, floor)
+	var/mob/living/carbon/human/micro = person(floor)
+	micro.forceMove(boots)
+	boots.container_resist(micro)
+	TEST_ASSERT_NOTNULL(op_pending_of(micro), "the climb is under way")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(micro.loc, boots, "still inside after four seconds")
+	test_time(1.5 SECONDS)
+	TEST_ASSERT_EQUAL(micro.loc, floor, "out on the floor after five")
+	TEST_ASSERT_NULL(op_pending_of(micro), "and it is over")
