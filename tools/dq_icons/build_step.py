@@ -31,6 +31,8 @@ update timestamps" question.
 Repack itself is CPU-bound on PIL/Pillow; the dirty pass parallelises
 across a thread pool (I/O bound) and the actual repack across a process
 pool (true CPU work).
+DQ_ICON_WORKERS controls the repack pool (default 4, range 1..32).
+Dirty-check concurrency is four times this value, capped at 16 threads.
 
 Usage:
     python -m tools.dq_icons.build_step --output icons/gen \
@@ -41,9 +43,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -55,6 +58,17 @@ from . import repack as repack_mod  # noqa: E402
 # write than a full 64-byte digest.
 _HASH_BYTES = 16
 _INPUT_SEPARATOR = b"\x00png-toml-separator\x00"
+
+
+def configured_workers(environment=None) -> int:
+    environment = os.environ if environment is None else environment
+    raw = environment.get("DQ_ICON_WORKERS", "4")
+    if not isinstance(raw, str) or not re.fullmatch(r"[1-9][0-9]*", raw):
+        raise ValueError("DQ_ICON_WORKERS must be an integer from 1 to 32")
+    # Check length before int conversion, including Python's own digit limit.
+    if len(raw) > 2 or not 1 <= int(raw) <= 32:
+        raise ValueError("DQ_ICON_WORKERS must be an integer from 1 to 32")
+    return int(raw)
 
 
 def _output_dmi_path(toml: Path, output_root: Path) -> Path:
@@ -179,6 +193,7 @@ def _sweep_stale(output_root: Path, live_dmis: set[Path]) -> int:
 
 
 def run(roots: list[Path], output_root: Path) -> int:
+    workers = configured_workers()  # Reject invalid configuration before scanning or launching.
     tomls = _gather_tomls(roots, output_root)
     if not tomls:
         return 0
@@ -190,8 +205,8 @@ def run(roots: list[Path], output_root: Path) -> int:
     check_inputs = [(t, _output_dmi_path(t, output_root)) for t in tomls]
     dirty: list[tuple[Path, Path, str]] = []
     skipped = 0
-    # 4x CPUs is a sweet spot for I/O bound work with cheap CPU per item.
-    check_workers = (os.cpu_count() or 4) * 4
+    # Bound I/O concurrency independently of the machine's logical CPU count.
+    check_workers = min(workers * 4, 16)
     with ThreadPoolExecutor(max_workers=check_workers) as pool:
         for toml, out_dmi, is_dirty, current_hash in pool.map(
             _check_one, check_inputs, chunksize=32
@@ -220,8 +235,7 @@ def run(roots: list[Path], output_root: Path) -> int:
                 else:
                     repacked += 1
         else:
-            repack_workers = max(2, os.cpu_count() or 4)
-            with ProcessPoolExecutor(max_workers=repack_workers) as pool:
+            with ProcessPoolExecutor(max_workers=workers) as pool:
                 for toml, err in pool.map(_repack_one, dirty, chunksize=8):
                     if err:
                         failures.append((toml, err))
@@ -257,7 +271,10 @@ def main() -> int:
         help="Build-output root. Generated .dmi files land at <output>/<source-relative-path>.",
     )
     args = ap.parse_args()
-    return run(args.roots, args.output.resolve())
+    try:
+        return run(args.roots, args.output.resolve())
+    except ValueError as error:
+        ap.error(str(error))
 
 
 if __name__ == "__main__":
