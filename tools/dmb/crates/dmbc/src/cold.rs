@@ -607,6 +607,11 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let pending_modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
     drop(initialization.classified);
+    // Current output descriptors already own any syntax they require. The
+    // semantic classification receipts and token roster survive this release.
+    if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+        store.release_runtime_syntax();
+    }
     measurement.complete();
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;
