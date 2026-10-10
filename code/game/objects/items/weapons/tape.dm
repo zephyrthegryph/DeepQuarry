@@ -30,14 +30,14 @@ MSG_DEF(tape/mouth_begin, null, span_danger("%U% begins taping up %T%'s mouth!")
 
 CAPABILITIES(/obj/item/tape_roll)
 	op("tape_eyes", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape over the eyes"),
-		when(req_bool(PROC_REF(aimed_at_eyes))),
-		needs(req_adjacent(), req_bool(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req_bool(PROC_REF(has_head), because = MSG(tape/no_head)), req_bool(PROC_REF(has_eyes), because = MSG(tape/no_eyes)),
-			req_bool(PROC_REF(eyes_free), because = MSG(tape/eyes_covered)), req_bool(PROC_REF(face_free), because = PROC_REF(face_text))),
+		when(PROC_REF(aimed_at_eyes)),
+		needs(req_adjacent(), req(PROC_REF(firm_grip)), req(PROC_REF(has_head)), req(PROC_REF(has_eyes)),
+			req(PROC_REF(eyes_free)), req(PROC_REF(face_free))),
 		begins(MSG(tape/eyes_begin)), wait(3 SECONDS), then(PROC_REF(tape_eyes_done)))
 	op("tape_mouth", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART + 1), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape up the mouth"),
-		when(req_bool(PROC_REF(aimed_at_mouth))),
-		needs(req_adjacent(), req_bool(PROC_REF(firm_grip), because = MSG(tape/no_grip)), req_bool(PROC_REF(has_head), because = MSG(tape/no_head)), req_bool(PROC_REF(has_mouth), because = MSG(tape/no_mouth)),
-			req_bool(PROC_REF(mask_free), because = MSG(tape/mask_worn)), req_bool(PROC_REF(face_free), because = PROC_REF(face_text))),
+		when(PROC_REF(aimed_at_mouth)),
+		needs(req_adjacent(), req(PROC_REF(firm_grip)), req(PROC_REF(has_head)), req(PROC_REF(has_mouth)),
+			req(PROC_REF(mask_free)), req(PROC_REF(face_free))),
 		begins(MSG(tape/mouth_begin)), wait(3 SECONDS), then(PROC_REF(tape_mouth_done)))
 
 /obj/item/tape_roll/proc/aimed_at_eyes(datum/act/op/A)
@@ -48,37 +48,39 @@ CAPABILITIES(/obj/item/tape_roll)
 	return zone == O_MOUTH || zone == BP_HEAD
 
 /obj/item/tape_roll/proc/firm_grip(datum/act/op/A)
-	return read_once(can_place(A.target, A.actor))
+	return (read_once(can_place(A.target, A.actor))) ? null : /datum/msg/tape/no_grip
+
 
 /obj/item/tape_roll/proc/has_head(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return !!read_once(H.organs_by_name[BP_HEAD])
+	return (!!read_once(H.organs_by_name[BP_HEAD])) ? null : /datum/msg/tape/no_head
+
 
 /obj/item/tape_roll/proc/has_eyes(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return !!read_once(H.has_eyes())
+	return (!!read_once(H.has_eyes())) ? null : /datum/msg/tape/no_eyes
+
 
 /obj/item/tape_roll/proc/has_mouth(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return !!read_once(H.check_has_mouth())
+	return (!!read_once(H.check_has_mouth())) ? null : /datum/msg/tape/no_mouth
+
 
 /obj/item/tape_roll/proc/eyes_free(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return !H.get_equipped_item(SLOT_ID_EYES)
+	return (!H.get_equipped_item(SLOT_ID_EYES)) ? null : /datum/msg/tape/eyes_covered
+
 
 /obj/item/tape_roll/proc/mask_free(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return !H.get_equipped_item(SLOT_ID_MASK)
+	return (!H.get_equipped_item(SLOT_ID_MASK)) ? null : /datum/msg/tape/mask_worn
+
 
 /// A helmet or hat that covers the face keeps the tape off.
 /obj/item/tape_roll/proc/face_free(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	var/obj/item/worn = H.get_equipped_item(SLOT_ID_HEAD)
-	return !worn || !(read_once(worn.body_parts_covered) & FACE)
-
-/obj/item/tape_roll/proc/face_text(datum/act/op/A)
-	var/mob/living/carbon/human/H = A.target
-	return span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first.")
+	return (!worn || !(read_once(worn.body_parts_covered) & FACE)) ? null : span_warning("Remove their [worn] first.")
 
 /obj/item/tape_roll/proc/tape_eyes_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target

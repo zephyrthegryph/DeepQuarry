@@ -158,6 +158,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// Empty text is a refusal, not a falsey successful evaluation. Invalid callback results fail closed.
 /proc/req_refusal_value(value, fallback = /datum/msg/req_failed)
+	READS_FROM() // Pure normalization of the supplied refusal value.
 	if(istext(value))
 		return length(value) ? value : /datum/msg/req_silent
 	if(ispath(value, /datum/msg) || istype(value, /datum/msg))

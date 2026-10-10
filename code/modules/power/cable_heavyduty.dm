@@ -47,7 +47,7 @@
 MSG_DEF_SELF(heavy_cable/needs_heavier, "you will need heavier cables to connect to these")
 
 CAPABILITIES(/obj/structure/cable/heavyduty)
-	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req_bool(PROC_REF(heavy_coil_holds), because = MSG(heavy_cable/needs_heavier))), then(PROC_REF(heavyduty_interaction_item)))
+	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req(PROC_REF(heavy_coil_holds))), then(PROC_REF(heavyduty_interaction_item)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
@@ -64,4 +64,4 @@ CAPABILITIES(/obj/structure/cable/heavyduty)
 	return
 
 /obj/structure/cable/heavyduty/proc/heavy_coil_holds(datum/act/op/A)
-	return istype(A.held, /obj/item/stack/cable_coil/heavyduty)
+	return (istype(A.held, /obj/item/stack/cable_coil/heavyduty)) ? null : MSG(heavy_cable/needs_heavier)

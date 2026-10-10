@@ -144,13 +144,13 @@ CAPABILITIES(/obj/item/locator)
 
 CAPABILITIES(/obj/item/hand_tele)
 	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
-	op("lock_in", in_hand(), needs(req_bool(PROC_REF(can_open_portal), because = MSG(hand_tele/malfunctioning))),
+	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal))),
 		asks(/datum/prompt/choice, fields = list("title" = "Hand Teleporter", "question" = "Please select a teleporter to lock in on.", "choices" = computed(PROC_REF(teleporter_choices)), "timeout" = 0)),
 		then(PROC_REF(teleporter_chosen)))
 
 /// Requirement: it won't work off-station or on a teleport-blocked turf.
 /obj/item/hand_tele/proc/can_open_portal(datum/act/op/A)
-	return hand_tele_works_at(get_turf(A.actor))
+	return (hand_tele_works_at(get_turf(A.actor))) ? null : MSG(hand_tele/malfunctioning)
 
 /proc/hand_tele_works_at(turf/current_location)
 	READS_FROM() // where the actor stands is asked when the button is pressed

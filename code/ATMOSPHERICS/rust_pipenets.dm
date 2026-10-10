@@ -82,7 +82,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	ref_one(nameof(node2))
 	owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture)
 	op("fit_material", stack(/obj/item/stack/material, 1), label("Fit engineered material"), wait(0), when(PROC_REF(material_fittable)),
-		needs(req_bool(PROC_REF(no_shell), because = MSG(atmospherics/has_shell))), then(PROC_REF(material_fitted)))
+		needs(req(PROC_REF(no_shell))), then(PROC_REF(material_fitted)))
 	// a pipe painter used on anything it cannot paint does nothing (its own op paints a pipe, a tier above)
 	op("painter", item(/obj/item/pipe_painter), wait(0), then(PROC_REF(painter_swallowed)))
 	param(nameof(dir), pos = 1)

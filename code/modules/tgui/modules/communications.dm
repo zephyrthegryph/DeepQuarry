@@ -45,28 +45,28 @@ CAPABILITIES(/datum/tgui_module/communications)
 	owns_one(nameof(crew_announcement), /datum/announcement/priority, starts = PROC_REF(make_announcement))
 	interface("CommunicationsConsole")
 	// The console works only near the station; after login, every button but the login one needs a login.
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_in_contact), because = MSG(communications/out_of_range))))
-	op("auth", ui_act("auth"), needs(req_bool(PROC_REF(ui_is_human), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_auth)))
-	op("main", ui_act("main"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_main)))
-	op("newalertlevel", ui_act("newalertlevel", arg("level", num())), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_newalertlevel)))
-	op("announce", ui_act("announce"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied)), req_bool(PROC_REF(ui_captain), silent = TRUE), req_bool(PROC_REF(announce_ready), because = MSG(communications/announce_cooldown))), asks(/datum/prompt/text, fields = list("title" = "Priority Announcement", "question" = "Please write a message to announce to the station crew.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_announce)))
-	op("callshuttle", ui_act("callshuttle"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?")), then(PROC_REF(ui_act_callshuttle)))
-	op("cancelshuttle", ui_act("cancelshuttle"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied)), req_bool(PROC_REF(ui_not_silicon), because = MSG(communications/no_recall))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to recall the shuttle?")), then(PROC_REF(ui_act_cancelshuttle)))
-	op("messagelist", ui_act("messagelist", arg("msgid", num())), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_messagelist)))
-	op("delmessage", ui_act("delmessage", arg("msgid", num())), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied)), req_bool(PROC_REF(message_deletable), because = MSG(communications/cannot_delete))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to delete this message?")), then(PROC_REF(ui_act_delmessage)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_in_contact))))
+	op("auth", ui_act("auth"), needs(req(PROC_REF(ui_is_human))), then(PROC_REF(ui_act_auth)))
+	op("main", ui_act("main"), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_main)))
+	op("newalertlevel", ui_act("newalertlevel", arg("level", num())), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_newalertlevel)))
+	op("announce", ui_act("announce"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain)), req(PROC_REF(announce_ready))), asks(/datum/prompt/text, fields = list("title" = "Priority Announcement", "question" = "Please write a message to announce to the station crew.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_announce)))
+	op("callshuttle", ui_act("callshuttle"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?")), then(PROC_REF(ui_act_callshuttle)))
+	op("cancelshuttle", ui_act("cancelshuttle"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_not_silicon))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to recall the shuttle?")), then(PROC_REF(ui_act_cancelshuttle)))
+	op("messagelist", ui_act("messagelist", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_messagelist)))
+	op("delmessage", ui_act("delmessage", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(message_deletable))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to delete this message?")), then(PROC_REF(ui_act_delmessage)))
 	extend("delmessage", then(PROC_REF(ui_select_message), early = TRUE))
 	extend("newalertlevel", needs(req_actor_kind(list(/mob/living/silicon/ai, /mob/living/silicon/robot), not = TRUE, because = MSG(communications/no_alert_level))))
-	op("status", ui_act("status"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_status)))
-	op("setstat", ui_act("setstat", arg("statdisp", enum(list("blank", "time", "shuttle", "message")))), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), then(PROC_REF(ui_act_setstat)))
-	op("setmsg1", ui_act("setmsg1"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 1", "default" = computed(PROC_REF(msg1_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg1)))
-	op("setmsg2", ui_act("setmsg2"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 2", "default" = computed(PROC_REF(msg2_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg2)))
-	op("MessageCentCom", ui_act("MessageCentCom"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied)), req_bool(PROC_REF(ui_captain), silent = TRUE), req_bool(PROC_REF(centcom_ready), because = MSG(communications/arrays_recycling))), asks(/datum/prompt/text, fields = list("title" = "Central Command Quantum Messaging", "question" = computed(PROC_REF(centcom_question)), "multiline" = TRUE)), then(PROC_REF(ui_act_messagecentcom)))
-	op("MessageSyndicate", ui_act("MessageSyndicate"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied)), req_bool(PROC_REF(ui_captain_emagged), silent = TRUE), req_bool(PROC_REF(centcom_ready), because = MSG(communications/arrays_recycling))), asks(/datum/prompt/text, fields = list("title" = "To abort, send an empty message.", "question" = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.")), then(PROC_REF(ui_act_messagesyndicate)))
-	op("RestoreBackup", ui_act("RestoreBackup"), needs(req_bool(PROC_REF(ui_logged_in), because = MSG(communications/access_denied))), says(MSG(communications/backup_restored)), then(PROC_REF(ui_act_restorebackup)))
+	op("status", ui_act("status"), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_status)))
+	op("setstat", ui_act("setstat", arg("statdisp", enum(list("blank", "time", "shuttle", "message")))), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_setstat)))
+	op("setmsg1", ui_act("setmsg1"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 1", "default" = computed(PROC_REF(msg1_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg1)))
+	op("setmsg2", ui_act("setmsg2"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 2", "default" = computed(PROC_REF(msg2_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg2)))
+	op("MessageCentCom", ui_act("MessageCentCom"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain)), req(PROC_REF(centcom_ready))), asks(/datum/prompt/text, fields = list("title" = "Central Command Quantum Messaging", "question" = computed(PROC_REF(centcom_question)), "multiline" = TRUE)), then(PROC_REF(ui_act_messagecentcom)))
+	op("MessageSyndicate", ui_act("MessageSyndicate"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain_emagged)), req(PROC_REF(centcom_ready))), asks(/datum/prompt/text, fields = list("title" = "To abort, send an empty message.", "question" = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.")), then(PROC_REF(ui_act_messagesyndicate)))
+	op("RestoreBackup", ui_act("RestoreBackup"), needs(req(PROC_REF(ui_logged_in))), says(MSG(communications/backup_restored)), then(PROC_REF(ui_act_restorebackup)))
 
 /// The console reaches the person: they are on a level the station's contact range covers.
 /datum/tgui_module/communications/proc/ui_in_contact(datum/act/op/A)
-	return !using_map || (get_z(A.actor) in using_map.contact_levels)
+	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
 
 MSG_DEF_SELF(communications/out_of_range, "Unable to establish a connection: You're too far away from the station!")
 MSG_DEF_SELF(communications/access_denied, "Access denied.")
@@ -103,7 +103,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 /// needs: the message named is one this console may delete (a modular program's own copy; the station's list is kept).
 /datum/tgui_module/communications/proc/message_deletable(datum/act/op/A)
 	var/datum/comm_message_listener/l = obtain_message_listener()
-	return l != GLOB.global_message_listener && !!message_by_id(A.args["msgid"])
+	return (l != GLOB.global_message_listener && !!message_by_id(A.args["msgid"])) ? null : MSG(communications/cannot_delete)
 
 /// The message of that id in this console's list, or null.
 /datum/tgui_module/communications/proc/message_by_id(msgid)
@@ -119,25 +119,25 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	return stat_msg2
 
 /datum/tgui_module/communications/proc/ui_is_human(datum/act/op/A)
-	return ishuman(A.actor)
+	return (ishuman(A.actor)) ? null : MSG(communications/access_denied)
 
 /datum/tgui_module/communications/proc/ui_logged_in(datum/act/op/A)
-	return is_authenticated(A.actor, FALSE)
+	return (is_authenticated(A.actor, FALSE)) ? null : MSG(communications/access_denied)
 
 /datum/tgui_module/communications/proc/ui_captain(datum/act/op/A)
-	return is_authenticated(A.actor, FALSE) == COMM_AUTHENTICATION_MAX
+	return (is_authenticated(A.actor, FALSE) == COMM_AUTHENTICATION_MAX) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/communications/proc/ui_captain_emagged(datum/act/op/A)
-	return routing_scrambled() && ui_captain(A)
+	return routing_scrambled() ? ui_captain(A) : /datum/msg/req_silent
 
 /datum/tgui_module/communications/proc/ui_not_silicon(datum/act/op/A)
-	return !(A.authority & AUTH_REMOTE_ACCESS)
+	return (A.authority & AUTH_REMOTE_ACCESS) ? MSG(communications/no_recall) : null
 
 /datum/tgui_module/communications/proc/announce_ready(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, message_cooldown)
+	return (COOLDOWN_FINISHED(src, message_cooldown)) ? null : MSG(communications/announce_cooldown)
 
 /datum/tgui_module/communications/proc/centcom_ready(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, centcomm_message_cooldown)
+	return (COOLDOWN_FINISHED(src, centcomm_message_cooldown)) ? null : MSG(communications/arrays_recycling)
 
 /datum/tgui_module/communications/proc/centcom_question(datum/act/op/A)
 	return "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise."

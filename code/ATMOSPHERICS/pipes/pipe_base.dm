@@ -41,9 +41,9 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
 	owns_many(nameof(leak_watches), /datum/native_watch/gas)
 	op("unwrench", tool(TOOL_WRENCH), wait(1 SECOND), when(PROC_REF(wrenchable)),
-		needs(req_bool(PROC_REF(floor_clear), because = MSG(pipe/plating)), req_bool(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
+		needs(req(PROC_REF(floor_clear)), req(PROC_REF(unwrench_safe), because = MSG(pipe/exerted))),
 		begins(PROC_REF(unwrench_warning)), says(MSG(pipe/unfastened)), then(PROC_REF(pipe_unwrenched)))
-	op("seal", tool(TOOL_WELDER), wait(4 SECONDS), needs(req_bool(PROC_REF(cracked), because = MSG(pipe/not_cracked))), says(MSG(pipe/sealed)), then(PROC_REF(crack_sealed)))
+	op("seal", tool(TOOL_WELDER), wait(4 SECONDS), needs(req(PROC_REF(cracked))), says(MSG(pipe/sealed)), then(PROC_REF(crack_sealed)))
 
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 /// Its floor does not cover it.
 /obj/machinery/atmospherics/pipe/proc/floor_clear(datum/act/A)
 	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe stays where it was built
-	return !(level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
+	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(pipe/plating) // ALLOW(reads): a pipe's level is fixed by where it was built; asked when the wrench is used
 
 /// What it holds above the room, kPa.
 /obj/machinery/atmospherics/pipe/proc/overpressure()
@@ -271,7 +271,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	return OP_OK
 
 /obj/machinery/atmospherics/pipe/proc/cracked(datum/act/A)
-	return damaged_leak // ALLOW(reads): asked when the welder is used, never from a cached menu
+	return (damaged_leak) ? null : MSG(pipe/not_cracked) // ALLOW(reads): asked when the welder is used, never from a cached menu
 
 /obj/machinery/atmospherics/pipe/proc/crack_sealed(datum/act/op/A)
 	damaged_leak = FALSE

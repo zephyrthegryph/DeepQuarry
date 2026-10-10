@@ -33,19 +33,19 @@
 MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
 
 CAPABILITIES(/obj/machinery/washing_machine)
-	op("washing_machine_load_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in washer"), when(req_bool(PROC_REF(washer_grab_meant))), starts(PROC_REF(washer_grab_started)), wait(5 SECONDS), then(PROC_REF(washer_grab_finished)))
+	op("washing_machine_load_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in washer"), when(PROC_REF(washer_grab_meant)), starts(PROC_REF(washer_grab_started)), wait(5 SECONDS), then(PROC_REF(washer_grab_finished)))
 	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
 	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))
 	op("washing_machine_start_washing", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Start Washing"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_washing_machine_start_washing)))
-	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req_bool(PROC_REF(actor_inside_holds), because = MSG(washing_machine/not_inside))), captures(nameof(state)), starts(PROC_REF(washer_escape_started)), wait(PROC_REF(washer_escape_duration)), then(PROC_REF(interaction_washing_machine_climb_out)))
+	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds))), captures(nameof(state)), starts(PROC_REF(washer_escape_started)), wait(PROC_REF(washer_escape_duration)), then(PROC_REF(interaction_washing_machine_climb_out)))
 	op("washing_machine_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use)))
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
-	extend("machine_panel", needs(req_bool(PROC_REF(idle_and_empty), silent = TRUE)))
-	extend("machine_panel_close", needs(req_bool(PROC_REF(idle_and_empty), silent = TRUE)))
-	extend("machine_deconstruct", needs(req_bool(PROC_REF(idle_and_empty), silent = TRUE)))
-	extend("machine_anchor", needs(req_bool(PROC_REF(idle_and_empty), silent = TRUE)))
-	extend("machine_unanchor", needs(req_bool(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_panel", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
 	default_parts()
 
 
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 /// Maintenance only on an empty, shut machine (otherwise the tool's click is taken and nothing happens).
 /obj/machinery/washing_machine/proc/idle_and_empty(datum/act/op/A)
-	return state == EMPTY_CLOSED && !LAZYLEN(washing)
+	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? null : MSG(req_failed)
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use(datum/act/op/A)
 	return toggle_door(A.actor)
@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 
 /obj/machinery/washing_machine/proc/actor_inside_holds(datum/act/op/A)
-	return A.actor && (A.actor in contents_of(src))
+	return (A.actor && (A.actor in contents_of(src))) ? null : MSG(washing_machine/not_inside)
 
 #undef EMPTY_OPEN
 #undef EMPTY_CLOSED

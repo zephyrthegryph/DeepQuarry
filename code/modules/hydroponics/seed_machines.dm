@@ -75,9 +75,9 @@ CAPABILITIES(/obj/machinery/botany)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
-	op("load_seed", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Load seed"), needs(req_bool(PROC_REF(botany_no_seed_holds), because = PROC_REF(botany_seed_refusal))), then(PROC_REF(interaction_load_seed)))
-	op("part_replacement_impl", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req_bool(PROC_REF(botany_not_active_holds))), then(PROC_REF(interaction_part_replacement_impl)))
-	op("load_disk", item(/obj/item/disk/botany), priority(OP_PRIORITY_DEFAULT - 1), label("Load disk"), needs(req_bool(PROC_REF(botany_disk_slot_holds), because = PROC_REF(botany_disk_slot_refusal))), then(PROC_REF(interaction_load_disk)))
+	op("load_seed", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Load seed"), needs(req(PROC_REF(botany_no_seed_holds))), then(PROC_REF(interaction_load_seed)))
+	op("part_replacement_impl", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(botany_not_active_holds))), then(PROC_REF(interaction_part_replacement_impl)))
+	op("load_disk", item(/obj/item/disk/botany), priority(OP_PRIORITY_DEFAULT - 1), label("Load disk"), needs(req(PROC_REF(botany_disk_slot_holds))), then(PROC_REF(interaction_load_disk)))
 	default_parts()
 
 /obj/machinery/botany/proc/work_step(datum/act/timer/A)
@@ -108,12 +108,10 @@ CAPABILITIES(/obj/machinery/botany)
 
 /// Requirement: no seed is loaded.
 /obj/machinery/botany/proc/botany_no_seed_holds(datum/act/op/A)
-	return !seed
+	return (!seed) ? null : "there is already a seed loaded"
+
 
 /// Why botany_no_seed_holds refuses.
-/obj/machinery/botany/proc/botany_seed_refusal(datum/act/op/A)
-	return "there is already a seed loaded"
-
 /obj/machinery/botany/proc/interaction_load_seed(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
@@ -128,7 +126,7 @@ CAPABILITIES(/obj/machinery/botany)
 
 /// Requirement (offered only while true): the machine is not working.
 /obj/machinery/botany/proc/botany_not_active_holds(datum/act/op/A)
-	return !active
+	return (!active) ? null : /datum/msg/req_failed
 
 /obj/machinery/botany/proc/interaction_part_replacement_impl(datum/act/op/A)
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
@@ -148,13 +146,10 @@ CAPABILITIES(/obj/machinery/botany)
 /// Requirement: the held disk fits the slot.
 /obj/machinery/botany/proc/botany_disk_slot_holds(datum/act/op/A)
 	var/obj/item/disk/botany/B = A.held
-	return isnull(botany_disk_slot_reason(B))
-
-/// Why botany_disk_slot_holds refuses.
-/obj/machinery/botany/proc/botany_disk_slot_refusal(datum/act/op/A)
-	var/obj/item/disk/botany/B = A.held
 	return botany_disk_slot_reason(B)
 
+
+/// Why botany_disk_slot_holds refuses.
 /obj/machinery/botany/proc/interaction_load_disk(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held

@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/camerabug)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
 	op("pair", item(/obj/item/bug_monitor), label("Pair"), then(PROC_REF(interaction_pair)))
 	// wrenching it down on the floor (any stance but harm; a harmful swing falls through to the hit)
-	op("secure", tool(TOOL_WRENCH), wait(0), stance(I_HELP, I_DISARM, I_GRAB), label("Secure or unsecure"), needs(req_bool(PROC_REF(lies_on_turf), because = MSG(camerabug/not_on_floor))), then(PROC_REF(interaction_wrench)))
+	op("secure", tool(TOOL_WRENCH), wait(0), stance(I_HELP, I_DISARM, I_GRAB), label("Secure or unsecure"), needs(req(PROC_REF(lies_on_turf))), then(PROC_REF(interaction_wrench)))
 	// the old attackby: a strong hit breaks the lens (and the hit goes on)
 	op("hit", item(/obj/item), then(PROC_REF(interaction_item)))
 	// the old object verb
@@ -141,7 +141,7 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 
 /// Requirement: it lies on the floor.
 /obj/item/camerabug/proc/lies_on_turf(datum/act/op/A)
-	return lies_on_floor(src)
+	return (lies_on_floor(src)) ? null : MSG(camerabug/not_on_floor)
 
 /// Is `thing` lying loose on a turf (not carried or inside something)?
 /proc/lies_on_floor(atom/movable/thing)

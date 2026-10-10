@@ -373,25 +373,25 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 	owns_many(nameof(buffers), /datum/transhuman/body_record)
 	ref_one(nameof(connected), /obj/machinery/dna_scannernew)
 	interface("DNAModifier")
-	extend("ui_open", needs(req_bool(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req_bool(PROC_REF(not_the_occupant), because = MSG(dna_console/occupant))))
-	extend(TAG_UI, needs(req_bool(PROC_REF(scanner_connected), because = MSG(dna_console/no_scanner)), req_bool(PROC_REF(not_irradiating), because = MSG(dna_console/busy))))
+	extend("ui_open", needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_the_occupant))))
+	extend(TAG_UI, needs(req(PROC_REF(scanner_connected)), req(PROC_REF(not_irradiating))))
 	extend(TAG_UI, then(PROC_REF(window_touched), early = TRUE))
-	op("selectMenuKey", ui_act("selectMenuKey", arg("key", schema_text(32))), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_selectmenukey)))
-	op("toggleLock", ui_act("toggleLock"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_togglelock)))
-	op("pulseRadiation", ui_act("pulseRadiation"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_pulseradiation)))
-	op("radiationDuration", ui_act("radiationDuration", arg("value", num(1, 20))), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_radiationduration)))
-	op("radiationIntensity", ui_act("radiationIntensity", arg("value", num(1, 10))), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_radiationintensity)))
-	op("injectRejuvenators", ui_act("injectRejuvenators", arg("amount", num())), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_injectrejuvenators)))
-	op("selectSEBlock", ui_act("selectSEBlock", arg("block", num()), arg("subblock", num())), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_selectseblock)))
-	op("pulseSERadiation", ui_act("pulseSERadiation"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_pulseseradiation)))
-	op("ejectBeaker", ui_act("ejectBeaker"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectbeaker)))
-	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectoccupant)))
-	op("bufferOption", ui_act("bufferOption", arg("block", num(default = 0)), arg("id", num()), arg("option", schema_text(32))), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))),
+	op("selectMenuKey", ui_act("selectMenuKey", arg("key", schema_text(32))), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_selectmenukey)))
+	op("toggleLock", ui_act("toggleLock"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_togglelock)))
+	op("pulseRadiation", ui_act("pulseRadiation"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_pulseradiation)))
+	op("radiationDuration", ui_act("radiationDuration", arg("value", num(1, 20))), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_radiationduration)))
+	op("radiationIntensity", ui_act("radiationIntensity", arg("value", num(1, 10))), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_radiationintensity)))
+	op("injectRejuvenators", ui_act("injectRejuvenators", arg("amount", num())), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_injectrejuvenators)))
+	op("selectSEBlock", ui_act("selectSEBlock", arg("block", num()), arg("subblock", num())), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_selectseblock)))
+	op("pulseSERadiation", ui_act("pulseSERadiation"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_pulseseradiation)))
+	op("ejectBeaker", ui_act("ejectBeaker"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_ejectbeaker)))
+	op("ejectOccupant", ui_act("ejectOccupant"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_ejectoccupant)))
+	op("bufferOption", ui_act("bufferOption", arg("block", num(default = 0)), arg("id", num()), arg("option", schema_text(32))), needs(req(PROC_REF(user_standing))),
 		asks(/datum/prompt/text, fields = list("question" = "Please enter the new buffer label:", "default" = computed(PROC_REF(buffer_label_default)), "max_len" = TGUI_MODAL_INPUT_MAX_LENGTH_NAME, "modal_id" = "changeBufferLabel", "inline" = TRUE, "timeout" = 0), step = "label", when = PROC_REF(asks_buffer_label)),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the block to create an injector from:", "choices" = computed(PROC_REF(buffer_block_choices)), "modal_id" = "createInjectorBlock", "inline" = TRUE, "timeout" = 0), step = "block", when = PROC_REF(asks_injector_block)),
 		then(PROC_REF(ui_act_bufferoption)))
-	op("wipeDisk", ui_act("wipeDisk"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_wipedisk)))
-	op("ejectDisk", ui_act("ejectDisk"), needs(req_bool(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectdisk)))
+	op("wipeDisk", ui_act("wipeDisk"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_wipedisk)))
+	op("ejectDisk", ui_act("ejectDisk"), needs(req(PROC_REF(user_standing))), then(PROC_REF(ui_act_ejectdisk)))
 	op("dna_console_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT + 1), label("Use"), then(PROC_REF(dna_console_interaction_item)))
 
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(datum/act/op/A)
@@ -444,19 +444,19 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 
 /// The scanner beside the console is still there.
 /obj/machinery/computer/scan_consolenew/proc/scanner_connected(datum/act/A)
-	return !!connected()
+	return (!!connected()) ? null : MSG(dna_console/no_scanner)
 
 /// The one opening the window is not lying in the scanner.
 /obj/machinery/computer/scan_consolenew/proc/not_the_occupant(datum/act/op/A)
-	return A.actor != connected()?.get_occupant()
+	return (A.actor != connected()?.get_occupant()) ? null : MSG(dna_console/occupant)
 
 /// The console is not in the middle of a pulse (buttons wait until it is done).
 /obj/machinery/computer/scan_consolenew/proc/not_irradiating(datum/act/A)
-	return !irradiating
+	return (!irradiating) ? null : MSG(dna_console/busy)
 
 /// The user works the console from a tile (not from inside a locker, a mech or the scanner); a silicon works it over its link.
 /obj/machinery/computer/scan_consolenew/proc/user_standing(datum/act/op/A)
-	return isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
+	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
 
 /// Every button leaves a print.
 /obj/machinery/computer/scan_consolenew/proc/window_touched(datum/act/op/A)

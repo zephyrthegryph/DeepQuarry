@@ -33,7 +33,7 @@ CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
 	without("stuff_grab")
 	without("set_down")
 	without("empty_basket")
-	op("take_supplies", hand(), label("Take supplies"), when(req_bool(PROC_REF(actor_is_no_ai))), needs(req_bool(PROC_REF(has_supplies), because = MSG(emerglocker/empty))),
+	op("take_supplies", hand(), label("Take supplies"), when(PROC_REF(actor_is_no_ai)), needs(req(PROC_REF(has_supplies))),
 		then(PROC_REF(supplies_taken)), says(MSG(emerglocker/taken)))
 
 /// The AI cannot reach in.
@@ -41,7 +41,8 @@ CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
 	return !istype(A.actor, /mob/living/silicon/ai)
 
 /obj/structure/closet/walllocker/emerglocker/proc/has_supplies(datum/act/A)
-	return amount > 0 // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked
+	return (amount > 0) ? null : /datum/msg/emerglocker/empty // ALLOW(reads): how many sets are left is read when the entry is offered and when it is picked
+
 
 /// A set of supplies comes out onto the tile.
 /obj/structure/closet/walllocker/emerglocker/proc/supplies_taken(datum/act/op/A)

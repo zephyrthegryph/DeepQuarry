@@ -35,8 +35,8 @@
 	var/atom/movable/screen/background/cam_background
 
 CAPABILITIES(/obj/effect/overmap)
-	owns_one(nameof(cam_background), /atom/movable/screen/background)
-	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
+	owns_one(nameof(cam_background), /atom/movable/screen/background, starts = when(nameof(render_map), /atom/movable/screen/background), starts_args = NO_LOC)
+	owns_one(nameof(cam_screen), /atom/movable/screen/map_view, starts = when(nameof(render_map), /atom/movable/screen/map_view), starts_args = NO_LOC)
 	owns_many(nameof(cam_plane_masters))
 
 /obj/effect/overmap/Initialize(mapload)
@@ -46,7 +46,6 @@ CAPABILITIES(/obj/effect/overmap)
 
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
-		rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 		cam_screen.name = "screen"
 		cam_screen.assigned_map = map_name
 		cam_screen.del_on_map_removal = FALSE
@@ -60,7 +59,6 @@ CAPABILITIES(/obj/effect/overmap)
 			instance.del_on_map_removal = FALSE
 			instance.screen_loc = "[map_name]:CENTER"
 
-		rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 		cam_background.assigned_map = map_name
 		cam_background.del_on_map_removal = FALSE
 		update_screen()

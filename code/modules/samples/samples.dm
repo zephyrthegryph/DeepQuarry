@@ -23,42 +23,43 @@
 
 TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold))
 
+/// Rolled before init (rolls()): an unnamed sample's look, its name to match and its hazard.
+/obj/item/research_sample/proc/roll_sample(datum/roller/R)
+	var/name_prefix = R.choose(list("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric"))
+	var/name_suffix		//blank because it's randomized per sample appearance
+	var/sample_icon = R.number(1, 11)
+	hazard_type = R.choose(list("BRUTE","BURN","TOX","OXY","EMP","PAIN"))
+	//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
+	switch(sample_icon)
+		if(1)	//prism
+			name_suffix = R.choose(list("alloy","object","sample","element","chunk"))
+		if(2)	//ring
+			name_suffix = R.choose(list("ring","band","torus","circuit","halo","hoop"))
+		if(3)	//red stone
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock"))
+		if(4)	//circuit scrap
+			name_suffix = R.choose(list("circuit","board","scrap","junk","object","device"))
+		if(5)	//crystal star
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock","star"))
+		if(6)	//spore
+			name_suffix = R.choose(list("glob","spore","blob","corpuscle","macroorganism","vacuole"))
+		if(7)	//device
+			name_suffix = R.choose(list("device","gadget","widget","object","apparatus","contraption","gizmo","object","doohickey"))
+		if(8)	//purple shard
+			name_suffix = R.choose(list("shard","fragment","sliver","remnant"))
+		if(9, 10)	//purple rock, green rock
+			name_suffix = R.choose(list("rock","stone","slab","rubble","mineral","mass","boulder","slag"))
+		else	//none
+			name_suffix = R.choose(list("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver"))
+	name = "[name_prefix] [name_suffix]"
+	return "generic_sample[sample_icon]"
+
 /obj/item/research_sample/Initialize(mapload)
 	. = ..()
-	if(!fixed_name)
-		var/name_prefix = "[pick("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric")]"
-		var/name_suffix		//blank because it's randomized per sample appearance
-		var/sample_icon = rand(1,11)
-		icon_state = "generic_sample[sample_icon]"
-		hazard_type = pick("BRUTE","BURN","TOX","OXY","EMP","PAIN")
-		//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
-		switch(sample_icon)
-			if(1)	//prism
-				name_suffix = "[pick("alloy","object","sample","element","chunk")]"
-			if(2)	//ring
-				name_suffix = "[pick("ring","band","torus","circuit","halo","hoop")]"
-			if(3)	//red stone
-				name_suffix = "[pick("gem","crystal","jewel","stone","bauble","rock")]"
-			if(4)	//circuit scrap
-				name_suffix = "[pick("circuit","board","scrap","junk","object","device")]"
-			if(5)	//crystal star
-				name_suffix = "[pick("gem","crystal","jewel","stone","bauble","rock","star")]"
-			if(6)	//spore
-				name_suffix = "[pick("glob","spore","blob","corpuscle","macroorganism","vacuole")]"
-			if(7)	//device
-				name_suffix = "[pick("device","gadget","widget","object","apparatus","contraption","gizmo","object","doohickey")]"
-			if(8)	//purple shard
-				name_suffix = "[pick("shard","fragment","sliver","remnant")]"
-			if(9)	//purple rock
-				name_suffix = "[pick("rock","stone","slab","rubble","mineral","mass","boulder","slag")]"
-			if(10)	//green rock
-				name_suffix = "[pick("rock","stone","slab","rubble","mineral","mass","boulder","slag")]"
-			else	//none
-				name_suffix = "[pick("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver")]"
-		name = "[name_prefix] [name_suffix]"
 	make_sellable(/datum/sellable/research_sample)
 
 CAPABILITIES(/obj/item/research_sample)
+	rolls(nameof(icon_state), PROC_REF(roll_sample), when = cond_not(nameof(fixed_name)))
 	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
 	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))

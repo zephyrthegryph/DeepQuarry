@@ -128,9 +128,9 @@ CAPABILITIES(/obj/item/gun)
 	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
 	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
-	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
-	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
-	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
+	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_give_dna)))
+	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_remove_dna)))
+	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_allow_dna)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART - 1), label("Remove the DNA lock"), needs(req(PROC_REF(lock_refusal))),
 		begins(PROC_REF(lock_removal_begins)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE), wait(2.5 SECONDS), then(PROC_REF(lock_removed)))
 

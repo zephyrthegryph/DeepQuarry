@@ -142,12 +142,12 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 	section(hatch, "What the tools do behind the open hatch")
 	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
-		needs(req_bool(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),
+		needs(req(PROC_REF(terminal_site_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built)))
 	op("cut_terminal", tool(TOOL_WIRECUTTER), at(SPACE_PANEL),
-		needs(req_bool(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))),
+		needs(req(PROC_REF(terminal_cut_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
-	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req_bool(PROC_REF(casing_damaged), because = MSG(smes/whole))),
+	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req(PROC_REF(casing_damaged))),
 		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
@@ -375,9 +375,6 @@ CAPABILITIES(/obj/machinery/power/smes)
 		return /datum/msg/smes/terminal_there
 	return null
 
-/obj/machinery/power/smes/proc/terminal_site_ok(datum/act/op/A)
-	return isnull(terminal_site_refusal(A))
-
 /// A terminal already stands on `location` facing `direction`.
 /obj/machinery/power/smes/proc/terminal_exists_at(turf/location, direction)
 	for(var/obj/machinery/power/terminal/term in location)
@@ -416,9 +413,6 @@ CAPABILITIES(/obj/machinery/power/smes)
 		return /datum/msg/smes/plating
 	return null
 
-/obj/machinery/power/smes/proc/terminal_cuttable(datum/act/op/A)
-	return isnull(terminal_cut_refusal(A))
-
 /// The wait is over (the terminal was asked for again before this ran): the cable is cut (with a chance of a shock from the live cable that can
 /// stun the cutter before the job is done), the ten lengths drop and the terminal goes.
 /obj/machinery/power/smes/proc/terminal_taken_down(datum/act/op/A)
@@ -437,7 +431,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// The casing has damage to weld.
 /obj/machinery/power/smes/proc/casing_damaged(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a unit's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(smes/whole) // ALLOW(reads): a unit's max_integrity is its type's constant
 
 /// The weld is done: every point of damage is repaired.
 /obj/machinery/power/smes/proc/casing_repaired(datum/act/op/A)

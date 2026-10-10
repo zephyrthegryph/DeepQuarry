@@ -174,9 +174,10 @@ CAPABILITIES(/turf/simulated/open)
 // /turf/simulated/floor/glass/setup_broken_states()
 //	return list("glass-damaged1", "glass-damaged2", "glass-damaged3")
 
-/turf/simulated/floor/glass/Initialize(mapload)
-	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-	. = ..()
+/// No base sprite: the smooth overlays are the floor (the normal icon would show behind them).
+/turf/simulated/floor/glass/draw(datum/look/look)
+	..()
+	look.state("")
 
 /turf/simulated/floor/glass/runtime_after_init()
 	return TRUE

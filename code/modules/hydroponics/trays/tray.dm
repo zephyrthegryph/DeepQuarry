@@ -141,25 +141,25 @@ MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 	reagents(200)
 	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
-	owns_one(nameof(temp_chem_holder), /obj)
+	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)))
 	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
 	// a ghost may become the living plant product of a ripe tray (the old attack_ghost: never fell through to the default)
-	op("ghost_harvest", observer(), label("Harvest"), needs(req_bool(PROC_REF(can_ghost_harvest), because = PROC_REF(ghost_harvest_refusal))),
+	op("ghost_harvest", observer(), label("Harvest"), needs(req(PROC_REF(can_ghost_harvest))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Living plant request", "question" = computed(PROC_REF(ghost_harvest_question)), "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(ghost_harvested)))
-	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(req_bool(PROC_REF(can_toggle_lid))), then(PROC_REF(interaction_close_lid)))
-	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_remove_label)))
-	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))),
+	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(PROC_REF(can_toggle_lid)), then(PROC_REF(interaction_close_lid)))
+	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))), then(PROC_REF(interaction_remove_label)))
+	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))),
 		asks(/datum/prompt/choice, fields = list("question" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10), "buttons" = FALSE, "timeout" = 0), step = "light"),
 		then(PROC_REF(interaction_set_light)))
-	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
+	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))), then(PROC_REF(interaction_toggle_lid_verb)))
 	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
-	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(boltable))), then(PROC_REF(bolted)))
+	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
 	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
-		needs(req_bool(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req_bool(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
+		needs(req(PROC_REF(is_anchored)), req(PROC_REF(can_freeze))),
 		then(PROC_REF(freezer_toggled)))
 
 /// Only a mechanical tray has a lid (the hand binding brings the reach and the actor's state).
@@ -169,21 +169,19 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(datum/act/op/A)
 	close_lid(A.actor)
 
-/// The old verbs' check: alive, conscious and free.
+/// Preserve the old verbs' living-actor and default restraint check.
 /obj/machinery/portable_atmospherics/hydroponics/proc/actor_can_act(datum/act/op/A)
-	return dq_actor_can_act(A.actor, src, A.held)
+	return (dq_actor_can_act(A.actor, src, A.held)) ? null : /datum/msg/hydroponics/not_by_this
+
 
 /// A ghost may become the living plant product of a ripe tray (the old attack_ghost). Silent unless the ghost itself may not.
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_ghost_harvest(datum/act/op/A)
-	return isnull(ghost_harvest_refusal(A))
-
-/// Why a ghost may not harvest this tray, or null: nothing living to harvest (silent) or the ghost trap's own candidate checks.
-/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_refusal(datum/act/op/A)
 	READS_FROM() // the ripeness and the candidate's bans are read when the ghost clicks, never cached
 	if(!(harvest && seed && seed.has_mob_product)) // ALLOW(reads): ripeness and the plant's kind are read when the ghost clicks, never cached
 		return /datum/msg/req_silent
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	return G?.candidate_refusal(A.actor)
+
 
 /// The question the ghost is asked, naming the planted line.
 /obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_question(datum/act/A)
@@ -247,7 +245,6 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(temp_chem_holder), new /obj())
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
@@ -684,7 +681,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
 /obj/machinery/portable_atmospherics/hydroponics/proc/boltable(datum/act/op/A)
-	return mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): the port under the tray is looked for when the wrench is used
+	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed // ALLOW(reads): the port under the tray is looked for when the wrench is used
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
 	var/obj/item/tool = A.held
@@ -693,10 +690,12 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 	to_chat(A.actor, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/is_anchored(datum/act/op/A)
-	return anchored
+	return (anchored) ? null : /datum/msg/hydroponics/anchor_first
+
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/can_freeze(datum/act/op/A)
-	return frozen != -1
+	return (frozen != -1) ? null : /datum/msg/hydroponics/no_freezer
+
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/freezer_toggled(datum/act/op/A)
 	to_chat(A.actor, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))

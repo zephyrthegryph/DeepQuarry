@@ -11,6 +11,7 @@
 CAPABILITIES(/obj/effect/temporary_effect/eruption)
 	param(nameof(extra_time), pos = 1, default = 10 SECONDS)
 	param(nameof(color), pos = 2)
+	after_init(nameof(eruption_delay), then(PROC_REF(erupt_after_init)))
 
 /// How much longer than its type the eruption lasts (its constructor param).
 /obj/effect/temporary_effect/eruption/var/extra_time
@@ -19,9 +20,15 @@ CAPABILITIES(/obj/effect/temporary_effect/eruption)
 /obj/effect/temporary_effect/eruption/Initialize(mapload)
 	if(extra_time)
 		time_to_die += extra_time
-	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
+	eruption_delay = time_to_die - 0.2 SECONDS
 	. = ..()
 	flick("[icon_state]_create",src)
+
+/// How long after init it erupts: just before it ends (after_init()).
+/obj/effect/temporary_effect/eruption/var/eruption_delay = 0
+
+/obj/effect/temporary_effect/eruption/proc/erupt_after_init(datum/act/A)
+	on_eruption(get_turf(src))
 
 /obj/effect/temporary_effect/eruption/proc/on_eruption(turf/Target)	// Override for specific functions, as below.
 	flick("[icon_state]_erupt",src)

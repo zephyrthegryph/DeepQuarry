@@ -50,10 +50,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 
 /// needs: no AI is loaded (its screws won't budge while one is).
 /obj/machinery/computer/aifixer/proc/no_ai_loaded(datum/act/op/A)
-	return !occupier()
-
-/obj/machinery/computer/aifixer/proc/screws_stuck_reason(datum/act/op/A)
-	return operable() ? /datum/msg/aifixer/screws_stuck_beep : /datum/msg/aifixer/screws_stuck
+	return !occupier() ? null : (operable() ? /datum/msg/aifixer/screws_stuck_beep : /datum/msg/aifixer/screws_stuck)
 
 /obj/machinery/computer/aifixer/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -64,7 +61,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
-	extend("disconnect", needs(req_bool(PROC_REF(no_ai_loaded), because = PROC_REF(screws_stuck_reason))))
+	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))
 	interface("AiRestorer")
 	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))

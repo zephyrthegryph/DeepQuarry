@@ -76,7 +76,7 @@
 
 /obj/machinery/computer/pandemic/proc/release_form_ready(datum/act/op/A)
 	// Printing is a volatile legacy flag; sample the actual busy state at admission and resumption.
-	return !read_once(printing)
+	return (!read_once(printing)) ? null : MSG(pandemic/printing)
 
 /obj/machinery/computer/pandemic/proc/release_has_reason(datum/act/op/A)
 	return !!A.step_value("reason")
@@ -92,7 +92,7 @@ MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
 MSG_DEF_SELF(pandemic/not_beaker, "not possible right now")
 
 CAPABILITIES(/obj/machinery/computer/pandemic)
-	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req_bool(PROC_REF(empty_slot_holds), because = MSG(pandemic/beaker_loaded)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
+	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req(PROC_REF(empty_slot_holds)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
@@ -100,10 +100,10 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 	op("destroy_eject_beaker", ui_act("destroy_eject_beaker"), then(PROC_REF(ui_act_destroy_eject_beaker)))
 	op("empty_beaker", ui_act("empty_beaker"), then(PROC_REF(ui_act_empty_beaker)))
 	op("rename_disease", ui_act("rename_disease", arg("index"), arg("name", schema_text(4096))), then(PROC_REF(ui_act_rename_disease)))
-	op("print_release_form", ui_act("print_release_form", arg("index", num())), needs(req_bool(PROC_REF(release_form_ready), because = MSG(pandemic/printing))),
+	op("print_release_form", ui_act("print_release_form", arg("index", num())), needs(req(PROC_REF(release_form_ready))),
 		asks(/datum/prompt/text/pandemic_release_reason, step = "reason", fields = list("title" = "Write", "question" = "Enter a reason for the release", "multiline" = TRUE, "affliction" = computed(PROC_REF(release_strain)), "timeout" = 0)),
 		asks(/datum/prompt/yes_no/pandemic_release_sign, step = "signature", fields = list("title" = "Signature", "question" = "Would you like to add your signature?", "disease" = computed(PROC_REF(release_reason_disease)), "reason" = computed(PROC_REF(release_reason_text)), "timeout" = 0), when = PROC_REF(release_has_reason)), then(PROC_REF(ui_act_print_release_form)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(console_works), because = MSG(pandemic/not_working))))
+	extend(TAG_UI, needs(req(PROC_REF(console_works))))
 
 CAPABILITIES(/datum/prompt/text/pandemic_release_reason)
 	ref_one(nameof(affliction), /datum/affliction/contagion/engineered)
@@ -118,7 +118,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 /// The console answers only while it works.
 /obj/machinery/computer/pandemic/proc/console_works(datum/act/op/A)
-	return operable()
+	return (operable()) ? null : MSG(pandemic/not_working)
 
 /obj/machinery/computer/pandemic/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -410,4 +410,4 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /obj/machinery/computer/pandemic/proc/empty_slot_holds(datum/act/op/A)
-	return !beaker
+	return (!beaker) ? null : MSG(pandemic/beaker_loaded)

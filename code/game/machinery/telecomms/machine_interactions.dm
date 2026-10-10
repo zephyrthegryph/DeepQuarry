@@ -23,10 +23,10 @@ TRACKED(/obj/machinery/telecomms, temp)
 
 /// req_tcomms_multitool(): the actor has a multitool for the machine (in hand; an AI's own; a cyborg's at the machine).
 /proc/req_tcomms_multitool()
-	return req_bool(TYPE_PROC_REF(/obj/machinery, actor_has_multitool), because = MSG(tcomms/needs_multitool))
+	return req(TYPE_PROC_REF(/obj/machinery, actor_has_multitool))
 
 /obj/machinery/proc/actor_has_multitool(datum/act/op/A)
-	return !!get_multitool(A.actor)
+	return (!!get_multitool(A.actor)) ? null : MSG(tcomms/needs_multitool)
 
 /obj/machinery/telecomms/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -161,7 +161,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 /// needs: the link the button names is one of the machine's.
 /obj/machinery/telecomms/proc/link_index_valid(datum/act/op/A)
 	var/index = A.args["unlink"]
-	return isnum(index) && index >= 1 && index <= LAZYLEN(links)
+	return (isnum(index) && index >= 1 && index <= LAZYLEN(links)) ? null : MSG(tcomms/no_such_link)
 
 /obj/machinery/telecomms/proc/ui_act_unlink(datum/act/op/A, unlink)
 	var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink)
@@ -173,7 +173,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 /obj/machinery/telecomms/proc/buffer_linkable(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
 	var/obj/machinery/telecomms/T = P?.buffer()
-	return istype(T) && T != src
+	return (istype(T) && T != src) ? null : MSG(tcomms/no_buffer)
 
 /obj/machinery/telecomms/proc/ui_act_link(datum/act/op/A)
 	var/obj/item/multitool/P = get_multitool(A.actor)
@@ -205,7 +205,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 
 /// needs: the machine is damaged.
 /obj/machinery/telecomms/proc/damaged(datum/act/op/A)
-	return get_integrity() < max_integrity // ALLOW(reads): the machine's integrity is asked when the paste is applied, never cached
+	return (get_integrity() < max_integrity) ? null : MSG(tcomms/whole) // ALLOW(reads): the machine's integrity is asked when the paste is applied, never cached
 
 /// Nanopaste repairs 10 to 20 integrity.
 /obj/machinery/telecomms/proc/nanopaste_repair(datum/act/op/A)
@@ -217,7 +217,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 CAPABILITIES(/obj/machinery/telecomms/relay)
 	op("receive", ui_act(), toggles(nameof(receiving)), then(PROC_REF(receiving_reported)))
 	op("broadcast", ui_act(), toggles(nameof(broadcasting)), then(PROC_REF(broadcasting_reported)))
-	op("change_listening", ui_act("change_listening"), needs(req_bool(PROC_REF(can_change_level), because = MSG(tcomms/cannot_lock))), then(PROC_REF(ui_act_change_listening)))
+	op("change_listening", ui_act("change_listening"), needs(req(PROC_REF(can_change_level))), then(PROC_REF(ui_act_change_listening)))
 
 /obj/machinery/telecomms/relay/Options_Menu()
 	var/list/data = ..()
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/telecomms/relay)
 
 /// needs: the relay listens to the station now (it can go back to its own level), or stands on the satellite (it can lock onto the station).
 /obj/machinery/telecomms/relay/proc/can_change_level(datum/act/op/A)
-	return listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z // ALLOW(reads): the relay's level is asked when the button is pressed
+	return (listening_level == TCOMMS_STATION_Z || z == TCOMMS_SATELLITE_Z) ? null : MSG(tcomms/cannot_lock) // ALLOW(reads): the relay's level is asked when the button is pressed
 
 /// Locks the relay's signal onto the station, or back onto its own level.
 /obj/machinery/telecomms/relay/proc/ui_act_change_listening(datum/act/op/A)

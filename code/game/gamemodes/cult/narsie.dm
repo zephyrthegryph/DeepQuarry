@@ -33,6 +33,15 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	var/announce=1
 	var/cause_hell = 1
 
+CAPABILITIES(/obj/singularity/narsie/large)
+	when(nameof(calls_evac), after_init(10 SECONDS, then(PROC_REF(call_evac_after_init))))
+
+/// The first Nar-Sie to rise calls the evacuation (after_init()).
+/obj/singularity/narsie/large/var/calls_evac = FALSE
+
+/obj/singularity/narsie/large/proc/call_evac_after_init(datum/act/A)
+	narsie_call_evac()
+
 /obj/singularity/narsie/large/Initialize(mapload)
 	. = ..()
 	if(announce)
@@ -46,7 +55,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		after(src, 10 SECONDS, /proc/narsie_call_evac)
+		calls_evac = TRUE // the first Nar-Sie calls the evacuation ten seconds on (after_init())
 
 /// Nar-Sie's step (the singularity's every()): it eats, hunts a cultist and moves.
 /obj/singularity/narsie/singularity_frame(datum/act/timer/A)

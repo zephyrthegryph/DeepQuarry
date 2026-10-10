@@ -54,7 +54,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	if(!mapload)
-		after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
+		dry_delay = DRYING_TIME * (amount+1) // fresh blood dries (after_init()); mapped blood is dry already
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
 	if(src.type == /obj/effect/decal/cleanable/blood)
@@ -138,11 +138,18 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 
 	amount--
 
+/// How long after init fresh blood dries, or 0 for mapped blood (after_init()).
+/obj/effect/decal/cleanable/blood/var/dry_delay = 0
+
+/obj/effect/decal/cleanable/blood/proc/dry_after_init(datum/act/A)
+	dry()
+
 /obj/effect/decal/cleanable/blood/proc/dry()
 	set_dried(TRUE)
 	amount = 0
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
 	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))
 
 /// Old attack_hand: bare hands pick up some of the blood (and any touch-spread disease).
@@ -283,9 +290,12 @@ SETTER(/obj/effect/decal/cleanable/blood/gibs, fleshcolor)
 	var/sampled = FALSE
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
-/obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(viruses), new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
+CAPABILITIES(/obj/effect/decal/cleanable/mucus/mapped)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_mapped_virus))
+
+/// Mapped mucus carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/mucus/mapped/proc/make_mapped_virus(current)
+	return list(new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())

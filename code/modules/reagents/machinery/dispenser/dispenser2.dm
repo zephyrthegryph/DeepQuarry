@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	// A chemical canister refills the cartridge under its label (it was the canister's afterattack, which the dispenser's ops now answer first).
 	op("refill_cartridge", item(/obj/item/reagent_containers/chem_canister), label("Refill cartridge"), then(PROC_REF(canister_refill)))
 	op("set_container", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Set container"),
-		needs(req_bool(PROC_REF(no_container), silent = TRUE), req_bool(PROC_REF(can_take_container), because = PROC_REF(container_refusal))), then(PROC_REF(container_set)))
+		needs(req(PROC_REF(no_container), silent = TRUE), req(PROC_REF(can_take_container))), then(PROC_REF(container_set)))
 	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Dispenser", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
 
 /obj/machinery/chemical_dispenser/proc/canister_refill(datum/act/op/A)
@@ -121,11 +121,11 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// No container is set on it.
 /obj/machinery/chemical_dispenser/proc/no_container(datum/act/op/A)
-	return !container
+	return (!container) ? null : /datum/msg/req_failed
 
 /// The held container can be set on the dispenser.
 /obj/machinery/chemical_dispenser/proc/can_take_container(datum/act/op/A)
-	return isnull(container_refusal(A))
+	return container_refusal(A)
 
 /// Why the held container can't be set on the dispenser, or null.
 /obj/machinery/chemical_dispenser/proc/container_refusal(datum/act/op/A)

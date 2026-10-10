@@ -44,11 +44,11 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	op("eject_guy", ui_act("eject_guy"), then(PROC_REF(ui_act_eject_guy)))
 	op("toggleUV", ui_act("toggleUV"), then(PROC_REF(ui_act_toggleuv)))
 	op("togglesafeties", ui_act("togglesafeties"), then(PROC_REF(ui_act_togglesafeties)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("get_out", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Suit Storage Unit"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_get_out)))
-	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(storage_conscious), silent = TRUE), req(PROC_REF(can_move_inside))), starts(PROC_REF(storage_entry_started)), wait(1 SECOND), then(PROC_REF(interaction_move_inside)))
-	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), needs(req_bool(PROC_REF(storage_grab_powered), silent = TRUE), req_bool(PROC_REF(storage_grab_ready), because = PROC_REF(storage_grab_reason))), starts(PROC_REF(storage_grab_started)), wait(PROC_REF(storage_load_duration)), then(PROC_REF(interaction_use_item)))
+	op("move_inside", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Hide in Suit Storage Unit"), needs(req_adjacent(), req_capable(), req(PROC_REF(storage_conscious), silent = TRUE), req(PROC_REF(can_move_inside))), starts(PROC_REF(storage_entry_started)), wait(1 SECOND), then(PROC_REF(interaction_move_inside)))
+	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), needs(req(PROC_REF(storage_grab_powered), silent = TRUE), req(PROC_REF(storage_grab_reason))), starts(PROC_REF(storage_grab_started)), wait(PROC_REF(storage_load_duration)), then(PROC_REF(interaction_use_item)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /// The window answers while the unit is neither disinfecting nor broken.
 /obj/machinery/suit_storage_unit/proc/ui_gate(datum/act/op/A)
-	return !isUV && !isbroken
+	return (!isUV && !isbroken) ? null : MSG(req_failed)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_door(datum/act/op/A)
 	var/mob/user = A.actor
@@ -387,7 +387,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	return null
 
 /obj/machinery/suit_storage_unit/proc/storage_conscious(datum/act/op/A)
-	return A.actor.stat == CONSCIOUS
+	return (A.actor.stat == CONSCIOUS) ? null : MSG(req_failed)
 
 /obj/machinery/suit_storage_unit/proc/storage_entry_started(datum/act/op/A)
 	act_message(A.actor, null, others = span_info("%U% starts squeezing into the suit storage unit!"))
@@ -401,7 +401,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	return istype(G) && G.grab_target() ? 2 SECONDS : 0
 
 /obj/machinery/suit_storage_unit/proc/storage_grab_powered(datum/act/op/A)
-	return !istype(A.held, /obj/item/grab) || ispowered
+	return (!istype(A.held, /obj/item/grab) || ispowered) ? null : MSG(req_failed)
 
 /obj/machinery/suit_storage_unit/proc/storage_grab_reason(datum/act/op/A)
 	var/obj/item/grab/G = A.held
@@ -414,9 +414,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(slot_item(OCCUPANT_SLOT_SUIT_STORAGE) || HELMET || SUIT)
 		return "The unit's storage area is too cluttered."
 	return null
-
-/obj/machinery/suit_storage_unit/proc/storage_grab_ready(datum/act/op/A)
-	return isnull(storage_grab_reason(A))
 
 /obj/machinery/suit_storage_unit/proc/storage_grab_started(datum/act/op/A)
 	var/obj/item/grab/G = A.held

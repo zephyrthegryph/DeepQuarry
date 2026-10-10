@@ -1,13 +1,13 @@
 /obj/item/modular_computer/proc/pred_computer_has_drive(datum/act/op/A)
-	return !!portable_drive
+	return (!!portable_drive) ? null : /datum/msg/req_failed
 
 /obj/item/modular_computer/proc/pred_computer_has_card_slot(datum/act/op/A)
-	return !!card_slot
+	return (!!card_slot) ? null : /datum/msg/req_failed
 
 /// Requirement: a living, able, non-animal user (simple mobs can't work the buttons). Reach is the verb's own clause.
 /obj/item/modular_computer/proc/pred_computer_hands_on(datum/act/op/A)
 	var/mob/actor = A.actor
-	return isliving(actor) && !isanimal(actor) && !actor.incapacitated()
+	return (isliving(actor) && !isanimal(actor) && !actor.incapacitated()) ? null : "you can't do that"
 
 /// Why pred_computer_hands_on refuses.
 /obj/item/modular_computer/proc/pred_computer_hands_on_refusal(datum/act/op/A)

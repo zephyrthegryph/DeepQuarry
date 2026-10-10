@@ -26,7 +26,6 @@
 
 /mob/living/carbon/brain/Initialize(mapload)
 	. = ..()
-	create_reagents(1000)
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 // a brain with a player dies and ghosts; its host forgets the view.
@@ -136,4 +135,5 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
+	reagents(1000)
 	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

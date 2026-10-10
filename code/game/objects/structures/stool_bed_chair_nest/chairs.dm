@@ -357,17 +357,18 @@ TRACKED(/obj/structure/bed/chair, occupied)
 
 /obj/structure/bed/chair/sofa/bench/Initialize(mapload, new_material, new_padding_material)
 	. = ..()
-	var/mutable_appearance/MA
 	// If we're north-facing, metal goes above mob, padding overlay goes below mob.
 	if((dir & NORTH) && !corner_piece)
 		plane = MOB_PLANE
 		layer = ABOVE_MOB_LAYER
-		MA = mutable_appearance(icon, icon_state = "o[icon_state]", layer = BELOW_MOB_LAYER, plane = MOB_PLANE, appearance_flags = KEEP_APART|RESET_COLOR)
-	// Else just normal plane and layer for everything, which will be below mobs.
+
+/// The padding, in its own colour: below mobs on a north-facing bench (the metal is above them), else on the bench.
+/obj/structure/bed/chair/sofa/bench/look_parts(datum/look/look)
+	..()
+	if((dir & NORTH) && !corner_piece)
+		look.overlay(look_overlay_image(icon, "o[base_icon]", layer = BELOW_MOB_LAYER, plane = MOB_PLANE, color = padding_color, appearance_flags = KEEP_APART|RESET_COLOR))
 	else
-		MA = mutable_appearance(icon, icon_state = "o[icon_state]", appearance_flags = KEEP_APART|RESET_COLOR)
-	MA.color = padding_color
-	add_overlay(MA)
+		look.overlay(look_overlay_image(icon, "o[base_icon]", color = padding_color, appearance_flags = KEEP_APART|RESET_COLOR))
 
 /obj/structure/bed/chair/sofa/bench/left
 	icon_state = "bench_left"
@@ -613,12 +614,10 @@ TRACKED(/obj/structure/bed/chair, occupied)
 	base_icon = "modern_chair"
 	applies_material_colour = 0
 
-/obj/structure/bed/chair/modern_chair/Initialize(mapload, new_material, new_padding_material)
-	. = ..()
-	var/image/I = image(icon, "[base_icon]_over")
-	I.layer = ABOVE_MOB_LAYER
-	I.plane = MOB_PLANE
-	add_overlay(I)
+/// The back of the chair, over a seated mob.
+/obj/structure/bed/chair/modern_chair/look_parts(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[base_icon]_over", layer = ABOVE_MOB_LAYER, plane = MOB_PLANE))
 
 /obj/structure/bed/chair/bar_stool
 	name = "bar stool"

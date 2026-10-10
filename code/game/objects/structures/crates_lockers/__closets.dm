@@ -74,22 +74,22 @@ CAPABILITIES(/obj/structure/closet)
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), because = MSG(closet/bolts_unreachable))))
 	weld_shut(offered = PROC_REF(can_seal))
 	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
-	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req_bool(PROC_REF(bare_hand_or_menu))),
-		needs(req_bool(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
+	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(PROC_REF(bare_hand_or_menu)),
+		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
 	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
-		needs(req_bool(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
+		needs(req(PROC_REF(welder_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
 	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
 		then(PROC_REF(basket_emptied)), says(MSG(closet/emptied_basket)))
 	op("stuff_grab", item(/obj/item/grab), label("Stuff inside"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
-		needs(req_bool(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), then(PROC_REF(stuff_grabbed)))
+		needs(req(PROC_REF(grab_fits))), then(PROC_REF(stuff_grabbed)))
 	op("set_down", item(/obj/item), label("Put down"), at(SPACE_INTERIOR), priority(OP_PRIORITY_DEFAULT),
-		needs(req_bool(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), then(PROC_REF(set_down)))
+		needs(req(PROC_REF(can_set_down))), then(PROC_REF(set_down)))
 	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), at(SPACE_INTERIOR), then(PROC_REF(stuff_dragged)))
 	op("break_out", ai(), label("Break out"), wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE),
-		needs(req_capable(), req_bool(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),
+		needs(req_capable(), req(PROC_REF(can_break_out))),
 		begins(MSG(closet/break_begin)), then(PROC_REF(broke_out)), logs(LOG_GAME))
-	op("devour", menu(), label("Devour Occupants"), when(req_bool(PROC_REF(actor_shut_in))),
-		needs(req_bool(PROC_REF(has_prey), because = MSG(closet/no_targets))),
+	op("devour", menu(), label("Devour Occupants"), when(PROC_REF(actor_shut_in)),
+		needs(req(PROC_REF(has_prey))),
 		asks(/datum/prompt/choice/prey),
 		then(PROC_REF(devoured)))
 
@@ -320,7 +320,8 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The door can move now: it is not mid-swing, and the closet lets it (an open one can be shut, a shut one opened).
 /obj/structure/closet/proc/door_ready(datum/act/A)
-	return !is_animating_door && (opened ? can_close() : can_open()) // ALLOW(reads): what a door lets through is asked of the closet's own procs at the click; the menu entry is advisory
+	return (!is_animating_door && (opened ? can_close() : can_open())) ? null : /datum/msg/closet/wont_budge // ALLOW(reads): what a door lets through is asked of the closet's own procs at the click; the menu entry is advisory
+
 
 /// An empty hand works the door (a held thing has its own ops), and so does the menu's pick whatever is held.
 /obj/structure/closet/proc/bare_hand_or_menu(datum/act/op/A)
@@ -339,7 +340,8 @@ CAPABILITIES(/obj/structure/closet)
 /// The welder is lit.
 /obj/structure/closet/proc/welder_lit(datum/act/op/A)
 	var/obj/item/weldingtool/welder = A.held?.get_welder()
-	return !welder || welder.isOn()
+	return (!welder || welder.isOn()) ? null : /datum/msg/weld/needs_lit
+
 
 /// An open closet is cut apart into a sheet of steel (what it held is already on its tile).
 /obj/structure/closet/proc/cut_apart(datum/act/op/A)
@@ -351,7 +353,7 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/basket_emptied(datum/act/op/A)
 	var/obj/item/storage/laundry_basket/LB = A.held
 	if(!length(LB.slot_contents()))
-		return can_set_down(A) ? set_down(A) : OP_OK
+		return isnull(can_set_down(A)) ? set_down(A) : OP_OK
 	var/turf/T = get_turf(src)
 	for(var/obj/item/I in LB.slot_contents())
 		LB.remove_from_storage(I, T)
@@ -359,7 +361,8 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The held item is in the actor's own hands (not a module mounted on a cyborg), and the actor is no cyborg: only those let go of things at a closet.
 /obj/structure/closet/proc/can_set_down(datum/act/op/A)
-	return A.actor.lets_go_of_held() && A.held.loc == A.actor // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.actor.lets_go_of_held() && A.held.loc == A.actor) ? null : /datum/msg/closet/cant_put_down // ALLOW(reads): where the held item is read when it is put down; the click asks again
+
 
 /// A held thing is let go of onto the tile of an open closet.
 /obj/structure/closet/proc/set_down(datum/act/op/A)
@@ -397,10 +400,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// Whether a grab can stuff the one it holds in: closets take anyone (a locker too small, a crate, say otherwise).
 /obj/structure/closet/proc/grab_fits(datum/act/op/A)
-	return TRUE
-
-/obj/structure/closet/proc/grab_refusal(datum/act/op/A)
-	return /datum/msg/closet/too_small
+	return null
 
 /// What the lock of a secure locker or crate just did, in the library's words.
 /obj/structure/closet/proc/lock_toggled_message(datum/act/A)
@@ -483,7 +483,8 @@ CAPABILITIES(/obj/structure/closet)
 
 /// The actor is shut inside, and the closet holds them (still shut, and sealed or locked).
 /obj/structure/closet/proc/can_break_out(datum/act/op/A)
-	return A.actor?.loc == src && !!req_breakout() // ALLOW(reads): where the pusher is, and whether the closet still holds them, read again when the wait ends
+	return (A.actor?.loc == src && !!req_breakout()) ? null : /datum/msg/closet/cant_break_out // ALLOW(reads): where the pusher is, and whether the closet still holds them, read again when the wait ends
+
 
 /// The shove goes through: the closet is broken open.
 /obj/structure/closet/proc/broke_out(datum/act/op/A)
@@ -588,7 +589,7 @@ CAPABILITIES(/obj/structure/closet)
 	return by_name
 
 /obj/structure/closet/proc/has_prey(datum/act/op/A)
-	return length(prey_by_name(A.actor)) > 0
+	return (length(prey_by_name(A.actor)) > 0) ? null : MSG(closet/no_targets)
 
 /// The choice a hidden devour offers: the ones shut in with the asker that can be eaten.
 /datum/prompt/choice/prey

@@ -28,18 +28,18 @@ CAPABILITIES(/obj/item/taperecorder)
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	// a tape goes in when there is none
-	op("insert_tape", item(/obj/item/rectape), label("Insert tape"), needs(req_bool(PROC_REF(has_no_tape), because = MSG(taperecorder/has_tape))), then(PROC_REF(interaction_item)))
+	op("insert_tape", item(/obj/item/rectape), label("Insert tape"), needs(req(PROC_REF(has_no_tape))), then(PROC_REF(interaction_item)))
 	// held in the other hand, an empty hand takes the tape out (otherwise the click declines to pick up)
-	op("hand_eject", hand(), label("Eject tape"), needs(req_bool(PROC_REF(hand_eject_ok), because = PROC_REF(hand_eject_refusal))), then(PROC_REF(interaction_hand)))
+	op("hand_eject", hand(), label("Eject tape"), needs(req(PROC_REF(hand_eject_refusal))), then(PROC_REF(interaction_hand)))
 	// the old attack_self: stop playing or recording, or start recording
-	op("use", in_hand(), label("Record or stop"), needs(req_bool(PROC_REF(use_self_ok), because = PROC_REF(use_self_refusal))), then(PROC_REF(interaction_self)))
+	op("use", in_hand(), label("Record or stop"), needs(req(PROC_REF(use_self_refusal))), then(PROC_REF(interaction_self)))
 	// the old object verbs
-	op("eject", menu(), label("Eject Tape"), needs(carried(), req_bool(PROC_REF(eject_ok), because = PROC_REF(eject_refusal))), then(PROC_REF(verb_eject)))
-	op("record", menu(), label("Start Recording"), needs(carried(), req_bool(PROC_REF(record_ok), because = PROC_REF(record_refusal))), then(PROC_REF(verb_record)))
+	op("eject", menu(), label("Eject Tape"), needs(carried(), req(PROC_REF(eject_refusal))), then(PROC_REF(verb_eject)))
+	op("record", menu(), label("Start Recording"), needs(carried(), req(PROC_REF(record_refusal))), then(PROC_REF(verb_record)))
 	op("stop", menu(), label("Stop"), needs(carried()), then(PROC_REF(verb_stop)))
-	op("wipe", menu(), label("Wipe Tape"), needs(carried(), req_bool(PROC_REF(wipe_ok), because = PROC_REF(wipe_refusal))), then(PROC_REF(verb_wipe)))
-	op("playback", menu(), label("Playback Tape"), needs(carried(), req_bool(PROC_REF(playback_ok), because = PROC_REF(playback_refusal))), then(PROC_REF(verb_playback)))
-	op("print", menu(), label("Print Transcript"), needs(carried(), req_bool(PROC_REF(print_ok), because = PROC_REF(print_refusal))), then(PROC_REF(verb_print)))
+	op("wipe", menu(), label("Wipe Tape"), needs(carried(), req(PROC_REF(wipe_refusal))), then(PROC_REF(verb_wipe)))
+	op("playback", menu(), label("Playback Tape"), needs(carried(), req(PROC_REF(playback_refusal))), then(PROC_REF(verb_playback)))
+	op("print", menu(), label("Print Transcript"), needs(carried(), req(PROC_REF(print_refusal))), then(PROC_REF(verb_print)))
 
 /obj/item/taperecorder/empty
 	mytape = null
@@ -52,54 +52,40 @@ TRACKED(/obj/item/rectape, ruined)
 // The requirements as op parts: each old check is TRUE or why not.
 
 /obj/item/taperecorder/proc/has_no_tape(datum/act/op/A)
-	return !mytape
+	return mytape ? /datum/msg/taperecorder/has_tape : null
 
 MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 
-/obj/item/taperecorder/proc/hand_eject_ok(datum/act/op/A)
-	return can_hand_eject(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/hand_eject_refusal(datum/act/op/A)
 	var/reason = can_hand_eject(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/use_self_ok(datum/act/op/A)
-	return can_use_self(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/use_self_refusal(datum/act/op/A)
 	var/reason = can_use_self(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/eject_ok(datum/act/op/A)
-	return can_eject(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/eject_refusal(datum/act/op/A)
 	var/reason = can_eject(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/record_ok(datum/act/op/A)
-	return can_record(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/record_refusal(datum/act/op/A)
 	var/reason = can_record(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/wipe_ok(datum/act/op/A)
-	return can_wipe(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/wipe_refusal(datum/act/op/A)
 	var/reason = can_wipe(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/playback_ok(datum/act/op/A)
-	return can_playback(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/playback_refusal(datum/act/op/A)
 	var/reason = can_playback(A.actor, src, A.held)
 	return reason == TRUE ? null : reason
 
-/obj/item/taperecorder/proc/print_ok(datum/act/op/A)
-	return can_print(A.actor, src, A.held) == TRUE
 
 /obj/item/taperecorder/proc/print_refusal(datum/act/op/A)
 	var/reason = can_print(A.actor, src, A.held)
@@ -536,4 +522,3 @@ CAPABILITIES(/obj/item/rectape/random)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/rectape/random/proc/roll_icon_state(datum/roller/R)
 	return "tape_[R.choose(list("white", "blue", "red", "yellow", "purple"))]"
-

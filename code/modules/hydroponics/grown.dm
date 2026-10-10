@@ -18,6 +18,7 @@
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	configure(reagents(contents_from = PROC_REF(seed_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(seed_nutriment_taste))))
 	op("grown_squash", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Squash"), then(PROC_REF(grown_squash)))
 	op("grown_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Grown self"), then(PROC_REF(grown_self)))
 	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
@@ -45,22 +46,36 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	potency = seed().get_trait(TRAIT_POTENCY)
 
 	if(seed().chems)
-		for(var/rid in seed().chems)
-			var/list/reagent_data = seed().chems[rid]
-			if(reagent_data && LAZYLEN(reagent_data))
-				var/rtotal = reagent_data[1]
-				var/list/data = list()
-				if(LAZYLEN(reagent_data) > 1 && potency > 0)
-					rtotal += round(potency/reagent_data[2])
-				if(rid == REAGENT_ID_NUTRIMENT)
-					data[seed().seed_name] = max(1,rtotal)
-				if(rid != REAGENT_ID_GLAMOUR_INVIS)
-					reagents.add_reagent(rid,max(1,rtotal),data)
 		update_desc()
 		if(reagents.total_volume > 0)
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 		if(seed().get_trait(TRAIT_STINGS))
 			force = 1
+
+/// The seed's chemicals at its potency (reagents(contents_from =)); glamour is never put in. Null for produce with no known plant.
+/obj/item/reagent_containers/food/snacks/grown/proc/seed_contents()
+	var/datum/seed/S = plantname ? SSplants.seeds[plantname] : null
+	if(!S?.chems)
+		return
+	var/plant_potency = S.get_trait(TRAIT_POTENCY)
+	. = list()
+	for(var/rid in S.chems)
+		var/list/reagent_data = S.chems[rid]
+		if(!LAZYLEN(reagent_data) || rid == REAGENT_ID_GLAMOUR_INVIS)
+			continue
+		var/rtotal = reagent_data[1]
+		if(LAZYLEN(reagent_data) > 1 && plant_potency > 0)
+			rtotal += round(plant_potency/reagent_data[2])
+		.[rid] = max(1, rtotal)
+
+/// The taste of the produce's nutriment: the plant's name, as strong as its nutriment.
+/obj/item/reagent_containers/food/snacks/grown/proc/seed_nutriment_taste()
+	var/datum/seed/S = plantname ? SSplants.seeds[plantname] : null
+	var/list/contents = seed_contents()
+	if(!S || !contents?[REAGENT_ID_NUTRIMENT])
+		return list()
+	. = list()
+	.[S.seed_name] = contents[REAGENT_ID_NUTRIMENT]
 
 /obj/item/reagent_containers/food/snacks/grown/proc/update_desc()
 	if(!seed())

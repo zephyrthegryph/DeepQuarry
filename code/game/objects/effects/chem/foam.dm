@@ -21,15 +21,18 @@ CAPABILITIES(/obj/effect/effect/foam)
 	when(nameof(dries), after_init(15 SECONDS, then(PROC_REF(harden))))
 	when(nameof(dries), after_init(12 SECONDS, then(PROC_REF(pre_harden))))
 	param(nameof(metal), pos = 1)
+	when(nameof(dries), after_init(nameof(spread_delay), then(PROC_REF(post_spread))))
 
 // ALLOW(init/INSTANCE_STATE): foam bubbles, spreads and, when it dries, hardens on timers from its creation
 /obj/effect/effect/foam/Initialize(mapload)
 	. = ..()
 	play_sfx(src, SFX_EFFECTS_BUBBLES2)
-	if(dries)
-		after(src, 3 + metal * 3, PROC_REF(post_spread))
+	spread_delay = 3 + metal * 3 // metal foam spreads slower (after_init())
 
-/obj/effect/effect/foam/proc/post_spread()
+/// How long after init it spreads (after_init()).
+/obj/effect/effect/foam/var/spread_delay = 3
+
+/obj/effect/effect/foam/proc/post_spread(datum/act/A)
 	periodic_step()
 	checkReagents()
 
