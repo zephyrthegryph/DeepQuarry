@@ -255,6 +255,14 @@ fn construction(
                     framed(output, name.as_bytes());
                     arguments(args, false, source, write, symbols, evaluator, output)?;
                 }
+                "generator" if !args.is_empty() => {
+                    // The ordinary compiler selects this reserved constructor
+                    // before named call resolution. Reuse the same argument
+                    // evaluation receipts; unknown runtime operands decline keys.
+                    output.push(3);
+                    framed(output, name.as_bytes());
+                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                }
                 "sound" | "matrix" => {
                     output.push(3);
                     framed(output, name.as_bytes());
@@ -272,6 +280,8 @@ fn construction(
 mod tests {
     use super::*;
     use dm_ir::SymbolId;
+    #[path = "generator_tokens_tests.rs"]
+    mod generator;
     struct Host;
     #[test]
     fn oracle_file_and_icon_defaults_keep_markers_and_runtime_assignments() {
@@ -435,7 +445,7 @@ mod tests {
             .iter()
             .map(|source| InitializerWrite {
                 source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::Instance {
+                target: dm_ir::InitializerTarget::Instance {
                     declaring_owner: dm_ir::SymbolId::of("/obj"),
                     receiver_owner: dm_ir::SymbolId::of("/obj"),
                     name: dm_ir::SymbolId::of("value"),
@@ -514,7 +524,7 @@ mod tests {
                     });
                     InitializerWrite {
                         source_site: dm_ir::InitializerSite::Declaration,
-            target: if *name == "global_one" {
+                        target: if *name == "global_one" {
                             dm_ir::InitializerTarget::Shared {
                                 slot: dm_ir::SymbolId::of(name),
                                 owner,
@@ -610,7 +620,7 @@ mod tests {
         for value in expressions {
             let write = InitializerWrite {
                 source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::Shared {
+                target: dm_ir::InitializerTarget::Shared {
                     slot: dm_ir::SymbolId::of("slot"),
                     owner: dm_ir::SymbolId::of("/"),
                     name: dm_ir::SymbolId::of("value"),
@@ -739,7 +749,7 @@ mod tests {
             let value = expression(source, &mut symbols);
             let write = InitializerWrite {
                 source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::Shared {
+                target: dm_ir::InitializerTarget::Shared {
                     slot: dm_ir::SymbolId::of("slot"),
                     owner: dm_ir::SymbolId::of("/"),
                     name: dm_ir::SymbolId::of("value"),
