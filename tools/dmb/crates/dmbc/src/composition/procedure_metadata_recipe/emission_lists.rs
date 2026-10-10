@@ -10,6 +10,22 @@ pub(super) struct ArgumentList {
     words: Arc<Vec<u32>>,
 }
 impl ProcedureMetadataRecipe {
+    pub(super) fn release_emission_lists(&self) -> usize {
+        let locals = self
+            .locals
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        let arguments = self
+            .arguments
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        let count = usize::from(locals.is_some()) + usize::from(arguments.is_some());
+        drop(locals);
+        drop(arguments);
+        count
+    }
     pub(crate) fn local_list(&self, first: u32, count: usize) -> Arc<Vec<u32>> {
         let mut current = self.locals.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(hit) = current
@@ -97,6 +113,40 @@ impl ProcedureMetadataRecipe {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pressure_release_rebuilds_exact_lists_and_keeps_symbolic_recipe() {
+        let mut symbols = SymbolTable::default();
+        let identity = UnitIdentity {
+            owner: symbols.intern("/").unwrap(),
+            name: symbols.intern("run").unwrap(),
+            namespace: Namespace::Proc,
+            occurrence: 0,
+        };
+        let recipe = ProcedureMetadataRecipe::capture(identity, &symbols, None).unwrap();
+        let path = recipe.path(&symbols, true).unwrap();
+        let locals = recipe.local_list(9, 2);
+        let arguments = recipe.argument_list(20, &[1, 4], vec![0x40, 0x340]);
+        let old_locals = Arc::downgrade(&locals);
+        let old_arguments = Arc::downgrade(&arguments);
+        let expected_locals = locals.as_ref().clone();
+        let expected_arguments = arguments.as_ref().clone();
+        drop(locals);
+        drop(arguments);
+        assert_eq!(recipe.release_numeric_caches(), 2);
+        assert!(old_locals.upgrade().is_none());
+        assert!(old_arguments.upgrade().is_none());
+        assert_eq!(recipe.release_numeric_caches(), 0);
+        assert!(Arc::ptr_eq(&path, &recipe.path(&symbols, true).unwrap()));
+        assert_eq!(*recipe.local_list(9, 2), expected_locals);
+        assert_eq!(
+            *recipe.argument_list(20, &[1, 4], vec![0x40, 0x340]),
+            expected_arguments
+        );
+        assert_eq!(
+            recipe.argument_list(30, &[2], vec![0x440]).as_slice(),
+            &[2, 0x440, 30, 0]
+        );
+    }
     #[test]
     fn exact_numeric_inputs_reuse_and_each_dependency_invalidates() {
         let mut symbols = SymbolTable::default();

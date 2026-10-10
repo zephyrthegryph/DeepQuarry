@@ -26,15 +26,15 @@ pub(super) fn memo_statistics(
         "parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),
         "recomputed":memo.counts.recomputed.load(Relaxed),
         "pending_dropped":memo.counts.pending_dropped.load(Relaxed),
-        "published_records":memo.counts.published_records.load(Relaxed),
-        "publication_failed":memo.counts.publication_failed.load(Relaxed),
+        "staged_records":memo.counts.staged_records.load(Relaxed),
+        "staging_failed":memo.counts.staging_failed.load(Relaxed),
         "key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,
         "lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,
         "occurrence_reads_seconds":memo.counts.occurrence_reads_ns.load(Relaxed) as f64 / 1e9,
         "explanation_seconds":memo.counts.explanation_ns.load(Relaxed) as f64 / 1e9,
         "encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,
-        "publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,
-        "errors":memo.publication_errors()
+        "staging_wall_seconds":memo.counts.staging_ns.load(Relaxed) as f64 / 1e9,
+        "staging_errors":memo.staging_errors()
     })
 }
 pub(super) struct FrontendReport {

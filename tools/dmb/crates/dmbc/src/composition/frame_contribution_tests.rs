@@ -274,3 +274,54 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
     assert!(matches!(error, CompositionError::Unsupported(_)));
     assert!(model.lists.len() > before);
 }
+
+#[test]
+fn pressure_release_recomputes_identical_frame_output() {
+    use std::sync::Arc;
+    let (mut batch, _) = ownership_fixture_source("/proc/pressure_probe()\n    return 1\n");
+    batch.units[0].lowered.frame.local_count = 1;
+    batch.units[0].lowered.frame.local_names = vec!["pressure_local".into()];
+    let baseline =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let emit = |model: &mut Dmb| {
+        let mut index = StringIndex::build(model).unwrap();
+        frame_contribution::emit(
+            model,
+            &mut index,
+            &batch.units[0],
+            Arc::new(vec![1]),
+            procedure_plan::ProcedureMetadata {
+                declared: Some(true),
+                path: Ok(Arc::from("/proc/pressure_probe")),
+                default_display: Ok(Arc::from("pressure probe")),
+                value_sources: Vec::new(),
+            },
+            true,
+        )
+        .unwrap();
+    };
+    let mut expected = baseline.clone();
+    emit(&mut expected);
+    let weak = {
+        let cache = batch.units[0].metadata_recipe.frame_owner().lock().unwrap();
+        Arc::downgrade(cache.as_ref().unwrap())
+    };
+    assert!(batch.units[0].metadata_recipe.release_numeric_caches() >= 1);
+    assert!(weak.upgrade().is_none());
+    assert!(batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .is_none());
+    assert_eq!(batch.units[0].metadata_recipe.release_numeric_caches(), 0);
+    let mut rebuilt = baseline;
+    emit(&mut rebuilt);
+    assert_eq!(rebuilt, expected);
+    assert!(batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .is_some());
+}

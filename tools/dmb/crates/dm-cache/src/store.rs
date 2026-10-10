@@ -190,19 +190,59 @@ impl Cache {
             drop(file);
             // On Windows rename never replaces an existing destination. A competing
             // identical publisher may win; compare exact bytes before accepting it.
-            match fs::rename(&temporary, &destination) {
-                Ok(()) => Ok(id),
-                Err(error) => {
-                    if destination.exists() && fs::read(&destination)? == bytes {
-                        Ok(id)
-                    } else {
-                        Err(CacheError::Io(error))
-                    }
-                }
-            }
+            self.publish_staged_file(id, &temporary, extension)
         })();
         let _ = fs::remove_file(&temporary);
         result
+    }
+    pub(crate) fn publish_staged_file(
+        &self,
+        id: u128,
+        temporary: &Path,
+        extension: &str,
+    ) -> Result<u128, CacheError> {
+        let destination = self.root.join(format!("{id:032x}.{extension}"));
+        let same = || -> Result<bool, CacheError> {
+            use std::io::Read;
+            let mut a = fs::File::open(temporary)?;
+            let mut b = fs::File::open(&destination)?;
+            if a.metadata()?.len() != b.metadata()?.len() {
+                return Ok(false);
+            }
+            let mut left = a.metadata()?.len();
+            let mut ab = [0; 65536];
+            let mut bb = [0; 65536];
+            while left != 0 {
+                let n = left.min(ab.len() as u64) as usize;
+                a.read_exact(&mut ab[..n])?;
+                b.read_exact(&mut bb[..n])?;
+                if ab[..n] != bb[..n] {
+                    return Ok(false);
+                }
+                left -= n as u64;
+            }
+            Ok(true)
+        };
+        if destination.exists() {
+            return if same()? {
+                Ok(id)
+            } else {
+                Err(CacheError::Invalid(
+                    "segment content identity collision".into(),
+                ))
+            };
+        }
+        match fs::rename(temporary, &destination) {
+            Ok(()) => Ok(id),
+            Err(error) if destination.exists() => {
+                if same()? {
+                    Ok(id)
+                } else {
+                    Err(CacheError::Io(error))
+                }
+            }
+            Err(error) => Err(CacheError::Io(error)),
+        }
     }
     /// `live` is an explicit caller-selected record roster. This
     /// neutral storage layer does not invent session or payload dependency rules.
@@ -242,6 +282,9 @@ impl Cache {
     }
 }
 impl CacheSnapshot {
+    pub fn batch_spool(&self) -> Result<crate::BatchSpool, CacheError> {
+        self.writer.batch_spool()
+    }
     /// Append through the captured writer without mutating this mapped snapshot.
     /// Used only to flush bounded population queues when no callback was supplied.
     pub fn publish(&self, records: &[Record]) -> Result<u128, CacheError> {

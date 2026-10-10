@@ -3,6 +3,7 @@
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
 mod declaration_syntax;
+mod cache_batch;
 mod dmb_image;
 mod effective_metadata;
 pub(crate) mod initializer_artifacts;

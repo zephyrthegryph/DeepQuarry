@@ -469,13 +469,13 @@ fn procedure_memo_publisher_flushes_small_bounded_batches_without_dropping_popul
     );
     assert_eq!(
         memo.counts
-            .publication_failed
+            .staging_failed
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
     assert!(
         memo.counts
-            .published_records
+            .staged_records
             .load(std::sync::atomic::Ordering::Relaxed)
             > 0
     );

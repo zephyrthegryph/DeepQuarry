@@ -1,11 +1,14 @@
 //! Request-local disk access. Resident acceptance does not open or scan the cache.
+#[path = "lazy_disk_batch.rs"]
+mod batch;
 use std::{
     path::PathBuf,
-    sync::{Arc, OnceLock},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 pub struct LazyDisk {
     root: Option<PathBuf>,
+    batch: Mutex<batch::State>,
     writer: OnceLock<Result<Arc<dm_cache::Cache>, String>>,
     snapshot: OnceLock<Option<Arc<dm_cache::CacheSnapshot>>>,
 }
@@ -17,6 +20,7 @@ impl LazyDisk {
     pub fn new(root: PathBuf) -> Self {
         Self {
             root: Some(root),
+            batch: Mutex::new(batch::State::Dormant),
             writer: OnceLock::new(),
             snapshot: OnceLock::new(),
         }
@@ -24,6 +28,7 @@ impl LazyDisk {
     pub fn from_snapshot(snapshot: Arc<dm_cache::CacheSnapshot>) -> Self {
         Self {
             root: None,
+            batch: Mutex::new(batch::State::Dormant),
             writer: OnceLock::new(),
             snapshot: OnceLock::from(Some(snapshot)),
         }

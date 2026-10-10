@@ -1,4 +1,4 @@
-//! Shared request-owned pending publication used by rich and frozen completion records.
+//! Shared request-owned pending staging used by rich and frozen completion records.
 use super::*;
 #[derive(Clone)]
 pub(crate) struct DiskWriter {
@@ -7,7 +7,7 @@ pub(crate) struct DiskWriter {
     counts: Arc<MemoCounts>,
     limits: MemoLimits,
     publisher: Option<Arc<CachePublisher>>,
-    publication_errors: Arc<Mutex<Vec<String>>>,
+    staging_errors: Arc<Mutex<Vec<String>>>,
 }
 impl DiskWriter {
     pub(super) fn from_memo(memo: &ProcedureMemo) -> Self {
@@ -17,7 +17,7 @@ impl DiskWriter {
             counts: Arc::clone(&memo.counts),
             limits: memo.limits,
             publisher: memo.publisher.clone(),
-            publication_errors: Arc::clone(&memo.publication_errors),
+            staging_errors: Arc::clone(&memo.staging_errors),
         }
     }
     pub(crate) fn queue_compact(
@@ -47,11 +47,9 @@ impl DiskWriter {
     }
     pub(super) fn wire_error(&self, message: &str) {
         self.counts.unsupported_disk.fetch_add(1, Ordering::Relaxed);
-        self.counts
-            .publication_failed
-            .fetch_add(1, Ordering::Relaxed);
+        self.counts.staging_failed.fetch_add(1, Ordering::Relaxed);
         let mut errors = self
-            .publication_errors
+            .staging_errors
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         if errors.len() < 8 {
@@ -67,9 +65,9 @@ impl DiskWriter {
             None => self
                 .disk
                 .as_ref()
-                .ok_or_else(|| "cache publication has no captured writer".to_owned())
+                .ok_or_else(|| "cache staging has no captured writer".to_owned())
                 .and_then(|disk| {
-                    disk.publish(&records)
+                    disk.append_records(records)
                         .map(|_| ())
                         .map_err(|error| error.to_string())
                 }),
@@ -77,15 +75,15 @@ impl DiskWriter {
         match outcome {
             Ok(()) => {
                 self.counts
-                    .published_records
+                    .staged_records
                     .fetch_add(count as u64, Ordering::Relaxed);
             }
             Err(message) => {
                 self.counts
-                    .publication_failed
+                    .staging_failed
                     .fetch_add(count as u64, Ordering::Relaxed);
                 let mut errors = self
-                    .publication_errors
+                    .staging_errors
                     .lock()
                     .unwrap_or_else(|error| error.into_inner());
                 if errors.len() < 8 {
@@ -93,7 +91,7 @@ impl DiskWriter {
                 }
             }
         }
-        self.counts.publication_ns.fetch_add(
+        self.counts.staging_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
         );

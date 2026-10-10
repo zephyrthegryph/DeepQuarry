@@ -349,19 +349,14 @@ fn run_build_attempt(
     } else {
         None
     };
-    // The shared handle stays unopened until resident fallback or computed publication.
+    let _cache_batch_attempt = memo_cache.as_ref().map(|cache| cache.batch_attempt());
+    // The shared handle stays unopened until resident fallback or computed staging.
     let cache_snapshot = memo_cache.clone();
     let cache_publisher: Option<Arc<dmbc::lowering_memo::CachePublisher>> =
         memo_cache.as_ref().map(|cache| {
             let cache = Arc::clone(cache);
-            Arc::new(move |records: Vec<dm_cache::Record>| {
-                let mut sink = cache.writer()?.publish_sink(8 * 1024 * 1024);
-                for record in records {
-                    sink.push(record).map_err(|error| error.to_string())?;
-                }
-                sink.finish().map_err(|error| error.to_string())?;
-                Ok(())
-            }) as Arc<dmbc::lowering_memo::CachePublisher>
+            Arc::new(move |records: Vec<dm_cache::Record>| cache.append_records(records))
+                as Arc<dmbc::lowering_memo::CachePublisher>
         });
     let procedure_memo = host
         .procedure_memo(memo_policy, cache_snapshot.clone())
@@ -760,33 +755,34 @@ fn run_build_attempt(
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
-            publish_cache_records(cache, records)?;
+            publish_cache_records(cache, records);
             use std::sync::atomic::Ordering::Relaxed;
             dmbc::daemon_eprintln!("native retention: policy={:032x} host={}", memo.policy, retention_status);
             dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} resident_dropped={} retention={:?} recomputed={} unsupported_disk={}",
                 memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
                 memo.counts.resident_dropped.load(Relaxed), memo.resident_retention(),
                 memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
-            let errors = memo.publication_errors();
+            let errors = memo.staging_errors();
             if !errors.is_empty() {
-                return Err(format!("cache population failed: {}", errors.join("; ")).into());
+                dmbc::daemon_eprintln!("cache population skipped: {}", errors.join("; "));
             }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &expansion_memo) {
-            publish_cache_records(cache, memo.take_pending())?;
-            let errors = memo.publication_errors();
+            publish_cache_records(cache, memo.take_pending());
+            let errors = memo.staging_errors();
             if !errors.is_empty() {
-                return Err(
-                    format!("expansion cache population failed: {}", errors.join("; ")).into(),
-                );
+                dmbc::daemon_eprintln!("expansion cache population skipped: {}", errors.join("; "));
             }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &map_memo) {
-            publish_cache_records(cache, memo.take_pending())?;
-            let errors = memo.publication_errors();
+            publish_cache_records(cache, memo.take_pending());
+            let errors = memo.staging_errors();
             if !errors.is_empty() {
-                return Err(format!("map cache population failed: {}", errors.join("; ")).into());
+                dmbc::daemon_eprintln!("map cache population skipped: {}", errors.join("; "));
             }
+        }
+        if let Some(cache) = &memo_cache {
+            dmbc::heap_census::emit_if_enabled("cache_batch.staged", |census| census.cache_batch(cache))?;
         }
         drop(cache_flush_profile);
         let publication_started = Instant::now();
@@ -872,19 +868,38 @@ fn run_build_attempt(
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         drop(publication_profile);
         let _finalization_profile = dm_profile::stage("request.finalization");
+        let store_path = std::fs::canonicalize(store.root_path())?;
+        // Required compile, freshness, pair installation and session operations
+        // succeeded. The sole cache segment is published only at this boundary.
+        dmbc::daemon::control::checkpoint()?;
+        let cache_batch_stats = memo_cache.as_ref().map(|cache| match cache.finish_batch() {
+            Ok(report) => serde_json::json!({
+                "segment": report.segment.map(|id| format!("{id:032x}")),
+                "committed_records": report.records,
+                "committed_variants": report.variants,
+                "status": "completed",
+                "scope": "one_request_completed_batch",
+            }),
+            Err(error) => {
+                dmbc::daemon_eprintln!("native cache publication skipped: {error}");
+                serde_json::json!({"segment":null,"committed_records":0,
+                    "committed_variants":0,"status":"failed","error":error,
+                    "scope":"one_request_completed_batch"})
+            }
+        });
         let memo_stats = procedure_memo.as_ref()
             .map(|memo| runner_report::memo_statistics(memo, &retention_status));
         let expansion_stats = expansion_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"candidates":memo.candidates.load(Relaxed),"stored":memo.stored.load(Relaxed),"dropped":memo.dropped.load(Relaxed),"published_records":memo.published_records.load(Relaxed),"publication_failed":memo.publication_failed.load(Relaxed),"publication_seconds":memo.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
+            serde_json::json!({"candidates":memo.candidates.load(Relaxed),"stored":memo.stored.load(Relaxed),"dropped":memo.dropped.load(Relaxed),"staged_records":memo.staged_records.load(Relaxed),"staging_failed":memo.staging_failed.load(Relaxed),"staging_wall_seconds":memo.staging_ns.load(Relaxed) as f64 / 1e9,"staging_errors":memo.staging_errors()})
         });
         let map_stats = map_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"output_hits":memo.counts.output_hits.load(Relaxed),"outputs_prepared":memo.counts.outputs_prepared.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"errors":memo.publication_errors()})
+            serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"output_hits":memo.counts.output_hits.load(Relaxed),"outputs_prepared":memo.counts.outputs_prepared.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"staged_records":memo.counts.staged_records.load(Relaxed),"staging_failed":memo.counts.staging_failed.load(Relaxed),"staging_errors":memo.staging_errors()})
         });
         let declaration_stats = frontend_report.declaration_reuse;
         dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
-        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) {
             dmbc::daemon_eprintln!("native telemetry skipped: {error}");
         }
@@ -901,7 +916,6 @@ fn run_build_attempt(
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
-        let store_path = std::fs::canonicalize(store.root_path())?;
         query_attempt.finish_published(&pair);
         return Ok(BuildOutcome::Published {
             pair,

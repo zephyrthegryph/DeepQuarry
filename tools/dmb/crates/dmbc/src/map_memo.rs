@@ -36,8 +36,8 @@ pub struct Counts {
     pub skipped_budget: AtomicU64,
     pub disk_admitted: AtomicU64,
     pub skipped_disk_budget: AtomicU64,
-    pub published_records: AtomicU64,
-    pub publication_failed: AtomicU64,
+    pub staged_records: AtomicU64,
+    pub staging_failed: AtomicU64,
 }
 struct ParseEntry {
     key: Arc<[u8]>,
@@ -67,7 +67,7 @@ pub struct MapMemo {
     resident: Mutex<Resident>,
     read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
-    publication_errors: Mutex<Vec<String>>,
+    staging_errors: Mutex<Vec<String>>,
     pub counts: Counts,
 }
 impl MapMemo {
@@ -75,6 +75,16 @@ impl MapMemo {
         match version {
             3 => wire::validate_parse(bytes),
             4 => wire::validate_geometry(bytes),
+            5 | 6 => {
+                for payload in dm_cache::decode_variants(bytes)? {
+                    if version == 5 {
+                        wire::validate_parse(payload)?;
+                    } else {
+                        wire::validate_geometry(payload)?;
+                    }
+                }
+                Ok(())
+            }
             _ => Err("unsupported map memo version".into()),
         }
     }
@@ -89,7 +99,7 @@ impl MapMemo {
             resident: Mutex::new(Resident::default()),
             read_only_disk: false,
             publisher: None,
-            publication_errors: Mutex::new(Vec::new()),
+            staging_errors: Mutex::new(Vec::new()),
             counts: Counts::default(),
         }
     }
@@ -114,7 +124,7 @@ impl MapMemo {
         memo
     }
     /// One map record per bounded callback; the host may batch these records in
-    /// its PublishSink. Publication never holds the resident mutex.
+    /// its request batch spool. Staging never holds the resident mutex.
     /// Hydrate existing records without encoding/populating this disk store.
     pub fn with_read_only_disk(mut self) -> Self {
         self.read_only_disk = true;
@@ -125,19 +135,17 @@ impl MapMemo {
         self
     }
     fn record_error(&self, message: String) {
-        self.counts
-            .publication_failed
-            .fetch_add(1, Ordering::Relaxed);
+        self.counts.staging_failed.fetch_add(1, Ordering::Relaxed);
         let mut errors = self
-            .publication_errors
+            .staging_errors
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         if errors.len() < 8 {
             errors.push(message.chars().take(512).collect());
         }
     }
-    pub fn publication_errors(&self) -> Vec<String> {
-        self.publication_errors
+    pub fn staging_errors(&self) -> Vec<String> {
+        self.staging_errors
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone()
@@ -145,7 +153,7 @@ impl MapMemo {
     fn record_key(key: &[u8], geometry: bool) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: 3,
-            version: if geometry { 4 } else { 3 },
+            version: if geometry { 6 } else { 5 },
             content: xxhash_rust::xxh3::xxh3_128(key),
         }
     }
@@ -160,16 +168,20 @@ impl MapMemo {
             Self::record_key(key, geometry),
             |bytes, _| {
                 *issued.borrow_mut() = None;
-                let candidate = admit(bytes)?;
-                let accepted = candidate.is_some();
-                *issued.borrow_mut() = candidate;
-                Ok(accepted)
+                Self::validate_cache_payload(Self::record_key(key, geometry).version, bytes)?;
+                for payload in dm_cache::decode_variants(bytes)?.into_iter().rev() {
+                    if let Some(candidate) = admit(payload)? {
+                        *issued.borrow_mut() = Some(candidate);
+                        return Ok(true);
+                    }
+                }
+                Ok(false)
             },
         )?;
         issued.into_inner().map(|value| (value, view.payload.len()))
     }
     /// Charge an intentionally conservative multiple of serialized bytes for
-    /// typed Arc/vector backing. Disk publication flushes bounded queues independently.
+    /// typed Arc/vector backing. Disk staging drains bounded queues into the request batch.
     /// Evict existing resident entries to make room; oversized entries remain disk-only.
     fn reserve(&self, state: &mut Resident, payload: usize, key: usize) -> bool {
         let Some(cost) = payload
@@ -178,7 +190,7 @@ impl MapMemo {
         else {
             return false;
         };
-        // Oversized values are published without retaining another typed copy.
+        // Oversized values are staged without retaining another typed copy.
         if cost > self.budget {
             return false;
         }
@@ -201,6 +213,13 @@ impl MapMemo {
         if self.read_only_disk {
             return;
         }
+        let bytes = match dm_cache::encode_variants(&[bytes]) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(error);
+                return;
+            }
+        };
         if let Some(publisher) = &self.publisher {
             let record = dm_cache::Record {
                 key: Self::record_key(key, geometry),
@@ -210,16 +229,12 @@ impl MapMemo {
             self.counts.disk_admitted.fetch_add(1, Ordering::Relaxed);
             match publisher(vec![record]) {
                 Ok(()) => {
-                    self.counts
-                        .published_records
-                        .fetch_add(1, Ordering::Relaxed);
+                    self.counts.staged_records.fetch_add(1, Ordering::Relaxed);
                 }
                 Err(message) => {
-                    self.counts
-                        .publication_failed
-                        .fetch_add(1, Ordering::Relaxed);
+                    self.counts.staging_failed.fetch_add(1, Ordering::Relaxed);
                     let mut errors = self
-                        .publication_errors
+                        .staging_errors
                         .lock()
                         .unwrap_or_else(|e| e.into_inner());
                     if errors.len() < 8 {
@@ -248,15 +263,15 @@ impl MapMemo {
                 Ok(batches) => {
                     for records in batches {
                         let count = records.len() as u64;
-                        match disk.publish(&records) {
+                        match disk.append_records(records) {
                             Ok(_) => {
                                 self.counts
-                                    .published_records
+                                    .staged_records
                                     .fetch_add(count, Ordering::Relaxed);
                             }
                             Err(error) => {
                                 self.counts
-                                    .publication_failed
+                                    .staging_failed
                                     .fetch_add(count.saturating_sub(1), Ordering::Relaxed);
                                 self.record_error(error.to_string());
                             }
@@ -575,7 +590,7 @@ mod tests {
         memo.project(&[plan], defaults(), &Host { mob: false })
             .unwrap();
         assert_eq!(published.lock().unwrap().len(), 2);
-        assert_eq!(memo.counts.published_records.load(Ordering::Relaxed), 2);
+        assert_eq!(memo.counts.staged_records.load(Ordering::Relaxed), 2);
         assert_eq!(memo.counts.skipped_disk_budget.load(Ordering::Relaxed), 0);
         assert!(memo.take_pending().is_empty());
     }
@@ -585,9 +600,9 @@ mod tests {
         for occurrence in 0..12 {
             memo.parse(input(occurrence)).unwrap();
         }
-        assert_eq!(memo.counts.publication_failed.load(Ordering::Relaxed), 12);
-        assert_eq!(memo.publication_errors().len(), 8);
-        assert_eq!(memo.counts.published_records.load(Ordering::Relaxed), 0);
+        assert_eq!(memo.counts.staging_failed.load(Ordering::Relaxed), 12);
+        assert_eq!(memo.staging_errors().len(), 8);
+        assert_eq!(memo.counts.staged_records.load(Ordering::Relaxed), 0);
     }
     #[test]
     fn map_hits_rebind_occurrences_and_validate_every_geometry_read() {

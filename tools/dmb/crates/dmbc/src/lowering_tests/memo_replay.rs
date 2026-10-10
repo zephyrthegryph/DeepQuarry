@@ -148,17 +148,18 @@ fn procedure_memo_reuses_resident_and_disk_and_rebases_shifted_origins() {
     assert_eq!(
         bounded
             .counts
-            .published_records
+            .staged_records
             .load(std::sync::atomic::Ordering::Relaxed),
         2
     );
     assert_eq!(
         bounded
             .counts
-            .publication_failed
+            .staging_failed
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
+    bounded.finish_test_batch().unwrap();
     let flushed =
         crate::lowering_memo::ProcedureMemo::with_disk(11, bounded_cache.snapshot().unwrap());
     let replayed = lower_frontend_with_memo(

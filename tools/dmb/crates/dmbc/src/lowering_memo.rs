@@ -22,8 +22,8 @@ pub struct MemoCounts {
     pub unsupported_disk: AtomicU64,
     pub pending_dropped: AtomicU64,
     pub resident_dropped: AtomicU64,
-    pub published_records: AtomicU64,
-    pub publication_failed: AtomicU64,
+    pub staged_records: AtomicU64,
+    pub staging_failed: AtomicU64,
     /// Key preparation includes current parse and ABI input preparation.
     pub key_preparation_ns: AtomicU64,
     pub issued_preparations: AtomicU64,
@@ -32,9 +32,9 @@ pub struct MemoCounts {
     pub lookup_ns: AtomicU64,
     pub occurrence_reads_ns: AtomicU64,
     pub explanation_ns: AtomicU64,
-    /// Supported result wire creation, excluding publication IO.
+    /// Supported result wire creation, excluding staging IO.
     pub encode_ns: AtomicU64,
-    pub publication_ns: AtomicU64,
+    pub staging_ns: AtomicU64,
 }
 const PENDING_LIMIT: usize = 64 * 1024 * 1024;
 const RESIDENT_LIMIT: usize = dm_session::DEFAULT_RESIDENT_BYTES;
@@ -86,7 +86,7 @@ pub struct ProcedureMemo {
     explanations: Mutex<BTreeMap<dm_ir::ProcedureIdentity, MemoExplanation>>,
     read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
-    publication_errors: Arc<Mutex<Vec<String>>>,
+    staging_errors: Arc<Mutex<Vec<String>>>,
     explanation_limit: usize,
 }
 pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + Send + Sync;
@@ -169,7 +169,7 @@ impl ProcedureMemo {
         self.explanation_limit = limit.min(131072);
         self
     }
-    /// Request-owned publication; IO happens outside the pending lock. Failure
+    /// Request-owned staging; IO happens outside the pending lock. Failure
     /// affects cache availability only and is observable through counts/errors.
     /// Hydrate existing records without encoding/populating this disk store.
     pub fn with_read_only_disk(mut self) -> Self {
@@ -183,8 +183,8 @@ impl ProcedureMemo {
     fn wire_error(&self, message: &str) {
         DiskWriter::from_memo(self).wire_error(message);
     }
-    pub fn publication_errors(&self) -> Vec<String> {
-        self.publication_errors
+    pub fn staging_errors(&self) -> Vec<String> {
+        self.staging_errors
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .clone()
@@ -236,7 +236,7 @@ impl ProcedureMemo {
             explanations: Mutex::new(BTreeMap::new()),
             read_only_disk: false,
             publisher: None,
-            publication_errors: Arc::new(Mutex::new(Vec::new())),
+            staging_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
         }
     }
@@ -289,7 +289,7 @@ impl ProcedureMemo {
             explanations: Mutex::new(BTreeMap::new()),
             read_only_disk: false,
             publisher: None,
-            publication_errors: Arc::new(Mutex::new(Vec::new())),
+            staging_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
         }
     }
@@ -540,6 +540,13 @@ impl ProcedureMemo {
         DiskWriter::from_memo(self).queue_payload(key, payload);
     }
     /// Publish once per build; never create one physical segment per procedure.
+    #[cfg(test)]
+    pub(crate) fn finish_test_batch(&self) -> Result<dm_cache::BatchReport, String> {
+        self.disk
+            .as_ref()
+            .ok_or("memo has no disk batch")?
+            .finish_batch()
+    }
     pub fn take_pending(&self) -> Vec<dm_cache::Record> {
         self.pending
             .lock()
@@ -581,7 +588,7 @@ impl ProcedureMemo {
     ) {
         if self.resident_retention == ResidentRetention::DiskOnly {
             // Avoid weight serialization and RichIR clone for a request-local
-            // cache. Disk publication occurred independently before this call.
+            // cache. Disk staging occurred independently before this call.
             return;
         }
         let _profile = dm_profile::item("lowering.resident_store");

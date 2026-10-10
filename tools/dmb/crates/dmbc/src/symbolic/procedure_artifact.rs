@@ -64,7 +64,9 @@ impl Contribution {
 impl ReusableProcedureArtifact {
     pub(crate) fn release_bound_images(&self) -> usize {
         self.helpers.iter().fold(
-            self.image_owner.release_bound_images(),
+            self.image_owner
+                .release_bound_images()
+                .saturating_add(self.metadata_recipe.release_numeric_caches()),
             |released, helper| released.saturating_add(helper.image_owner.release_bound_images()),
         )
     }

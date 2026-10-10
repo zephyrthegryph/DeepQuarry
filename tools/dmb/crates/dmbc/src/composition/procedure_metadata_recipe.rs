@@ -15,6 +15,18 @@ pub(crate) struct ProcedureMetadataRecipe {
     arguments: std::sync::Mutex<Option<emission_lists::ArgumentList>>,
 }
 impl ProcedureMetadataRecipe {
+    /// Retire disposable numeric bindings while keeping symbolic admission inputs.
+    /// The return value counts populated cache slots, not freed bytes or RSS.
+    pub(crate) fn release_numeric_caches(&self) -> usize {
+        let frame = self
+            .frame
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        let count = usize::from(frame.is_some());
+        drop(frame);
+        count + self.release_emission_lists()
+    }
     pub(crate) fn capture(
         identity: UnitIdentity,
         symbols: &SymbolTable,

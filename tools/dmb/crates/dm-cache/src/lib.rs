@@ -16,3 +16,6 @@ pub use sink::{PublishReport, PublishSink};
 
 mod pending;
 pub use pending::PendingRecords;
+
+mod batch;
+pub use batch::{BatchReport, BatchSpool, BatchStorageView};

@@ -15,11 +15,11 @@ pub struct DiskExpansionMemo {
     pending: Mutex<dm_cache::PendingRecords>,
     read_only_disk: bool,
     publisher: Option<Arc<crate::lowering_memo::CachePublisher>>,
-    publication_errors: Mutex<Vec<String>>,
+    staging_errors: Mutex<Vec<String>>,
     recent: Mutex<(usize, BTreeMap<dm_cache::RecordKey, Vec<dm_cache::Record>>)>,
-    pub published_records: AtomicU64,
-    pub publication_failed: AtomicU64,
-    pub publication_ns: AtomicU64,
+    pub staged_records: AtomicU64,
+    pub staging_failed: AtomicU64,
+    pub staging_ns: AtomicU64,
     pub candidates: AtomicU64,
     pub stored: AtomicU64,
     pub dropped: AtomicU64,
@@ -38,11 +38,11 @@ impl DiskExpansionMemo {
             disk,
             read_only_disk: false,
             publisher: None,
-            publication_errors: Mutex::new(Vec::new()),
+            staging_errors: Mutex::new(Vec::new()),
             recent: Mutex::new((0, BTreeMap::new())),
-            published_records: AtomicU64::new(0),
-            publication_failed: AtomicU64::new(0),
-            publication_ns: AtomicU64::new(0),
+            staged_records: AtomicU64::new(0),
+            staging_failed: AtomicU64::new(0),
+            staging_ns: AtomicU64::new(0),
             pending: Mutex::new(dm_cache::PendingRecords::default()),
             candidates: AtomicU64::new(0),
             stored: AtomicU64::new(0),
@@ -60,17 +60,17 @@ impl DiskExpansionMemo {
         self
     }
     fn record_error(&self, message: String) {
-        self.publication_failed.fetch_add(1, Ordering::Relaxed);
+        self.staging_failed.fetch_add(1, Ordering::Relaxed);
         let mut errors = self
-            .publication_errors
+            .staging_errors
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         if errors.len() < 8 {
             errors.push(message.chars().take(512).collect());
         }
     }
-    pub fn publication_errors(&self) -> Vec<String> {
-        self.publication_errors
+    pub fn staging_errors(&self) -> Vec<String> {
+        self.staging_errors
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone()
@@ -127,18 +127,18 @@ impl DiskExpansionMemo {
             Some(publisher) => publisher(records),
             None => self
                 .disk
-                .publish(&records)
+                .append_records(records)
                 .map(|_| ())
                 .map_err(|error| error.to_string()),
         };
         match outcome {
             Ok(()) => {
-                self.published_records.fetch_add(count, Ordering::Relaxed);
+                self.staged_records.fetch_add(count, Ordering::Relaxed);
             }
             Err(error) => {
-                self.publication_failed.fetch_add(count, Ordering::Relaxed);
+                self.staging_failed.fetch_add(count, Ordering::Relaxed);
                 let mut errors = self
-                    .publication_errors
+                    .staging_errors
                     .lock()
                     .unwrap_or_else(|e| e.into_inner());
                 if errors.len() < 8 {
@@ -146,7 +146,7 @@ impl DiskExpansionMemo {
                 }
             }
         }
-        self.publication_ns.fetch_add(
+        self.staging_ns.fetch_add(
             started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
         );
@@ -421,10 +421,10 @@ mod tests {
         fill(&memo);
         memo.flush_pending();
         assert_eq!(memo.pending_bytes(), 0);
-        assert_eq!(memo.published_records.load(Ordering::Relaxed), 1);
+        assert_eq!(memo.staged_records.load(Ordering::Relaxed), 1);
         assert_eq!(seen.load(Ordering::Relaxed), 1);
         assert!(!memo.recent_payloads(memo.key(9)).is_empty());
-        assert!(memo.publication_errors().is_empty());
+        assert!(memo.staging_errors().is_empty());
     }
     #[test]
     fn read_only_disk_hydrates_resident_without_population_and_preserves_normal_writer() {
@@ -447,7 +447,8 @@ mod tests {
         assert!(!writer.pending.lock().unwrap().is_empty());
         // Force the ordinary bounded flush; its existing snapshot fallback writes.
         writer.flush_pending();
-        assert!(writer.published_records.load(Ordering::Relaxed) > 0);
+        writer.disk.finish_batch().unwrap();
+        assert!(writer.staged_records.load(Ordering::Relaxed) > 0);
         let reader = DiskExpansionMemo::new(1, cache.snapshot().unwrap()).with_read_only_disk();
         let host = crate::runner_host::BuildHost::default();
         let view = host.expansion_memo(Some(&reader)).unwrap();
@@ -461,20 +462,20 @@ mod tests {
         reader.insert(Arc::clone(first.receipts[0].record()));
         assert!(reader.take_pending().is_empty());
         assert_eq!(reader.stored.load(Ordering::Relaxed), 0);
-        assert_eq!(reader.published_records.load(Ordering::Relaxed), 0);
-        assert!(reader.publication_errors().is_empty());
+        assert_eq!(reader.staged_records.load(Ordering::Relaxed), 0);
+        assert!(reader.staging_errors().is_empty());
     }
     #[test]
-    fn expansion_stream_publication_failure_is_reported() {
+    fn expansion_stream_staging_failure_is_reported() {
         let memo = memo("failure").with_publisher(Arc::new(|_| Err("injected failure".into())));
         fill(&memo);
         memo.flush_pending();
-        assert_eq!(memo.publication_failed.load(Ordering::Relaxed), 1);
-        assert_eq!(memo.publication_errors(), vec!["injected failure"]);
-        assert_eq!(memo.published_records.load(Ordering::Relaxed), 0);
+        assert_eq!(memo.staging_failed.load(Ordering::Relaxed), 1);
+        assert_eq!(memo.staging_errors(), vec!["injected failure"]);
+        assert_eq!(memo.staged_records.load(Ordering::Relaxed), 0);
     }
     #[test]
-    fn singleton_publication_preserves_six_macro_contexts_and_parser_enrichment() {
+    fn singleton_staging_preserves_six_macro_contexts_and_parser_enrichment() {
         struct Source(u8);
         impl dm_preprocess::SourceProvider for Source {
             fn read(&self, path: &std::path::Path) -> Result<String, String> {
