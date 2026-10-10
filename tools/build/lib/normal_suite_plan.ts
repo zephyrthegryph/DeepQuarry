@@ -106,9 +106,26 @@ export function bindNormalPlan(current: IssuedNormalInventory, previous: IssuedN
 export function bindSuitePlan(current: IssuedSuiteInventory, previous: IssuedSuiteInventory): IssuedSuiteInventory {
   suiteBatches(current, 1); suiteBatches(previous, 1);
   if (current.tier !== previous.tier) throw new Error('captured suite tier differs');
-  const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every(name => b.includes(name));
+  const sameSet = (a: string[], b: string[]) => {
+    const members = new Set(b);
+    return a.length === b.length && a.every(name => members.has(name));
+  };
   if (!sameSet(current.eligible, previous.eligible) || !sameSet(current.automaticRows, previous.automaticRows)) {
     throw new Error('captured normal plan does not match current runtime inventory');
+  }
+  // Eligibility is itself compiled behavior. Equal selected names cannot hide
+  // a changed abstract/focus classification or a different omitted tier roster.
+  if (!sameSet(current.excluded.map(row => JSON.stringify([row.name, row.reason])),
+    previous.excluded.map(row => JSON.stringify([row.name, row.reason])))) {
+    throw new Error('captured suite exclusions differ from current runtime inventory');
+  }
+  // Historical normal inventories did not issue pre-tier coverage. They remain
+  // usable for a selected-test comparison, never proof of full tier coverage.
+  if (current.preTierCount !== undefined && previous.preTierCount !== undefined
+    && (current.preTierCount !== previous.preTierCount
+    || !sameSet((current.tierExcluded ?? []).map(row => JSON.stringify([row.name, row.tier])),
+      (previous.tierExcluded ?? []).map(row => JSON.stringify([row.name, row.tier]))))) {
+    throw new Error('captured suite pre-tier coverage differs from current runtime inventory');
   }
   return { ...current, eligible: [...previous.eligible], automaticRows: [...previous.automaticRows] };
 }

@@ -42,6 +42,20 @@ describe('runtime-issued normal inventory', () => {
     expect(() => exactNormalUnion(one, [])).toThrow('incomplete');
     expect(() => normalSuiteBatches({ ...one, eligible: [...one.eligible, ...one.eligible] }, 1)).toThrow('duplicate');
   });
+  test('same selected tests cannot conceal different exclusions or pre-tier membership', () => {
+    expect(() => bindNormalPlan({ ...inventory, excluded: [{ ...inventory.excluded[0], reason: 'focus_only' }] }, inventory))
+      .toThrow('exclusions differ');
+    expect(() => bindNormalPlan({ ...inventory, excluded: [{ name: '/datum/unit_test/other_base', reason: 'abstract' }] }, inventory))
+      .toThrow('exclusions differ');
+    const exhaustive: IssuedSuiteInventory = { ...inventory, tier: 'exhaustive', preTierCount: 5,
+      tierExcluded: [{ name: '/datum/unit_test/omitted', tier: 'normal' }] };
+    expect(() => bindSuitePlan({ ...exhaustive, tierExcluded: [{ name: '/datum/unit_test/other_omitted', tier: 'normal' }] }, exhaustive))
+      .toThrow('pre-tier coverage differs');
+    expect(bindNormalPlan({ ...inventory, preTierCount: 4, tierExcluded: [] }, inventory).preTierCount)
+      .toBe(4); // Historical selected-test comparison has no prior pre-tier proof.
+    expect(bindSuitePlan({ ...exhaustive, eligible: [...exhaustive.eligible].reverse() }, exhaustive).eligible)
+      .toEqual(exhaustive.eligible);
+  });
 });
 
 describe('suite runtime and result contracts', () => {
