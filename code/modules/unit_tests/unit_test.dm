@@ -531,7 +531,7 @@ GLOBAL_VAR(dq_test_select_names)
 				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
 	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
 	// on its next poll and then restores atmos before deleting the test, and OM work still
-	// pending on the test's entities (a mob's telegraphed strike is an om_after on its clock)
+	// pending on the test's entities (a mob's telegraphed strike is an after() on its clock)
 	// would otherwise fire in that gap, with nothing left to own what it makes.
 	end_test_world()
 	run_finished = TRUE

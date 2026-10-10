@@ -21,7 +21,7 @@
 //                     value of another var ({charging?@icon_state_charging:@icon_state_idle})
 //   {initial(name)}   the concrete type's initial value of var name (resolved per subtype)
 //
-// Refresh is automatic. Every name that is a declared OM field (OM_FIELD, OM_FLAG_FIELD, a
+// Refresh is automatic. Every name that is a declared field (TRACKED, a
 // registered setter, a derived field) adds its channel to the type's appearance watch mask, and APPEARANCE_WATCH adds the channels of fields a procedural update_icon()
 // reads. A raise of any of those channels queues the atom once; the presentation lane runs
 // update_icon() on it at most once per frame (so a field setter is never followed by a manual

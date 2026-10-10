@@ -457,7 +457,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			// (species_resets_hair, etc.) skip the preview; one rebuild at the
 			// end captures the cumulative new state. update_preview_icon_lazy
 			// renders the south frame synchronously and defers north/east/west
-			// to next tick via om_after — so user-perceived latency on a
+			// to next tick via after() — so user-perceived latency on a
 			// species change is the south-only cost (~250 ms) instead of the
 			// full 4-direction cost (~1 s).
 			update_preview_icon_lazy()

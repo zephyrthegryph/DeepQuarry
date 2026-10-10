@@ -405,8 +405,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !islist(value) && !isnull(value))
 					OWN_REPORT("[D.type].[var_name]: rel(symmetric = TRUE) needs a list var")
 
-/// A framework write changed holder.var_name. When the var is also a declared OM field
-/// (OM_FIELD), its channel is raised exactly as the field's setter would, so stages, watches and
+/// A framework write changed holder.var_name. When the var is also a declared (tracked)
+/// field, its channel is raised exactly as the field's setter would, so stages, watches and
 /// while-declarations gated on it see the change (a relation view cleared because its target died,
 /// an owned child disposed of, a proto swapped). Before the OM registry exists nothing listens.
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
