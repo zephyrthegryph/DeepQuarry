@@ -14,7 +14,7 @@
 	var/obj/machinery/petrification/linked
 
 CAPABILITIES(/obj/item/petrifier)
-	op("fire", in_hand(), wait(0), needs(req_bool(PROC_REF(can_fire), because = MSG(petrifier/beeps))), then(PROC_REF(fired)))
+	op("fire", in_hand(), wait(0), needs(req(PROC_REF(can_fire), because = MSG(petrifier/beeps))), then(PROC_REF(fired)))
 	param(nameof(linked), pos = 1)
 
 MSG_DEF_SELF(petrifier/beeps, "The device beeps but does nothing.")
@@ -23,7 +23,7 @@ MSG_DEF_SELF(petrifier/beeps, "The device beeps but does nothing.")
 /obj/item/petrifier/proc/can_fire(datum/act/op/A)
 	var/mob/user = A.actor
 	// ALLOW(reads): where the user stands is read when the device is used, never from a cached menu
-	return isturf(user.loc) || get_ultimate_mob(user) == target_ref()
+	return (isturf(user.loc) || get_ultimate_mob(user) == target_ref()) ? null : MSG(petrifier/beeps)
 
 /// The use in the hand.
 /obj/item/petrifier/proc/fired(datum/act/op/A)

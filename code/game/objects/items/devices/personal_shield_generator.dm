@@ -44,8 +44,8 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
 	drag_onto(PROC_REF(drop_input))
 	// the screwdriver takes the cell out; a built-in shield cell asks first, because taking it out destroys it
-	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(PROC_REF(cell_builtin))), then(PROC_REF(screwdriver_used)))
-	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(PROC_REF(cell_builtin)), needs(req_bool(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
+	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(req(PROC_REF(cell_builtin)))), then(PROC_REF(screwdriver_used)))
+	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(req(PROC_REF(cell_builtin))), needs(req(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
 		asks(/datum/prompt/choice, fields = list("title" = "Selection List", "question" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "choices" = list("Cancel", "Remove"), "buttons" = TRUE, "timeout" = 0)),
 		then(PROC_REF(destroy_cell_answered)))
 	op("recolor", tool(TOOL_MULTITOOL), wait(0), label("Set the shield colour"),
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("toggle_shield_effect", menu(), label("Toggle Shield"), needs(carried()), then(PROC_REF(toggle_shield_effect_op)))
-	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req_bool(PROC_REF(pred_has_weapon_holds), because = PROC_REF(pred_has_weapon_refusal))), then(PROC_REF(weapon_toggle_effect_op)))
+	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req(PROC_REF(pred_has_weapon_holds))), then(PROC_REF(weapon_toggle_effect_op)))
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -133,14 +133,9 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /// Requirement (was REQ_* pred_has_weapon): the legacy check answers TRUE to pass.
 /obj/item/personal_shield_generator/proc/pred_has_weapon_holds(datum/act/op/A)
-	var/answer = pred_has_weapon(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return has_weapon ? null : "it has no gun"
 
 /// Why pred_has_weapon_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/personal_shield_generator/proc/pred_has_weapon_refusal(datum/act/op/A)
-	var/answer = pred_has_weapon(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no gun"
-
 /// The weapon_toggle_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect_op(datum/act/op/A)
 	weapon_toggle_effect(A.actor, A.held)
@@ -196,7 +191,7 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 
 /// A built-in shield cell (not the parry one): taking it out destroys it.
 /obj/item/personal_shield_generator/proc/cell_builtin(datum/act/A)
-	return istype(bcell, /obj/item/cell/device/shield_generator) && !istype(bcell, /obj/item/cell/device/shield_generator/parry)
+	return (istype(bcell, /obj/item/cell/device/shield_generator) && !istype(bcell, /obj/item/cell/device/shield_generator/parry)) ? null : MSG(shield_generator/no_cell)
 
 /// The screwdriver takes an ordinary cell out; the parry cell stays.
 /obj/item/personal_shield_generator/proc/screwdriver_used(datum/act/op/A)
@@ -616,5 +611,3 @@ CAPABILITIES(/obj/item/gun/energy/gun/generator)
 /// Old object verbs.
 
 /// Requirement for "Toggle Gun" (old: the verb was removed from generators without a weapon).
-/obj/item/personal_shield_generator/proc/pred_has_weapon(mob/actor, atom/target, obj/item/held)
-	return has_weapon

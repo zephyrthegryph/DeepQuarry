@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")
-	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req_bool(PROC_REF(can_insert_key_holds), because = PROC_REF(can_insert_key_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds))), then(PROC_REF(interaction_item)))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -87,21 +87,13 @@ CAPABILITIES(/obj/item/radio/headset)
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 
 /// Requirement: a free key slot.
-/obj/item/radio/headset/proc/can_insert_key(mob/user, atom/target, obj/item/held)
-	if(keyslot1 && keyslot2)
-		return "the headset can't hold another key"
-	return TRUE
-
 /// Requirement (was REQ_* can_insert_key): the legacy check answers TRUE to pass.
 /obj/item/radio/headset/proc/can_insert_key_holds(datum/act/op/A)
-	var/answer = can_insert_key(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(keyslot1 && keyslot2)
+		return "the headset can't hold another key"
+	return null
 
 /// Why can_insert_key_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/radio/headset/proc/can_insert_key_refusal(datum/act/op/A)
-	var/answer = can_insert_key(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/item/radio/headset/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held

@@ -19,7 +19,7 @@
 CAPABILITIES(/obj/item/autopsy_scanner)
 	owns_many(nameof(chemtraces))
 	owns_many(nameof(wdata))
-	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(can_print_data_holds), because = PROC_REF(can_print_data_refusal))), then(PROC_REF(print_data_effect)))
+	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_print_data_holds))), then(PROC_REF(print_data_effect)))
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
@@ -74,21 +74,13 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 			rel_add(src, nameof(chemtraces), V)
 
 /// Requirement: only a conscious human can print the data.
-/obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
-	if(user.stat || !ishuman(user))
-		return "no"
-	return TRUE
-
 /// Requirement (was REQ_* can_print_data): the legacy check answers TRUE to pass.
 /obj/item/autopsy_scanner/proc/can_print_data_holds(datum/act/op/A)
-	var/answer = can_print_data(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(A.actor.stat || !ishuman(A.actor))
+		return "no"
+	return null
 
 /// Why can_print_data_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/autopsy_scanner/proc/can_print_data_refusal(datum/act/op/A)
-	var/answer = can_print_data(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/item/autopsy_scanner/proc/print_data_effect(datum/act/op/A)
 	var/mob/user = A.actor
 	var/scan_data = ""

@@ -33,7 +33,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 		. += op(surgery_op_key(step_type), item(/obj/item), label(initial(S.name)), stance(I_HELP, I_DISARM, I_GRAB),
 			priority(SURGERY_OP_PRIORITY + initial(S.priority) * 100 - order),
 			when(TYPE_PROC_REF(/mob/living/carbon/human, surgery_offered)),
-			needs(req_bool(TYPE_PROC_REF(/mob/living/carbon/human, surgery_hands_steady), because = MSG(surgery/unsteady))),
+			needs(req(TYPE_PROC_REF(/mob/living/carbon/human, surgery_hands_steady), because = MSG(surgery/unsteady))),
 			asks(/datum/prompt/choice, fields = list("question" = "Which organ do you want to work on?", "title" = initial(S.name), "choices" = computed(TYPE_PROC_REF(/mob/living/carbon/human, surgery_target_names)), "timeout" = 0),
 				step = "target", when = TYPE_PROC_REF(/mob/living/carbon/human, surgery_target_asked)),
 			surgery_confirms(),
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 
 /mob/living/carbon/human/proc/surgery_hands_steady(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && !user.action_blocked(ACTION_BLOCK_SURGERY)
+	return (istype(user) && !user.action_blocked(ACTION_BLOCK_SURGERY)) ? null : MSG(surgery/unsteady)
 
 // --- The questions ------------------------------------------------------------------------------
 

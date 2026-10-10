@@ -27,7 +27,7 @@ TRACKED(/obj/item/emergency_beacon, beacon_active)
 CAPABILITIES(/obj/item/emergency_beacon)
 	owns_one(nameof(gps), /obj/item/gps, starts = /obj/item/gps/emergency_beacon)
 	// the old attack_self: on solid ground, after a yes, the beacon is spiked in a moment later
-	op("activate", in_hand(), label("Activate"), needs(req_is(nameof(beacon_active), FALSE, because = MSG(emergency_beacon/active)), req_bool(PROC_REF(on_solid_ground), because = PROC_REF(ground_refusal))),
+	op("activate", in_hand(), label("Activate"), needs(req_is(nameof(beacon_active), FALSE, because = MSG(emergency_beacon/active)), req(PROC_REF(on_solid_ground))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "name", "question" = "Would you like to activate this personal emergency beacon?", "timeout" = 0), ends_on_no = TRUE),
 		wait(3 SECONDS), // short, so they can still abort if they want to
 		then(PROC_REF(activate_done)))
@@ -39,9 +39,6 @@ MSG_DEF_SELF(emergency_beacon/active, "It is already active, or is otherwise mal
 
 /// Requirement: the actor stands on solid ground.
 /obj/item/emergency_beacon/proc/on_solid_ground(datum/act/op/A)
-	return isnull(ground_refusal(A))
-
-/obj/item/emergency_beacon/proc/ground_refusal(datum/act/op/A)
 	return beacon_ground_refusal(A.actor)
 
 /proc/beacon_ground_refusal(mob/user)

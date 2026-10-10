@@ -24,9 +24,9 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	owns_one(nameof(entopic), /datum/entopic, starts = PROC_REF(make_entopic))
 	// Software goes straight into the buyer's NIF: a buyer needs a working one that can take it, and the software's own access.
 	extend("vend", needs(
-		req_bool(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
-		req_bool(PROC_REF(nif_can_take), because = PROC_REF(nif_take_reason)),
-		req_bool(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
+		req(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
+		req(PROC_REF(nif_can_take)),
+		req(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
 
 /// The projection the shop shows itself as (owned: made with the shop, deleted with it).
 /obj/machinery/vending/nifsoft_shop/proc/make_entopic(datum/act/A)
@@ -40,25 +40,22 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 /// needs: the buyer has a working NIF.
 /obj/machinery/vending/nifsoft_shop/proc/nif_ready(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
-	return istype(H) && H.nif?.stat == NIF_WORKING
+	return (istype(H) && H.nif?.stat == NIF_WORKING) ? null : MSG(nifsoft_shop/no_nif)
 
 /// needs: the buyer's NIF can take the software.
 /obj/machinery/vending/nifsoft_shop/proc/nif_can_take(datum/act/op/A)
-	return isnull(nif_take_reason(A))
-
-/// Why the buyer's NIF cannot take the software, or null.
-/obj/machinery/vending/nifsoft_shop/proc/nif_take_reason(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
 	if(!istype(H) || !H.nif)
 		return null
 	return H.nif.install_refusal(soft_of(A))
 
+/// Why the buyer's NIF cannot take the software, or null.
 /// needs: software with an access of its own goes only to someone with it (unless the shop is emagged or does not scan).
 /obj/machinery/vending/nifsoft_shop/proc/nif_soft_access(datum/act/op/A)
 	var/datum/nifsoft/path = soft_of(A)
 	if(!path || !initial(path.access) || !scan_id || emag_emagged(src))
-		return TRUE
-	return has_access(list(initial(path.access)), list(), A.actor.GetAccess())
+		return null
+	return (has_access(list(initial(path.access)), list(), A.actor.GetAccess())) ? null : MSG(nifsoft_shop/unauthorized)
 
 /// A purchase the shop turned away flashes on its projection as well.
 /obj/machinery/vending/nifsoft_shop/vend_turned_away(datum/act/notice/A)

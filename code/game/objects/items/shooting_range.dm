@@ -37,7 +37,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/target)
-	op("unpin", hand(), when(req_bool(PROC_REF(is_pinned))), then(PROC_REF(unpinned)))
+	op("unpin", hand(), when(req(PROC_REF(is_pinned))), then(PROC_REF(unpinned)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// The stake this target is pinned to, if one is near.
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/target)
 
 /// An empty hand takes a pinned target off its stake; a free target is picked up as any item.
 /obj/item/target/proc/is_pinned(datum/act/op/A)
-	return !!pinning_stake()
+	return (!!pinning_stake()) ? null : /datum/msg/req_failed
 
 /// Taking pinned targets off.
 /obj/item/target/proc/unpinned(datum/act/op/A)

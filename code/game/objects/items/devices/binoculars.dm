@@ -16,17 +16,17 @@ MSG_DEF_SELF(binoculars/distracted, "You are too distracted to do that.")
 
 CAPABILITIES(/obj/item/binoculars)
 	op("zoom", in_hand(), label("Zoom"),
-		needs(req_bool(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed)))
+		needs(req(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed)))
 
 /obj/item/binoculars/proc/view_available(datum/act/op/A)
 	var/client/C = A.actor?.client // ALLOW(reads): native client view is queried immediately before instant zoom with no wait or prompt
 	if(!C || !C.mob || !C.eye)
-		return TRUE
+		return null
 	if(isturf(C.mob.loc) && get_turf(C.eye) == get_turf(C.mob))
-		return TRUE
+		return null
 	if(ismecha(C.mob.loc) && C.eye == C.mob.loc)
-		return TRUE
-	return C.eye == C.mob
+		return null
+	return (C.eye == C.mob) ? null : MSG(binoculars/distracted)
 
 /// The op context does not occupy zoom's offset and view-size arguments.
 /obj/item/binoculars/proc/zoomed(datum/act/op/A)

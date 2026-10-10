@@ -24,18 +24,18 @@ MSG_DEF_SELF(bvm/no_seal, span_warning("You can't get a seal over %T%'s face."))
 
 CAPABILITIES(/obj/item/bag_valve_mask)
 	op("squeeze", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Ventilate"),
-		needs(req_adjacent(), req_bool(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
+		needs(req_adjacent(), req(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
 
 /// Requirement: the patient has a mouth and nothing worn covers the face (what is worn is fixed while the click is decided).
 /obj/item/bag_valve_mask/proc/sealable(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	if(!read_once(H.check_has_mouth()))
-		return FALSE
+		return MSG(bvm/no_seal)
 	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
 	if(mask && (read_once(mask.body_parts_covered) & FACE))
-		return FALSE
+		return MSG(bvm/no_seal)
 	var/obj/item/hat = H.get_equipped_item(SLOT_ID_HEAD)
-	return !(hat && (read_once(hat.body_parts_covered) & FACE))
+	return (!(hat && (read_once(hat.body_parts_covered) & FACE))) ? null : MSG(bvm/no_seal)
 
 /obj/item/bag_valve_mask/proc/squeeze_done(datum/act/op/A)
 	if(!apply_ventilation(A.target))
@@ -68,21 +68,21 @@ MSG_DEF_SELF(airway_kit/no_mouth, span_warning("You can't get into %T%'s mouth."
 
 CAPABILITIES(/obj/item/airway_kit)
 	op("clear_airway", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clear the airway"),
-		needs(req_adjacent(), req_bool(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req_bool(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
+		needs(req_adjacent(), req(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
 		begins(MSG(airway_kit/working)), wait(4 SECONDS), then(PROC_REF(airway_done)))
 
 /// Requirement: the user aims at the mouth or the head (what is aimed at is fixed while the click is decided).
 /obj/item/airway_kit/proc/aimed_at_mouth(datum/act/op/A)
 	var/zone = read_once(A.actor.zone_sel?.selecting)
-	return zone == O_MOUTH || zone == BP_HEAD
+	return (zone == O_MOUTH || zone == BP_HEAD) ? null : MSG(airway_kit/aim)
 
 /// Requirement: the patient has a mouth and no mask over it.
 /obj/item/airway_kit/proc/mouth_open(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	if(!read_once(H.check_has_mouth()))
-		return FALSE
+		return MSG(airway_kit/no_mouth)
 	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
-	return !(mask && (read_once(mask.body_parts_covered) & FACE))
+	return (!(mask && (read_once(mask.body_parts_covered) & FACE))) ? null : MSG(airway_kit/no_mouth)
 
 /obj/item/airway_kit/proc/airway_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
@@ -111,24 +111,18 @@ MSG_DEF(decompression_needle/lining_up, span_notice("You line %I% up between %T%
 
 CAPABILITIES(/obj/item/decompression_needle)
 	op("decompress", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE),
-		needs(req_bool(PROC_REF(unused), because = PROC_REF(used_text)), req_bool(PROC_REF(aimed_at_chest), because = PROC_REF(aim_text))),
+		needs(req(PROC_REF(unused)), req(PROC_REF(aimed_at_chest))),
 		begins(MSG(decompression_needle/lining_up)), wait(3 SECONDS), then(PROC_REF(needle_done)))
 
 TRACKED(/obj/item/decompression_needle, used)
 
 /// Requirement: the needle has not been used.
 /obj/item/decompression_needle/proc/unused(datum/act/op/A)
-	return !used
-
-/obj/item/decompression_needle/proc/used_text(datum/act/op/A)
-	return span_warning("\The [src] has already been used.")
+	return (!used) ? null : span_warning("\The [src] has already been used.")
 
 /// Requirement: the user aims at the chest (what is aimed at is fixed while the click is decided).
 /obj/item/decompression_needle/proc/aimed_at_chest(datum/act/op/A)
-	return read_once(A.actor.zone_sel?.selecting) == BP_TORSO
-
-/obj/item/decompression_needle/proc/aim_text(datum/act/op/A)
-	return span_warning("Aim for [A.target]'s chest.")
+	return (read_once(A.actor.zone_sel?.selecting) == BP_TORSO) ? null : span_warning("Aim for [A.target]'s chest.")
 
 /obj/item/decompression_needle/proc/needle_done(datum/act/op/A)
 	var/mob/living/user = A.actor

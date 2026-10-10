@@ -24,12 +24,12 @@ MSG_DEF(thermometer_medical/taking, span_notice("You take %T%'s temperature."), 
 MSG_DEF_SELF(thermometer_medical/not_human, span_warning("You can't get a reading from this."))
 
 CAPABILITIES(/obj/item/thermometer_medical)
-	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(target_is_human), because = MSG(thermometer_medical/not_human))),
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(thermometer_medical/not_human))),
 		begins(MSG(thermometer_medical/taking)), wait(3 SECONDS), then(PROC_REF(read_temperature)))
 
 /// Requirement: the patient is a human.
 /obj/item/thermometer_medical/proc/target_is_human(datum/act/op/A)
-	return ishuman(A.target)
+	return (ishuman(A.target)) ? null : MSG(thermometer_medical/not_human)
 
 /obj/item/thermometer_medical/proc/read_temperature(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -52,12 +52,12 @@ MSG_DEF(bp_cuff/wrapping, span_notice("You wrap %I% around %T%'s arm and begin p
 MSG_DEF_SELF(bp_cuff/not_human, span_warning("You can't fit the cuff on this."))
 
 CAPABILITIES(/obj/item/bp_cuff)
-	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(target_is_human), because = MSG(bp_cuff/not_human))),
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(bp_cuff/not_human))),
 		begins(MSG(bp_cuff/wrapping)), wait(12 SECONDS), then(PROC_REF(read_pressure)))
 
 /// Requirement: the patient is a human.
 /obj/item/bp_cuff/proc/target_is_human(datum/act/op/A)
-	return ishuman(A.target)
+	return (ishuman(A.target)) ? null : MSG(bp_cuff/not_human)
 
 /obj/item/bp_cuff/proc/read_pressure(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -82,12 +82,12 @@ MSG_DEF(pulse_oximeter/clipping, span_notice("You clip %I% to %T%'s fingertip an
 MSG_DEF_SELF(pulse_oximeter/not_human, span_warning("You can't clip this to anything useful here."))
 
 CAPABILITIES(/obj/item/pulse_oximeter)
-	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(target_is_human), because = MSG(pulse_oximeter/not_human))),
+	op("take", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(target_is_human), because = MSG(pulse_oximeter/not_human))),
 		begins(MSG(pulse_oximeter/clipping)), wait(4 SECONDS), then(PROC_REF(read_oximetry)))
 
 /// Requirement: the patient is a human.
 /obj/item/pulse_oximeter/proc/target_is_human(datum/act/op/A)
-	return ishuman(A.target)
+	return (ishuman(A.target)) ? null : MSG(pulse_oximeter/not_human)
 
 /obj/item/pulse_oximeter/proc/read_oximetry(datum/act/op/A)
 	var/mob/living/user = A.actor

@@ -43,7 +43,7 @@ TRACKED(/obj/item/healthanalyzer, guide)
 CAPABILITIES(/obj/item/healthanalyzer)
 	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
-		needs(req_adjacent(), req_bool(PROC_REF(scanner_dexterity), because = PROC_REF(dexterity_refusal))), then(PROC_REF(patient_scanned)))
+		needs(req_adjacent(), req(PROC_REF(scanner_dexterity))), then(PROC_REF(patient_scanned)))
 	op("toggle_advanced", menu(), label("Toggle Advanced Scan"), when(PROC_REF(advanced_profile)), needs(carried()), then(PROC_REF(advanced_toggled)))
 	op("toggle_guidance", menu(), label("Toggle Guidance"), needs(carried()), then(PROC_REF(guidance_toggled)))
 
@@ -52,15 +52,12 @@ CAPABILITIES(/obj/item/healthanalyzer)
 	if(ishuman(A.actor))
 		var/mob/living/carbon/human/H = A.actor
 		var/datum/xenochimera/state = H.xenochimera
-		return !state?.feral && H.species?.has_fine_manipulation // ALLOW(reads): current dexterity is queried before instant scanning; advisory menu state cannot authorize an effect because the requirement is checked again
+		return (!state?.feral && H.species?.has_fine_manipulation) ? null : span_warning("You don't have the dexterity to do this!") // ALLOW(reads): current dexterity is queried before instant scanning; advisory menu state cannot authorize an effect because the requirement is checked again
 	if(istype(A.actor, /mob/living/silicon))
-		return TRUE
+		return null
 	if(istype(A.actor, /mob/living/simple_mob))
 		var/mob/living/simple_mob/S = A.actor
-		return S.has_hands // ALLOW(reads): this simple mob's hand policy is fixed type data, queried before instant scanning rather than used as a cached permission
-	return FALSE
-
-/obj/item/healthanalyzer/proc/dexterity_refusal(datum/act/op/A)
+		return (S.has_hands) ? null : span_warning("You don't have the dexterity to do this!") // ALLOW(reads): this simple mob's hand policy is fixed type data, queried before instant scanning rather than used as a cached permission
 	return span_warning("You don't have the dexterity to do this!")
 
 /obj/item/healthanalyzer/proc/patient_scanned(datum/act/op/A)

@@ -196,16 +196,13 @@ MSG_DEF_SELF(nifsoft/uploading_self, span_notice("You upload %I% into your NIF."
 
 CAPABILITIES(/obj/item/disk/nifsoft)
 	op("upload", at_target(/mob/living/carbon/human), when(req_actor_kind(/mob/living/carbon/human)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Upload"),
-		needs(req_adjacent(), req_bool(PROC_REF(upload_ready), because = PROC_REF(upload_refusal))),
+		needs(req_adjacent(), req(PROC_REF(upload_ready))),
 		begins(PROC_REF(upload_begins)), starts(PROC_REF(upload_started)), wait(PROC_REF(upload_time)), on_interrupt(PROC_REF(upload_failed)), then(PROC_REF(upload_done)))
 
 /// Requirement: the target has a NIF that is up and running (what a click decides on).
 /obj/item/disk/nifsoft/proc/upload_ready(datum/act/op/A)
 	var/mob/living/carbon/human/Ht = A.target
-	return read_once(Ht.nif?.stat) == NIF_WORKING
-
-/obj/item/disk/nifsoft/proc/upload_refusal(datum/act/op/A)
-	return span_warning("Either they don't have a NIF, or the uploader can't connect.")
+	return (read_once(Ht.nif?.stat) == NIF_WORKING) ? null : span_warning("Either they don't have a NIF, or the uploader can't connect.")
 
 /obj/item/disk/nifsoft/proc/upload_begins(datum/act/op/A)
 	return A.actor == A.target ? MSG(nifsoft/uploading_self) : MSG(nifsoft/uploading_other)
@@ -253,9 +250,6 @@ TRACKED(/obj/item/disk/nifsoft/compliance, laws)
 
 /// A compliance disk with no laws set uploads nothing.
 /obj/item/disk/nifsoft/compliance/upload_ready(datum/act/op/A)
-	return !!laws && ..()
-
-/obj/item/disk/nifsoft/compliance/upload_refusal(datum/act/op/A)
 	if(!laws)
 		return span_warning("You haven't set any laws yet. Use the disk in-hand first.")
 	return ..()

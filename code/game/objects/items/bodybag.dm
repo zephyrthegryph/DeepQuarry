@@ -16,14 +16,12 @@
 // A folded bag used in hand is unfolded onto the floor (a refused folded bag keeps its owned injector).
 CAPABILITIES(/obj/item/bodybag)
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
-	op("unfold", in_hand(), label("Unfold"), needs(req_bool(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(unfolded)))
+	op("unfold", in_hand(), label("Unfold"), needs(req(PROC_REF(can_unfold))), then(PROC_REF(unfolded)))
 
 /// Unfolding must leave a refused folded bag and its owned injector intact: where it is carried must let it go.
 /obj/item/bodybag/proc/can_unfold(datum/act/op/A)
-	return isnull(loc?.release_refusal(src, A.actor)) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
-
-/obj/item/bodybag/proc/unfold_refusal(datum/act/op/A)
-	return loc?.release_refusal(src, A.actor) || /datum/msg/op/not_available
+	var/reason = loc?.release_refusal(src, A.actor) // ALLOW(reads): where the bag is carried and whether that lets it go are read when it is unfolded
+	return isnull(reason) ? null : (reason || /datum/msg/op/not_available)
 
 /// The floor structure this folded bag makes.
 /obj/item/bodybag/proc/unfolded_type()
@@ -94,7 +92,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 	op("label", item(/obj/item/pen), label("Label"), priority(OP_PRIORITY_PART),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "max_len" = MAX_NAME_LEN)), then(PROC_REF(labelled)))
 	op("cut_label", tool(TOOL_WIRECUTTER), label("Cut the tag off"), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(label_cut)), says(MSG(bodybag/cut_label)))
-	op("fold", at_target(/mob/living), gesture(GESTURE_DRAG), label("Fold up"), when(req_bool(PROC_REF(dragged_onto_self))), then(PROC_REF(folded_up)))
+	op("fold", at_target(/mob/living), gesture(GESTURE_DRAG), label("Fold up"), when(req(PROC_REF(dragged_onto_self))), then(PROC_REF(folded_up)))
 
 /// The label the pen was asked for is put on the bag (an empty one leaves the bag as it was).
 /obj/structure/closet/body_bag/proc/labelled(datum/act/op/A)
@@ -128,7 +126,7 @@ CAPABILITIES(/obj/structure/closet/body_bag)
 
 /// The bag is dragged onto the one dragging it.
 /obj/structure/closet/body_bag/proc/dragged_onto_self(datum/act/op/A)
-	return A.target == A.actor
+	return (A.target == A.actor) ? null : /datum/msg/req_failed
 
 /// The bag folds back into its item where it lay (a human only, and only while it is shut and empty). A cryo bag keeps its injector.
 /obj/structure/closet/body_bag/proc/folded_up(datum/act/op/A)
@@ -208,14 +206,14 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	owns_one(nameof(tank), /obj/item/tank)
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
 	extend("door", when(cond_not(nameof(used))))
-	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req_bool(PROC_REF(bare_hand_or_menu))),
+	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req(PROC_REF(bare_hand_or_menu))),
 		confirms("Are you sure you want to open it? It will expire upon opening it."),
 		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
 	op("scan", item(/obj/item/healthanalyzer), label("Scan"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), then(PROC_REF(analyser_used)))
 	op("insert_injector", item(/obj/item/reagent_containers/syringe), label("Insert injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART),
-		needs(req_bool(PROC_REF(can_insert_injector), because = PROC_REF(injector_refusal))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
+		needs(req(PROC_REF(can_insert_injector))), then(PROC_REF(injector_inserted)), says(MSG(cryobag/injector_in)))
 	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
-		needs(req_bool(PROC_REF(injector_removable), because = PROC_REF(remove_refusal))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
+		needs(req(PROC_REF(injector_removable))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
 	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
@@ -288,13 +286,9 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 /// Loading an injector must respect its current holder's release rules, and the bag takes one.
 /obj/structure/closet/body_bag/cryobag/proc/can_insert_injector(datum/act/op/A)
 	if(syringe)
-		return FALSE
-	return isnull(A.held.loc?.release_refusal(A.held, A.actor)) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
-
-/obj/structure/closet/body_bag/cryobag/proc/injector_refusal(datum/act/op/A)
-	if(syringe)
 		return /datum/msg/cryobag/has_injector
-	return A.held.loc?.release_refusal(A.held, A.actor) || /datum/msg/op/not_available
+	var/reason = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): where the injector is carried and whether that lets it go are read when it is put in
+	return isnull(reason) ? null : (reason || /datum/msg/op/not_available)
 
 /// A shut stasis bag is scanned through its skin: every one inside is read by the analyzer.
 /obj/structure/closet/body_bag/cryobag/proc/analyser_used(datum/act/op/A)
@@ -318,9 +312,8 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 
 /// There is an injector to take out, and the bag has not been used.
 /obj/structure/closet/body_bag/cryobag/proc/injector_removable(datum/act/op/A)
-	return !!syringe && !used
-
-/obj/structure/closet/body_bag/cryobag/proc/remove_refusal(datum/act/op/A)
+	if(syringe && !used)
+		return null
 	return used ? /datum/msg/cryobag/injector_stuck : /datum/msg/cryobag/no_injector
 
 /// The injector is pried out onto the floor.

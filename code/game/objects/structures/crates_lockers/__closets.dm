@@ -74,7 +74,7 @@ CAPABILITIES(/obj/structure/closet)
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), because = MSG(closet/bolts_unreachable))))
 	weld_shut(offered = PROC_REF(can_seal))
 	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
-	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(PROC_REF(bare_hand_or_menu)),
+	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req(PROC_REF(bare_hand_or_menu))),
 		needs(req(PROC_REF(door_ready))), then(PROC_REF(door_toggled)))
 	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
 		needs(req(PROC_REF(welder_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
@@ -325,7 +325,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// An empty hand works the door (a held thing has its own ops), and so does the menu's pick whatever is held.
 /obj/structure/closet/proc/bare_hand_or_menu(datum/act/op/A)
-	return isnull(A.held) || A.origin != ORIGIN_CLICK
+	return (isnull(A.held) || A.origin != ORIGIN_CLICK) ? null : /datum/msg/req_failed
 
 /// A hand or the menu's pick works the door.
 /obj/structure/closet/proc/door_toggled(datum/act/op/A)

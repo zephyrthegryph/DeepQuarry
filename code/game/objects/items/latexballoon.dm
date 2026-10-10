@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/latexballon)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(balloon_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(balloon_shot))))
-	op("puncture", item(/obj/item), when(req_bool(PROC_REF(punctures))), passes(), then(PROC_REF(punctured)))
+	op("puncture", item(/obj/item), when(req(PROC_REF(punctures))), passes(), then(PROC_REF(punctured)))
 
 /obj/item/latexballon/proc/blow(obj/item/tank/tank)
 	if (icon_state == "latexballon_bursted")
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/latexballon)
 
 /// The held thing has a point.
 /obj/item/latexballon/proc/punctures(datum/act/op/A)
-	return can_puncture(A.held)
+	return (can_puncture(A.held)) ? null : /datum/msg/req_failed
 
 /// A pointed thing bursts the balloon, and the click goes on to the ordinary attack.
 /obj/item/latexballon/proc/punctured(datum/act/op/A)
