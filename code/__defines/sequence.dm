@@ -23,6 +23,8 @@
 
 /// The membership source a sequence's awake members hold their sweep membership under.
 #define SEQ_SOURCE "sequence"
+/// Published on a member when its STAT_RELEVANCE moved (relevance_changed()): a sequence with a min_relevance re-checks it is in the sweep.
+#define SEQ_KEY_RELEVANCE "seq_relevance"
 /// A sequence has at most this many conditions (one bit each in a frame).
 #define SEQ_MAX_CONDITIONS 24
 /// The missed-wake audit's sample per sequence and pass (parked members, awake members with a sleeping step).

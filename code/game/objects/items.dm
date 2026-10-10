@@ -433,7 +433,6 @@ TRACKED(/obj/item, gurgled_color)
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
-		changed(user, CHANGE_MOB_HANDS)
 		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
 	// Worn/held items stay real for as long as they're worn or held (C10,
 	// containment.md §4.7): a matching equipped() pinned it, and dropping
@@ -483,7 +482,6 @@ TRACKED(/obj/item, gurgled_color)
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
-	changed(user, CHANGE_MOB_HANDS)
 	if(user)
 		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
 	// Worn or held: pin it real for as long as that's true (C10, unpinned by

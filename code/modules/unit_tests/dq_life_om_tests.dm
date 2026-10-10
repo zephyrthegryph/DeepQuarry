@@ -147,11 +147,15 @@
 	return list(seq_step(PROC_REF(raise), after = LIFE_INPUT, key = "life_test_raiser", should_run = PROC_REF(no_work)))
 
 /datum/life_test_step/raiser/proc/raise(mob/living/L, datum/seq_frame/life/F)
-	changed(L, CHANGE_MOB_HEALTH)
+	PUBLISH_CHANGE(L, MOB_KEY_HEALTH)
 
 /// Runs once per wake; health changes wake it.
 /datum/life_test_step/sleeper/life_steps()
-	return list(seq_step(PROC_REF(count), after = LIFE_TAIL, key = "life_test_sleeper", reads = CHANGE_MOB_HEALTH, once = TRUE))
+	return list(seq_step(PROC_REF(count), after = LIFE_TAIL, key = "life_test_sleeper", reads = list(MOB_KEY_HEALTH), once = TRUE))
+
+/// Runs once per wake; status changes wake it.
+/datum/life_test_step/status_sleeper/life_steps()
+	return list(seq_step(PROC_REF(count), after = LIFE_TAIL, key = "life_test_status_sleeper", reads = list(MOB_KEY_STATUS), once = TRUE))
 
 /// Deletes its mob during the frame.
 /datum/life_test_step/deleter/life_steps()
@@ -199,16 +203,9 @@
 		for(var/datum/reaction/R as anything in T.by_key[key])
 			. |= "[R.handler]"
 
-/// Raises a mob change the way its producer does: the OM channel (Life steps still wake on it) and the change key the
-/// presentation reactions read (PUBLISH_CHANGE).
-/proc/life_test_raise(mob/living/L, channel)
-	changed(L, channel)
-	var/static/list/keys = list("[CHANGE_MOB_STATUS]" = MOB_KEY_STATUS, "[CHANGE_MOB_HEALTH]" = MOB_KEY_HEALTH, \
-		"[CHANGE_MOB_LOC]" = MOB_KEY_LOC, "[CHANGE_MOB_EQUIPMENT]" = MOB_KEY_EQUIPMENT, "[CHANGE_MOB_CONDITIONS]" = MOB_KEY_CONDITIONS, \
-		"[CHANGE_MOB_CLIENT]" = MOB_KEY_CLIENT)
-	var/key = keys["[channel]"]
-	if(key)
-		PUBLISH_CHANGE(L, key)
+/// Raises a mob change the way its producer does: publishes the change key Life's steps and the presentation reactions read.
+/proc/life_test_raise(mob/living/L, key)
+	PUBLISH_CHANGE(L, key)
 
 /// TRUE when `L`'s reaction with `handler` is queued for the next drain.
 /proc/life_test_rx_queued(mob/living/L, handler)
@@ -470,9 +467,9 @@
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(life_test_asleep(M, "life_test_sleeper"), "a once step sleeps after its run")
 	var/runs = S.runs_on(M)
-	changed(M, CHANGE_MOB_EQUIPMENT)
+	PUBLISH_CHANGE(M, MOB_KEY_EQUIPMENT)
 	TEST_ASSERT(life_test_asleep(M, "life_test_sleeper"), "a channel the step doesn't read leaves it asleep")
-	changed(M, CHANGE_MOB_HEALTH)
+	PUBLISH_CHANGE(M, MOB_KEY_HEALTH)
 	TEST_ASSERT(!life_test_asleep(M, "life_test_sleeper"), "its read wakes it")
 	seq_run_frame_now(M, LIFE_SEQ)
 	TEST_ASSERT_EQUAL(S.runs_on(M), runs + 1, "a woken once step runs in the next frame, with no pre-check")
@@ -678,7 +675,7 @@
 	var/frames = life_test_frames(H)
 	H.status_set(STAT_SLEEPING, 2)
 	H.canmove = TRUE
-	life_test_raise(H, CHANGE_MOB_STATUS)
+	life_test_raise(H, MOB_KEY_STATUS)
 	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a clientless mob queues no HUD pass")
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_canmove_changed)), "the canmove reaction is queued")
 	rx_drain()
@@ -707,13 +704,13 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	rx_drain()
 	H.hud_runs = 0
-	for(var/channel in list(CHANGE_MOB_LOC, CHANGE_MOB_HEALTH, CHANGE_MOB_EQUIPMENT, CHANGE_MOB_STATUS))
-		life_test_raise(H, channel)
+	for(var/key in list(MOB_KEY_LOC, MOB_KEY_HEALTH, MOB_KEY_EQUIPMENT, MOB_KEY_STATUS))
+		life_test_raise(H, key)
 	TEST_ASSERT(!life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "no client: nothing is queued")
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 0, "and no HUD pass runs")
 	H.pretend_client = TRUE
-	life_test_raise(H, CHANGE_MOB_CLIENT)
+	life_test_raise(H, MOB_KEY_CLIENT)
 	TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "a client logging in queues the HUD")
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "which draws once")
@@ -730,12 +727,12 @@
 	life_test_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
 	rx_drain()
 	H.hud_runs = 0
-	life_test_raise(H, CHANGE_MOB_LOC)
+	life_test_raise(H, MOB_KEY_LOC)
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
 	for(var/i in 1 to 4)
-		life_test_raise(H, CHANGE_MOB_LOC)
-		life_test_raise(H, CHANGE_MOB_HEALTH)
+		life_test_raise(H, MOB_KEY_LOC)
+		life_test_raise(H, MOB_KEY_HEALTH)
 		rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "changes inside the window are held")
 	life_test_advance(LIFE_PRESENT_MIN_INTERVAL / 10 + 0.1)
@@ -815,7 +812,7 @@
 	// /mob/living/Login() calls this hook; a unit test has no client to log in with.
 	M.on_client_changed("login")
 	TEST_ASSERT(!life_test_parked(M), "a login should wake a parked mob")
-	TEST_ASSERT(!life_test_state(M).asleep, "a login wakes every step (CHANGE_MOB_CLIENT is one of the sequence's wake_all channels)")
+	TEST_ASSERT(!life_test_state(M).asleep, "a login wakes every step (MOB_KEY_CLIENT is one of the sequence's wake_keys)")
 
 /// The missed-wake audit finds a change made without raising its channel, logs it and wakes the mob.
 /datum/unit_test/life_om/audit_catches_missed_wake
@@ -981,26 +978,41 @@
 	TEST_ASSERT(!H.has_status(STAT_SLEEPING), "choosing to wake ends it")
 	TEST_ASSERT(!H.alerts?["asleep"], "and its alert")
 
-/// A status change raises CHANGE_MOB_STATUS once, and a change that doesn't change the value raises nothing.
+/// A human that counts the deliveries of its status key.
+/mob/living/carbon/human/dq_test_status_probe
+	var/status_deliveries = 0
+
+/mob/living/carbon/human/dq_test_status_probe/reactions()
+	. = ..()
+	. += on_change(list(MOB_KEY_STATUS), PROC_REF(probe_status))
+
+/mob/living/carbon/human/dq_test_status_probe/proc/probe_status(list/keys)
+	status_deliveries++
+
+/// A status change publishes MOB_KEY_STATUS, and a change that doesn't change the value publishes nothing.
 /datum/unit_test/life_om/status_raises_once
 
 /datum/unit_test/life_om/status_raises_once/run_life()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/dq_test_status_probe/H = allocate(/mob/living/carbon/human/dq_test_status_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	hold(H, STAT_SUSPENDED, TRUE, H) // no frames (raises are counted while the mob listens for its own changes)
-	sched.test_raises = list()
+	hold(H, STAT_SUSPENDED, TRUE, H) // no frames
+	rx_drain()
+	H.status_deliveries = 0
 	H.status_at_least(STAT_STUNNED, 2)
-	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "starting a stun raises the status channel once")
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.status_deliveries, 1, "starting a stun publishes the status key once")
 	H.status_at_least(STAT_SLURRING, 3)
-	sched.test_raises = list()
+	rx_drain()
+	H.status_deliveries = 0
 	H.status_at_least(STAT_STUNNED, 4)
 	H.status_adjust(STAT_STUNNED, -1)
 	H.status_at_least(STAT_SLURRING, 5)
 	H.status_at_least(STAT_STUNNED, 1)
-	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 0, "extending or shortening an active status raises nothing")
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.status_deliveries, 0, "extending or shortening an active status publishes nothing")
 	H.status_set(STAT_STUNNED, 0)
-	TEST_ASSERT_EQUAL(life_test_status_raises(sched, H), 1, "ending it raises once")
-	sched.test_raises = null
+	rx_drain()
+	TEST_ASSERT_EQUAL(H.status_deliveries, 1, "ending it publishes once")
 
 /// Life never wakes itself: a frame on a mob with running statuses raises no status change, so a sleeping mouse
 /// parks like an idle one.
@@ -1012,10 +1024,12 @@
 	M.status_set(STAT_SLEEPING, 100)
 	M.status_at_least(STAT_CONFUSED, 100)
 	sched.run_pass(1e9)
-	sched.test_raises = list()
+	var/datum/life_test_step/status_sleeper/S = life_test_add(M, /datum/life_test_step/status_sleeper)
 	seq_run_frame_now(M, LIFE_SEQ)
-	TEST_ASSERT_EQUAL(life_test_status_raises(sched, M), 0, "a frame raises no status change on its own mob")
-	sched.test_raises = null
+	TEST_ASSERT(life_test_asleep(M, "life_test_status_sleeper"), "a once step reading the status key sleeps after its run")
+	var/runs = S.runs_on(M)
+	seq_run_frame_now(M, LIFE_SEQ)
+	TEST_ASSERT_EQUAL(S.runs_on(M), runs, "a frame publishes no status change on its own mob (the status reader never woke)")
 	TEST_ASSERT(life_test_settle(M), "a sleeping, confused mouse parks; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(M.has_status(STAT_SLEEPING), "and stays asleep while parked")
 
@@ -1090,13 +1104,6 @@
 	H.forceMove(T)
 	H.set_low_priority(FALSE)
 	TEST_ASSERT_EQUAL(H.life_z, 0, "a mob that isn't low priority keeps its own relevance")
-
-/// Changes to `E` logged on `sched.test_raises` that carry CHANGE_MOB_STATUS.
-/proc/life_test_status_raises(datum/om/scheduler/sched, datum/E)
-	. = 0
-	for(var/list/entry as anything in sched.test_raises)
-		if(entry[1] == E && (entry[2] & CHANGE_MOB_STATUS))
-			.++
 
 // --- Human sleep rules ------------------------------------------------------------------------------------------------
 

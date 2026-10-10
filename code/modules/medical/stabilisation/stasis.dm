@@ -169,7 +169,6 @@
 		if(holds_rate)
 			hold(src, STAT_CLOCK_RATE_BIO, 1 - level.stasis_depth(), hold, clock = HOLD_CLOCK_WORLD)
 	invalidate_factors()
-	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	var/datum/body_effect/old_level = current ? body_effect_def(current) : null
 	var/datum/body_effect/new_level = stasis_type ? body_effect_def(stasis_type) : null

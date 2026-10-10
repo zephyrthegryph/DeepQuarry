@@ -30,7 +30,7 @@
 	TEST_ASSERT(F["density"] & CHANGE_MACHINE_SETTINGS, "density does not raise CHANGE_MACHINE_SETTINGS on a machine")
 	TEST_ASSERT(F["use_power"] & CHANGE_MACHINE_SETTINGS, "use_power does not raise CHANGE_MACHINE_SETTINGS")
 	var/list/mob_fields = reg.fields_of(/mob/living)
-	TEST_ASSERT(mob_fields["anchored"] & CHANGE_MOB_CAN_MOVE, "anchored does not raise CHANGE_MOB_CAN_MOVE on a mob")
+	TEST_ASSERT_EQUAL(mob_fields["anchored"], 0, "anchored raises no channel on a mob")
 
 /// The hand-written setters registered as fields raise their family channel on a change only.
 /datum/unit_test/dq_sys_fields_custom_setters_raise

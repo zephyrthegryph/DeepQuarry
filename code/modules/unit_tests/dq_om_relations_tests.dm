@@ -75,7 +75,7 @@
 	TEST_ASSERT_NOTEQUAL(get_turf(H), get_turf(C), "setup: H should now be off the chair's tile")
 
 	// The live scheduler would run this on its next lane pass (relation.dm's
-	// edge_refresh behaviour, watching CHANGE_MOB_LOC/CHANGE_ITEM_LOC); drive
+	// edge_refresh behaviour, watching the ends' location); drive
 	// it directly so the test doesn't depend on tick timing.
 	test_time(1 SECONDS)
 	test_driver_end()

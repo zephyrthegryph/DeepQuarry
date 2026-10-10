@@ -43,14 +43,14 @@
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
 	var/datum/om_wake_test_subscriber/anyone = allocate(/datum/om_wake_test_subscriber)
-	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
-	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), CHANGE_CHUNK_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
 	var/mob/living/npc = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	npc.forceMove(T)
 	TEST_ASSERT(length(anyone.wakes), "a mob moving into the chunk did not wake an any-mob subscriber")
 	TEST_ASSERT(!length(players.wakes), "a mob without a client woke a player-chunk subscriber")
-	unwatch_mob_chunks(players, player_tokens, CHANGE_CHUNK_PLAYER)
-	unwatch_mob_chunks(anyone, any_tokens, CHANGE_CHUNK_ANY_MOB)
+	unwatch_mob_chunks(players, player_tokens, MOB_CHUNK_WATCH_PLAYER)
+	unwatch_mob_chunks(anyone, any_tokens, MOB_CHUNK_WATCH_ANY_MOB)
 
 #endif
 

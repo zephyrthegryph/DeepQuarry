@@ -9,7 +9,7 @@
 
 /// Shots left in the current counted volley. A field: the volley repeats while it is non-zero.
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_shots_left = 0
-TRACKED_BRIDGED(/mob/living/simple_mob/mechanical/mecha/eclipse, volley_shots_left, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living/simple_mob/mechanical/mecha/eclipse, volley_shots_left)
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/volley_kind
 /// What the current volley is fired at (a relation view).
 /mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target

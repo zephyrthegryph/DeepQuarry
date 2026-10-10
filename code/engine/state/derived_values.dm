@@ -64,19 +64,12 @@
 	if(D.aggregate)
 		var/list/contributions = list()
 		var/list/members = list()
-		if(D.over_slot || (islist(D.over) && D.over[1] == "slot"))
-			var/datum/ledger/L = isatom(E) ? dq_ledger_peek(E) : null
-			var/list/things = L ? (D.over_slot ? L.slots[D.over_slot] : L.entries) : null
-			for(var/datum/member as anything in things)
-				members += member
-				contributions += list(derived_agg_contribution(D, member))
-		else
-			for(var/datum/relation_edge/edge as anything in rec.edges)
-				if(edge.rel.id == D.over_rel_id && edge.target == E)
-					var/c = derived_agg_contribution(D, edge.source)
-					derived_edge_cache_set(edge, D.idx, c)
-					members += edge.source
-					contributions += list(c)
+		for(var/datum/relation_edge/edge as anything in rec.edges)
+			if(edge.rel.id == D.over_rel_id && edge.target == E)
+				var/c = derived_agg_contribution(D, edge.source)
+				derived_edge_cache_set(edge, D.idx, c)
+				members += edge.source
+				contributions += list(c)
 		switch(D.aggregate)
 			if(AGG_SUM)
 				value = 0

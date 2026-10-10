@@ -273,7 +273,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	return amount
 
 /// The stat layer: status `id` started (`active`) or ended on this entity. Its hooks run, its presentation follows, and the mob's status
-/// change is announced (CHANGE_MOB_STATUS, MOB_KEY_STATUS).
+/// change is announced (MOB_KEY_STATUS).
 /datum/proc/status_flipped(id, active)
 	var/datum/status_policy/P = status_policies()["[id]"]
 	if(!P)
@@ -284,8 +284,6 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 			call(src, hook)()
 		if(P.alert || P.indicator)
 			status_shown(P, active)
-	// ALLOW(sys_manual_push): the legacy status channel the OM consumers and Life step reads still wake on, raised once per start or end as the OM status rows did
-	changed(src, CHANGE_MOB_STATUS)
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
 
 /// A status with an alert or indicator started (`active`) or ended.

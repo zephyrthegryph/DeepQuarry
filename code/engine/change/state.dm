@@ -96,7 +96,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 /// BRIDGE (removed with S4): tracked_changed() for a hand-written setter of a var an OM stage still reads by channel.
 /// The channel is the one E's type declares for the var (OM_FIELD_SETTER in machinery_fields.dm: a machine's anchored
-/// raises CHANGE_MACHINE_ANCHORED, a mob's CHANGE_MOB_CAN_MOVE, any other atom none), so the setter needs no istype().
+/// raises CHANGE_MACHINE_ANCHORED, any other atom none), so the setter needs no istype().
 /proc/tracked_bridged_changed(datum/E, var_name)
 	var/list/fields = definition_registry().fields_of(E.type)
 	state_changed(E, fields[var_name] || 0, var_name)

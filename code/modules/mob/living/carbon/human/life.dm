@@ -90,7 +90,7 @@
 	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		src.status_at_least(STAT_SLEEPING, 20)
 
-/// Factor changes (body invalidate, CHANGE_MOB_HEALTH) wake it.
+/// Factor changes (body invalidate, MOB_KEY_HEALTH) wake it.
 /mob/living/carbon/human/proc/life_stasis_sleep_due()
 	return src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD
 
@@ -1208,7 +1208,7 @@
 	var/nutrition_drained_at = 0
 
 /// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the
-/// body (CHANGE_MOB_HEALTH). Hunger is integrated over the idle time on the rewake.
+/// body (MOB_KEY_HEALTH). Hunger is integrated over the idle time on the rewake.
 /mob/living/carbon/human/life_chemicals_due()
 	if(src.touching?.total_volume || src.ingested?.total_volume || src.bloodstr?.total_volume)
 		return TRUE
@@ -1947,7 +1947,7 @@
 	src.pulse = life_pulse_compute()
 
 /// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body
-/// (CHANGE_MOB_HEALTH) or set_stat().
+/// (MOB_KEY_HEALTH) or set_stat().
 
 /// The pulse this body should show now.
 /mob/living/carbon/human/proc/life_pulse_compute()

@@ -39,7 +39,7 @@
 /datum/dx_core_child
 	var/level = 0
 
-TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_DATUM_A)
 
 /obj/cap_fixture
 	name = "capability fixture"
@@ -58,7 +58,7 @@ TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_EFFECTS)
 	. = ..()
 	. += owns(nameof(child), policy = OWN_DELETE)
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_core/capabilities()
 	. = ..()
@@ -137,7 +137,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	periodic_cadence = PERIODIC_SLOW
 	var/gating = FALSE
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_periodic/should_run()
 	return gating
@@ -192,18 +192,18 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/before = F.state_changes
 	TEST_ASSERT(F.set_power_level(3), "set_ returns TRUE on a change")
 	TEST_ASSERT(F.refresh_queued, "a change queues the refresh")
-	TEST_ASSERT(F.refresh_bits & CHANGE_EFFECTS, "refresh_bits carries the channel")
+	TEST_ASSERT(F.refresh_bits & CHANGE_DATUM_A, "refresh_bits carries the channel")
 	TEST_ASSERT(!F.set_power_level(3), "set_ returns FALSE with no change")
 	var/queued = 0
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		if(D == F)
 			queued++
 	TEST_ASSERT_EQUAL(queued, 1, "queued once per frame")
-	changed(F, CHANGE_CONTENTS)
+	changed(F, CHANGE_DATUM_B)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.state_changes - before, 1, "on_state_changed ran once for the frame")
-	TEST_ASSERT(F.last_bits & CHANGE_EFFECTS, "on_state_changed got the TRACKED channel")
-	TEST_ASSERT(F.last_bits & CHANGE_CONTENTS, "on_state_changed got the explicit channel")
+	TEST_ASSERT(F.last_bits & CHANGE_DATUM_A, "on_state_changed got the TRACKED channel")
+	TEST_ASSERT(F.last_bits & CHANGE_DATUM_B, "on_state_changed got the explicit channel")
 	TEST_ASSERT_EQUAL(F.refresh_bits, 0, "bits are cleared after the refresh")
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "draw ran")
 
@@ -226,7 +226,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/before = D.state_changes
 	TEST_ASSERT(DK.set_level(4), "the drawn child's setter changed it")
 	TEST_ASSERT(D.refresh_queued, "an owner whose capability draws the child is queued with it")
-	TEST_ASSERT(D.refresh_bits & CHANGE_EFFECTS, "the owner carries the child's channel")
+	TEST_ASSERT(D.refresh_bits & CHANGE_DATUM_A, "the owner carries the child's channel")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(D.state_changes - before, 1, "the owner refreshed once")
 

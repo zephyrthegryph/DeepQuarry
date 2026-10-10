@@ -7,7 +7,7 @@
 //	/mob/living/life_steps()
 //		. = ..()
 //		. += seq_step(PROC_REF(life_breathing), after = LIFE_INPUT, when = list("placed", "alive"),
-//			reads = list(CHANGE_MOB_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due))
+//			reads = list(MOB_KEY_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due))
 //
 // A subtype changes a step by overriding its proc (with ..() for the parent's code): that is what the pipeline
 // runner's families, variants and plans did. An entity's composed table is its type's table proc, plus the same
@@ -249,13 +249,15 @@
 		compile_step(T, S)
 		T.gated += (S.cond_req || S.cond_forbid) ? TRUE : FALSE
 	T.n = length(T.steps)
+	if(min_relevance)
+		T.by_key[SEQ_KEY_RELEVANCE] = list() // no step wakes on it; the key reaches seq_publish() so the member follows its relevance
 	seq_register_reads(E, T)
 	return T
 
 /// Compiles one step of `T`: its condition masks, what wakes it, its cost slot and rewake key.
 /datum/sequence/proc/compile_step(datum/seq_table/T, datum/seq_step/S)
 	var/chans = wake_all
-	var/list/keys = list()
+	var/list/keys = wake_keys ? wake_keys.Copy() : list()
 	for(var/read in S.reads)
 		if(isnum(read))
 			chans |= read

@@ -1,4 +1,7 @@
 #define CHUNK_SIZE 16
+/// watch_mob_chunks() masks: which mob movements call a watcher back (code/modules/mob/mob_chunks.dm).
+#define MOB_CHUNK_WATCH_ANY_MOB (1<<0)
+#define MOB_CHUNK_WATCH_PLAYER (1<<1)
 
 /// Chunk coordinate of a 1-based tile coordinate.
 #define MOB_CHUNK_COORD(v) (FLOOR((v) - 1, CHUNK_SIZE) / CHUNK_SIZE)
