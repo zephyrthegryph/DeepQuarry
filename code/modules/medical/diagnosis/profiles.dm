@@ -45,6 +45,7 @@ REGISTRY_TYPE(/datum/diagnostic_profile, GLOBAL_PROC_REF(registry_diagnostic_pro
 
 /// The shared singleton for a profile type.
 /proc/diagnostic_profile(profile_type)
+	READS_FROM()
 	. = GLOB.diagnostic_profiles[profile_type]
 	if(!.)
 		. = new profile_type()

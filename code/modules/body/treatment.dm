@@ -110,6 +110,7 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 /// calibration), its own regeneration and refactory feedstock, plus the
 /// electrical jump-start that reboots a dormant core.
 /proc/treatment_tag_biology(tag)
+	READS_FROM()
 	switch(tag)
 		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_CALIBRATION, TREAT_PANEL_CLOSURE)
 			return BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM
