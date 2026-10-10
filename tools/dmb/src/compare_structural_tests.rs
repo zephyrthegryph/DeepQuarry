@@ -436,3 +436,38 @@ fn unresolved_certified_proc_operand_blocks_tool_completeness() {
         .uncovered
         .contains_key("unresolved_required_operand_reference"));
 }
+
+#[test]
+fn summary_bounds_examples_without_copying_exact_signatures() {
+    let mut report = StructuralReport::new("summary-fixture");
+    for index in 0..300 {
+        report.record(
+            "/datum/example",
+            "proc.flags",
+            "0".into(),
+            index.to_string(),
+        );
+    }
+    report.observe_bytecode("/datum/example/proc/check", 3, 4);
+    let summary = report.summary();
+    let flags = &summary.categories["procedure_flags"];
+    assert_eq!(flags.discrepancy_count, 300);
+    assert_eq!(flags.unique_case_count, 300);
+    assert_eq!(flags.examples.len(), EXAMPLES);
+    assert!(std::ptr::eq(
+        flags.examples.as_ptr(),
+        report.categories["procedure_flags"].examples.as_ptr()
+    ));
+    let json = serde_json::to_value(summary).unwrap();
+    assert!(json.get("category_signatures").is_none());
+    assert!(json.get("bytecode_procedures").is_none());
+    assert_eq!(
+        json["bytecode_shape_counts"]
+            ["different_instruction_count_positional_alignment_provisional"],
+        1
+    );
+    assert_eq!(
+        json["opcode_equivalence"],
+        "not_asserted_by_difference_counts_or_instruction_shapes"
+    );
+}

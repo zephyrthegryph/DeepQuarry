@@ -23,6 +23,7 @@ import semantic_configuration
 from iteration_history import EditHistory
 import host_context
 import worktree_authority
+import build_receipt
 
 
 DEFAULT = Path("E:/dmb-native-v2-phase0/review-power-focus")
@@ -228,6 +229,7 @@ def check_outputs(retained, fresh, manifest):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", required=True)
+    parser.add_argument("--build-receipt", help="optional successful-build receipt pinned to exact executable SHA")
     parser.add_argument("--inspector", required=True, help="frozen dmb-inspect structural comparator")
     parser.add_argument("--byond-dmb", default=str(DEFAULT / "frozen/pairs/byond/world.dmb"))
     parser.add_argument("--byond-pin", default=str(DEFAULT / "byond-structural-pin.json"))
@@ -254,6 +256,7 @@ def main():
         parser.error("overall deadline must be between 1 and 3600 seconds")
     executable = safe_e(args.compiler)
     regular(executable)
+    build_proof = build_receipt.authenticate(safe_e(args.build_receipt), executable, sha) if args.build_receipt else None
     sources = [safe_e(args.source)]
     if args.worktree_sources:
         sources = [safe_e(path) for path in json.loads(Path(args.worktree_sources).read_text(encoding="utf-8"))]
@@ -316,6 +319,7 @@ def main():
     root.mkdir(parents=True)
     receipt = {"schema_version": 1, "status": "running", "root": str(root),
                "compiler_sha256": sha(executable), "template_sha256": sha(template),
+               "build_provenance": build_proof,
                "scenario_sha256": sha(scenario_path), "workers": args.workers,
                "require_owned_daemon": args.require_owned_daemon,
                "worktree_authority": worktree_proof,

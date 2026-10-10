@@ -64,6 +64,29 @@ class ComparisonTests(unittest.TestCase):
         return self.comparison.compare(self.native, self.root / name,
             context or {"current_source": "bytes"}, same_source, self.launch, 1)
 
+    def test_producer_summary_is_bounded_diagnostic_and_cross_revision_scoped(self):
+        original_launch = self.launch
+        def launch(executable, arguments, logs, deadline):
+            result = original_launch(executable, arguments, logs, deadline)
+            raw = json.loads(Path(arguments[3]).read_text())
+            summary = {key: raw[key] for key in ("schema_version", "snapshot_id",
+                "complete", "tool_complete", "traversal_complete", "semantic_coverage",
+                "total_discrepancies", "unexplained_discrepancies")}
+            summary.update(categories={name: {"discrepancy_count": 0,
+                "unique_case_count": 0, "examples": []} for name in raw["categories"]},
+                uncovered={}, bytecode_shape_counts={})
+            Path(arguments[3] + ".summary.json").write_text(json.dumps(summary))
+            return result
+        result = self.comparison.compare(self.native, self.root / "summary", {}, False, launch, 1)
+        summary = json.loads(Path(result["diagnostic_summary"]).read_text())
+        self.assertEqual(summary["baseline_admission"], "not_evaluable_cross_revision")
+        self.assertEqual(summary["opcode_equivalence"],
+                         "not_asserted_by_difference_counts_or_instruction_shapes")
+        # Sidecar tampering cannot alter the raw-report admission path.
+        Path(result["report"] + ".summary.json").write_text('{}')
+        with self.assertRaisesRegex(ValueError, "summary differs"):
+            self.comparison.compare(self.native, self.root / "tampered-summary", {}, False, launch, 1)
+
     def test_same_input_gate_and_edited_scope_are_separate_from_byte_parity(self):
         baseline = self.compare("initial")
         self.assertEqual(baseline["baseline_admission"], "passed")

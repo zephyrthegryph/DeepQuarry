@@ -339,6 +339,15 @@ impl Validation {
 }
 
 impl InputSnapshot {
+    pub(crate) fn canonical_proof_paths(&self) -> impl Iterator<Item = &Path> {
+        self.files
+            .keys()
+            .chain(self.negative_files.iter())
+            .map(PathBuf::as_path)
+    }
+    pub(crate) fn canonical_proof_folders(&self) -> impl Iterator<Item = &Path> {
+        self.folders.keys().map(PathBuf::as_path)
+    }
     pub fn proof_paths(&self) -> impl Iterator<Item = PathBuf> + '_ {
         self.files.keys().chain(self.negative_files.iter()).cloned()
     }

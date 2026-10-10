@@ -399,6 +399,32 @@
       "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190101-deba2f00.json"
     }
   },
+  "host_fact_and_snapshot_proof_migration": {
+    "status": "workspace all-target check, four focused dmbc fixtures and scalar rebind fixture passed; no new end-to-end timings",
+    "dm_tree_focused_passed": 1,
+    "scalar_rebind_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-194300-9c36052b.json",
+    "dmbc_focused_passed": 4,
+    "host_facts_fixture_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-193943-698f07f8.json",
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-193805-f4f50ccf.json",
+    "workspace_check_seconds": 77.7774798,
+    "implemented": [
+      "current-revision host facts retained through the shared observation store with exact engine and declaration owner admission",
+      "scalar outcome facts reissued against current occurrence bindings without retaining historical source locations",
+      "snapshot proof capture borrows canonical roster and deduplicates borrowed directory parents; full filesystem validation retained",
+      "map defaults use the declaration target index instead of five whole-program occurrence scans",
+      "bounded structural summary sidecar checked against the authoritative complete diff",
+      "optional benchmark build receipt authenticates exact executable and prototype optimization settings"
+    ],
+    "python_focused_passed": 10,
+    "limitations": [
+      "structural host fact invalidation still rebuilds pinned facts and scalar outcomes",
+      "full source proof validation and final output model materialization remain",
+      "raw structural report authentication still loads the complete report",
+      "optimized codegen64 and codegen256 builds hit the 300-second watchdog; owned processes reaped",
+      "prototype lower optimization builds are not revision6 release-profile acceptance"
+    ],
+    "end_to_end_timings": null
+  },
   "current_projection_and_publication_migration": {
     "status": "production hooks and bounded focused gates passed; real benchmark pending",
     "workspace_all_targets": {

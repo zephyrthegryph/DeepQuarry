@@ -61,6 +61,9 @@ fn structural_diff(args: &[String]) -> io::Result<()> {
     let report = byond_dmb::compare::structural_report(&expected, &actual, &args[5]);
     let file = std::fs::File::create(&args[4])?;
     serde_json::to_writer_pretty(file, &report).map_err(io::Error::other)?;
+    let summary_path = format!("{}.summary.json", args[4]);
+    let summary_file = std::fs::File::create(summary_path)?;
+    serde_json::to_writer_pretty(summary_file, &report.summary()).map_err(io::Error::other)?;
     Ok(())
 }
 

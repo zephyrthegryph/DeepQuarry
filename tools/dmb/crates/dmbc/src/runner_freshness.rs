@@ -73,10 +73,7 @@ pub(super) fn admit(
 }
 
 pub(super) fn admit_live(inputs: &InputSnapshot, allow_moving: bool) -> Result<(), Box<dyn Error>> {
-    let current = crate::filesystem_proofs::BulkFileSystemProofs::capture(
-        inputs.proof_paths(),
-        inputs.proof_folders(),
-    );
+    let current = crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(inputs)?;
     admit(inputs, &current, allow_moving)
 }
 

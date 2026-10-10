@@ -59,14 +59,49 @@ impl BulkFileSystemProofs {
         paths: impl IntoIterator<Item = PathBuf>,
         folders: impl IntoIterator<Item = PathBuf>,
     ) -> Self {
-        let mut requested: BTreeSet<PathBuf> =
-            folders.into_iter().map(|p| canonical_path(&p)).collect();
+        Self::capture_canonical(
+            paths
+                .into_iter()
+                .map(|path| std::borrow::Cow::Owned(canonical_path(&path))),
+            folders
+                .into_iter()
+                .map(|path| std::borrow::Cow::Owned(canonical_path(&path))),
+        )
+    }
+
+    /// InputSnapshot checks canonical structure once; every capture still obtains
+    /// fresh complete directory proofs and leaves payload digests live.
+    pub fn capture_snapshot(inputs: &crate::input_snapshot::InputSnapshot) -> io::Result<Self> {
+        inputs.check_structure()?;
+        Ok(Self::capture_canonical(
+            inputs
+                .canonical_proof_paths()
+                .map(std::borrow::Cow::Borrowed),
+            inputs
+                .canonical_proof_folders()
+                .map(std::borrow::Cow::Borrowed),
+        ))
+    }
+    fn capture_canonical<'a>(
+        paths: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,
+        folders: impl IntoIterator<Item = std::borrow::Cow<'a, Path>>,
+    ) -> Self {
+        let mut requested: BTreeSet<std::borrow::Cow<'a, Path>> = folders.into_iter().collect();
         let mut exact_candidates = Vec::new();
         let mut exact_bytes = 0usize;
         for path in paths {
-            let path = canonical_path(&path);
-            if let Some(parent) = path.parent() {
-                requested.insert(parent.to_owned());
+            match &path {
+                std::borrow::Cow::Borrowed(path) => {
+                    let path: &'a Path = path;
+                    if let Some(parent) = path.parent() {
+                        requested.insert(std::borrow::Cow::Borrowed(parent));
+                    }
+                }
+                std::borrow::Cow::Owned(path) => {
+                    if let Some(parent) = path.parent() {
+                        requested.insert(std::borrow::Cow::Owned(parent.to_owned()));
+                    }
+                }
             }
             // A separate bounded positive index removes repeated path rebuilding
             // for authenticated canonical facts. Budget denial only slows lookup.
@@ -78,7 +113,7 @@ impl BulkFileSystemProofs {
                 .saturating_add(256);
             if exact_bytes.saturating_add(charge) <= 16 * 1024 * 1024 {
                 exact_bytes += charge;
-                exact_candidates.push(path);
+                exact_candidates.push(path.into_owned());
             }
         }
         let requested_count = requested.len();
@@ -93,14 +128,14 @@ impl BulkFileSystemProofs {
                 Ok(proof) => {
                     if bytes.saturating_add(proof.charged) <= 64 * 1024 * 1024 {
                         bytes += proof.charged;
-                        directories.insert(path.clone(), proof);
+                        directories.insert(path.to_path_buf(), proof);
                     } else {
                         capture_budget_denials += 1;
                     }
                 }
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {
                     capture_missing += 1;
-                    missing_candidates.insert(path.clone());
+                    missing_candidates.insert(path.to_path_buf());
                 }
                 Err(_) => {
                     capture_errors += 1;
@@ -113,7 +148,7 @@ impl BulkFileSystemProofs {
             .iter()
             .filter_map(|path| path.parent().map(Path::to_owned))
             .collect();
-        parents.retain(|path| !requested.contains(path));
+        parents.retain(|path| !requested.contains(path.as_path()));
         for parent in parents.into_iter().take(1024) {
             if let Ok(proof) = capture_directory(&parent) {
                 if bytes.saturating_add(proof.charged) <= 64 * 1024 * 1024 {
@@ -148,7 +183,8 @@ impl BulkFileSystemProofs {
             - requested
                 .iter()
                 .filter(|path| {
-                    directories.contains_key(*path) || missing_directories.contains(*path)
+                    directories.contains_key(path.as_ref())
+                        || missing_directories.contains(path.as_ref())
                 })
                 .count();
         let mut exact_files = HashMap::new();

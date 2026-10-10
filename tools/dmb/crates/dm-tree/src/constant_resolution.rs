@@ -90,6 +90,9 @@ struct ScalarDomain {
     identity: u128,
     backend: u128,
     version: u128,
+    requested: Arc<[ScalarQuery]>,
+    dependencies: Arc<BTreeMap<ScalarQuery, Arc<[ScalarQuery]>>>,
+    predefined_reads: Arc<BTreeMap<SymbolId, PredefinedOutcome>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PredefinedOutcome {
@@ -97,6 +100,10 @@ pub enum PredefinedOutcome {
     Missing,
     Unsupported,
 }
+#[path = "constant_resolution_retained.rs"]
+mod retained;
+pub use retained::ScalarFacts;
+
 impl ScalarSnapshot {
     pub fn outcome(&self, query: ScalarQuery) -> Option<&ScalarOutcome> {
         self.outcomes.get(&query)
@@ -470,6 +477,9 @@ pub fn resolve_with_predefined_and_calls(
     domain_hash.update(b"dm-scalar-answer-domain-v1\0");
     domain_hash.update(&identity.to_le_bytes());
     domain_hash.update(&backend_identity.to_le_bytes());
+    let requested: Arc<[ScalarQuery]> = requested.into_iter().collect::<Vec<_>>().into();
+    let dependencies = Arc::new(dependencies);
+    let predefined_reads = Arc::new(memo.predefined);
     ScalarSnapshot {
         issued_domain: ScalarDomain {
             source: Arc::clone(&snapshot.tree),
@@ -477,14 +487,17 @@ pub fn resolve_with_predefined_and_calls(
             identity,
             backend: backend_identity,
             version: domain_hash.digest128(),
+            requested: Arc::clone(&requested),
+            dependencies: Arc::clone(&dependencies),
+            predefined_reads: Arc::clone(&predefined_reads),
         },
         source: snapshot.clone(),
         identity,
         backend_identity,
-        requested: requested.into_iter().collect::<Vec<_>>().into(),
+        requested,
         outcomes,
-        dependencies: Arc::new(dependencies),
-        predefined_reads: Arc::new(memo.predefined),
+        dependencies,
+        predefined_reads,
     }
 }
 
@@ -578,7 +591,7 @@ mod tests {
         resolved.outcomes = Arc::new(BTreeMap::new());
         assert_eq!(resolved.domain_version(dm_ir::ReadDomain::Tree), None);
     }
-    fn snapshot(source: &str) -> TreeSnapshot {
+    pub(super) fn snapshot(source: &str) -> TreeSnapshot {
         crate::from_ast(
             &dm_syntax::parse(source),
             SymbolTable::default(),
@@ -599,7 +612,7 @@ mod tests {
     fn number(value: f32) -> ScalarOutcome {
         ScalarOutcome::Value(SemanticValue::NumberBits(value.to_bits()))
     }
-    fn backend_disabled() -> ScalarBackend<'static> {
+    pub(super) fn backend_disabled() -> ScalarBackend<'static> {
         ScalarBackend {
             identity: 1,
             decode_string: &|_| None,

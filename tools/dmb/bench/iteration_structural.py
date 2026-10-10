@@ -81,6 +81,43 @@ class Comparison:
         if (self.sha(native) != native_sha or self.sha(native.with_suffix(".rsc")) != rsc_sha
                 or self.sha(self.expected) != self.expected_sha or self.sha(self.inspector) != self.inspector_sha):
             raise ValueError("structural inputs changed during comparison")
+        # Optional producer diagnostic sidecar is never admission authority.
+        summary_path = Path(str(report) + ".summary.json")
+        if summary_path.exists():
+            summary_sha = self.sha(summary_path)
+            if summary_path.stat().st_size > 1024 * 1024:
+                raise ValueError("structural summary exceeds diagnostic size limit")
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            if self.sha(summary_path) != summary_sha:
+                raise ValueError("structural summary changed while loading")
+            if (summary.get("schema_version") != 1 or summary.get("snapshot_id") != snapshot
+                    or any(summary.get(field) != value.get(field) for field in
+                           ("total_discrepancies", "unexplained_discrepancies", "complete",
+                            "tool_complete", "traversal_complete", "semantic_coverage"))
+                    or set(summary.get("categories", {})) != set(value["categories"])
+                    or set(summary.get("uncovered", {})) != set(value["uncovered"] )):
+                raise ValueError("structural summary differs from authenticated raw report")
+            for roster, signatures, count in (("categories", "category_signatures", "discrepancy_count"),
+                                              ("uncovered", "uncovered_signatures", "occurrence_count")):
+                for kind, entry in summary[roster].items():
+                    original = value[roster][kind]
+                    if (entry.get(count) != original[count]
+                            or entry.get("unique_case_count") != len(value[signatures][kind])
+                            or entry.get("examples") != original.get("examples", [])[:5]):
+                        raise ValueError("structural summary category differs from raw report")
+            shapes = {}
+            for procedure in value.get("bytecode_procedures", {}).values():
+                kind = procedure["shape_classification"]
+                shapes[kind] = shapes.get(kind, 0) + 1
+            if summary.get("bytecode_shape_counts") != shapes:
+                raise ValueError("structural summary shapes differ from raw report")
+            summary.update(comparison_scope=result["comparison_scope"],
+                           baseline_admission=result["baseline_admission"],
+                           opcode_equivalence="not_asserted_by_difference_counts_or_instruction_shapes",
+                           raw_report=str(report), raw_report_sha256=report_sha)
+            diagnostic_path = directory / "structural-summary.json"
+            diagnostic_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+            result["diagnostic_summary"] = str(diagnostic_path)
         (directory / "structural-admission.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
         return result
 

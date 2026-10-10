@@ -436,10 +436,8 @@ impl SessionRecords {
         };
         observer(&record);
         let started = std::time::Instant::now();
-        let proofs = crate::filesystem_proofs::BulkFileSystemProofs::capture(
-            record.inputs.proof_paths(),
-            record.inputs.proof_folders(),
-        );
+        let proofs =
+            crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&record.inputs)?;
         timings.bulk_capture = started.elapsed();
         let started = std::time::Instant::now();
         let validated = record.inputs.validate_for_reuse(&proofs, exact, now_ns)?;

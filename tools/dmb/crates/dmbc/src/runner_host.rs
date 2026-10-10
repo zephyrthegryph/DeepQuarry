@@ -47,6 +47,7 @@ pub struct BuildHost {
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
+    host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -95,10 +96,23 @@ impl Default for BuildHost {
             class_projections: None,
             link_bindings: None,
             generation: None,
+            host_facts: None,
         }
     }
 }
 impl BuildHost {
+    pub(crate) fn host_facts(
+        &mut self,
+    ) -> Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>> {
+        self.memo.as_ref()?;
+        Some(Arc::clone(
+            self.host_facts
+                .get_or_insert_with(|| Arc::new(Default::default())),
+        ))
+    }
+    pub fn host_facts_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
+        self.host_facts.as_ref().map(|facts| facts.census())
+    }
     pub fn prepared_source_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
         self.prepared_sources
             .as_deref()
@@ -172,6 +186,7 @@ impl BuildHost {
             class_projections: None,
             link_bindings: None,
             generation: None,
+            host_facts: None,
         }
     }
 
@@ -452,6 +467,7 @@ impl BuildHost {
         self.class_projections = None;
         self.link_bindings = None;
         self.generation = None;
+        self.host_facts = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());

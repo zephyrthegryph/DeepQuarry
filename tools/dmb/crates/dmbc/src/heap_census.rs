@@ -98,6 +98,21 @@ impl HeapCensus {
             frozen_code_metrics: Default::default(),
         }
     }
+    /// Count logical entries without claiming their private index allocation layout.
+    pub(crate) fn observe_items(&mut self, name: &str, count: usize) {
+        self.owner(name).observed_items =
+            self.owner(name).observed_items.saturating_add(count as u64);
+    }
+    /// Account a provider's exposed backing view; caller supplies actual capacities.
+    pub(crate) fn exposed_buffer(
+        &mut self,
+        owner: &str,
+        pointer: usize,
+        payload: usize,
+        capacity: usize,
+    ) -> bool {
+        self.buffer(owner, pointer, payload, capacity)
+    }
     fn owner(&mut self, name: &str) -> &mut OwnerReport {
         if !self.owners.contains_key(name) {
             self.owners.insert(

@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 #[path = "runner_facts.rs"]
-mod runner_facts;
+pub(crate) mod runner_facts;
 #[path = "runner_report.rs"]
 mod runner_report;
 
@@ -371,6 +371,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
     } else {
         None
     };
+    let host_facts = if executable { host.host_facts() } else { None };
     let (frontend_memo, execution, semantic_state) = host.execution(
         workers,
         expansion_memo
@@ -466,7 +467,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
         let facts_started = Instant::now();
         drop(frontend_handoff_profile);
         let facts_profile = dm_profile::stage("captured_facts");
-        let (host, scalar) = runner_facts::prepare(&frontend, engine)?;
+        let (host, scalar) = runner_facts::prepare_retained(&frontend, retained_engine, host_facts.as_deref())?;
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
         drop(scalar);
         dmbc::heap_census::emit_if_enabled("captured_facts.ready", |census| {
@@ -527,7 +528,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
             };
             let proof_started = std::time::Instant::now();
             let proof_profile = dm_profile::stage("resources.filesystem_proofs");
-            let proofs = manifest.filesystem_proofs();
+            let proofs = manifest.filesystem_proofs().map_err(|error| error.to_string())?;
             drop(proof_profile);
             dmbc::daemon_eprintln!(
                 "native resource FilesystemProofCapture: {:.3}s",
@@ -826,10 +827,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
         }
         if let Some(session) = &session.filter(|_| !verification_capture) {
             let inputs = publication_inputs;
-            let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture(
-                inputs.proof_paths(),
-                inputs.proof_folders(),
-            );
+            let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
             if inputs.restat(&publication_proofs)?.unchanged() {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                 installation.record_outputs(&mut outputs)?;
@@ -904,7 +902,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
     if command == BuildCommand::AnalyzeResolved {
         let retained_engine = engine_capture.as_ref().ok_or("resolved analysis requires pinned engine")?;
-        let (resolver, _scalar) = runner_facts::prepare(&frontend, &retained_engine.snapshot)?;
+        let (resolver, _scalar) = runner_facts::prepare_retained(&frontend, retained_engine, host_facts.as_deref())?;
         dmbc::daemon::control::checkpoint()?;
         let links = retained_engine.link_overlay()?;
         let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);

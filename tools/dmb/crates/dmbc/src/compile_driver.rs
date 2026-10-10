@@ -96,20 +96,19 @@ pub fn map_defaults(
             .and_then(|member| tree.member(member));
         // Captured engine defaults are handled by the map driver. Only authored
         // values replace them; unsupported authored expressions must fail.
-        let authored = scalars
-            .source
-            .occurrences
-            .source_order()
-            .iter()
-            .any(|occurrence| {
-                let dm_tree::Target::Member(id) = occurrence.target else {
-                    return false;
-                };
-                tree.member(id).is_some_and(|member| {
-                    member.name == symbol
-                        && tree
-                            .type_node(member.owner)
-                            .is_some_and(|node| node.path == owner)
+        // The declaration index already groups exact source occurrences by
+        // target. Inspect only this owner's members, not the program roster.
+        let authored = tree
+            .lookup_type(owner)
+            .and_then(|id| tree.type_node(id))
+            .is_some_and(|node| {
+                node.members.iter().any(|&id| {
+                    tree.member(id).is_some_and(|member| member.name == symbol)
+                        && !scalars
+                            .source
+                            .occurrences
+                            .for_target(dm_tree::Target::Member(id))
+                            .is_empty()
                 })
             });
         if !authored {

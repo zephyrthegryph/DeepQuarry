@@ -28,6 +28,7 @@ impl BuildHost {
         self.link_bindings = None;
         self.maps = None;
         self.generation = None;
+        self.host_facts = None;
     }
 }
 
@@ -40,16 +41,21 @@ mod tests {
         host.executor = Some(dm_exec::BuildExecutor::new_unbound(1).unwrap());
         let prepared = host.prepared_sources().unwrap();
         let first = host.procedure_memo(4, None).unwrap();
+        let facts = host.host_facts().unwrap();
+        let weak_facts = Arc::downgrade(&facts);
+        drop(facts);
         let generation = host.generation(4).unwrap();
         let weak_generation = Arc::downgrade(&generation);
         drop(generation);
         host.release_idle_executor();
         assert!(host.executor.is_none());
         assert!(weak_generation.upgrade().is_some());
+        assert!(weak_facts.upgrade().is_some());
         let second = host.procedure_memo(4, None).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
         host.release_idle_artifacts();
         assert!(weak_generation.upgrade().is_none());
+        assert!(weak_facts.upgrade().is_none());
         let next = host.procedure_memo(4, None).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &next.values));
         assert!(!Arc::ptr_eq(&prepared, &host.prepared_sources().unwrap()));

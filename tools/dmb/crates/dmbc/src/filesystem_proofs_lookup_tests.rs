@@ -57,3 +57,46 @@ fn alternate_case_and_reserved_names_still_require_live_fallback() {
     assert_eq!(proof.counts().live_stamp_fallbacks, 2);
     assert_eq!(proof.counts().negative_proofs, 0);
 }
+#[test]
+fn snapshot_and_compatibility_capture_preserve_roster_answers_and_counts() {
+    let mut snapshot = crate::input_snapshot::InputSnapshot::new(10_000_000_000);
+    let folder = canonical_path(Path::new("dmb-proof-absent-fixture-parent"));
+    let file = folder.join("source.dm");
+    snapshot
+        .record_file(
+            &file,
+            Stamp {
+                size: 3,
+                modified_ns: 1,
+                file_id: Some(7),
+            },
+            b"one",
+        )
+        .unwrap();
+    snapshot
+        .record_folder(&folder, FolderListing::Missing)
+        .unwrap();
+    snapshot.record_negative(&folder.join("absent.dm")).unwrap();
+    let old = BulkFileSystemProofs::capture(snapshot.proof_paths(), snapshot.proof_folders());
+    let next = BulkFileSystemProofs::capture_snapshot(&snapshot).unwrap();
+    for path in snapshot.proof_paths() {
+        let old_answer = old.stamp(&path);
+        let next_answer = next.stamp(&path);
+        match (old_answer, next_answer) {
+            (Ok(old), Ok(next)) => assert_eq!(old, next),
+            (Err(old), Err(next)) => assert_eq!(old.kind(), next.kind()),
+            _ => panic!("proof capture changed answer"),
+        }
+    }
+    assert_eq!(old.list(&folder).unwrap(), next.list(&folder).unwrap());
+    assert_eq!(old.counts(), next.counts());
+}
+#[test]
+fn malformed_snapshot_roster_rejects_before_directory_capture() {
+    let snapshot = crate::input_snapshot::InputSnapshot::new(1);
+    let mut value = serde_json::to_value(snapshot).unwrap();
+    value["negative_files"] = serde_json::json!(["folder/../noncanonical.dm"]);
+    let malformed = serde_json::from_value(value).unwrap();
+    let result = BulkFileSystemProofs::capture_snapshot(&malformed);
+    assert!(matches!(result,Err(error) if error.kind()==io::ErrorKind::InvalidData));
+}

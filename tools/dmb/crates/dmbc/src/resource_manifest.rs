@@ -97,11 +97,8 @@ impl ResourceManifest {
     pub fn archive(&self) -> ResourceIdentity {
         self.archive
     }
-    pub fn filesystem_proofs(&self) -> crate::filesystem_proofs::BulkFileSystemProofs {
-        crate::filesystem_proofs::BulkFileSystemProofs::capture(
-            self.inputs.proof_paths(),
-            self.inputs.proof_folders(),
-        )
+    pub fn filesystem_proofs(&self) -> io::Result<crate::filesystem_proofs::BulkFileSystemProofs> {
+        crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&self.inputs)
     }
     /// Returns None for an ordinary changed-input/archive miss. Provider errors
     /// propagate; neither a read failure nor unsupported lookup proves absence.

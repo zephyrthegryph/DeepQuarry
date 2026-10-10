@@ -64,7 +64,93 @@ pub struct StructuralReport {
     pub normalization: Vec<&'static str>,
 }
 
+/// Bounded diagnostic view. Exact-case signatures remain exclusively in the raw report.
+#[derive(Serialize)]
+pub struct StructuralSummary<'a> {
+    pub schema_version: u32,
+    pub snapshot_id: &'a str,
+    pub scope: &'static str,
+    pub opcode_equivalence: &'static str,
+    pub traversal_complete: bool,
+    pub tool_complete: bool,
+    pub semantic_coverage: &'a str,
+    pub complete: bool,
+    pub total_discrepancies: u64,
+    pub unexplained_discrepancies: u64,
+    pub categories: BTreeMap<&'a str, CategorySummary<'a>>,
+    pub uncovered: BTreeMap<&'a str, CoverageSummary<'a>>,
+    pub bytecode_shape_counts: BTreeMap<&'a str, usize>,
+}
+
+#[derive(Serialize)]
+pub struct CategorySummary<'a> {
+    pub discrepancy_count: u64,
+    pub unique_case_count: usize,
+    pub examples: &'a [Discrepancy],
+}
+
+#[derive(Serialize)]
+pub struct CoverageSummary<'a> {
+    pub occurrence_count: u64,
+    pub unique_case_count: usize,
+    pub examples: &'a [String],
+}
+
 impl StructuralReport {
+    /// Borrow capped examples; never copy or serialize the full signature roster.
+    pub fn summary(&self) -> StructuralSummary<'_> {
+        let mut shapes = BTreeMap::new();
+        for procedure in self.bytecode_procedures.values() {
+            *shapes.entry(procedure.shape_classification).or_insert(0) += 1;
+        }
+        StructuralSummary {
+            schema_version: 1,
+            snapshot_id: &self.snapshot_id,
+            scope: "unscoped_diagnostic_only_requires_authenticated_source_and_configuration",
+            opcode_equivalence: "not_asserted_by_difference_counts_or_instruction_shapes",
+            traversal_complete: self.traversal_complete,
+            tool_complete: self.tool_complete,
+            semantic_coverage: self.semantic_coverage,
+            complete: self.complete,
+            total_discrepancies: self.total_discrepancies,
+            unexplained_discrepancies: self.unexplained_discrepancies,
+            categories: self
+                .categories
+                .iter()
+                .map(|(name, entry)| {
+                    (
+                        name.as_str(),
+                        CategorySummary {
+                            discrepancy_count: entry.discrepancy_count,
+                            unique_case_count: self
+                                .category_signatures
+                                .get(name)
+                                .map_or(0, BTreeSet::len),
+                            examples: &entry.examples[..entry.examples.len().min(EXAMPLES)],
+                        },
+                    )
+                })
+                .collect(),
+            uncovered: self
+                .uncovered
+                .iter()
+                .map(|(name, entry)| {
+                    (
+                        name.as_str(),
+                        CoverageSummary {
+                            occurrence_count: entry.occurrence_count,
+                            unique_case_count: self
+                                .uncovered_signatures
+                                .get(name)
+                                .map_or(0, BTreeSet::len),
+                            examples: &entry.examples[..entry.examples.len().min(EXAMPLES)],
+                        },
+                    )
+                })
+                .collect(),
+            bytecode_shape_counts: shapes,
+        }
+    }
     fn new(snapshot_id: &str) -> Self {
         Self {
             schema_version: 1, snapshot_id: snapshot_id.into(),
