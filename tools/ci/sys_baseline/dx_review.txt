@@ -124,7 +124,6 @@ unkeyed_wire_after	code/modules/recycling/disposal_junctions.dm	after(src, 10 SE
 manual_push	code/datums/capabilities/capabilities.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/capability_ext.dm	changed(A, CHANGE_CAPABILITY)
-manual_push	code/datums/capabilities/construction.dm	changed(target, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/timed.dm	changed(D, CHANGE_EXPLICIT, var_name)
 manual_push	code/game/atom/atom_defense.dm	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 manual_push	code/game/machinery/doors/airlock.dm	changed(src, CHANGE_MACHINE_MODE)

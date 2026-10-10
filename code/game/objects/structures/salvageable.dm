@@ -191,9 +191,15 @@ CAPABILITIES(/obj/structure/salvageable/server)
 		/obj/item/computer_hardware/hard_drive/advanced = 40
 	)
 
+CAPABILITIES(/obj/structure/salvageable/personal)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/salvageable/personal/proc/roll_look(datum/roller/R)
+	return "personal[R.number(0, 12)]"
+
 /obj/structure/salvageable/personal/Initialize(mapload)
 	. = ..()
-	icon_state = "personal[rand(0,12)]"
 	new /obj/structure/table/reinforced (loc)
 
 /obj/structure/salvageable/bliss

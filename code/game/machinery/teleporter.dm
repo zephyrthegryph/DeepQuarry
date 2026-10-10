@@ -213,7 +213,6 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
 /obj/machinery/teleport/station/Initialize(mapload)
 	. = ..()
-	add_overlay("controller-wires")
 	default_apply_parts()
 
 // the teleporter console forgets its station.
@@ -293,3 +292,7 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 
 /obj/machinery/computer/teleporter/proc/teleporter_can_set_id(datum/act/op/A)
 	return operable() && isliving(A.actor)
+
+/obj/machinery/teleport/station/draw(datum/look/look)
+	..()
+	look.overlay("controller-wires")

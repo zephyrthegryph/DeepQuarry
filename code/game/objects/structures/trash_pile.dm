@@ -157,21 +157,16 @@ TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest, mob_spawner_types, list( \
 	/mob/living/simple_mob/animal/passive/mouse= 100, \
 	/mob/living/simple_mob/animal/passive/cockroach = 25))
 
+CAPABILITIES(/obj/structure/mob_spawner/mouse_nest)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/mob_spawner/mouse_nest/proc/roll_look(datum/roller/R)
+	return R.choose(list("pile1", "pile2", "pilechair", "piletable", "pilevending", "brtrashpile", "microwavepile", "rackpile", "boxfort", "trashbag", "brokecomp"))
+
 /obj/structure/mob_spawner/mouse_nest/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
-	icon_state = pick(
-		"pile1",
-		"pile2",
-		"pilechair",
-		"piletable",
-		"pilevending",
-		"brtrashpile",
-		"microwavepile",
-		"rackpile",
-		"boxfort",
-		"trashbag",
-		"brokecomp")
 
 /obj/structure/mob_spawner/mouse_nest/do_spawn(mob_path)
 	. = ..()

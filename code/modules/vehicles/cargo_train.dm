@@ -44,8 +44,6 @@
 
 /obj/vehicle/train/engine/Initialize(mapload)
 	. = ..()
-	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
-	add_overlay(I)
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/engine/Move(atom/newloc, direct = 0, movetime)

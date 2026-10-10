@@ -44,3 +44,21 @@
 	var/obj/machinery/atmospherics/pipe/tank/air/full/A = allocate(/obj/machinery/atmospherics/pipe/tank/air/full, T)
 	var/n2 = A.start_pressure * N2STANDARD * A.volume / (R_IDEAL_GAS_EQUATION * T20C)
 	TEST_ASSERT(abs(A.air_temporary.get_moles(GAS_N2) - n2) < 0.01, "a /full tank fills to its own start_pressure")
+
+/// Looks rolled before init (rolls()) instead of drawn from the world RNG in Initialize(): each lands in its type's set.
+/datum/unit_test/dq_decl_rolled_looks/Run()
+	var/turf/T = dq_containment_floor()
+	var/list/cases = list(
+		/obj/structure/flora/ausbushes/sunnybush = "sunnybush_",
+		/obj/structure/flora/ausbushes/reedbush = "reedbush_",
+		/obj/structure/flora/mushroom = "mush",
+		/obj/structure/flora/tree/pine = "pine_",
+		/obj/item/reagent_containers/food/snacks/nugget = "nugget_",
+		/obj/structure/salvageable/personal = "personal",
+	)
+	for(var/path in cases)
+		var/atom/A = allocate(path, T)
+		TEST_ASSERT(findtext(A.icon_state, cases[path]) == 1, "[path] rolls a look starting [cases[path]] (got [A.icon_state])")
+	var/obj/structure/noticeboard/medical/board = allocate(/obj/structure/noticeboard/medical, T)
+	var/obj/item/paper/P = locate() in board
+	TEST_ASSERT(length(P?.stamp_marks), "a noticeboard's memo carries its stamp as a stamp mark")
