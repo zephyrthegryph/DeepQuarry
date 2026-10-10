@@ -1,0 +1,56 @@
+human|none menu: Remove bulb
+human|none menu: Toggle
+human|none click: Click: Toggle
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove bulb
+robot|none menu: Toggle
+robot|none menu: Toggle emergency lights
+robot|none click: Click: Toggle
+ai|none menu: Flicker
+ai|none menu: Toggle emergency lights
+ai|none click: Click: Toggle emergency lights
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove shade
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Remove shade
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Tune
+human|/obj/item/multitool click: Click: Tune
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+human|/obj/item/light menu: Insert bulb (refused: There is a bulb in it already.)
+human|/obj/item/light menu: Move To Top
+human|/obj/item/light menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/light click: Click: Insert bulb
+human|/obj/item/lampshade menu: Move To Top
+human|/obj/item/lampshade menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/lampshade click: nothing
+keys: add_shade, anchor.toggle, drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, remove_shade, robot_remote_blocked, toggle, toggle_emergency, tune
+
