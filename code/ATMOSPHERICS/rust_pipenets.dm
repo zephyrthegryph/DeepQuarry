@@ -85,6 +85,8 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		needs(req(PROC_REF(no_shell), because = MSG(atmospherics/has_shell))), then(PROC_REF(material_fitted)))
 	// a pipe painter used on anything it cannot paint does nothing (its own op paints a pipe, a tier above)
 	op("painter", item(/obj/item/pipe_painter), wait(0), then(PROC_REF(painter_swallowed)))
+	// A creature climbing into the vent: the animation delay of its vent_crawl_time (code/modules/ventcrawl/ventcrawl.dm).
+	op("ventcrawl_enter", ai(), claims(), wait(PROC_REF(ventcrawl_enter_time)), then(PROC_REF(ventcrawl_entered)))
 	param(nameof(dir), pos = 1)
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()

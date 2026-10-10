@@ -7,6 +7,8 @@
  * It observes the holder's events and actions with observe().
  */
 CAPABILITIES(/datum/experiment_handler)
+	// Scanning the target for the selected experiment with a handheld handler: a second of holding still.
+	op("handheld_scan", ai(), takes("scan_target", "scanner"), wait(1 SECOND), then(PROC_REF(run_handheld_experiment)))
 	op("clear_server", ui_act(), then(PROC_REF(ui_act_clear_server)))
 	op("clear_experiment", ui_act(), then(PROC_REF(ui_act_clear_experiment)))
 	interface("ExperimentConfigure")
@@ -142,17 +144,17 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
-	task_start(/datum/task/timed/handheld_experiment, user, target, duration = ((config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) ? 0 : 1 SECOND), receiver = src, scanner = source)
+	if(config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION)
+		handheld_experiment_scanned(source, target, user)
+		return
+	perform_op(user, src, "handheld_scan", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("scan_target" = target, "scanner" = source))
 
-/// Scanning the target for the selected experiment with a handheld handler (`scanner`).
-/datum/task/timed/handheld_experiment
-	complete_proc = /datum/experiment_handler/proc/run_handheld_experiment
-	var/datum/scanner
+/// The scan finished (after the wait).
+/datum/experiment_handler/proc/run_handheld_experiment(datum/act/op/A)
+	handheld_experiment_scanned(A.arg("scanner"), A.arg("scan_target"), A.actor)
 
-/datum/experiment_handler/proc/run_handheld_experiment(datum/task/timed/handheld_experiment/task)
-	var/datum/source = task.scanner
-	var/atom/target = task.target
-	var/mob/user = task.actor
+/// Scanning the target for the selected experiment with a handheld handler (`source`).
+/datum/experiment_handler/proc/handheld_experiment_scanned(datum/source, atom/target, mob/user)
 	if(action_experiment(source, target, user))
 		play_sfx(user, SFX_MACHINES_PING, 0.5)
 		to_chat(user, span_notice("You scan [target]."))

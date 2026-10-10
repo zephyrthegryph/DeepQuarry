@@ -55,6 +55,9 @@
 
 CAPABILITIES(/datum/spell)
 	owns_one(nameof(connected_button), /atom/movable/screen)
+	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
+	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
+	op("cast_delay_statallowed", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY), silent_wait(), then(PROC_REF(cast_delayed)))
 
 ///////////////////////
 ///SETUP AND PROCESS///
@@ -98,10 +101,16 @@ TRACKED(/datum/spell, recharging)
 	if(!cast_check(skipcharge, user))
 		return
 	if(cast_delay)
-		var/flags = IGNORE_HELD_ITEM | ((spell_flags & (STATALLOWED|GHOSTCAST)) ? IGNORE_INCAPACITATED : NONE)
-		task_timed(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
+		perform_op(user, src, (spell_flags & (STATALLOWED|GHOSTCAST)) ? "cast_delay_statallowed" : "cast_delay", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("skipcharge" = skipcharge))
 		return
 	perform_cast(user, skipcharge)
+
+/datum/spell/proc/cast_time(datum/act/op/A)
+	return cast_delay
+
+/// The cast delay passed.
+/datum/spell/proc/cast_delayed(datum/act/op/A)
+	perform_cast(A.actor, A.arg("skipcharge"))
 
 /// The arguments of the perform_cast() running now, so target questions re-run it. Only set while it runs.
 GLOBAL_LIST_EMPTY(spell_cast_args)
