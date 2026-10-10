@@ -135,7 +135,9 @@
 	var/obj/item/clothing/gloves/sterile/thieves/gloves = allocate(/obj/item/clothing/gloves/sterile/thieves, run_loc_floor_bottom_left)
 	user.equip_to_slot(gloves, SLOT_ID_GLOVES)
 	user.set_use_stance(I_DISARM)
+	user.equip_to_slot(allocate(/obj/item/clothing/under/color/grey, run_loc_floor_bottom_left), SLOT_ID_UNIFORM) // the pockets belong to the uniform
 	var/mob/living/carbon/human/victim = person(get_step(user, NORTH))
+	victim.equip_to_slot(allocate(/obj/item/clothing/under/color/grey, run_loc_floor_bottom_left), SLOT_ID_UNIFORM)
 	var/obj/item/pen/loot = allocate(/obj/item/pen, run_loc_floor_bottom_left)
 	victim.equip_to_slot(loot, SLOT_ID_POCKET_L)
 	target = victim
