@@ -157,19 +157,14 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	task_start(/datum/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
+	perform_op(src, src, "bloodsuck", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = B, "noise" = noise, "bleed" = bleed, "from" = B.loc))
 
-/datum/task/timed/human_bloodsuck_human
-	duration = 30 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
-	var/noise
-	var/bleed
-
-/mob/living/carbon/human/proc/bloodsuck_human_done(datum/task/timed/human_bloodsuck_human/task)
-	var/mob/living/carbon/human/B = task.target
-	var/noise = task.noise
-	var/bleed = task.bleed
-	if(!Adjacent(B)) return
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/act/op/A)
+	var/mob/living/carbon/human/B = A.arg("victim")
+	var/noise = A.arg("noise")
+	var/bleed = A.arg("bleed")
+	if(QDELETED(B) || B.loc != A.arg("from") || !Adjacent(B))
+		return
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
 	else
@@ -194,37 +189,31 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 		after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 
-/// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
-/// the target, then the next stage.
-/datum/task/timed/grab_drain
-	duration = 5 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
-	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
-	var/obj/item/grab/grab
-	var/stage
-	/// A proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done.
-	var/stage_proc
-	/// The grab state the drain needs (0: any grab).
-	var/needed_grab = 0
-	/// "draining", "feeding": for the interruption message.
-	var/what
-
-/// Runs stage `stage` of a drain, and holds the grab for the next one.
+/// A drain through a grab (succubus_drain(), slime_feed()) runs in stages, five seconds of holding the target between one and the next: the "grab_drain"
+/// op is one repeating wait whose laps run the stages (code/library/mob/hands.dm).
+/// Runs stage `stage` of a drain now, and holds the grab for the next ones.
 /mob/living/carbon/human/proc/grab_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage, stage_proc, needed_grab, what)
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	task_start(/datum/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
+	perform_op(src, src, "grab_drain", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
 
-/mob/living/carbon/human/proc/grab_drain_held(datum/task/timed/grab_drain/task)
-	var/obj/item/grab/G = task.grab
-	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
-		grab_drain_interrupted(task)
+/// A lap of five seconds is over: the grab must still be the one the drain needs, and the next stage runs. A stage that returns 0 ends the series.
+/mob/living/carbon/human/proc/grab_drain_lap(datum/act/op/A)
+	var/obj/item/grab/G = A.arg("grab")
+	var/needed_grab = A.arg("needed_grab")
+	if(QDELETED(G) || (needed_grab ? G.state != needed_grab : !G.state))
+		grab_drain_interrupted(A)
+		LAZYSET(A.args, "stage", 0)
 		return
-	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
+	LAZYSET(A.args, "stage", call(src, A.arg("stage_proc"))(A.arg("victim"), A.arg("stage") + 1))
 
-/mob/living/carbon/human/proc/grab_drain_interrupted(datum/task/timed/grab_drain/task)
-	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
+/// Another lap follows while the last stage named one.
+/mob/living/carbon/human/proc/grab_drain_more(datum/act/op/A)
+	return !!A.arg("stage")
+
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
 	absorbing_prey = FALSE
 
 //Welcome to the adapted changeling absorb code.
@@ -698,19 +687,19 @@ CAPABILITIES(/datum/shred_limb_review)
 	COOLDOWN_START(src, last_special, vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
-	task_start(/datum/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
+	perform_op(src, src, "shred_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "external" = T_ext, "internal" = T_int, "belly" = B))
 
-/datum/task/timed/living_shred_limb_living
-	complete_proc = /mob/living/proc/shred_limb_living_done
-	var/obj/item/organ/external/T_ext
-	var/obj/item/organ/internal/T_int
-	var/obj/belly/B
+/// How long the shredding takes: the preparing mob's own pace.
+/mob/living/proc/shred_limb_time(datum/act/op/A)
+	return vore_shred_time
 
-/mob/living/proc/shred_limb_living_done(datum/task/timed/living_shred_limb_living/task)
-	var/mob/living/carbon/human/T = task.target
-	var/obj/item/organ/external/T_ext = task.T_ext
-	var/obj/item/organ/internal/T_int = task.T_int
-	var/obj/belly/B = task.B
+/mob/living/proc/shred_limb_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.arg("victim")
+	var/obj/item/organ/external/T_ext = A.arg("external")
+	var/obj/item/organ/internal/T_int = A.arg("internal")
+	var/obj/belly/B = A.arg("belly")
+	if(QDELETED(T) || QDELETED(T_ext))
+		return
 	if(can_shred(T) != T)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
@@ -1400,54 +1389,57 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		dq_admin_report_html(src, "Chemical Refresher", output)
 		return
 	else
-		var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT. AND KEEP COPYPASTING IT  (Pointing Rick Dalton: "That's my code!" ~CL)
-
-		for(var/mob/living/carbon/L in living_mobs(1, TRUE)) //Noncarbons don't even process reagents so don't bother listing others.
-			if(!istype(L, /mob/living/carbon))
-				continue
-			if(L == src) //no getting high off your own supply, get a nif or something, nerd.
-				continue
-			if(!L.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
-				continue
-			if(!L.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
-				continue
-			targets += L
-
-		if(!(targets.len))
+		if(!length(injection_targets()))
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		open_request(src, /datum/prompt/choice/victim, PROC_REF(injection_target_chosen), answerer = src, choices = targets)
+		// The op asks who, checks the pick, and waits five seconds next to them (code/library/mob/living_abilities.dm).
+		perform_op(src, src, "injection", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/mob/living/proc/injection_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/target = A.answer.value
-	if(target && QDELETED(target))
-		return
+/// Whoever next to us can be injected with the selected reagent.
+/mob/living/proc/injection_targets()
+	var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT. AND KEEP COPYPASTING IT  (Pointing Rick Dalton: "That's my code!" ~CL)
+
+	for(var/mob/living/carbon/L in living_mobs(1, TRUE)) //Noncarbons don't even process reagents so don't bother listing others.
+		if(!istype(L, /mob/living/carbon))
+			continue
+		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
+			continue
+		if(!L.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+			continue
+		if(!L.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+			continue
+		targets += L
+	return targets
+
+/mob/living/proc/injection_choices(datum/act/op/A)
+	return injection_targets()
+
+MSG_DEF_SELF(injection/state, "You can't do that in your current state.")
+MSG_DEF_SELF(injection/kind, "That won't work on that kind of creature! (Only works on crew/monkeys)")
+MSG_DEF_SELF(injection/reagent, "You need to select a reagent.")
+MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Select a verb!)")
+
+/// The victim is picked: the pick is checked again, and the onlookers are told.
+/mob/living/proc/injection_started(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
+		return /datum/msg/op/not_available
 	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !Adjacent(target))
-		to_chat(src, span_warning("You can't do that in your current state."))
-		return
+		return /datum/msg/injection/state
 	if(!istype(target, /mob/living/carbon)) //Safety.
-		to_chat(src, span_warning("That won't work on that kind of creature! (Only works on crew/monkeys)"))
-		return
-
-	var/synth = 0
-	if(HAS_SYNTHETIC_BIOLOGY(target))
-		synth = 1
-
+		return /datum/msg/injection/kind
 	if(!trait_injection_selected)
-		to_chat(src, span_notice("You need to select a reagent."))
-		return
-
+		return /datum/msg/injection/reagent
 	if(!trait_injection_verb)
-		to_chat(src, span_notice("Somehow, you forgot your means of injecting. (Select a verb!)"))
-		return
-
+		return /datum/msg/injection/means
 	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
-	task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
 
-/mob/living/proc/injection_living_done(mob/living/target, synth)
+/mob/living/proc/injection_living_done(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
+		return
+	var/synth = HAS_SYNTHETIC_BIOLOGY(target) ? 1 : 0
 	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
 	if(target.reagents && (trait_injection_amount > 0) && !synth)
 		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
@@ -1553,9 +1545,14 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	var/choice = A.answer.value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
-	task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+	perform_op(src, src, "succubus_bite", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "choice" = choice, "from" = T.loc))
 
-/mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
+/// The bite lands only on a victim who is still where they were when the choice was made.
+/mob/living/proc/succubus_bite_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.arg("victim")
+	var/choice = A.arg("choice")
+	if(QDELETED(T) || T.loc != A.arg("from") || !Adjacent(T))
+		return
 	if(choice == REAGENT_APHRODISIAC)
 		src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
 		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
@@ -1637,14 +1634,12 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 		return
 
 	COOLDOWN_START(src, last_special, 60 SECONDS)
-	open_request(src, /datum/prompt/choice, PROC_REF(mobegglaying_chosen), answerer = src, title = "Egg Option", question = "What do you want to do?", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	// The op asks what to do, then takes thirty seconds over it (code/library/mob/living_abilities.dm).
+	perform_op(src, src, "egg_laying", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/mob/living/proc/mobegglaying_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.value))
-
-/mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
+/mob/living/proc/mobegglaying_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/C = src
+	var/choice = A.step_value("choice")
 	if(choice == "Make a Egg" && eggs > 5)
 		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
 		return 0
@@ -1783,22 +1778,15 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 		MSG_OTHERS(span_vnotice("%T%'s [belly] seems interested in %U%.")))
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
-	var/starting_loc = target.loc
-	task_start(/datum/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
+	perform_op(src, src, "absorb_devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target, "pred" = pred, "belly" = belly, "from" = target.loc))
 
-/datum/task/timed/living_absorb_devour_living
-	duration = 5 SECONDS
-	complete_proc = /mob/living/proc/absorb_devour_living_done
-	var/mob/living/pred
-	var/obj/belly/belly
-	var/starting_loc
-
-/mob/living/proc/absorb_devour_living_done(datum/task/timed/living_absorb_devour_living/task)
-	var/mob/living/pred = task.pred
-	var/obj/belly/belly = task.belly
-	var/mob/living/target = task.target
-	var/starting_loc = task.starting_loc
-	if(target.loc != starting_loc)
+/mob/living/proc/absorb_devour_living_done(datum/act/op/A)
+	var/mob/living/pred = A.arg("pred")
+	var/obj/belly/belly = A.arg("belly")
+	var/mob/living/target = A.arg("victim")
+	if(QDELETED(target) || QDELETED(pred) || QDELETED(belly))
+		return
+	if(target.loc != A.arg("from"))
 		to_chat(src, span_notice("\The [target] is no longer within reach."))
 		return
 	if(target?.buckled_to())

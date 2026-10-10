@@ -32,8 +32,11 @@
 
 	open_request(src, /datum/prompt/choice/vertical_nom_target, PROC_REF(vertical_nom_answered), answerer = src, choices = targets)
 
-/mob/living/proc/vertical_nom_done(mob/living/target, starting_loc)
-	if(target.loc != starting_loc)
+/mob/living/proc/vertical_nom_done(datum/act/op/A)
+	var/mob/living/target = A.arg("prey")
+	if(QDELETED(target))
+		return
+	if(target.loc != A.arg("from"))
 		to_chat(target, span_vwarning("You have interrupted whatever that was..."))
 		to_chat(src, span_vnotice("They got away."))
 		return
@@ -55,9 +58,8 @@
 		return
 	var/mob/living/target = context.answer.value
 	to_chat(target, span_vwarning("You feel yourself being pulled up by something... Or someone?!"))
-	var/starting_loc = target.loc
 
-	task_timed(src, 5 SECONDS, target, src, PROC_REF(vertical_nom_done), list(target, starting_loc))
+	perform_op(src, src, "vertical_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = target, "from" = target.loc))
 	SStgui.update_uis(src)
 
 /datum/prompt/choice/vertical_nom_target

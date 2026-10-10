@@ -968,10 +968,17 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
 		return FALSE
 	to_chat(user, span_filter_notice("You jam the crowbar into the robot and begin levering [mmi]."))
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(extract_mmi_robot_done), done_args = list(user))
+	perform_op(user, src, "extract_mmi", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/silicon/robot/proc/extract_mmi_robot_done(mob/user)
+/// A yanked object tears the wiring it was in.
+/mob/living/silicon/robot/yank_out_tear(obj/item/selection, mob/U)
+	LAZYREMOVE(embedded, selection)
+	injure(INJURY_CUT, 5, null, selection)
+	injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
+
+/mob/living/silicon/robot/proc/extract_mmi_robot_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires_all_cut(src))
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))

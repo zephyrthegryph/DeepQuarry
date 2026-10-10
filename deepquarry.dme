@@ -5790,6 +5790,7 @@
 #include "code\library\mob\hands.dm"
 #include "code\engine\stats\status_hooks.dm"
 #include "code\library\mob\statuses.dm"
+#include "code\library\mob\living_abilities.dm"
 #include "code\library\stats\status_delivery.dm"
 #include "code\library\mob\silicon.dm"
 #include "code\library\mob\attacks.dm"

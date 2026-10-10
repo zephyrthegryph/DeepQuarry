@@ -62,11 +62,16 @@
 	TEST_ASSERT(north in sweep_tiles, "the sweep should include the front tile")
 
 
-// A target standing in the swing tile takes damage — routed through the attackby hook
+// A target standing in the swing tile takes damage — routed through a real click
 // to also cover the divert in item_attack.dm.
 /datum/unit_test/dq_melee_swing_hits_occupied_tile
 
 /datum/unit_test/dq_melee_swing_hits_occupied_tile/Run()
+	test_driver_begin() // the windup is the "melee_swing" op: it lands when the kernel clock reaches its end
+	exercise()
+	test_driver_end()
+
+/datum/unit_test/dq_melee_swing_hits_occupied_tile/proc/exercise()
 	var/turf/base = _swing_arena()
 	var/turf/north = get_step(base, NORTH)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
@@ -81,14 +86,19 @@
 	TEST_ASSERT(attacker.Adjacent(victim), "attacker should be adjacent to the victim")
 
 	var/before = victim.vitality()
-	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
-	victim.attackby(weapon, attacker) // harm-intent item attack -> divert -> windup -> swing
-	set_global("timed_actions_instant", FALSE)
+	test_click(attacker, victim, weapon) // harm-intent item attack -> divert -> windup -> swing
+	TEST_ASSERT_NOTNULL(op_pending_of(attacker), "the windup is under way")
+	test_time(weapon.get_melee_windup() + 1 SECOND)
 	TEST_ASSERT(victim.vitality() < before, "a victim in the swing tile should take damage (vitality before [before], after [victim.vitality()])")
 
 /datum/unit_test/dq_melee_swing_kitchen_knife
 
 /datum/unit_test/dq_melee_swing_kitchen_knife/Run()
+	test_driver_begin()
+	exercise()
+	test_driver_end()
+
+/datum/unit_test/dq_melee_swing_kitchen_knife/proc/exercise()
 	var/turf/base = _swing_arena()
 	var/turf/north = get_step(base, NORTH)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
@@ -99,9 +109,8 @@
 	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
-	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
 	var/committed = attacker.begin_melee_swing(victim, knife)
-	set_global("timed_actions_instant", FALSE)
+	test_time(knife.get_melee_windup() + 1 SECOND)
 	TEST_ASSERT(committed, "the kitchen knife swing did not commit")
 	TEST_ASSERT(victim.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "a real kitchen knife on harm intent did not deal physical injury")
 
@@ -111,6 +120,11 @@
 /datum/unit_test/dq_melee_swing_dodge_by_moving
 
 /datum/unit_test/dq_melee_swing_dodge_by_moving/Run()
+	test_driver_begin()
+	exercise()
+	test_driver_end()
+
+/datum/unit_test/dq_melee_swing_dodge_by_moving/proc/exercise()
 	var/turf/base = _swing_arena()
 	var/turf/north = get_step(base, NORTH)
 	var/turf/far = get_step(north, NORTH)
@@ -125,10 +139,12 @@
 	attacker.set_combat_mode(TRUE)
 
 	var/before = victim.vitality()
-	INVOKE_ASYNC(attacker, TYPE_PROC_REF(/mob/living, begin_melee_swing), victim, weapon)
-	sleep(2)                                  // windup is in progress (9 ds total)
+	attacker.begin_melee_swing(victim, weapon)
+	test_time(2)                              // windup is in progress (9 ds total)
+	TEST_ASSERT_NOTNULL(op_pending_of(attacker), "the windup is running")
 	victim.forceMove(far)                     // dodge out of the swing tiles
-	sleep(weapon.get_melee_windup() + 4)      // wait past the swing resolution
+	test_time(weapon.get_melee_windup() + 4)  // wait past the swing resolution
+	TEST_ASSERT(!attacker.is_swinging, "and the swing has resolved")
 	TEST_ASSERT_EQUAL(victim.vitality(), before, "a victim that left the tiles during windup should take no damage")
 
 
@@ -136,6 +152,11 @@
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown
 
 /datum/unit_test/dq_melee_swing_sets_recovery_cooldown/Run()
+	test_driver_begin()
+	exercise()
+	test_driver_end()
+
+/datum/unit_test/dq_melee_swing_sets_recovery_cooldown/proc/exercise()
 	var/turf/base = _swing_arena()
 	var/turf/north = get_step(base, NORTH)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
@@ -146,8 +167,8 @@
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
 
-	set_global("timed_actions_instant", TRUE) // the windup is a timed action; land it now
 	attacker.begin_melee_swing(victim, weapon)
-	set_global("timed_actions_instant", FALSE)
+	TEST_ASSERT(attacker.is_swinging, "the swing is committed while the windup runs")
+	test_time(weapon.get_melee_windup() + 1 SECOND)
 	TEST_ASSERT(attacker.next_click > world.time, "a recovery cooldown should be active immediately after the swing")
 	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")

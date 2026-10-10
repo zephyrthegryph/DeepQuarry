@@ -326,36 +326,36 @@
 			if(!paddles.can_use(user))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			task_start(/datum/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
+			perform_op(user, src, "paddles_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site))
 			return
-	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
+	perform_op(user, src, "repair_step", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site, "time" = 5 SECONDS))
 
-/datum/task/timed/core_dormancy_paddles_charge
-	duration = 5 SECONDS
-	complete_proc = /datum/affliction/core_dormancy/proc/paddles_charge
-	var/obj/item/W
-	var/step
+// The revival steps are ops of the dormancy (it is their holder): whoever works on the cluster, or on the body, is the actor and stays beside the site.
+CAPABILITIES(/datum/affliction/core_dormancy)
+	op("paddles_charge", ai(), needs(req_capable()), takes("tool", "step", "site"), wait(5 SECONDS), then(PROC_REF(paddles_charge)))
+	op("repair_step", ai(), needs(req_capable()), takes("tool", "step", "site", "time"), wait(PROC_REF(repair_step_time)), then(PROC_REF(repair_step_done)))
 
-/datum/affliction/core_dormancy/proc/paddles_charge(datum/task/timed/core_dormancy_paddles_charge/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
+/// The paddles charge, then the shock follows a second later.
+/datum/affliction/core_dormancy/proc/paddles_charge(datum/act/op/A)
+	var/obj/item/W = A.arg("tool")
+	var/mob/living/user = A.actor
+	var/atom/site = A.arg("site")
+	var/step = A.arg("step")
+	if(QDELETED(W) || QDELETED(site) || !user.Adjacent(site))
+		return
 	play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
-	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
+	perform_op(user, src, "repair_step", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site, "time" = 1 SECOND))
 
-/datum/task/timed/core_dormancy_repair_step
-	complete_proc = /datum/affliction/core_dormancy/proc/repair_step_done
-	var/obj/item/W
-	var/step
+/datum/affliction/core_dormancy/proc/repair_step_time(datum/act/op/A)
+	return A.arg("time")
 
-/datum/affliction/core_dormancy/proc/repair_step_done(datum/task/timed/core_dormancy_repair_step/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
+/datum/affliction/core_dormancy/proc/repair_step_done(datum/act/op/A)
+	var/obj/item/W = A.arg("tool")
+	var/mob/living/user = A.actor
+	var/atom/site = A.arg("site")
+	var/step = A.arg("step")
 	var/mob/living/patient = held_mob
-	if(!patient || revival_step != step)
+	if(!patient || revival_step != step || QDELETED(W) || QDELETED(site) || !user.Adjacent(site))
 		return
 	switch(step)
 		if(DORMANCY_SEALED)

@@ -127,20 +127,21 @@
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	task_start(/datum/task/timed/living_begin_melee_swing_living, src, src, duration = windup, target_arg = target, weapon = weapon, swing_tiles = swing_tiles, progress = FALSE, interaction_key = "melee_swing", hidden = TRUE)
+	// The op (code/library/mob/living_abilities.dm) shows no bar or cog and holds nothing.
+	var/datum/op_result/started = perform_op(src, src, "melee_swing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "weapon" = weapon, "tiles" = swing_tiles, "windup" = windup))
+	if(started?.outcome == ACT_REFUSED)
+		is_swinging = FALSE
+		return FALSE
 	return TRUE
 
-/datum/task/timed/living_begin_melee_swing_living
-	complete_proc = /mob/living/proc/begin_melee_swing_living_done
-	cancel_proc = /mob/living/proc/begin_melee_swing_living_failed
-	var/mob/living/target_arg
-	var/obj/item/weapon
-	var/list/turf/swing_tiles
+/// The windup is the weapon's, worked out when the swing began.
+/mob/living/proc/melee_swing_windup(datum/act/op/A)
+	return A.arg("windup")
 
-/mob/living/proc/begin_melee_swing_living_done(datum/task/timed/living_begin_melee_swing_living/task)
-	var/mob/living/target = task.target_arg
-	var/obj/item/weapon = task.weapon
-	var/list/turf/swing_tiles = task.swing_tiles
+/mob/living/proc/begin_melee_swing_living_done(datum/act/op/A)
+	var/mob/living/target = A.arg("target")
+	var/obj/item/weapon = A.arg("weapon")
+	var/list/turf/swing_tiles = A.arg("tiles")
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
@@ -176,6 +177,5 @@
 
 	return TRUE
 
-/mob/living/proc/begin_melee_swing_living_failed(datum/task/timed/living_begin_melee_swing_living/task)
+/mob/living/proc/begin_melee_swing_living_failed(datum/act/op/A)
 	is_swinging = FALSE
-	return FALSE

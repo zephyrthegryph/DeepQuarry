@@ -57,6 +57,10 @@
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
+	// What the dog does on its own for a while (eating the weather it floats in, going down to a place and back up): the dog is still for as long as it takes.
+	op("eat_weather", ai(), needs(req_capable()), takes("event", "nut", "aff", "monster", "ore", "tre", "msg", "heal", "delet"), wait(20 SECONDS), then(PROC_REF(eat_space_weather_stardog_done)))
+	op("transition_up", ai(), needs(req_capable()), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_stardog_done)))
+	op("transition_down", ai(), needs(req_capable()), takes("destination"), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_down_done)))
 	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
 /// The one picked is told a hand is coming, as the wait starts.
@@ -278,36 +282,26 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	task_start(/datum/task/timed/stardog_eat_space_weather_stardog, src, E, nut = nut, aff = aff, mob = mob, ore = ore, tre = tre, msg = msg, heal = heal, delet = delet)
+	perform_op(src, src, "eat_weather", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("event" = E, "nut" = nut, "aff" = aff, "monster" = mob, "ore" = ore, "tre" = tre, "msg" = msg, "heal" = heal, "delet" = delet))
 	return TRUE
 
-/datum/task/timed/stardog_eat_space_weather_stardog
-	duration = 20 SECONDS
-	complete_proc = /mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done
-	var/nut
-	var/aff
-	var/mob
-	var/ore
-	var/tre
-	var/msg
-	var/heal
-	var/delet
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/task/timed/stardog_eat_space_weather_stardog/task)
-	var/obj/effect/overmap/event/E = task.target
-	var/nut = task.nut
-	var/aff = task.aff
-	var/mob = task.mob
-	var/ore = task.ore
-	var/tre = task.tre
-	var/msg = task.msg
-	var/heal = task.heal
-	var/delet = task.delet
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/act/op/A)
+	var/obj/effect/overmap/event/E = A.arg("event")
+	var/nut = A.arg("nut")
+	var/aff = A.arg("aff")
+	var/monster = A.arg("monster")
+	var/ore = A.arg("ore")
+	var/tre = A.arg("tre")
+	var/msg = A.arg("msg")
+	var/heal = A.arg("heal")
+	var/delet = A.arg("delet")
+	if(QDELETED(E))
+		return
 	to_chat(src, span_notice("[msg]"))
 	if(nut || aff)
 		adjust_nutrition(nut)
 		adjust_affinity(aff)
-	if(mob)
+	if(monster)
 		spawn_mob()
 		to_chat(src, span_notice("You can feel something moving inside of you..."))
 	if(ore)
@@ -332,7 +326,10 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		if(istype(a, /area/redgate/stardog/flesh_abyss) && prob(chance))
 			a.spawn_treasure()
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(atom/our_dest)
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(datum/act/op/A)
+	var/atom/our_dest = A.arg("destination")
+	if(QDELETED(our_dest))
+		return
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(our_dest))
@@ -371,7 +368,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		perform_op(src, src, "transition_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
@@ -391,18 +388,17 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(QDELETED(our_dest))
 		return
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-	task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
+	perform_op(src, src, "transition_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = our_dest))
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done(datum/act/op/A)
 
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(get_overmap_sector(z)))
 	adjust_nutrition(-500)
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed()
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed(datum/act/op/A)
 	to_chat(src, span_warning("You were interrupted."))
-	return
 
 /obj/effect/overmap/visitable/ship/simplemob/stardog
 	icon = 'icons/obj/overmap.dmi'

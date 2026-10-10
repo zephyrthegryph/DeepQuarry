@@ -209,6 +209,13 @@
 	if(my_slug.ai_brain?.primary_threat == victim)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
+CAPABILITIES(/obj/effect/slug_glue)
+	// Struggling out of the glue (user_unbuckle_mob()): whoever tugs stays next to it for as long as the size of the stuck one says, stunned or not.
+	op("struggle_free", ai(), takes("buckled", "time"), wait(PROC_REF(struggle_time), keeps = HELD | ADJACENT | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_slug_glue_done)))
+
+/obj/effect/slug_glue/proc/struggle_time(datum/act/op/A)
+	return A.arg("time")
+
 /obj/effect/slug_glue/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	to_chat(user, "You tug and strain against the sticky substance...")
@@ -222,10 +229,12 @@
 			escape_time = 0.5 * base_escape_time
 		else
 			escape_time = base_escape_time //Admeme size scale
-	task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_slug_glue_done), done_args = list(buckled_mob, user))
+	perform_op(user, src, "struggle_free", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("buckled" = buckled_mob, "time" = escape_time))
 
-/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(mob/living/buckled_mob, mob/user)
-	if(!has_buckled_mobs())
+/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(datum/act/op/A)
+	var/mob/living/buckled_mob = A.arg("buckled")
+	var/mob/user = A.actor
+	if(!has_buckled_mobs() || QDELETED(buckled_mob))
 		return
 	to_chat(user, "You tug free of the tacky, rubbery strands!")
 	unbuckle_mob(buckled_mob)

@@ -62,7 +62,7 @@
 			var/pull_up_time = max((3 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 			to_chat(src, span_notice("You start diving underwater..."))
 			src.audible_message(span_notice("[src] begins to dive under the water."), runemessage = "splish splosh")
-			task_start(/datum/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the sea floor.", fail_message = span_warning("You stopped swimming downwards."))
+			zmove_timed(pull_up_time, direction, start, destination, "You reach the sea floor.", span_warning("You stopped swimming downwards."))
 			return 0
 
 		else if(!destination.CanZPass(src, direction)) // one for the down and non-special case
@@ -84,14 +84,14 @@
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
 				to_chat(src, span_notice("You grab \the [lattice] and start pulling yourself upward..."))
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				task_start(/datum/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
+				zmove_timed(pull_up_time, direction, start, destination, "You pull yourself up.", span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			else if(isdiveablewater(destination))
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 				to_chat(src, span_notice("You start swimming upwards..."))
 				src.audible_message(span_notice("[src] begins to swim towards the surface."), runemessage = "splish splosh")
-				task_start(/datum/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the surface.", fail_message = span_warning("You stopped swimming upwards."))
+				zmove_timed(pull_up_time, direction, start, destination, "You reach the surface.", span_warning("You stopped swimming upwards."))
 				return 0
 
 			else if(catwalk?.hatch_open)
@@ -103,7 +103,7 @@
 					to_chat(src, span_notice("There's something in the way up above in that direction, try another."))
 					return 0
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				task_start(/datum/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
+				zmove_timed(pull_up_time, direction, start, destination, "You pull yourself up.", span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			// Explicit check if the destination turf allows full passing
@@ -121,7 +121,7 @@
 					var/fly_time = max(7 SECONDS + (H.movement_delay() * 10), 1) //So it's not too useful for combat. Could make this variable somehow, but that's down the road.
 					to_chat(src, span_notice("You begin to fly upwards..."))
 					H.audible_message(span_notice("[H] begins to flap \his wings, preparing to move upwards!"), runemessage = "flap flap")
-					task_start(/datum/task/timed/zmove, H, null, duration = fly_time, direction = direction, start = start, destination = destination, done_message = "You fly upwards.", needs_flight = TRUE, fail_message = span_warning("You stopped flying upwards."))
+					H.zmove_timed(fly_time, direction, start, destination, "You fly upwards.", span_warning("You stopped flying upwards."), TRUE)
 					return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
@@ -133,26 +133,28 @@
 
 	return zmove_finish(direction, start, destination)
 
-/// A timed z-move: diving, climbing, swimming or flying from `start` to `destination`.
-/datum/task/timed/zmove
-	complete_proc = /mob/proc/zmove_timed_done
-	var/direction
-	var/turf/start
-	var/turf/destination
-	var/done_message
-	/// Flying up: the mob must still be flying at the end.
-	var/needs_flight = FALSE
+/// A timed z-move: diving, climbing, swimming or flying from `start` to `destination`. It is the "zmove" op of the mob (mob_defines.dm): the time and
+/// both messages are the ones the movement worked out, and a flight has to last to the end.
+/mob/proc/zmove_timed(duration, direction, turf/start, turf/destination, done_message, fail_message, needs_flight = FALSE)
+	perform_op(src, src, "zmove", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = duration, "direction" = direction, "start" = start, "destination" = destination, "done" = done_message, "failed" = fail_message, "flight" = needs_flight))
+
+/mob/proc/zmove_time(datum/act/op/A)
+	return A.arg("time")
+
+/// A timed z-move was interrupted: the mob is told.
+/mob/proc/zmove_timed_failed(datum/act/op/A)
+	to_chat(src, A.arg("failed"))
 
 /// A timed z-move completed: move.
-/mob/proc/zmove_timed_done(datum/task/timed/zmove/task)
-	if(task.needs_flight)
+/mob/proc/zmove_timed_done(datum/act/op/A)
+	if(A.arg("flight"))
 		var/mob/living/H = src
 		if(!istype(H) || !H.flying)
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
-	to_chat(src, span_notice(task.done_message))
-	var/direction = task.direction
-	if(zmove_finish(direction, task.start, task.destination))
+	to_chat(src, span_notice(A.arg("done")))
+	var/direction = A.arg("direction")
+	if(zmove_finish(direction, A.arg("start"), A.arg("destination")))
 		to_chat(src, span_notice(direction == UP ? "You move upwards." : "You move down."))
 
 /// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.
@@ -890,47 +892,44 @@
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	task_start(/datum/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
+	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/datum/task/timed/simulated_climb_wall
-	complete_proc = /turf/simulated/proc/climb_wall_done
-	cancel_proc = /turf/simulated/proc/climb_wall_interrupted
-	var/turf/above_mob
-	var/turf/above_wall
-	var/fall_chance
-	var/drop_our_held
-	var/nutrition_cost
-	var/fall_at
+/// How long the climb takes: what the one climbing worked out.
+/mob/living/proc/climb_time_of(datum/act/op/A)
+	return A.arg("time")
 
-/turf/simulated/proc/climb_wall_done(datum/task/timed/simulated_climb_wall/task)
-	var/mob/living/L = task.actor
-	var/turf/above_mob = task.above_mob
-	var/turf/above_wall = task.above_wall
-	var/fall_chance = task.fall_chance
-	var/drop_our_held = task.drop_our_held
-	var/nutrition_cost = task.nutrition_cost
+/// The top of the wall, or a fall back to where the climb began.
+/mob/living/proc/climb_wall_done(datum/act/op/A)
+	var/turf/simulated/wall = A.arg("wall")
+	var/turf/above_mob = A.arg("above_mob")
+	var/turf/above_wall = A.arg("above_wall")
+	var/fall_chance = A.arg("fall_chance")
+	var/drop_our_held = A.arg("drop_held")
+	var/nutrition_cost = A.arg("nutrition_cost")
+	if(QDELETED(wall))
+		return
 	if(prob(fall_chance))
-		L.forceMove(above_mob)
-		act_message(L, src, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
+		forceMove(above_mob)
+		act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
 			blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 	else
 		if(drop_our_held)
-			L.drop_item(get_turf(L))
-		L.forceMove(above_wall)
-		act_message(L, src, others = span_infoplain(span_bold("%U%") + " climbed up on " + span_bold("%T%")),	\
-			self = span_notice("You successfully scaled " + span_bold("%T%")),	\
+			drop_item(get_turf(src))
+		forceMove(above_wall)
+		act_message(src, wall, others = span_infoplain(span_bold("%U%") + " climbed up on " + span_bold("%T%")), \
+			self = span_notice("You successfully scaled " + span_bold("%T%")), \
 			blind = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
-	L.adjust_nutrition(-nutrition_cost)
+	adjust_nutrition(-nutrition_cost)
 
 /// Interrupted past the grace time: the climber falls.
-/turf/simulated/proc/climb_wall_interrupted(datum/task/timed/simulated_climb_wall/task)
-	var/mob/living/L = task.actor
-	var/turf/above_mob = task.above_mob
-	var/fall_at = task.fall_at
-	if(!L || ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
+/mob/living/proc/climb_wall_interrupted(datum/act/op/A)
+	var/turf/simulated/wall = A.arg("wall")
+	var/turf/above_mob = A.arg("above_mob")
+	var/fall_at = A.arg("fall_at")
+	if(QDELETED(wall) || ELAPSED_SINCE(wall, fall_at, CLOCK_WORLD) <= 0)
 		return
-	L.forceMove(above_mob)
-	act_message(L, src, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
+	forceMove(above_mob)
+	act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
 		blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 
 /mob/living/verb/climb_down()
@@ -1033,30 +1032,21 @@
 		to_chat(src, span_danger("\The [climbing_surface] is not suitable for climbing! Even for a master climber, this is risky!"))
 		if(fall_chance < 75 )
 			fall_chance = 75
-	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climb down " + span_bold("%T%")),	\
+	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climb down " + span_bold("%T%")), \
+		\
 		self = span_infoplain("You begin to descend " + span_bold("%T%")), 	\
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	task_start(/datum/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
+	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/datum/task/timed/living_climb_down
-	complete_proc = /mob/living/proc/climb_down_done
-	cancel_proc = /mob/living/proc/climb_down_interrupted
-	var/turf/front_of_us
-	var/turf/destination
-	var/turf/below_wall
-	var/fall_chance
-	var/nutrition_cost
-	var/fall_at
-
-/mob/living/proc/climb_down_done(datum/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/destination = task.destination
-	var/turf/below_wall = task.below_wall
-	var/fall_chance = task.fall_chance
-	var/nutrition_cost = task.nutrition_cost
+/mob/living/proc/climb_down_done(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/destination = A.arg("destination")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_chance = A.arg("fall_chance")
+	var/nutrition_cost = A.arg("nutrition_cost")
 	if(prob(fall_chance))
 		src.forceMove(front_of_us)
 		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \
@@ -1064,16 +1054,16 @@
 			blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 	else
 		src.forceMove(destination)
-		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climbed down on " + span_bold("%T%")),	\
-			self = span_notice("You successfully descended " + span_bold("%T%")),	\
+		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climbed down on " + span_bold("%T%")), \
+			self = span_notice("You successfully descended " + span_bold("%T%")), \
 			blind = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
 	adjust_nutrition(-nutrition_cost)
 
 /// Interrupted past the grace time: the climber falls.
-/mob/living/proc/climb_down_interrupted(datum/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/below_wall = task.below_wall
-	var/fall_at = task.fall_at
+/mob/living/proc/climb_down_interrupted(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_at = A.arg("fall_at")
 	if(ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
 		return
 	src.forceMove(front_of_us)
