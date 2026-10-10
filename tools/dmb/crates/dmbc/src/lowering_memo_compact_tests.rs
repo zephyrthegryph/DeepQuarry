@@ -42,12 +42,48 @@ fn compact_disk_preserves_current_local_array_warning_receipts() {
     );
 }
 #[test]
-fn compact_disk_rebinds_lexer_warning_cursor_and_preserves_unknown_eof() {
+fn compact_disk_rebinds_lexer_warning_cursor_and_checked_current_eof() {
     check_replay("/proc/compact_probe()\n    var/value = input(\"warning fixture\") as text|anything\n    return value\n", false, false);
     check_replay(
         "/proc/compact_probe()\n    return input(\"warning fixture\") as text|anything\n",
         false,
         false,
+    );
+}
+#[test]
+fn compact_cursor_recipe_declines_unissued_skipped_directive_progression() {
+    struct Included;
+    impl dm_preprocess::SourceProvider for Included {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            Ok(if path.extension().is_some_and(|extension| extension == "dme") {
+                "#include \"probe.dm\"\n#define X 1\n"
+            } else {
+                "/proc/compact_probe()\n    return input(\"warning fixture\") as text|anything\n"
+            }.into())
+        }
+    }
+    let frontend = dm_tree::frontend::build(
+        Path::new("compact_unknown.dme"),
+        &Included,
+        &Default::default(),
+        1,
+    )
+    .unwrap();
+    let body = &frontend.bodies[0];
+    let end = frontend.expanded.text.find("text|anything").unwrap() + "text|anything".len();
+    assert!(frontend.diagnostic_cursor_after(end).is_none());
+    let recipe = crate::debug_sources::RelativeDebugAnchor::LexerCursorAfterBodyOffset(
+        end - body.expanded_span.start,
+    );
+    let bound = crate::lowering_memo::rebase_debug(&frontend, body, &[recipe]).unwrap();
+    assert_eq!(bound.entries[0].line, 0);
+    assert_eq!(bound.entries[0].semantic_path.as_ref(), "probe.dm");
+    let wire = dm_wire::encode(0x0d1a_0001, &vec![recipe]).unwrap();
+    let restored: Vec<crate::debug_sources::RelativeDebugAnchor> =
+        dm_wire::decode(0x0d1a_0001, &wire, wire.len()).unwrap();
+    assert_eq!(
+        crate::lowering_memo::rebase_debug(&frontend, body, &restored),
+        Some(bound)
     );
 }
 fn check_replay(source: &'static str, helpers: bool, modifiers: bool) {
@@ -394,10 +430,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         malformed.executable.corrupt_warning_name();
         assert!(malformed.rebind(context(), ready).is_err());
         let cursor_warning = original_source.contains("as text|anything");
-        let unknown_cursor = cursor_warning && !original_source.contains("return value");
-        let expected = if unknown_cursor {
-            "compact.dme:warning (anything_no_list): 'anything' has no meaning without a list\n"
-        } else if cursor_warning {
+        let expected = if cursor_warning {
             "compact.dme:3:warning (anything_no_list): 'anything' has no meaning without a list\n"
         } else {
             "compact.dme:2:warning (list_double_init): value: list doubly initialized\n"
@@ -485,9 +518,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
             )
             .unwrap()
         };
-        let shifted_expected = if unknown_cursor {
-            expected
-        } else if cursor_warning {
+        let shifted_expected = if cursor_warning {
             "compact.dme:5:warning (anything_no_list): 'anything' has no meaning without a list\n"
         } else {
             "compact.dme:4:warning (list_double_init): value: list doubly initialized\n"
