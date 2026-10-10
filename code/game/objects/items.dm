@@ -644,7 +644,6 @@ TRACKED(/obj/item, gurgled_color)
 		dq_set_blood_color(src, COLOR_LUMINOL)
 		if(blood_overlay)
 			blood_overlay.color = COLOR_LUMINOL
-		update_icon()
 
 /// TRUE for an item whose look draws its own stains (blood from the tracked blood colour and the forensics record, a vore gurgle from the tracked
 /// gurgled colour), so add_blood() and the gurgle code add no overlay of their own.

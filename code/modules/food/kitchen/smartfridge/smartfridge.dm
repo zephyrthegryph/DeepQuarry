@@ -151,6 +151,8 @@ CAPABILITIES(/obj/machinery/smartfridge)
 
 /obj/machinery/smartfridge/draw(datum/look/look)
 	..()
+	for(var/datum/stored_item/record as anything in item_records)
+		look.watch(record) // the stock count: a record's amount and what it keeps are tracked on it
 	look_parts(look)
 
 /// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
@@ -289,7 +291,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 		rel_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
-	changed(src)
 
 /obj/machinery/smartfridge/proc/vend(datum/stored_item/I, count)
 	var/amount = I.get_amount()
@@ -300,7 +301,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	for(var/i = 1 to min(amount, count))
 		I.get_product(get_turf(src))
 	SStgui.update_uis(src)
-	changed(src)
 
 /// Old attack_hand.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_hand(datum/act/op/A)
@@ -370,7 +370,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	throw_item.throw_at(target,16,3,src)
 	src.visible_message(span_warning("[src] launches [throw_item.name] at [target.name]!"))
 	SStgui.update_uis(src)
-	changed(src)
 	return TRUE
 
 /*

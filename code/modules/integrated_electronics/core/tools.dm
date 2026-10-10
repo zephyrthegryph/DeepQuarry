@@ -239,7 +239,6 @@ CAPABILITIES(/obj/item/integrated_electronics/debugger)
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
-	changed(src)
 
 
 /obj/item/multitool/proc/unwire(datum/integrated_io/io1, datum/integrated_io/io2, mob/user)
@@ -256,7 +255,6 @@ CAPABILITIES(/obj/item/integrated_electronics/debugger)
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder().displayed_name]'s \
 		[io1.name] and the [io2.holder().displayed_name]'s [io2.name]."))
 		io1.holder().interact(user) // This is to update the UI.
-		changed(src)
 
 /obj/item/multitool/afterattack(atom/target, mob/living/user, proximity)
 	if(proximity && engineering_reading && istype(target, /obj/machinery/photocopier))

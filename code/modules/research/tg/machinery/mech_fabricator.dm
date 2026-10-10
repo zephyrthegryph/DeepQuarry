@@ -266,13 +266,12 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 		return FALSE
 
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
-	being_built = D
+	set_being_built(D)
 	cap_key_set(src, FABRICATOR_PRINTING, TRUE, null)
 	current_producer_account = producer_account
 	part_time = get_construction_time_w_coeff(initial(D.construction_time))
 	after(src, part_time, PROC_REF(part_finished), key = "exofab_part")
 	desc = "It's building \a [D.name]."
-	changed(src)
 
 	return TRUE
 
@@ -311,10 +310,9 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
 	current_producer_account = 0
 
-	being_built = null
+	set_being_built(null)
 	cap_key_set(src, FABRICATOR_PRINTING, FALSE, null)
 	part_time = 0
-	changed(src)
 
 	var/turf/exit = get_step(src, drop_direction)
 	if(exit.density)
@@ -495,6 +493,8 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 // ---- the look ----
 
 /// Its open panel has its own state; it shows its work while a part is made.
+TRACKED(/obj/machinery/mecha_part_fabricator_tg, being_built)
+
 /obj/machinery/mecha_part_fabricator_tg/draw(datum/look/look)
 	..()
 	look.hide(LOOK_PANEL_OPEN)

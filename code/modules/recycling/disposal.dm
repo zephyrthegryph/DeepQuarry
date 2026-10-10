@@ -61,7 +61,6 @@
 // change visibility status and force update of icon
 /obj/structure/disposalpipe/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE	// hide if floor is intact
-	changed(src)
 
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version

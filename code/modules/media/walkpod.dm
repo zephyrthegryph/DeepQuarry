@@ -73,14 +73,12 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
 	rel_clear(src, nameof(listener))
-	changed(src)
 
 /obj/item/walkpod/proc/set_listener(mob/living/L)
 	if(listener())
 		remove_listener()
 	rel_set(src, nameof(listener), L)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
-	changed(src)
 
 /obj/item/walkpod/proc/update_music()
 	listener()?.force_music(media_url, media_start_time, volume) // Calling this with "" url (when we aren't playing) helpfully disables forced music
@@ -133,7 +131,6 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 		if(JUKEMODE_PLAY_ONCE)
 			rel_clear(src, nameof(current_track))
 			playing = 0
-			changed(src)
 	start_stop_song()
 
 // Track/music internals
@@ -251,7 +248,6 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 		return
 	rel_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
 	L.put_in_any_hand_if_possible(deployed_headpods)
-	changed(src)
 
 /// Old attackby.
 /obj/item/walkpod/proc/interaction_item(datum/act/op/A)
@@ -272,7 +268,6 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 	if(istype(potential_holder))
 		potential_holder.unEquip(deployed_headpods, force = TRUE)
 	rel_clear(src, nameof(deployed_headpods))
-	changed(src)
 
 /obj/item/walkpod/proc/check_headpods()
 	if(deployed_headpods && deployed_headpods.loc != loc)

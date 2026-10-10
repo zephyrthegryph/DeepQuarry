@@ -216,7 +216,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry)
 
 			product.price = (entry in prices) ? prices[entry] : 0
-			product.amount = spec["count"] || 1
+			product.set_amount(spec["count"] || 1)
 			product.variant = spec["variant"]
 			product.category = category
 

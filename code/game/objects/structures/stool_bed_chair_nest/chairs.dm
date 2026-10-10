@@ -202,7 +202,7 @@ TRACKED(/obj/structure/bed/chair, occupied)
 	can_pad = FALSE
 	can_unpad = FALSE
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/chair/office/look_parts(datum/look/look)
 	return
 
@@ -265,7 +265,7 @@ TRACKED(/obj/structure/bed/chair, occupied)
 	can_pad = FALSE
 	can_unpad = FALSE
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/chair/wood/look_parts(datum/look/look)
 	return
 

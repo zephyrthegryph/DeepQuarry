@@ -167,10 +167,10 @@ CAPABILITIES(/obj/effect/blob)
 
 	expandType = /obj/effect/blob/shield
 
-/// The look (the draw sweep: from APPEARANCE_NONE).
+/// The look: the mapped sprite, none of what the types above draw.
 /obj/effect/blob/core/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's states and layers
 	look.state(null)
 
 CAPABILITIES(/obj/effect/blob/core)

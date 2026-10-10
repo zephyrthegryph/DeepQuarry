@@ -90,7 +90,7 @@ CAPABILITIES(/obj/effect/weaversilk/wall)
 	icon_state = "nest"
 	base_icon = "nest"
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/double/weaversilk_nest/look_parts(datum/look/look)
 	return
 

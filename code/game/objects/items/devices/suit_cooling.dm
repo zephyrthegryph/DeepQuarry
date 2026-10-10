@@ -222,10 +222,10 @@ TRACKED(/obj/item/suit_cooling_unit, cover_open)
 	cell = /obj/item/cell
 	w_class = ITEMSIZE_NORMAL
 
-/// The look (the draw sweep: from APPEARANCE_NONE).
+/// The look: the mapped sprite, none of what the types above draw.
 /obj/item/suit_cooling_unit/emergency/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's states and layers
 	look.state(null)
 	look.hide("battery-0")
 	look.hide("battery-1")

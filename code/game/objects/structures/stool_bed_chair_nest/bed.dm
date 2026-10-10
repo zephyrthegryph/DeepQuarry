@@ -274,7 +274,7 @@ CAPABILITIES(/obj/structure/bed)
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/roller/look_parts(datum/look/look)
 	return
 
@@ -420,7 +420,7 @@ CAPABILITIES(/obj/item/roller_holder)
 	can_unpad = FALSE
 	can_dismantle = FALSE
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/alien/look_parts(datum/look/look)
 	return
 

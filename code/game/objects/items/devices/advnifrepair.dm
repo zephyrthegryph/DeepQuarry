@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/nifrepairer)
 /// The look (the draw sweep: from its template).
 /obj/item/nifrepairer/draw(datum/look/look)
 	..()
+	look.watch(supply) // its level is tracked on the holder
 	look.state("[initial(icon_state)][appearance_filled() ? "2" : ""]")
 
 /obj/item/nifrepairer/afterattack(atom/target, mob/user, proximity)
@@ -59,7 +60,6 @@ CAPABILITIES(/obj/item/nifrepairer)
 
 	var/trans = supply.trans_to(target, 15)
 	to_chat(user, span_notice("You transfer [trans] units of the programmed nanites to [target]."))
-	changed(src)
 	return 1
 
 /obj/item/nifrepairer/examine(mob/user)

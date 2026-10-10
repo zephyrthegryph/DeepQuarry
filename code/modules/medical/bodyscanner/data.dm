@@ -19,7 +19,6 @@
 		data["occupant"] = list()
 		return data
 
-	changed(src)
 	var/mob/living/carbon/human/H = occupant
 	var/list/occupantData = list()
 

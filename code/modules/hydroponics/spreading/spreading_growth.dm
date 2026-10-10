@@ -74,7 +74,6 @@
 		plant.set_dir(src.dir)
 		plant.transform = src.transform
 		plant.age = seed().get_trait(TRAIT_MATURATION)-1
-		plant.update_icon()
 		if(growth_type==0) //Vines do not become invisible.
 			invisibility = INVISIBILITY_MAXIMUM
 		else

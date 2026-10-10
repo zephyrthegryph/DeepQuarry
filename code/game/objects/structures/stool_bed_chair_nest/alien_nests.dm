@@ -9,7 +9,7 @@
 	unacidable = TRUE
 	flippable = FALSE
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the types above draw.
 /obj/structure/bed/nest/look_parts(datum/look/look)
 	return
 

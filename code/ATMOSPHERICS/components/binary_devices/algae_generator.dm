@@ -55,13 +55,12 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /// Not farming: clear the error and report only the idle draw (what the step did when it parked).
 /obj/machinery/atmospherics/binary/algae_farm/proc/show_idle_readout()
-	recent_moles_transferred = 0
+	set_recent_moles_transferred(0)
 	ui_error = null
 	if(use_power == USE_POWER_IDLE)
 		last_power_draw = idle_power_usage
 	else
 		last_power_draw = 0
-	changed(src)
 
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
@@ -108,7 +107,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /// One service interval of farming (its every(), while it has work).
 /obj/machinery/atmospherics/binary/algae_farm/proc/farm_step(datum/act/A)
-	recent_moles_transferred = 0
+	set_recent_moles_transferred(0)
 	last_power_draw = active_power_usage
 
 	// STEP 1 - Check material resources
@@ -149,19 +148,21 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	internal.adjust_gas(input_gas, -converted_moles)
 	air2.adjust_gas_temp(output_gas, converted_moles, internal.return_temperature())
 	gas_touched(air2)
-	recent_moles_transferred = converted_moles
+	set_recent_moles_transferred(converted_moles)
 	ui_error = null // Success!
+
+TRACKED(/obj/machinery/atmospherics/binary/algae_farm, recent_moles_transferred)
 
 /obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
 	..()
 	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
 		look.state("algae-off")
 	else
-		look.state(recent_moles_transferred > 0 ? "algae-full" : "algae-on") // ALLOW(derived_reads): every write of the readout is followed by update_icon()
+		look.state(recent_moles_transferred > 0 ? "algae-full" : "algae-on")
 
 /obj/machinery/atmospherics/binary/algae_farm/derived()
 	. = ..()
-	. += drawn_from(nameof(use_power), nameof(anchored))
+	. += drawn_from(nameof(use_power), nameof(anchored), nameof(recent_moles_transferred))
 
 /obj/machinery/atmospherics/binary/algae_farm/proc/materials_loaded(datum/act/op/A)
 	try_load_materials(A.actor, A.held)

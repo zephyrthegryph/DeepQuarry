@@ -124,7 +124,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, NS, name)
 
 			product.price = initial(NS.cost)
-			product.amount = 10
+			product.set_amount(10)
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	entopic.hide()
 
 /obj/machinery/vending/nifsoft_shop/proc/finish_nifsoft_vend(datum/stored_item/vending_product/R, mob/living/carbon/human/H, mob/user)
-	R.amount--
+	R.set_amount(R.amount - 1)
 	new R.item_path(H.nif)
 	H.nif.notify("New software installed: [R.item_name]")
 	flick("[icon_state]-vend",entopic.my_image)
