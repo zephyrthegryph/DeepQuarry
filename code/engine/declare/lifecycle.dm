@@ -230,7 +230,14 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		var/path = ispath(current) ? current : default
 		if(ispath(path))
 			D.vars[var_name] = null // ALLOW(api): the type path placeholder is replaced by the owned child
-			lifecycle_decl_adopt_child(D, var_name, start_args ? new path(arglist(list(D) + start_args)) : new path(D), FALSE)
+			lifecycle_decl_adopt_child(D, var_name, starts_construct(path, D, start_args), FALSE)
+
+/// One starting occupant of `path` for holder D: `new path(D, start_args...)`, or, when start_args begins with NO_LOC, `new path(rest...)`.
+/proc/starts_construct(path, datum/D, list/start_args)
+	if(length(start_args) && start_args[1] == NO_LOC)
+		var/list/rest = start_args.Copy(2)
+		return length(rest) ? new path(arglist(rest)) : new path
+	return length(start_args) ? new path(arglist(list(D) + start_args)) : new path(D)
 
 /// Adopts what a starts = PROC_REF returned: one value (a type or an instance) for a one var; for a many var a list of types and instances,
 /// or an associative list of key = instance, adopted under the keys.
@@ -263,7 +270,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			if(!isnum(count) || count < 1)
 				count = 1
 			for(var/i in 1 to count)
-				made += start_args ? new entry(arglist(list(D) + start_args)) : new entry(D)
+				made += starts_construct(entry, D, start_args)
 		else if(isdatum(entry))
 			made += entry
 	return made

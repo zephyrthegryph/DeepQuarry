@@ -268,15 +268,15 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
 	var/list/tertiary_loaded
 
 CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
-	owns_many(nameof(secondary_loaded))
+	owns_many(nameof(secondary_loaded), starts = PROC_REF(make_secondary_loaded))
 	owns_many(nameof(tertiary_loaded))
 	op("lemat_verb_swap_firing_mode", menu(), label("Swap Firing Mode"), needs(carried()), then(PROC_REF(lemat_verb_swap_firing_mode)))
 
 
-/obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
-	. = ..()
-	for(var/i in 1 to secondary_max_shells)
-		rel_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
+/// The starting secondary shells (owns_many(starts =)): a full cylinder.
+/obj/item/gun/projectile/revolver/lemat/proc/make_secondary_loaded(current)
+	. = list()
+	.[secondary_ammo_type] = secondary_max_shells
 
 /// Old Swap Firing Mode verb: Click to swap from one method of firing to another.
 /obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(datum/act/op/A)

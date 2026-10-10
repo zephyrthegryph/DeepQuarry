@@ -13,7 +13,7 @@
 TRACKED(/obj/structure/drop_pod, finished)
 
 CAPABILITIES(/obj/structure/drop_pod)
-	owns_one(nameof(air), /datum/gas_mixture/pod_air)
+	owns_one(nameof(air), /datum/gas_mixture/pod_air, starts = /datum/gas_mixture/pod_air, starts_args = NO_LOC)
 	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req_bool(PROC_REF(is_finished), because = MSG(drop_pod/not_opened))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
 	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
@@ -32,7 +32,6 @@ CAPABILITIES(/obj/structure/drop_pod)
 	if(cargo_at_make)
 		cargo_at_make.forceMove(src) // helo
 		podfall(auto_open)
-	rel_set(src, nameof(air), new /datum/gas_mixture/pod_air)
 
 
 /obj/structure/drop_pod/proc/podfall(auto_open)

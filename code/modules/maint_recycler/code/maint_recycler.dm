@@ -115,8 +115,8 @@
 CAPABILITIES(/obj/machinery/maint_recycler)
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
-	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
-	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+	owns_one(nameof(hatch), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	interface("RecyclerInterface")
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
@@ -133,13 +133,11 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	rel_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
 	src.vis_contents |= hatch
 
-	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon

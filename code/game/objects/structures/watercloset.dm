@@ -555,7 +555,7 @@ CAPABILITIES(/obj/structure/urinal)
 CAPABILITIES(/obj/machinery/shower)
 	reagents(nameof(reaction_volume), starts_from = list(nameof(reagent_id) = nameof(reaction_volume)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
-	owns_one(nameof(soundloop), /datum/looping_sound/showering)
+	owns_one(nameof(soundloop), /datum/looping_sound/showering, starts = /datum/looping_sound/showering)
 	op("toggle", hand(), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("analyze", item(/obj/item/analyzer), label("Check water temperature"), then(PROC_REF(interaction_analyze)))
 	op("set_temperature", hand(), ungated(), gesture(GESTURE_ALT), label("Set temperature"), passes(),
@@ -566,7 +566,6 @@ MSG_DEF_SELF(shower/adjusting, span_notice("You begin to adjust the temperature.
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
 
 /// Washes its tile every machine step while running.

@@ -22,13 +22,12 @@
 	VAR_PRIVATE/drain_time = 10
 
 CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
-	owns_one(nameof(internal_tank), /obj/machinery/portable_atmospherics/canister)
+	owns_one(nameof(internal_tank), /obj/machinery/portable_atmospherics/canister, starts = /obj/machinery/portable_atmospherics/canister/empty, starts_args = NO_LOC)
 	climb()
 
 /obj/machinery/reagent_refinery/reactor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	rel_set(src, nameof(internal_tank), new /obj/machinery/portable_atmospherics/canister/empty())
 	update_gas_network()
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 

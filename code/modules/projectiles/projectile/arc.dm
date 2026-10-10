@@ -19,14 +19,14 @@
 	var/arc_height_multiplier = 1 // Modifies how 'high' the projectile flies.
 
 CAPABILITIES(/obj/item/projectile/arc)
-	owns_one(nameof(shadow), /obj/effect/projectile_shadow)
+	owns_one(nameof(shadow), /obj/effect/projectile_shadow, starts = PROC_REF(make_shadow))
 
 /obj/item/projectile/arc/Bump()
 	return
 
-/obj/item/projectile/arc/Initialize(mapload)
-	rel_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
-	return ..()
+/// The starting shadow (owns_one(starts =)): on the projectile's turf.
+/obj/item/projectile/arc/proc/make_shadow(current)
+	return new /obj/effect/projectile_shadow(get_turf(src))
 
 
 /obj/item/projectile/arc/proc/calculate_initial_pixel_distance(atom/user, atom/target)

@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(req_console_information)
 
 CAPABILITIES(/obj/machinery/requests_console)
 	op("toggleSilent", ui_act("toggleSilent"), then(PROC_REF(ui_act_togglesilent)))
-	owns_one(nameof(announcement), /datum/announcement)
+	owns_one(nameof(announcement), /datum/announcement, starts = /datum/announcement, starts_args = NO_LOC)
 	interface("RequestConsole")
 	op("write", ui_act("write", arg("priority", num()), arg("write", schema_text(4096))),
 		asks(/datum/prompt/text, fields = list("title" = "Awaiting Input", "question" = "Write your message:", "default" = "", "timeout" = 0), when = PROC_REF(write_target_ok)),
@@ -84,7 +84,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 /obj/machinery/requests_console/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(announcement), new /datum/announcement)
 	announcement.title = "[department] announcement"
 	announcement.newscast = 1
 

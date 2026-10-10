@@ -39,7 +39,7 @@ TRACKED(/obj/machinery/atmospherics/binary/algae_farm, working)
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
-	owns_one(nameof(internal), /datum/gas_mixture)
+	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")
 	part_replacement()
 	gas_watch(air = nameof(air1), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_COMPOSITION)
@@ -67,7 +67,6 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 	// TODO - Make these in actual icon states so its not silly like this

@@ -11,15 +11,14 @@
 /obj/item/anomaly_neutralizer/var/datum/effect_remover/effect_remover
 
 CAPABILITIES(/obj/item/anomaly_neutralizer)
-	owns_one(nameof(effect_remover), /datum/effect_remover)
+	owns_one(nameof(effect_remover), /datum/effect_remover, starts = PROC_REF(make_effect_remover))
 
-/obj/item/anomaly_neutralizer/Initialize(mapload)
-	. = ..()
-
-	rel_set(src, nameof(effect_remover), new /datum/effect_remover(src, \
+/// The starting effect remover (owns_one(starts =)): it clears anomalies.
+/obj/item/anomaly_neutralizer/proc/make_effect_remover(current)
+	return new /datum/effect_remover(src, \
 		success_feedback = "You neutralize %THEEFFECT with %THEWEAPON, frying its circuitry in the process.", \
 		on_clear = PROC_REF(on_anomaly_neutralized), \
-		effects_we_clear = list(/obj/effect/anomaly)))
+		effects_we_clear = list(/obj/effect/anomaly))
 
 /obj/item/anomaly_neutralizer/proc/on_anomaly_neutralized(obj/effect/anomaly/target, mob/living/user)
 	target.anomalyNeutralize()

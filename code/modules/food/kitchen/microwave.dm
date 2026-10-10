@@ -50,7 +50,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
-	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
+	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
 	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
 	interface("Microwave")
 	without("ui_open")
@@ -107,7 +107,6 @@ CAPABILITIES(/obj/machinery/microwave)
 
 	default_apply_parts()
 
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
 
 // its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/on_destroy(force)

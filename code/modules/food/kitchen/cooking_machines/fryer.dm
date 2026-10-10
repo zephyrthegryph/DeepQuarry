@@ -37,7 +37,7 @@
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
-	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer)
+	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)
 	owns_one(nameof(oil), /datum/reagents/oil_reagents)
 	op("fryer_interaction_oil", item(/obj/item), then(PROC_REF(fryer_interaction_oil)))
 	// A grabbed mob shoved in: the victim has to stay in reach of the user for the two seconds.
@@ -49,7 +49,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 /obj/machinery/appliance/cooker/fryer/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
 
 	rel_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
 	oil.optimal_oil = optimal_oil
