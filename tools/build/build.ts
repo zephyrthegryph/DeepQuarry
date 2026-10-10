@@ -61,9 +61,8 @@ import {
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
-import { compilerCacheIdentity, compilerMode } from './lib/compiler_selection';
-import { updateDerivedCompileConfiguration } from './lib/derived_compile_key';
-import { conventionalOutput, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
+import { compilerMode } from './lib/compiler_selection';
+import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -523,94 +522,18 @@ function writeDerivedDme(target: string): void {
   fs.writeFileSync(target, text);
 }
 
-// Where compileDerived() records the content hash it compiled a .dmb/.rsc
-// pair from, so a later call (a rerun on an unchanged tree: flake reruns,
-// focused reruns) can skip DreamMaker() entirely. Lives under data/, so it's
-// per-worktree like everything else there -- never shared between worktrees.
+// Per-worktree test-sweep result fingerprints; these do not admit compiled outputs.
 const DMB_CACHE_DIR = 'data/dmb-cache';
-
-/**
- * The .dm files transitively #include'd from `dmeText` (paths relative to
- * the repo root). A small, self-contained walk of the same #include graph
- * ValidateDmeTarget checks, kept separate (rather than shared) so this cache
- * addition stays a minimal, independent diff.
- */
-function resolveDmeIncludes(dmeText: string): string[] {
-  const resolveInclude = (baseDir: string, raw: string): string => {
-    const combined = baseDir === '.' ? raw : `${baseDir}/${raw}`;
-    const out: string[] = [];
-    for (const seg of combined.replace(/\\/g, '/').split('/')) {
-      if (seg === '' || seg === '.') continue;
-      if (seg === '..') { out.pop(); continue; }
-      out.push(seg);
-    }
-    return out.join('/');
-  };
-  const dirOf = (file: string): string => {
-    const i = file.lastIndexOf('/');
-    return i === -1 ? '.' : file.slice(0, i);
-  };
-  const ACTIVE_INCLUDE = /^[ \t]*#include\s+"([^"]+\.dm)"/gm;
-  const reachable = new Set<string>();
-  const queue: string[] = [];
-  const seed = (content: string, baseDir: string) => {
-    for (const m of content.matchAll(ACTIVE_INCLUDE)) {
-      queue.push(resolveInclude(baseDir, m[1]));
-    }
-  };
-  seed(dmeText, '.');
-  while (queue.length > 0) {
-    const file = queue.pop() as string;
-    if (reachable.has(file)) continue;
-    reachable.add(file);
-    if (!fs.existsSync(file)) continue; // missing include: DreamMaker will report it
-    seed(fs.readFileSync(file, 'utf-8'), dirOf(file));
-  }
-  return [...reachable].sort();
-}
-
-/**
- * Content hash of everything that determines a derived-dme compile's
- * output: the derived .dme text itself, the full content of every .dm file
- * it transitively includes, the define list, and the DM compiler version.
- * Define order is semantic: later duplicate overrides win. File order is
- * fixed (sorted), and identical ordered inputs produce the same hash.
- */
-function computeCompileHash(dmeText: string, defines: string[], dmVersion: string | null): string {
-  const hash = createHash('sha256');
-  hash.update(dmeText);
-  for (const file of resolveDmeIncludes(dmeText)) {
-    hash.update(file);
-    try {
-      hash.update(fs.readFileSync(file));
-    } catch {
-      hash.update('<unreadable>');
-    }
-  }
-  updateDerivedCompileConfiguration(hash, defines, dmVersion, compilerCacheIdentity());
-  return hash.digest('hex');
-}
 
 async function compileDerived(dme: string, get: any, defines: string[]): Promise<CompiledOutput> {
   writeDerivedDme(dme);
-  const dmeText = fs.readFileSync(dme, 'utf-8');
   const allDefines = [...defines, ...get(DefineParameter)];
   const dmVersion = get(DmVersionParameter);
-  const dmbFile = dme.replace(/\.dme$/, '.dmb');
-  const rscFile = dme.replace(/\.dme$/, '.rsc');
-  const cacheFile = `${DMB_CACHE_DIR}/${path.basename(dme)}.hash.json`;
-  const hash = computeCompileHash(dmeText, allDefines, dmVersion);
-  if (compilerMode() === 'byond' && fs.existsSync(dmbFile) && fs.existsSync(rscFile)) {
-    try {
-      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
-      if (cached.hash === hash) {
-        Juke.logger.info(`compileDerived: reusing ${dmbFile} (compile inputs unchanged since ${cached.compiledAt}).`);
-        return conventionalOutput(dme);
-      }
-    } catch {
-      // No cache record yet, or it's unreadable/stale-format: fall through and recompile.
-    }
-  }
+  // Every derived build invokes the selected compiler. A DM-source fingerprint
+  // cannot prove map/resource bytes, FILE_DIR search or negative lookup inputs,
+  // effective compiler identity, or the current output pair. Reuse requires an
+  // authenticated complete closure; neither an icon repack nor file existence
+  // supplies that authority. Native retains its existing compiler-owned reuse.
   let output: CompiledOutput;
   try {
     output = await DreamMaker(dme, {
@@ -624,15 +547,8 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
     // A failed native build leaves the previous published generation and its
     // conventional compatibility files intact. No child launches after failure.
     await removeDerivedArtifacts(compilerMode() === 'native' ? dme : dme.replace(/\.dme$/, '.*'));
-    try {
-      fs.rmSync(cacheFile, { force: true });
-    } catch {
-      // best-effort
-    }
     throw error;
   }
-  fs.mkdirSync(DMB_CACHE_DIR, { recursive: true });
-  writeJson(cacheFile, { hash, defines: allDefines, dmVersion, compiledAt: new Date().toISOString() });
   return output;
 }
 
@@ -1704,11 +1620,9 @@ export const DmTestTarget = new Juke.Target({
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
     if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
-    // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
-    // unchanged rerun -- a flake recheck, a focused rerun while iterating --
-    // can reuse them via compileDerived()'s content-hash cache instead of
-    // recompiling. removeDerivedArtifacts() in compileDerived()'s catch
-    // already cleans up fully on a failed compile.
+    // Keep the successful output pair for inspection; the next derived build
+    // still invokes its compiler. Only the temporary derived manifest is removed.
+    // Failed compilation uses the existing cleanup path above.
     await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
