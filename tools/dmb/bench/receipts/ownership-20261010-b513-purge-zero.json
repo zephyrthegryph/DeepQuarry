@@ -1,0 +1,47 @@
+{
+  "scope": "bounded ownership diagnostic; no performance or output acceptance",
+  "compiler_sha256": "44676a829e6b81f4432b08e911799501b9e95bba07a2dcfedf81dbd63fad12ce",
+  "manifest_sha256": "a7be9696c99d0c1302b677944856927bba208390985c77d06264f2a246a20f0d",
+  "deadline_seconds": 300,
+  "status": "diagnostic_stopped",
+  "diagnostic_environment": {
+    "MIMALLOC_PURGE_DELAY": "0"
+  },
+  "allocation_policy": "explicit zero purge delay diagnostic; not acceptance profile",
+  "error": "sampled owned private-memory budget exceeded",
+  "daemon_cleanup": {
+    "pid": 58256,
+    "tree_error": null,
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "owned_memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 4033957888,
+    "samples": 537,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 58256,
+        "private_bytes": 4033957888
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "failed",
+    "reason": "sampled owned private-memory budget exceeded",
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  },
+  "heap_path": "E:\\dq-cache\\dmb-native-v2\\ownership-diagnostics\\20261010-081138-90b339ab\\heap.jsonl",
+  "outputs_admitted": false,
+  "source_receipt": "E:\\dq-cache\\dmb-native-v2\\ownership-diagnostics\\20261010-081138-90b339ab\\receipt.json",
+  "limitations": [
+    "Frozen b513 compiler; excludes later symbol-owner and initializer receipt changes.",
+    "Explicit zero purge delay still crossed4GB; this does not attribute all remaining private memory to live compiler owners.",
+    "Heap stages overlap and must not be summed.",
+    "No benchmark timing, oracle comparison or BYOND structural output admitted."
+  ]
+}

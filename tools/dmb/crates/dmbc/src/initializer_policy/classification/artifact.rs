@@ -1,9 +1,12 @@
 //! Per-write semantics, independently admitted by the shared dependency ledger.
 //! Current declarations, ordinals and runtime syntax never escape into this store.
 use super::*;
+#[path = "receipts.rs"]
+mod receipts;
 #[path = "shared_expression.rs"]
 mod shared_expression;
 use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+pub(super) use receipts::ReceiptPool;
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(test)]
 #[path = "artifact_tests.rs"]
@@ -313,6 +316,7 @@ pub(super) fn classify_one(
         prepared.as_ref(),
     )
 }
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn classify_one_keyed(
     write: &InitializerWrite,
@@ -323,6 +327,30 @@ pub(super) fn classify_one_keyed(
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
     prepared_key: Option<&Arc<[u8]>>,
+) -> Result<PendingWrite, ClassificationFailure> {
+    classify_one_keyed_grouped(
+        write,
+        symbols,
+        evaluator,
+        fact,
+        ordinal,
+        factory,
+        reuse,
+        prepared_key,
+        None,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn classify_one_keyed_grouped(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    fact: ModifierFact,
+    ordinal: usize,
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    prepared_key: Option<&Arc<[u8]>>,
+    receipt_pool: Option<&ReceiptPool>,
 ) -> Result<PendingWrite, ClassificationFailure> {
     let Some(_) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
@@ -446,10 +474,20 @@ pub(super) fn classify_one_keyed(
             })
         });
         let admitted = charge.and_then(|weight| {
-            reuse
-                .store
-                .values
-                .insert_with_owned(Arc::clone(key), reads, versions, weight, || value)
+            // Explicit byte-budget callers keep their original flat allocation
+            // charge. Current-roster diagnostics count grouped owners directly.
+            let receipt = receipts::capture(
+                reads,
+                write.lexical_owner,
+                receipt_pool.filter(|_| !reuse.store.bounded),
+            );
+            reuse.store.values.insert_with_receipt(
+                Arc::clone(key),
+                receipt,
+                versions.into(),
+                weight,
+                || value,
+            )
         });
         if let Some(value) = admitted {
             pending.accepted = Some(value);

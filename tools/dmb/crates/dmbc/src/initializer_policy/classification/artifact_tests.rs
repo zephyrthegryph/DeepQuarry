@@ -1,5 +1,7 @@
 use super::*;
 use std::sync::atomic::AtomicU32;
+#[path = "ancestry_receipts_tests.rs"]
+mod ancestry_receipts_tests;
 
 struct Host {
     value: AtomicU32,
@@ -25,7 +27,7 @@ fn write(source: &str, symbols: &mut SymbolTable) -> InitializerWrite {
     let name = symbols.intern("output").unwrap();
     InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Shared {
+        target: InitializerTarget::Shared {
             slot: SymbolId::of("output.slot"),
             owner,
             name,

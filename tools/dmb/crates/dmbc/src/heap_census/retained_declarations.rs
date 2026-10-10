@@ -7,6 +7,9 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
     if state.declaration_retention_stats().shared_census_scope {
         census.unknown("retained_declarations.scope", "contribution storage is engine-wide across host leases; shared allocations counted once in this census, not per-host retained bytes");
     }
+    if let Some(symbols) = state.retained_symbol_owner() {
+        census.symbols(symbols);
+    }
     let mut has_index = false;
     state.visit_occurrence_index_storage(|pointer, _, bytes| {
         has_index = true;
@@ -159,6 +162,18 @@ mod tests {
             Some(&mut state),
         )
         .unwrap();
+        let symbol_owner = state.retained_symbol_owner().unwrap();
+        let mut one = HeapCensus::new("symbol_owner");
+        one.symbols(symbol_owner);
+        let one = one.finish();
+        let mut aliases = HeapCensus::new("symbol_aliases");
+        aliases.symbols(symbol_owner);
+        aliases.symbols(&Arc::clone(symbol_owner));
+        assert_eq!(
+            one.unique_known_capacity_bytes,
+            aliases.finish().unique_known_capacity_bytes
+        );
+        assert!(one.unique_known_capacity_bytes > 0);
         let before = state.declaration_retention_stats();
         let first = inspect(&state);
         let second = inspect(&state);
@@ -168,13 +183,22 @@ mod tests {
             .iter()
             .any(|owner| owner.owner == "retained_grammar.descriptors"
                 && owner.unique_known_capacity_bytes > 0));
-        assert!(
-            first
-                .owners
-                .iter()
-                .any(|owner| owner.owner == "retained_grammar.expansions"
-                    && !owner.unknown.is_empty())
-        );
+        // Grammar admission now retains exact SourceText pieces, not opaque
+        // ExpansionRecord owners. Their backing is exposed; the store's private
+        // index remains unknown and must not become a fabricated byte estimate.
+        assert!(first
+            .owners
+            .iter()
+            .any(|owner| owner.owner == "retained_grammar.pieces"
+                && owner.unique_known_capacity_bytes > 0));
+        assert!(first
+            .owners
+            .iter()
+            .any(|owner| owner.owner == "retained_grammar.index"
+                && owner
+                    .unknown
+                    .iter()
+                    .any(|reason| reason.contains("private observed-store BTree"))));
         assert!(first.owners.iter().any(|owner| owner.owner
             == "retained_normalization.current_roster"
             && owner.unique_known_capacity_bytes > 0));

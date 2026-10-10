@@ -173,6 +173,9 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         keys
     });
     // No evaluation begins unless every modifier boundary was admitted.
+    // Request-local physical sharing only. The pool disappears after this pass;
+    // admitted receipts hold their leaves and replay every original observation.
+    let receipt_pool = reuse.map(|_| artifact::ReceiptPool::default());
     let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
         let result = if let Some(reuse) = reuse {
@@ -182,7 +185,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .enumerate()
                 .map(|(local, &global)| {
                     ordinal = local;
-                    artifact::classify_one_keyed(
+                    artifact::classify_one_keyed_grouped(
                         &writes[global],
                         symbols,
                         worker,
@@ -191,6 +194,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                         evaluator,
                         reuse,
                         prepared_keys.as_ref().map(|keys| &keys[global]),
+                        receipt_pool.as_ref().filter(|_| bucket.ordinals.len() > 1),
                     )
                 })
                 .collect()
