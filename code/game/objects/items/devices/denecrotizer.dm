@@ -135,6 +135,15 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 
 TRACKED(/obj/item/denecrotizer, charges)
 
+CAPABILITIES(/obj/item/denecrotizer)
+	// The three revives, started by check_target() / ghostjoin_rez() / basic_rez() with the creature; each takes revive_time.
+	op("tame", ai(), takes("target"), wait(PROC_REF(revive_wait)), then(PROC_REF(check_target_timed_done)))
+	op("ghostjoin_rez", ai(), takes("target"), wait(PROC_REF(revive_wait)), then(PROC_REF(ghostjoin_rez_timed_done)))
+	op("basic_rez", ai(), takes("target"), wait(PROC_REF(revive_wait)), on_interrupt(PROC_REF(basic_rez_timed_failed)), then(PROC_REF(basic_rez_timed_done)))
+
+/obj/item/denecrotizer/proc/revive_wait(datum/act/op/A)
+	return revive_time
+
 /obj/item/denecrotizer/draw(datum/look/look)
 	..()
 	if(charges == 0)
@@ -180,14 +189,18 @@ TRACKED(/obj/item/denecrotizer, charges)
 			return FALSE
 		if(!target.mind)
 			act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-			task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
+			perform_op(user, src, "tame", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
 	return TRUE
 
-/obj/item/denecrotizer/proc/check_target_timed_done(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/check_target_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.faction = user.faction
 	target.revivedby = user.name
 	target.set_ghostjoin(1)
@@ -196,13 +209,18 @@ TRACKED(/obj/item/denecrotizer, charges)
 	set_charges(charges - 1)
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
 	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
+	return OP_OK
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
+	perform_op(user, src, "ghostjoin_rez", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 	return
 
-/obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.faction = user.faction
 	target.revivedby = user.name
 	target.revive()
@@ -213,30 +231,27 @@ TRACKED(/obj/item/denecrotizer, charges)
 		registry_join(REGISTRY_GHOST_PODS, target)
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)
-	return
+	return OP_OK
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	act_message(user, target, others = "%U% presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	task_start(/datum/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
+	perform_op(user, src, "basic_rez", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 
-/datum/task/timed/denecrotizer_basic_rez
-	complete_proc = /obj/item/denecrotizer/proc/basic_rez_timed_done
-	cancel_proc = /obj/item/denecrotizer/proc/basic_rez_timed_failed
-
-/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/task/timed/denecrotizer_basic_rez/task)
-	var/mob/living/simple_mob/target = task.target
-	var/mob/living/user = task.actor
+/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.revive()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	set_charges(charges - 1)
-	return
+	return OP_OK
 
-/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/task/timed/denecrotizer_basic_rez/task)
-	var/mob/living/simple_mob/target = task.target
-	var/mob/living/user = task.actor
+/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
 	act_message(user, src, others = "%U% bonks [target] with %T%. Nothing happened.")
-	return
 
 /obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(check_target(target, user, stance))

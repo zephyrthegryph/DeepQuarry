@@ -4116,3 +4116,15 @@ The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/
 | Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
 
 Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
+
+## Timed actions round 3 (rewrite/timed3-B)
+
+Group B (devices, fantasy items, ghost hunting, the holosign creator). Every legacy entry point (`attack()`, `afterattack()`, a confirmed prompt, a game hook such as `container_resist()`) is kept and now ends in `perform_op(actor, <the item>, "key", ..., with = list(...))` of an `ai()` op declared on the item, so the work is a pending op of its actor. The target of the old task (a creature, a locker, a victim) travels as a `takes()` value, not as the op's target.
+
+| Class | Sites | Change |
+|---|---|---|
+| (a) A moving or lost target no longer cancels at the moment it happens | defib revive and shock (patient), body snatcher, mind binder, sleevemate scans, extrapolator, denecrotizer, translocator, bath buckle, wooden swirlie, hacktool locker/airlock, holosign | The old task watched the creature (`target = M`); the op watches the item. A target that was deleted ends the work with nothing done when it ends; the defib pair also ends when the patient left the tile it was placed on (`patient_left`); the sleevemate scans refuse with "You must remain close to your target!" when the user is no longer adjacent when they end. Nothing happens a second early. |
+| (b) The held item is not a keep of an `ai()` wait | all of the above | The legacy default cancelled when the actor's active hand changed; the `ai()` default keeps only the target (the item) and the actor staying put. The ghost catcher keeps `HELD`. Putting the item down mid-wait no longer cancels the work of the others. |
+| (c) The ghost catcher's range keep is not enforced | `ghost_catcher` grab | The old task ended when the user got further than `grab_range` from the ghost; there is no range keep yet (framework_gaps K15). The user and the target may still move freely, as before. A grab whose target is deleted does not run its `on_interrupt` (K8), so the box segments the user's client holds are not cleaned up until it logs out. |
+| (d) Busy is `op_claimed()` | defib paddles, hacktool, ghost catcher, holosign creator | The same refusals ("already hacking", "already grabbing", "busy creating a hologram"); the claim is `CLAIM_TARGET` on the item only. |
+| (e) The multitool recalibration is an op of the item | `multitool.dm` | `attack()` is deleted; the op is `at_target(/mob/living/carbon/human)` on help intent, with the limb read from the aimed zone when the wait ends as well as when it starts (aiming elsewhere during the four seconds recalibrates the newly aimed limb). |

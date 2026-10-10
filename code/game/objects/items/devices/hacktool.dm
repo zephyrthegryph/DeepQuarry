@@ -23,6 +23,9 @@
 CAPABILITIES(/obj/item/multitool/hacktool)
 	owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	// The hacks, started by attempt_hack() with the target and the rolled time; the tool is claimed (busy) until one ends.
+	op("hack_locker", ai(), takes("locker", "time"), claims(CLAIM_TARGET), wait(PROC_REF(hack_wait)), then(PROC_REF(attempt_hack_timed_done)))
+	op("hack_airlock", ai(), takes("door", "time"), claims(CLAIM_TARGET), wait(PROC_REF(hack_wait)), on_interrupt(PROC_REF(hack_airlock_failed)), then(PROC_REF(hack_airlock_done)))
 	rolls(nameof(max_known_targets), PROC_REF(roll_max_known_targets))
 
 // known_targets is a relation list (newest last): the framework drops a target when it dies.
@@ -63,7 +66,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 	return 1
 
 /obj/item/multitool/hacktool/proc/attempt_hack(mob/user, atom/target)
-	if(task_busy(src))
+	if(op_claimed(src))
 		to_chat(user, span_warning("You are already hacking!"))
 		return 0
 	if(!is_type_in_list(target, supported_types))
@@ -74,7 +77,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 		var/obj/structure/closet/crate/secure/A = target
 		if(lock_locked(A))
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A), claims = TRUE)
+			perform_op(user, src, "hack_locker", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("locker" = A, "time" = ((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)))
 		else
 			return
 
@@ -82,7 +85,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 		var/obj/structure/closet/secure_closet/A = target
 		if(lock_locked(A))
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			task_timed(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A), claims = TRUE)
+			perform_op(user, src, "hack_locker", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("locker" = A, "time" = ((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)))
 		else
 			return
 
@@ -99,36 +102,41 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
 		// Reduced hack duration to compensate for the reduced functionality, multiplied by door sec level
-		task_start(/datum/task/timed/hacktool_airlock, user, src, duration = (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), receiver = src, door = D)
+		perform_op(user, src, "hack_airlock", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = D, "time" = (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level)))
 		return 0 // the hack is under way; the door is handled when it lands
 
-/// Hacking an airlock: the tool is busy with it (claimed) until it lands.
-/datum/task/timed/hacktool_airlock
-	claims = TRUE
-	complete_proc = /obj/item/multitool/hacktool/proc/hack_airlock_done
-	fail_message = span_warning("Your hacking attempt failed!")
-	var/obj/machinery/door/airlock/door
+/// How long the hack takes, rolled when it was started.
+/obj/item/multitool/hacktool/proc/hack_wait(datum/act/op/A)
+	return A.arg("time")
+
+/// The hack was cut short.
+/obj/item/multitool/hacktool/proc/hack_airlock_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("Your hacking attempt failed!"))
 
 /// The airlock hack landed: remember the door and act on it as a hacked target.
-/obj/item/multitool/hacktool/proc/hack_airlock_done(datum/task/timed/hacktool_airlock/task)
-	var/mob/user = task.actor
-	var/obj/machinery/door/airlock/D = task.door
+/obj/item/multitool/hacktool/proc/hack_airlock_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/machinery/door/airlock/D = A.arg("door")
+	if(QDELETED(D))
+		return OP_REFUSED
 	if(!in_hack_mode)
-		to_chat(user, task.fail_message)
-		return
+		to_chat(user, span_warning("Your hacking attempt failed!"))
+		return OP_FAILED
 	to_chat(user, span_notice("Your hacking attempt was succesful!"))
 	user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)
 	rel_add(src, nameof(known_targets), D)	// The newly hacked target goes at the newest end
 	afterattack(D, user)
+	return OP_OK
 
-/obj/item/multitool/hacktool/proc/attempt_hack_timed_done(mob/user, obj/structure/closet/crate/secure/A)
+/obj/item/multitool/hacktool/proc/attempt_hack_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/closet/locker = A.arg("locker")
+	if(QDELETED(locker))
+		return OP_REFUSED
 	to_chat(user, span_notice("Override successful!"))
-	A.force_lock(FALSE)
-	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
-/obj/item/multitool/hacktool/proc/attempt_hack_timed_done2(mob/user, obj/structure/closet/secure_closet/A)
-	to_chat(user, span_notice("Override successful!"))
-	A.force_lock(FALSE)
-	play_sfx(A, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
+	locker.force_lock(FALSE)
+	play_sfx(locker, SFX_MACHINES_CLICK, 0.3, extrarange = -3)
+	return OP_OK
 
 /obj/item/multitool/hacktool/proc/sanity_check()
 	if(max_known_targets < 1) max_known_targets = 1

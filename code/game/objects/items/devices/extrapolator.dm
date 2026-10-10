@@ -44,6 +44,9 @@ CAPABILITIES(/obj/item/extrapolator)
 	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	param(nameof(scanner_at_make), pos = 1, apply = PROC_REF(fit_scanner), keep = FALSE)
+	// The isolations, started by isolate_symptom() / isolate_disease() once the user chose what to take from the subject.
+	op("isolate_symptom", ai(), takes("subject", "disease"), wait(PROC_REF(extract_wait)), then(PROC_REF(isolate_symptom_timed_done)))
+	op("isolate_disease", ai(), takes("subject", "disease"), wait(PROC_REF(isolate_wait)), then(PROC_REF(isolate_disease_timed_done)))
 
 /obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -326,37 +329,39 @@ CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
 	rel_add(symptom_holder, nameof(symptom_holder.symptoms), chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	task_start(/datum/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
+	perform_op(user, src, "isolate_symptom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "disease" = symptom_holder))
 	return TRUE
 
-/datum/task/timed/extrapolator_isolate_symptom
-	complete_proc = /obj/item/extrapolator/proc/isolate_symptom_timed_done
-	var/datum/affliction/contagion/engineered/symptom_holder
+/obj/item/extrapolator/proc/extract_wait(datum/act/op/A)
+	return extract_time
 
-/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/task/timed/extrapolator_isolate_symptom/task)
-	var/mob/living/user = task.actor
-	var/atom/target = task.target
-	var/datum/affliction/contagion/engineered/symptom_holder = task.symptom_holder
+/obj/item/extrapolator/proc/isolate_wait(datum/act/op/A)
+	return isolate_time
+
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/target = A.arg("subject")
+	var/datum/affliction/contagion/engineered/symptom_holder = A.arg("disease")
+	if(QDELETED(target) || QDELETED(symptom_holder))
+		return OP_REFUSED
 	create_culture(user, symptom_holder, target)
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease, timer = 10 SECONDS)
 	. = FALSE
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]...")), \
 		MSG_OTHERS(span_notice("%U% begins to thoroughly scan [target] with %T%...")))
-	task_start(/datum/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
+	perform_op(user, src, "isolate_disease", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "disease" = target_disease))
 	return TRUE
 
-/datum/task/timed/extrapolator_isolate_disease
-	complete_proc = /obj/item/extrapolator/proc/isolate_disease_timed_done
-	var/datum/affliction/contagion/engineered/target_disease
-
-/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/task/timed/extrapolator_isolate_disease/task)
-	var/mob/living/user = task.actor
-	var/atom/target = task.target
-	var/datum/affliction/contagion/engineered/target_disease = task.target_disease
+/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/target = A.arg("subject")
+	var/datum/affliction/contagion/engineered/target_disease = A.arg("disease")
+	if(QDELETED(target) || QDELETED(target_disease))
+		return OP_REFUSED
 	create_culture(user, target_disease, target)
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/proc/create_culture(mob/living/user, datum/affliction/contagion/engineered/disease)
 	. = FALSE

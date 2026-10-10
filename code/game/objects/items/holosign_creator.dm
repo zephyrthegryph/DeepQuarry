@@ -33,20 +33,30 @@
 		to_chat(user, span_notice("You use [src] to deactivate [H]."))
 		consume(H, user)
 	else
-		if(task_busy(src)) // a sign being projected claims the creator
+		if(op_claimed(src)) // a sign being projected claims the creator
 			to_chat(user, span_notice("[src] is busy creating a hologram."))
 			return
 		if(length(signs) < max_signs)
 			play_sfx(src.loc, SFX_MACHINES_CLICK, 0.4)
 			if(creation_time)
-				task_timed(user, creation_time, target = target, receiver = src, on_done = PROC_REF(create_sign), done_args = list(user, T), busy = src)
+				perform_op(user, src, "project", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("spot" = T))
 				return
 			create_sign(user, T, FALSE)
 		else
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
 CAPABILITIES(/obj/item/holosign_creator)
+	// Projecting a sign takes creation_time and claims the creator; afterattack() starts it with the turf.
+	op("project", ai(), takes("spot"), claims(CLAIM_TARGET), wait(PROC_REF(project_wait)), then(PROC_REF(project_done)))
 	op("clear_holograms", in_hand(), then(PROC_REF(clear_holograms)))
+
+/// How long projecting a sign takes.
+/obj/item/holosign_creator/proc/project_wait(datum/act/op/A)
+	return creation_time
+
+/obj/item/holosign_creator/proc/project_done(datum/act/op/A)
+	create_sign(A.actor, A.arg("spot"))
+	return OP_OK
 
 /// Clear only this projector's current signs through their existing checked consumption path.
 /obj/item/holosign_creator/proc/clear_holograms(datum/act/op/A)

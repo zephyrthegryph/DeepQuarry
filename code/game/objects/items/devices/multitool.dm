@@ -42,6 +42,8 @@ CAPABILITIES(/obj/item/multitool)
 		then(PROC_REF(menu_chosen)))
 	// an uplink multitool opens its hidden uplink instead
 	op("uplink", in_hand(), when(nameof(uplink)), then(PROC_REF(open_uplink)))
+	op("recalibrate", at_target(/mob/living/carbon/human), stance(I_HELP), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Recalibrate"),
+		needs(req_adjacent(), req(PROC_REF(calibratable), silent = TRUE)), begins(PROC_REF(recalibrate_text)), wait(4 SECONDS), then(PROC_REF(attack_timed_done)))
 
 /obj/item/multitool/proc/open_uplink(datum/act/op/A)
 	item_hidden_uplink(src)?.trigger(A.actor)
@@ -126,32 +128,32 @@ CAPABILITIES(/obj/item/multitool)
 /// TREAT_CALIBRATION, and a pass over the head also runs a system restore
 /// for processor corruption. Only synthetic parts respond — the body gates
 /// treatment by the part's biology.
-/obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(!ishuman(M) || stance != I_HELP)
-		return ..()
-	var/mob/living/carbon/human/H = M
-	var/obj/item/organ/external/E = H.get_organ(target_zone)
-	if(!E || !(H.body.biology_of(E) & treatment_tag_biology(TREAT_CALIBRATION)))
-		return ..()
-	act_message(user, src, MSG_SELF(span_notice("You start recalibrating [H]'s [E.name].")), \
-		MSG_OTHERS(span_notice("%U% plugs %T% into a diagnostic port on [H]'s [E.name] and starts recalibrating.")))
-	task_start(/datum/task/timed/multitool_attack, user, H, receiver = src, E = E)
-	return TRUE
+/obj/item/multitool/proc/aimed_limb(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return H.get_organ(read_once(A.actor.zone_sel?.selecting))
 
-/datum/task/timed/multitool_attack
-	duration = 4 SECONDS
-	complete_proc = /obj/item/multitool/proc/attack_timed_done
-	var/obj/item/organ/external/E
+/// Requirement: the aimed limb exists and its biology responds to calibration.
+/obj/item/multitool/proc/calibratable(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	return !!E && !!(read_once(H.body.biology_of(E)) & treatment_tag_biology(TREAT_CALIBRATION))
 
-/obj/item/multitool/proc/attack_timed_done(datum/task/timed/multitool_attack/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.target
-	var/obj/item/organ/external/E = task.E
+/obj/item/multitool/proc/recalibrate_text(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	return msg_text(span_notice("You start recalibrating [H]'s [E?.name]."), span_notice("%U% plugs %I% into a diagnostic port on [H]'s [E?.name] and starts recalibrating."))
+
+/obj/item/multitool/proc/attack_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	if(!E)
+		return OP_REFUSED
 	var/treated = H.mend(TREAT_CALIBRATION, 30, E.organ_tag)
 	if(E.organ_tag == BP_HEAD)
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
 	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/multitool/get_multitool()
 	return src
