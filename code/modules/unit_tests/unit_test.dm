@@ -1114,7 +1114,10 @@ GLOBAL_VAR(dq_test_select_names)
 			GLOB.failed_any_test = TRUE
 			GLOB.current_test = null
 			GLOB.unit_test_runtime_capture = FALSE
-			LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
+			if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
+				LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
+			else
+				GLOB.unit_test_runtime_events_truncated = TRUE
 			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "runtime_errors" = GLOB.unit_test_runtime_events, "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = null)
