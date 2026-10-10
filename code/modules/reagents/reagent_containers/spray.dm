@@ -87,17 +87,15 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 	desc = "BLAM!-brand non-foaming space cleaner!"
 	volume = 50
 
-/obj/item/reagent_containers/spray/cleaner/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CLEANER, volume)
+CAPABILITIES(/obj/item/reagent_containers/spray/cleaner)
+	configure(reagents(add = list(REAGENT_ID_CLEANER = nameof(volume))))
 
 /obj/item/reagent_containers/spray/sterilizine
 	name = REAGENT_ID_STERILIZINE
 	desc = "Great for hiding incriminating bloodstains and sterilizing scalpels."
 
-/obj/item/reagent_containers/spray/sterilizine/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_STERILIZINE, volume)
+CAPABILITIES(/obj/item/reagent_containers/spray/sterilizine)
+	configure(reagents(add = list(REAGENT_ID_STERILIZINE = nameof(volume))))
 
 /obj/item/reagent_containers/spray/pepper
 	name = "pepperspray"

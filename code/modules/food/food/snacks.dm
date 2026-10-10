@@ -711,32 +711,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly)
 	overlay_state = "donut_chaos_inbox"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/chaos)
+	rolls(nameof(chaos_filling), pick_one(list(REAGENT_ID_NUTRIMENT, REAGENT_ID_CAPSAICIN, REAGENT_ID_FROSTOIL, REAGENT_ID_SPRINKLES, REAGENT_ID_PHORON, REAGENT_ID_COCO, REAGENT_ID_SLIMEJELLY, REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_TRICORDRAZINE)))
+	configure(reagents(contents_from = PROC_REF(chaos_filling_contents)))
 	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1)))
 
-// ALLOW(init/INSTANCE_STATE): rolls which filling this donut gets
-/obj/item/reagent_containers/food/snacks/donut/chaos/Initialize(mapload)
-	. = ..()
-	switch(rand(1,10))
-		if(1)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
-		if(2)
-			reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
-		if(3)
-			reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
-		if(4)
-			reagents.add_reagent(REAGENT_ID_SPRINKLES, 3)
-		if(5)
-			reagents.add_reagent(REAGENT_ID_PHORON, 3)
-		if(6)
-			reagents.add_reagent(REAGENT_ID_COCO, 3)
-		if(7)
-			reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 3)
-		if(8)
-			reagents.add_reagent(REAGENT_ID_BANANA, 3)
-		if(9)
-			reagents.add_reagent(REAGENT_ID_BERRYJUICE, 3)
-		if(10)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 3)
+/obj/item/reagent_containers/food/snacks/donut/chaos
+	/// The filling this donut rolled (rolls()): 3 units of it.
+	var/chaos_filling
+
+/obj/item/reagent_containers/food/snacks/donut/chaos/proc/chaos_filling_contents()
+	return chaos_filling ? list("[chaos_filling]" = 3) : null
 
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly/poisonberry
 	filling_color = "#ED1169"
@@ -852,11 +836,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
 	center_of_mass_y = 16
 	bitesize = 3
 
-// ALLOW(init/INSTANCE_STATE): rolls its protein and toxin content
-/obj/item/reagent_containers/food/snacks/organ/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, rand(3,5))
-	reagents.add_reagent(REAGENT_ID_TOXIN, rand(1,3))
+/obj/item/reagent_containers/food/snacks/organ
+	/// The protein and toxin units it rolled (rolls()).
+	var/organ_protein = 0
+	var/organ_toxin = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
+	rolls(nameof(organ_protein), range_of(3, 5))
+	rolls(nameof(organ_toxin), range_of(1, 3))
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = nameof(organ_protein), REAGENT_ID_TOXIN = nameof(organ_toxin))))
 
 /obj/item/reagent_containers/food/snacks/tofu
 	name = "Tofu"
@@ -904,12 +892,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
 	var/toxin_amount = 3
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/carpmeat)
+	configure(reagents(contents_from = PROC_REF(toxin_contents)))
 	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 3)))
 
-/obj/item/reagent_containers/food/snacks/carpmeat/Initialize(mapload)
-	. = ..()
-	if(toxin_type && toxin_amount)
-		reagents.add_reagent(toxin_type, toxin_amount)
+/// Its toxin, when the type names one.
+/obj/item/reagent_containers/food/snacks/carpmeat/proc/toxin_contents()
+	return (toxin_type && toxin_amount) ? list("[toxin_type]" = toxin_amount) : null
 
 /obj/item/reagent_containers/food/snacks/carpmeat/fish
 	desc = "A fillet of fish meat."
@@ -1469,16 +1457,23 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	rolls(nameof(exceptional), chance(10))
+	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 2)))
 
-// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
+/obj/item/reagent_containers/food/snacks/plump_pie
+	/// Whether the microwave's fey mood made it exceptional (rolls()).
+	var/exceptional = FALSE
+
+/obj/item/reagent_containers/food/snacks/plump_pie/proc/exceptional_contents()
+	return exceptional ? list(REAGENT_ID_NUTRIMENT = 8, REAGENT_ID_TRICORDRAZINE = 5) : null
+
+// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
 /obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
 	. = ..()
-	if(prob(10))
+	if(exceptional)
 		name = "exceptional plump pie"
 		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump pie!"
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, nutriment_desc)
-		reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
 
 /obj/item/reagent_containers/food/snacks/xemeatpie
 	name = "Xeno-pie"
@@ -2343,15 +2338,23 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	rolls(nameof(exceptional), chance(10))
+	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 1)))
 
-// ALLOW(init/INSTANCE_STATE): rolls whether it came out exceptional
+/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit
+	/// Whether the microwave's fey mood made it exceptional (rolls()).
+	var/exceptional = FALSE
+
+/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/proc/exceptional_contents()
+	return exceptional ? list(REAGENT_ID_NUTRIMENT = 3) : null
+
+// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
 	. = ..()
-	if(prob(10))
+	if(exceptional)
 		name = "exceptional plump helmet biscuit"
 		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!"
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/chawanmushi
 	name = "chawanmushi"
@@ -2509,45 +2512,36 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-// ALLOW(init/INSTANCE_STATE): rolls which mystery recipe the soup is
-/obj/item/reagent_containers/food/snacks/mysterysoup/Initialize(mapload)
-	. = ..()
-	var/mysteryselect = pick(1,2,3,4,5,6,7,8,9,10)
-	switch(mysteryselect)
+/obj/item/reagent_containers/food/snacks/mysterysoup
+	/// Which of the ten mystery recipes it rolled (rolls()).
+	var/mystery_recipe = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mysterysoup)
+	rolls(nameof(mystery_recipe), range_of(1, 10))
+	configure(reagents(contents_from = PROC_REF(mystery_contents)))
+
+/obj/item/reagent_containers/food/snacks/mysterysoup/proc/mystery_contents()
+	switch(mystery_recipe)
 		if(1)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
+			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2)
 		if(2)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
+			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2)
 		if(3)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_WATER, 5)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
+			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5)
 		if(4)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_WATER, 10)
+			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 10)
 		if(5)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 2, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_BANANA, 10)
+			return list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_BANANA = 10)
 		if(6)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_BLOOD, 10)
+			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_BLOOD = 10)
 		if(7)
-			reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 10)
-			reagents.add_reagent(REAGENT_ID_WATER, 10)
+			return list(REAGENT_ID_SLIMEJELLY = 10, REAGENT_ID_WATER = 10)
 		if(8)
-			reagents.add_reagent(REAGENT_ID_CARBON, 10)
-			reagents.add_reagent(REAGENT_ID_TOXIN, 10)
+			return list(REAGENT_ID_CARBON = 10, REAGENT_ID_TOXIN = 10)
 		if(9)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 10)
+			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_TOMATOJUICE = 10)
 		if(10)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 5)
-			reagents.add_reagent(REAGENT_ID_IMIDAZOLINE, 5)
+			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5)
 
 /obj/item/reagent_containers/food/snacks/wishsoup
 	name = "Wish Soup"
@@ -4866,11 +4860,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenkatsu)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch)
 	configure(reagents(add = list(REAGENT_ID_BATTER = 6.5)))
+	configure(reagents(add = list(REAGENT_ID_OIL = 4)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(coating), reagents.get_reagent(REAGENT_ID_BATTER))
-	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
 	name = "funnel cake"
@@ -5015,11 +5009,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/truffle)
 	name = "mystery chocolate truffle"
 	desc = "Rich bite-sized chocolate with a mystery filling!"
 
-// ALLOW(init/INSTANCE_STATE): rolls the truffle's filling
-/obj/item/reagent_containers/food/snacks/truffle/random/Initialize(mapload)
-	. = ..()
-	var/reagent_string = pick(list(REAGENT_ID_CREAM,REAGENT_ID_CHERRYJELLY,REAGENT_ID_MINT,REAGENT_ID_FROSTOIL,REAGENT_ID_CAPSAICIN,REAGENT_ID_CREAM,REAGENT_ID_COFFEE,REAGENT_ID_MILKSHAKE))
-	reagents.add_reagent(reagent_string, 4)
+/obj/item/reagent_containers/food/snacks/truffle/random
+	/// The filling it rolled (rolls()): 4 units.
+	var/truffle_filling
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/truffle/random)
+	rolls(nameof(truffle_filling), pick_one(list(REAGENT_ID_CREAM, REAGENT_ID_CHERRYJELLY, REAGENT_ID_MINT, REAGENT_ID_FROSTOIL, REAGENT_ID_CAPSAICIN, REAGENT_ID_CREAM, REAGENT_ID_COFFEE, REAGENT_ID_MILKSHAKE)))
+	configure(reagents(contents_from = PROC_REF(truffle_contents)))
+
+/obj/item/reagent_containers/food/snacks/truffle/random/proc/truffle_contents()
+	return truffle_filling ? list("[truffle_filling]" = 4) : null
 
 /obj/item/reagent_containers/food/snacks/bacon_flatbread
 	name = "bacon cheese flatbread"
@@ -6726,17 +6725,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
 	nutriment_amt = 10
 	bitesize = 3
 	filling_color = "#336b42"
-// ALLOW(init/INSTANCE_STATE): rolls which bad reagent the old food carries
-/obj/item/reagent_containers/food/snacks/old/Initialize(mapload)
-	.=..()
-	reagents.add_reagent(pick(list(
-				REAGENT_ID_FUEL,
-				REAGENT_ID_AMATOXIN,
-				REAGENT_ID_CARPOTOXIN,
-				REAGENT_ID_ZOMBIEPOWDER,
-				REAGENT_ID_CRYPTOBIOLIN,
-				REAGENT_ID_PSILOCYBIN)), 5)
-	reagents.add_reagent(REAGENT_ID_SALMONELLA, 5)
+/obj/item/reagent_containers/food/snacks/old
+	/// What it went bad with (rolls()): 5 units, and 5 of salmonella.
+	var/old_taint
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/old)
+	rolls(nameof(old_taint), pick_one(list(REAGENT_ID_FUEL, REAGENT_ID_AMATOXIN, REAGENT_ID_CARPOTOXIN, REAGENT_ID_ZOMBIEPOWDER, REAGENT_ID_CRYPTOBIOLIN, REAGENT_ID_PSILOCYBIN)))
+	configure(reagents(contents_from = PROC_REF(old_contents)))
+
+/obj/item/reagent_containers/food/snacks/old/proc/old_contents()
+	return old_taint ? list("[old_taint]" = 5, REAGENT_ID_SALMONELLA = 5) : list(REAGENT_ID_SALMONELLA = 5)
 
 /obj/item/reagent_containers/food/snacks/old/pizza
 	name = "\improper Pizza!"
@@ -6926,9 +6924,12 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
 	bitesize = 2
 	var/brainmeat = REAGENT_ID_BRAINPROTEIN
 
-/obj/item/reagent_containers/food/snacks/canned/brainzsnax/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(brainmeat, 10)
+/// Ten units of its brain meat.
+/obj/item/reagent_containers/food/snacks/canned/brainzsnax/proc/brain_contents()
+	return brainmeat ? list("[brainmeat]" = 10) : null
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
+	configure(reagents(contents_from = PROC_REF(brain_contents)))
 
 /obj/item/reagent_containers/food/snacks/canned/brainzsnax/red
 	name = "\improper BrainzSnax RED"

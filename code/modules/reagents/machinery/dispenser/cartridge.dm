@@ -18,7 +18,6 @@
 /obj/item/reagent_containers/chem_disp_cartridge/Initialize(mapload)
 	. = ..()
 	if(spawn_reagent)
-		reagents.add_reagent(spawn_reagent, volume)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[spawn_reagent]
 		setLabel(R.name)
 
@@ -38,6 +37,7 @@
 // A cartridge is a capped holder of its volume: the cap is worked in hand, with it off it pours into an open container and fills from a tank by the
 // tank's own amount. It moves a large amount at a time (set from 50 to 500). Its label is set from the menu.
 CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
+	configure(reagents(starts_from = list(nameof(spawn_reagent) = nameof(volume))))
 	reagent_container(
 		volume = nameof(volume),
 		lid = TRUE,
