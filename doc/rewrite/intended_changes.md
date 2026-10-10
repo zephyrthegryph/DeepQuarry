@@ -4116,3 +4116,11 @@ The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/
 | Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
 
 Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
+
+## Timed actions round 3 (rewrite/timed3-G)
+
+| Class | Site | Change |
+|---|---|---|
+| (b) target no longer cancels | stardog eating weather, kururak hatch rending, worm eating a wall / object / field / door, Nikki hat warp, slug glue | The old task also ended when the target (event, mech, wall, door, guided mob) moved; the self-target `ai()` op ends only when the actor moves. Kururak and the hat re-check adjacency at the end; the worm and stardog rely on the target being fixed. |
+| (b) dead check dropped | grab pin down | `pin_down_grab_done` reads `grab_target()` when the wait ends instead of the old `target` argument. |
+| (c) vertical nom, holo nom, dominate/lend control, beacon insert, body writing, eat minerals, climb down | left on the legacy task form | See KG1 in framework_gaps.md. |

@@ -199,6 +199,7 @@ CAPABILITIES(/obj/item/grab)
 	op("inspect_bones", ai(), wait(2 SECONDS), on_interrupt(PROC_REF(inspect_bones_failed)), then(PROC_REF(inspect_bones_done)))
 	op("inspect_skin", ai(), wait(1 SECOND), on_interrupt(PROC_REF(inspect_skin_failed)), then(PROC_REF(inspect_skin_done)))
 	op("inspect_internal", ai(), wait(5 SECONDS), on_interrupt(PROC_REF(inspect_internal_failed)), then(PROC_REF(inspect_internal_done)))
+	op("pin_down", ai(), wait(2 SECONDS), then(PROC_REF(pin_down_grab_done)))
 	owns_one(nameof(hud), starts = /atom/movable/screen/grab)
 	param(nameof(victim_at_make), pos = 1, apply = PROC_REF(grab_made), keep = FALSE)
 

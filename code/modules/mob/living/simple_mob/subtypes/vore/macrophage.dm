@@ -55,6 +55,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
 	owns_one(nameof(base_disease), /datum/affliction/contagion)
 	owns_many(nameof(infections), /datum/affliction/contagion)
+	op("extrapolator_stab", ai(), reach(REACH_ADJACENT), takes("probe"), wait(2 SECONDS), then(PROC_REF(extrapolator_stabbed)))
 
 
 /mob/living/simple_mob/vore/aggressive/macrophage/giant
@@ -83,10 +84,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	// if(!dry_run && !EXTRAPOLATOR_ACT_CHECK(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL) && extrapolator.create_culture(user, base_disease))
 	if(dry_run)
 		return
-	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(extrapolator_act_macrophage_done), done_args = list(user, extrapolator))
+	perform_op(user, src, "extrapolator_stab", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("probe" = extrapolator))
 	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
 
-/mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_stabbed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/extrapolator/extrapolator = A.arg("probe")
 	act_message(user, src, \
 		MSG_SELF(span_danger("You stab %T% with [extrapolator]'s probe, destroying it!")), \
 		MSG_OTHERS(span_danger("%U% stabs %T% with [extrapolator], sucking it up!")))

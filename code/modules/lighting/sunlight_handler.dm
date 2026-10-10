@@ -6,6 +6,7 @@ CAPABILITIES(/turf/simulated)
 	after_init(0, then(PROC_REF(turf_after_init)))
 	owns_one(nameof(shandler), /datum/sunlight_handler)
 	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
+	op("climb_wall", ai(), takes("duration", "above_mob", "above_wall", "fall_chance", "drop_our_held", "nutrition_cost", "fall_at"), wait(PROC_REF(climb_wall_time)), on_interrupt(PROC_REF(climb_wall_interrupted)), then(PROC_REF(climb_wall_done)))
 	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))
 
 /// A turf the map loads runs its after-init pass once the whole load exists; one made later (ChangeTurf) runs it only when its type says so.
