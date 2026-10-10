@@ -57,7 +57,6 @@
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
 	var/tmp/mob/living/carbon/human/wearer	// The person currently wearing the rig.
-	var/image/mob_icon                                        // Holder for on-mob icon.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
 	// Cooling system vars.
@@ -218,9 +217,6 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 
 	component_registry.initialize_pieces()
 
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
-
 
 // the suit pieces are torn down by its (owned) component registry.
 /obj/item/rig/on_destroy(force)
@@ -291,8 +287,8 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			return null //All other species are 'humanoid enough' to wear the default rig sprite.
 		if(icon_override)
 			return icon_override
-		else if(mob_icon)
-			return mob_icon
+		// The suit's own worn sheet: the species' sheet, else the rig's default (none for a protean rig: no forced sprite).
+		return LAZYACCESS(sprite_sheets, body_type) || default_mob_icon
 
 	return ..()
 
@@ -331,8 +327,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		piece.icon_state = "[suit_state]"
 		if(airtight)
 			update_airtight(piece, 0) // Unseal
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /obj/item/rig/proc/cut_suit()
 	offline = 2
@@ -341,8 +336,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("boots", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("chest", loc, ONLY_RETRACT, TRUE)
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /// Seals or unseals the suit: a sequence of timed actions (the overall check, then one per
 /// piece), each continuing in seal_piece() and ending in seal_finish().
@@ -493,8 +487,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		canremove = !seal_target
 		if(airtight)
 			update_component_sealed()
-		mob_icon = null // rebuilt by the redraw
-		update_icon()
+		refresh_worn_pieces()
 		return 0
 
 	// Success!
@@ -516,8 +509,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			module.deactivate()
 	if(airtight)
 		update_component_sealed()
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /obj/item/rig/proc/update_component_sealed()
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -666,32 +658,17 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		return 0
 	return cell.give(joules * CELLRATE) / CELLRATE
 
-DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/rig/appearance_overlays()
-	. = list()
-
-	if(!mob_icon)
-		var/species_icon = default_mob_icon
-		// Since setting mob_icon will override the species checks in
-		// update_inv_wear_suit(), handle species checks here.
-		if(wearer() && LAZYACCESS(sprite_sheets, wearer().species.get_bodytype(wearer())))
-			species_icon = sprite_sheets[wearer().species.get_bodytype(wearer())]
-		mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
-
-	if(chest)
-		chest.cut_overlays()
-		if(length(installed_modules))
-			for(var/obj/item/rig_module/module in installed_modules)
-				if(module.suit_overlay)
-					chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
-
-	if(wearer())
-		wearer().update_inv_shoes()
-		wearer().update_inv_gloves()
-		wearer().update_inv_head()
-		wearer().update_inv_wear_suit()
-		wearer().update_inv_back()
-	return .
+/// The wearer redraws every slot a piece of the suit sits in: the sealed or retracted state of a piece is its own icon_state, which the
+/// pieces get from the rig directly, so the slots that wear them are redrawn after the rig changed them.
+/obj/item/rig/proc/refresh_worn_pieces()
+	var/mob/living/carbon/human/H = wearer()
+	if(!H)
+		return
+	H.update_inv_shoes()
+	H.update_inv_gloves()
+	H.update_inv_head()
+	H.update_inv_wear_suit()
+	H.update_inv_back()
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 
@@ -751,7 +728,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
 		rel_set(src, nameof(wearer), M)
 		rel_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
-		update_icon()
+		refresh_worn_pieces()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
 

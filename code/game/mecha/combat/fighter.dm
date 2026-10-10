@@ -336,8 +336,6 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 	// Paint colors! Null if not set.
 	var/stripe1_color
 	var/stripe2_color
-	var/image/stripe1_overlay
-	var/image/stripe2_overlay
 
 //Loaded version with guns
 TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, fighter_init_loadout, FIGHTER_LOADOUT_GUNPOD)
@@ -345,19 +343,16 @@ TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, fighter_init_loadout, FIGHTE
 //Blinky
 TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, fighter_init_loadout, FIGHTER_LOADOUT_RECON)
 
-DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/mecha/combat/fighter/gunpod/appearance_overlays()
-	. = list()
-	. += ..()
-
+/// The stripes, in the colours a multitool gave them.
+/obj/mecha/combat/fighter/gunpod/draw(datum/look/look)
+	..()
 	if(stripe1_color)
-		stripe1_overlay = image("gunpod_stripes1")
-		stripe1_overlay.color = stripe1_color
-		. += stripe1_overlay
+		look.overlay(look_appearance(icon, "gunpod_stripes1", color = stripe1_color))
 	if(stripe2_color)
-		stripe2_overlay = image("gunpod_stripes2")
-		stripe2_overlay.color = stripe2_color
-		. += stripe2_overlay
+		look.overlay(look_appearance(icon, "gunpod_stripes2", color = stripe2_color))
+
+TRACKED(/obj/mecha/combat/fighter/gunpod, stripe1_color)
+TRACKED(/obj/mecha/combat/fighter/gunpod, stripe2_color)
 
 CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	op("gunpod_paint", item(/obj/item), label("Paint stripes"), then(PROC_REF(interaction_gunpod_paint)))
@@ -400,10 +395,9 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	if(ask.value)
 		switch(ask.zone)
 			if("Fore Stripe")
-				stripe1_color = ask.value
+				set_stripe1_color(ask.value)
 			if("Aft Stripe")
-				stripe2_color = ask.value
-	update_icon()
+				set_stripe2_color(ask.value)
 
 /obj/effect/decal/mecha_wreckage/gunpod
 	name = "Gunpod wreckage"

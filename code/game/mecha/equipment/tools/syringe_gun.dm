@@ -338,8 +338,6 @@ TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing)
 
 	var/enabled = FALSE
 
-	var/icon/drone_overlay
-
 	var/max_distance = 3
 
 	/// Only patients whose field triage demand for one of the drone's tags is
@@ -363,10 +361,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/var/jammed = FALSE
 TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed)
-
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
-	. = ..()
-	drone_overlay = new(src.icon, icon_state = droid_state)
+TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, enabled)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
@@ -493,7 +488,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/toggle_drone()
 	if(chassis)
-		enabled = !enabled
+		set_enabled(!enabled)
 		if(enabled)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
@@ -501,11 +496,10 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/add_equip_overlay(obj/mecha/M as obj)
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/equip_look(datum/look/look)
 	..()
-	if(enabled)
-		M.add_overlay(drone_overlay)
-	return
+	look.watch(src)
+	look.overlay(droid_state, enabled, icon)
 
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(datum/act/op/A)

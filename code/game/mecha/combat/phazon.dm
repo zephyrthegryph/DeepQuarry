@@ -52,7 +52,7 @@ TYPE_TABLE(/obj/mecha/combat/phazon/equipped, mecha_starting_equipment, list( \
 	if(phasing && get_charge()>=phasing_energy_drain)
 		if(can_phase)
 			can_phase = FALSE
-			flick("[initial_icon]-phase", src)
+			flick("[mecha_base_state()]-phase", src)
 			src.loc = get_step(src,src.dir)
 			src.use_power(phasing_energy_drain)
 			after(src, step_in*3, PROC_REF(phase_recharged))

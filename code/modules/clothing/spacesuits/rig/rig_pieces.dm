@@ -112,6 +112,18 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 	return OP_DECLINE
 
+/// The chestpiece shows the overlay of each module installed in the suit that controls it (a deployed piece knows its rig).
+/obj/item/clothing/suit/space/rig/draw(datum/look/look)
+	..()
+	var/obj/item/rig/suit = master_rig()
+	if(!suit)
+		return
+	look.watch(suit)
+	for(var/obj/item/rig_module/module in suit.installed_modules)
+		look.watch(module)
+		if(module.suit_overlay)
+			look.overlay(look_overlay_image(module.suit_overlay_icon, "[module.suit_overlay]", dir = SOUTH))
+
 //TODO: move this to modules
 /obj/item/clothing/head/helmet/space/rig/proc/prevent_track()
 	return 0

@@ -6,7 +6,6 @@
 	energy_drain = 100
 	range = 0
 	var/health_boost = 2
-	var/icon/droid_overlay
 	var/static/list/repairable_damage = list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH)
 
 	step_delay = 1
@@ -20,22 +19,12 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))
 	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/add_equip_overlay(obj/mecha/M as obj)
+/obj/item/mecha_parts/mecha_equipment/repair_droid/equip_look(datum/look/look)
 	..()
-	if(!droid_overlay)
-		droid_overlay = new(src.icon, icon_state = "repair_droid")
-	M.add_overlay(droid_overlay)
-	return
-
-/obj/item/mecha_parts/mecha_equipment/repair_droid/destroy()
-	if(chassis) // a droid that was never installed has no chassis to draw on
-		chassis.cut_overlay(droid_overlay)
-	..()
-	return
+	look.watch(src)
+	look.overlay(repairing ? "repair_droid_a" : "repair_droid", icon = icon)
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
-	if(chassis)
-		chassis.cut_overlay(droid_overlay)
 	set_repairing(FALSE)
 	..()
 	return
@@ -47,17 +36,13 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(datum/act/op/A)
-	chassis.cut_overlay(droid_overlay)
 	if(repairing)
-		droid_overlay = new(src.icon, icon_state = "repair_droid")
 		set_repairing(FALSE)
 		src.mecha_log_message("Deactivated.")
 		set_ready_state(TRUE)
 	else
-		droid_overlay = new(src.icon, icon_state = "repair_droid_a")
 		src.mecha_log_message("Activated.")
 		set_repairing(TRUE)
-	chassis.add_overlay(droid_overlay)
 	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 

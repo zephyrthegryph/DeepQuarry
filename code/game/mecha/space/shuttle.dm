@@ -26,11 +26,6 @@
 	var/central_paint
 	var/front_paint
 
-	var/image/base_paint_mask
-	var/image/engine_paint_mask
-	var/image/central_paint_mask
-	var/image/front_paint_mask
-
 	bound_height = 64
 	bound_width = 64
 
@@ -40,31 +35,23 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-DECLARE_APPEARANCE_PROC(/obj/mecha/working/hoverpod/shuttlecraft, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/mecha/working/hoverpod/shuttlecraft/appearance_overlays()
-	. = list()
-	. += ..()
-
+/// The hull's paint: a tinted mask over each painted zone.
+/obj/mecha/working/hoverpod/shuttlecraft/draw(datum/look/look)
+	..()
+	var/base = mecha_base_state()
 	if(base_paint)
-		if(!base_paint_mask)
-			base_paint_mask = image(icon, "[initial_icon]-mask+base", src.layer + 1)
-		base_paint_mask.color = base_paint
-		. += base_paint_mask
+		look.overlay(look_appearance(icon, "[base]-mask+base", color = base_paint, layer = layer + 1))
 	if(front_paint)
-		if(!front_paint_mask)
-			front_paint_mask = image(icon, "[initial_icon]-mask+front", src.layer + 1)
-		front_paint_mask.color = front_paint
-		. += front_paint_mask
+		look.overlay(look_appearance(icon, "[base]-mask+front", color = front_paint, layer = layer + 1))
 	if(engine_paint)
-		if(!engine_paint_mask)
-			engine_paint_mask = image(icon, "[initial_icon]-mask+engine", src.layer + 1)
-		engine_paint_mask.color = engine_paint
-		. += engine_paint_mask
+		look.overlay(look_appearance(icon, "[base]-mask+engine", color = engine_paint, layer = layer + 1))
 	if(central_paint)
-		if(!central_paint_mask)
-			central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
-		central_paint_mask.color = central_paint
-		. += central_paint_mask
+		look.overlay(look_appearance(icon, "[base]-mask+central", color = central_paint, layer = layer + 2))
+
+TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, base_paint)
+TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, engine_paint)
+TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, central_paint)
+TRACKED(/obj/mecha/working/hoverpod/shuttlecraft, front_paint)
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), then(PROC_REF(interaction_shuttlecraft_paint)))
@@ -100,12 +87,11 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 	if(ask.value)
 		switch(ask.zone)
 			if("Central")
-				central_paint = ask.value
+				set_central_paint(ask.value)
 			if("Engine")
-				engine_paint = ask.value
+				set_engine_paint(ask.value)
 			if("Front")
-				front_paint = ask.value
+				set_front_paint(ask.value)
 			if("Base")
-				base_paint = ask.value
-	update_icon()
+				set_base_paint(ask.value)
 
