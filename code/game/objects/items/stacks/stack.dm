@@ -43,6 +43,8 @@ CAPABILITIES(/obj/item/stack)
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
 	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
+	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
+	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
 	param(nameof(amount_at_make), pos = 1)
 
 /// The amount a stack is made with (its constructor param): null for its own, negative for a full stack.
@@ -161,7 +163,7 @@ CAPABILITIES(/obj/item/stack)
 	var/required = quantity*recipe.req_amount
 	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
 
-	if(task_busy(src))
+	if(op_claimed(src))
 		return
 
 	if (!can_use(required))
@@ -181,22 +183,22 @@ CAPABILITIES(/obj/item/stack)
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	task_start(/datum/task/timed/stack_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	start_build(user, recipe, required, produced)
 
-/// Building a stack recipe (at once when it takes no time): the stack is claimed meanwhile.
-/datum/task/timed/stack_build
-	claims = TRUE
-	complete_proc = /obj/item/stack/proc/produce_recipe_done
-	var/datum/stack_recipe/recipe
-	var/required
-	var/produced
+/// Starts the build op: the recipe, what it costs and what it makes ride with the call.
+/obj/item/stack/proc/start_build(mob/user, datum/stack_recipe/recipe, required, produced)
+	perform_op(user, src, "build", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("recipe" = recipe, "required" = required, "produced" = produced))
+
+/obj/item/stack/proc/build_time(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	return recipe.time
 
 /// The build time is over: spend the stack and make the thing.
-/obj/item/stack/proc/produce_recipe_done(datum/task/timed/stack_build/task)
-	var/datum/stack_recipe/recipe = task.recipe
-	var/mob/user = task.actor
-	var/required = task.required
-	var/produced = task.produced
+/obj/item/stack/proc/produce_recipe_done(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/mob/user = A.actor
+	var/required = A.arg("required")
+	var/produced = A.arg("produced")
 	if (use(required))
 		var/atom/O
 		if(recipe.use_material)
@@ -240,9 +242,11 @@ CAPABILITIES(/obj/item/stack)
 					if(MAT.icon_colour)
 						O.color = MAT.icon_colour
 				else
-					return
+					return OP_OK
 			else
 				O.color = color
+		return OP_OK
+	return OP_FAILED
 
 //Return 1 if an immediate subsequent call to use() would succeed.
 //Ensures that code dealing with stacks uses the same logic

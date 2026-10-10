@@ -25,6 +25,8 @@
 CAPABILITIES(/obj/item/material/kitchen/utensil)
 	reagents(nameof(scoop_volume))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+	// Feeding someone else takes five seconds; the one fed has to still be beside the feeder when it ends.
+	op("force_feed", ai(), takes("patient"), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(force_feed_done)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
@@ -73,12 +75,15 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
 
-/obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
-	if(!loaded)
-		return
+/obj/item/material/kitchen/utensil/proc/force_feed_done(datum/act/op/A)
+	var/mob/living/carbon/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	if(!loaded || QDELETED(M) || !user.Adjacent(M))
+		return OP_FAILED
 	act_message(user, M, others = span_bold("%U%") + " feeds some of [loaded] to %T% with \the [src].")
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 	set_loaded(null)
+	return OP_OK
 
 /obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M))
@@ -109,7 +114,7 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 			act_message(user, M, others = span_warning("%U% begins to feed %T%!"))
 			if(!M.can_force_feed(user, loaded))
 				return ITEM_INTERACT_FAILURE
-			task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
+			perform_op(user, src, "force_feed", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M))
 			return ITEM_INTERACT_SUCCESS
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 		set_loaded(null)

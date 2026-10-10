@@ -43,6 +43,8 @@ TRACKED(/obj/item/perfect_tele, beacons_left)
 
 CAPABILITIES(/obj/item/perfect_tele)
 	ref_many(nameof(beacons))
+	// Sending someone, started by afterattack() once the checks passed; the struggle of a resisting target is the wait.
+	op("translocate", ai(), takes("subject", "struggle", "ignore_fail_chance"), wait(PROC_REF(translocate_wait)), then(PROC_REF(teleport_now)))
 	owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type))
 	// held in the other hand, an empty hand takes the cell out (otherwise the click declines to pick up)
 	op("unload", hand(), label("Remove cell"), then(PROC_REF(interaction_hand)))
@@ -303,19 +305,21 @@ This device records all warnings given and teleport events for admin review in c
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					struggle = 3 SECONDS
-	task_start(/datum/task/timed/translocate, user, target, duration = struggle, receiver = src, ignore_fail_chance = ignore_fail_chance)
+	perform_op(user, src, "translocate", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "struggle" = struggle, "ignore_fail_chance" = ignore_fail_chance))
+
+/// How long the target struggles: nothing when it does not resist.
+/obj/item/perfect_tele/proc/translocate_wait(datum/act/op/A)
+	return A.arg("struggle")
 
 /// Sending the target to the chosen beacon: at once, or after a struggle with someone resisting.
-/datum/task/timed/translocate
-	complete_proc = /obj/item/perfect_tele/proc/teleport_now
-	var/ignore_fail_chance = 0
-
-/obj/item/perfect_tele/proc/teleport_now(datum/task/timed/translocate/task)
-	var/mob/living/target = task.target
-	var/mob/user = task.actor
-	var/ignore_fail_chance = task.ignore_fail_chance
+/obj/item/perfect_tele/proc/teleport_now(datum/act/op/A)
+	var/mob/living/target = A.arg("subject")
+	var/mob/user = A.actor
+	var/ignore_fail_chance = A.arg("ignore_fail_chance")
+	if(QDELETED(target))
+		return OP_REFUSED
 	if(!ready || !destination() || !power_source)
-		return
+		return OP_FAILED
 	//Bzzt.
 	set_ready(FALSE)
 	power_source.use(charge_cost)
@@ -388,6 +392,7 @@ This device records all warnings given and teleport events for admin review in c
 	after(src, 30 SECONDS, PROC_REF(translocator_ready))
 
 	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
+	return OP_OK
 
 /obj/item/perfect_tele/proc/translocator_ready()
 	set_ready(TRUE)
@@ -432,6 +437,8 @@ CAPABILITIES(/obj/item/perfect_tele_beacon)
 		asks(/datum/prompt/choice, fields = list("title" = "Eat beacon?", "question" = "You COULD eat the beacon...", "choices" = list("Eat it!", "No, thanks."), "buttons" = TRUE, "timeout" = 0), step = "eat"),
 		asks(/datum/prompt/choice, fields = list("title" = "Select A Belly", "question" = "Which belly?", "choices" = computed(PROC_REF(belly_choices)), "timeout" = 0), step = "belly", when = PROC_REF(asks_belly)),
 		then(PROC_REF(belly_chosen)))
+	// the five seconds of getting it down, started by belly_chosen() with the belly
+	op("eat_wait", ai(), takes("belly"), wait(5 SECONDS), then(PROC_REF(attack_self_timed_done)))
 
 /// The warning is asked of someone who did not make the beacon and has not been warned.
 /obj/item/perfect_tele_beacon/proc/needs_warning(datum/act/op/A)
@@ -481,13 +488,18 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	var/obj/belly/bellychoice = A.step_value("belly")
 	if(istype(bellychoice) && bellychoice.owner == user)
 		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
-		task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+		perform_op(user, src, "eat_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
 	return OP_OK
 
-/obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
+/obj/item/perfect_tele_beacon/proc/attack_self_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/belly/bellychoice = A.arg("belly")
+	if(QDELETED(bellychoice))
+		return OP_REFUSED
 	user.unEquip(src)
 	forceMove(bellychoice)
 	act_message(user, null, MSG_SELF("You eat the the beacon!"), MSG_OTHERS(span_warning("%U% eats a telebeacon!")))
+	return OP_OK
 
 // A single-beacon variant for use by miners (or whatever)
 /obj/item/perfect_tele/one_beacon
@@ -532,6 +544,9 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	var/phase_power = 75
 	var/recharging = 0
 
+CAPABILITIES(/obj/item/perfect_tele/frontier)
+	op("pump", ai(), wait(1 SECOND, repeats = PROC_REF(pump_more), after_step = PROC_REF(pump_stroke)), on_interrupt(PROC_REF(pump_done)), then(PROC_REF(pump_done)))
+
 /obj/item/perfect_tele/frontier/unload_ammo(mob/user, ignore_inactive_hand_check = 0)
 	if(recharging)
 		return
@@ -542,16 +557,19 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /// One second of pumping the handle per call, until the cell is full or the user stops.
 /obj/item/perfect_tele/frontier/proc/pump_handle(mob/user)
-	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
+	perform_op(user, src, "pump", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
+/// One second per stroke: a stroke gives the cell its charge, and the pumping stops when the cell is full.
+/obj/item/perfect_tele/frontier/proc/pump_stroke(datum/act/op/A)
 	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)
 	if(!recharging || power_source.give(phase_power) < phase_power)
-		pump_done()
-		return
-	pump_handle(user)
+		set_recharging(FALSE)
 
-/obj/item/perfect_tele/frontier/proc/pump_done()
+/// Another stroke while the pumping goes on.
+/obj/item/perfect_tele/frontier/proc/pump_more(datum/act/op/A)
+	return recharging
+
+/obj/item/perfect_tele/frontier/proc/pump_done(datum/act/op/A)
 	set_recharging(FALSE)
 
 TRACKED(/obj/item/perfect_tele/frontier, recharging)

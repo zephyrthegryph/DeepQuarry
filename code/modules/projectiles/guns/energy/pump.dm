@@ -113,18 +113,24 @@
 	set_recharging(1)
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
-	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+	var/datum/op_result/pumping = perform_op(user, src, "pump", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+	if(pumping.outcome == ACT_REFUSED)
+		set_recharging(0)
 
-/// One pump every second (a timed action each) until full.
-/obj/item/gun/energy/locked/frontier/proc/pump_cycle(mob/user)
+/// One pump every second (a lap each) until full.
+/obj/item/gun/energy/locked/frontier/proc/pump_cycle(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)
 	user.hud_used?.update_ammo_hud(user, src)
 	if(power_supply.give(phase_power) < phase_power)
-		pump_end(user)
-		return
-	task_timed(user, 1 SECOND, src, src, PROC_REF(pump_cycle), list(user), on_fail = PROC_REF(pump_end), fail_args = list(user))
+		set_recharging(0)
 
-/obj/item/gun/energy/locked/frontier/proc/pump_end(mob/user)
+/// Another pump follows while the last one was taken in full.
+/obj/item/gun/energy/locked/frontier/proc/pump_more(datum/act/op/A)
+	return recharging
+
+/obj/item/gun/energy/locked/frontier/proc/pump_end(datum/act/op/A)
+	var/mob/user = A.actor
 	set_recharging(0)
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
@@ -141,6 +147,7 @@ TRACKED(/obj/item/gun/energy/locked/frontier, recharging)
 	return initial(icon_state)
 
 CAPABILITIES(/obj/item/gun/energy/locked/frontier)
+	op("pump", ai(), wait(1 SECOND, repeats = PROC_REF(pump_more), after_step = PROC_REF(pump_cycle)), on_interrupt(PROC_REF(pump_end)), then(PROC_REF(pump_end)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(frontier_emp_shield)))
 
 /// Rugged: the pulse reaches the internal cells two steps weaker.

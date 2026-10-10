@@ -44,6 +44,12 @@ CAPABILITIES(/obj/item/gun/projectile)
 	owns_many(nameof(loaded))
 	param(nameof(starts_loaded), pos = 1)
 	op("gun_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload"), then(PROC_REF(gun_hand)))
+	// Working the bolt of a manual-chambered gun.
+	op("bolt_work", ai(), takes("stance"), wait(0.4 SECONDS), then(PROC_REF(bolt_handle)))
+	// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
+	op("feed_rounds", ai(), wait(PROC_REF(feed_time), repeats = PROC_REF(feed_more), after_step = PROC_REF(feed_round)), on_interrupt(PROC_REF(feed_ended)), then(PROC_REF(feed_ended)))
+	// A round slid into the chamber by hand.
+	op("chamber_round", ai(), takes("duration", "message"), wait(PROC_REF(chamber_time)), then(PROC_REF(chamber_round)))
 
 TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
@@ -184,7 +190,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(special_weapon_handling && !callback)
 		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, A.key == "gun_self_hurt" ? I_HURT : I_HELP)) // Gun Rework
+		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (A.key == "gun_self_hurt" ? I_HURT : I_HELP))) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
@@ -362,7 +368,9 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 		bolt_toggle()
 
 /// Works the bolt; `stance` I_HURT slaps the release (flavour).
-/obj/item/gun/projectile/proc/bolt_handle(mob/user, stance)
+/obj/item/gun/projectile/proc/bolt_handle(datum/act/op/A)
+	var/mob/user = A.actor
+	var/stance = A.arg("stance")
 	var/previous_chambered = chambered
 	var/result = bolt_toggle(TRUE)
 	if(!result)
@@ -517,7 +525,9 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	if(can_feed_from(H))
-		task_start(/datum/task/timed/feed_rounds, user, src, handful = H)
+		var/datum/op_result/feeding = perform_op(user, src, "feed_rounds", H, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+		if(feeding.outcome == ACT_REFUSED)
+			feed_done(H, user, 0)
 		return
 	feed_done(H, user, 0)
 
@@ -528,35 +538,29 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	return rd.caliber == caliber
 
-/// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
-/datum/task/timed/feed_rounds
-	steps = list(/obj/item/gun/projectile/proc/feed_round = 0)
-	complete_proc = /obj/item/gun/projectile/proc/feed_ended
-	cancel_proc = /obj/item/gun/projectile/proc/feed_ended
-	var/obj/item/ammo_magazine/handful/handful
-	var/count = 0
-	var/waited = FALSE
+/obj/item/gun/projectile/proc/feed_time(datum/act/op/A)
+	return reload_time
 
-/obj/item/gun/projectile/proc/feed_round(datum/task/timed/feed_rounds/task)
-	if(!task.waited)
-		task.waited = TRUE
-		return STEP_REPEAT(reload_time)
-	// re-validate after the wait; the stack may have shrunk or moved.
-	var/obj/item/ammo_magazine/handful/H = task.handful
+/// Another round follows while the handful's next one fits and there is room for it.
+/obj/item/gun/projectile/proc/feed_more(datum/act/op/A)
+	var/obj/item/ammo_magazine/handful/H = A.held
+	return read_once(can_feed_from(H))
+
+/// One round fed per lap; re-validated after the wait, the handful may have shrunk or moved.
+/obj/item/gun/projectile/proc/feed_round(datum/act/op/A)
+	var/obj/item/ammo_magazine/handful/H = A.held
 	if(!can_feed_from(H))
-		return STEP_DONE
+		return
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	rd.forceMove(src)
 	rel_move(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
-	var/mob/user = task.actor
+	var/mob/user = A.actor
 	user.hud_used?.update_ammo_hud(user, src)
-	task.count++
-	return can_feed_from(H) ? STEP_REPEAT(reload_time) : STEP_DONE
 
-/obj/item/gun/projectile/proc/feed_ended(datum/task/timed/feed_rounds/task)
-	feed_done(task.handful, task.actor, task.count)
+/obj/item/gun/projectile/proc/feed_ended(datum/act/op/A)
+	feed_done(A.held, A.actor, A.laps())
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
 	if(count && user)
@@ -626,10 +630,10 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							task_start(/datum/task/timed/projectile_chamber_round, user, src, duration = 0.5 SECONDS, C = C, message = "[user] slides \the [C] into the [src]'s chamber.")
+							chamber_by_hand(user, C, 0.5 SECONDS, "[user] slides \the [C] into the [src]'s chamber.")
 							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							task_start(/datum/task/timed/projectile_chamber_round, user, src, duration = 1.5 SECONDS, C = C, message = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
+							chamber_by_hand(user, C, 1.5 SECONDS, "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
 							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))
@@ -689,16 +693,18 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 		return
 	after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
-/datum/task/timed/projectile_chamber_round
-	complete_proc = /obj/item/gun/projectile/proc/chamber_round
-	var/obj/item/ammo_casing/C
-	var/message
+/// Slides the casing into the chamber by hand: the wait is the time the way of doing it takes.
+/obj/item/gun/projectile/proc/chamber_by_hand(mob/user, obj/item/ammo_casing/C, duration, message)
+	perform_op(user, src, "chamber_round", C, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("duration" = duration, "message" = message))
+
+/obj/item/gun/projectile/proc/chamber_time(datum/act/op/A)
+	return A.arg("duration")
 
 /// A round slid into the chamber by hand.
-/obj/item/gun/projectile/proc/chamber_round(datum/task/timed/projectile_chamber_round/task)
-	var/mob/user = task.actor
-	var/obj/item/ammo_casing/C = task.C
-	var/message = task.message
+/obj/item/gun/projectile/proc/chamber_round(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/ammo_casing/C = A.held
+	var/message = A.arg("message")
 	if(chambered)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You slide %I% into %T%'s chamber.")), MSG_OTHERS(span_notice(message)), item = C)

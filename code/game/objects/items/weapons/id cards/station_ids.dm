@@ -40,6 +40,8 @@
 	return 0
 
 CAPABILITIES(/obj/item/card/id)
+	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
+	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
 	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	ui_shape(registered_name = schema_text(), sex = schema_text(), species = schema_text(), age = num(), assignment = schema_text(), fingerprint_hash = schema_text(), blood_type = schema_text(), dna_hash = schema_text(), photo_front = any)

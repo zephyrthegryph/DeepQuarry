@@ -131,22 +131,16 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	task_start(/datum/task/timed/material_service_fit_stock, user, owner(), stock = stock, role = role, quantity = quantity, material_id = material_id)
+	perform_op(user, src, "fit_stock", stock, ORIGIN_SYSTEM, with = list("role" = role, "quantity" = quantity, "material_id" = material_id))
 
-/datum/task/timed/material_service_fit_stock
-	duration = 2 SECONDS
-	complete_proc = /datum/material_service/proc/fit_stock_done
-	var/obj/item/stack/material/stock
-	var/role
-	var/quantity
-	var/material_id
-
-/datum/material_service/proc/fit_stock_done(datum/task/timed/material_service_fit_stock/task)
-	var/obj/item/stack/material/stock = task.stock
-	var/mob/user = task.actor
-	var/role = task.role
-	var/quantity = task.quantity
-	var/material_id = task.material_id
+/datum/material_service/proc/fit_stock_done(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
+	var/mob/user = A.actor
+	var/role = A.arg("role")
+	var/quantity = A.arg("quantity")
+	var/material_id = A.arg("material_id")
+	if(QDELETED(stock))
+		return
 	if(!can_service(user) || !maintenance_open || stock.loc != user || !stock.use(quantity))
 		return
 	advance()
@@ -178,6 +172,8 @@
 CAPABILITIES(/datum/material_service)
 	owns_many(nameof(gas_watches), /datum/native_watch/gas)
 	interface("EngineeringAssembly")
+	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.
+	op("fit_stock", ai(), takes("role", "quantity", "material_id"), wait(2 SECONDS), then(PROC_REF(fit_stock_done)))
 	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
 
 /datum/material_service/ui_title(mob/user)

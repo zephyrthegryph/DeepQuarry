@@ -421,6 +421,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Every source whose var `var_name` names `target`, as a list: the reverse index read for one var (a one-ended link needs no var on the
 /// target's type). Empty when none; a fresh list.
 /proc/rel_sources_via(datum/target, var_name)
+	READS_FROM(target)
 	. = list()
 	for(var/list/pair as anything in rel_sources(target))
 		if(pair[2] == var_name)

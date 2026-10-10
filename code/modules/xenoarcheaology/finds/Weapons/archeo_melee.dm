@@ -39,6 +39,7 @@
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
+	op("convert_turf", ai(), takes("turf"), wait(PROC_REF(convert_time)), then(PROC_REF(convert_turf_done)))
 	ref_one(nameof(last_touched))
 	every(2 SECONDS, then(PROC_REF(artifact_blade_step)), when = nameof(last_touched))
 	op("blade_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -362,10 +363,15 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
 	conjure_animation(A, toolspeed)
-	task_timed(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
+	perform_op(user, src, "convert_turf", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("turf" = A))
 	return TRUE
 
-/obj/item/melee/artifact_blade/proc/convert_turf_done(atom/A, mob/living/user)
+/obj/item/melee/artifact_blade/proc/convert_time(datum/act/op/A)
+	return toolspeed
+
+/obj/item/melee/artifact_blade/proc/convert_turf_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("turf")
+	var/mob/living/user = op_act.actor
 	if(stored_blood < consecration_cost)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return

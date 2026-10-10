@@ -13,17 +13,30 @@ CAPABILITIES(/obj/item/paicard/sleevecard)
 	without("item")
 	// the old attackby: a sleevemate uploads its stored mind; an emag binds the infomorph
 	op("sleevecard_item", item(/obj/item), label("Use"), then(PROC_REF(sleevecard_interaction_item)))
+	// a sleevemate holding a mind uploads it into an empty card: eight seconds
+	op("upload_mind", item(/obj/item/sleevemate), priority(OP_PRIORITY_PART), when(PROC_REF(upload_ready)), label("Upload mind"), starts(PROC_REF(upload_started)), wait(8 SECONDS), then(PROC_REF(upload_mind_done)))
 
-/datum/task/timed/sleevecard_upload_mind
-	duration = 8 SECONDS
-	complete_proc = /obj/item/paicard/sleevecard/proc/upload_mind_done
-	var/obj/item/sleevemate/S
-	var/mind_name
+MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 
-/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/task/timed/sleevecard_upload_mind/task)
-	var/mob/user = task.actor
-	var/obj/item/sleevemate/S = task.S
-	var/mind_name = task.mind_name
+/// The held sleevemate stores a mind and the card has none yet.
+/obj/item/paicard/sleevecard/proc/upload_ready(datum/act/op/A)
+	var/obj/item/sleevemate/S = A.held
+	return S.stored_mind() && !pai
+
+/obj/item/paicard/sleevecard/proc/upload_started(datum/act/op/A)
+	var/obj/item/sleevemate/S = A.held
+	var/datum/mind/M = S.stored_mind()
+	if(!SStranscore.db_by_mind_name(M.name))
+		return MSG(sleevecard/no_backup)
+	to_chat(A.actor, span_notice("You begin uploading [M.name] into \the [src]."))
+
+/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/sleevemate/S = A.held
+	var/datum/mind/M = S.stored_mind()
+	if(!M)
+		return
+	var/mind_name = M.name
 	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind_name)
 	if(!db || pai)
 		return
@@ -37,17 +50,7 @@ CAPABILITIES(/obj/item/paicard/sleevecard)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	. = OP_PASS
-	if(istype(I,/obj/item/sleevemate))
-		var/obj/item/sleevemate/S = I
-		if(S.stored_mind() && !pai)
-			var/datum/mind/M = S.stored_mind()
-			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
-			if(db)
-				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				task_start(/datum/task/timed/sleevecard_upload_mind, user, src, receiver = src, S = S, mind_name = M.name)
-			else
-				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
-	else if(istype(I, /obj/item/card/emag))
+	if(istype(I, /obj/item/card/emag))
 		var/obj/item/card/emag/E = I
 		if(E.uses && !emagged)
 			E.uses --

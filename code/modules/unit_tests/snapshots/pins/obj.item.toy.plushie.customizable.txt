@@ -76,5 +76,5 @@ human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item
-keys: add_overlay, alt, change_base_color, change_overlay_color, clear, collect_item, drag_buckle, equip_module, hug, import_config, item, kit_customize, kit_customize_last, move_overlay_down, move_overlay_up, move_to_top, pick_up_item, poke, punch, remove_overlay, rename, set_overlay_alpha, strangle, toggle_digestable
+keys: add_overlay, alt, change_base_color, change_overlay_color, clear, collect_item, drag_buckle, equip_module, find_inside, hug, import_config, item, kit_customize, kit_customize_last, move_overlay_down, move_overlay_up, move_to_top, pick_up_item, poke, punch, remove_overlay, rename, set_overlay_alpha, strangle, toggle_digestable
 

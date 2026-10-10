@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The last timed actions (devices, tools, medical stacks, projectile guns, clothing, structures, mecha, turf digging, the cataloguer and more) are ops with waits; task_timed, task_start, task_busy and task_in_use are deleted and banned"
+  - bugfix: "A start handler that stuns its own actor (the suit cycler shock) no longer errors the op, and soap no longer overrides a machine's own cleaning"

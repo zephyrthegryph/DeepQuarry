@@ -45,7 +45,7 @@
 	else
 		log_and_message_admins("attempted to body swap with [key_name(M)].", user)
 	act_message(user, null, MSG_SELF(span_notice("You begin swap minds with [M]!")), MSG_OTHERS(span_warning("%U% pushes the device up their forehead and [M]'s head, the device beginning to let out a series of light beeps!")))
-	task_timed(user, 35 SECONDS, target = M, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user))
+	perform_op(user, src, "swap", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = M))
 
 /obj/item/bodysnatcher/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -79,7 +79,11 @@
 		to_chat(user,span_warning(" A warning pops up on the LED display on the side of the device, informing you that the target is not able to have their mind swapped with!"))
 		return ITEM_INTERACT_FAILURE
 
-/obj/item/bodysnatcher/proc/attack_timed_done(mob/living/M, mob/living/user)
+/obj/item/bodysnatcher/proc/attack_timed_done(datum/act/op/A)
+	var/mob/living/M = A.arg("victim")
+	var/mob/living/user = A.actor
+	if(QDELETED(M))
+		return OP_REFUSED
 	if(user.mind && M.mind && M.stat != DEAD && user.stat != DEAD)
 		log_and_message_admins("[user.ckey] used a Bodysnatcher to swap bodies with [M.ckey]", user)
 		to_chat(user,span_notice("Your minds have been swapped! Have a nice day."))
@@ -110,11 +114,13 @@
 			M.status_set(STAT_SLEEPING, 10)
 			M.status_set(STAT_BLURRY, 30)
 			M.status_set(STAT_SLURRING, 50)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	return OP_FAILED
 
 CAPABILITIES(/obj/item/bodysnatcher)
 	op("activate", in_hand(), then(PROC_REF(activated)))
+	// The swap itself, started by swap_confirmed() once the user agreed; the victim is passed in.
+	op("swap", ai(), takes("victim"), wait(35 SECONDS), then(PROC_REF(attack_timed_done)))
 
 /obj/item/bodysnatcher/proc/activated(datum/act/op/A)
 	var/mob/user = A.actor

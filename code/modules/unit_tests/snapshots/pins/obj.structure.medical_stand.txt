@@ -93,5 +93,5 @@ human|/obj/item menu: Set IV transfer amount
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle IV Mode
 human|/obj/item click: Click: Medical stand interaction item
-keys: drag_buckle, medical_stand_interaction_hand, medical_stand_interaction_item, melee_hit, set_iv_transfer, toggle_iv_mode, use_wrench
+keys: drag_buckle, insert_needle, medical_stand_interaction_hand, medical_stand_interaction_item, melee_hit, place_mask, remove_mask, remove_needle, set_iv_transfer, toggle_iv_mode, use_wrench
 

@@ -146,5 +146,5 @@ human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item menu: Unload
 human|/obj/item menu: Use Scope (refused: You can't do that.)
 human|/obj/item click: Click: Fit
-keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_awp_verb_scope, toggle_digestable
+keys: bolt_work, chamber_round, collect_item, drag_buckle, emag.subvert, emag.use, equip_module, feed_rounds, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_awp_verb_scope, suicide, toggle_digestable
 

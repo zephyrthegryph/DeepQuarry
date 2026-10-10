@@ -329,6 +329,8 @@ CAPABILITIES(/obj/effect/rune)
 
 CAPABILITIES(/obj/item/book/tome)
 	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
+	// The five seconds of drawing a rune (begin_drawing).
+	op("scribe", ai(), takes("english", "chosen_rune", "destination"), wait(5 SECONDS), then(PROC_REF(rune_drawn)))
 
 /// Old attack_self.
 /obj/item/book/tome/proc/interaction_tome(datum/act/op/A)
@@ -448,24 +450,18 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 		V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
 	to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
 	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
-	task_start(/datum/task/timed/tome_scribe, user, src, duration = 5 SECONDS, english = english, chosen_rune = chosen_rune, destination = destination)
+	perform_op(user, src, "scribe", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("english" = english, "chosen_rune" = chosen_rune, "destination" = destination))
 
-/// The five seconds of drawing a rune.
-/datum/task/timed/tome_scribe
-	name = "tome_scribe"
-	complete_proc = /obj/item/book/tome/proc/rune_drawn
-	var/list/english
-	var/chosen_rune
-	var/destination
-
-/obj/item/book/tome/proc/rune_drawn(datum/task/timed/tome_scribe/T)
+/obj/item/book/tome/proc/rune_drawn(datum/act/op/T)
 	var/mob/living/user = T.actor
-	var/list/english = T.english
-	var/list/required = GLOB.tome_rune_dictionary[T.chosen_rune]
-	if(T.destination)
-		required = required + T.destination
+	var/list/english = T.arg("english")
+	var/chosen_rune = T.arg("chosen_rune")
+	var/destination = T.arg("destination")
+	var/list/required = GLOB.tome_rune_dictionary[chosen_rune]
+	if(destination)
+		required = required + destination
 	var/area/A = get_area(user)
-	log_and_message_admins("created \an [T.chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
+	log_and_message_admins("created \an [chosen_rune] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
 	var/obj/effect/rune/R = new /obj/effect/rune(user.loc)
 	to_chat(user, span_notice("You finish drawing the arcane markings of the Geometer."))
 	R.word1 = english[required[1]]
@@ -475,6 +471,7 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	var/mob/living/carbon/human/H = user
 	if(istype(H))
 		R.add_blooddna(H.dna, H)
+	return OP_OK
 
 /obj/item/book/tome/examine(mob/user)
 	. = ..()

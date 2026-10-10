@@ -158,5 +158,5 @@ human|/obj/item menu: Switch Shoe Layer (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Orange shoes cuff item
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, equip_module, kit_customize, kit_customize_last, move_to_top, orange_shoes_cuff_item, orange_shoes_uncuff_self, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, equip_module, kit_customize, kit_customize_last, micro_climb_out, micro_escape_macro, move_to_top, orange_shoes_cuff_item, orange_shoes_uncuff_self, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable
 

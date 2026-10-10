@@ -31,6 +31,8 @@ TRACKED(/obj/item/nailpolish, open)
 
 CAPABILITIES(/obj/item/nailpolish)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("nail_paint", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint nails"),
+		needs(req(PROC_REF(polish_is_open), silent = TRUE)), starts(PROC_REF(paint_started)), wait(PROC_REF(paint_time)), on_interrupt(PROC_REF(paint_failed)), then(PROC_REF(paint_done)))
 
 /// Old attack_self.
 /obj/item/nailpolish/proc/interaction_self(datum/act/op/A)
@@ -67,49 +69,48 @@ CAPABILITIES(/obj/item/nailpolish)
 		icostate = organ_tag
 	return new /datum/nail_polish(ico, icostate, colour)
 
-/obj/item/nailpolish/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
-	if(!open)
-		return ITEM_INTERACT_FAILURE
+MSG_DEF_SELF(nailpolish/missing_limb, "%T% is missing that limb!")
+MSG_DEF_SELF(nailpolish/already_polished, "%T% already has nail polish on that limb!")
+MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to paint.")
 
-	if(!istype(target))
-		return ITEM_INTERACT_FAILURE
+/obj/item/nailpolish/proc/polish_is_open(datum/act/op/A)
+	return open
 
-	var/bp = user.zone_sel.selecting
-	var/obj/item/organ/external/body_part = target.get_organ(bp)
+/// The limb aimed at must be there, bare and have nails to paint; it and the polish are fixed now.
+/obj/item/nailpolish/proc/paint_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.target
+	var/obj/item/organ/external/body_part = target.get_organ(user.zone_sel.selecting)
 	if(!body_part)
-		to_chat(user, span_warning("[target] is missing that limb!"))
-		return ITEM_INTERACT_FAILURE
+		return MSG(nailpolish/missing_limb)
 	if(body_part.nail_polish)
-		to_chat(user, span_notice("[target]'s [body_part.name] already has nail polish on!"))
-		return ITEM_INTERACT_FAILURE
+		return MSG(nailpolish/already_polished)
 	var/datum/nail_polish/polish = body_part.get_polish(colour)
 	if(!polish)
-		to_chat(user, span_notice("You can't find any nails on [body_part] to paint."))
-		return ITEM_INTERACT_FAILURE
+		return MSG(nailpolish/no_nails)
+	LAZYSET(A.args, "limb", body_part)
+	LAZYSET(A.args, "polish", polish)
+
+/// Painting yourself is at once; painting someone else takes two seconds.
+/obj/item/nailpolish/proc/paint_time(datum/act/op/A)
+	return A.actor == A.target ? 0 : 2 SECONDS
+
+/obj/item/nailpolish/proc/paint_failed(datum/act/op/A)
+	to_chat(A.actor, span_notice("Both you and [A.target] must stay still!"))
+
+/obj/item/nailpolish/proc/paint_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.target
+	var/obj/item/organ/external/body_part = A.arg("limb")
+	var/datum/nail_polish/polish = A.arg("polish")
+	if(QDELETED(body_part) || body_part.nail_polish)
+		return
 	if(user == target)
 		act_message(user, src, MSG_SELF(span_infoplain("You paint your nails with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints their nails with %T%.")))
 	else
-		task_start(/datum/task/timed/nailpolish_paint, user, target, body_part = body_part, polish = polish, fail_message = span_notice("Both you and [target] must stay still!"))
-		return ITEM_INTERACT_SUCCESS
-	body_part.set_polish(polish)
-	return ITEM_INTERACT_SUCCESS
-
-/datum/task/timed/nailpolish_paint
-	duration = 2 SECONDS
-	complete_proc = /obj/item/nailpolish/proc/paint_done
-	var/obj/item/organ/external/body_part
-	var/datum/nail_polish/polish
-
-/obj/item/nailpolish/proc/paint_done(datum/task/timed/nailpolish_paint/task)
-	var/mob/living/user = task.actor
-	var/mob/living/target = task.target
-	var/obj/item/organ/external/body_part = task.body_part
-	var/datum/nail_polish/polish = task.polish
-	if(body_part.nail_polish)
-		return
-	act_message(user, target, MSG_SELF(span_infoplain("You paint %T%'s nails with \the [src].")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints %T%'s nails with \the [src].")))
+		act_message(user, target, MSG_SELF(span_infoplain("You paint %T%'s nails with \the [src].")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " paints %T%'s nails with \the [src].")))
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
@@ -129,6 +130,8 @@ TRACKED(/obj/item/nailpolish_remover, open)
 
 CAPABILITIES(/obj/item/nailpolish_remover)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("nail_remove", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Remove nail polish"),
+		needs(req(PROC_REF(remover_is_open), silent = TRUE)), starts(PROC_REF(remove_started)), wait(PROC_REF(remove_time)), on_interrupt(PROC_REF(remove_failed)), then(PROC_REF(remove_done)))
 
 /// Old attack_self.
 /obj/item/nailpolish_remover/proc/interaction_self(datum/act/op/A)
@@ -142,41 +145,42 @@ CAPABILITIES(/obj/item/nailpolish_remover)
 	..()
 	look.state("[initial(icon_state)][open ? "-open" : ""]")
 
-/obj/item/nailpolish_remover/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
-	if(!open)
-		return ITEM_INTERACT_FAILURE
+MSG_DEF_SELF(nailpolish/remover_missing_limb, "%T% is missing that limb!")
+MSG_DEF_SELF(nailpolish/nothing_to_remove, "%T% has no nail polish to remove on that limb!")
 
-	if(!istype(target))
-		return ITEM_INTERACT_FAILURE
+/obj/item/nailpolish_remover/proc/remover_is_open(datum/act/op/A)
+	return open
 
-	var/bp = user.zone_sel.selecting
-	var/obj/item/organ/external/body_part = target.get_organ(bp)
+/// The limb aimed at must be there and carry polish; it is fixed now.
+/obj/item/nailpolish_remover/proc/remove_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.target
+	var/obj/item/organ/external/body_part = target.get_organ(user.zone_sel.selecting)
 	if(!body_part)
-		to_chat(user, span_warning("[target] is missing that limb!"))
-		return ITEM_INTERACT_FAILURE
+		return MSG(nailpolish/remover_missing_limb)
 	if(!body_part.nail_polish)
-		to_chat(user, span_notice("[target]'s [body_part.name] has no nail polish to remove!"))
-		return ITEM_INTERACT_FAILURE
+		return MSG(nailpolish/nothing_to_remove)
+	LAZYSET(A.args, "limb", body_part)
+
+/// Removing your own is at once; someone else's takes two seconds.
+/obj/item/nailpolish_remover/proc/remove_time(datum/act/op/A)
+	return A.actor == A.target ? 0 : 2 SECONDS
+
+/obj/item/nailpolish_remover/proc/remove_failed(datum/act/op/A)
+	to_chat(A.actor, span_notice("Both you and [A.target] must stay still!"))
+
+/obj/item/nailpolish_remover/proc/remove_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.target
+	var/obj/item/organ/external/body_part = A.arg("limb")
+	if(QDELETED(body_part))
+		return
 	if(user == target)
 		act_message(user, src, MSG_SELF(span_infoplain("You remove your nail polish with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes their nail polish with %T%.")))
 	else
-		task_start(/datum/task/timed/nailpolish_remover_remove, user, target, body_part = body_part, fail_message = span_notice("Both you and [target] must stay still!"))
-		return ITEM_INTERACT_SUCCESS
-	body_part.set_polish(null)
-	return ITEM_INTERACT_SUCCESS
-
-/datum/task/timed/nailpolish_remover_remove
-	duration = 2 SECONDS
-	complete_proc = /obj/item/nailpolish_remover/proc/remove_done
-	var/obj/item/organ/external/body_part
-
-/obj/item/nailpolish_remover/proc/remove_done(datum/task/timed/nailpolish_remover_remove/task)
-	var/mob/living/user = task.actor
-	var/mob/living/target = task.target
-	var/obj/item/organ/external/body_part = task.body_part
-	act_message(user, target, MSG_SELF(span_infoplain("You remove %T%'s nail polish with \the [src].")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes %T%'s nail polish with \the [src].")))
+		act_message(user, target, MSG_SELF(span_infoplain("You remove %T%'s nail polish with \the [src].")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes %T%'s nail polish with \the [src].")))
 	body_part.set_polish(null)
 
 /datum/nail_polish

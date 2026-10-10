@@ -122,7 +122,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	op("clear", ui_act("clear", arg("item", num())), then(PROC_REF(ui_act_clear)))
 	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
 	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), claims(), begins(PROC_REF(wrench_begins)), wait(2 SECONDS), then(PROC_REF(wrench_used)))
 	op("cash_register_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay / scan"), then(PROC_REF(interaction_pay)))
 	op("cash_register_open_box_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Open cash box"), then(PROC_REF(interaction_open_box_alt)))
 	op("cash_register_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
@@ -302,10 +302,17 @@ CAPABILITIES(/obj/machinery/cash_register)
 	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 	return TRUE
 
+/obj/machinery/cash_register/proc/wrench_begins(datum/act/op/A)
+	return msg_text(anchored ? "You begin unsecuring [src] from the floor." : "You begin securing [src] to the floor.", anchored ? "[A.actor] begins unsecuring [src] from the floor." : "[A.actor] begins securing [src] to the floor.")
+
 /obj/machinery/cash_register/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	toggle_anchors(tool, user)
+	if(!anchored)
+		act_message(user, src, MSG_SELF(span_notice("You have secured %T% to the floor.")), MSG_OTHERS(span_notice("%U% has secured %T% to the floor.")))
+	else
+		act_message(user, src, MSG_SELF(span_notice("You have unsecured %T% from the floor.")), \
+			MSG_OTHERS(span_warning("%U% has unsecured %T% from the floor.")))
+	set_anchored(!anchored)
 	return OP_OK
 
 /obj/machinery/cash_register/proc/interaction_drop(datum/act/op/A)
@@ -606,20 +613,6 @@ CAPABILITIES(/obj/machinery/cash_register)
 			add_overlay("register_cash")
 	else
 		to_chat(user, span_warning("The cash box is locked."))
-
-/obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
-	if(task_busy(src)) return
-	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, start_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", start_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), claims = TRUE)
-	return TRUE
-
-/obj/machinery/cash_register/proc/toggle_anchors_tool_done(mob/user)
-	if(!anchored)
-		act_message(user, src, MSG_SELF(span_notice("You have secured %T% to the floor.")), MSG_OTHERS(span_notice("%U% has secured %T% to the floor.")))
-	else
-		act_message(user, src, MSG_SELF(span_notice("You have unsecured %T% from the floor.")), \
-			MSG_OTHERS(span_warning("%U% has unsecured %T% from the floor.")))
-	set_anchored(!anchored)
-	return
 
 /obj/machinery/cash_register/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

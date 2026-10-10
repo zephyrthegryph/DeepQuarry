@@ -56,5 +56,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Release
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Release
-keys: drag_buckle, melee_hit, release, stasis_cage_robot_release
+keys: drag_buckle, melee_hit, release, stasis_cage_robot_release, stuff_in
 

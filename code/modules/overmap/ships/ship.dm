@@ -92,6 +92,7 @@ TRACKED(/obj/effect/overmap/visitable/ship, speed)
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
 	drag_onto(PROC_REF(drop_input))
+	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
 	return under_way
@@ -324,9 +325,11 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 		if(bellychoice)
 			act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
 				MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
-			task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
+			perform_op(L, src, "eat_ship", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
 
-/obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
+/obj/effect/overmap/visitable/ship/proc/eaten_by(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/obj/belly/bellychoice = A.arg("belly")
 	forceMove(bellychoice)
 	SSskybox.ready().rebuild_skyboxes(map_z)
 	act_message(L, null, MSG_SELF("You eat the the spaceship! Yum, metal."), MSG_OTHERS(span_warning("%U% eats a spaceship! This is totally normal.")))

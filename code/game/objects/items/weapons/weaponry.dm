@@ -118,6 +118,8 @@
 
 CAPABILITIES(/obj/effect/energy_net)
 	after_init(2 SECONDS, then(PROC_REF(check_empty))) // a net that caught nobody goes away
+	// Tearing at the net takes escape_time; being stunned does not stop it, and the buckled mob comes from the unbuckle hook.
+	op("tear", ai(), takes("victim"), wait(PROC_REF(tear_time), keeps = HELD | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_timed_done)))
 
 /obj/effect/energy_net/proc/check_empty(datum/act/A)
 	if(!has_buckled_mobs())
@@ -134,13 +136,17 @@ CAPABILITIES(/obj/effect/energy_net)
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	act_message(user, src, others = span_danger("%U% begins to tear at %T%!"))
-	task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
+	perform_op(user, src, "tear", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = buckled_mob))
 
-/obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(mob/living/buckled_mob, mob/user)
+/obj/effect/energy_net/proc/tear_time(datum/act/op/A)
+	return escape_time
+
+/obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(datum/act/op/A)
 	if(!has_buckled_mobs())
-		return
-	act_message(user, src, others = span_danger("%U% manages to tear %T% apart!"))
-	unbuckle_mob(buckled_mob)
+		return OP_FAILED
+	act_message(A.actor, src, others = span_danger("%U% manages to tear %T% apart!"))
+	unbuckle_mob(A.arg("victim"))
+	return OP_OK
 
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)
 	if(M?.buckled_to() == src) //Just src?.buckled_to() someone

@@ -656,6 +656,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 				// A starts() handler may refuse like a requirement (a /datum/msg type): the op ends before the wait begins and nothing was announced.
 				for(var/start_handler in oplan.starts)
 					var/start_refusal = op_call(A, start_handler)
+					if(!active) // the handler's own write ended this op (a shock that stunned the actor re-checked its keeps): nothing left to suspend
+						return
 					if(ispath(start_refusal, /datum/msg))
 						log_game("op [key]: starts() refused: [start_refusal]")
 						suspend_act()

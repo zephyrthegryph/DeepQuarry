@@ -24,8 +24,8 @@
 			own(expected)
 		TEST_ASSERT(istype(expected, /obj/item/projectile/beam/lasertag/omni), "actual independent production consumer constructs the original concrete beam")
 		TEST_ASSERT(!QDELETED(expected) && expected.loc == control, "independent real projectile remains alive inside its original gun")
-		toy.mouthshoot = 1
-		toy.suicide_trigger(user)
+		toy.handle_suicide(user)
+		test_time(5 SECONDS)
 		for(var/obj/item/projectile/leaked in toy.contents)
 			TEST_ASSERT(QDELETED(leaked), "toy refusal leaves no live consumed projectile inside its actual gun")
 		TEST_ASSERT_EQUAL(toy_cell.charge, control_cell.charge, "toy path retains the exact original production charge use")

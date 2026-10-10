@@ -28,51 +28,42 @@ CAPABILITIES(/obj/item/ammo_casing)
 	rel_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 
-/// Mass reloading: one matching shell from `floor` into the box every half second.
-/obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
-	if(next_shell(box, floor))
-		to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
-		task_start(/datum/task/timed/collect_shells, user, box, duration = 0.5 SECONDS, receiver = src, floor = floor)
-		return
-	collect_done(user, box, 0)
-
-/// The next shell on `floor` that fits `box`, or null (the box is full, or there is none).
-/obj/item/ammo_casing/proc/next_shell(obj/item/ammo_magazine/box, turf/floor)
-	if(length(box.stored_ammo) >= box.max_ammo)
+/// The next shell on `floor` that fits this box, or null (the box is full, or there is none).
+/obj/item/ammo_magazine/proc/next_shell(turf/floor)
+	if(length(stored_ammo) >= max_ammo)
 		return null
 	for(var/obj/item/ammo_casing/bullet in floor)
-		if(box.caliber == bullet.caliber && bullet.BB)
+		if(caliber == bullet.caliber && bullet.BB)
 			return bullet
 	return null
 
-/// Collecting shells from the floor into the box (the target), one every half second.
-/datum/task/timed/collect_shells
-	steps = list(/obj/item/ammo_casing/proc/shell_collected = 0.5 SECONDS)
-	complete_proc = /obj/item/ammo_casing/proc/collect_ended
-	cancel_proc = /obj/item/ammo_casing/proc/collect_ended
-	var/turf/floor
-	var/collected = 0
-
-/obj/item/ammo_casing/proc/shell_collected(datum/task/timed/collect_shells/task)
-	var/obj/item/ammo_magazine/box = task.target
-	var/obj/item/ammo_casing/bullet = next_shell(box, task.floor)
-	if(!bullet)
-		return STEP_DONE
-	move_into(box, nameof(box.stored_ammo), bullet)
-	task.collected++
-	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
-
-/obj/item/ammo_casing/proc/collect_ended(datum/task/timed/collect_shells/task)
-	collect_done(task.actor, task.target, task.collected)
-
-/obj/item/ammo_casing/proc/collect_done(mob/user, obj/item/ammo_magazine/box, boolets)
-	if(!box)
-		return
-	if(boolets > 0)
-		to_chat(user, span_notice("You collect [boolets] shell\s. [box] now contains [length(box.stored_ammo)] shell\s."))
-	else
-		to_chat(user, span_warning("You fail to collect anything!"))
+/// Mass reloading: one matching shell from `floor` into the box every half second.
+/obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
+	if(box.next_shell(floor))
+		to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
+		var/datum/op_result/collecting = perform_op(user, box, "collect_shells", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("floor" = floor))
+		if(collecting.outcome != ACT_REFUSED)
+			return
 	box.reloading = FALSE
+	to_chat(user, span_warning("You fail to collect anything!"))
+
+/// Another shell follows while the floor has one that fits and the box has room.
+/obj/item/ammo_magazine/proc/collect_more(datum/act/op/A)
+	return read_once(!!next_shell(A.arg("floor")))
+
+/// One shell collected per half second.
+/obj/item/ammo_magazine/proc/shell_collected(datum/act/op/A)
+	var/obj/item/ammo_casing/bullet = next_shell(A.arg("floor"))
+	if(bullet)
+		move_into(src, nameof(stored_ammo), bullet)
+
+/obj/item/ammo_magazine/proc/collect_ended(datum/act/op/A)
+	var/boolets = A.laps()
+	if(boolets > 0)
+		to_chat(A.actor, span_notice("You collect [boolets] shell\s. [src] now contains [length(stored_ammo)] shell\s."))
+	else
+		to_chat(A.actor, span_warning("You fail to collect anything!"))
+	reloading = FALSE
 
 /// Old attackby.
 /obj/item/ammo_casing/proc/interaction_item(datum/act/op/A)
@@ -183,6 +174,8 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	op("load", item(/obj/item), label("Load"), then(PROC_REF(magazine_interaction_item)))
 	op("empty", in_hand(), label("Empty"), then(PROC_REF(magazine_interaction_self)))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(magazine_interaction_hand)))
+	// Mass reloading: one matching shell from the floor into the box every half second.
+	op("collect_shells", ai(), takes("floor"), wait(0.5 SECONDS, repeats = PROC_REF(collect_more), after_step = PROC_REF(shell_collected)), on_interrupt(PROC_REF(collect_ended)), then(PROC_REF(collect_ended)))
 
 /// The construction material a lathe forged the magazine from (its constructor param), or null.
 /obj/item/ammo_magazine/var/forge_material

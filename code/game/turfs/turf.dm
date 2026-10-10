@@ -175,6 +175,10 @@ CAPABILITIES(/turf)
 	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
 	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 10), label("Touch"), then(PROC_REF(turf_touch_op)))
 	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 10), label("Crawl"), then(PROC_REF(turf_drag)))
+	// A lying mob crawling onto the tile with something in tow (turf_drag), and a vandal carving a message (graffiti_entered).
+	op("crawl_drag", ai(), takes("thing", "from"), wait(PROC_REF(crawl_drag_time)), then(PROC_REF(crawl_drag_done)))
+	op("dig_grave", ai(), takes("delay"), wait(PROC_REF(grave_time)), then(PROC_REF(grave_dug)))
+	op("graffiti", ai(), takes("message", "click_parameters"), wait(PROC_REF(graffiti_time)), then(PROC_REF(graffiti_done)))
 
 /// The touch op: the old attack_hand.
 /turf/proc/turf_touch_op(datum/act/op/A)
@@ -276,12 +280,18 @@ CAPABILITIES(/turf)
 		return OP_DECLINE
 	if(isanimal(user) && O != user)
 		return OP_DECLINE
-	task_timed(user, 25 + (5 * user.status_units(STAT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+	perform_op(user, src, "crawl_drag", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("thing" = O, "from" = O.loc))
 	return OP_OK
 
-/turf/proc/crawl_drag_done(atom/movable/O, mob/user)
-	if(user.stat)
-		return
+/turf/proc/crawl_drag_time(datum/act/op/A)
+	return 25 + (5 * A.actor.status_units(STAT_WEAKENED))
+
+/turf/proc/crawl_drag_done(datum/act/op/A)
+	var/atom/movable/O = A.arg("thing")
+	var/mob/user = A.actor
+	// the dragged thing must still be where it was picked up
+	if(QDELETED(O) || O.loc != A.arg("from") || user.stat)
+		return OP_REFUSED
 	step_towards(O, src)
 	if(ismob(O))
 		// The wiggle is one chained animation; the transform settles once it has played.
@@ -289,6 +299,7 @@ CAPABILITIES(/turf)
 		animate(transform = turn(O.transform, -20), time = 4)
 		animate(transform = O.transform, time = 2)
 		after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
+	return OP_OK
 
 /turf/CanPass(atom/movable/mover, turf/target)
 	if(!target)
@@ -464,18 +475,16 @@ CAPABILITIES(/turf)
 	var/mob/vandal = ask.answerer
 	var/message = ask.value
 	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
-	task_start(/datum/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
+	perform_op(vandal, src, "graffiti", ask.subject, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("message" = message, "click_parameters" = ask.click_parameters))
 	return TRUE
 
-/datum/task/timed/turf_graffiti
-	complete_proc = /turf/proc/graffiti_done
-	var/message
-	var/click_parameters
+/turf/proc/graffiti_time(datum/act/op/A)
+	return max(2 SECONDS, length(A.arg("message")))
 
-/turf/proc/graffiti_done(datum/task/timed/turf_graffiti/task)
-	var/mob/vandal = task.actor
-	var/message = task.message
-	var/click_parameters = task.click_parameters
+/turf/proc/graffiti_done(datum/act/op/A)
+	var/mob/vandal = A.actor
+	var/message = A.arg("message")
+	var/click_parameters = A.arg("click_parameters")
 	act_message(vandal, src, others = span_danger("%U% carves some graffiti into %T%."))
 	var/obj/effect/decal/writing/graffiti = new(src)
 	graffiti.message = message
@@ -495,6 +504,7 @@ CAPABILITIES(/turf)
 
 	if(lowertext(message) == "elbereth")
 		to_chat(vandal, span_notice("You feel much safer."))
+	return OP_OK
 
 // Returns false if stepping into a tile would cause harm (e.g. open space while unable to fly, water tile while a slime, lava, etc).
 /turf/proc/is_safe_to_enter(mob/living/L)

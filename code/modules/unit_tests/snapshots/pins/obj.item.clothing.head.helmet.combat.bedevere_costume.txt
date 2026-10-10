@@ -104,5 +104,5 @@ human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: Y
 human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler click: Click: Add signaler
-keys: bedevere_costume_toggle_verb, bedevere_costume_visor_self, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, helmet_secbot_signaler, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+keys: bedevere_costume_toggle_verb, bedevere_costume_visor_self, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, helmet_secbot_signaler, kit_customize, kit_customize_last, move_to_top, pick_up_item, robot_hat_pickup, toggle_digestable
 

@@ -110,5 +110,5 @@ human|/obj/item/stock_parts/matter_bin menu: Wooden item
 human|/obj/item/stock_parts/matter_bin menu: Wooden touch
 human|/obj/item/stock_parts/matter_bin menu: Yank the flush lever
 human|/obj/item/stock_parts/matter_bin click: Click: Wooden item
-keys: drag_buckle, flush, flush_yank, insert_crystal, melee_hit, replace_bin, silicon_use, swirlie, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_touch
+keys: drag_buckle, flush, flush_yank, insert_crystal, melee_hit, replace_bin, silicon_use, swirlie, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_swirlie, wooden_touch
 

@@ -306,6 +306,8 @@ CAPABILITIES(/obj/machinery/cryopod)
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
 	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), then(PROC_REF(interaction_drag_in)))
+	// The loader's two seconds with somebody, started once the passenger has consented (finish_go_in).
+	op("cryopod_load", ai(), takes("passenger"), wait(2 SECONDS), then(PROC_REF(loaded)))
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -600,10 +602,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	act_message(A.actor, src, others = "%U% [on_enter_visible_message] %T%.")
 
 /obj/machinery/cryopod/proc/interaction_enter(datum/act/op/A)
-	interaction_enter_timed_done(A.actor)
-	return TRUE
-
-/obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
+	var/mob/user = A.actor
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!user || !user.client)
 		return TRUE
@@ -631,6 +630,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
 
 	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/cryopod/proc/interaction_drag_in(datum/act/op/A)
 	var/mob/user = A.actor
@@ -710,7 +710,7 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 		else
 			act_message(user, M, others = "%U% starts putting %T% into \the [src].")
 
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
+		perform_op(user, src, "cryopod_load", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("passenger" = M))
 
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
 	icon_state = occupied_icon_state
@@ -734,15 +734,20 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 	//Despawning occurs when process() is called with an occupant without a client.
 	add_fingerprint(M)
 
-/obj/machinery/cryopod/proc/go_in_timed_done(mob/M, mob/user)
+/obj/machinery/cryopod/proc/loaded(datum/act/op/A)
+	var/mob/M = A.arg("passenger")
+	var/mob/user = A.actor
+	if(QDELETED(M))
+		return OP_FAILED
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
-		return
+		return OP_FAILED
 	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]."))
-		return
+		return OP_FAILED
 	go_in_finish(M, user)
+	return OP_OK
 
 //Overrides!
 

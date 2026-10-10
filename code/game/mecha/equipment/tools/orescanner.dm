@@ -14,10 +14,14 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/orescanner)
 	owns_one(nameof(my_scanner), starts = /obj/item/mining_scanner)
+	op("scan", ai(), takes("spot"), wait(2 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(scan_done)))
 
-
-/obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(atom/target)
-	my_scanner.ScanTurf(target, chassis?.slot_item(MECHA_SLOT_PILOT), exact_scan)
+/obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(datum/act/op/A)
+	var/atom/spot = A.arg("spot")
+	if(QDELETED(spot))
+		return OP_REFUSED
+	my_scanner.ScanTurf(spot, chassis?.slot_item(MECHA_SLOT_PILOT), exact_scan)
+	return OP_OK
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/action(atom/target)
 	if(!action_checks(target) || get_dist(chassis, target) > 5)
@@ -29,7 +33,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/orescanner)
 	chassis.Beam(target, "g_beam", 'icons/effects/beam.dmi', 2 SECONDS, 10, /obj/effect/ebeam, 2)
 
 	// The beam ends itself after 2 seconds.
-	task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 2 SECONDS, target, src, PROC_REF(scan_done), list(target), IGNORE_HELD_ITEM)
+	perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "scan", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("spot" = target))
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/advanced
 	name = "advanced ore scanner"

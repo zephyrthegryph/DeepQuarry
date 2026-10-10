@@ -175,7 +175,7 @@
 	var/mob/living/silicon/robot/target = context.request.subject
 	user.hacking = 1
 	to_chat(user, "Beginning hack sequence. Estimated time until completed: 30 seconds.")
-	task_start(/datum/task/malf_hack, user, target, receiver = user, complete_proc = /mob/living/silicon/ai/proc/malf_hack_cyborg_done, script = list(
+	user.malf_hack_begin("malf_hack_cyborg", target, list(
 		list(0, null, "SYSTEM LOG: Remote Connection Estabilished (IP #UNKNOWN#)"),
 		list(10 SECONDS, "SYSTEM LOG: Connection Closed", "SYSTEM LOG: User Admin logged on. (L1 - SysAdmin)"),
 		list(5 SECONDS, "SYSTEM LOG: User Admin disconnected.", "SYSTEM LOG: User Admin - manual resynchronisation triggered."),
@@ -228,61 +228,91 @@
 							"1010010011110000100101000100",\
 							"0010010100010011010001001010")))
 	script += list(list(5, null, "OPERATING KEYCODES RESET. SYSTEM FAILURE. EMERGENCY SHUTDOWN FAILED. SYSTEM FAILURE."))
-	task_start(/datum/task/malf_hack, user, target, receiver = user, script = script, complete_proc = /mob/living/silicon/ai/proc/malf_hack_ai_done)
+	user.malf_hack_begin("malf_hack_ai", target, script)
 
 
 // END ABILITY VERBS
 
-/// A malfunctioning AI's scripted hack of another silicon (the target). script: a list of stages
-/// list(wait, message to the target if the AI died meanwhile, message(s) to the target, message
-/// to the AI). complete_proc runs on the AI with the task after the last stage.
-/datum/task/malf_hack
-	name = "malf hack"
-	steps = list(/mob/living/silicon/ai/proc/malf_hack_step = 0)
-	cancel_proc = /mob/living/silicon/ai/proc/malf_hack_stopped
-	var/list/script
-	var/stage_no = 1
-	var/waited = FALSE
+/// A script is a list of stages list(wait, message to the target if the AI died meanwhile, message(s) to the target, message to the AI). Each
+/// stage waits, then speaks; a stage with no wait speaks with the one before it, so a lap is a wait and the stages that follow it.
+/mob/living/silicon/ai/proc/malf_hack_laps(list/script)
+	var/list/laps = list()
+	for(var/list/stage in script)
+		if(stage[1] > 0 || !length(laps))
+			laps += list(list(stage))
+		else
+			var/list/last = laps[length(laps)]
+			last += list(stage)
+	return laps
 
-/mob/living/silicon/ai/proc/malf_hack_stopped(datum/task/T)
+/// Starts the hack `key` ("malf_hack_cyborg" or "malf_hack_ai") of the script on the target. A first stage without a wait speaks at once.
+/mob/living/silicon/ai/proc/malf_hack_begin(key, mob/living/silicon/target, list/script)
+	var/list/laps = malf_hack_laps(script)
+	var/list/first = laps[1]
+	if(first[1][1] <= 0)
+		malf_hack_speak(first, target)
+		laps.Cut(1, 2)
+	if(!length(laps))
+		perform_op(src, src, key, null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target, "laps" = list()))
+		return
+	perform_op(src, src, key, null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target, "laps" = laps))
+
+/// What a lap says: to the target, and to the AI.
+/mob/living/silicon/ai/proc/malf_hack_speak(list/lap, mob/living/silicon/target)
+	for(var/list/stage in lap)
+		if(length(stage) >= 3)
+			for(var/message in islist(stage[3]) ? stage[3] : list(stage[3]))
+				to_chat(target, message)
+		if(length(stage) >= 4)
+			to_chat(src, stage[4])
+
+/mob/living/silicon/ai/proc/malf_hack_lap_time(datum/act/op/A)
+	var/list/laps = A.arg("laps")
+	var/lap_no = A.laps() + 1
+	if(lap_no > length(laps))
+		return 0
+	var/list/lap = laps[lap_no]
+	return lap[1][1]
+
+/mob/living/silicon/ai/proc/malf_hack_more(datum/act/op/A)
+	return A.laps() < length(A.arg("laps"))
+
+/mob/living/silicon/ai/proc/malf_hack_lap_done(datum/act/op/A)
+	var/list/laps = A.arg("laps")
+	if(A.laps() > length(laps))
+		return
+	malf_hack_speak(laps[A.laps()], A.arg("victim"))
+
+/// The AI died (or was lost) before the script ran out: the victim is told what the stage it never reached says.
+/mob/living/silicon/ai/proc/malf_hack_stopped(datum/act/op/A)
+	var/list/laps = A.arg("laps")
+	var/mob/living/silicon/target = A.arg("victim")
+	if(is_dead() && A.laps() < length(laps) && !QDELETED(target))
+		var/list/stage = laps[A.laps() + 1][1]
+		if(stage[2])
+			to_chat(target, stage[2])
 	hacking = 0
 
-/mob/living/silicon/ai/proc/malf_hack_step(datum/task/malf_hack/T)
-	var/list/script = T.script
-	var/mob/living/silicon/target = T.target
-	var/i = T.stage_no
-	var/list/stage = script[i]
-	if(!T.waited)
-		T.waited = TRUE
-		if(stage[1] > 0)
-			return STEP_REPEAT(stage[1])
-	if(stage[2] && is_dead())
-		to_chat(target, stage[2])
-		return STEP_FAIL("dead")
-	if(length(stage) >= 3)
-		for(var/message in islist(stage[3]) ? stage[3] : list(stage[3]))
-			to_chat(target, message)
-	if(length(stage) >= 4)
-		to_chat(src, stage[4])
-	T.waited = FALSE
-	T.stage_no = ++i
-	if(i > length(script))
-		hacking = 0
-		return STEP_DONE
-	return malf_hack_step(T)
-
-/mob/living/silicon/ai/proc/malf_hack_cyborg_done(datum/task/malf_hack/T)
-	var/mob/living/silicon/robot/target = T.target
+/mob/living/silicon/ai/proc/malf_hack_cyborg_done(datum/act/op/A)
+	var/mob/living/silicon/robot/target = A.arg("victim")
+	hacking = 0
+	if(QDELETED(target))
+		return OP_REFUSED
 	// Connect the cyborg to AI
 	target.set_master_ai(src)
 	target.lawupdate = TRUE
 	target.sync()
 	target.show_laws()
+	return OP_OK
 
-/mob/living/silicon/ai/proc/malf_hack_ai_done(datum/task/malf_hack/T)
-	var/mob/living/silicon/ai/target = T.target
+/mob/living/silicon/ai/proc/malf_hack_ai_done(datum/act/op/A)
+	var/mob/living/silicon/ai/target = A.arg("victim")
+	hacking = 0
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.set_zeroth_law("You are slaved to [name]. You are to obey all it's orders. ALL LAWS OVERRIDDEN.")
 	target.show_laws()
+	return OP_OK
 
 /// These two confirmations only recheck consciousness and their original target's lifetime.
 /datum/prompt/choice/malf_hack_target

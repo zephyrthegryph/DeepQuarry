@@ -69,6 +69,8 @@
 CAPABILITIES(/obj/structure/bed/bath)
 	reagents(300)
 	op("bath_interaction_item", item(/obj/item), then(PROC_REF(bath_interaction_item)))
+	// buckling a grabbed victim, started by bath_interaction_item() with the grab held
+	op("bath_buckle", ai(), takes("subject"), wait(2 SECONDS), then(PROC_REF(bath_buckle_done)))
 
 /obj/structure/bed/bath/proc/bath_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -89,25 +91,22 @@ CAPABILITIES(/obj/structure/bed/bath)
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return OP_PASS
 		act_message(user, src, others = span_notice("%U% attempts to buckle [affecting] into %T%!"))
-		task_start(/datum/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
+		perform_op(user, src, "bath_buckle", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = affecting))
 	return OP_PASS
 
-/datum/task/timed/bath_bath_buckle
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/bed/bath/proc/bath_buckle_done
-	var/obj/item/I
-	var/mob/living/affecting
-
-/obj/structure/bed/bath/proc/bath_buckle_done(datum/task/timed/bath_bath_buckle/task)
-	var/obj/item/I = task.I
-	var/mob/user = task.actor
-	var/mob/living/affecting = task.affecting
+/obj/structure/bed/bath/proc/bath_buckle_done(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	var/mob/living/affecting = A.arg("subject")
+	if(QDELETED(affecting))
+		return OP_REFUSED
 	affecting.forceMove(loc)
 	if(buckle_mob(affecting))
 		act_message(affecting, src, MSG_SELF(span_danger("You are buckled to %T% by [user.name]!")), \
 			MSG_OTHERS(span_danger("%U% is buckled to %T% by [user.name]!")), \
 			MSG_BLIND(span_notice("You hear metal clanking.")))
 	consume(I, user)
+	return OP_OK
 
 
 //oven
@@ -135,6 +134,7 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 	op("wooden_touch", hand(), ungated(), then(PROC_REF(wooden_touched)))
 	op("wooden_item", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(wooden_interaction_item)))
 	op("wooden_item_cyborg", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(wooden_interaction_item_cyborg)))
+	op("wooden_swirlie", ai(), takes("subject"), wait(3 SECONDS), then(PROC_REF(wooden_swirlie_done)))
 
 /// A touch takes the click and does nothing.
 /obj/structure/toilet/wooden/proc/wooden_touched(datum/act/op/A)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
 					rel_set(src, nameof(swirlie_mob), GM)
-					task_start(/datum/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
+					perform_op(user, src, "wooden_swirlie", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = GM))
 					rel_clear(src, nameof(swirlie_mob))
 				else
 					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
@@ -188,16 +188,15 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 		return OP_PASS
 	return OP_PASS
 
-/datum/task/timed/wooden_wooden_swirlie
-	duration = 3 SECONDS
-	complete_proc = /obj/structure/toilet/wooden/proc/wooden_swirlie_done
-
-/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/task/timed/wooden_wooden_swirlie/task)
-	var/mob/living/user = task.actor
-	var/mob/living/GM = task.target
+/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/GM = A.arg("subject")
+	if(QDELETED(GM))
+		return OP_REFUSED
 	act_message(user, null, MSG_SELF(span_notice("You give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% gives [GM.name] a swirlie!")), MSG_BLIND("You hear a toilet flushing."))
 	if(!GM.internal)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+	return OP_OK
 
 
 /// The look: the mapped sprite, none of what the types above draw.

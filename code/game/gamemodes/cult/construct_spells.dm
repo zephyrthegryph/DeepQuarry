@@ -526,33 +526,38 @@
 		return TRUE
 
 	var/turf/T = get_turf(hit_atom)
-	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
-
-	T.add_overlay(target_image)
-	task_start(/datum/task/timed/construct_shot, user, src, duration = pre_shot_delay, aimed_at = hit_atom, marked = T, marker = target_image)
+	var/obj/effect/overlay/spell_target/marker = new(T)
+	perform_op(user, src, "charge_shot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("aimed_at" = hit_atom, "marker" = marker))
 	return FALSE
+
+/// The mark on the tile a construct's shot is charging at.
+/obj/effect/overlay/spell_target
+	name = "target"
+	icon = 'icons/obj/spells.dmi'
+	icon_state = "target"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
 /// A construct's charged shot: the target turf is marked while it charges, then it fires.
-/datum/task/timed/construct_shot
-	complete_proc = /obj/item/spell/construct/projectile/proc/shot_charged
-	cancel_proc = /obj/item/spell/construct/projectile/proc/shot_unmark
-	var/atom/aimed_at
-	var/turf/marked
-	var/image/marker
+CAPABILITIES(/obj/item/spell/construct/projectile)
+	op("charge_shot", ai(), takes("aimed_at", "marker"), wait(PROC_REF(shot_time)), on_interrupt(PROC_REF(shot_unmark)), then(PROC_REF(shot_charged)))
 
-/obj/item/spell/construct/projectile/proc/shot_unmark(datum/task/timed/construct_shot/task)
-	task.marked?.cut_overlay(task.marker)
-	spent(task.marker)
+/obj/item/spell/construct/projectile/proc/shot_time(datum/act/op/A)
+	return pre_shot_delay
 
-/obj/item/spell/construct/projectile/proc/shot_charged(datum/task/timed/construct_shot/task)
-	shot_unmark(task)
-	if(!task.aimed_at)
-		return
+/obj/item/spell/construct/projectile/proc/shot_unmark(datum/act/op/A)
+	spent(A.arg("marker"))
+
+/obj/item/spell/construct/projectile/proc/shot_charged(datum/act/op/A)
+	shot_unmark(A)
+	var/atom/aimed_at = A.arg("aimed_at")
+	if(!aimed_at)
+		return OP_REFUSED
 	shot_ready = TRUE
-	on_ranged_cast(task.aimed_at, task.actor)
+	on_ranged_cast(aimed_at, A.actor)
 	shot_ready = FALSE
+	return OP_OK
 
 /obj/item/spell/construct/spawner
 	name = "spawner template"
@@ -691,27 +696,30 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		task_start(/datum/task/timed/slam_slam_wall, user, src, duration = windup, W = W, attack_message = attack_message)
+		perform_op(user, src, "slam_wall", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = W, "attack_message" = attack_message, "windup" = windup))
 		return
 	consume(src, user)
 
-/obj/item/spell/construct/slam/proc/slam_lowered(datum/task/timed/slam_slam_wall/task)
-	var/mob/living/user = task.actor
+CAPABILITIES(/obj/item/spell/construct/slam)
+	op("slam_wall", ai(), takes("wall", "attack_message", "windup"), wait(PROC_REF(slam_windup)), on_interrupt(PROC_REF(slam_lowered)), then(PROC_REF(slam_wall)))
+
+/obj/item/spell/construct/slam/proc/slam_windup(datum/act/op/A)
+	return A.arg("windup")
+
+/obj/item/spell/construct/slam/proc/slam_lowered(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, null, others = span_bold("%U%") + " lowers its fist.")
 
-/datum/task/timed/slam_slam_wall
-	complete_proc = /obj/item/spell/construct/slam/proc/slam_wall
-	cancel_proc = /obj/item/spell/construct/slam/proc/slam_lowered
-	var/turf/simulated/wall/W
-	var/attack_message
-
-/obj/item/spell/construct/slam/proc/slam_wall(datum/task/timed/slam_slam_wall/task)
-	var/mob/living/user = task.actor
-	var/turf/simulated/wall/W = task.W
-	var/attack_message = task.attack_message
+/obj/item/spell/construct/slam/proc/slam_wall(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/turf/simulated/wall/W = A.arg("wall")
+	var/attack_message = A.arg("attack_message")
+	if(QDELETED(W))
+		return OP_REFUSED
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
 	spent(src)
+	return OP_OK
 
 
 ////////////////////////////

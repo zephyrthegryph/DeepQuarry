@@ -1132,7 +1132,7 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 	test_answer(H, null, REQ_CANCELLED)
 	TEST_ASSERT_EQUAL(B.RCon_tag, old_tag, "cancel keeps the tag")
 	TEST_ASSERT_EQUAL(B.on, old_on, "the multitool never toggles power")
-	TEST_ASSERT(!task_busy(B), "it starts no hand reprogramming task")
+	TEST_ASSERT(!task_claiming(B), "it starts no hand reprogramming task")
 
 /datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows
 /datum/unit_test/dq_hc_struct/single_item_menus_preserve_disabled_rows/run_gate()

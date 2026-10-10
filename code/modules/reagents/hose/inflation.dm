@@ -76,28 +76,25 @@
 	// Display action
 	name = "[human_owner()]'s [feedback]"
 	act_message(user, null, others = "%U% starts to connect the hose to \the [human_owner()]'s [feedback]...")
-	var/started = task_start(/datum/task/timed/inflation_inflation_connected, user, human_owner(), other = other, origin = origin, target_arg = target, distancetonode = distancetonode, tubing = tubing, feedback = feedback)
-	return !istext(started)
+	var/datum/op_result/started = perform_op(user, src, "inflation_connect", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("other" = other, "origin" = origin, "target" = target, "distancetonode" = distancetonode, "tubing" = tubing, "feedback" = feedback))
+	return started.outcome != ACT_REFUSED
 
-/datum/task/timed/inflation_inflation_connected
-	duration = 7 SECONDS
-	complete_proc = /datum/hose_connector/inflation/proc/inflation_connected
-	fail_message = span_warning("You couldn't connect the hose!")
-	var/datum/hose_connector/other
-	var/datum/hose_connector/origin
-	var/datum/hose_connector/target_arg
-	var/distancetonode
-	var/obj/item/stack/tubing
-	var/feedback
+// Connecting the hose to the owner: seven seconds.
+CAPABILITIES(/datum/hose_connector/inflation)
+	op("inflation_connect", ai(), takes("other", "origin", "target", "distancetonode", "tubing", "feedback"), wait(7 SECONDS), on_interrupt(PROC_REF(inflation_failed)), then(PROC_REF(inflation_connected)))
 
-/datum/hose_connector/inflation/proc/inflation_connected(datum/task/timed/inflation_inflation_connected/task)
-	var/mob/user = task.actor
-	var/datum/hose_connector/other = task.other
-	var/datum/hose_connector/origin = task.origin
-	var/datum/hose_connector/target = task.target_arg
-	var/distancetonode = task.distancetonode
-	var/obj/item/stack/tubing = task.tubing
-	var/feedback = task.feedback
+/datum/hose_connector/inflation/proc/inflation_failed(datum/act/op/A)
+	to_chat(A.actor, span_warning("You couldn't connect the hose!"))
+
+
+/datum/hose_connector/inflation/proc/inflation_connected(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/hose_connector/other = A.arg("other")
+	var/datum/hose_connector/origin = A.arg("origin")
+	var/datum/hose_connector/target = A.arg("target")
+	var/distancetonode = A.arg("distancetonode")
+	var/obj/item/stack/tubing = A.arg("tubing")
+	var/feedback = A.arg("feedback")
 	if(other.get_hose() || get_hose()) // SHouldn't be connected to anything yet!
 		to_chat(user,span_warning("You couldn't connect the hose, another hose is already connected!"))
 		return

@@ -963,27 +963,18 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 /*
 /obj/item/gun/projectile/automatic/serdy/kord/var/trigger_reached = FALSE
 
-/datum/task/timed/kord_trigger_reached
-	duration = 5 SECONDS
-	complete_proc = /obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done
-	var/atom/A
-	var/adjacent
-	var/params
-
-/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/task/timed/kord_trigger_reached/task)
-	var/atom/A = task.A
-	var/mob/living/user = task.actor
-	var/adjacent = task.adjacent
-	var/params = task.params
+/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	trigger_reached = TRUE
-	afteratt(A, user, adjacent, params)
+	afteratt(A.arg("aim"), user, A.arg("adjacent"), A.arg("params"))
 	trigger_reached = FALSE
 
 /obj/item/gun/projectile/automatic/serdy/kord/afteratt(atom/A, mob/living/user, adjacent, params)
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
 		if(!trigger_reached) //Give them a chance to take it back.
-			task_start(/datum/task/timed/kord_trigger_reached, user, src, receiver = src, A = A, adjacent = adjacent, params = params)
+			// the five-second reach is an op: op("trigger_reach", ai(), takes("aim", "adjacent", "params"), wait(5 SECONDS), then(PROC_REF(trigger_reached_done)))
+			perform_op(user, src, "trigger_reach", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = A, "adjacent" = adjacent, "params" = params))
 			return
 		. = ..() //RIP
 

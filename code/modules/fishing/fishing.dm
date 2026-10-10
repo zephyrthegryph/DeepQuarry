@@ -121,40 +121,34 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 	else
 		fish_type = null
 
-/// Old attackby: cast a fishing rod's line into water that has fish. Spec in water.dm.
-/turf/simulated/floor/water/proc/water_fishing(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/P = A.held
-	//If you use a fishing rod on an open body of water that var/has_fish enabled
-	if(!task_busy(src))
-		var/obj/item/material/fishing_rod/R = P
-		if(!R.strung)
-			to_chat(user, span_notice("It is hard to go fishing without any line!"))
-			return OP_PASS
-		if(R.cast)
-			to_chat(user, span_notice("You can only cast one line at a time!"))
-			return OP_PASS
-		play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
-		to_chat(user,"You cast \the [P.name] into \the [src].")
-		R.cast = TRUE
-		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
-		task_start(/datum/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
-		return OP_PASS
-	return OP_DECLINE
+MSG_DEF_SELF(fishing/no_line, span_notice("It is hard to go fishing without any line!"))
+MSG_DEF_SELF(fishing/already_cast, span_notice("You can only cast one line at a time!"))
+
+/// A fishing rod cast into water that has fish (the "water_fishing" op in water.dm): the line must be strung and not already out. Spec in water.dm.
+/turf/simulated/floor/water/proc/fishing_cast(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	if(!R.strung)
+		return MSG(fishing/no_line)
+	if(R.cast)
+		return MSG(fishing/already_cast)
+	play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
+	to_chat(A.actor, "You cast \the [R.name] into \the [src].")
+	R.cast = TRUE
+
+/// How long the line stays in the water before something bites.
+/turf/simulated/floor/water/proc/fishing_wait_time(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	return rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
 
 /// A line in the water until something bites; the water is busy meanwhile.
-/datum/task/timed/fishing
-	complete_proc = /turf/simulated/floor/water/proc/fishing_done
-	cancel_proc = /turf/simulated/floor/water/proc/fishing_ended
-	var/obj/item/material/fishing_rod/rod
+/turf/simulated/floor/water/proc/fishing_ended(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	if(R)
+		R.cast = FALSE
 
-/turf/simulated/floor/water/proc/fishing_ended(datum/task/timed/fishing/task)
-	if(task.rod)
-		task.rod.cast = FALSE
-
-/turf/simulated/floor/water/proc/fishing_done(datum/task/timed/fishing/task)
-	var/mob/user = task.actor
-	var/obj/item/material/fishing_rod/R = task.rod
+/turf/simulated/floor/water/proc/fishing_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/material/fishing_rod/R = A.held
 	var/obj/item/P = R
 	play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
 	to_chat(user,span_notice("You feel a tug and begin pulling!"))
@@ -179,7 +173,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 			if(prob(33))	// Dead on hook. Good for food, not so much for live catch.
 				L.death()
 		to_chat(user,span_notice("You fish out \the [fished] from the water with [P.name]!"))
-	fishing_ended(task)
+	fishing_ended(A)
 
 /obj/random/fishing_junk
 	name = "junk"

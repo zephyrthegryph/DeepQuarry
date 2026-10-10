@@ -36,7 +36,7 @@
 	if (chassis)
 		act_message(user, chassis, others = span_notice("%U% starts to climb into %T%."))
 
-	task_start(/datum/task/timed/passenger_boarded, user, src, receiver = src)
+	perform_op(user, src, "board", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
 	act_message(user, src, MSG_SELF(span_notice("You open the hatch on %T% and remove [passenger_occupant]!")), \
@@ -44,20 +44,19 @@
 	go_out()
 	mecha_log_message("[passenger_occupant] was removed.")
 
-/datum/task/timed/passenger_boarded
-	duration = 4 SECONDS
-	complete_proc = /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded
-	fail_message = span_info("You stop entering the exosuit.")
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/board_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_info("You stop entering the exosuit."))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/task/timed/passenger_boarded/task)
-	var/mob/user = task.actor
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))
-			return
+			return OP_REFUSED
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")
 	else if(src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != user)
 		to_chat(user, span_warning("[src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)] was faster. Try harder next time, loser."))
+	return OP_OK
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -120,6 +119,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
 	op("toggle_lock", topic("toggle_lock"), then(PROC_REF(topic_toggle_lock)))
+	op("board", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(board_interrupted)), then(PROC_REF(boarded)))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(datum/act/op/A)
 	door_locked = !door_locked

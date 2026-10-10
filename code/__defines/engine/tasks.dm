@@ -15,5 +15,3 @@
 /// Cancel the task with `reason` (its on_cancel runs).
 #define STEP_FAIL(reason) list(TASK_STEP_FAIL, reason)
 
-/// Starts a task: task_start(/datum/task/timed/x, actor, target, var = value, ...). The target is optional (task_start(/datum/task/x, actor)).
-#define task_start(task, actor, rest...) task_begin(task, actor, list(rest), src)

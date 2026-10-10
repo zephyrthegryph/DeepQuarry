@@ -64,8 +64,6 @@ dx_raw_overlays	code/game/atoms_movable.dm	add_overlay(list(gen_emissive_blocker
 dx_raw_overlays	code/game/atoms_movable.dm	cut_overlay(em_block)
 dx_raw_overlays	code/game/atoms_movable.dm	cut_overlay(source)
 dx_raw_overlays	code/game/gamemodes/changeling/state/powers/lesser_form.dm	C.cut_overlays()
-dx_raw_overlays	code/game/gamemodes/cult/construct_spells.dm	T.add_overlay(target_image)
-dx_raw_overlays	code/game/gamemodes/cult/construct_spells.dm	task.marked?.cut_overlay(task.marker)
 dx_raw_overlays	code/game/gamemodes/technomancer/instability.dm	add_overlay(instability_flash)
 dx_raw_overlays	code/game/gamemodes/technomancer/instability.dm	cut_overlay(instability_flash)
 dx_raw_overlays	code/game/gamemodes/technomancer/spells/control.dm	L.add_overlay(control_overlay, TRUE)

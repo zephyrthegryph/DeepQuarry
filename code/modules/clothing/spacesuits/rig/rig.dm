@@ -136,6 +136,10 @@ CAPABILITIES(/obj/item/rig)
 	op("tank_settings", ui_act("tank_settings"), then(PROC_REF(ui_act_tank_settings)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(rig_emp_malfunction)))
 	op("rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Rig item"), then(PROC_REF(rig_item)))
+	// Sealing or unsealing the suit: one wait for the overall check, then one per piece (boots, gloves, helmet, chest), each lap sealing the piece it waited for.
+	op("seal_suit", ai(), takes("seal_target", "booting_L", "booting_R"), wait(PROC_REF(seal_wait), keeps = STAY | ALIVE, repeats = PROC_REF(seal_more), after_step = PROC_REF(seal_lap)), on_interrupt(PROC_REF(seal_interrupted)), then(PROC_REF(seal_finished)))
+	op("put_on", ai(), wait(PROC_REF(seal_wait), keeps = STAY | ALIVE), on_interrupt(PROC_REF(put_on_cancelled)), then(PROC_REF(put_on_finished)))
+	op("install_module", ai(), wait(4 SECONDS, keeps = HELD | STAY | TARGET_PRESENT), then(PROC_REF(install_module_done)))
 	op("rig_shock_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Rig shock hand"), then(PROC_REF(rig_shock_hand)))
 	op("rig_hardsuit_interface_verb", menu(), label("Open Hardsuit Interface"), needs(carried()), then(PROC_REF(rig_hardsuit_interface_verb)))
 	op("rig_toggle_vision_verb", menu(), label("Toggle Visor"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_toggle_vision_verb)))
@@ -379,39 +383,75 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		act_message(M, null, MSG_SELF(span_notice("With a quiet hum, the suit begins running checks and adjusting components.")), \
 			MSG_OTHERS(span_notice("%U%'s suit emits a quiet hum as it begins to adjust its seals.")))
 		if(seal_delay)
-			task_start(/datum/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
+			perform_op(M, src, "seal_suit", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R))
 			return 1
 	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
 	return 1
 
-/// One timed stage of sealing the suit: the overall check (no piece), or one piece. Each
-/// continues in seal_piece() with the next piece.
-/datum/task/timed/rig_seal
-	flags = IGNORE_TARGET_LOC_CHANGE
-	complete_proc = /obj/item/rig/proc/seal_stage_done
-	cancel_proc = /obj/item/rig/proc/seal_interrupted
-	var/seal_target
-	var/atom/movable/screen/rig_booting/booting_L
-	var/atom/movable/screen/rig_booting/booting_R
-	/// The piece this stage seals (null: the overall check) and its place in the order.
-	var/obj/item/piece
-	var/msg_type
-	var/index = 0
+/// How long one stage of sealing (or putting the suit on) takes.
+/obj/item/rig/proc/seal_wait(datum/act/op/A)
+	return seal_delay
 
-/obj/item/rig/proc/seal_interrupted(datum/task/timed/rig_seal/task)
-	var/mob/living/carbon/human/M = task.actor
+/// The wearer moved, passed out or lost the suit while it was adjusting.
+/obj/item/rig/proc/seal_interrupted(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
 		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
-	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
+	seal_finish(M, A.arg("seal_target"), A.arg("booting_L"), A.arg("booting_R"), TRUE)
 
-/obj/item/rig/proc/seal_stage_done(datum/task/timed/rig_seal/task)
-	if(task.piece)
-		seal_one_piece(task.actor, task.piece, task.msg_type, task.seal_target)
-	seal_piece(task.actor, task.seal_target, FALSE, task.booting_L, task.booting_R, task.index + 1)
+/// A lap of the seal ended: the piece it waited for (none after the overall check) is sealed, then the next stage is found.
+/obj/item/rig/proc/seal_lap(datum/act/op/A)
+	var/obj/item/piece = A.arg("piece")
+	if(piece)
+		seal_one_piece(A.actor, piece, A.arg("msg_type"), A.arg("seal_target"))
+	seal_next_stage(A, (A.arg("index") || 0) + 1)
 
-/// Seals pieces from `index` on (boots, gloves, helmet, chest); a piece with a seal delay is a
-/// timed action that comes back here for the next one.
+/// Another stage follows while a piece is left to seal.
+/obj/item/rig/proc/seal_more(datum/act/op/A)
+	return !!A.arg("more")
+
+/// The last stage ended, or the suit lost a piece on the way.
+/obj/item/rig/proc/seal_finished(datum/act/op/A)
+	seal_finish(A.actor, A.arg("seal_target"), A.arg("booting_L"), A.arg("booting_R"), !!A.arg("failed"))
+	return OP_OK
+
+/// Finds the next piece from `index` on that has a stage to wait for (boots, gloves, helmet, chest) and writes it to the op's arguments; a piece that is
+/// missing is skipped, a suit that lost its wearer or a piece ends the sealing as failed.
+/obj/item/rig/proc/seal_next_stage(datum/act/op/A, index)
+	var/mob/living/carbon/human/M = A.actor
+	LAZYSET(A.args, "more", FALSE)
+	LAZYSET(A.args, "piece", null)
+	if(!M)
+		LAZYSET(A.args, "failed", TRUE)
+		return
+	var/list/pieces = list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type))
+	for(var/i in index to length(pieces))
+		var/list/piece_data = pieces[i]
+		var/obj/item/piece = piece_data[1]
+		var/obj/item/compare_piece = piece_data[2]
+		var/msg_type = piece_data[3]
+		var/piece_type = piece_data[4]
+
+		if(!piece || !piece_type)
+			continue
+
+		if(!istype(M) || !istype(piece) || !istype(compare_piece) || !msg_type)
+			to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
+			LAZYSET(A.args, "failed", TRUE)
+			return
+
+		if(!((M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src) && piece == compare_piece))
+			LAZYSET(A.args, "failed", TRUE)
+			return
+
+		LAZYSET(A.args, "piece", piece)
+		LAZYSET(A.args, "msg_type", msg_type)
+		LAZYSET(A.args, "index", i)
+		LAZYSET(A.args, "more", TRUE)
+		return
+
+/// Seals pieces from `index` on (boots, gloves, helmet, chest) at once; with a seal delay the suit seals through the "seal_suit" op instead.
 /obj/item/rig/proc/seal_piece(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, index)
 	if(!M)
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
@@ -436,9 +476,6 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 			return
 
-		if(seal_delay && !instant)
-			task_start(/datum/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R, piece = piece, msg_type = msg_type, index = i)
-			return
 		seal_one_piece(M, piece, msg_type, seal_target)
 
 	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
@@ -713,9 +750,16 @@ TRACKED(/obj/item/rig, carried_by_mob)
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_notice("You start putting on %T%...")), MSG_OTHERS(span_notice("%U% starts putting on %T%...")))
-		task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
+		perform_op(M, src, "put_on", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 	put_on_done(M)
+
+/obj/item/rig/proc/put_on_cancelled(datum/act/op/A)
+	put_on_failed(A.actor)
+
+/obj/item/rig/proc/put_on_finished(datum/act/op/A)
+	put_on_done(A.actor)
+	return OP_OK
 
 /obj/item/rig/proc/put_on_failed(mob/living/carbon/human/M)
 	if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))

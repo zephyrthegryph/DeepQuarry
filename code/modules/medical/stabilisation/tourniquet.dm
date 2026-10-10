@@ -237,13 +237,18 @@ MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
 	if(!choice)
 		return
 	var/obj/item/organ/external/E = cinched[choice]
-	act_message(user, src, MSG_SELF(span_notice("You start loosening the tourniquet on the [E.name].")), \
-		MSG_OTHERS(span_notice("%U% starts loosening the tourniquet on [src == user ? "their" : "%T%'s"] [E.name].")))
-	task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
+	perform_op(user, src, "loosen_tourniquet", null, ORIGIN_SYSTEM, with = list("limb" = E))
 
-/mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
-	// Re-validate after the delay.
-	if(E.owner != src || !E.tourniquet || user.incapacitated() || !user.Adjacent(src))
+/// The line said when the loosening starts.
+/mob/living/carbon/human/proc/loosen_tourniquet_begins(datum/act/op/A)
+	var/obj/item/organ/external/E = A.arg("limb")
+	return msg_text(span_notice("You start loosening the tourniquet on the [E.name]."), span_notice("%U% starts loosening the tourniquet on [src == A.actor ? "their" : "%T%'s"] [E.name]."))
+
+/// Re-validate after the delay (the limb is still there and still tied).
+/mob/living/carbon/human/proc/loosen_tourniquet_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/E = A.arg("limb")
+	if(QDELETED(E) || E.owner != src || !E.tourniquet)
 		return
 	var/obj/item/tourniquet/T = E.remove_tourniquet(user)
 	if(T)
