@@ -19,6 +19,8 @@
 TRACKED(/obj/item/ghost_trap, deployed)
 
 CAPABILITIES(/obj/item/ghost_trap)
+	// The captured entity working its way out (container_resist() starts it): two minutes.
+	op("break_out", ai(), wait(2 MINUTES), then(PROC_REF(container_resist_timed_done)))
 	ref_one(nameof(captured_entity))
 	// Watches its catch every 2 s while it holds one; empty, it sleeps.
 	every(2 SECONDS, then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity))
@@ -152,14 +154,16 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 	if(!ismob(escapee))
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
-	task_timed(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
+	perform_op(escapee, src, "break_out", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
+/obj/item/ghost_trap/proc/container_resist_timed_done(datum/act/op/A)
+	var/mob/living/escapee = A.actor
 	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
 	rel_clear(src, nameof(captured_entity))
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
+	return OP_OK
 
 /// Something is buckled to the trap and the actor can work it.
 /obj/item/ghost_trap/proc/can_free_occupant(datum/act/op/A)

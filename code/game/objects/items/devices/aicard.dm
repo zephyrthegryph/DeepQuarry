@@ -26,6 +26,8 @@ CAPABILITIES(/obj/item/aicard)
 	op("view_ai", in_hand(), opens_ui())
 	interface("AICard", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")
+	// Transferring an AI in: started by grab_ai() from the AI's own verb, the AI fixer and the rig module, which pass the AI.
+	op("grab_ai", ai(), takes("ai"), wait(10 SECONDS), then(PROC_REF(grab_ai_timed_done)))
 	op("wipe", ui_act("wipe"), then(PROC_REF(ui_act_wipe)))
 	op("radio", ui_act("radio"), then(PROC_REF(ui_act_radio)))
 	op("wireless", ui_act("wireless"), then(PROC_REF(ui_act_wireless)))
@@ -118,13 +120,17 @@ CAPABILITIES(/obj/item/aicard)
 	act_message(user, src, MSG_SELF("You start transferring \the [ai] into %T%..."), MSG_OTHERS("%U% starts transferring \the [ai] into %T%..."))
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
+	perform_op(user, src, "grab_ai", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("ai" = ai))
 	return 1
 
-/obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)
+/obj/item/aicard/proc/grab_ai_timed_done(datum/act/op/A)
+	var/mob/living/silicon/ai/ai = A.arg("ai")
+	var/mob/living/user = A.actor
+	if(QDELETED(ai))
+		return OP_REFUSED
 	if(carded_ai())
 		to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
-		return 0
+		return OP_FAILED
 	if(istype(ai.loc, /turf/))
 		new /obj/structure/AIcore/deactivated(get_turf(ai))
 
@@ -146,6 +152,7 @@ CAPABILITIES(/obj/item/aicard)
 		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
 
 	ai.canmove = 1
+	return OP_OK
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai() && istype(carded_ai().loc, /turf))
