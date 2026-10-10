@@ -135,6 +135,7 @@ pub fn lower<R: Resolver>(
         resource_search_context,
         true,
         LowerOptions {
+            allocation: None,
             observer: None,
             classification: None,
             memo: None,
@@ -177,6 +178,7 @@ pub fn lower_captured_observed_memo<R: Resolver>(
         resource_search_context,
         false,
         LowerOptions {
+            allocation: None,
             observer,
             classification: None,
             memo,
@@ -212,6 +214,7 @@ pub struct InitializerExecution<'a> {
     pub classification: Option<initializer_policy::InitializerReuse<'a>>,
 }
 struct LowerOptions<'a> {
+    allocation: Option<&'a crate::startup_allocation::StartupAllocationRoster>,
     classification: Option<initializer_policy::InitializerReuse<'a>>,
     observer: Option<&'a InitializerObserver<'a>>,
     memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
@@ -229,6 +232,25 @@ pub fn lower_captured_observed_memo_on_executor<R: Resolver>(
     resource_search_context: Option<u128>,
     execution: InitializerExecution<'_>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
+    lower_captured_on_executor_with_allocation(
+        frontend,
+        startup,
+        evaluator,
+        host,
+        resource_search_context,
+        execution,
+        None,
+    )
+}
+pub(crate) fn lower_captured_on_executor_with_allocation<R: Resolver>(
+    frontend: &ColdFrontend,
+    startup: &crate::startup::CapturedStartup<'_>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    execution: InitializerExecution<'_>,
+    allocation: Option<&crate::startup_allocation::StartupAllocationRoster>,
+) -> Result<LoweredInitializers, InitializerLoweringError> {
     startup.validate_for(frontend)?;
     lower_plan(
         (frontend, startup.plan()),
@@ -237,6 +259,7 @@ pub fn lower_captured_observed_memo_on_executor<R: Resolver>(
         resource_search_context,
         false,
         LowerOptions {
+            allocation,
             observer: execution.observer,
             classification: execution.classification,
             executor: Some(execution.executor),
@@ -258,6 +281,7 @@ fn lower_plan<R: Resolver>(
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     let (frontend, plan) = captured;
     let LowerOptions {
+        allocation,
         classification: reuse,
         observer,
         memo,
@@ -311,7 +335,7 @@ fn lower_plan<R: Resolver>(
             debug_defined,
         ),
     };
-    let classified = match classification {
+    let mut classified = match classification {
         Ok(classified) => classified,
         Err(error) => {
             let ordinals = error
@@ -354,6 +378,9 @@ fn lower_plan<R: Resolver>(
             ));
         }
     };
+    if let Some(allocation) = allocation {
+        allocation.order_runtime(plan, &mut classified)?;
+    }
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
     let fragment_store = memo.and_then(|memo| memo.initializer_fragments.as_deref());

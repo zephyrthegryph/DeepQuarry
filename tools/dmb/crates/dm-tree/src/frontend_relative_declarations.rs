@@ -23,12 +23,14 @@ struct RelativeBody {
     span: Span,
     settings: Arc<[Span]>,
     stored_candidates: bool,
+    settings_owner: Option<Arc<dm_ir::ProcedureMetadata>>,
 }
 fn capture_bodies(
     items: &[Item],
     source: &str,
     path: &mut Vec<usize>,
     output: &mut Vec<RelativeBody>,
+    owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
 ) {
     for (index, item) in items.iter().enumerate() {
         path.push(index);
@@ -39,12 +41,19 @@ fn capture_bodies(
                 path: path.clone().into(),
                 span: item.span,
                 settings: settings.into(),
+                settings_owner: owners.get(&item.span.start).and_then(|owner| {
+                    let mut symbols = dm_ir::SymbolTable::default();
+                    crate::settings::extract_settings(&item.children, &mut symbols)
+                        .ok()
+                        .filter(|nodes| nodes.as_ref() == owner.settings.as_ref())
+                        .map(|_| Arc::clone(owner))
+                }),
                 stored_candidates: crate::procedure_statics::may_contain_stored_declarations(
                     &source[item.span.range()],
                 ),
             });
         } else {
-            capture_bodies(&item.children, source, path, output);
+            capture_bodies(&item.children, source, path, output, owners);
         }
         path.pop();
     }
@@ -55,6 +64,9 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     root_prefix: usize,
 }
 impl CurrentBodyRecipe<'_> {
+    pub(crate) fn settings_owner(&self) -> Option<Arc<dm_ir::ProcedureMetadata>> {
+        self.relative.settings_owner.clone()
+    }
     pub(crate) fn stored_candidates(&self) -> bool {
         self.relative.stored_candidates
     }
@@ -82,7 +94,15 @@ impl RelativeSyntax {
     pub(crate) fn capture(items: Vec<Item>, source: &str) -> Result<Self, BindingError> {
         Self::capture_shared(items, Arc::from(source))
     }
+    #[cfg(test)]
     pub(crate) fn capture_shared(items: Vec<Item>, source: Arc<str>) -> Result<Self, BindingError> {
+        Self::capture_with_settings(items, source, &Default::default())
+    }
+    pub(crate) fn capture_with_settings(
+        items: Vec<Item>,
+        source: Arc<str>,
+        owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
+    ) -> Result<Self, BindingError> {
         let mut max_end = 0;
         let mut pending: Vec<_> = items.iter().collect();
         while let Some(item) = pending.pop() {
@@ -95,7 +115,7 @@ impl RelativeSyntax {
             pending.extend(&item.children);
         }
         let mut bodies = Vec::new();
-        capture_bodies(&items, &source, &mut Vec::new(), &mut bodies);
+        capture_bodies(&items, &source, &mut Vec::new(), &mut bodies, owners);
         let source_len = source.len();
         Ok(Self {
             items: arena::Arena::capture(items, source),
@@ -117,6 +137,13 @@ impl RelativeSyntax {
     }
     pub fn shared_source(&self) -> Option<&Arc<str>> {
         self.items.source()
+    }
+    pub fn visit_settings_owners(&self, mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>)) {
+        for body in &self.bodies {
+            if let Some(owner) = &body.settings_owner {
+                visit(owner);
+            }
+        }
     }
     pub fn visit_item_storage(&self, visit: impl FnMut(usize, usize, usize)) {
         self.items.visit_storage(visit);

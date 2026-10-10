@@ -552,7 +552,12 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let initialization = crate::initializer_lowering::lower_captured_observed_memo_on_executor(
+    let startup_allocation = crate::startup_allocation::StartupAllocationRoster::issue(
+        plan,
+        declarations.source_type_order,
+    )
+    .map_err(ColdError::InitializerInvariant)?;
+    let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
         frontend,
         startup,
         &evaluator,
@@ -581,6 +586,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
                 })
             }),
         },
+        Some(&startup_allocation),
     )
     .map_err(initializer_lowering_error)?;
     let mut projection = crate::class_projection::project_classified_with_artifacts(
@@ -592,6 +598,9 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         memo.and_then(|memo| memo.class_projections.as_deref()),
     )
     .map_err(ColdError::Projection)?;
+    startup_allocation
+        .order_membership(&mut projection.shared_slot_order)
+        .map_err(ColdError::InitializerInvariant)?;
     projection
         .bind_field_sources(frontend, plan)
         .map_err(ColdError::Projection)?;
@@ -623,8 +632,9 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     // exactly as before; this capture performs no resolver/evaluator operations.
     let pending_modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
-    let mut warnings = crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
-        .map_err(initializer_lowering_error)?;
+    let mut warnings =
+        crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
+            .map_err(initializer_lowering_error)?;
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.
@@ -705,8 +715,11 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
     for contribution in &contributions {
-        warnings.extend(contribution.current_warnings(frontend.snapshot.tree.symbols())
-            .map_err(ColdError::InitializerInvariant)?);
+        warnings.extend(
+            contribution
+                .current_warnings(frontend.snapshot.tree.symbols())
+                .map_err(ColdError::InitializerInvariant)?,
+        );
     }
     let body_types: Vec<_> = contributions
         .iter()

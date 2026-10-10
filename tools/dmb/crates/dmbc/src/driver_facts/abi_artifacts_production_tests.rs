@@ -90,6 +90,31 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     let engine = &engine_owner.snapshot;
     let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner));
     let original=frontend("/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
+    for body in original.bodies.iter() {
+        let proof = original
+            .procedure_settings(body)
+            .unwrap()
+            .expect("production settings owner must be issued");
+        let metadata = original
+            .snapshot
+            .tree
+            .member(body.member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_ref()
+            .unwrap();
+        assert!(proof.authenticates(original.compact_body(body).unwrap(), metadata));
+        let owner = original
+            .settings_owner_storage()
+            .iter()
+            .flatten()
+            .find(|owner| Arc::ptr_eq(&owner.settings, &metadata.settings));
+        assert!(
+            owner.is_some(),
+            "settings proof shares existing producer payload"
+        );
+    }
     let before = prepared(&original, &engine, Some(&store));
     same(&before, &prepared(&original, &engine, None));
     let edited=frontend("// moved provenance\n/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x+1\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);

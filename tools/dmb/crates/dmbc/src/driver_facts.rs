@@ -542,6 +542,14 @@ fn prepare_source_abi_mode_on_executor(
                                                 artifacts,
                                                 &artifact_keys,
                                                 metadata,
+                                                frontend
+                                                    .procedure_settings(body)
+                                                    .map_err(|error| {
+                                                        AbiError::unsupported(format!(
+                                                            "body settings: {error:?}"
+                                                        ))
+                                                    })?
+                                                    .as_ref(),
                                                 parsed,
                                                 &context,
                                                 evaluator,

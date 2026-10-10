@@ -558,7 +558,23 @@ impl Contribution {
         items_spans(&mut items, text, offset, 0)?;
         let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
         let source: Arc<str> = Arc::from(text);
-        let syntax = Arc::new(RelativeSyntax::capture_shared(items, Arc::clone(&source)).ok()?);
+        let settings = facts
+            .skeletons
+            .iter()
+            .zip(&facts.origins)
+            .filter_map(|(row, origin)| {
+                let crate::Skeleton::Member { metadata, .. } = row else {
+                    return None;
+                };
+                metadata
+                    .procedure
+                    .as_ref()
+                    .map(|owner| (origin.span.start as usize, Arc::clone(owner)))
+            })
+            .collect();
+        let syntax = Arc::new(
+            RelativeSyntax::capture_with_settings(items, Arc::clone(&source), &settings).ok()?,
+        );
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts

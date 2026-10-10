@@ -24,6 +24,7 @@ impl HeapCensus {
         if !self.arc_object(owner, relative) {
             return;
         }
+        relative.visit_settings_owners(|metadata| self.procedure_metadata(owner, metadata));
         relative.visit_body_storage(|address, logical, capacity| {
             self.buffer(owner, address, logical, capacity);
         });

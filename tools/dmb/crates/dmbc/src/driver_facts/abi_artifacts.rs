@@ -76,6 +76,7 @@ pub(super) fn prepare(
     store: &AbiArtifacts,
     keys: &Mutex<Vec<Arc<[u8]>>>,
     metadata: &dm_ir::ProcedureMetadata,
+    settings: Option<&dm_tree::frontend::IssuedProcedureSettings<'_>>,
     parsed: dm_tree::frontend::ItemView<'_>,
     context: &AbiContext<'_>,
     evaluator: &DriverEvaluator<'_>,
@@ -84,11 +85,13 @@ pub(super) fn prepare(
     resource: Option<u128>,
 ) -> Result<PreparedUnit, AbiError> {
     // Always authenticate the current issued header/settings before accepting old answers.
+    let authenticated = settings.is_some_and(|proof| proof.authenticates(parsed, metadata));
     let mut symbols = dm_ir::SymbolTable::default();
-    if dm_tree::settings::extract_settings_view(parsed, &mut symbols)
-        .map_err(AbiError::unsupported)?
-        .as_ref()
-        != metadata.settings.as_ref()
+    if !authenticated
+        && dm_tree::settings::extract_settings_view(parsed, &mut symbols)
+            .map_err(AbiError::unsupported)?
+            .as_ref()
+            != metadata.settings.as_ref()
     {
         return Err(AbiError::unsupported(
             "captured procedure setting tree differs from actual body",

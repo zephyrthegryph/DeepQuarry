@@ -7,13 +7,13 @@
 pub mod cache_maintenance;
 pub mod cli;
 pub mod debug_sources;
-mod procedure_warnings;
 pub mod diagnostics;
 pub mod expansion_memo;
 pub mod filesystem_proofs;
 pub mod frozen_inputs;
 pub mod heap_census;
 pub mod input_snapshot;
+mod procedure_warnings;
 pub use runner_host::disk as runner_disk;
 pub mod map_memo;
 pub mod output_cli;
@@ -96,6 +96,7 @@ mod modified_instance_receipts;
 #[cfg(test)]
 mod native_macro_receipts;
 pub mod startup;
+mod startup_allocation;
 #[cfg(test)]
 mod static_storage_receipts;
 

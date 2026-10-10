@@ -391,7 +391,15 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         })
         .collect();
     let mut bodies = Vec::new();
-    collect_bodies(&syntax, &declarations_by_start, &mapping, &mut bodies)?;
+    let mut issued_settings = Vec::new();
+    collect_bodies(
+        &syntax,
+        &snapshot.tree,
+        &declarations_by_start,
+        &mapping,
+        &mut bodies,
+        &mut issued_settings,
+    )?;
     let callable_roster = match semantic_state {
         Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
         None => CallableRoster::issue(&snapshot.tree, &bodies),
@@ -443,6 +451,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .collect(),
         ),
         issued_bodies: Arc::clone(&bodies),
+        issued_settings: issued_settings.into(),
         bodies,
         emission_order: emission_order.into(),
     })

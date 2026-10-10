@@ -212,6 +212,7 @@ pub struct ColdFrontend {
     callable_roster: Arc<CallableRoster>,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
+    issued_settings: Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>,
     issued_syntax: Arc<DeclarationSyntax>,
     issued_arena: dm_preprocess::SourceText,
     /// Explicit linker projection. It never changes semantic override priority
@@ -220,6 +221,10 @@ pub struct ColdFrontend {
 }
 
 impl ColdFrontend {
+    pub fn settings_owner_storage(&self) -> &Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]> {
+        &self.issued_settings
+    }
+
     /// Borrow only the exact issued source-neutral roster beside current bodies.
     pub fn callable_roster(&self) -> Result<&Arc<CallableRoster>, String> {
         if !Arc::ptr_eq(&self.bodies, &self.issued_bodies)
@@ -266,6 +271,20 @@ impl ColdFrontend {
             return Err(reject());
         }
         Ok(item)
+    }
+    /// Current parser-issued settings proof, never constructible by callers.
+    /// Unissued/custom syntax retains the ordinary extraction path.
+    pub fn procedure_settings(
+        &self,
+        occurrence: &BodyOccurrence,
+    ) -> Result<Option<IssuedProcedureSettings<'_>>, Diagnostic> {
+        let compact = self.compact_body(occurrence)?;
+        let index = self.body_by_declaration[&occurrence.declaration];
+        Ok(self
+            .issued_settings
+            .get(index)
+            .and_then(|owner| owner.as_ref())
+            .map(|owner| IssuedProcedureSettings { compact, owner }))
     }
     /// Borrow exact captured procedure bytes without parsing executable syntax.
     /// This certifies source identity only; consumers still need their own
@@ -414,6 +433,17 @@ impl FrontendIssuance {
 
 /// A bounded executable parse tied to an immutable source capture. Callers may
 /// inspect its AST, but cannot replace it or manufacture its source authority.
+pub struct IssuedProcedureSettings<'a> {
+    compact: ItemView<'a>,
+    owner: &'a Arc<dm_ir::ProcedureMetadata>,
+}
+impl IssuedProcedureSettings<'_> {
+    pub fn authenticates(&self, item: ItemView<'_>, metadata: &dm_ir::ProcedureMetadata) -> bool {
+        self.compact.same_node(item)
+            && (Arc::ptr_eq(&self.owner.settings, &metadata.settings)
+                || self.owner.settings.as_ref() == metadata.settings.as_ref())
+    }
+}
 pub struct IssuedBodyInput<'a> {
     issuer: &'a ColdFrontend,
     occurrence: &'a BodyOccurrence,
@@ -797,9 +827,11 @@ fn resolution_error(
 
 fn collect_bodies(
     syntax: &DeclarationSyntax,
+    tree: &crate::SemanticTree,
     declarations: &HashMap<usize, (OccurrenceId, MemberId)>,
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
+    settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for recipe in syntax.body_recipes() {
         let span = recipe.span();
@@ -818,6 +850,12 @@ fn collect_bodies(
                     .ok_or_else(|| vec![internal("procedure setting has no current source origin")])
             })
             .collect::<Result<Vec<_>, _>>()?;
+        settings.push(recipe.settings_owner().and_then(|issued| {
+            let current = tree.member(declaration.1)?.metadata.procedure.as_ref()?;
+            (Arc::ptr_eq(&issued.settings, &current.settings)
+                || issued.settings.as_ref() == current.settings.as_ref())
+            .then(|| Arc::clone(current))
+        }));
         bodies.push(BodyOccurrence {
             stored_candidates: recipe.stored_candidates(),
             declaration: declaration.0,
@@ -906,3 +944,7 @@ mod worker_facts_tests {
 }
 
 pub(crate) use declaration_state::shared::SharedContributionStore;
+
+#[cfg(test)]
+#[path = "frontend_settings_receipt_tests.rs"]
+mod settings_receipt_tests;

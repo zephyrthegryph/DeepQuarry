@@ -394,6 +394,14 @@ impl HeapCensus {
         );
         self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
         self.slice("frontend.body_index", &frontend.bodies, true);
+        self.slice(
+            "frontend.settings_index",
+            frontend.settings_owner_storage(),
+            true,
+        );
+        for owner in frontend.settings_owner_storage().iter().flatten() {
+            self.procedure_metadata("frontend.settings_owner", owner);
+        }
         for body in frontend.bodies.iter() {
             self.slice("frontend.body_index", &body.ast_path, true);
             self.slice("frontend.body_index", &body.setting_context_origins, true);
@@ -535,7 +543,11 @@ impl HeapCensus {
             }
         }
     }
-    pub(crate) fn procedure_metadata(&mut self, owner: &str, metadata: &Arc<dm_ir::ProcedureMetadata>) {
+    pub(crate) fn procedure_metadata(
+        &mut self,
+        owner: &str,
+        metadata: &Arc<dm_ir::ProcedureMetadata>,
+    ) {
         if !self.arc_object(owner, metadata) {
             return;
         }
