@@ -129,7 +129,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	return routing_scrambled() ? ui_captain(A) : /datum/msg/req_silent
 
 /datum/tgui_module/communications/proc/ui_not_silicon(datum/act/op/A)
-	return (!(isAI(A.actor) || isrobot(A.actor))) ? null : MSG(communications/no_recall)
+	return (A.authority & AUTH_REMOTE_ACCESS) ? MSG(communications/no_recall) : null
 
 /datum/tgui_module/communications/proc/announce_ready(datum/act/op/A)
 	return (COOLDOWN_FINISHED(src, message_cooldown)) ? null : MSG(communications/announce_cooldown)

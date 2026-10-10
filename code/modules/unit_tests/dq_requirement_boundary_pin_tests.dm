@@ -92,7 +92,7 @@
 
 // Old/new behavior pins at actual compiled native needs boundary.
 // Host-window auth/effects also covered by existing dq_hc_tgui communications tests.
-/datum/unit_test/dq_hc_tgui/proc/cbp(datum/host, mob/actor, key, callback, expected, list/values)
+/datum/unit_test/dq_hc_tgui/proc/cbp(datum/host, mob/actor, key, callback, expected, list/values, authority = 0)
 	var/datum/op_plan/P = op_plan_for(host, key)
 	TEST_ASSERT_NOTNULL(P, "real [key] op exists")
 	var/datum/entry/part/req/R
@@ -108,6 +108,7 @@
 	A.actor = actor
 	A.oplan = P
 	A.args = values || list()
+	A.authority = authority
 	var/answer = op_req_holds(A, R) ? null : op_req_refusal(A, R)
 	A.release()
 	TEST_ASSERT_EQUAL(answer, expected, "[callback] preserves exact allow/refusal")
@@ -123,7 +124,8 @@
 	cbp(M, H, "auth", "ui_is_human", null)
 	cbp(M, R, "auth", "ui_is_human", MSG(communications/access_denied))
 	cbp(M, H, "cancelshuttle", "ui_not_silicon", null)
-	cbp(M, R, "cancelshuttle", "ui_not_silicon", MSG(communications/no_recall))
+	cbp(M, R, "cancelshuttle", "ui_not_silicon", MSG(communications/no_recall), null, AUTH_REMOTE_ACCESS)
+	cbp(M, R, "cancelshuttle", "ui_not_silicon", null)
 	M.set_login(H, 0)
 	cbp(M, H, "status", "ui_logged_in", MSG(communications/access_denied))
 	M.set_login(H, 1)

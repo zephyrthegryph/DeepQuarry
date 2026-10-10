@@ -1,26 +1,12 @@
-// The operation context (code/datums/operations/op_ctx.dm): requirement flyweights and the pooled op_ctx with its stage order.
+// The requirement context (code/datums/operations/op_ctx.dm): requirement flyweights and the pooled op_ctx.
 
 /obj/cap_fixture/ops
 	name = "ops fixture"
 	req_access = list(ACCESS_ENGINE)
 	var/calls_allowed = FALSE
 
-CAPABILITY(/obj/cap_fixture/ops, cap_require(OP_STRUCTURAL, needs = req_set(CAP_PANEL_OPEN)))
-
 /obj/cap_fixture/ops/proc/fx_gate(mob/user, obj/item/held)
 	return calls_allowed ? TRUE : "the gears are jammed"
-
-/// An op definition for a context check: a plain op needs a manipulating provider over the physical route.
-/proc/dx_op_def(key, by = AFF_MANIPULATE, via = ROUTE_PHYSICAL, needs, kind = OP_CONTROL)
-	RETURN_TYPE(/datum/op_def)
-	var/datum/op_def/op = new
-	op.key = key
-	op.name = key
-	op.by = by
-	op.via = via
-	op.kind = kind
-	op.needs = req_list(needs)
-	return op
 
 // ---- requirements ----
 
@@ -30,7 +16,7 @@ CAPABILITY(/obj/cap_fixture/ops, cap_require(OP_STRUCTURAL, needs = req_set(CAP_
 	var/turf/T = test_floor()
 	var/obj/cap_fixture/ops/F = allocate(/obj/cap_fixture/ops, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/datum/op_ctx/ctx = op_ctx_take(H, F, null, dx_op_def("latch", needs = req_clear(CAP_LOCKED)))
+	var/datum/op_ctx/ctx = op_ctx_take(H, F, null)
 
 	TEST_ASSERT(req_set(CAP_LOCKED) == req_set(CAP_LOCKED), "the same declaration is one shared flyweight")
 	TEST_ASSERT(req_set(CAP_LOCKED) != req_clear(CAP_LOCKED), "set and clear are different flyweights")
@@ -73,7 +59,7 @@ CAPABILITY(/obj/cap_fixture/ops, cap_require(OP_STRUCTURAL, needs = req_set(CAP_
 	TEST_ASSERT_NULL(gate.test(ctx), "the proc allows")
 	ctx.release()
 
-// ---- the pooled context and the stage order ----
+// ---- the pooled context ----
 
 /datum/unit_test/dx_op_ctx
 
@@ -83,59 +69,15 @@ CAPABILITY(/obj/cap_fixture/ops, cap_require(OP_STRUCTURAL, needs = req_set(CAP_
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
 	var/live_before = op_ctx_live_count()
-	var/datum/op_ctx/first = op_ctx_take(H, F, null, dx_op_def("latch", needs = req_clear(CAP_LOCKED)))
+	var/datum/op_ctx/first = op_ctx_take(H, F, null)
 	var/first_id = first.id
 	TEST_ASSERT(first.id > 0 && op_ctx_live_count() == live_before + 1, "a taken context is live in the pool's accounting")
 	first.release()
 	TEST_ASSERT(first.released && isnull(first.actor) && isnull(first.target), "release() resets every field")
 	TEST_ASSERT_EQUAL(op_ctx_live_count(), live_before, "and the pool counts it back")
-	var/datum/op_ctx/second = op_ctx_take(H, F, null, dx_op_def("latch", needs = req_clear(CAP_LOCKED)))
+	var/datum/op_ctx/second = op_ctx_take(H, F, null)
 	TEST_ASSERT(second.id != first_id && !second.released, "the next take has a fresh id, live again")
 	second.release()
-
-	// Provider first: no slot gives the affordance, so the route and the needs are never asked.
-	var/datum/op_ctx/ctx = op_ctx_take(H, F, null, dx_op_def("impossible", by = (1<<12), via = ROUTE_UI, needs = req_set(CAP_EMAGGED)))
-	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_no_provider, "provider is the first stage")
-	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_PROVIDER, "failed at the provider stage")
-	ctx.release()
-
-	// Route second: a UI-only op over the physical route, with its needs also unmet.
-	ctx = op_ctx_take(H, F, null, dx_op_def("remote", via = ROUTE_UI, needs = req_set(CAP_EMAGGED)))
-	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_no_route, "route comes before the op's needs")
-	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_ROUTE, "failed at the route stage")
-	ctx.release()
-
-	// Over the UI route the needs stage is reached (last).
-	ctx = op_ctx_take(H, F, null, dx_op_def("remote", via = ROUTE_UI, needs = req_set(CAP_EMAGGED)), ROUTE_UI)
-	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_wrong_state, "needs answer last")
-	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_NEEDS, "failed at the needs stage")
-	TEST_ASSERT_NOTNULL(ctx.provider, "the provider was resolved on the way")
-	TEST_ASSERT_EQUAL(ctx.provider.slot_id, SLOT_ID_HAND_R, "the active hand provides")
-	H.hand = 1
-	ctx.check()
-	TEST_ASSERT_EQUAL(ctx.provider.slot_id, SLOT_ID_HAND_L, "and the active hand is asked first")
-	H.hand = null
-	ctx.release()
-
-	// Actor state third: an unconscious actor is refused by an ordinary op, allowed an emergency one.
-	H.set_stat(UNCONSCIOUS)
-	ctx = op_ctx_take(H, F, null, dx_op_def("press", via = ROUTE_PHYSICAL | ROUTE_VERB))
-	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_not_capable, "an unconscious actor can't")
-	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_ACTOR, "at the actor stage")
-	ctx.release()
-	H.set_stat(CONSCIOUS)
-
-	// Capability contract fifth: cap_require(OP_STRUCTURAL) covers the structural op only.
-	ctx = op_ctx_take(H, F, null, dx_op_def("rip", kind = OP_STRUCTURAL))
-	TEST_ASSERT_EQUAL(ctx.check(), /datum/msg/req_wrong_state, "the structural contract applies")
-	TEST_ASSERT_EQUAL(ctx.failed_stage, OP_STAGE_CAPS, "at the capability stage")
-	cap_set(F, CAP_PANEL_OPEN, TRUE)
-	TEST_ASSERT_NULL(ctx.check(), "with the panel open it passes")
-	ctx.release()
-	ctx = op_ctx_take(H, F, null, dx_op_def("press", via = ROUTE_PHYSICAL | ROUTE_VERB))
-	cap_set(F, CAP_PANEL_OPEN, FALSE)
-	TEST_ASSERT_NULL(ctx.check(), "the contract does not touch other kinds")
-	ctx.release()
 
 	// A released context is poisoned in test builds: touching it is a bug.
 	TEST_ASSERT_EQUAL(first.pool_state, POOL_STATE_POISONED, "a released context is poisoned, never handed out again")

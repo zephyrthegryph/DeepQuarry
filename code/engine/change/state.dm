@@ -47,9 +47,6 @@
 	var/list/cross_pending
 	/// after(key = ...): key -> list(timer id, token, clock) of the pending keyed timer.
 	var/list/timer_ids
-	/// Pending operation contexts (/datum/op_ctx) this datum is an end of (actor, target, held, a watched
-	/// datum): rx_teardown() cancels them, so a wait never outlives what it is about (operations/op_ctx.dm).
-	var/list/pending_ops
 	/// Tasks (code/engine/kernel/tasks.dm) that name this datum as actor, target, busy worker or state: its deletion ends them.
 	var/list/tasks_on
 	/// on_change(at_most =): reaction sig -> when it was last delivered (the scheduler's clock).
@@ -381,9 +378,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/rx_state/S = D.rx
 	if(!S)
 		return
-	// Operations waiting on this datum (as actor, target, held, provider or watched read) are cancelled first.
-	for(var/datum/operation_context/ctx as anything in S.pending_ops?.Copy())
-		ctx.cancel_deleted()
 	for(var/datum/task/T as anything in S.tasks_on?.Copy())
 		T.datum_gone(D)
 	if(S.every_hop_on)

@@ -96,3 +96,25 @@
 /proc/silicon_ui_used(datum/act/op/A)
 	var/atom/holder = A.holder
 	holder.tgui_interact(A.actor)
+
+// ---- a records console's login: who the actor signs in as ----
+
+/// The records consoles' login kind for this mob (LOGIN_TYPE_*): a silicon signs in over its link as itself, anyone else with a card.
+/mob/proc/records_login_kind()
+	return LOGIN_TYPE_NORMAL
+
+/mob/living/silicon/ai/records_login_kind()
+	return LOGIN_TYPE_AI
+
+/mob/living/silicon/robot/records_login_kind()
+	return LOGIN_TYPE_ROBOT
+
+/// The rank a silicon's records login shows.
+/mob/proc/records_login_rank()
+	return null
+
+/mob/living/silicon/ai/records_login_rank()
+	return JOB_AI
+
+/mob/living/silicon/robot/records_login_rank()
+	return "[modtype] [braintype]"

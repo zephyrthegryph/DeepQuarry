@@ -33,11 +33,11 @@
 CAPABILITIES(/mob/living/bot/floorbot)
 	interface("Floorbot")
 	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
-	op("vocal", ui_act("vocal"), then(PROC_REF(ui_act_vocal)))
-	op("improve", ui_act("improve"), then(PROC_REF(ui_act_improve)))
-	op("tiles", ui_act("tiles"), then(PROC_REF(ui_act_tiles)))
-	op("make", ui_act("make"), then(PROC_REF(ui_act_make)))
-	op("bridgemode", ui_act("bridgemode", arg("dir")), then(PROC_REF(ui_act_bridgemode)))
+	op("vocal", ui_act("vocal"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_vocal)))
+	op("improve", ui_act("improve"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_improve)))
+	op("tiles", ui_act("tiles"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_tiles)))
+	op("make", ui_act("make"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_make)))
+	op("bridgemode", ui_act("bridgemode", arg("dir")), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_bridgemode)))
 
 /// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/floorbot/ui_data(datum/act/eval/A)
@@ -55,7 +55,7 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	data["maketiles"] = null
 	data["bmode"] = null
 
-	if(!locked || issilicon(user))
+	if(settings_unlocked(A))
 		data["improvefloors"] = improvefloors
 		data["eattiles"] = eattiles
 		data["maketiles"] = maketiles
@@ -79,32 +79,22 @@ CAPABILITIES(/mob/living/bot/floorbot)
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_vocal(datum/act/op/A)
-	if(locked && !issilicon(A.actor))
-		return
 	vocal = !vocal
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_improve(datum/act/op/A)
-	if(locked && !issilicon(A.actor))
-		return
 	improvefloors = !improvefloors
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_tiles(datum/act/op/A)
-	if(locked && !issilicon(A.actor))
-		return
 	eattiles = !eattiles
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_make(datum/act/op/A)
-	if(locked && !issilicon(A.actor))
-		return
 	maketiles = !maketiles
 	. = TRUE
 
 /mob/living/bot/floorbot/proc/ui_act_bridgemode(datum/act/op/A, dir)
-	if(locked && !issilicon(A.actor))
-		return
 	targetdirection = text2dir(dir)
 	. = TRUE
 

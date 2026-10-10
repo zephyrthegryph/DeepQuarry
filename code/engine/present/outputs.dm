@@ -194,6 +194,7 @@
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.observer = observer
+	A.authority = user?.click_authority() // what the viewer's inputs carry: a window shows a silicon what its link may change
 	var/datum/unit = present_forwarded_unit(holder)
 	if(unit)
 		A.holder = unit // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

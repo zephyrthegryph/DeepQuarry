@@ -313,6 +313,7 @@ GLOBAL_LIST(construction_frame_floor)
 	var/list/req_component_names = null
 
 CAPABILITIES(/obj/structure/frame)
+	rotatable()
 	construction(native_frame_graph())
 	owns_many(nameof(components))
 	climb()
@@ -388,8 +389,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 	seed_native_frame_graph()
 	update_icon()
-
-	make_rotatable()
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.

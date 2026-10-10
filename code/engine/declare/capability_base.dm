@@ -8,10 +8,6 @@
 	RETURN_TYPE(/list)
 	return list()
 
-/datum/capability/proc/refined(list/overrides)
-	stack_trace("refine('[key]'): [type] has nothing refine() can change")
-	return null
-
 /proc/cap_intern(datum/capability/C)
 	var/signature = datum_signature(C)
 	var/datum/capability/known = GLOB.caps_interned[signature]

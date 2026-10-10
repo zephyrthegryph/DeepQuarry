@@ -40,8 +40,6 @@
 /// Ownership entries (owns(...)) this capability contributes to its holder type's ownership table
 /// (doc/rewrite/ownership.md §1.2): a slot owns its var, so the type declares nothing for it. Per
 /// type and pure: read only the capability's own settings.
-/// refine(key, ...) on this capability (not an op): a new capability with `overrides` (refine()'s named fields,
-/// field -> value) applied, or null when it has nothing refinable. The default refuses (a stack_trace names the key).
 /// Init / teardown hooks for per-instance state (default children, lazily created data).
 /datum/capability/proc/legacy_holder_init(atom/holder, mapload)
 	return

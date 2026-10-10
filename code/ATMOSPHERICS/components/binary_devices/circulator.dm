@@ -33,12 +33,12 @@ MSG_DEF(circulator/secured, "You secure the bolts holding %T% to the floor.", "%
 MSG_DEF(circulator/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
+	rotatable()
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/atmospherics/binary/circulator/Initialize(mapload)
 	. = ..()
 	air1.set_volume(400)
-	make_rotatable()
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed

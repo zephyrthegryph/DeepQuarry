@@ -43,6 +43,7 @@ MSG_DEF(teg/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% 
 MSG_DEF_SELF(teg/not_ready, "It isn't bolted down and working.")
 
 CAPABILITIES(/obj/machinery/power/generator)
+	rotatable()
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator)
 	owns_many(nameof(loop_watches), /datum/native_watch/gas)
@@ -56,13 +57,11 @@ CAPABILITIES(/obj/machinery/power/generator)
 /obj/machinery/power/generator/Initialize(mapload)
 	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
-	make_rotatable()
 	. = ..()
 
 /// Connects its circulators, once they exist.
 /obj/machinery/power/generator/proc/connect_circulators(datum/act/timer/A)
 	reconnect()
-
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator

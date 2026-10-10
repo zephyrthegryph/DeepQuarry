@@ -261,7 +261,6 @@ init_new_child	code/modules/projectiles/guns/modular_guns.dm	rel_add(src, nameof
 init_new_child	code/modules/projectiles/guns/modular_guns.dm	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 init_new_child	code/modules/projectiles/guns/projectile.dm	rel_add(src, nameof(loaded), new ammo_type(src))
 init_new_child	code/modules/projectiles/guns/projectile.dm	rel_set(src, nameof(ammo_magazine), new magazine_type(src))
-init_new_child	code/modules/projectiles/guns/projectile/automatic.dm	rel_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
 init_new_child	code/modules/projectiles/guns/projectile/revolver.dm	rel_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
 init_new_child	code/modules/projectiles/projectile/arc.dm	rel_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
 init_new_child	code/modules/refinery/core/industrial_reagent_reactor.dm	rel_set(src, nameof(internal_tank), new /obj/machinery/portable_atmospherics/canister/empty())

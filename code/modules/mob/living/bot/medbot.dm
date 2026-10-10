@@ -240,12 +240,12 @@ MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
 CAPABILITIES(/mob/living/bot/medbot)
 	interface("Medbot", input = menu())
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
-	op("adj_urgency", ui_act("adj_urgency", arg("val", num())), then(PROC_REF(ui_act_adj_urgency)))
-	op("adj_inject", ui_act("adj_inject", arg("val", num(MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))), then(PROC_REF(ui_act_adj_inject)))
-	op("use_beaker", ui_act("use_beaker"), then(PROC_REF(ui_act_use_beaker)))
-	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
-	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
+	op("adj_urgency", ui_act("adj_urgency", arg("val", num())), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_urgency)))
+	op("adj_inject", ui_act("adj_inject", arg("val", num(MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_inject)))
+	op("use_beaker", ui_act("use_beaker"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_use_beaker)))
+	op("eject", ui_act("eject"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_eject)))
+	op("togglevoice", ui_act("togglevoice"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_togglevoice)))
+	op("declaretreatment", ui_act("declaretreatment"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_declaretreatment)))
 	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
 	op("medbot_tip", hand(), ungated(), stance(I_DISARM), label("Tip over"), when(PROC_REF(can_tip)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/tipping)), starts(PROC_REF(pleads)), wait(3 SECONDS), then(PROC_REF(tipped_over)))
 	op("medbot_right", hand(), ungated(), stance(I_HELP), label("Set right"), when(PROC_REF(can_right)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/righting)), wait(3 SECONDS), then(PROC_REF(righted)))
@@ -274,7 +274,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 	data["use_beaker"] = null
 	data["declare_treatment"] = null
 	data["vocal"] = null
-	if(!locked || issilicon(user))
+	if(settings_unlocked(A))
 		data["min_urgency"] = min_urgency
 		data["injection_amount"] = injection_amount
 		data["use_beaker"] = use_beaker
@@ -303,8 +303,6 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /mob/living/bot/medbot/proc/ui_act_adj_urgency(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	var/rank = val
 	if(isnull(rank))
 		return FALSE
@@ -313,22 +311,16 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /mob/living/bot/medbot/proc/ui_act_adj_inject(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	injection_amount = val
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_use_beaker(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	use_beaker = !use_beaker
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_eject(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
 		rel_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
@@ -336,15 +328,11 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 /mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	vocal = !vocal
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_declaretreatment(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(A.actor))
-		return TRUE
 	declare_treatment = !declare_treatment
 	. = TRUE
 

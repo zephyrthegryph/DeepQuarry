@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 	var/mob/user = A.actor
 
 	return list(
-		"siliconUser" = issilicon(user),
+		"siliconUser" = !!(A.authority & AUTH_REMOTE_ACCESS),
 		"locked" = locked,
 		"open" = open,
 		"location" = location,

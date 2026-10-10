@@ -148,7 +148,7 @@ CAPABILITIES(/datum/tgui_module/camera)
 
 /// Every button clicks, unless a silicon presses it.
 /datum/tgui_module/camera/proc/ui_typed(datum/act/op/A)
-	if(!issilicon(A.actor))
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
 	return OP_OK
 

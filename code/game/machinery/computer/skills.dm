@@ -283,8 +283,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	data["screen"] = screen
 	data["printing"] = printing
 	data["scan"] = scan ? scan.name : null
-	data["isAI"] = isAI(user)
-	data["isRobot"] = isrobot(user)
+	data["isAI"] = user?.records_login_kind() == LOGIN_TYPE_AI
+	data["isRobot"] = user?.records_login_kind() == LOGIN_TYPE_ROBOT
 	if(authenticated)
 		var/list/budget_plan = SSsupply.department_budget_plan()
 		var/list/planned_departments = budget_plan["departments"]
@@ -503,13 +503,9 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		if(check_access(scan))
 			authenticated = scan.registered_name
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(A.actor))
+	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
 		authenticated = A.actor.name
-		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(A.actor))
-		authenticated = A.actor.name
-		var/mob/living/silicon/robot/R = A.actor
-		rank = "[R.modtype] [R.braintype]"
+		rank = A.actor.records_login_rank()
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
 		screen = GENERAL_RECORD_LIST

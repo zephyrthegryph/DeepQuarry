@@ -65,15 +65,12 @@
 /datum/unit_test/dq_time_foundation_null_providers/Run()
 	var/datum/time_scheduler_factory/saved_factory = GLOB.time_scheduler_factory
 	var/datum/native_watch_provider/saved_native = GLOB.native_watch_provider
-	var/datum/construction_stage_provider/saved_construction = GLOB.construction_stage_provider
 	var/datum/transfer_feedback_provider/saved_feedback = GLOB.transfer_feedback_provider
 	GLOB.time_scheduler_factory = null
 	GLOB.native_watch_provider = null
-	GLOB.construction_stage_provider = null
 	GLOB.transfer_feedback_provider = null
 	var/datum/time_scheduler_factory/factory
 	var/datum/native_watch_provider/native
-	var/datum/construction_stage_provider/construction
 	var/datum/transfer_feedback_provider/feedback
 	var/datum/time_scheduler/made_scheduler
 	var/reused = FALSE
@@ -82,9 +79,8 @@
 	try
 		factory = time_scheduler_factory()
 		native = native_watch_provider()
-		construction = construction_stage_provider()
 		feedback = transfer_feedback_provider()
-		reused = factory == time_scheduler_factory() && native == native_watch_provider() && construction == construction_stage_provider() && feedback == transfer_feedback_provider()
+		reused = factory == time_scheduler_factory() && native == native_watch_provider() && feedback == transfer_feedback_provider()
 		made_scheduler = factory.make()
 		legacy_scheduler = istype(made_scheduler, /datum/time_scheduler)
 	catch(var/exception/error)
@@ -92,10 +88,9 @@
 	// Restore before assertions (TEST_ASSERT returns on failure) and before deleting probes.
 	GLOB.time_scheduler_factory = saved_factory
 	GLOB.native_watch_provider = saved_native
-	GLOB.construction_stage_provider = saved_construction
 	GLOB.transfer_feedback_provider = saved_feedback
-	var/created = factory && native && construction && feedback && made_scheduler
-	for(var/datum/probe in list(made_scheduler, factory, native, construction, feedback))
+	var/created = factory && native && feedback && made_scheduler
+	for(var/datum/probe in list(made_scheduler, factory, native, feedback))
 		if(probe)
 			qdel(probe)
 	TEST_ASSERT_NULL(problem, "An early provider lookup from null globals completes without a runtime")

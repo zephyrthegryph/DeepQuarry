@@ -2,7 +2,7 @@
 //
 // A route is how an operation reaches its target: physically (hands on it), through its interface,
 // through a UI window, a verb, speech, a mind link or a granted authority (an admin, a console).
-// An op says which it accepts (op_def.via); the context says which this attempt used.
+// A context says which route an attempt used.
 //
 // A compartment is a named bay of a holder with a boundary. compartment(BAY_INTERIOR, door = CAP_KEY,
 // route_gate = req_set(CAP_PANEL_OPEN)) declares it; ops (`at =`) and slots (`at =`) name the bay they work
