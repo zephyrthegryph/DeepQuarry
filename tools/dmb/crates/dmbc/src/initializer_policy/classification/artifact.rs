@@ -15,6 +15,10 @@ mod tests;
 enum RuntimeRecipe {
     Expression(shared_expression::SharedExpression),
     SizedArray(Arc<[u16]>),
+    SizedArrayExplicit {
+        dimensions: Arc<[u16]>,
+        expression: Option<shared_expression::SharedExpression>,
+    },
 }
 pub(crate) struct SemanticClassification {
     default: DefaultValue,
@@ -84,7 +88,14 @@ impl InitializerArtifacts {
     pub fn release_runtime_syntax(&self) {
         self.values.visit_storage(|storage| {
             if let dm_session::ArtifactStorageView::Entry { value, .. } = storage {
-                if let Some(RuntimeRecipe::Expression(syntax)) = &value.runtime {
+                if let Some(
+                    RuntimeRecipe::Expression(syntax)
+                    | RuntimeRecipe::SizedArrayExplicit {
+                        expression: Some(syntax),
+                        ..
+                    },
+                ) = &value.runtime
+                {
                     syntax.release_syntax();
                 }
             }
@@ -160,7 +171,7 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v3\0".to_vec();
+    let mut key = b"dmbc-initializer-classification-v4\0".to_vec();
     key.extend_from_slice(&reuse.policy.to_le_bytes());
     key.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
@@ -211,6 +222,23 @@ impl SemanticClassification {
                     Some((source, syntax)),
                 );
             }),
+            Some(RuntimeRecipe::SizedArrayExplicit {
+                dimensions,
+                expression,
+            }) => {
+                if let Some(value) = expression {
+                    value.visit_retained(|source, syntax| {
+                        visitor(
+                            &self.default,
+                            self.key.as_ref(),
+                            Some(dimensions),
+                            Some((source, syntax)),
+                        )
+                    });
+                } else {
+                    visitor(&self.default, self.key.as_ref(), Some(dimensions), None);
+                }
+            }
             Some(RuntimeRecipe::SizedArray(value)) => {
                 visitor(&self.default, self.key.as_ref(), Some(value), None);
             }
@@ -227,6 +255,31 @@ impl SemanticClassification {
             None => None,
             Some(RuntimeValue::SizedArray(dimensions)) => {
                 Some(RuntimeRecipe::SizedArray(Arc::clone(dimensions)))
+            }
+            Some(RuntimeValue::SizedArrayExplicit {
+                dimensions,
+                expression,
+            }) => {
+                let syntax = if let Some(expression) = expression {
+                    let InitializerValue::Expression(value) = &pending.write.write.value else {
+                        return None;
+                    };
+                    Some(match parsed_source {
+                        Some(source) => {
+                            shared_expression::SharedExpression::from_parser(source, expression)
+                        }
+                        None => shared_expression::SharedExpression::capture(
+                            value.source_text(symbols)?,
+                            expression,
+                        )?,
+                    })
+                } else {
+                    None
+                };
+                Some(RuntimeRecipe::SizedArrayExplicit {
+                    dimensions: Arc::clone(dimensions),
+                    expression: syntax,
+                })
             }
             Some(RuntimeValue::Expression(expression)) => {
                 let InitializerValue::Expression(value) = &pending.write.write.value else {
@@ -273,6 +326,16 @@ impl SemanticClassification {
             Some(RuntimeRecipe::SizedArray(dimensions)) => {
                 Some(RuntimeValue::SizedArray(Arc::clone(dimensions)))
             }
+            Some(RuntimeRecipe::SizedArrayExplicit {
+                dimensions,
+                expression,
+            }) => Some(RuntimeValue::SizedArrayExplicit {
+                dimensions: Arc::clone(dimensions),
+                expression: match expression {
+                    Some(syntax) => Some(syntax.bind(current_expression.as_deref()?)?),
+                    None => None,
+                },
+            }),
             Some(RuntimeRecipe::Expression(syntax)) => Some(RuntimeValue::Expression(
                 syntax.bind(current_expression.as_deref()?)?,
             )),
@@ -445,7 +508,10 @@ pub(super) fn classify_one_keyed_grouped(
         let reads = recorder.reads();
         let versions = recorder.domain_receipts();
         let dimensions = match &value.runtime {
-            Some(RuntimeRecipe::SizedArray(dimensions)) => Some(dimensions),
+            Some(
+                RuntimeRecipe::SizedArray(dimensions)
+                | RuntimeRecipe::SizedArrayExplicit { dimensions, .. },
+            ) => Some(dimensions),
             _ => None,
         };
         // Current-roster retention has no byte admission budget. This charge
@@ -460,16 +526,18 @@ pub(super) fn classify_one_keyed_grouped(
                 &versions,
             )
             .and_then(|weight| match &value.runtime {
-                Some(RuntimeRecipe::Expression(syntax)) => {
-                    syntax.visit_retained(|source, expression| {
-                        expression.and_then(|expression| {
-                            crate::heap_census::resident_initializer_syntax_weight(
-                                source, expression,
-                            )
+                Some(
+                    RuntimeRecipe::Expression(syntax)
+                    | RuntimeRecipe::SizedArrayExplicit {
+                        expression: Some(syntax),
+                        ..
+                    },
+                ) => syntax.visit_retained(|source, expression| {
+                    expression.and_then(|expression| {
+                        crate::heap_census::resident_initializer_syntax_weight(source, expression)
                             .and_then(|extra| weight.checked_add(extra))
-                        })
                     })
-                }
+                }),
                 _ => Some(weight),
             })
         });

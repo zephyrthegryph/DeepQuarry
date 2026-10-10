@@ -375,6 +375,74 @@ impl Compiler<'_> {
 
     /// One borrowed initializer write: occurrence belongs to the issued unit,
     /// while every expression span remains in the authored immutable AST.
+    pub(super) fn typed_assignment_continuation(
+        &mut self,
+        target: &Expr,
+        value: &Expr,
+        occurrence: dm_syntax::Span,
+        double_receiver: bool,
+        continuation: Option<crate::initializer::ValueContinuation<'_>>,
+    ) -> Result<(), LowerError> {
+        if let Some(extra) =
+            continuation.filter(|extra| extra.before_assignment && !extra.assignment_is_allocation)
+        {
+            self.typed_array_continuation(extra.dimensions, occurrence, None)?;
+        }
+        let emit_assignment = continuation.is_none_or(|extra| extra.emit_assignment);
+        if emit_assignment {
+            if let Some(extra) = continuation.filter(|extra| extra.assignment_is_allocation) {
+                self.typed_array_continuation(extra.dimensions, occurrence, Some(target))?;
+            } else {
+                self.typed_assignment(target, value, occurrence)?;
+            }
+            if double_receiver
+                && !crate::initializer::finish::double_assignment_receiver(
+                    &mut self.result.code.items,
+                )
+            {
+                return Err(error(
+                    "initializer assignment",
+                    "declared instance target receiver could not be certified",
+                ));
+            }
+        }
+        if let Some(extra) =
+            continuation.filter(|extra| !extra.before_assignment && !extra.assignment_is_allocation)
+        {
+            self.typed_array_continuation(extra.dimensions, occurrence, None)?;
+        }
+        Ok(())
+    }
+    pub(super) fn typed_array_continuation(
+        &mut self,
+        dimensions: &[u16],
+        occurrence: dm_syntax::Span,
+        target: Option<&Expr>,
+    ) -> Result<(), LowerError> {
+        let saved_debug = self.debug_current;
+        let saved_span = self.statement_span;
+        let dimensions = dimensions.iter().map(u16::to_string).collect::<Vec<_>>();
+        let borrowed = dimensions.iter().map(String::as_str).collect::<Vec<_>>();
+        let result = self
+            .debug_at(occurrence.start, "initializer allocation")
+            .and_then(|()| {
+                let target = target
+                    .map(|target| self.variable_expr(target, "initializer allocation"))
+                    .transpose()?;
+                if let Some(target) = &target {
+                    self.ensure_writable(target, "initializer allocation")?;
+                }
+                self.local_array(&borrowed, "initializer allocation")?;
+                if let Some(target) = target {
+                    self.emit(opcode::SET_VAR, vec![Word::Variable(target)]);
+                }
+                Ok(())
+            })
+            .map_err(|error| error.at(self.statement_span));
+        self.debug_current = saved_debug;
+        self.statement_span = saved_span;
+        result
+    }
     pub(super) fn typed_assignment(
         &mut self,
         target: &Expr,

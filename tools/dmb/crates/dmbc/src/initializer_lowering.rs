@@ -85,6 +85,16 @@ fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Exp
     use dm_syntax::{Expr, ExprKind, Span};
     match value {
         RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value.as_ref()),
+        RuntimeValue::SizedArrayExplicit {
+            expression: Some(expression),
+            ..
+        } => std::borrow::Cow::Borrowed(expression),
+        RuntimeValue::SizedArrayExplicit {
+            expression: None, ..
+        } => std::borrow::Cow::Owned(Expr {
+            span: Span::new(0, 0),
+            kind: ExprKind::Literal("null".into()),
+        }),
         RuntimeValue::SizedArray(dimensions) => {
             // A policy-issued typed constructor; no DM source is generated.
             let span = Span::new(0, 0);
@@ -606,6 +616,32 @@ fn lower_group<R: Resolver>(
             (&write.write.target, write.write.lexical_owner, value)
         })
         .collect::<Vec<_>>();
+    let value_continuations = group
+        .writes
+        .iter()
+        .map(
+            |&index| match classified.writes[index].runtime_value.as_ref() {
+                Some(RuntimeValue::SizedArrayExplicit {
+                    dimensions,
+                    expression,
+                }) => Some(dm_codegen_byond::initializer::ValueContinuation {
+                    dimensions,
+                    before_assignment: group.receiver.is_none(),
+                    emit_assignment: expression.is_some(),
+                    assignment_is_allocation: false,
+                }),
+                Some(RuntimeValue::SizedArray(dimensions)) => {
+                    Some(dm_codegen_byond::initializer::ValueContinuation {
+                        dimensions,
+                        before_assignment: false,
+                        emit_assignment: true,
+                        assignment_is_allocation: true,
+                    })
+                }
+                _ => None,
+            },
+        )
+        .collect::<Vec<_>>();
     let assignment_views = assignments
         .iter()
         .enumerate()
@@ -641,6 +677,7 @@ fn lower_group<R: Resolver>(
             context(),
             host,
         )
+        .and_then(|prepared| prepared.with_value_continuations(value_continuations.clone()))
         .map_err(map_error)?;
         let mut continuations = Vec::with_capacity(group.writes.len());
         let mut recipe_fragments = Vec::with_capacity(group.writes.len());
@@ -696,10 +733,11 @@ fn lower_group<R: Resolver>(
             continuations.push(fragment.code);
         }
         if unsupported {
-            dm_codegen_byond::initializer::lower_assignment_views(
+            dm_codegen_byond::initializer::lower_with_value_continuations(
                 &assignment_views,
                 context(),
                 host,
+                value_continuations.clone(),
             )
             .map_err(map_error)?
         } else {
@@ -725,17 +763,18 @@ fn lower_group<R: Resolver>(
                 Err(_) => {
                     // Cross-fragment collisions use the established producer's
                     // exact diagnostics rather than introducing a new failure.
-                    dm_codegen_byond::initializer::lower_assignment_views(
+                    dm_codegen_byond::initializer::lower_with_value_continuations(
                         &assignment_views,
                         context(),
                         host,
+                        value_continuations.clone(),
                     )
                     .map_err(map_error)?
                 }
             }
         }
     } else if let Some(memo) = memo {
-        let mut key = b"dmbc-anonymous-declaration-v2-relative-debug\0".to_vec();
+        let mut key = b"dmbc-anonymous-declaration-v3-sized-continuations\0".to_vec();
         key.extend_from_slice(&memo.policy.to_le_bytes());
         key.extend_from_slice(
             &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
@@ -754,8 +793,18 @@ fn lower_group<R: Resolver>(
                 .ok_or("initializer runtime value missing")?
             {
                 RuntimeValue::Expression(_) => key.push(0),
-                RuntimeValue::SizedArray(dimensions) => {
-                    key.push(1);
+                RuntimeValue::SizedArray(dimensions)
+                | RuntimeValue::SizedArrayExplicit { dimensions, .. } => {
+                    key.push(
+                        if matches!(
+                            write.runtime_value,
+                            Some(RuntimeValue::SizedArrayExplicit { .. })
+                        ) {
+                            2
+                        } else {
+                            1
+                        },
+                    );
                     key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
                     for dimension in dimensions.iter() {
                         key.extend_from_slice(&dimension.to_le_bytes());
@@ -795,10 +844,11 @@ fn lower_group<R: Resolver>(
                     recorder.record_occurrence(identity);
                 }
             }
-            let code = dm_codegen_byond::initializer::lower_assignment_views(
+            let code = dm_codegen_byond::initializer::lower_with_value_continuations(
                 &assignment_views,
                 context(),
                 &recorder,
+                value_continuations.clone(),
             )
             .map_err(|error| {
                 if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) = &error {
@@ -824,8 +874,13 @@ fn lower_group<R: Resolver>(
     } else {
         // Cold oracle path performs no cache key, serialization, extra
         // ancestry reads or recording allocation.
-        dm_codegen_byond::initializer::lower_assignment_views(&assignment_views, context(), host)
-            .map_err(map_error)?
+        dm_codegen_byond::initializer::lower_with_value_continuations(
+            &assignment_views,
+            context(),
+            host,
+            value_continuations.clone(),
+        )
+        .map_err(map_error)?
     };
     let encoding =
         if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {

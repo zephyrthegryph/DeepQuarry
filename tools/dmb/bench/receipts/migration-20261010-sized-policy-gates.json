@@ -1,0 +1,38 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "5ffabbefe2778c4f033809f6b45eddfd72fb0d8ac719fe4f3aad6636bf1b7747",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "initializer_policy::tests::sized_array_tests",
+      "selected": [
+        "initializer_policy::tests::sized_array_tests::explicit_sized_list_and_null_keep_both_current_input_receipts",
+        "initializer_policy::tests::sized_array_tests::inherited_null_override_has_no_new_array_allocation"
+      ],
+      "exit": 0,
+      "seconds": 0.1865263999789022,
+      "stdout": "\nrunning 2 tests\ntest initializer_policy::tests::sized_array_tests::explicit_sized_list_and_null_keep_both_current_input_receipts ... ok\ntest initializer_policy::tests::sized_array_tests::inherited_null_override_has_no_new_array_allocation ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 651 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::retained_declarations::tests",
+      "selected": [
+        "heap_census::retained_declarations::tests::retained_declaration_census_visits_payloads_without_mutating_or_serializing"
+      ],
+      "exit": 0,
+      "seconds": 0.5332371999975294,
+      "stdout": "\nrunning 1 test\ntest heap_census::retained_declarations::tests::retained_declaration_census_visits_payloads_without_mutating_or_serializing ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 652 filtered out; finished in 0.02s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::cold_boundary::tests",
+      "selected": [
+        "heap_census::cold_boundary::tests::combined_current_projection_deduplicates_shared_field_payloads"
+      ],
+      "exit": 0,
+      "seconds": 0.031222699966747314,
+      "stdout": "\nrunning 1 test\ntest heap_census::cold_boundary::tests::combined_current_projection_deduplicates_shared_field_payloads ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 652 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

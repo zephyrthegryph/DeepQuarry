@@ -609,19 +609,18 @@ fn compile_with_lookup_mode(
                     }
                 }
                 crate::typed_scopes::ScopeBody::Assignment {
+                    continuation,
                     target,
                     value,
                     occurrence,
                     double_receiver,
-                } => {
-                    let result = compiler.typed_assignment(target, value, occurrence);
-                    if result.is_ok() && double_receiver
-                        && !crate::initializer::finish::double_assignment_receiver(&mut compiler.result.code.items)
-                    {
-                        return Err(vec![error("initializer assignment", "declared instance target receiver could not be certified")]);
-                    }
-                    result
-                },
+                } => compiler.typed_assignment_continuation(
+                    target,
+                    value,
+                    occurrence,
+                    double_receiver,
+                    continuation,
+                ),
             };
             if result.is_err() {
                 break;
@@ -970,10 +969,10 @@ mod inference;
 mod resolution;
 #[path = "simple/statements.rs"]
 mod statements;
-#[path = "simple/typed_switch.rs"]
-mod typed_switch;
 #[path = "simple/typed_statements.rs"]
 mod typed_statements;
+#[path = "simple/typed_switch.rs"]
+mod typed_switch;
 use helpers::{
     class_tag, error, fold_number, member_proc_selector, parenthesized, parse_interpolated_string,
     parse_text_template,

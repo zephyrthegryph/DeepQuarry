@@ -314,6 +314,10 @@ pub struct ClassifiedWrite {
 pub enum RuntimeValue {
     Expression(Arc<dm_syntax::Expr>),
     SizedArray(Arc<[u16]>),
+    SizedArrayExplicit {
+        dimensions: Arc<[u16]>,
+        expression: Option<Arc<dm_syntax::Expr>>,
+    },
 }
 #[derive(Clone, Debug)]
 pub struct RuntimeGroup {

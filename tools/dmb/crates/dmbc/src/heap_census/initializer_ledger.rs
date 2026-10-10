@@ -35,6 +35,17 @@ impl HeapCensus {
                             self.typed_expression(owner, expression);
                         }
                     }
+                    Some(RuntimeValue::SizedArrayExplicit {
+                        dimensions,
+                        expression,
+                    }) => {
+                        self.slice(owner, dimensions, true);
+                        if let Some(expression) = expression {
+                            if self.arc_object(owner, expression) {
+                                self.typed_expression(owner, expression);
+                            }
+                        }
+                    }
                     Some(RuntimeValue::SizedArray(dimensions)) => {
                         self.slice(owner, dimensions, true);
                     }
@@ -61,7 +72,7 @@ mod tests {
                 source_ordinal: 0,
                 write: dm_ir::InitializerWrite {
                     source_site: dm_ir::InitializerSite::Declaration,
-            target: dm_ir::InitializerTarget::Shared {
+                    target: dm_ir::InitializerTarget::Shared {
                         owner: dm_ir::SymbolId::of("/"),
                         name: dm_ir::SymbolId::of("value"),
                         slot: dm_ir::SymbolId::of("/value"),

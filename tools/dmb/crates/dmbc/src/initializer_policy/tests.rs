@@ -674,3 +674,6 @@ fn sparse_runtime_model_has_compact_slots_and_releases_evaluated_list_before_cod
         .upgrade()
         .is_none());
 }
+
+#[path = "classification/sized_array_tests.rs"]
+mod sized_array_tests;

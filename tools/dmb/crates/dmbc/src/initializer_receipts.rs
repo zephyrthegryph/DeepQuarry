@@ -8,12 +8,17 @@ use std::sync::Arc;
 pub(crate) enum Shape {
     Expression,
     SizedArray(Arc<[u16]>),
+    SizedArrayExplicit(Arc<[u16]>, bool),
 }
 impl From<&RuntimeValue> for Shape {
     fn from(value: &RuntimeValue) -> Self {
         match value {
             RuntimeValue::Expression(_) => Self::Expression,
             RuntimeValue::SizedArray(value) => Self::SizedArray(Arc::clone(value)),
+            RuntimeValue::SizedArrayExplicit {
+                dimensions,
+                expression,
+            } => Self::SizedArrayExplicit(Arc::clone(dimensions), expression.is_some()),
         }
     }
 }
@@ -54,7 +59,7 @@ impl Binding {
         duplicate: usize,
         writes: Vec<GroupWrite>,
     ) -> Self {
-        let mut key = b"initializer-assembly-placement-v3".to_vec();
+        let mut key = b"initializer-assembly-placement-v4".to_vec();
         match receiver {
             None => key.push(0),
             Some(receiver) => {
@@ -86,7 +91,7 @@ impl Binding {
 // These select candidates only; collisions or shifted duplicates still replay Inputs.
 pub(crate) fn fragment_locator(write: &InitializerWrite) -> Vec<u8> {
     use dm_ir::{InitializerTarget, InitializerValue};
-    let mut key = b"initializer-fragment-placement-v4".to_vec();
+    let mut key = b"initializer-fragment-placement-v5".to_vec();
     match write.target {
         InitializerTarget::ProcedureStatic(identity) => {
             key.push(0);

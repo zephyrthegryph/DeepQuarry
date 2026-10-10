@@ -78,7 +78,9 @@ impl HeapCensus {
                 if let Some(array) = &input.write.declared_array {
                     self.array(owner, array);
                 }
-                if let Shape::SizedArray(dimensions) = &input.shape {
+                if let Shape::SizedArray(dimensions) | Shape::SizedArrayExplicit(dimensions, _) =
+                    &input.shape
+                {
                     self.slice(owner, dimensions, true);
                 }
                 if let Some(accepted) = &input.accepted {

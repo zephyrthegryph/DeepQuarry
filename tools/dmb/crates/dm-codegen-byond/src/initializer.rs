@@ -15,7 +15,11 @@ mod fragments;
 use finish::finish_initializer;
 #[cfg(test)]
 mod receiver_tests;
-pub use assignment_group::PreparedAssignmentGroup;
+#[cfg(test)]
+mod sized_array_tests;
+pub use assignment_group::{
+    lower_with_value_continuations, PreparedAssignmentGroup, ValueContinuation,
+};
 pub use fragments::AssignmentFragment;
 #[derive(Debug)]
 pub enum InitializerError {
@@ -197,7 +201,7 @@ pub fn prepare_assignment_group<'a, R: Resolver>(
     let mut slots = Vec::new();
     let mut instance = None;
     let mut receiver = None;
-    for assignment in assignments {
+    for (index, assignment) in assignments.iter().enumerate() {
         let AssignmentView {
             target,
             lexical_owner: owner,
@@ -234,7 +238,7 @@ pub fn prepare_assignment_group<'a, R: Resolver>(
             ..ProcedureInputs::default()
         });
         if let Some(slot) = slot {
-            slots.push(slot);
+            slots.push((index, slot.0, slot.1));
         }
     }
     Ok(PreparedAssignmentGroup::new(

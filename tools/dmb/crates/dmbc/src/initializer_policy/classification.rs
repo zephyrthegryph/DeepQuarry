@@ -72,9 +72,6 @@ fn classify_pending<'a>(
         if let Some(array) = &original.declared_array {
             let unsized_only = array.dimensions.len() == 1 && array.dimensions[0].is_none();
             if !unsized_only {
-                if !matches!(original.value, InitializerValue::ArrayAllocation(_)) {
-                    return Err("explicit sized array initializer is unsupported".into());
-                }
                 let mut dimensions = Vec::with_capacity(array.dimensions.len());
                 for dimension in array.dimensions.iter() {
                     let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
@@ -94,6 +91,49 @@ fn classify_pending<'a>(
                 }
                 if constant_binding {
                     return Err("const array allocation is unsupported".into());
+                }
+                if matches!(original.value, InitializerValue::Expression(_)) {
+                    // Classify the authored value through the ordinary evaluator;
+                    // dimensions remain an independently issued allocation receipt.
+                    let mut authored = original.clone();
+                    authored.declared_array = None;
+                    let mut local_ordinal = 0;
+                    let mut pending = classify_pending(
+                        std::iter::once(&authored),
+                        symbols,
+                        evaluator,
+                        &facts[ordinal..=ordinal],
+                        &mut local_ordinal,
+                    )?
+                    .pop()
+                    .ok_or("explicit array classification missing")?;
+                    if pending
+                        .write
+                        .phase
+                        .is_some_and(|phase| phase != Phase::LiteralAllocation)
+                    {
+                        return Err(
+                            "explicit sized array nonliteral initializer is unsupported".into()
+                        );
+                    }
+                    let expression = match pending.write.runtime_value.take() {
+                        Some(RuntimeValue::Expression(value)) => Some(value),
+                        None if pending.write.default
+                            == DefaultValue::Scalar(SemanticValue::Null) =>
+                        {
+                            None
+                        }
+                        _ => return Err("explicit sized array scalar value is unsupported".into()),
+                    };
+                    pending.write.write = original.clone();
+                    pending.write.source_ordinal = ordinal;
+                    pending.write.phase = Some(Phase::LiteralAllocation);
+                    pending.write.runtime_value = Some(RuntimeValue::SizedArrayExplicit {
+                        dimensions: dimensions.into(),
+                        expression,
+                    });
+                    classified.push(pending);
+                    continue;
                 }
                 // Native sized-array declarations retain null defaults; they
                 // allocate during initialization without an expression token.

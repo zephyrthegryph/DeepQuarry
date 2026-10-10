@@ -6,6 +6,7 @@ use dm_syntax::{Expr, Span, Statement};
 
 pub(crate) struct AssignmentScope<'a> {
     pub inputs: &'a ProcedureInputs,
+    pub continuation: Option<crate::initializer::ValueContinuation<'a>>,
     pub target: &'a Expr,
     pub value: &'a Expr,
     pub occurrence: Span,
@@ -15,6 +16,7 @@ pub(crate) struct AssignmentScope<'a> {
 pub(crate) enum ScopeBody<'a> {
     Statements(&'a [Statement]),
     Assignment {
+        continuation: Option<crate::initializer::ValueContinuation<'a>>,
         target: &'a Expr,
         value: &'a Expr,
         occurrence: Span,
@@ -50,6 +52,7 @@ pub(crate) fn prepare_assignments<'a>(
         (
             scope.inputs,
             ScopeBody::Assignment {
+                continuation: scope.continuation,
                 target: scope.target,
                 value: scope.value,
                 occurrence: scope.occurrence,
