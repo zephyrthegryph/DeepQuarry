@@ -200,6 +200,11 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
     remaining = min(300, deadline - started)
     if remaining <= 0:
         raise TimeoutError("overall iteration deadline exhausted")
+    evidence = {"status": "starting", "arguments": arguments, "executable": str(executable),
+                "stdout": str(directory / "stdout.log"), "stderr": str(directory / "stderr.log"),
+                "result_path": str(directory / "child.json"), "watchdog_s": remaining,
+                "admitted_output": False, "timing_admitted": False}
+    (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     with (directory / "stdout.log").open("xb") as out, (directory / "stderr.log").open("xb") as err:
         environment = os.environ.copy()
         if cache_directory is not None:
@@ -207,9 +212,21 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
         if require_owned:
             environment["DMB_DAEMON_AUTOSTART"] = "0"
         if _owned_memory is not None:
-            _owned_memory.check()
-        child = subprocess.Popen([str(executable), *arguments], stdout=out, stderr=err, env=environment,
-                                 creationflags=subprocess.CREATE_NO_WINDOW)
+            try:
+                _owned_memory.check()
+            except Exception as error:
+                evidence.update(status="not_launched", error=str(error), wall_s=time.monotonic() - started)
+                (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+                raise
+        try:
+            child = subprocess.Popen([str(executable), *arguments], stdout=out, stderr=err, env=environment,
+                                     creationflags=subprocess.CREATE_NO_WINDOW)
+        except Exception as error:
+            evidence.update(status="launch_failed", error=str(error), wall_s=time.monotonic() - started)
+            (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+            raise
+        evidence.update(status="running", pid=child.pid)
+        (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
         try:
             if _owned_memory is not None:
                 _owned_memory.register(child)
@@ -226,6 +243,8 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
                     continue
         except subprocess.TimeoutExpired:
             cleanup = terminate_owned(child)
+            evidence.update(status="timed_out", cleanup=cleanup, exit=child.returncode,
+                            wall_s=time.monotonic() - started)
             (directory / "timeout.json").write_text(json.dumps({
                 "cleanup": cleanup, "watchdog_s": remaining,
                 "wall_s": time.monotonic() - started, "arguments": arguments,
@@ -233,8 +252,10 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
                 "admitted_output": False,
             }, indent=2), encoding="utf-8")
             raise TimeoutError(f"compiler child exceeded {remaining:.1f}s")
-        except Exception:
+        except Exception as error:
             cleanup = terminate_owned(child)
+            evidence.update(status="interrupted", error=str(error), cleanup=cleanup,
+                            exit=child.returncode, wall_s=time.monotonic() - started)
             (directory / "owned-stop.json").write_text(json.dumps({
                 "cleanup": cleanup, "admitted_output": False,
                 "reason": "request interrupted or sampled owned memory gate failed"}, indent=2), encoding="utf-8")
@@ -242,9 +263,11 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
         finally:
             if _owned_memory is not None:
                 _owned_memory.unregister(child)
+            (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     result = {"exit": code, "wall_s": time.monotonic() - started,
               "wall_scope": "client launch through reap; daemon work included for retained requests"}
-    (directory / "child.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    evidence.update(result, status="completed")
+    (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     return result
 
 
@@ -484,7 +507,8 @@ def main():
         for ordinal, (kind, edit) in enumerate(steps):
             if daemon.poll() is not None or not endpoint.probe(daemon):
                 raise RuntimeError("owned daemon missing before request")
-            row = {"ordinal": ordinal, "kind": kind, "sessions": []}
+            row = {"ordinal": ordinal, "kind": kind, "sessions": [], "phase": "retained"}
+            receipt["active_request"] = row
             for index, project in enumerate(projects):
                 session = {"index": index, "project": str(project / manifest)}
                 if edit is not None:
@@ -516,10 +540,16 @@ def main():
                     except Exception as error:
                         failures.append(str(error))
                 if failures:
+                    row["status"] = "failed"
+                    row["timing_admitted"] = False
+                    row["errors"] = failures
+                    row["child_result_paths"] = [str(logs(index, "retained") / "child.json") for index in range(len(projects))]
+                    receipt.setdefault("failed_requests", []).append(row)
                     raise RuntimeError("; ".join(failures))
             row["retained_burst_wall_s"] = time.monotonic() - burst_started
             row["host_context_after_retained"] = host_context.sample()
             # Fresh oracle processes never compete with retained measured work.
+            row["phase"] = "fresh_oracle"
             for index, (project, session) in enumerate(zip(projects, row["sessions"])):
                 session["host_context_before_fresh"] = host_context.sample()
                 session["fresh"] = compile_one(executable, project, manifest, args.workers,
@@ -544,7 +574,9 @@ def main():
                     row["edit"] = row["sessions"][0]["edit"]
             row["end_to_end_s"] = time.monotonic() - row_started
             row["fresh_native_byte_oracle"] = True
+            row.pop("phase", None)
             receipt["rows"].append(row)
+            receipt.pop("active_request", None)
             if _owned_memory is not None:
                 _owned_memory.check()
             write_receipt(root, receipt)
@@ -555,6 +587,14 @@ def main():
     except Exception as error:
         receipt["status"] = "failed"
         receipt["error"] = str(error)
+        interrupted = receipt.pop("active_request", None)
+        if interrupted is not None:
+            interrupted.update(status="failed", timing_admitted=False)
+            interrupted.setdefault("child_result_paths", [str(logs(index, mode) / "child.json")
+                for index in range(len(projects)) for mode in ("retained", "fresh")])
+            failures = receipt.setdefault("failed_requests", [])
+            if not any(item is interrupted for item in failures):
+                failures.append(interrupted)
     finally:
         if daemon is not None:
             record_daemon_cleanup(receipt, terminate_owned(daemon))
