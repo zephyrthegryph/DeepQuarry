@@ -134,6 +134,11 @@
 
 /// What a sleeper does not take: a mouse, a second person, anyone while it has no power.
 /datum/unit_test/dq_medpod/sleeper_refusals
+// Warm the persistent status-policy cache before the runner snapshots globals.
+/datum/unit_test/dq_medpod/sleeper_refusals/New()
+	..()
+	status_policies()
+
 /datum/unit_test/dq_medpod/sleeper_refusals/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	..()
