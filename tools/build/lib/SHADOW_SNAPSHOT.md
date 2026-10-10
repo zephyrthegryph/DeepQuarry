@@ -32,9 +32,10 @@ A complete implementation must:
    A before/after manifest hash or independently captured native journal cannot
    prove which intermediate bytes DreamMaker read.
 3. Pass that snapshot's manifest to both compilers. The current BYOND callback
-   closes over the original manifest; it must become a snapshot-aware producer
-   before this step can be activated. Keep normal BYOND output installation
-   behavior through explicit verified output transfer afterward.
+   already accepts a captured manifest override and prepared compiler identity;
+   selection currently supplies no override because the closed snapshot issuer
+   is missing. Keep normal BYOND output installation behavior through explicit
+   verified output transfer afterward.
 4. Authenticate the issued closure/configuration and compiler output hashes in
    the admission consumer. Native replay must use the same authority; avoid a
    separate weaker equivalence check. Record source/configuration proof and

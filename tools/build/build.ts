@@ -62,6 +62,7 @@ import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
 import { compilerCacheIdentity, compilerMode } from './lib/compiler_selection';
+import { updateDerivedCompileConfiguration } from './lib/derived_compile_key';
 import { conventionalOutput, currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
@@ -572,8 +573,8 @@ function resolveDmeIncludes(dmeText: string): string[] {
  * Content hash of everything that determines a derived-dme compile's
  * output: the derived .dme text itself, the full content of every .dm file
  * it transitively includes, the define list, and the DM compiler version.
- * Order-independent in the define list; file order is fixed (sorted) so the
- * hash is stable across runs.
+ * Define order is semantic: later duplicate overrides win. File order is
+ * fixed (sorted), and identical ordered inputs produce the same hash.
  */
 function computeCompileHash(dmeText: string, defines: string[], dmVersion: string | null): string {
   const hash = createHash('sha256');
@@ -586,9 +587,7 @@ function computeCompileHash(dmeText: string, defines: string[], dmVersion: strin
       hash.update('<unreadable>');
     }
   }
-  hash.update(JSON.stringify([...defines].sort()));
-  hash.update(dmVersion ?? '');
-  hash.update(compilerCacheIdentity());
+  updateDerivedCompileConfiguration(hash, defines, dmVersion, compilerCacheIdentity());
   return hash.digest('hex');
 }
 
