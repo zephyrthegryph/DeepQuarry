@@ -37,7 +37,6 @@
 // ALLOW(init/INSTANCE_STATE): takes its built parts and the high-capacity cell among them
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 	update_icon()
 
@@ -284,6 +283,7 @@ MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
 MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	default_parts()
 	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

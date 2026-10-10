@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/freezer, cooling)
 TRACKED(/obj/machinery/atmospherics/unary/freezer, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
 	reagents(120)
 	// A heat pump from its pipeline's gas into the room around it, toward the thermostat: the room takes the heat plus the work, at a
@@ -52,12 +53,9 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	var/cooling = 0
 	var/reagent_cooling = 0
 
-
 /obj/machinery/atmospherics/unary/freezer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/atmospherics/unary/freezer/atmos_init()
 	if(node)

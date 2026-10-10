@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
 TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
 	reagents(120)
 	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
@@ -48,12 +49,9 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	var/pumping = FALSE
 	var/reagent_cooling = 0
 
-
 /obj/machinery/atmospherics/unary/heater/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/atmospherics/unary/heater/atmos_init()
 	if(node)
@@ -70,7 +68,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	if(check_for_obstacles())
 		rel_clear(src, nameof(node))
 
-
 /// Unconnected, connected and idle, or working.
 /obj/machinery/atmospherics/unary/heater/draw(datum/look/look)
 	..()
@@ -82,7 +79,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 /obj/machinery/atmospherics/unary/heater/derived()
 	. = ..()
 	. += drawn_from(nameof(use_power), nameof(heating))
-
 
 // ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----
 
@@ -171,7 +167,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
-
 	max_power_rating = initial(max_power_rating) * cap_rating / 2
 	max_temperature = max(initial(max_temperature) - T20C, 0) * ((bin_rating * 4 + cap_rating) / 5) + T20C
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
@@ -192,7 +187,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 #undef REAGENT_COOLING_MAXMOD
 #undef REAGENT_COOLING_CONSUMED
 #undef HEATER_PERF_MULT
-
 
 /obj/machinery/atmospherics/unary/heater/sauna
 	max_temperature = 331.15

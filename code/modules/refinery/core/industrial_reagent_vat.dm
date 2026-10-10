@@ -13,11 +13,6 @@
 	buckle_lying = TRUE
 	default_max_vol = REAGENT_VAT_VOLUME
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/reagent_refinery/vat/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/reagent_refinery/vat/refinery_step()
 	if(length(src?.buckled_mob_list()) && reagents.total_volume > 0)
 		for(var/mob/living/L in src?.buckled_mob_list())
@@ -95,6 +90,7 @@
 	return length(src?.buckled_mob_list()) && reagents.total_volume > 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/vat)
+	default_parts()
 	without("reagent_refinery_set_transfer_amount")
 	op("reagent_vat_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into vat"), then(PROC_REF(interaction_drain_trolley)))
 	op("reagent_vat_drain_container", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker), item(/obj/item/reagent_containers/chem_canister)), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Dump into vat"), then(PROC_REF(interaction_drain_container)))

@@ -24,6 +24,7 @@
 	var/datum/reagents/udder = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
+	hose_sockets(list(/datum/hose_connector/output/cow))
 	owns_one(nameof(udder), /datum/reagents)
 	op("cow_item", item(/obj/item), then(PROC_REF(cow_interaction_item)))
 	op("cow_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(cow_interaction_hand_disarm)))
@@ -37,8 +38,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
 
 	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
 	rel_set(udder, nameof(udder.my_atom), src)
-
-	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
 
 /// Old attackby: milking.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(datum/act/op/A)
