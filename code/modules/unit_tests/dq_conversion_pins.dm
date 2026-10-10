@@ -122,11 +122,13 @@
 			beside = changed.ChangeTurf(beside_type)
 			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "turf capture left fixture products")
 			continue
-		var/atom/target = null
-		try
-			target = dq_snapshot_allocate(type, T)
-		catch(var/exception/made)
-			actual_by_type[type] = list("runtime while making it: [made.name]")
+		var/list/made = dq_pin_make_with_diagnostics(type, T)
+		var/atom/target = made["target"]
+		if(made["diagnostic"])
+			actual_by_type[type] = list("runtime while making it: [made["diagnostic"]]")
+			if(target && !QDELETED(target))
+				qdel(target)
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "failed constructor left fixture products")
 			continue
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
@@ -301,3 +303,66 @@
 	TEST_ASSERT_EQUAL(room.has_gravity, !gravity, "the fixture actually changes room gravity")
 	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "target cleanup completes")
 	TEST_ASSERT_EQUAL(room.has_gravity, gravity, "gravity is restored before the next capture")
+
+// Test-only producer helper. The real constructor still runs and remains invalid.
+/datum/unit_test/proc/dq_pin_make_with_diagnostics(type, turf/T)
+	var/previous_capture = GLOB.dq_lifecycle_report_capture
+	var/list/reports = list()
+	var/atom/target
+	var/exception/fault
+	GLOB.dq_lifecycle_report_capture = reports
+	try
+		target = dq_snapshot_allocate(type, T)
+	catch(var/exception/made)
+		fault = made
+	GLOB.dq_lifecycle_report_capture = previous_capture
+	// The first ownership failure is the constructor's primary diagnostic;
+	// a later null dereference must not replace it merely because a previous
+	// probe already reported the same ownership message this round.
+	var/diagnostic = length(reports) ? reports[1] : fault?.name
+	return list("target" = target, "diagnostic" = diagnostic, "fault" = fault?.name)
+
+// Test-only invalid constructor: exercises the ownership engine rather than
+// depending on any content defect remaining unfixed.
+/obj/item/dq_pin_expected_part
+
+/obj/item/dq_pin_wrong_part
+
+/obj/dq_pin_rejected_constructor
+	var/obj/item/dq_pin_expected_part/part
+
+CAPABILITIES(/obj/dq_pin_rejected_constructor)
+	owns_one(nameof(part), /obj/item/dq_pin_expected_part)
+
+/obj/dq_pin_rejected_constructor/Initialize(mapload)
+	. = ..()
+	var/obj/item/dq_pin_wrong_part/wrong = new /obj/item/dq_pin_wrong_part(loc)
+	rel_set(src, nameof(part), wrong)
+	// The rejected child remains on the turf; fixture cleanup must remove it
+	// and the partially initialized owner despite this secondary fault.
+	CRASH("dq pin fixture: secondary constructor fault")
+
+/datum/unit_test/dq_conversion_pin_constructor_diagnostics/Run()
+	var/turf/T = test_floor()
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated?.Copy() || list()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	var/previous_capture = GLOB.dq_lifecycle_report_capture
+	var/first_diagnostic
+	for(var/pass in 1 to 2)
+		var/list/result = dq_pin_make_with_diagnostics(/obj/dq_pin_rejected_constructor, T)
+		TEST_ASSERT_EQUAL(GLOB.dq_lifecycle_report_capture, previous_capture, "constructor diagnostics restore the caller's capture immediately")
+		var/diagnostic = result["diagnostic"]
+		TEST_ASSERT(istext(result["fault"]) && findtext(result["fault"], "secondary constructor fault"), "the deliberate secondary constructor fault actually ran")
+		TEST_ASSERT(istext(diagnostic) && findtext(diagnostic, "/obj/dq_pin_rejected_constructor.part") && findtext(diagnostic, "/obj/item/dq_pin_wrong_part"), "the actual rejected ownership write is reported before the secondary constructor fault")
+		TEST_ASSERT(!findtext(diagnostic, "secondary constructor fault"), "the later crash cannot replace the first ownership error")
+		TEST_ASSERT_NOTNULL(locate(/obj/item/dq_pin_wrong_part) in T, "the real failed allocation left a child for cleanup to remove")
+		if(pass == 1)
+			first_diagnostic = diagnostic
+		else
+			TEST_ASSERT_EQUAL(diagnostic, first_diagnostic, "two controlled failed allocations report the same primary error")
+		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "failed constructor fixture products are removed")
+		TEST_ASSERT_NULL(locate(/obj/item/dq_pin_wrong_part) in T, "cleanup removes the rejected child")
+		var/list/after_atoms = dq_pin_fixture_atoms()
+		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")

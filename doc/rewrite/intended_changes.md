@@ -4315,7 +4315,7 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 ### Requirement protocol pin follows master's rotation migration (2026-10-10)
 
 * **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
-* **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.
+* **/obj/item/floor_light:** the Oct 9 `Click: Equip` evidence was stale, predating `45a7c1225d`; fresh runs never reproduce it. Later robot/AI `Use` rows follow rf-silicon `1b7d651912`, accepted by master snapshot refresh `13f4c81362`. This is separate from Equip and is not a resolver defect.
 ### rf-silicon lane (2026-10-10)
 
 - **`silicon_use` is deleted; every machine and turf has a silicon op.** `/obj/machinery` declares `silicon_hand(tier = OP_PRIORITY_DEFAULT - 100)`
@@ -4435,7 +4435,7 @@ The floor-light protocol golden is left exactly as it was, per the user's stale-
 ### Requirement protocol pin follows master's rotation migration (2026-10-10)
 
 * **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
-* **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.
+* **/obj/item/floor_light:** the Oct 9 `Click: Equip` evidence was stale, predating `45a7c1225d`; fresh runs never reproduce it. Later robot/AI `Use` rows follow rf-silicon `1b7d651912`, accepted by master snapshot refresh `13f4c81362`. This is separate from Equip and is not a resolver defect.
 
 ### Batch 42 merge of requirements-zero-1010-d (2026-10-10)
 
@@ -4443,3 +4443,8 @@ The requirement pins Codex recorded before rf-silicon landed (`dq_requirement_pr
 - **Produce and grown items fill from their seed at the root of init** (`reagents(contents_from =)`, the nutriment's taste by `data = PROC_REF`), before the item's own `Initialize()` reads them, instead of after it. The wish soup's wish is rolled (seeded), its nutriment a computed amount.
 - **Drawn instead of written once**: the metal bench's padding and the modern chair's back are look overlays (the chair's look rebuilt them away before), an area's empty in-game sprite, a wall's `blank` base, the carry turfs' in-game sprite, the glass floor's empty base and the fake space star field are set by `draw()`.
 - **More starting children are declared** (`owns_* starts =`): uplink devices and the uplink implant, the refinery machines' holders (`reagents(holder = nameof(reagent_type))`), the fryer's oil (made and filled in `make_oil()`), a full grower pod's biomass, a bluespace toilet's crystal, the bluespace beacon, the overmap objects' map screens (only when `render_map`), the hydroponics tray's scratch holder, the quad bike's cell (not for one built from an assembly) and the mapped mucus's virus. An anomaly counts down its lifespan by `after_init()`.
+
+### Requirement E constructor pin isolation (2026-10-10)
+
+* **/obj/item/rig/nikki:** the producer now captures the lifecycle framework's primary ownership diagnostic during each real construction and cleans up failed-constructor products. The existing cape-type rejection remains recorded, rather than changing to a downstream `null.adopt_constraint()` error after another probe logged it once. Its one diagnostic row loses the incidental runtime source-location trailer because it comes directly from the existing report-capture API. No successful constructor, interaction or ownership declaration is fabricated or blessed. This test-fixture correction does not retire the underlying invalid chest declaration.
+* **Master refreshes:** merging `13f4c81362` accepts the verified silicon Use protocol rows, including floor light. Merging `19329aee16` carries master's controller/cabinet pin refreshes. The cabinet wrench difference depends on its starting occupant, not rf-silicon; E does not change its declaration or insert fake contents.
