@@ -5788,6 +5788,7 @@
 #include "code\library\machine\cell_bay.dm"
 #include "code\library\items\telekinesis.dm"
 #include "code\library\mob\hands.dm"
+#include "code\library\mob\living_abilities.dm"
 #include "code\engine\stats\status_hooks.dm"
 #include "code\library\mob\statuses.dm"
 #include "code\library\stats\status_delivery.dm"

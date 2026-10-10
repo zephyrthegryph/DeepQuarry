@@ -1645,17 +1645,19 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 /mob/living/proc/mobegglaying_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, A.answer.value))
+	perform_op(src, src, "mobegglaying", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("choice" = A.answer.value))
 
-/mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
+/mob/living/proc/mobegglaying_done(datum/act/op/A)
+	var/mob/living/carbon/human/C = src
+	var/choice = A.arg("choice")
 	if(choice == "Make a Egg" && eggs > 5)
 		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
-		return 0
+		return OP_OK
 	else if(choice == "Make a Egg")
 		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
 		C.adjust_nutrition(-(150))
 		eggs += 1
-		return 0
+		return OP_OK
 	else if(choice == "lay your Eggs" && eggs > 0)
 		act_message(src, null, others = span_infoplain(span_white("%U% freezes and vissibly tries to squat down")))
 
@@ -1665,10 +1667,10 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 			var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 			E.pixel_x = rand(-6,6)
 			E.pixel_y = rand(-6,6)
-		return
+		return OP_OK
 	else
 		src.visible_message(span_warning("you dont have any eggs!"))
-		return //Should never happen
+		return OP_OK //Should never happen
 
 /mob/living/proc/insect_sting()
 	set name = "Insect Sting"
@@ -1787,30 +1789,28 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc
-	task_start(/datum/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
+	perform_op(src, target, "absorb_devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("pred" = pred, "belly" = belly, "starting_loc" = starting_loc))
 
-/datum/task/timed/living_absorb_devour_living
-	duration = 5 SECONDS
-	complete_proc = /mob/living/proc/absorb_devour_living_done
-	var/mob/living/pred
-	var/obj/belly/belly
-	var/starting_loc
-
-/mob/living/proc/absorb_devour_living_done(datum/task/timed/living_absorb_devour_living/task)
-	var/mob/living/pred = task.pred
-	var/obj/belly/belly = task.belly
-	var/mob/living/target = task.target
-	var/starting_loc = task.starting_loc
+/// The devour op runs on the victim (src); the one who reached out from inside the belly is the actor.
+/mob/living/proc/absorb_devour_done(datum/act/op/A)
+	var/mob/living/prey = A.actor
+	var/mob/living/pred = A.arg("pred")
+	var/obj/belly/belly = A.arg("belly")
+	var/mob/living/target = src
+	var/starting_loc = A.arg("starting_loc")
+	if(QDELETED(pred) || QDELETED(belly) || QDELETED(prey))
+		return OP_FAILED
 	if(target.loc != starting_loc)
-		to_chat(src, span_notice("\The [target] is no longer within reach."))
-		return
+		to_chat(prey, span_notice("\The [target] is no longer within reach."))
+		return OP_FAILED
 	if(target?.buckled_to())
 		var/atom/movable/_tmp_buck_20 = target?.buckled_to()
 		_tmp_buck_20.unbuckle_mob()
-	to_chat(src, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
+	to_chat(prey, span_vwarning("You manage to [lowertext(belly.vore_verb)] \the [target]!"))
 	to_chat(pred, span_vnotice("Your [belly] manages to [lowertext(belly.vore_verb)] \the [target]."))
 	to_chat(target, span_vwarning("You are [lowertext(belly.vore_verb)]ed by \The [pred]'s [belly]!"))
-	return pred.begin_instant_nom(src, target, pred, belly, FALSE)
+	pred.begin_instant_nom(prey, target, pred, belly, FALSE)
+	return OP_OK
 
 /mob/living/proc/name_change_verb()
 	set name = "Change Name"
