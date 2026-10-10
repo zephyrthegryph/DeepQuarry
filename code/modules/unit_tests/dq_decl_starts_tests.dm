@@ -74,3 +74,17 @@
 	TEST_ASSERT_EQUAL(B.reagents.get_reagent_amount(REAGENT_ID_CRYOSLURRY), 150, "its first beaker holds the cryoslurry")
 	var/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/E = allocate(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher, T)
 	TEST_ASSERT_EQUAL(E.reagents.get_reagent_amount(REAGENT_ID_FIREFOAM), E.max_water, "the exosuit extinguisher starts full of foam")
+
+/// Starting children made by a starts = PROC_REF (a constructor that needs the holder's state, a list of them).
+/datum/unit_test/dq_decl_starts_procs/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/machinery/appliance/cooker/oven/O = allocate(/obj/machinery/appliance/cooker/oven, T)
+	TEST_ASSERT_EQUAL(length(O.cooking_objs), O.max_contents, "a cooker starts with one cooking slot per max_contents")
+	var/obj/machinery/appliance/mixer/candy/M = allocate(/obj/machinery/appliance/mixer/candy, T)
+	TEST_ASSERT_EQUAL(length(M.cooking_objs), 1, "a mixer starts with its one slot")
+	var/obj/machinery/cablelayer/C = allocate(/obj/machinery/cablelayer, T)
+	TEST_ASSERT_EQUAL(C.cable?.get_amount(), C.max_cable, "the cable layer starts full")
+	var/obj/structure/bed/pillowpile/P = allocate(/obj/structure/bed/pillowpile, T)
+	TEST_ASSERT(P.front?.pile == P, "a pillow pile starts with its front, which knows its pile")
+	var/obj/machinery/mining/drill/D = allocate(/obj/machinery/mining/drill, T)
+	TEST_ASSERT(istype(D.faultreporter, /obj/item/radio/intercom), "a drill starts with its fault reporter")

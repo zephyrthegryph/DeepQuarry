@@ -16,14 +16,14 @@
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "toggle_override")
 
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
+	owns_one(nameof(program), /datum/embedded_program, starts = PROC_REF(make_docking_program))
 	owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 
 // ALLOW(init/INSTANCE_STATE): its docking program is made from the program tag and name the map set
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
-	// The port owns its running program (program); docking_program is a typed view of it.
-	rel_set(src, nameof(program), new/datum/embedded_program/docking/airlock(src, airlock_program))
+	// The port owns its running program (program, owns_one(starts =)); docking_program is a typed view of it.
 	rel_set(src, nameof(docking_program), program)
 	if(display_name)
 		docking_program.display_name = display_name
@@ -137,3 +137,6 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
 		..(target)
 
+/// The running program (owns_one(starts =)): docking over the airlock program the map set.
+/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/make_docking_program(current)
+	return new /datum/embedded_program/docking/airlock(src, airlock_program)

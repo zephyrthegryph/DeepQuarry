@@ -32,6 +32,7 @@
 	tgui_id = "CookingAppliance"
 
 CAPABILITIES(/obj/machinery/appliance/cooker)
+	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
 /obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
@@ -86,9 +87,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	rel_take_all(src, nameof(cooking_objs))
-	for (var/i = 0, i < max_contents, i++)
-		rel_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)
 
 /// The cooker's status light: idle, preheating, or off.
@@ -258,3 +256,8 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
 		selected_option = null
 
+/// The starting cooking slots (owns_many(starts =)): one container per slot.
+/obj/machinery/appliance/cooker/proc/make_cooking_objs(current)
+	. = list()
+	for(var/i in 1 to max_contents)
+		. += new /datum/cooking_item(new container_type(src))

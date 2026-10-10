@@ -8,9 +8,9 @@
 	var/max_cable = 100
 	on = 0
 
-/obj/machinery/cablelayer/Initialize(mapload)
-	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
-	. = ..()
+/// The starting coil (owns(starts =)): a full load.
+/obj/machinery/cablelayer/proc/make_cable(current)
+	return new /obj/item/stack/cable_coil(src, max_cable)
 
 /obj/machinery/cablelayer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -140,7 +140,7 @@ MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 
 /obj/machinery/cablelayer/ownership()
 	. = ..()
-	. += owns(nameof(cable), policy = OWN_CONTAINED)
+	. += owns(nameof(cable), policy = OWN_CONTAINED, starts = PROC_REF(make_cable))
 
 /// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable
