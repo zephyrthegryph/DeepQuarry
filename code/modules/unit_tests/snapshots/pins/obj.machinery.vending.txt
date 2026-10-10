@@ -8,8 +8,10 @@ robot|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
 robot|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open (refused: You can't do that that way.)
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
 ghost|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
@@ -107,5 +109,5 @@ human|/obj/item/refill_cartridge menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/refill_cartridge menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/refill_cartridge click: Click: Refill
 wires: Contraband, Electrification, ID Scan, Item Throw
-keys: anchor.toggle, check_logs, drag_buckle, emag.subvert, emag.use, insert_coin, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_with_item, panel.open, refill, reject_fake_coin, remove_coin, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, stock, toggle_voice, ui_open, vend, wires.cut, wires.pulse
+keys: anchor.toggle, check_logs, drag_buckle, emag.subvert, emag.use, insert_coin, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_with_item, panel.open, refill, reject_fake_coin, remove_coin, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, stock, toggle_voice, ui_open, vend, wires.cut, wires.pulse
 

@@ -1,8 +1,10 @@
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open (refused: You need a multitool to work its network settings.)
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -44,5 +46,5 @@ human|/obj/item/stack/nanopaste menu: Move To Top
 human|/obj/item/stack/nanopaste menu: Repair (refused: This machine is already in perfect condition.)
 human|/obj/item/stack/nanopaste menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/nanopaste click: Click: Repair
-keys: broadcast, buffer, change_listening, cleartemp, delete, drag_buckle, flush, freq, id, link, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, network, range, receive, repair, robot_remote_blocked, toggle, ui_open, unlink
+keys: broadcast, buffer, change_listening, cleartemp, delete, drag_buckle, flush, freq, id, link, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, network, range, receive, repair, robot_remote_blocked, silicon_hand, toggle, ui_open, unlink
 

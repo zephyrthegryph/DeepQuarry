@@ -4343,3 +4343,91 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **after_init() timers** replace `after(src, ...)` in `Initialize()` for foam hardening, an always-on shield projector and the integrated signaler's retune: a map-loaded instance counts the delay from the close of its map-load frame instead of from its own `Initialize()`.
 - **Declared destroy messages** (`DESTROY_EFFECTS`): the crystal, micro tunnel and artifact blade show their destruction message in phase 6, after `on_destroy()` (the blade's message now follows its lightning strike instead of preceding it).
 - The frost grenade's beakers are typed fills (`grenade_fill_frost_a/b`) made by `owns_many(starts =)`, like every other premade chem grenade.
+
+### Requirement E pins follow merged master (2026-10-10)
+
+These refreshes accept only changes from master, not requirement refusal or effect changes. No Equip row is refreshed.
+
+* **Native silicon Use (1b7d651912):** inherited silicon_hand() replaces silicon_use; the listed machinery types gain robot/AI Use menu rows, fallback clicks and the silicon_hand key. All other keys and rows are preserved. Each class below has that same documented cause.
+
+In `pins` (45 class files):
+
+- `/obj/machinery/access_button`
+- `/obj/machinery/alarm`
+- `/obj/machinery/atmospherics/binary/passive_gate`
+- `/obj/machinery/atmospherics/binary/pump`
+- `/obj/machinery/atmospherics/binary/volume_pump`
+- `/obj/machinery/atmospherics/omni/atmos_filter`
+- `/obj/machinery/atmospherics/omni/mixer`
+- `/obj/machinery/atmospherics/omni`
+- `/obj/machinery/atmospherics/pipe`
+- `/obj/machinery/atmospherics/portables_connector`
+- `/obj/machinery/atmospherics/trinary`
+- `/obj/machinery/atmospherics/unary/cryo_cell`
+- `/obj/machinery/atmospherics/unary/heat_exchanger`
+- `/obj/machinery/atmospherics/unary/vent_pump`
+- `/obj/machinery/atmospherics/unary/vent_scrubber`
+- `/obj/machinery/body_scanconsole`
+- `/obj/machinery/botany/editor`
+- `/obj/machinery/botany/extractor`
+- `/obj/machinery/button/remote/airlock/survival_pod`
+- `/obj/machinery/button/remote/blast_door/single_use`
+- `/obj/machinery/button/remote/noemag`
+- `/obj/machinery/computer/card`
+- `/obj/machinery/computer/telecomms/server`
+- `/obj/machinery/computer/telecomms`
+- `/obj/machinery/door/blast`
+- `/obj/machinery/door/unpowered`
+- `/obj/machinery/door/window`
+- `/obj/machinery/door_timer`
+- `/obj/machinery/embedded_controller`
+- `/obj/machinery/light/flamp`
+- `/obj/machinery/light`
+- `/obj/machinery/meter`
+- `/obj/machinery/pipedispenser/disposal`
+- `/obj/machinery/porta_turret`
+- `/obj/machinery/power/apc`
+- `/obj/machinery/power/port_gen/large_altevian`
+- `/obj/machinery/power/smes/batteryrack`
+- `/obj/machinery/power/smes`
+- `/obj/machinery/recharger`
+- `/obj/machinery/sleeper`
+- `/obj/machinery/smartfridge/secure`
+- `/obj/machinery/telecomms/relay`
+- `/obj/machinery/telecomms`
+- `/obj/machinery/vending`
+- `/turf/simulated/mineral/floor`
+
+In `requirements_protocol_1008` (27 class files):
+
+- `/obj/machinery/bomb_tester`
+- `/obj/machinery/cablelayer`
+- `/obj/machinery/camera`
+- `/obj/machinery/computer/aifixer`
+- `/obj/machinery/computer/aiupload`
+- `/obj/machinery/computer/arcade/clawmachine`
+- `/obj/machinery/computer/borgupload`
+- `/obj/machinery/computer/guestpass`
+- `/obj/machinery/computer/pandemic`
+- `/obj/machinery/computer/pod/old/syndicate`
+- `/obj/machinery/computer/prison_shuttle`
+- `/obj/machinery/computer/skills`
+- `/obj/machinery/computer/supplycomp`
+- `/obj/machinery/cryopod`
+- `/obj/machinery/floor_light`
+- `/obj/machinery/food_replicator`
+- `/obj/machinery/gear_painter`
+- `/obj/machinery/nuclearbomb`
+- `/obj/machinery/organ_printer`
+- `/obj/machinery/particle_smasher`
+- `/obj/machinery/partslathe`
+- `/obj/machinery/recharge_station`
+- `/obj/machinery/robotic_fabricator`
+- `/obj/machinery/suit_cycler`
+- `/obj/machinery/suit_storage_unit`
+- `/obj/machinery/vr_sleeper/alien`
+- `/obj/machinery/vr_sleeper`
+
+* **Holder construction error source location (744bd7644):** /obj/item/holder, /obj/item/holder/micro and /obj/item/holder/mouse retain exactly the same missing-mob refusal. The NO_LOC parameter support inserts three source lines, so the recorded params.dm location changes from 234 to 237.
+
+**Not refreshed:** /obj/item/rig/nikki has an existing order-dependent constructor error (OWN reporting throws once, then a later capture reaches null.adopt_constraint); /obj/structure/extinguisher_cabinet now offers Unwrench instead of Use after the starting occupant was moved to conditional starts in 744bd7644. These are not accepted behavior changes and require owner review.

@@ -6,6 +6,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -73,5 +74,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Electrification, ID Scan, Item Throw
-keys: drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, release, robot_remote_blocked, smartfridge_interaction_hand, smartfridge_interaction_item, ui_open, use_crowbar, use_screwdriver, use_wire_tools, use_wrench
+keys: drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, release, robot_remote_blocked, silicon_hand, smartfridge_interaction_hand, smartfridge_interaction_item, ui_open, use_crowbar, use_screwdriver, use_wire_tools, use_wrench
 
