@@ -1,5 +1,11 @@
 import path from 'node:path';
 
+export function acquiredWorldArguments(args: any[], originalDmb: string, acquired: boolean): any[] {
+  return acquired && !args.includes('-cd')
+    ? [...args, '-cd', path.dirname(path.resolve(originalDmb))]
+    : args;
+}
+
 // Hosting resolves its runtime independently of a prepared compilation request.
 export async function resolveDreamDaemonExecutable(
   namedVersion: string | null | undefined,

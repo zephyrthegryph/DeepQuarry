@@ -1,6 +1,15 @@
 import { expect, test } from 'bun:test';
 import path from 'node:path';
-import { resolveDreamDaemonExecutable } from './byond_runtime';
+import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
+
+test('acquiring output preserves original world directory and explicit caller choice', () => {
+  const args = ['1234', '-trusted', '-params', 'test-focus=data/focus.txt'];
+  expect(acquiredWorldArguments(args, 'deepquarry.test.run1.dmb', true))
+    .toEqual([...args, '-cd', process.cwd()]);
+  expect(acquiredWorldArguments(args, 'deepquarry.test.run1.dmb', false)).toBe(args);
+  const explicit = [...args, '-cd', 'chosen'];
+  expect(acquiredWorldArguments(explicit, 'ignored.dmb', true)).toBe(explicit);
+});
 
 test('hosting resolves the selected runtime version once and uses its sibling daemon', async () => {
   const versions: Array<string | null | undefined> = [];

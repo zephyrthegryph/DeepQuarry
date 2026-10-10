@@ -7,7 +7,7 @@ import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
-import { resolveDreamDaemonExecutable } from './byond_runtime';
+import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
 import { stageRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
@@ -551,10 +551,14 @@ export async function DreamDaemon(
   ...args: any[]
 ): Promise<DDResult> {
   const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
+  // BYOND defaults its world directory to the DMB directory, independently of
+  // the spawned process cwd. Acquiring a pair must preserve the caller's world
+  // directory for config, focus files, logs and other runtime libraries.
+  const hostedArgs = acquiredWorldArguments(args, options.dmbFile, output.kind === 'native_pair');
   return withCompiledOutput(output, Juke.exec, async dmbFile => {
     options.onPreparedOutput?.(dmbFile);
     const hosted = { ...options, dmbFile, compiledOutput: output };
-    try { return await runHostedWorld(hosted, args); }
+    try { return await runHostedWorld(hosted, hostedArgs); }
     finally {
       if (output.kind === 'native_pair' && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
         const destination = options.daemonLog ?? options.dmbFile.replace(/\.dmb$/, '.log');
