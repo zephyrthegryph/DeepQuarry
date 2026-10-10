@@ -1047,6 +1047,6 @@
 	storage_restrict(B, list(/obj/item/stack/tile), null)
 	var/before_count = sb_count(B)
 	var/why = op_cand_require_reason(R, insertion)
-	TEST_ASSERT_EQUAL(why, "\The [next] won't go in 	he [B]: it doesn't take that.", "the same candidate now refuses with the original formatted reason")
+	TEST_ASSERT_EQUAL(why, "The storage probe won't go in the box: it doesn't take that.", "the same candidate now refuses with the original formatted reason")
 	TEST_ASSERT_EQUAL(next.loc, H, "the refused requirement kept the input in the actor's hand")
 	TEST_ASSERT_EQUAL(sb_count(B), before_count, "requirement inspection made no containment change")
