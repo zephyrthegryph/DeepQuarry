@@ -7,7 +7,8 @@ robot|none menu: Eject content
 robot|none menu: Eject pAI
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject content (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject content
@@ -77,5 +78,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: clean, cook, dispose, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, microwave_interaction_eject_pai, microwave_interaction_hand, microwave_interaction_item, microwave_verb_eject, robot_remote_blocked, use_crowbar, use_screwdriver, use_wrench
+keys: clean, cook, dispose, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, microwave_interaction_eject_pai, microwave_interaction_hand, microwave_interaction_item, microwave_verb_eject, robot_remote_blocked, silicon_hand, use_crowbar, use_screwdriver, use_wrench
 

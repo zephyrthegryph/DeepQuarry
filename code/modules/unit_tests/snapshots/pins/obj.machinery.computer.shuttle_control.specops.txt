@@ -67,5 +67,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
-keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move, robot_remote_blocked, set_codes, specops_silicon_refuse, use_gripper, use_item
+keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move, robot_remote_blocked, set_codes, silicon_hand, specops_silicon_refuse, use_gripper, use_item
 

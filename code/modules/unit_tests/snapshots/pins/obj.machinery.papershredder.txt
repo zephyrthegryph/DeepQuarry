@@ -4,8 +4,10 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Empty bin (refused: it is empty)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Empty bin (refused: You can't reach that.)
 ghost|none click: nothing
@@ -115,5 +117,5 @@ human|/obj/item/paper_bundle menu: Rename bundle (refused: You can't do that.)
 human|/obj/item/paper_bundle menu: Shred
 human|/obj/item/paper_bundle menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper_bundle click: Click: Shred
-keys: climb.climb, climb.climb_menu, drag_buckle, empty, empty_into, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, shred
+keys: climb.climb, climb.climb_menu, drag_buckle, empty, empty_into, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, shred, silicon_hand
 

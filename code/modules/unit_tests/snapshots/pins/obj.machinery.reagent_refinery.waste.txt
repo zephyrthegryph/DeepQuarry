@@ -6,8 +6,10 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Rotate Clockwise
 robot|none menu: Rotate Counter Clockwise
 robot|none menu: Turn Around
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Rotate Clockwise
 ghost|none menu: Rotate Counter Clockwise
 ghost|none menu: Turn Around
@@ -104,5 +106,5 @@ human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Turn Around
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use_wrench
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench
 

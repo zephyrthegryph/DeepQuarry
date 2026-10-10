@@ -4,8 +4,10 @@ human|none click: Click: Boil
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Boil
 robot|none menu: Take reagent
+robot|none menu: Use
 robot|none click: Click: Boil
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Boil
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -83,5 +85,5 @@ human|/obj/item/potion_base menu: Take reagent
 human|/obj/item/potion_base menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/potion_base menu: Use
 human|/obj/item/potion_base click: Click: Place base
-keys: brew, drag_buckle, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, no_use, robot_remote_blocked, take_reagent
+keys: brew, drag_buckle, load_base, load_reagent, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, no_use, robot_remote_blocked, silicon_hand, take_reagent
 

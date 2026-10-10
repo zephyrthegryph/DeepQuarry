@@ -106,9 +106,10 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	var/mob/user = A.actor
 	return user && read_once(user.Adjacent(src)) ? null : "you're too far away"
 
-/// A declared silicon interface may reach the physical ID slot; actor kinds are selected by requirements.
+/// A silicon's interface reaches the physical ID slot: the console takes a silicon's Use as a hand's (every machine's silicon_hand() op),
+/// so the slot is open to it; actor kinds are selected by requirements.
 /obj/machinery/computer/med_data/proc/records_remote_slot_allowed(datum/act/op/A)
-	return (read_once(silicon_use) & (SILICON_USE_HAND | ROBOT_USE_HAND)) ? null : "you're too far away"
+	return null
 
 /// The named insertion uses the same checked transfer as the old ID-card slot.
 /obj/machinery/computer/med_data/proc/insert_scan(datum/act/op/A)

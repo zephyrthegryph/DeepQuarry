@@ -2,8 +2,10 @@ human|none menu: Push pulled object
 human|none click: Click: Push pulled object
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Push pulled object
+robot|none menu: Use
 robot|none click: Click: Push pulled object
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Drop on belt
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -60,5 +62,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Push pulled object
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Push pulled object
-keys: conveyor_drop_item, conveyor_push_pulled, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_multitool
+keys: conveyor_drop_item, conveyor_push_pulled, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_multitool
 

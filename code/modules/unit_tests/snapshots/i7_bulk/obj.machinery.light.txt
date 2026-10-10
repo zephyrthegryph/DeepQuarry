@@ -3,9 +3,11 @@ human|none click: Click: Remove bulb
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Remove bulb
 robot|none menu: Toggle emergency lights
+robot|none menu: Use
 robot|none click: Click: Remove bulb
 ai|none menu: Flicker
 ai|none menu: Toggle emergency lights
+ai|none menu: Use
 ai|none click: Click: Toggle emergency lights
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -45,5 +47,5 @@ human|/obj/item/light menu: Insert bulb (refused: There is a bulb in it already.
 human|/obj/item/light menu: Move To Top
 human|/obj/item/light menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/light click: Click: Insert bulb
-keys: drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, robot_remote_blocked, toggle_emergency, tune
+keys: drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, robot_remote_blocked, silicon_hand, toggle_emergency, tune
 

@@ -4,8 +4,10 @@ human|none click: Click: Resleeving console interaction hand
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Resleeving console interaction hand
+robot|none menu: Use
 robot|none click: Click: Resleeving console interaction hand
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
@@ -83,5 +85,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Resleeving console interaction item
 human|/obj/item/gripper deleted itself on creation
-keys: cleartemp, clear_b_rec, clear_m_rec, climb.climb, climb.climb_menu, coredump, create, disconnect, drag_buckle, ejectdisk, genereset, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, resleeving_console_interaction_hand, resleeving_console_interaction_item, robot_remote_blocked, selectpod, selectprinter, selectsleever, sleeve, use_gripper, use_item, use_multitool, view_b_rec, view_m_rec
+keys: cleartemp, clear_b_rec, clear_m_rec, climb.climb, climb.climb_menu, coredump, create, disconnect, drag_buckle, ejectdisk, genereset, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, resleeving_console_interaction_hand, resleeving_console_interaction_item, robot_remote_blocked, selectpod, selectprinter, selectsleever, silicon_hand, sleeve, use_gripper, use_item, use_multitool, view_b_rec, view_m_rec
 

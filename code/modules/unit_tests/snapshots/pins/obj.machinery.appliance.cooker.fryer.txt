@@ -6,7 +6,8 @@ robot|none menu: Toggle Power
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none menu: Toggle power
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Toggle Power (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Fryer interaction oil
@@ -73,5 +74,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle Power
 human|/obj/item menu: Use
 human|/obj/item click: Click: Fryer interaction oil
-keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, fryer_interaction_oil, fry_mob, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, remote_power, remove_menu, robot_remote_blocked, slot, toggle_power, toggle_safety
+keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, fryer_interaction_oil, fry_mob, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, remote_power, remove_menu, robot_remote_blocked, silicon_hand, slot, toggle_power, toggle_safety
 

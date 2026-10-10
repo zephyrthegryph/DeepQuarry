@@ -8,9 +8,11 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Bug camera (refused: needs a camera bug)
 robot|none menu: Look through
 robot|none menu: Slash (refused: not possible right now)
+robot|none menu: Use
 robot|none menu: Use (refused: needs an item)
 robot|none click: Click: Look through
 ai|none menu: Look through
+ai|none menu: Use
 ai|none click: Click: Look through
 ghost|none menu: Attack (refused: needs an item)
 ghost|none menu: Bug camera (refused: needs a camera bug)
@@ -122,5 +124,5 @@ human|/obj/item/camera_bug menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/camera_bug menu: Use
 human|/obj/item/camera_bug click: Click: Use
 wires: Camera Alarm, Camera Light, Focus, Primary Power
-keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_silicon_look, camera_update_coverage, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_screwdriver, use_welder, use_wire_tools
+keys: camera_bash, camera_bug_toggle, camera_paper_show, camera_shred, camera_silicon_look, camera_update_coverage, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_screwdriver, use_welder, use_wire_tools
 

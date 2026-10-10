@@ -2,8 +2,10 @@ human|none menu: Toggle Monitor Beeping
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Toggle Monitor Beeping
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Toggle Monitor Beeping
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -48,5 +50,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle Monitor Beeping
 human|/obj/item click: nothing
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, vitals_monitor_toggle_beep
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, vitals_monitor_toggle_beep
 

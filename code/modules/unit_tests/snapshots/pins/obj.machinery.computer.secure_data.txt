@@ -6,8 +6,10 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Eject ID Card
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Eject ID Card (refused: You can't reach that.)
@@ -87,5 +89,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
 human|/obj/item/gripper deleted itself on creation
-keys: add_c, cleartemp, climb.climb, climb.climb_menu, del_all, del_c, del_r, del_r_2, disconnect, drag_buckle, d_rec, edit, edit_notes, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, new, photo_front, photo_side, print_p, robot_remote_blocked, scan, screen, search, secure_data_eject_id, secure_data_insert_id, sync_r, ui_open, use_gripper, use_item
+keys: add_c, cleartemp, climb.climb, climb.climb_menu, del_all, del_c, del_r, del_r_2, disconnect, drag_buckle, d_rec, edit, edit_notes, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, new, photo_front, photo_side, print_p, robot_remote_blocked, scan, screen, search, secure_data_eject_id, secure_data_insert_id, silicon_hand, sync_r, ui_open, use_gripper, use_item
 

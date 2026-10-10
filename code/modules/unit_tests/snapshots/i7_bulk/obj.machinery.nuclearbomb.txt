@@ -8,6 +8,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Make Deployable (refused: You can't reach that.)
 ghost|none click: nothing
@@ -85,5 +86,5 @@ human|/obj/item/disk/nuclear menu: Toggle Digestable (refused: You can't do that
 human|/obj/item/disk/nuclear menu: Ui open
 human|/obj/item/disk/nuclear menu: Use
 human|/obj/item/disk/nuclear click: Click: Ui open
-keys: anchor, auth, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, pulse, robot_remote_blocked, safety, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wire_tools, use_wrench, wire
+keys: anchor, auth, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, pulse, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wire_tools, use_wrench, wire
 
