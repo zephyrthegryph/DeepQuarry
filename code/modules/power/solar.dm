@@ -219,7 +219,7 @@ MSG_DEF(solar_assembly/electronics_out, "You take out the electronics from the s
 CAPABILITIES(/obj/item/solar_assembly)
 	op("fixed", hand(), label("Touch"), wait(0), when(nameof(anchored)), when(req_empty_hand()), then(PROC_REF(touched)))
 	op("wrench", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(PROC_REF(on_floor))), then(PROC_REF(wrenched)))
-	op("glass", stack(/obj/item/stack/material, 2), label("Add glass"), wait(0), when(req_bool(PROC_REF(held_is_glass))),
+	op("glass", stack(/obj/item/stack/material, 2), label("Add glass"), wait(0), when(req(PROC_REF(held_is_glass))),
 		needs(req(PROC_REF(on_floor)), req_is(nameof(anchored), TRUE, because = MSG(solar_assembly/unanchored))),
 		says(MSG(solar_assembly/glassed)), then(PROC_REF(glassed)))
 	op("electronics", item(/obj/item/tracker_electronics), label("Insert electronics"), wait(0), when(cond_not(nameof(tracker))),
@@ -238,7 +238,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 
 /obj/item/solar_assembly/proc/held_is_glass(datum/act/op/A)
 	var/obj/item/stack/material/S = A.held
-	return istype(S, /obj/item/stack/material/glass)
+	return (istype(S, /obj/item/stack/material/glass)) ? null : MSG(req_failed)
 
 /obj/item/solar_assembly/proc/wrenched(datum/act/op/A)
 	set_anchored(!anchored)

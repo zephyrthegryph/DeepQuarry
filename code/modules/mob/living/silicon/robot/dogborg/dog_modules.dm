@@ -124,8 +124,8 @@ MSG_DEF(tongue/lick_clean, span_notice("You begin to lick %T% clean..."), span_f
 CAPABILITIES(/obj/item/robot_tongue)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	// a lick of anything but a person is five seconds of standing still; a person's face is instant (afterattack)
-	op("tongue_drink_sink", at_target(/obj/structure/sink), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_thirsty), silent = TRUE)), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
-	op("tongue_drink_toilet", at_target(/obj/structure/toilet), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_thirsty), because = MSG(tongue/full))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
+	op("tongue_drink_sink", at_target(/obj/structure/sink), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_thirsty), silent = TRUE)), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
+	op("tongue_drink_toilet", at_target(/obj/structure/toilet), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_thirsty), because = MSG(tongue/full))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
 	op("tongue_lick_up", at_target(/obj/effect/decal/cleanable), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_up)), wait(5 SECONDS), then(PROC_REF(tongue_licked_up)))
 	op("tongue_eat_trash", at_target(/obj/item/trash), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_trash)))
 	op("tongue_eat_food", at_target(/obj/item/reagent_containers/food), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_food)))
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/robot_tongue)
 
 /// A sink is lapped from while the reserve has room.
 /obj/item/robot_tongue/proc/tongue_thirsty(datum/act/op/A)
-	return read_once(water.energy < water.max_energy)
+	return (read_once(water.energy < water.max_energy)) ? null : MSG(tongue/full)
 
 /obj/item/robot_tongue/proc/tongue_started(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -306,7 +306,7 @@ CAPABILITIES(/obj/item/lightreplacer/dogborg)
 		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
 		then(PROC_REF(dogborg_chosen)))
 	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
-	op("fabricate", ai(), needs(req_bool(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
+	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
 
 /obj/item/lightreplacer/dogborg/proc/has_reserves()
 	return glass && glass.energy >= 125

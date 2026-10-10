@@ -74,7 +74,7 @@ TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
-	extend(TAG_POD_ENTER, needs(req_operable(), req_bool(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))
+	extend(TAG_POD_ENTER, needs(req_operable(), req(PROC_REF(pipe_connected))))
 	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(STAT_SLEEPING), on = ON_CONTENTS))
 	// While it works, the occupant's body and the cell's gas trade heat through one link (the heat domain conserves it and wakes the pipe network).
 	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 	on_notice(/datum/notice/pod_left, then(PROC_REF(occupant_left)))
 	section(window, "the cell's window: its occupant takes no part in it (occupant_pod(controls_inside = FALSE)), and it opens unpowered")
 	interface("Cryo", title = "Cryo Cell")
-	extend("ui_open", ungated(), needs(req_closed(SPACE_PANEL), req_bool(PROC_REF(actor_outside), silent = TRUE)))
+	extend("ui_open", ungated(), needs(req_closed(SPACE_PANEL), req(PROC_REF(actor_outside), silent = TRUE)))
 	extend(TAG_UI, then(PROC_REF(control_touched), early = TRUE))
 	op("switchOn", ui_act("switchOn"), then(PROC_REF(switch_on)))
 	op("switchOff", ui_act("switchOff"), then(PROC_REF(switch_off)))
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 
 /// The actor is not the one inside.
 /obj/machinery/atmospherics/unary/cryo_cell/proc/actor_outside(datum/act/op/A)
-	return A.actor != occupant_of(src)
+	return (A.actor != occupant_of(src)) ? null : MSG(req_failed)
 
 // ---- the window's buttons ----
 
@@ -279,3 +279,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
 #undef CRYO_THAW_FLOOR
 #undef CRYO_GLASS_RAISE
 #undef CRYO_GLASS_ALPHA
+
+/obj/machinery/atmospherics/unary/cryo_cell/proc/pipe_connected(datum/act/A)
+	return piped() ? null : MSG(cryo_cell/not_connected)

@@ -19,7 +19,7 @@
 	perform_op(user, pump, "use", origin = ORIGIN_SYSTEM)
 	TEST_ASSERT_NULL(pump.cell, "the actual open-panel hand action ejects the original installed cell")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), cell, "actual ejection returns the original installed cell to the free hand")
-	TEST_ASSERT_EQUAL(pump.battery_panel_open(null) && pump.no_cell(null), TRUE, "the actual open empty panel permits a real cell insertion")
+	TEST_ASSERT_EQUAL(isnull(pump.battery_panel_open(null)) && isnull(pump.no_cell(null)), TRUE, "the actual open empty panel permits a real cell insertion")
 	pump.reagents.add_reagent(REAGENT_ID_WATER, 10)
 	var/charge_before = cell.charge
 	var/capacity_before = pump.reagents.maximum_volume

@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/stack/flag)
 	without("ui_open")
 	op("flag_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(flag_interaction_item)))
 	op("flag_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Knock down"), then(PROC_REF(flag_hand)))
-	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req_bool(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(flag_self)))
+	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req(PROC_REF(can_plant_holds))), then(PROC_REF(flag_self)))
 
 /obj/item/stack/flag/Initialize(mapload)
 	. = ..()
@@ -256,15 +256,9 @@ CAPABILITIES(/obj/item/stack/flag)
 	singular_name = "green flag"
 	icon_state = "greenflag"
 
-/// Requirement (was REQ_* can_plant): the legacy check answers TRUE to pass.
+/// Requirement: can_plant returns null to allow, or a refusal reason.
 /obj/item/stack/flag/proc/can_plant_holds(datum/act/op/A)
-	var/answer = can_plant(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_plant_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/stack/flag/proc/can_plant_refusal(datum/act/op/A)
-	var/answer = can_plant(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_plant(A.actor, src, A.held)
 
 /// Old attackby.
 /obj/item/stack/flag/proc/flag_interaction_item(datum/act/op/A)
@@ -295,7 +289,7 @@ CAPABILITIES(/obj/item/stack/flag)
 	var/obj/item/stack/flag/F = locate_within(T, /obj/item/stack/flag)
 	if(F && F.upright)
 		return "there is already a flag here"
-	return TRUE
+	return null
 
 /// Old attack_self: plant a flag.
 /obj/item/stack/flag/proc/flag_self(datum/act/op/A)
@@ -323,7 +317,7 @@ CAPABILITIES(/obj/item/stack/flag)
 
 CAPABILITIES(/obj/item/stack/lightpole)
 	without("ui_open")
-	op("lightpole_self", in_hand(), label("Plant"), needs(req_bool(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), wait(8 SECONDS), then(PROC_REF(plant_done)))
+	op("lightpole_self", in_hand(), label("Plant"), needs(req(PROC_REF(can_plant_holds))), wait(8 SECONDS), then(PROC_REF(plant_done)))
 
 /obj/item/stack/lightpole/red
 	name = "red flags"
@@ -350,18 +344,12 @@ CAPABILITIES(/obj/item/stack/lightpole)
 		return "the light won't stand up in this terrain"
 	if(locate_within(get_turf(src), /obj/structure/trailblazer))
 		return "there is already a light here"
-	return TRUE
+	return null
 
 /// Old attack_self: plant a trail light.
-/// Requirement (was REQ_* can_plant): the legacy check answers TRUE to pass.
+/// Requirement: can_plant returns null to allow, or a refusal reason.
 /obj/item/stack/lightpole/proc/can_plant_holds(datum/act/op/A)
-	var/answer = can_plant(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_plant_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/stack/lightpole/proc/can_plant_refusal(datum/act/op/A)
-	var/answer = can_plant(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_plant(A.actor, src, A.held)
 
 /obj/item/stack/lightpole/proc/plant_done(datum/act/op/A)
 	var/mob/user = A.actor

@@ -153,16 +153,16 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	on_change(STAT_ARMED, EXIT, then(PROC_REF(disarmed)))
 	anchor()
 	extend("anchor.toggle", wait(5 SECONDS), claims(), needs(
-		req_bool(PROC_REF(intact), because = MSG(porta_turret/wrecked)),
+		req(PROC_REF(intact), because = MSG(porta_turret/wrecked)),
 		req(PROC_REF(idle_for_the_wrench)),
-		req_bool(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
+		req(PROC_REF(not_anchoring_in_space), because = MSG(porta_turret/in_space))))
 	op("salvage", tool(TOOL_CROWBAR), when(TYPE_PROC_REF(/obj/machinery, stat_is_broken)), wait(2 SECONDS), then(PROC_REF(salvaged)))
 	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), then(PROC_REF(struck)))
 
 	section(window, "The turret's window, its buttons, and who may use them")
 	interface("PortableTurret")
-	extend("ui_open", needs(req_bool(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
-	extend(TAG_UI, needs(req_bool(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
+	extend("ui_open", needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_is(nameof(anchored), because = MSG(porta_turret/unsecured))))
+	extend(TAG_UI, needs(req(PROC_REF(uncontrolled), because = MSG(porta_turret/controlled)), req_window_usable(remote = PROC_REF(firewall_open), remote_because = MSG(porta_turret/firewall))))
 	op("power", ui_act(), toggles(nameof(enabled)))
 	op("lethal", ui_act(), toggles(nameof(lethal), when = nameof(lethal_is_configurable)))
 	op("authweapon", ui_act(), toggles(nameof(check_weapons), when = nameof(targetting_is_configurable)))
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// No control panel in the turret's area has taken it over.
 /obj/machinery/porta_turret/proc/uncontrolled(datum/act/op/A)
-	return !has_controller()
+	return (!has_controller()) ? null : MSG(porta_turret/controlled)
 
 /// The turret's area has a control panel.
 /obj/machinery/porta_turret/proc/has_controller()
@@ -258,7 +258,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 // ---- wrench, crowbar, a blow ----
 
 /obj/machinery/porta_turret/proc/intact(datum/act/op/A)
-	return !broken_now()
+	return (!broken_now()) ? null : MSG(porta_turret/wrecked)
 
 /// The wrench moves only a switched-off turret with its cover down.
 /obj/machinery/porta_turret/proc/idle_for_the_wrench(datum/act/op/A)
@@ -266,7 +266,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// A loose turret cannot be bolted down in space.
 /obj/machinery/porta_turret/proc/not_anchoring_in_space(datum/act/op/A)
-	return anchored || !istype(loc, /turf/space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
+	return (anchored || !istype(loc, /turf/space)) ? null : MSG(porta_turret/in_space) // ALLOW(reads): the floor under it is asked when the wrench turns, never cached
 
 /// A wreck pried apart: with luck, its gun and parts come out.
 /obj/machinery/porta_turret/proc/salvaged(datum/act/op/A)

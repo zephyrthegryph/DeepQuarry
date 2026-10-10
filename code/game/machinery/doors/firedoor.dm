@@ -218,14 +218,14 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	op("welded", item(/obj/item), priority(OP_PRIORITY_CLAW + 4), when(nameof(blocked)), wait(0),
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_shut))), then(PROC_REF(nothing_done)))
 	op("pry", item(/obj/item), label("Force"), when(PROC_REF(prying_item)), priority(OP_PRIORITY_CLAW + 3), wait(3 SECONDS), claims(),
-		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), then(PROC_REF(item_forced)))
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), then(PROC_REF(item_forced)))
 	op("weld", tool(TOOL_WELDER), label("Weld"), when(cond_not(PROC_REF(repairable))), priority(OP_PRIORITY_CLAW + 6), wait(0), costs(RES_FUEL, 0),
 		needs(req_unclaimed(because = MSG(firedoor/busy_prying))), then(PROC_REF(weld_toggled)))
 	op("hatch", tool(TOOL_SCREWDRIVER), label("Maintenance hatch"), when(nameof(density)), priority(OP_PRIORITY_CLAW + 6), wait(0), then(PROC_REF(hatch_toggled)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(nameof(blocked)), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS),
 		needs(req(PROC_REF(hatch_reachable))), then(PROC_REF(electronics_out)))
 	op("pry_tool", tool(TOOL_CROWBAR), label("Force"), when(cond_not(nameof(blocked))), priority(OP_PRIORITY_CLAW + 6), wait(3 SECONDS), claims(),
-		needs(req_bool(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), then(PROC_REF(tool_forced)))
+		needs(req(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), then(PROC_REF(tool_forced)))
 
 /// An op that only swallows the touch (a busy door, tape, a welded door's refusal): nothing happens.
 /obj/machinery/door/firedoor/proc/nothing_done(datum/act/op/A)
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 /// A fireaxe must be held in both hands to pry; anything else does not care.
 /obj/machinery/door/firedoor/proc/wielded_if_axe(datum/act/op/A)
 	var/obj/item/material/twohanded/fireaxe/F = A.held
-	return !istype(F) || F.wielded
+	return (!istype(F) || F.wielded) ? null : MSG(firedoor/need_wield)
 
 /// An axe or a blade has forced it (a welded one too: the seam gives).
 /obj/machinery/door/firedoor/proc/item_forced(datum/act/op/A)
@@ -382,7 +382,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /// A crowbar works a door with no power, or an open one.
 /obj/machinery/door/firedoor/proc/pry_free(datum/act/A)
-	return !operable() || !density
+	return (!operable() || !density) ? null : MSG(firedoor/motors_resist)
 
 /obj/machinery/door/firedoor/proc/tool_forced(datum/act/op/A)
 	var/mob/user = A.actor

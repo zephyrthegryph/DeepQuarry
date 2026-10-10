@@ -106,7 +106,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_unload)))
+	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_unload)))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -454,15 +454,10 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	if(!cell) return 0
 	return cell.checked_use(charge_use)
 
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/// Requirement: dq_actor_can_act returns null to allow, or a refusal reason.
 /obj/machinery/mining/drill/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/mining/drill/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
+	READS_FROM(A.actor)
+	return (isliving(A.actor) && !A.actor.incapacitated()) ? null : "you can't do that right now"
 
 /obj/machinery/mining/drill/proc/interaction_unload(datum/act/op/A)
 	var/mob/user = A.actor
@@ -499,7 +494,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_work_on_holds))), then(PROC_REF(interaction_attackby)))
 	default_parts()
 	rotatable()
 
@@ -511,17 +506,11 @@ CAPABILITIES(/obj/machinery/mining/brace)
 /obj/machinery/mining/brace/proc/can_work_on(mob/user, atom/target, obj/item/held)
 	if(connected() && connected().active)
 		return "you can't work with the brace of a running drill"
-	return TRUE
+	return null
 
-/// Requirement (was REQ_* can_work_on): the legacy check answers TRUE to pass.
+/// Requirement: can_work_on returns null to allow, or a refusal reason.
 /obj/machinery/mining/brace/proc/can_work_on_holds(datum/act/op/A)
-	var/answer = can_work_on(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_work_on_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/mining/brace/proc/can_work_on_refusal(datum/act/op/A)
-	var/answer = can_work_on(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_work_on(A.actor, src, A.held)
 
 /obj/machinery/mining/brace/proc/interaction_attackby(datum/act/op/A)
 	var/mob/user = A.actor

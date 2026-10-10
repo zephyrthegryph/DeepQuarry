@@ -115,7 +115,7 @@
 	fail = asks_question(perform(actor, target, "vv_remlanguage"), made, "removing a language from a mob that knows one")
 	TEST_ASSERT_NULL(fail, fail)
 	// (The question's own check needs a real holder's rights, which a clientless actor has none of: the passing case asks the requirements themselves.)
-	TEST_ASSERT(!mob_state_played(target) && target.vv_not_remote_driven(), "a mob nobody plays may be given an AI")
+	TEST_ASSERT(!mob_state_played(target) && isnull(target.vv_not_remote_driven()), "a mob nobody plays may be given an AI")
 	key_set(target, MOB_STATE_PLAYED, TRUE)
 	fail = refused_without_question(perform(actor, target, "vv_give_ai"), /datum/msg/vv/player_mob, "giving AI to a player's mob")
 	TEST_ASSERT_NULL(fail, fail)

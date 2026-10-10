@@ -31,9 +31,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(holding), /obj/item/tank)
 	ref_one(nameof(connected_port), /obj/machinery/atmospherics/portables_connector)
-	tank_bay(nameof(holding), when = PROC_REF(not_destroyed))
+	tank_bay(nameof(holding), when = req(PROC_REF(not_destroyed)))
 	op("port", tool(TOOL_WRENCH), label("Connect to the port"), wait(0), when(PROC_REF(port_wrench_offered)),
-		needs(req_bool(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), req_bool(PROC_REF(port_reachable), because = MSG(portable/no_port)), req_bool(PROC_REF(port_free), because = MSG(portable/port_taken))),
+		needs(req(PROC_REF(not_destroyed), because = MSG(portable/wrecked)), req(PROC_REF(port_reachable), because = MSG(portable/no_port)), req(PROC_REF(port_free), because = MSG(portable/port_taken))),
 		says(PROC_REF(port_message)), then(PROC_REF(port_wrenched)))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_bursts))))
 
@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 /// Not wrecked: it takes a tank, a wrench.
 /obj/machinery/portable_atmospherics/proc/not_destroyed(datum/act/A)
-	return !destroyed
+	return (!destroyed) ? null : MSG(portable/wrecked)
 
 /// The wrench means the port on this machine (a tray that bolts itself down says otherwise when it has no port).
 /obj/machinery/portable_atmospherics/proc/port_wrench_offered(datum/act/op/A)
@@ -126,14 +126,14 @@ CAPABILITIES(/obj/machinery/portable_atmospherics)
 
 /// Connected, or a port stands under it.
 /obj/machinery/portable_atmospherics/proc/port_reachable(datum/act/op/A)
-	return connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): asked when the wrench is used, never from a cached menu
+	return (connected_port() || locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : MSG(portable/no_port) // ALLOW(reads): asked when the wrench is used, never from a cached menu
 
 /// Connected, or the port under it has no device yet.
 /obj/machinery/portable_atmospherics/proc/port_free(datum/act/op/A)
 	if(connected_port())
-		return TRUE
+		return null
 	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): asked when the wrench is used, never from a cached menu
-	return port && !port.connected_device
+	return (port && !port.connected_device) ? null : MSG(portable/port_taken)
 
 /obj/machinery/portable_atmospherics/proc/port_message(datum/act/A)
 	return connected_port() ? /datum/msg/portable/connected : /datum/msg/portable/disconnected
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
 	op("cell_in", item(/obj/item/cell), label("Insert power cell"), wait(0), when(nameof(use_cell)),
 		needs(req_empty(nameof(cell), because = MSG(portable/cell_present))), put_in(nameof(cell)), says(MSG(portable/cell_in)), then(PROC_REF(cell_changed)))
 	op("cell_out", tool(TOOL_SCREWDRIVER), label("Remove power cell"), when(nameof(removeable_cell)),
-		needs(req_bool(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
+		needs(req(PROC_REF(has_cell), because = MSG(portable/no_cell))), says(MSG(portable/cell_out)), then(PROC_REF(take_cell_out)))
 
 /// The cell it comes with (none by default).
 /obj/machinery/portable_atmospherics/powered/proc/starting_cell(datum/act/A)
@@ -202,7 +202,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
 	return 0
 
 /obj/machinery/portable_atmospherics/powered/proc/has_cell(datum/act/A)
-	return !isnull(cell)
+	return (!isnull(cell)) ? null : MSG(portable/no_cell)
 
 /obj/machinery/portable_atmospherics/powered/proc/take_cell_out(datum/act/op/A)
 	var/obj/item/cell/C = cell
@@ -224,11 +224,11 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered)
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/powered/proc/is_off(datum/act/A)
-	return !on
+	return (!on) ? null : MSG(huge_portable/turn_off)
 
 /// A requirement that never holds (a stationary one's bolts).
 /obj/machinery/portable_atmospherics/powered/proc/never(datum/act/A)
-	return FALSE
+	return MSG(huge_portable/bolted)
 
 /obj/machinery/portable_atmospherics/powered/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)

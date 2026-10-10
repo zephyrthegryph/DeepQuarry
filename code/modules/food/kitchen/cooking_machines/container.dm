@@ -27,7 +27,7 @@ TRACKED(/obj/item/reagent_containers/cooking_container, food_items)
 CAPABILITIES(/obj/item/reagent_containers/cooking_container)
 	configure(reagents(volume = nameof(max_reagents)))
 	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"),
-		needs(req_bool(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted)))
+		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted)))
 	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"),
 		needs(req(PROC_REF(holds_solids))), then(PROC_REF(emptied)))
 	examine_line(PROC_REF(solids_line))
@@ -57,7 +57,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 /// There is room for the held thing.
 /obj/item/reagent_containers/cooking_container/proc/has_room(datum/act/op/A)
 	var/obj/item/thing = held_thing(A)
-	return !isnull(thing) && !!can_fit(thing)
+	return (!isnull(thing) && !!can_fit(thing)) ? null : MSG(cooking_container/full)
 
 /// The held thing goes in.
 /obj/item/reagent_containers/cooking_container/proc/item_inserted(datum/act/op/A)

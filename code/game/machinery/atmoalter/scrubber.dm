@@ -214,4 +214,4 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	desc += "This one seems to be tightly secured with large bolts."
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
-	extend("anchor", needs(req_bool(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
+	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))

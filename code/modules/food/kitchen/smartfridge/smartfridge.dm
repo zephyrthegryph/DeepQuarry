@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(is_powered_for_stocking_holds), because = PROC_REF(is_powered_for_stocking_refusal))), then(PROC_REF(smartfridge_interaction_item)))
+	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds))), then(PROC_REF(smartfridge_interaction_item)))
 	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
 
@@ -186,19 +186,13 @@ CAPABILITIES(/obj/machinery/smartfridge)
 			if(6 to INFINITY)
 				look.overlay("[icon_base]-[icon_contents]3")
 
-/// Requirement (was REQ_* is_powered_for_stocking): the legacy check answers TRUE to pass.
+/// Requirement: is_powered_for_stocking returns null to allow, or a refusal reason.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking_holds(datum/act/op/A)
-	var/answer = is_powered_for_stocking(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why is_powered_for_stocking_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/smartfridge/proc/is_powered_for_stocking_refusal(datum/act/op/A)
-	var/answer = is_powered_for_stocking(A.actor, src, A.held)
-	return istext(answer) ? answer : "it is unpowered and useless"
+	return is_powered_for_stocking(A.actor, src, A.held)
 
 /// Requirement: the fridge has power.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking(mob/user, atom/target, obj/item/held)
-	return !power_lost()
+	return !power_lost() ? null : "it is unpowered and useless"
 
 /// Old attackby.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_item(datum/act/op/A)
@@ -378,11 +372,11 @@ CAPABILITIES(/obj/machinery/smartfridge)
 // A secure fridge's buttons do nothing while it does not work (the old ui_act_allowed()).
 CAPABILITIES(/obj/machinery/smartfridge/secure)
 	configure(wires(count = 4, randomize = TRUE)) // a dud beside the three, and each fridge its own colours
-	extend("release", needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend("release", needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/smartfridge/secure/proc/ui_gate(datum/act/op/A)
-	return operable()
+	return (operable()) ? null : /datum/msg/req_silent
 
 /// Release behind the ID scan.
 /obj/machinery/smartfridge/secure/ui_act_release(datum/act/op/A, amount, index)

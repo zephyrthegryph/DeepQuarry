@@ -42,7 +42,7 @@
 
 /// A drink that is shut takes nobody.
 /obj/item/reagent_containers/food/drinks/stuffing_free(datum/act/op/A)
-	return is_open_container()
+	return is_open_container() ? null : MSG(food/closed_to_micros)
 
 /obj/item/reagent_containers/food/drinks/micro_stuffed_messages(mob/user, mob/living/micro)
 	to_chat(user, span_warning("You drop [micro] into \the [src]."))

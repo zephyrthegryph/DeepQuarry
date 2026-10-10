@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/reagent_containers)
 /// A hot thing held over an open container with blood in it.
 /obj/item/reagent_containers/proc/blood_test_fits(datum/act/op/A)
 	var/obj/item/held = A.held
-	return !isnull(held) && is_open_container() && !!reagents.get_reagent(REAGENT_ID_BLOOD) && held.is_hot()
+	return (!isnull(held) && is_open_container() && !!reagents.get_reagent(REAGENT_ID_BLOOD) && held.is_hot()) ? null : /datum/msg/req_failed
 
 /// The heat shows a changeling's blood for what it is.
 /obj/item/reagent_containers/proc/blood_tested(datum/act/op/A)

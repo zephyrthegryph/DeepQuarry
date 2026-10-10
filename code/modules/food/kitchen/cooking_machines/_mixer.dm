@@ -95,6 +95,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 	return data
 
 /// Requirement: something in the bowl to mix.
+/// Mixer power requirement: reject empty contents, otherwise inherit the null success.
 /obj/machinery/appliance/mixer/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if(!CI.container().check_contents())

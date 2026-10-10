@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/resonator)
 		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
 		then(PROC_REF(settings_picked)))
 	op("resonate", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Create resonance field"),
-		needs(req_adjacent(), req_bool(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))
+		needs(req_adjacent(), req(PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))
 
 /obj/item/resonator/proc/settings_picked(datum/act/op/A)
 	var/datum/prompt/choice/picked = A.answer
@@ -107,9 +107,6 @@ CAPABILITIES(/obj/item/resonator)
 			set_spreadmode(!spreadmode)
 			to_chat(A.actor, span_info("You have [(spreadmode ? "enabled" : "disabled")] the resonance cascade mode."))
 	return OP_OK
-
-/obj/item/resonator/proc/resonance_allowed(datum/act/op/A)
-	return isnull(resonance_refusal(A))
 
 /// These native location queries are checked before instant creation; this operation never waits or prompts.
 /obj/item/resonator/proc/resonance_refusal(datum/act/op/A)

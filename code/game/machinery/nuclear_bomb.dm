@@ -223,7 +223,7 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("anchor", ui_act("anchor"), then(PROC_REF(ui_act_anchor)))
 	op("wire", ui_act("wire", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_wire)))
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
+	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
@@ -240,8 +240,8 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 /obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
-		return FALSE
-	return get_dist(src, user) <= 1 || istype(user, /mob/living/silicon/ai)
+		return MSG(nuclearbomb/unreachable)
+	return (get_dist(src, user) <= 1 || istype(user, /mob/living/silicon/ai)) ? null : MSG(nuclearbomb/unreachable)
 
 /// Whoever presses a button leaves their prints on the bomb.
 /obj/machinery/nuclearbomb/proc/ui_fingerprint(datum/act/op/A)

@@ -58,9 +58,9 @@ CAPABILITIES(/obj/machinery/appliance)
 	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
 	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
 	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
-	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(appliance_interaction_item)))
+	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds))), then(PROC_REF(appliance_interaction_item)))
 	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
-	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(can_toggle_power_verb_holds), because = PROC_REF(can_toggle_power_verb_refusal))), then(PROC_REF(appliance_toggle_power_effect)))
+	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds))), then(PROC_REF(appliance_toggle_power_effect)))
 	default_parts()
 	on_change(nameof(cooking), ANY, then(PROC_REF(loop_sync)))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(loop_sync)))
@@ -255,35 +255,23 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 	return TRUE
 
-/// Requirement (was REQ_* can_take_item): the legacy check answers TRUE to pass.
+/// Requirement: the appliance accepts the held item, or returns its refusal.
 /obj/machinery/appliance/proc/can_take_item_holds(datum/act/op/A)
-	var/answer = can_take_item(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return can_take_item(A.actor, src, A.held)
 
-/// Why can_take_item_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/appliance/proc/can_take_item_refusal(datum/act/op/A)
-	var/answer = can_take_item(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
-/// Requirement (was REQ_* can_toggle_power_verb): the legacy check answers TRUE to pass.
+/// Requirement: the appliance power toggle returns null to allow, or a reason.
 /obj/machinery/appliance/proc/can_toggle_power_verb_holds(datum/act/op/A)
-	var/answer = can_toggle_power_verb(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_toggle_power_verb_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/appliance/proc/can_toggle_power_verb_refusal(datum/act/op/A)
-	var/answer = can_toggle_power_verb(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_toggle_power_verb(A.actor, src, A.held)
 
 /// Requirement: the appliance works.
 /obj/machinery/appliance/proc/can_take_item(mob/user, atom/target, obj/item/held)
 	if(!cook_type || broken_now())
 		return "\The [src] is not working"
-	return TRUE
+	return null
 
-/// Requirement: TRUE, or why the power verb is refused (subtypes add their own conditions).
+/// Requirement: null, or why the power verb is refused (subtypes add their own conditions).
 /obj/machinery/appliance/proc/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
-	return TRUE
+	return null
 
 /// Old subtype attackby: part replacement first, then the appliance's own item handling.
 /obj/machinery/appliance/proc/appliance_interaction_part_replace(datum/act/op/A)

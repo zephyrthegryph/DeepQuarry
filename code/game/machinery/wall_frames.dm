@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/frame)
 	op("refund", tool(TOOL_WRENCH), label("Take apart"), then(PROC_REF(refund_materials)))
 	op("mount", at_target(/turf/simulated/wall), at_target(/obj/structure/window), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK),
 		label("Mount on the wall"), wait(0),
-		needs(req_bool(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()),
+		needs(req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()),
 		asks(/datum/prompt/choice/frame_type_wall, fields = list("title" = "Frame type request", "question" = "What kind of frame would you like to make?", "choices" = computed(PROC_REF(wall_choices)), "wall_turf" = computed(PROC_REF(mount_spot)), "wall_dir" = computed(PROC_REF(mount_direction)), "subject" = computed(PROC_REF(prompt_frame)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "frame_type", keeps = ALIVE, when = PROC_REF(wall_type_needed)),
 		then(PROC_REF(mount_on)))
 
@@ -117,11 +117,11 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	var/atom/wall = A.target
 	var/mob/user = A.actor
 	if(!wall || !user || get_dist(wall, user) > 1)
-		return FALSE
+		return MSG(req_failed)
 	var/obj/structure/window/W = wall
 	if(istype(W) && !W.anchored)
-		return FALSE
-	return (mount_dir(wall, user) in GLOB.cardinal)
+		return MSG(req_failed)
+	return ((mount_dir(wall, user) in GLOB.cardinal)) ? null : MSG(req_failed)
 
 /// Why the frame can't go on this wall from where the builder stands, or null.
 /obj/item/frame/proc/mount_refusal(datum/act/op/A)

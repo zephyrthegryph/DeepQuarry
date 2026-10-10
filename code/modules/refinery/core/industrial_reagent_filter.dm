@@ -24,8 +24,8 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	climb()
 	op("reagent_filter_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_reagent_filter_use)))
-	op("reagent_filter_set_filter", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set Filter Chemical"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_reagent_filter_set_filter)))
-	op("reagent_filter_flip", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip Filter Direction"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_reagent_filter_flip)))
+	op("reagent_filter_set_filter", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set Filter Chemical"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_reagent_filter_set_filter)))
+	op("reagent_filter_flip", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip Filter Direction"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_reagent_filter_flip)))
 
 /obj/machinery/reagent_refinery/filter/refinery_step()
 	if(!anchored)
@@ -76,15 +76,10 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	var/side_dir = turn(dir, filter_side == 1 ? 270 : 90)
 	return side_dir == back || dir == back
 
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/// Requirement: dq_actor_can_act returns null to allow, or a refusal reason.
 /obj/machinery/reagent_refinery/filter/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/reagent_refinery/filter/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
+	READS_FROM(A.actor)
+	return (isliving(A.actor) && !A.actor.incapacitated()) ? null : "you can't do that right now"
 
 /obj/machinery/reagent_refinery/filter/proc/interaction_reagent_filter_set_filter(datum/act/op/A)
 	var/mob/user = A.actor

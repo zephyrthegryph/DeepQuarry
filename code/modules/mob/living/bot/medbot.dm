@@ -490,7 +490,7 @@ MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.
 // else goes on to the storage.
 CAPABILITIES(/obj/item/storage/firstaid)
 	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)),
-		when(req_bool(PROC_REF(arm_is_robotic))), label("Add robot arm"),
+		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
 		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(icon_variety))
 
@@ -498,9 +498,9 @@ CAPABILITIES(/obj/item/storage/firstaid)
 /obj/item/storage/firstaid/proc/arm_is_robotic(datum/act/op/A)
 	var/obj/item/S = A.held
 	if(istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm))
-		return TRUE
+		return null
 	var/obj/item/organ/external/arm/organ_arm = S
-	return istype(organ_arm) && organ_arm.robotic == ORGAN_ROBOT
+	return (istype(organ_arm) && organ_arm.robotic == ORGAN_ROBOT) ? null : /datum/msg/req_failed
 
 /obj/item/storage/firstaid/proc/add_robot_arm(datum/act/op/A)
 	var/mob/user = A.actor

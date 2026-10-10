@@ -40,9 +40,9 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("vr_sleeper_scan", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_scan)))
-	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant))), needs(req_bool(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
+	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant))), needs(req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
 	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(vr_entry_ready), because = PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
+	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
@@ -130,9 +130,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 
 /obj/machinery/vr_sleeper/proc/vr_entry_target(datum/act/op/A)
 	return A.key == "vr_sleeper_enter" ? A.held : A.actor
-
-/obj/machinery/vr_sleeper/proc/vr_entry_ready(datum/act/op/A)
-	return isnull(vr_entry_reason(A))
 
 /obj/machinery/vr_sleeper/proc/vr_entry_reason(datum/act/op/A)
 	var/mob/M = vr_entry_target(A)

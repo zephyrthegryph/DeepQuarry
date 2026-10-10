@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
 	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
 	op("void_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_is(nameof(hood), TRUE, because = MSG(void/no_helmet))), then(PROC_REF(void_toggle_helmet_verb)))
-	op("voidsuit_remove_component", tool(TOOL_SCREWDRIVER), label("Remove component"), needs(req_actor_kind(/mob/living), req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn)), req_bool(PROC_REF(has_removable_component), because = MSG(void/nothing_installed))), asks(/datum/prompt/choice, fields = list("question" = "What component would you like to remove?", "title" = "Remove Component", "choices" = computed(PROC_REF(removable_components)), "timeout" = 0), step = "component"), then(PROC_REF(remove_component)))
+	op("voidsuit_remove_component", tool(TOOL_SCREWDRIVER), label("Remove component"), needs(req_actor_kind(/mob/living), req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn)), req(PROC_REF(has_removable_component), because = MSG(void/nothing_installed))), asks(/datum/prompt/choice, fields = list("question" = "What component would you like to remove?", "title" = "Remove Component", "choices" = computed(PROC_REF(removable_components)), "timeout" = 0), step = "component"), then(PROC_REF(remove_component)))
 	op("void_eject_tank_verb", menu(), label("Eject Voidsuit Tank/Cooler"), needs(carried(), any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(void_eject_tank_verb)))
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
@@ -384,7 +384,7 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 
 /// Something a screwdriver can remove (a helmet, boots or a tank; the cooling unit is on the list but does not count on its own, as before).
 /obj/item/clothing/suit/space/void/proc/has_removable_component(datum/act/op/A)
-	return !!(hood || boots || tank)
+	return (!!(hood || boots || tank)) ? null : MSG(void/nothing_installed)
 
 /// What the question offers.
 /obj/item/clothing/suit/space/void/proc/removable_components(datum/act/A)
@@ -424,7 +424,7 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 
 /// The AutoLok's helmet is part of the suit: its screwdriver offers boots, tank and cooling unit.
 /obj/item/clothing/suit/space/void/autolok/has_removable_component(datum/act/op/A)
-	return !!(boots || tank || cooler)
+	return (!!(boots || tank || cooler)) ? null : MSG(void/nothing_installed)
 
 /obj/item/clothing/suit/space/void/autolok/removable_components(datum/act/A)
 	var/list/choices = list()

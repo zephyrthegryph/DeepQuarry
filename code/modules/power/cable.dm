@@ -931,12 +931,12 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
-	op("split", hand(), ungated(), label("Take wire"), when(req_bool(PROC_REF(alien_coil_inactive))),
+	op("split", hand(), ungated(), label("Take wire"), when(req(PROC_REF(alien_coil_inactive))),
 		asks(/datum/prompt/number, step = "wire", fields = list("title" = "Split stacks", "question" = computed(PROC_REF(alien_wire_question)), "default" = 1, "max_value" = computed(PROC_REF(alien_wire_maximum)), "min_value" = 1, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(alien_wire_taken)))
 
 /// Only the actual inactive-hand spool supplies the split operation; a floor spool falls through to pickup.
 /obj/item/stack/cable_coil/alien/proc/alien_coil_inactive(datum/act/op/A)
-	return A.actor?.get_inactive_hand() == src
+	return (A.actor?.get_inactive_hand() == src) ? null : MSG(req_failed)
 
 /obj/item/stack/cable_coil/alien/proc/alien_wire_question(datum/act/op/A)
 	return "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time."

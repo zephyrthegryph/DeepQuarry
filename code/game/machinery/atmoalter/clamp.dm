@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/clamp)
 	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(attached)), says(MSG(clamp/switched)), then(PROC_REF(toggled)))
 	// the clamp is dragged onto the one who takes it off
 	op("remove", at_target(/mob/living), gesture(GESTURE_DRAG), label("Remove"), wait(3 SECONDS),
-		needs(req_bool(PROC_REF(dragged_by_self), because = MSG(op/not_available)), req_bool(PROC_REF(released), because = MSG(clamp/active))), says(MSG(clamp/removed)), then(PROC_REF(removed)))
+		needs(req(PROC_REF(dragged_by_self), because = MSG(op/not_available)), req(PROC_REF(released), because = MSG(clamp/active))), says(MSG(clamp/removed)), then(PROC_REF(removed)))
 	param(nameof(target), pos = 1)
 
 /obj/machinery/clamp/proc/attached(datum/act/op/A)
@@ -50,10 +50,10 @@ CAPABILITIES(/obj/machinery/clamp)
 
 /// The clamp is dragged onto the one dragging it.
 /obj/machinery/clamp/proc/dragged_by_self(datum/act/op/A)
-	return A.target == A.actor
+	return (A.target == A.actor) ? null : MSG(op/not_available)
 
 /obj/machinery/clamp/proc/released(datum/act/A)
-	return open
+	return (open) ? null : MSG(clamp/active)
 
 /// It comes off into the hands of whoever pulled it off.
 /obj/machinery/clamp/proc/removed(datum/act/op/A)
@@ -119,10 +119,10 @@ MSG_DEF(clamp/attached, "You attach %T% to the pipe.", "%U% attaches %T% to the 
 
 CAPABILITIES(/obj/item/clamp)
 	op("attach", at_target(/obj/machinery/atmospherics/pipe/simple), label("Attach clamp"), wait(3 SECONDS),
-		needs(req_adjacent(), req_bool(PROC_REF(pipe_free), because = MSG(clamp/occupied))), says(MSG(clamp/attached)), then(PROC_REF(attached_to)))
+		needs(req_adjacent(), req(PROC_REF(pipe_free), because = MSG(clamp/occupied))), says(MSG(clamp/attached)), then(PROC_REF(attached_to)))
 
 /obj/item/clamp/proc/pipe_free(datum/act/op/A)
-	return !locate_within(get_turf(A.target), /obj/machinery/clamp)
+	return (!locate_within(get_turf(A.target), /obj/machinery/clamp)) ? null : MSG(clamp/occupied)
 
 /obj/item/clamp/proc/attached_to(datum/act/op/A)
 	var/mob/user = A.actor

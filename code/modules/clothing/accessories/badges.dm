@@ -120,12 +120,9 @@ TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
-	op("holobadge_imprint_item", item(/obj/item), needs(req_bool(PROC_REF(imprint_credentials_holds), because = PROC_REF(imprint_credentials_refusal))), then(PROC_REF(holobadge_imprint_item)))
+	op("holobadge_imprint_item", item(/obj/item), needs(req(PROC_REF(imprint_credentials_holds))), then(PROC_REF(holobadge_imprint_item)))
 
 /obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_holds(datum/act/op/A)
-	return isnull(imprint_credentials_refusal(A))
-
-/obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_refusal(datum/act/op/A)
 	var/obj/item/card/id/id_card
 	if(istype(A.held, /obj/item/card/id))
 		id_card = A.held

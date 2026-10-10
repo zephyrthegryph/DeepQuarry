@@ -51,11 +51,11 @@ CAPABILITIES(/datum/trait_state/weaver)
 	op("new_silk_color", ui_act("new_silk_color"), then(PROC_REF(ui_act_new_silk_color)))
 	op("toggle_silk_production", ui_act("toggle_silk_production"), then(PROC_REF(ui_act_toggle_silk_production)))
 	op("check_silk_amount", ui_act("check_silk_amount"), then(PROC_REF(ui_act_check_silk_amount)))
-	op("weave_binding", ui_act("weave_binding"), needs(req_bool(PROC_REF(weave_silk_binding), because = PROC_REF(weave_silk_refusal)), req_conscious(), req_bool(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
-	op("weave_floor", ui_act("weave_floor"), needs(req_bool(PROC_REF(weave_silk_floor), because = PROC_REF(weave_silk_refusal)), req_conscious(), req_bool(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
-	op("weave_wall", ui_act("weave_wall"), needs(req_bool(PROC_REF(weave_silk_wall), because = PROC_REF(weave_silk_refusal)), req_conscious(), req_bool(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
-	op("weave_nest", ui_act("weave_nest"), needs(req_bool(PROC_REF(weave_silk_nest), because = PROC_REF(weave_silk_refusal)), req_conscious(), req_bool(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
-	op("weave_trap", ui_act("weave_trap"), needs(req_bool(PROC_REF(weave_silk_trap), because = PROC_REF(weave_silk_refusal)), req_conscious(), req_bool(PROC_REF(weave_site_free), because = PROC_REF(weave_site_refusal))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_binding", ui_act("weave_binding"), needs(req(PROC_REF(weave_silk_binding)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_floor", ui_act("weave_floor"), needs(req(PROC_REF(weave_silk_floor)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_wall", ui_act("weave_wall"), needs(req(PROC_REF(weave_silk_wall)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_nest", ui_act("weave_nest"), needs(req(PROC_REF(weave_silk_nest)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
+	op("weave_trap", ui_act("weave_trap"), needs(req(PROC_REF(weave_silk_trap)), req_conscious(), req(PROC_REF(weave_site_free))), wait(PROC_REF(weave_time)), then(PROC_REF(weave_done)))
 
 /mob/living/proc/weaver_control_panel()
 	set name = "Weaver Control Panel"
@@ -128,7 +128,7 @@ TYPE_TABLE_DECLARE(/datum/trait_state/weaver, recipes, list(
 
 /// Enough silk for a weave of `cost`; one requirement proc per button so each reads a constant cost.
 /datum/trait_state/weaver/proc/weave_silk_for(cost)
-	return cost <= silk_reserve
+	return cost <= silk_reserve ? null : /datum/msg/weaver/no_silk
 
 /datum/trait_state/weaver/proc/weave_silk_binding(datum/act/op/A)
 	return weave_silk_for(50)
@@ -145,12 +145,9 @@ TYPE_TABLE_DECLARE(/datum/trait_state/weaver, recipes, list(
 /datum/trait_state/weaver/proc/weave_silk_trap(datum/act/op/A)
 	return weave_silk_for(250)
 
-/datum/trait_state/weaver/proc/weave_silk_refusal(datum/act/op/A)
-	return /datum/msg/weaver/no_silk
-
 /// The weaver stands on a turf with none of the product on it (where they stand is fixed while a weave is open: moving ends it).
 /datum/trait_state/weaver/proc/weave_site_free(datum/act/op/A)
-	return read_once(weave_site_text(A) == null)
+	return read_once(weave_site_text(A))
 
 /datum/trait_state/weaver/proc/weave_site_text(datum/act/op/A)
 	var/mob/M = A.actor
@@ -159,9 +156,6 @@ TYPE_TABLE_DECLARE(/datum/trait_state/weaver, recipes, list(
 	if(locate_within(M.loc, weave_product(A)))
 		return /datum/msg/weaver/already_there
 	return null
-
-/datum/trait_state/weaver/proc/weave_site_refusal(datum/act/op/A)
-	return weave_site_text(A) || /datum/msg/req_failed
 
 MSG_DEF_SELF(weaver/no_silk, span_warning("You don't have enough silk to weave that!"))
 MSG_DEF_SELF(weaver/no_room, span_warning("You can't weave here!"))

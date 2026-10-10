@@ -86,9 +86,9 @@ CAPABILITIES(/obj/machinery/door/blast)
 		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
 	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(PROC_REF(prying_item)), priority(OP_PRIORITY_PART), wait(0),
-		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req_bool(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
 	op("pry_broken", item(/obj/item), stance(I_HURT), when(PROC_REF(prying_item)), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0),
-		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req_bool(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
 	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS),
 		needs(req(PROC_REF(needs_mending))),
 		then(PROC_REF(mended)), says(MSG(blast_door/repaired)))
@@ -158,11 +158,11 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// A fireaxe must be held in both hands to pry; anything else does not care.
 /obj/machinery/door/blast/proc/wielded_if_axe(datum/act/op/A)
 	var/obj/item/material/twohanded/fireaxe/F = A.held
-	return !istype(F) || F.wielded
+	return (!istype(F) || F.wielded) ? null : MSG(blast_door/need_wield)
 
 /// The motors have given out (no power or broken) and the door is still.
 /obj/machinery/door/blast/proc/pry_free(datum/act/A)
-	return (power_lost() || broken_now()) && !operating
+	return ((power_lost() || broken_now()) && !operating) ? null : MSG(blast_door/motors_resist)
 
 /obj/machinery/door/blast/proc/pry_forced(datum/act/op/A)
 	add_fingerprint(A.actor)

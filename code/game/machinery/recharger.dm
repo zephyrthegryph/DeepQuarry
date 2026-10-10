@@ -90,10 +90,10 @@ CAPABILITIES(/obj/machinery/recharger)
 	anchor(empty = nameof(charging))
 	part_replacement()
 	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL)
-	op("insert", item(/obj/item), when(req_bool(PROC_REF(takes_device))),
+	op("insert", item(/obj/item), when(req(PROC_REF(takes_device))),
 		needs(req(PROC_REF(device_refusal))),
 		then(PROC_REF(insert_device)))
-	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req_bool(PROC_REF(takes_device))),
+	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req(PROC_REF(takes_device))),
 		needs(req(PROC_REF(device_refusal))),
 		then(PROC_REF(drag_in_device)))
 	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_device)))
@@ -139,11 +139,11 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 /obj/machinery/recharger/proc/takes_device(datum/act/op/A)
 	var/obj/item/held = A.held
 	if(!held)
-		return FALSE
+		return MSG(req_failed)
 	for(var/type in (small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)) // ALLOW(reads): the lists are constants and an item's type is fixed for its life
 		if(istype(held, type))
-			return TRUE
-	return FALSE
+			return null
+	return MSG(req_failed)
 
 /// Why this device cannot go in now, or null.
 /obj/machinery/recharger/proc/device_refusal(datum/act/op/A)

@@ -23,7 +23,7 @@
 CAPABILITIES(/obj/machinery/pump)
 	silicon_hand()
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
-		needs(req_bool(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req_bool(PROC_REF(no_cell), because = MSG(pump/has_cell))),
+		needs(req(PROC_REF(battery_panel_open)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
 		then(PROC_REF(cell_inserted)))
 	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
 	op("silicon_toggle", remote(), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))
@@ -123,15 +123,11 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
 /// The battery panel is open.
 /obj/machinery/pump/proc/battery_panel_open(datum/act/op/A)
-	return open // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
-
-/// Why the battery panel is shut: screwed, or watertight until a crowbar opens it.
-/obj/machinery/pump/proc/battery_panel_shut_reason(datum/act/op/A)
-	return unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)
+	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)) // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
 
 /// No cell is installed.
 /obj/machinery/pump/proc/no_cell(datum/act/op/A)
-	return isnull(cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
+	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the

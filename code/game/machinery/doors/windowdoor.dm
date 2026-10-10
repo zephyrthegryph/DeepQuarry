@@ -174,7 +174,7 @@ CAPABILITIES(/obj/machinery/door/window)
 	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_TAKE_OUT), wait(0), then(PROC_REF(sliced_open)))
 	op("shred", hand(), hostile(), label("Smash"), when(req_can_shred(15)), wait(0), then(PROC_REF(shredded)))
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), costs(RES_FUEL, 1),
-		needs(req_bool(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), then(PROC_REF(repaired)), says(MSG(windoor/repaired)))
+		needs(req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), then(PROC_REF(repaired)), says(MSG(windoor/repaired)))
 	op("crowbar_shut", tool(TOOL_CROWBAR), when(nameof(density)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(nothing_done)))
 	op("pry_out", tool(TOOL_CROWBAR), label("Pry out of the frame"), when(cond_not(nameof(density))), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS),
 		then(PROC_REF(pried_out)))
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/machinery/door/window)
 
 /// It has taken damage a welder can mend.
 /obj/machinery/door/window/proc/damaged_now(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(windoor/good_condition) // ALLOW(reads): a door's max_integrity is its type's constant
 
 /// An energy blade slices through the glass: the door gives way as to an emag (it stays open for good).
 /obj/machinery/door/window/proc/sliced_open(datum/act/op/A)

@@ -215,7 +215,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 		op("console_only", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), says(MSG(huge_portable/console_only)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
 		op("swallow_cell", item(/obj/item/cell), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
 		op("swallow_tank", item(/obj/item/tank), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
-		op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req_bool(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, is_off), because = MSG(huge_portable/turn_off))),
+		op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, is_off), because = MSG(huge_portable/turn_off))),
 			says(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, anchor_message)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, anchor_toggled))))
 
 /// Switching it keeps the power draw in step.
@@ -283,7 +283,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
 	name = "Stationary Air Pump"
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge/stationary)
-	extend("anchor", needs(req_bool(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
+	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/stationary/purge
 	on = 1

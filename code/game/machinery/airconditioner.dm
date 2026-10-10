@@ -119,7 +119,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	on_change(nameof(on), ANY, then(PROC_REF(reconsider)))
 	on_change(nameof(target_temp), ANY, then(PROC_REF(reconsider)))
 	examine_line(PROC_REF(display_text))
-	op("switch", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), needs(req_bool(PROC_REF(bolted), because = MSG(thermoregulator/loose))),
+	op("switch", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), needs(req(PROC_REF(bolted), because = MSG(thermoregulator/loose))),
 		says(PROC_REF(switch_message)), then(PROC_REF(switched)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 	op("set_target", tool(TOOL_MULTITOOL), label("Set target temperature"), wait(0),
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 // ---- the controls ----
 
 /obj/machinery/power/thermoregulator/proc/bolted(datum/act/A)
-	return anchored
+	return (anchored) ? null : MSG(thermoregulator/loose)
 
 /obj/machinery/power/thermoregulator/proc/switch_message(datum/act/A)
 	return on ? /datum/msg/thermoregulator/activated : /datum/msg/thermoregulator/deactivated

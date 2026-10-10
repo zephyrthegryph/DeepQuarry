@@ -71,12 +71,12 @@ CAPABILITIES(/obj/machinery/material_furnace)
 	ref_one(nameof(output_stock), /obj/item/stack/material/processed_alloy)
 	reagents(120)
 	owns_one(nameof(chamber_air), /datum/gas_mixture)
-	op("load_stock", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Load material"), needs(req_bool(PROC_REF(can_load_stock_holds), because = PROC_REF(can_load_stock_refusal))), then(PROC_REF(interaction_load_stock)))
+	op("load_stock", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Load material"), needs(req(PROC_REF(can_load_stock_holds))), then(PROC_REF(interaction_load_stock)))
 	op("load_carbon", item(/obj/item/ore/coal), priority(OP_PRIORITY_DEFAULT - 1), label("Add carbon"), then(PROC_REF(interaction_load_carbon)))
 	op("transfer_gas", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Transfer gas"), then(PROC_REF(interaction_transfer_gas)))
 	op("transfer_reagents", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Pour"), then(PROC_REF(interaction_transfer_reagents)))
-	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req_bool(PROC_REF(can_eject_contents_holds), because = PROC_REF(can_eject_contents_refusal))), begins(MSG(material_furnace/opening)), wait(1 SECOND), then(PROC_REF(eject_contents_done)))
-	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_use_furnace_holds), because = PROC_REF(can_use_furnace_refusal))), then(PROC_REF(interaction_use)))
+	op("eject_contents", menu(), label("Eject contents"), needs(req_adjacent(), req_capable(), req_is(nameof(firing), FALSE, because = MSG(material_furnace/firing)), req(PROC_REF(can_eject_contents_holds))), begins(MSG(material_furnace/opening)), wait(1 SECOND), then(PROC_REF(eject_contents_done)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_furnace_holds))), then(PROC_REF(interaction_use)))
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 
@@ -98,40 +98,21 @@ DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 	if(chamber_air)
 		. += span_notice("Chamber: [round(chamber_air.return_pressure(), 0.1)] kPa at [round(chamber_air.return_temperature(), 0.1)] K.")
 
-/// Requirement (was REQ_* can_load_stock): the legacy check answers TRUE to pass.
+/// Requirement: can_load_stock returns null to allow, or a refusal reason.
 /obj/machinery/material_furnace/proc/can_load_stock_holds(datum/act/op/A)
 	var/obj/item/stack/material/typed_held = A.held
-	var/answer = can_load_stock(A.actor, src, typed_held)
-	return !istext(answer) && !!answer
-
-/// Why can_load_stock_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/material_furnace/proc/can_load_stock_refusal(datum/act/op/A)
-	var/obj/item/stack/material/typed_held = A.held
-	var/answer = can_load_stock(A.actor, src, typed_held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_load_stock(A.actor, src, typed_held)
 
 MSG_DEF(material_furnace/opening, span_notice("You begin opening %T%."), span_notice("%U% begins opening %T%."))
 MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while firing")
 
-/// Requirement (was REQ_* can_eject_contents): the legacy check answers TRUE to pass.
+/// Requirement: can_eject_contents returns null to allow, or a refusal reason.
 /obj/machinery/material_furnace/proc/can_eject_contents_holds(datum/act/op/A)
-	var/answer = can_eject_contents(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return can_eject_contents(A.actor, src, A.held)
 
-/// Why can_eject_contents_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/material_furnace/proc/can_eject_contents_refusal(datum/act/op/A)
-	var/answer = can_eject_contents(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
-/// Requirement (was REQ_* can_use_furnace): the legacy check answers TRUE to pass.
+/// Requirement: can_use_furnace returns null to allow, or a refusal reason.
 /obj/machinery/material_furnace/proc/can_use_furnace_holds(datum/act/op/A)
-	var/answer = can_use_furnace(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_use_furnace_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/material_furnace/proc/can_use_furnace_refusal(datum/act/op/A)
-	var/answer = can_use_furnace(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return can_use_furnace(A.actor, src, A.held)
 
 /// Requirement: TRUE, or why this stack can't be loaded now.
 /obj/machinery/material_furnace/proc/can_load_stock(mob/user, atom/target, obj/item/stack/material/held)
@@ -139,7 +120,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return "the furnace must be idle and its output removed first"
 	if(istype(held) && held.uses_charge) // ALLOW(reads): a stack's synthesiser link is set when its module builds it and never changes after
 		return "[held] is drawn from a matter synthesiser and can't be charged into the furnace as physical stock"
-	return TRUE
+	return null
 
 /obj/machinery/material_furnace/proc/interaction_load_stock(datum/act/op/A)
 	var/mob/user = A.actor
@@ -188,14 +169,14 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 /// Requirement: TRUE when there is output to take or a charge that can be fired, else why not.
 /obj/machinery/material_furnace/proc/can_use_furnace(mob/user, atom/target, obj/item/held)
 	if(output_stock() && !firing)
-		return TRUE
+		return null
 	if(firing)
 		return "the furnace is still firing"
 	if(!LAZYLEN(feedstock))
 		return "the furnace is empty; load material sheets before firing it"
 	if(!operable())
 		return "the furnace has no power or requires repairs"
-	return TRUE
+	return null
 
 /obj/machinery/material_furnace/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
@@ -221,7 +202,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 /obj/machinery/material_furnace/proc/can_eject_contents(mob/user, atom/target, obj/item/held)
 	if(!output_stock() && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
 		return "the furnace is empty"
-	return TRUE
+	return null
 
 /obj/machinery/material_furnace/proc/eject_contents_done(datum/act/op/A)
 	var/mob/user = A.actor

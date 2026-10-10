@@ -15,19 +15,13 @@
 	. = ..()
 	. += owns(nameof(holdingitems), policy = OWN_SPILL, is_list = TRUE)
 
-/// Requirement (was REQ_* has_room): the legacy check answers TRUE to pass.
+/// Requirement: has_room returns null to allow, or a refusal reason.
 /obj/machinery/reagent_refinery/grinder/proc/has_room_holds(datum/act/op/A)
-	var/answer = has_room(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why has_room_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/reagent_refinery/grinder/proc/has_room_refusal(datum/act/op/A)
-	var/answer = has_room(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return has_room(A.actor, src, A.held)
 
 /// Requirement: the grinder holds at most `limit` items.
 /obj/machinery/reagent_refinery/grinder/proc/has_room(mob/user, atom/target, obj/item/held)
-	return length(holdingitems) >= limit ? "the machine cannot hold any more items" : TRUE
+	return length(holdingitems) >= limit ? "the machine cannot hold any more items" : null
 
 /obj/machinery/reagent_refinery/grinder/proc/interaction_insert(datum/act/op/A)
 	var/mob/user = A.actor
@@ -150,4 +144,4 @@
 CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
-	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_bool(PROC_REF(has_room_holds), because = PROC_REF(has_room_refusal))), then(PROC_REF(interaction_insert)))
+	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req(PROC_REF(has_room_holds))), then(PROC_REF(interaction_insert)))

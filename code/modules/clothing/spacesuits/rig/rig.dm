@@ -143,10 +143,10 @@ CAPABILITIES(/obj/item/rig)
 	op("rig_shock_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Rig shock hand"), then(PROC_REF(rig_shock_hand)))
 	op("rig_hardsuit_interface_verb", menu(), label("Open Hardsuit Interface"), needs(carried()), then(PROC_REF(rig_hardsuit_interface_verb)))
 	op("rig_toggle_vision_verb", menu(), label("Toggle Visor"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_toggle_vision_verb)))
-	op("rig_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_bool(PROC_REF(pred_has_helmet_holds), because = PROC_REF(pred_has_helmet_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_helmet_verb)))
-	op("rig_toggle_chest_verb", menu(), label("Toggle Chestpiece"), needs(carried(), req_bool(PROC_REF(pred_has_chest_holds), because = PROC_REF(pred_has_chest_refusal))), then(PROC_REF(rig_toggle_chest_verb)))
-	op("rig_toggle_gauntlets_verb", menu(), label("Toggle Gauntlets"), needs(carried(), req_bool(PROC_REF(pred_has_gauntlets_holds), because = PROC_REF(pred_has_gauntlets_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_gauntlets_verb)))
-	op("rig_toggle_boots_verb", menu(), label("Toggle Boots"), needs(carried(), req_bool(PROC_REF(pred_has_boots_holds), because = PROC_REF(pred_has_boots_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_boots_verb)))
+	op("rig_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req(PROC_REF(pred_has_helmet_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_helmet_verb)))
+	op("rig_toggle_chest_verb", menu(), label("Toggle Chestpiece"), needs(carried(), req(PROC_REF(pred_has_chest_holds))), then(PROC_REF(rig_toggle_chest_verb)))
+	op("rig_toggle_gauntlets_verb", menu(), label("Toggle Gauntlets"), needs(carried(), req(PROC_REF(pred_has_gauntlets_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_gauntlets_verb)))
+	op("rig_toggle_boots_verb", menu(), label("Toggle Boots"), needs(carried(), req(PROC_REF(pred_has_boots_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_boots_verb)))
 	op("rig_deploy_suit_verb", menu(), label("Deploy Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_deploy_suit_verb)))
 	op("rig_toggle_seals_verb", menu(), label("Toggle Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_seals_verb)))
 	op("rig_switch_vision_mode_verb", menu(), label("Switch Vision Mode"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_switch_vision_mode_verb)))
@@ -161,45 +161,21 @@ MSG_DEF_SELF(rig/visor, "The hardsuit does not have a configurable visor.")
 
 MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 
-/// Requirement (was REQ pred_has_helmet): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/rig/proc/pred_has_helmet_holds(datum/act/op/A)
-	var/answer = pred_has_helmet(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return helmet ? null : "it has no helmet"
 
-/// Why pred_has_helmet refuses: the legacy check text, else the clause reason.
-/obj/item/rig/proc/pred_has_helmet_refusal(datum/act/op/A)
-	var/answer = pred_has_helmet(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no helmet"
-
-/// Requirement (was REQ pred_has_chest): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/rig/proc/pred_has_chest_holds(datum/act/op/A)
-	var/answer = pred_has_chest(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return chest ? null : "it has no chestpiece"
 
-/// Why pred_has_chest refuses: the legacy check text, else the clause reason.
-/obj/item/rig/proc/pred_has_chest_refusal(datum/act/op/A)
-	var/answer = pred_has_chest(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no chestpiece"
-
-/// Requirement (was REQ pred_has_gauntlets): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/rig/proc/pred_has_gauntlets_holds(datum/act/op/A)
-	var/answer = pred_has_gauntlets(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return gloves ? null : "it has no gauntlets"
 
-/// Why pred_has_gauntlets refuses: the legacy check text, else the clause reason.
-/obj/item/rig/proc/pred_has_gauntlets_refusal(datum/act/op/A)
-	var/answer = pred_has_gauntlets(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no gauntlets"
-
-/// Requirement (was REQ pred_has_boots): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/rig/proc/pred_has_boots_holds(datum/act/op/A)
-	var/answer = pred_has_boots(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_has_boots refuses: the legacy check text, else the clause reason.
-/obj/item/rig/proc/pred_has_boots_refusal(datum/act/op/A)
-	var/answer = pred_has_boots(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no boots"
+	return boots ? null : "it has no boots"
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()

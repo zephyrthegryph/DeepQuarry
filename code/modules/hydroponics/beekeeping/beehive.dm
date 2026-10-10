@@ -64,35 +64,35 @@ CAPABILITIES(/obj/machinery/beehive)
 
 MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking the bees")
 
-/// Requirement (was REQ_* can_load_frame): the legacy check answers TRUE to pass.
+/// The requirement returns null or its original refusal.
 /obj/machinery/beehive/proc/can_load_frame_holds(datum/act/op/A)
-	var/obj/item/honey_frame/typed_held = A.held
-	var/answer = can_load_frame(A.actor, src, typed_held)
-	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
-
-
-/// Requirement (was REQ_* can_move_bees): the legacy check answers TRUE to pass.
-/obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
-	var/obj/item/bee_pack/typed_held = A.held
-	var/answer = can_move_bees(A.actor, src, typed_held)
-	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
-
-
-/obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
-	var/mob/user = A.actor
-	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
-	set_smoked(30)
-	return OP_OK
-
-/// Requirement: TRUE, or why this frame can't go in.
-/obj/machinery/beehive/proc/can_load_frame(mob/user, atom/target, obj/item/honey_frame/held)
+	var/obj/item/honey_frame/held = A.held
 	if(closed)
 		return "you need to open \the [src] with a crowbar before inserting \the [held]"
 	if(length(frames) >= maxFrames)
 		return "there is no place for an another frame"
 	if(held.honey)
 		return "\The [held] is full with beeswax and honey, empty it in the extractor first"
-	return TRUE
+	return null
+
+/// The requirement returns null or its original refusal.
+/obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
+	var/obj/item/bee_pack/held = A.held
+	if(held.full && bee_count)
+		return "\The [src] already has bees inside"
+	if(!held.full && bee_count < 90)
+		return "\The [src] is not ready to split"
+	if(!held.full && !smoked)
+		return "smoke \the [src] first"
+	if(closed)
+		return "you need to open \the [src] with a crowbar before moving the bees"
+	return null
+
+/obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
+	var/mob/user = A.actor
+	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
+	set_smoked(30)
+	return OP_OK
 
 /obj/machinery/beehive/proc/interaction_beehive_load_frame(datum/act/op/A)
 	var/mob/user = A.actor
@@ -102,18 +102,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	held.forceMove(src)
 	rel_add(src, nameof(frames), held)
 	return OP_OK
-
-/// Requirement: TRUE, or why the bees can't be moved in or split out.
-/obj/machinery/beehive/proc/can_move_bees(mob/user, atom/target, obj/item/bee_pack/held)
-	if(held.full && bee_count)
-		return "\The [src] already has bees inside"
-	if(!held.full && bee_count < 90)
-		return "\The [src] is not ready to split"
-	if(!held.full && !smoked)
-		return "smoke \the [src] first"
-	if(closed)
-		return "you need to open \the [src] with a crowbar before moving the bees"
-	return TRUE
 
 /obj/machinery/beehive/proc/interaction_beehive_bee_pack(datum/act/op/A)
 	var/mob/user = A.actor
@@ -273,36 +261,24 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 	if(panel_open == 1)
 		look.overlay("centrifuge_panel")
 
-/// Requirement (was REQ_* ready_for_item): the legacy check answers TRUE to pass.
+/// The requirement returns null or its original refusal.
 /obj/machinery/honey_extractor/proc/ready_for_item_holds(datum/act/op/A)
-	var/answer = ready_for_item(A.actor, src, A.held)
-	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
-
-
-/// Requirement (was REQ_* can_extract_frame): the legacy check answers TRUE to pass.
-/obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
-	var/obj/item/honey_frame/typed_held = A.held
-	var/answer = can_extract_frame(A.actor, src, typed_held)
-	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
-
-
-MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
-
-/// The old attackby's shared guard: not spinning, powered, panel closed.
-/obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
 	if(processing)
 		return "it's currently spinning, wait until it's finished"
 	if(power_lost())
 		return "it's powerless and can't grant your wishes"
 	if(panel_open)
 		return "its maintenance panel is open, it would not be safe to turn it on"
-	return TRUE
+	return null
 
-/// Requirement: the frame has honey to extract.
-/obj/machinery/honey_extractor/proc/can_extract_frame(mob/user, atom/target, obj/item/honey_frame/held)
+/// The requirement returns null or its original refusal.
+/obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
+	var/obj/item/honey_frame/held = A.held
 	if(!held.honey)
 		return "\The [held] is empty, put it into a beehive"
-	return TRUE
+	return null
+
+MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 /obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(datum/act/op/A)
 	var/mob/user = A.actor
@@ -407,7 +383,6 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	icon_state = "beepack"
 	var/full = 1
 TRACKED(/obj/item/bee_pack, full)
-
 
 /// The look (the draw sweep: from its layers).
 /obj/item/bee_pack/draw(datum/look/look)
