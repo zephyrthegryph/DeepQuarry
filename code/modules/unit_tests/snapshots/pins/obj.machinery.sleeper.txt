@@ -3,8 +3,10 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Move Inside (refused: It is not designed for that organism.)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Move Inside (refused: You can't do that right now.)
 ghost|none click: nothing
@@ -66,5 +68,5 @@ human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer click: Click: Replace parts
-keys: auto_eject_dead_off, auto_eject_dead_on, beaker_bay.beaker.eject, beaker_bay.beaker.insert, changestasis, chemical, controls, drag_buckle, ejectify, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, part_replacement.replace, robot_remote_blocked, togglefilter, togglepump, ui_open
+keys: auto_eject_dead_off, auto_eject_dead_on, beaker_bay.beaker.eject, beaker_bay.beaker.insert, changestasis, chemical, controls, drag_buckle, ejectify, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, part_replacement.replace, robot_remote_blocked, silicon_hand, togglefilter, togglepump, ui_open
 

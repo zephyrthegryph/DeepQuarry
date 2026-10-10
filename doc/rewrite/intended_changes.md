@@ -4343,3 +4343,7 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 
 * **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
 * **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.
+
+### Batch 42 merge of requirements-zero-1010-d (2026-10-10)
+
+The requirement pins Codex recorded before rf-silicon landed (`dq_requirement_protocol_pin`, `dq_requirement_third_pin`, `dq_requirement_fourth_pin`) and `dq_conversion_pin` are re-blessed only for master's silicon Use: the `robot|none`/`ai|none` `Use` rows and clicks and the `silicon_hand` key. The holder runtime rows' `params.dm` line moves 234 -> 237 (master's file, stale pin). The extinguisher cabinet's wrench row flips between `Use` and `Unwrench` with probe order (whether the cabinet still holds its extinguisher); it is left as recorded.
