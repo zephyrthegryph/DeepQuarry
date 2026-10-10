@@ -33,11 +33,11 @@ MSG_DEF_SELF(button/no_lock, "It has no lock to subvert.")
 
 CAPABILITIES(/obj/machinery/button/remote)
 	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE)
-	extend("emag.use", needs(req_bool(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
-	extend("emag.subvert", needs(req_bool(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
+	extend("emag.use", needs(req(PROC_REF(has_access_lock))))
+	extend("emag.subvert", needs(req(PROC_REF(has_access_lock))))
 	op("press_hand", hand(), label("Toggle"), wait(0),
 		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
-	op("press_item", item(/obj/item), label("Toggle"), when(req_bool(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0),
+	op("press_item", item(/obj/item), label("Toggle"), when(PROC_REF(item_presses)), priority(OP_PRIORITY_NORMAL + 1), wait(0),
 		needs(req_bool(PROC_REF(button_works), because = MSG(button/dead)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
 	op("press_silicon", ai(), wait(0),
 		needs(req_bool(PROC_REF(has_network), because = MSG(button/no_route)), req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
@@ -91,7 +91,7 @@ CAPABILITIES(/obj/machinery/button/remote)
 
 /// A lock (an access list) is there to scorch off.
 /obj/machinery/button/remote/proc/has_access_lock(datum/act/A)
-	return LAZYLEN(req_access) || LAZYLEN(req_one_access) // ALLOW(reads): the access lists are read when the sequencer is tried
+	return (LAZYLEN(req_access) || LAZYLEN(req_one_access)) ? null : MSG(button/no_lock) // ALLOW(reads): the access lists are read when the sequencer is tried
 
 /// The sequencer scorches the access lock off.
 /obj/machinery/button/remote/proc/lock_scorched(datum/act/op/A)

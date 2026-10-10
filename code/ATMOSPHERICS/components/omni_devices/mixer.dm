@@ -135,14 +135,14 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	pipe_device_window("OmniMixer")
 	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))
 	op("configure", ui_act("configure"), then(PROC_REF(ui_configure)))
-	op("set_flow_rate", ui_act("set_flow_rate"), needs(req_bool(PROC_REF(configurable), silent = TRUE)),
+	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable))),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "rate"),
 		then(PROC_REF(ui_set_flow_rate)))
-	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(16))), needs(req_bool(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_mode)))
-	op("switch_con", ui_act("switch_con", arg("dir")), needs(req_bool(PROC_REF(configurable), silent = TRUE), req_bool(PROC_REF(share_free), silent = TRUE)),
+	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(16))), needs(req(PROC_REF(configurable))), then(PROC_REF(ui_switch_mode)))
+	op("switch_con", ui_act("switch_con", arg("dir")), needs(req(PROC_REF(configurable)), req(PROC_REF(share_free))),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(share_question)), "title" = "Concentration control", "default" = computed(PROC_REF(share_default)), "max_value" = computed(PROC_REF(share_most)), "timeout" = 0), step = "share"),
 		then(PROC_REF(ui_switch_con)))
-	op("switch_conlock", ui_act("switch_conlock", arg("dir")), needs(req_bool(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_conlock)))
+	op("switch_conlock", ui_act("switch_conlock", arg("dir")), needs(req(PROC_REF(configurable))), then(PROC_REF(ui_switch_conlock)))
 
 /// The window's data.
 /obj/machinery/atmospherics/omni/mixer/ui_data(datum/act/eval/A)
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 
 /// The ports, the rate and the shares are changed only while configuring with the mixer off (silent, as the old early returns were).
 /obj/machinery/atmospherics/omni/mixer/proc/configurable(datum/act/op/A)
-	return configuring && !use_power
+	return (configuring && !use_power) ? null : /datum/msg/req_silent
 
 /obj/machinery/atmospherics/omni/mixer/proc/ui_power_switched(datum/act/op/A)
 	if(!configuring)
@@ -210,8 +210,8 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	var/port = dir_flag(A.args["dir"])
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir != port && !P.con_lock) // ALLOW(reads): the ports are asked when the button is pressed, never from a cached menu or look
-			return TRUE
-	return FALSE
+			return null
+	return /datum/msg/req_silent
 
 /obj/machinery/atmospherics/omni/mixer/proc/share_most(datum/act/op/A)
 	return round(share_left(dir_flag(A.args["dir"])) * 100, 0.5)

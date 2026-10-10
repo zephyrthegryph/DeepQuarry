@@ -13,7 +13,7 @@
 
 /// Requirement for the DNA lock Menu entries: replaces the verbs gun.dm added and removed with the lock.
 /obj/item/gun/proc/pred_has_dna_lock_holds(datum/act/op/A)
-	return dna_lock && attached_lock
+	return (dna_lock && attached_lock) ? null : MSG(gun/no_dna_lock)
 
 /obj/item/gun/proc/get_dna(mob/user)
 	var/mob/living/M = user

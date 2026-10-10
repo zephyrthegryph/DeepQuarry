@@ -3858,14 +3858,14 @@ TRACKED(/obj/item/pizzabox, boxtag)
 CAPABILITIES(/obj/item/pizzabox)
 	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
 	ref_many(nameof(boxes), /obj/item/pizzabox)
-	op("toggle", in_hand(), label("Open or close it"), needs(req_bool(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
-	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
-	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
+	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked))), then(PROC_REF(toggled)))
+	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
+	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
 	op("stack", item(/obj/item/pizzabox), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(held_is_another))), label("Put it on top"),
-		needs(req_bool(PROC_REF(both_shut), because = MSG(pizzabox/close_first)), req_bool(PROC_REF(stack_has_room), because = MSG(pizzabox/too_high))), then(PROC_REF(box_stacked)))
+		needs(req(PROC_REF(both_shut)), req(PROC_REF(stack_has_room))), then(PROC_REF(box_stacked)))
 	op("put_pizza", item(/obj/item/reagent_containers/food/snacks/sliceable/pizza), priority(OP_PRIORITY_PART),
 		needs(req_bool(PROC_REF(is_open), because = MSG(pizzabox/lid_shut))), then(PROC_REF(pizza_put_in)))
-	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(is_shut))), label("Write on the tag"),
+	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
 
 MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
@@ -3910,7 +3910,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
-	return length(boxes) == 0
+	return (length(boxes) == 0) ? null : MSG(pizzabox/stacked)
 
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	set_open(!open)
@@ -3919,13 +3919,13 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	return OP_OK
 
 /obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
-	return open && !isnull(pizza) && isnull(A.held)
+	return (open && !isnull(pizza) && isnull(A.held)) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/is_open(datum/act/op/A)
 	return !!open
 
 /obj/item/pizzabox/proc/is_shut(datum/act/op/A)
-	return !open
+	return (!open) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/pizza_taken(datum/act/op/A)
 	var/mob/user = A.actor
@@ -3937,7 +3937,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 /// A stack of boxes, with the one it is in held in the other hand.
 /obj/item/pizzabox/proc/stack_in_off_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	return length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src
+	return (length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/box_taken(datum/act/op/A)
 	var/mob/user = A.actor
@@ -3953,12 +3953,12 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 /obj/item/pizzabox/proc/both_shut(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return !box.open && !open
+	return (!box.open && !open) ? null : MSG(pizzabox/close_first)
 
 /// The boxes to add, with the ones already in the pile, are no more than five.
 /obj/item/pizzabox/proc/stack_has_room(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return (length(boxes) + 1) + (1 + length(box.boxes)) <= 5
+	return ((length(boxes) + 1) + (1 + length(box.boxes)) <= 5) ? null : MSG(pizzabox/too_high)
 
 /obj/item/pizzabox/proc/box_stacked(datum/act/op/A)
 	var/mob/user = A.actor

@@ -472,7 +472,7 @@ TRACKED(/obj/item/melee/robotic/baton, status)
 CAPABILITIES(/obj/item/melee/robotic/baton)
 	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
 	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
-	op("item_pass", item(/obj/item), when(req_bool(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())
+	op("item_pass", item(/obj/item), when(req(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())
 
 /obj/item/melee/robotic/baton/proc/baton_pickup_blocked(datum/act/op/A)
 	return OP_OK
@@ -485,7 +485,7 @@ CAPABILITIES(/obj/item/melee/robotic/baton)
 	return OP_OK
 
 /obj/item/melee/robotic/baton/proc/baton_used_by_other_item(datum/act/op/A)
-	return A.held != A.target
+	return (A.held != A.target) ? null : /datum/msg/req_failed
 
 /obj/item/melee/robotic/baton/proc/baton_item_passed(datum/act/op/A)
 	return OP_OK

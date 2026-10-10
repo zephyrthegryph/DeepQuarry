@@ -40,7 +40,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 /// Requirement (was REQ_* no_id_inserted): the legacy check answers TRUE to pass.
 /obj/machinery/photocopier/faxmachine/proc/no_id_inserted_holds(datum/act/op/A)
 	var/answer = no_id_inserted(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
 
 MSG_DEF_SELF(faxmachine/no_scan, "there is no ID card to remove")
 
@@ -70,7 +70,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 
 /// The staff request is open: the global relays are not recalibrating after the last request.
 /obj/machinery/photocopier/faxmachine/proc/role_request_ready(datum/act/op/A)
-	return !GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES
+	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
 
 /// The jobs a fax may request (the talon's offmap crew on its own fax).
 /obj/machinery/photocopier/faxmachine/proc/requestable_jobs(datum/act/A)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	// the staff request form: the window's button and the menu's verb, four questions, then the ping
 	op("send_automated_staff_request", inputs(ui_act("send_automated_staff_request"), menu()), label("Staff Request Form"),
-		needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req_bool(PROC_REF(role_request_ready), because = MSG(fax/relays_recalibrating))),
+		needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req(PROC_REF(role_request_ready))),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Are you sure you want to send automated crew request?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel"), "buttons" = TRUE), step = "confirm"),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick the job to request.", "title" = "Job Request", "choices" = computed(PROC_REF(requestable_jobs)), "buttons" = FALSE), step = "role", when = PROC_REF(request_confirmed)),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick request reason.", "title" = "Request reason", "choices" = computed(PROC_REF(request_reasons)), "buttons" = FALSE), step = "reason", when = PROC_REF(request_role_picked)),
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"), needs(req_bool(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/text/fax_department_id, fields = list("default" = nameof(department))),
 		then(PROC_REF(fax_department_id_answered)))
-	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_bool(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))
+	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))
 	op("faxmachine_insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 1), label("Insert toner"), then(PROC_REF(interaction_insert_toner_impl)))
 	op("faxmachine_open_ui_silicon", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon)), label("Use"), then(PROC_REF(silicon_open_ui)))
 	op("faxmachine_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_open_ui_impl)))

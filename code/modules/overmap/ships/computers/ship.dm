@@ -86,7 +86,7 @@ TRACKED(/obj/machinery/computer/ship, ai_control)
 
 /// Requirement (old attack_hand): ID access.
 /obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)
-	return !!allowed(A.actor)
+	return (!!allowed(A.actor)) ? null : MSG(ship/access_denied)
 
 /// Old attack_hand: opens the interface if it isn't already.
 /obj/machinery/computer/ship/proc/interaction_use(datum/act/op/A)

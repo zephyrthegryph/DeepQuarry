@@ -173,17 +173,17 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 	section(touch, "What a hand or a held thing does to the door")
 	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),
-		needs(req_bool(PROC_REF(pry_free), because = PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
+		needs(req(PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
 	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
 		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
-	op("tear", hand(), label("Tear"), when(req_bool(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
+	op("tear", hand(), label("Tear"), when(PROC_REF(claws_tear)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
 		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held)))
 	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
 	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin)))
-	op("pry_weapon", item(/obj/item), when(req_bool(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
+	op("pry_weapon", item(/obj/item), when(PROC_REF(prying_weapon)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
 	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done)))
 	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
@@ -662,8 +662,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return OP_OK
 
 /// A crowbar's force on a door that has lost its power and its bolts.
-/obj/machinery/door/airlock/proc/pry_free(datum/act/A)
-	return isnull(pry_blocked(A))
 
 /// Why a crowbar cannot force the door now (a message), or null.
 /obj/machinery/door/airlock/proc/pry_blocked(datum/act/A)

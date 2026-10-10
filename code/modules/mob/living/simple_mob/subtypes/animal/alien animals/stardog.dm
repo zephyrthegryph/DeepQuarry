@@ -63,7 +63,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	op("eat_weather", ai(), needs(req_capable()), takes("event", "nut", "aff", "monster", "ore", "tre", "msg", "heal", "delet"), wait(20 SECONDS), then(PROC_REF(eat_space_weather_stardog_done)))
 	op("transition_up", ai(), needs(req_capable()), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_stardog_done)))
 	op("transition_down", ai(), needs(req_capable()), takes("destination"), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_down_done)))
-	op("fur_pick", hand(), ungated(), label("Use"), when(req_bool(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
+	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
 /// The one picked is told a hand is coming, as the wait starts.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_reaches(datum/act/op/A)
@@ -92,7 +92,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 /// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return read_once(istype(user) && user.pickup_pref && user.pickup_active && length(fur_pick_targets())) // preferences and who stands in the fur are asked when the click is made
+	return (read_once(istype(user) && user.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
 
 /// The players standing in the fur who may be picked up.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
@@ -424,16 +424,16 @@ CAPABILITIES(/turf/simulated/floor/outdoors/fur)
 	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
 	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
 	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
-	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(emoter_is_living), silent = TRUE), req_bool(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
+	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req(PROC_REF(emoter_is_living), silent = TRUE), req(PROC_REF(emoter_not_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
 
 MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 
 /// Old Emote Beyond verb: Emote to those beyond the fur!
 /turf/simulated/floor/outdoors/fur/proc/emoter_is_living(datum/act/op/A)
-	return isliving(A.actor)
+	return (isliving(A.actor)) ? null : /datum/msg/req_failed
 
 /turf/simulated/floor/outdoors/fur/proc/emoter_not_muted(datum/act/op/A)
-	return dq_actor_not_ic_muted(A.actor)
+	return (dq_actor_not_ic_muted(A.actor)) ? null : MSG(fur/ic_muted)
 
 /// An item used on the fur does nothing to it: the click goes on (the old interaction_pass).
 /turf/simulated/floor/outdoors/fur/proc/fur_item_passes(datum/act/op/A)
@@ -948,13 +948,13 @@ MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 
 /obj/machinery/computer/ship/navigation/proc/ship_emote_in_view(datum/act/op/A)
 	// The host's current seven-tile view has no published visibility dependency; sample the real view at admission and resumption.
-	return A.actor && read_once(get_dist(A.actor, src)) <= 7 && (src in read_once(view(7, A.actor)))
+	return (A.actor && read_once(get_dist(A.actor, src)) <= 7 && (src in read_once(view(7, A.actor)))) ? null : MSG(ship_emote/too_far)
 
 /obj/machinery/computer/ship/navigation/proc/ship_emoter_capable(datum/act/op/A)
-	return dq_actor_can_act(A.actor, src, A.held)
+	return (dq_actor_can_act(A.actor, src, A.held)) ? null : MSG(ship_emote/incapable)
 
 /obj/machinery/computer/ship/navigation/proc/ship_emoter_not_muted(datum/act/op/A)
-	return dq_actor_not_ic_muted(A.actor)
+	return (dq_actor_not_ic_muted(A.actor)) ? null : MSG(fur/ic_muted)
 
 /// The old verb's `set src in oview(7)`.
 /proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)

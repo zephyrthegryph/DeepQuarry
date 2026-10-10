@@ -421,7 +421,7 @@ CAPABILITIES(/obj/item/roulette_ball/hollow)
 
 CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
-	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(not_spinning), because = MSG(casino/wheel_spinning))), then(PROC_REF(interaction_use)))
+	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning))), then(PROC_REF(interaction_use)))
 	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req_bool(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req_bool(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
 	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req_bool(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
 	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_setinterval_verb)))
@@ -431,7 +431,7 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 /// Requirement: the wheel isn't mid-spin.
 /obj/machinery/wheel_of_fortune/proc/not_spinning(datum/act/op/A)
-	return !work_busy(src)
+	return (!work_busy(src)) ? null : MSG(casino/wheel_spinning)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_use(datum/act/op/A)
 	wheel_use_stage(A.actor, A.held, list())
@@ -626,9 +626,9 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
 	ref_one(nameof(selected_collar), /obj/item/clothing/accessory/collar/casinosentientprize)
 	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
-	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req_bool(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
-	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req_bool(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated))), then(PROC_REF(interaction_collar)))
-	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req_bool(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated)), req_bool(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
+	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
+	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), then(PROC_REF(interaction_collar)))
+	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage))), then(PROC_REF(interaction_id)))
 
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
@@ -723,7 +723,7 @@ MSG_DEF_SELF(casino/select_prize_first, "select a prize first")
 MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 
 /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(datum/act/op/A)
-	return !A.actor.incapacitated()
+	return (!A.actor.incapacitated()) ? null : MSG(casino/incapacitated)
 
 /obj/machinery/casinosentientprize_handler/proc/interaction_cash(datum/act/op/A)
 	var/mob/user = A.actor
@@ -773,7 +773,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/casinosentientprize_handler/proc/can_manage(datum/act/op/A)
-	return !!check_access(A.held)
+	return (!!check_access(A.held)) ? null : MSG(casino/access_denied)
 
 /obj/machinery/casinosentientprize_handler/proc/interaction_id(datum/act/op/A)
 	spasm_id(A.actor, A.held)

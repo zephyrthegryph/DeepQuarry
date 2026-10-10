@@ -796,7 +796,9 @@
 	sb_empty_hands(H)
 	H.put_in_inactive_hand(busy)
 	H.next_click = 0
-	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
+	var/datum/op_result/refused = test_click(H, B)
+	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "the real lift operation refuses an occupied second hand")
+	TEST_ASSERT_EQUAL(refused?.reason, MSG(two_hands/other_hand), "lifting retains the established other-hand refusal")
 	sb_settle()
 	TEST_ASSERT(!sb_in_hands(H, B), "with the other hand full the basket is not lifted")
 	sb_empty_hands(H)

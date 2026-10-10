@@ -69,7 +69,7 @@ TRACKED(/obj/item/sniper_rifle_part, part_count)
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
 CAPABILITIES(/obj/item/sniper_rifle_part)
-	op("use", in_hand(), needs(req_bool(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
+	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
 	op("add_part", item(/obj/item/sniper_rifle_part), begins(PROC_REF(adding_text)), wait(3 SECONDS), then(PROC_REF(part_added)))
 
 MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%."))
@@ -80,7 +80,7 @@ MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%
 
 /// Requirement: the part is more than one piece.
 /obj/item/sniper_rifle_part/proc/can_disassemble_holds(datum/act/op/A)
-	return part_count != 1
+	return (part_count != 1) ? null : MSG(sniper_part/last_part)
 
 /obj/item/sniper_rifle_part/proc/disassembled(datum/act/op/A)
 	var/mob/user = A.actor

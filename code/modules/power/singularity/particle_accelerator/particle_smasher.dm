@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
 		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
 	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
-	op("store", item(/obj/item), label("Store"), when(req_bool(PROC_REF(can_store_item))), then(PROC_REF(interaction_store)))
+	op("store", item(/obj/item), label("Store"), when(PROC_REF(can_store_item)), then(PROC_REF(interaction_store)))
 	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
 	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
 

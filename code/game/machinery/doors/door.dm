@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/door)
 	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first))), then(PROC_REF(door_emag))), repeatable = TRUE)
 	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), when(nameof(density)), when(cond_not(req(/obj/item/card))), when(cond_not(req(/obj/item/stack/material/plasteel))), then(PROC_REF(strike_with)))
 	op("reinforce", item(/obj/item/stack/material/plasteel), priority(OP_PRIORITY_PART), then(PROC_REF(add_plasteel)),
-		needs(req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), req_bool(PROC_REF(not_damaged), because = MSG(door/repair_first)), req_is(nameof(density), because = MSG(door/close_first))))
+		needs(req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), req(PROC_REF(not_damaged)), req_is(nameof(density), because = MSG(door/close_first))))
 	op("weld_plasteel", tool(TOOL_WELDER), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(1 SECOND), costs(RES_FUEL, 0),
 		needs(req_is(nameof(density), because = MSG(door/close_first)), req_at_least(nameof(reinforcing), 2, because = MSG(door/need_more_plasteel))),
 		then(PROC_REF(plasteel_welded)), says(MSG(door/reinforced)))
@@ -332,7 +332,7 @@ CAPABILITIES(/obj/machinery/door)
 
 /// A door that has taken no damage (reinforcing it is allowed).
 /obj/machinery/door/proc/not_damaged(datum/act/A)
-	return !broken_now() && get_integrity() >= max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+	return (!broken_now() && get_integrity() >= max_integrity) ? null : MSG(door/repair_first) // ALLOW(reads): a door's max_integrity is its type's constant
 
 /// Fits sheets of plasteel on the door (up to two in all, over as many visits as it takes).
 /obj/machinery/door/proc/add_plasteel(datum/act/op/A)

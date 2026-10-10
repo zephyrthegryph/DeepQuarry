@@ -19,11 +19,11 @@
 
 /// The table is standing and of a kind that can be flipped.
 /obj/structure/table/proc/is_flippable(datum/act/A)
-	return can_flip_verb && flipped == 0
+	return (can_flip_verb && flipped == 0) ? null : /datum/msg/req_failed
 
 /// The table is lying on its side and of a kind that can be put back.
 /obj/structure/table/proc/is_flipped_up(datum/act/A)
-	return can_flip_verb && flipped == 1
+	return (can_flip_verb && flipped == 1) ? null : /datum/msg/req_failed
 
 /// The actor has their hands and legs free and can touch the table (the old can_touch(), which also scolded: here it only answers).
 /obj/structure/table/proc/actor_can_touch(datum/act/op/A)
@@ -38,12 +38,12 @@
 
 /// Flipping asks the same (a mob nobody wants flipping tables, an ambient pest, is turned away by the effect).
 /obj/structure/table/proc/actor_can_flip(datum/act/op/A)
-	return actor_can_touch(A)
+	return (actor_can_touch(A)) ? null : MSG(table/hands_busy)
 
 /// Flip's own precondition: a straight run of unflipped tables, toward the user's side.
 /obj/structure/table/proc/can_flip_away(datum/act/op/A)
 	var/direction = get_cardinal_dir(A.actor, src)
-	return straight_table_check(turn(direction, 90)) && straight_table_check(turn(direction, -90))
+	return (straight_table_check(turn(direction, 90)) && straight_table_check(turn(direction, -90))) ? null : MSG(table/wont_budge)
 
 /// Put back's precondition: nothing is in the way of the flipped table (and the flipped tables in line with it) standing up.
 /obj/structure/table/proc/can_put_back(datum/act/op/A)

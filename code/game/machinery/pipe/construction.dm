@@ -152,7 +152,7 @@ MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 CAPABILITIES(/obj/item/pipe)
 	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
 	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req_bool(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
-	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req_bool(PROC_REF(unlined), because = MSG(pipe_item/lined))), then(PROC_REF(lined)))
+	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req(PROC_REF(unlined))), then(PROC_REF(lined)))
 	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0),
 		needs(req_bool(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req_bool(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
 		says(MSG(pipe_item/fastened)), then(PROC_REF(fastened)))
@@ -175,7 +175,7 @@ CAPABILITIES(/obj/item/pipe)
 	return OP_OK
 
 /obj/item/pipe/proc/unlined(datum/act/A)
-	return !material_engineered_id(src)
+	return (!material_engineered_id(src)) ? null : MSG(pipe_item/lined)
 
 /// The sheet (the op's cost) becomes the fitting's liner and shell.
 /obj/item/pipe/proc/lined(datum/act/op/A)
