@@ -132,9 +132,12 @@ pub fn contribute(
     // Procedure IDs are observable through typesof(/type/proc), independently
     // of the class's method footer. Carry the issued encounter roster into
     // the existing linker; its finalizer appends generated executable domains.
+    // Membership is prepended (reverse allocation); numeric IDs use the
+    // opposite order so typesof observes the authored declaration order.
     let procedure_order = plan
         .procedure_membership
         .iter()
+        .rev()
         .copied()
         .filter(|key| !retained.contains(key))
         .collect::<Vec<_>>();
