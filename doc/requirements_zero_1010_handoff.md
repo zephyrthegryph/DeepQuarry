@@ -28,11 +28,25 @@ the boot gate was clean and the test compile reported zero errors. Six new
 old-code pins were recorded and committed separately (`211cbe14ab`): laundry
 basket, omni filter, omni mixer, shutoff valve, airlock and battery rack.
 Existing recorded pins cover the remaining converted content and shared
-capability consumers. No existing pin was re-blessed.
+capability consumers. The oxygen-pump timed pin was refreshed only for master's
+native-only silicon menu exposure. Its four-row cause is documented in
+intended_changes.md; click choices did not change.
 
 The real laundry-basket lift test now asserts the occupied-second-hand refusal;
 the natural-weapon test checks the self-attack refusal after its cooldown ends.
-The post-edit lane-ready results will be recorded here after verification.
+Lane-ready merged origin/master at `59dbe6b9a0`. Production compilation passed
+with zero errors (39 existing DreamMaker warnings), DreamChecker found zero
+diagnostics, and all ratchets passed. The combined focused batch passed 45 of
+46 test types; its sole failure was the master-origin oxygen-pump pin drift.
+After documenting and refreshing those four rows, the failure-only rerun passed
+1/1 with a clean boot and reused the existing compiled test world.
+
+Per explicit user instruction, this handoff is **unstamped**: lane-ready cannot
+combine the first run and failure-only repair result. No passing tests were
+repeated merely to obtain a stamp. Evidence: initial result
+`data/test-runs/20261010T190415_b781dfe80a_focused.json`, repair result
+`data/test-runs/20261010T190823_050b47f0db.json`, and gates
+`data/merge-gates/b781dfe80ace.{dm,ratchets,tests}.log`.
 
 ## Semantic review and remaining work
 
