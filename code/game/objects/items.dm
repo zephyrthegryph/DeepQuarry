@@ -380,12 +380,16 @@ TRACKED(/obj/item, gurgled_color)
 	// EDIT END.
 	return
 
-/obj/item/proc/item_in_robot_module(datum/act/A)
-	return read_once(istype(loc, /obj/item/robot_module))
+MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
-/// Old /obj/item/attack_ai: a cyborg clicking an item of its module equips it. Offered only on a module's items (declared with every item's
-/// defaults, robot/component.dm), so it never competes with an item's own.
+/obj/item/proc/item_in_robot_module(datum/act/A)
+	return read_once(istype(loc, /obj/item/robot_module)) ? null : MSG(item/module_unavailable)
+
+/// Preserve the silicon module menu: items outside a module retain a disabled Equip row.
+/// A module item equips for a robot; other silicons retain their successful no-op.
 /obj/item/proc/item_silicon_equip_module(datum/act/op/A)
+	if(!isrobot(A.actor))
+		return OP_OK
 	var/mob/living/silicon/robot/R = A.actor
 	R.activate_module(src)
 	R.hud_used.update_robot_modules_display()
