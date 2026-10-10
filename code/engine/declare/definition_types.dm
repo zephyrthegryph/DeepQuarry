@@ -316,7 +316,6 @@
 	var/idx = 0
 	var/order = 0
 	var/over_rel_id = 0
-	var/over_slot
 	var/datum/requirement_definition/compiled_expr
 	/// list of list(list(relation ids path), mask)
 	var/list/compiled_related

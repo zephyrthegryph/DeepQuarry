@@ -2,7 +2,7 @@
 // doc/rewrite/systems.md section 1).
 //
 // Declarations live in the type's /datum/lifecycle_decls table (DECLARE_APPEARANCE layers,
-// APPEARANCE_TEMPLATE, APPEARANCE_LEVEL, APPEARANCE_EMISSIVE, APPEARANCE_SLOT, APPEARANCE_WATCH).
+// APPEARANCE_TEMPLATE, APPEARANCE_LEVEL, APPEARANCE_EMISSIVE, APPEARANCE_WATCH).
 // finish_appearance() validates them against the first instance, resolves which names are procs and
 // computes the type's appearance watch mask from the channels of the declared fields they read.
 //
@@ -24,8 +24,6 @@
 	var/list/appearance_levels
 	/// APPEARANCE_EMISSIVE: field name -> rows ("value" -> icon_state).
 	var/list/appearance_emissives
-	/// APPEARANCE_SLOT: slot id -> icon_state.
-	var/list/appearance_slots
 	/// APPEARANCE_WATCH: names of the declared fields a procedural update_icon() reads.
 	var/list/appearance_watch
 	/// DECLARE_APPEARANCE_PROC: the provider proc, and the fields/channels it reads.
@@ -33,7 +31,7 @@
 	var/list/appearance_proc_fields
 	/// Names read by call() (procs) rather than from vars; name -> TRUE.
 	var/list/appearance_procs
-	/// Channels whose raise refreshes the appearance (fields read, CHANGE_CONTENTS for slots).
+	/// Channels whose raise refreshes the appearance (the fields it reads).
 	var/appearance_mask = 0
 	/// TRUE when a declaration draws something (anything but APPEARANCE_WATCH).
 	var/appearance_draws = FALSE
@@ -50,9 +48,6 @@
 /datum/lifecycle_decls/proc/add_appearance_emissive(field, list/rows)
 	LAZYSET(appearance_emissives, field, rows)
 
-/datum/lifecycle_decls/proc/add_appearance_slot(slot_id, state)
-	LAZYSET(appearance_slots, slot_id, state)
-
 /datum/lifecycle_decls/proc/add_appearance_watch(list/fields)
 	for(var/name in fields)
 		LAZYOR(appearance_watch, name)
@@ -68,7 +63,6 @@
 	appearance_template = null
 	appearance_levels = null
 	appearance_emissives = null
-	appearance_slots = null
 
 /datum/lifecycle_decls/proc/drop_appearance()
 	clear_appearance()
@@ -152,7 +146,7 @@
 /// computes appearance_mask.
 /datum/lifecycle_decls/proc/finish_appearance(datum/D)
 	if(!isatom(D))
-		if(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_slots || appearance_watch)
+		if(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_watch)
 			stack_trace("appearance declarations on [owner_type]: only atoms have an appearance; dropped")
 		drop_appearance()
 		return
@@ -189,7 +183,7 @@
 			appearance_emissives -= field
 	if(!length(appearance_emissives))
 		appearance_emissives = null
-	appearance_draws = !!(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_slots)
+	appearance_draws = !!(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives)
 	var/list/fields = definition_registry().fields_of(owner_type)
 	appearance_mask = 0
 	for(var/entry in appearance_proc_fields)
@@ -209,8 +203,6 @@
 		appearance_mask |= fields[name]
 	if(!length(appearance_watch))
 		appearance_watch = null
-	if(appearance_slots)
-		appearance_mask |= CHANGE_CONTENTS
 
 // ---- drawing ----
 
@@ -278,8 +270,6 @@
 		var/list/rows = appearance_emissives[field]
 		key += "[rows["[appearance_value(A, field)]"] || rows[APPEARANCE_ANY]]|"
 	key += "\n"
-	for(var/slot_id in appearance_slots)
-		key += "[A.slot_item_real(slot_id) ? appearance_slots[slot_id] : ""]|"
 	return key
 
 /// The built appearance for a combined key, shared by every instance: list(icon_state, color,

@@ -284,10 +284,6 @@ READS_AS(/obj/machinery/proc/operable, MACHINE_KEY_STAT)
 	of = /obj/machinery
 	field = "anchored"
 	channel = CHANGE_MACHINE_ANCHORED
-/datum/scheduler_field_definition/mob/anchored
-	of = /mob
-	field = "anchored"
-	channel = CHANGE_MOB_CAN_MOVE
 
 /// Density: set_density() (_atom.dm) is the setter; a machine hears CHANGE_MACHINE_SETTINGS.
 /datum/scheduler_field_definition/atom/density

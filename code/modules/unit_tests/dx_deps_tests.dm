@@ -16,7 +16,7 @@
 	var/should_run_calls = 0
 	var/draw_calls = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_ITEM_CHARGE)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_DATUM_A)
 TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_DATUM_A)
 TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_DATUM_A)
 

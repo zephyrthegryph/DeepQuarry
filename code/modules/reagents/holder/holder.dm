@@ -76,7 +76,6 @@ TRACKED(/datum/reagents, master_id)
 	return the_id
 
 /datum/reagents/proc/update_total() // Updates volume.
-	var/old_total = total_volume
 	var/total = 0
 	for(var/datum/reagent/R in reagent_list)
 		if(R.volume < MINIMUM_CHEMICAL_VOLUME)
@@ -92,10 +91,6 @@ TRACKED(/datum/reagents, master_id)
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
-	// Contents are state the holder's derived procs read (a fill gauge): a dispatched change
-	// (dx_conventions.md §1). Mobs metabolise every tick and draw nothing from it, so only objects.
-	if(my_atom && total_volume != old_total && !ismob(my_atom))
-		changed(my_atom, CHANGE_CONTENTS)
 	return
 
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.

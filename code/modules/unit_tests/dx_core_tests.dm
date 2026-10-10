@@ -199,11 +199,11 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 		if(D == F)
 			queued++
 	TEST_ASSERT_EQUAL(queued, 1, "queued once per frame")
-	changed(F, CHANGE_CONTENTS)
+	changed(F, CHANGE_DATUM_B)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.state_changes - before, 1, "on_state_changed ran once for the frame")
 	TEST_ASSERT(F.last_bits & CHANGE_DATUM_A, "on_state_changed got the TRACKED channel")
-	TEST_ASSERT(F.last_bits & CHANGE_CONTENTS, "on_state_changed got the explicit channel")
+	TEST_ASSERT(F.last_bits & CHANGE_DATUM_B, "on_state_changed got the explicit channel")
 	TEST_ASSERT_EQUAL(F.refresh_bits, 0, "bits are cleared after the refresh")
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "draw ran")
 

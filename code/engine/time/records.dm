@@ -581,8 +581,6 @@
 /// gets the relation's declared view fields, `changes` channels and
 /// contributes/grants for free, on top of the ledger's own bookkeeping.
 /proc/entity_slot_entered(atom/holder, atom/movable/thing, datum/relation_definition/slot/def)
-	if(holder.om_listen & CHANGE_CONTENTS)
-		entity_dispatch_change(holder, CHANGE_CONTENTS)
 	if(def)
 		relation_link(thing, holder, def.type)
 
@@ -590,5 +588,3 @@
 /proc/entity_slot_left(atom/holder, atom/movable/thing, datum/relation_definition/slot/def)
 	if(def && thing.om_rec)
 		relation_unlink(thing, holder, def.type)
-	if(holder.om_listen & CHANGE_CONTENTS)
-		entity_dispatch_change(holder, CHANGE_CONTENTS)
