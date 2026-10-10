@@ -47,15 +47,26 @@ def semantic_arguments(scenario, template):
     return [*result, "--engine-template", str(template)]
 
 
+def resolved_path(value):
+    """Compare Windows extended and ordinary names for the same resolved path."""
+    resolved = str(Path(value).resolve())
+    if os.name == "nt":
+        if resolved.startswith("\\\\?\\UNC\\"):
+            resolved = "\\\\" + resolved[8:]
+        elif resolved.startswith("\\\\?\\") and re.match(r"[A-Za-z]:\\", resolved[4:]):
+            resolved = resolved[4:]
+    return Path(resolved)
+
+
 def admit_pair(result, acquired, project, store, slots, regular, sha):
     if result.get("schema_version") != 1 or result.get("kind") != "native_pair":
         raise ValueError("unsupported compile result")
     if acquired.get("schema_version") != 1 or acquired.get("kind") != "acquired_pair":
         raise ValueError("unsupported acquisition result")
-    if Path(result["output_project"]).resolve() != project.resolve():
+    if resolved_path(result["output_project"]) != resolved_path(project):
         raise ValueError("compile result names another project")
     for value in (result, acquired):
-        if Path(value["store"]).resolve() != store.resolve():
+        if resolved_path(value["store"]) != resolved_path(store):
             raise ValueError("result names another output store")
         for field in ("pair_id", "dmb_hash", "rsc_hash"):
             if not isinstance(value.get(field), str) or not re.fullmatch("[0-9a-f]{32}", value[field]):
@@ -66,8 +77,8 @@ def admit_pair(result, acquired, project, store, slots, regular, sha):
     for field in ("pair_id", "dmb_hash", "rsc_hash", "dmb_bytes", "rsc_bytes"):
         if acquired[field] != result[field]:
             raise ValueError("acquisition differs from published generation")
-    slot = Path(acquired["slot"]).resolve()
-    if slot.parent != slots.resolve():
+    slot = resolved_path(acquired["slot"])
+    if slot.parent != resolved_path(slots):
         raise ValueError("acquisition escaped owned slots")
     marker = slot / "slot-complete"
     regular(marker)
@@ -75,7 +86,7 @@ def admit_pair(result, acquired, project, store, slots, regular, sha):
         raise ValueError("acquired slot incomplete")
     outputs = {}
     for extension in ("dmb", "rsc"):
-        actual = Path(acquired[extension]).resolve()
+        actual = resolved_path(acquired[extension])
         if actual != slot / ("deepquarry." + extension):
             raise ValueError("unexpected acquired artifact path")
         conventional = project.with_suffix("." + extension)

@@ -86,6 +86,19 @@ class FreshAdmission(unittest.TestCase):
             sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
             outputs = fresh.admit_pair(result, acquired, project, root / "store", slots, regular, sha)
             self.assertEqual(outputs["rsc"]["bytes"], 4)
+            if fresh.os.name == "nt":
+                store = root / "store"
+                store.mkdir()
+                extended = "\\\\?\\" + str(store.resolve())
+                outputs = fresh.admit_pair({**result, "store": extended},
+                    {**acquired, "store": extended, "slot": "\\\\?\\" + str(slot.resolve()),
+                     "dmb": "\\\\?\\" + str(Path(acquired["dmb"]).resolve()),
+                     "rsc": "\\\\?\\" + str(Path(acquired["rsc"]).resolve())},
+                    project, store, slots, regular, sha)
+                self.assertEqual(outputs["dmb"]["bytes"], 3)
+                with self.assertRaisesRegex(ValueError, "another output store"):
+                    fresh.admit_pair({**result, "store": "\\\\?\\" + str((root / "other").resolve())},
+                        acquired, project, store, slots, regular, sha)
             project.with_suffix(".rsc").write_bytes(b"evil")
             with self.assertRaisesRegex(ValueError, "copy differs"):
                 fresh.admit_pair(result, acquired, project, root / "store", slots, regular, sha)
