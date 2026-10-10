@@ -25,7 +25,7 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
 	owns_one(nameof(contained), starts = nameof(mask_type))
 	interface("Tank")
-	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(req_bool(PROC_REF(placement_actor))), needs(req_bool(PROC_REF(placement_ready), because = PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
+	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(PROC_REF(placement_actor)), needs(req(PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump))), then(PROC_REF(oxygen_pump_interaction_hand)))
 	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
@@ -53,9 +53,6 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 // A pump dragged onto a person carries that person as the at_target op's target.
 /obj/machinery/oxygen_pump/proc/placement_actor(datum/act/op/A)
 	return read_once(isliving(A.actor) && !A.actor.is_incorporeal())
-
-/obj/machinery/oxygen_pump/proc/placement_ready(datum/act/op/A)
-	return isnull(placement_reason(A))
 
 /obj/machinery/oxygen_pump/proc/placement_reason(datum/act/op/A)
 	if(!read_once(CanMouseDrop(A.target, A.actor)))

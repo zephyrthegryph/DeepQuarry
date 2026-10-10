@@ -56,7 +56,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	owns_one(nameof(mannequin), /mob/living/carbon/human)
 	owns_many(nameof(cam_plane_masters))
 	interface("AppearanceChanger")
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_cooled), because = MSG(appearance_changer/too_fast))))
+	extend(TAG_UI, needs(req(PROC_REF(ui_cooled))))
 	extend(TAG_UI, then(PROC_REF(ui_start_cooldown), early = TRUE))
 	ref_one(nameof(owner), /mob/living/carbon/human)
 
@@ -180,7 +180,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 
 /// Buttons are answered at most twice a second: spamming them is laggy.
 /datum/tgui_module/appearance_changer/proc/ui_cooled(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, cooldown)
+	return COOLDOWN_FINISHED(src, cooldown) ? null : MSG(appearance_changer/too_fast)
 
 MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!")
 

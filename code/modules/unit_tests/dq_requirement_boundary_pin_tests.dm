@@ -1,4 +1,4 @@
-// Draft: pin ONLY the actual compiled op requirement, before and after callback conversion.
+// Pin the actual compiled op requirement before and after callback conversion.
 // This deliberately isolates the owner/token/UI-entry authorization layer; existing Topic authorization tests cover that layer.
 // No copied callback logic, no Boolean callback return assertions, no holder gate override.
 /datum/unit_test/dq_requirement_boundary_pin
@@ -113,6 +113,9 @@
 	TEST_ASSERT_EQUAL(answer, expected, "[callback] preserves exact allow/refusal")
 
 /datum/unit_test/dq_hc_tgui/comms_requirement_boundaries
+/datum/unit_test/dq_hc_tgui/comms_requirement_boundaries/Run()
+	set_global(nameof(GLOB.test_prompts), list())
+	..()
 /datum/unit_test/dq_hc_tgui/comms_requirement_boundaries/run_gate()
 	var/datum/tgui_module/communications/M = hct_comms()
 	var/mob/living/carbon/human/H = hct_actor()
@@ -163,6 +166,9 @@
 	cbp(wired, H, "MessageSyndicate", "ui_captain_emagged", /datum/msg/req_silent)
 
 /datum/unit_test/dq_hc_tgui/appearance_cooldown_boundary
+/datum/unit_test/dq_hc_tgui/appearance_cooldown_boundary/Run()
+	set_global(nameof(GLOB.test_prompts), list())
+	..()
 /datum/unit_test/dq_hc_tgui/appearance_cooldown_boundary/run_gate()
 	var/mob/living/carbon/human/H = hct_actor()
 	var/datum/tgui_module/appearance_changer/M = hct_track(new /datum/tgui_module/appearance_changer(hct_host(), H))
@@ -170,3 +176,8 @@
 	cbp(M, H, "blood_color", "ui_cooled", MSG(appearance_changer/too_fast))
 	COOLDOWN_RESET(M, cooldown)
 	cbp(M, H, "blood_color", "ui_cooled", null)
+
+// Compare this sweep's affected trees against their old-code snapshots.
+/datum/unit_test/dq_requirement_third_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/obj/item/airlock_electronics, /obj/machinery/computer/card, /obj/machinery/light/flamp, /obj/machinery/sleeper, /obj/machinery/vending, /obj/machinery/scan_consolenew, /obj/machinery/oxygen_pump, /obj/machinery/computer/aifixer, /obj/machinery/computer/communications, /obj/machinery/autolathe, /obj/machinery/camera, /obj/machinery/suit_cycler, /obj/structure/bed, /obj/structure/chair)

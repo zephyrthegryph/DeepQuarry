@@ -53,16 +53,16 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	var/list/who = list(req(CAP_PROC(can_buckle_victim)))
 	return list(
 		slot(SLOT_BUCKLE, accepts = list(/mob/living), capacity = slots),
-		examine_line(CAP_PROC(seated_line), when = CAP_PROC(has_occupants)),
+		examine_line(CAP_PROC(seated_line), when = req(CAP_PROC(has_occupants))),
 		op("buckle_self", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Buckle"), \
 			needs(who), then(CAP_PROC(buckle_victim)), says(MSG(buckle/self)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("buckle_drag", item(/mob/living), gesture(GESTURE_DRAG), priority(above("buckle.buckle_self")), when(CAP_PROC(is_other_drag)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/other)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
 		op("buckle_grab", item(/obj/item/grab), when(CAP_PROC(holds_someone)), label("Buckle"), \
 			needs(who), wait(delay), then(CAP_PROC(buckle_victim)), says(MSG(buckle/grabbed)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)),
-		op("unbuckle", hand(), when(CAP_PROC(has_occupants)), label("Unbuckle"), \
+		op("unbuckle", hand(), when(req(CAP_PROC(has_occupants))), label("Unbuckle"), \
 			asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to unbuckle?", "choices" = computed(CAP_PROC(occupant_names))), when = CAP_PROC(has_several)), \
-			needs(req_bool(CAP_PROC(has_occupants), because = MSG(buckle/nobody))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
+			needs(req(CAP_PROC(has_occupants))), then(CAP_PROC(unbuckle_chosen)), plays(SFX_EFFECTS_SEATBELT), logs(LOG_GAME)))
 
 // ---- who is being buckled ----
 
@@ -192,7 +192,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 
 /datum/capability/lib/buckle/proc/has_occupants(datum/act/A)
 	var/atom/movable/holder = A.holder
-	return istype(holder) && length(holder.buckled_mob_list()) > 0
+	return (istype(holder) && length(holder.buckled_mob_list()) > 0) ? null : /datum/msg/buckle/nobody
 
 /datum/capability/lib/buckle/proc/has_several(datum/act/A)
 	var/atom/movable/holder = A.holder

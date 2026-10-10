@@ -124,10 +124,10 @@ MSG_DEF_SELF(admin_topic/round_started, "The game has already started.")
 MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 
 /datum/admins/proc/round_not_started(datum/act/op/A)
-	return !(SSticker && ticker_mode())
+	return (!(SSticker && ticker_mode())) ? null : MSG(admin_topic/round_started)
 
 /datum/admins/proc/round_is_secret(datum/act/op/A)
-	return GLOB.master_mode == "secret"
+	return (GLOB.master_mode == "secret") ? null : MSG(admin_topic/not_secret)
 
 /// The game modes an admin can pick before the round starts: label -> mode.
 /datum/admins/proc/c_mode_choices()

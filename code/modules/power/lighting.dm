@@ -1422,14 +1422,11 @@ CAPABILITIES(/obj/machinery/light/flamp)
 	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
 	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
 	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
-		needs(req_bool(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp)))
+		needs(req(PROC_REF(has_light_in_fitting))), then(PROC_REF(toggle_lamp)))
 	extend("open_casing", when(cond_not(nameof(lamp_shade))))
 
 /obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)
-	return status != LIGHT_EMPTY
-
-/obj/machinery/light/flamp/proc/no_light_reason(datum/act/op/A)
-	return /datum/msg/light/no_bulb
+	return status != LIGHT_EMPTY ? null : /datum/msg/light/no_bulb
 
 MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 

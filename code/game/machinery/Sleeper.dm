@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 	extend(TAG_UI, needs(req_closed(SPACE_PANEL)), then(PROC_REF(control_touched), early = TRUE))
 	op("chemical", ui_act("chemical", arg("amount", num()), arg("chemid")),
 		needs(req_operable(), req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)),
-			req_bool(PROC_REF(occupant_alive), because = MSG(sleeper/dead_occupant)), req_bool(PROC_REF(occupant_viable), because = MSG(sleeper/too_far_gone))),
+			req(PROC_REF(occupant_alive)), req(PROC_REF(occupant_viable))),
 		then(PROC_REF(inject_chosen)))
 	op("togglefilter", ui_act("togglefilter"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_full(nameof(beaker), because = MSG(sleeper/needs_beaker))),
 		toggles(nameof(filtering)))
@@ -258,12 +258,12 @@ CAPABILITIES(/obj/machinery/sleeper)
 /// The occupant is alive (the injectors refuse the dead).
 /obj/machinery/sleeper/proc/occupant_alive(datum/act/op/A)
 	var/mob/living/occupant = occupant_of(src)
-	return occupant?.stat != DEAD
+	return (occupant?.stat != DEAD) ? null : MSG(sleeper/dead_occupant)
 
 /// The occupant is in good enough condition for the sleeper to help.
 /obj/machinery/sleeper/proc/occupant_viable(datum/act/op/A)
 	var/mob/living/occupant = occupant_of(src)
-	return occupant && occupant.vitality() > 0
+	return (occupant && occupant.vitality() > 0) ? null : MSG(sleeper/too_far_gone)
 
 /// A chemical button: `amount` units of `chemid` into the occupant, when it is one of the doses and one of the chemicals the sleeper lists, and the
 /// occupant does not already carry max_chem of it. A chemical the sleeper does not list is a forged press: refused and told to the admins.

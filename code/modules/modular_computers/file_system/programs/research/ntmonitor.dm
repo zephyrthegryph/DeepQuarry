@@ -19,8 +19,8 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 	op("purgelogs", ui_act("purgelogs"), then(PROC_REF(ui_act_purgelogs)))
 	op("updatemaxlogs", ui_act("updatemaxlogs", arg("new_number", num())), then(PROC_REF(ui_act_updatemaxlogs)))
 	op("toggle_function", ui_act("toggle_function", arg("id", num())), then(PROC_REF(ui_act_toggle_function)))
-	op("ban_nid", ui_act("ban_nid"), needs(req_bool(PROC_REF(ntnet_present), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to block from the network:")), then(PROC_REF(ui_act_ban_nid)))
-	op("unban_nid", ui_act("unban_nid"), needs(req_bool(PROC_REF(ntnet_present), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to unblock from the network:")), then(PROC_REF(ui_act_unban_nid)))
+	op("ban_nid", ui_act("ban_nid"), needs(req(PROC_REF(ntnet_present))), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to block from the network:")), then(PROC_REF(ui_act_ban_nid)))
+	op("unban_nid", ui_act("unban_nid"), needs(req(PROC_REF(ntnet_present))), asks(/datum/prompt/number, fields = list("title" = "Enter NID", "question" = "Enter NID of device which you want to unblock from the network:")), then(PROC_REF(ui_act_unban_nid)))
 
 /datum/computer_file/program/ntnetmonitor/ui_data(datum/act/eval/A)
 	if(!GLOB.ntnet_global)
@@ -95,7 +95,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 	return TRUE
 
 /datum/computer_file/program/ntnetmonitor/proc/ntnet_present(datum/act/op/A)
-	return !!GLOB.ntnet_global
+	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_ban_nid(datum/act/op/A)
 	if(!GLOB.ntnet_global)

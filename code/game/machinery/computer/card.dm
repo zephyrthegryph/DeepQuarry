@@ -47,24 +47,24 @@ TRACKED(/obj/machinery/computer/card, printing)
 // its owner and assignment after every button.
 CAPABILITIES(/obj/machinery/computer/card)
 	interface("IdentificationComputer")
-	op("insert_id", item(/obj/item/card/id), needs(req_bool(PROC_REF(has_free_slot), because = MSG(card_console/slots_full))), then(PROC_REF(card_inserted)), opens_ui())
-	op("eject", menu(), label("Eject ID Card"), needs(req_bool(PROC_REF(has_a_card), because = MSG(card_console/empty))), says(MSG(card_console/ejected)), then(PROC_REF(eject_first_card)))
+	op("insert_id", item(/obj/item/card/id), needs(req(PROC_REF(has_free_slot))), then(PROC_REF(card_inserted)), opens_ui())
+	op("eject", menu(), label("Eject ID Card"), needs(req(PROC_REF(has_a_card))), says(MSG(card_console/ejected)), then(PROC_REF(eject_first_card)))
 	extend(TAG_UI, then(PROC_REF(refresh_card_name)))
 	op("modify", ui_act("modify"), then(PROC_REF(ui_act_modify)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
-	op("access", ui_act("access", arg("access_target", num()), arg("allowed", num())), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign))), then(PROC_REF(ui_act_access)))
-	op("assign", ui_act("assign", arg("assign_target", schema_text(4096))), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign)), req_bool(PROC_REF(job_known), because = MSG(card_console/no_log))), then(PROC_REF(ui_act_assign)))
-	op("assign_custom", ui_act("assign_custom"), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign))), asks(/datum/prompt/text, fields = list("title" = "Assignment", "question" = "Enter a custom job assignment.", "default" = "", "max_len" = 45)), then(PROC_REF(ui_act_assign_custom)))
-	op("reg", ui_act("reg", arg("reg", schema_text(4096))), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign)), req_bool(PROC_REF(name_valid), because = MSG(card_console/bad_name))), then(PROC_REF(ui_act_reg)))
-	op("account", ui_act("account", arg("account", num())), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign))), then(PROC_REF(ui_act_account)))
+	op("access", ui_act("access", arg("access_target", num()), arg("allowed", num())), needs(req(PROC_REF(assign_possible))), then(PROC_REF(ui_act_access)))
+	op("assign", ui_act("assign", arg("assign_target", schema_text(4096))), needs(req(PROC_REF(assign_possible)), req(PROC_REF(job_known))), then(PROC_REF(ui_act_assign)))
+	op("assign_custom", ui_act("assign_custom"), needs(req(PROC_REF(assign_possible))), asks(/datum/prompt/text, fields = list("title" = "Assignment", "question" = "Enter a custom job assignment.", "default" = "", "max_len" = 45)), then(PROC_REF(ui_act_assign_custom)))
+	op("reg", ui_act("reg", arg("reg", schema_text(4096))), needs(req(PROC_REF(assign_possible)), req(PROC_REF(name_valid))), then(PROC_REF(ui_act_reg)))
+	op("account", ui_act("account", arg("account", num())), needs(req(PROC_REF(assign_possible))), then(PROC_REF(ui_act_account)))
 	op("mode", ui_act("mode", arg("mode_target", num())), then(PROC_REF(ui_act_mode)))
 	op("print", ui_act("print"), when(cond_not(nameof(printing))), then(PROC_REF(ui_act_print)))
-	op("terminate", ui_act("terminate"), needs(req_bool(PROC_REF(assign_possible), because = MSG(card_console/cannot_assign))), then(PROC_REF(ui_act_terminate)))
+	op("terminate", ui_act("terminate"), needs(req(PROC_REF(assign_possible))), then(PROC_REF(ui_act_terminate)))
 
 /// needs: a slot is free for the card (the operator's slot for a card with the access, else the subject's).
 /obj/machinery/computer/card/proc/has_free_slot(datum/act/op/A)
 	var/obj/item/card/id/I = A.held
-	return istype(I) && (!modify || (!scan && (ACCESS_CHANGE_IDS in I.GetAccess())))
+	return (istype(I) && (!modify || (!scan && (ACCESS_CHANGE_IDS in I.GetAccess())))) ? null : MSG(card_console/slots_full)
 
 /// The offered card goes in: the operator's slot when it has the access and the slot is free, else the subject's.
 /obj/machinery/computer/card/proc/card_inserted(datum/act/op/A)
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// needs: a card is in the console.
 /obj/machinery/computer/card/proc/has_a_card(datum/act/op/A)
-	return scan || modify
+	return (scan || modify) ? null : MSG(card_console/empty)
 
 /// "Eject ID Card": the operator's card, else the subject's, into the empty hand or onto the floor.
 /obj/machinery/computer/card/proc/eject_first_card(datum/act/op/A)
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// needs: the job has a log (a CentCom console takes any of its own titles).
 /obj/machinery/computer/card/proc/job_known(datum/act/op/A)
-	return is_centcom() || !!SSjob.get_job(A.args["assign_target"])
+	return (is_centcom() || !!SSjob.get_job(A.args["assign_target"])) ? null : MSG(card_console/no_log)
 
 /// The loaded card takes the job: its access, assignment and rank.
 /obj/machinery/computer/card/proc/ui_act_assign(datum/act/op/A, assign_target)
@@ -221,7 +221,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// needs: the name typed is a name.
 /obj/machinery/computer/card/proc/name_valid(datum/act/op/A)
-	return !!sanitizeName(A.args["reg"])
+	return (!!sanitizeName(A.args["reg"])) ? null : MSG(card_console/bad_name)
 
 /obj/machinery/computer/card/proc/ui_act_reg(datum/act/op/A, reg)
 	modify.registered_name = sanitizeName(reg)
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// The operator is authenticated and a card is loaded.
 /obj/machinery/computer/card/proc/assign_possible(datum/act/op/A)
-	return is_authenticated() && modify
+	return (is_authenticated() && modify) ? null : MSG(card_console/cannot_assign)
 
 /// A custom assignment, typed: it works as an impromptu alt title, mainly for sechuds.
 /obj/machinery/computer/card/proc/ui_act_assign_custom(datum/act/op/A)
