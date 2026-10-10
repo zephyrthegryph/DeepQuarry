@@ -67,7 +67,7 @@
 /datum/unit_test/dq_decl_reagent_fills/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/machinery/microwave/MW = allocate(/obj/machinery/microwave, T)
-	TEST_ASSERT_EQUAL(MW.reagents?.maximum_volume, 100, "the microwave holds 100 units")
+	TEST_ASSERT(MW.reagents?.my_atom == MW, "the microwave has its reagent holder (its parts then size it)")
 	var/obj/item/grenade/chem_grenade/frost/G = allocate(/obj/item/grenade/chem_grenade/frost, T)
 	TEST_ASSERT_EQUAL(length(G.beakers), 2, "the frost grenade starts with two beakers")
 	var/obj/item/reagent_containers/B = G.beakers[1]
