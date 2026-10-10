@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import tempfile
+import hashlib
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -12,6 +13,26 @@ spec.loader.exec_module(helper)
 
 
 class RuntimeContractHelperTests(unittest.TestCase):
+    def test_runtime_archive_mutation_preserves_authenticated_acquisition(self):
+        with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
+            root = Path(directory)
+            acquired = {}
+            hashes = {}
+            sha = lambda file: hashlib.sha256(file.read_bytes()).hexdigest()
+            for extension in ("dmb", "rsc"):
+                file = root / ("compiled." + extension)
+                file.write_bytes(b"compiled " + extension.encode())
+                acquired[extension] = str(file)
+                hashes[extension] = {"sha256": sha(file)}
+            dmb, evidence = helper.runtime_copies(acquired, hashes, root / "runtime", lambda file: None, sha)
+            dmb.with_suffix(".rsc").write_bytes(b"DD mutable archive")
+            for extension in ("dmb", "rsc"):
+                self.assertEqual(sha(Path(acquired[extension])), hashes[extension]["sha256"])
+                self.assertEqual(evidence[extension]["initial_sha256"], hashes[extension]["sha256"])
+            self.assertNotEqual(sha(dmb.with_suffix(".rsc")), hashes["rsc"]["sha256"])
+            with self.assertRaises(FileExistsError):
+                helper.runtime_copies(acquired, hashes, root / "runtime", lambda file: None, sha)
+
     def test_matching_compiler_outputs_are_insufficient_without_expected_values(self):
         with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
             log = Path(directory) / "probe.log"

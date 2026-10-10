@@ -52,6 +52,26 @@ def observations(file, expected):
     return result
 
 
+def runtime_copies(acquired, hashes, directory, regular, sha):
+    """DD may rewrite RSC archives. Preserve the authenticated compiled pair."""
+    directory.mkdir()
+    evidence = {}
+    for extension in ("dmb", "rsc"):
+        source = Path(acquired[extension])
+        regular(source)
+        if sha(source) != hashes[extension]["sha256"]:
+            raise ValueError("authenticated acquisition changed before runtime copy: " + extension)
+        destination = directory / ("deepquarry." + extension)
+        # Exclusive creation prevents copying into an existing alias/inode.
+        with source.open("rb") as reader, destination.open("xb") as writer:
+            shutil.copyfileobj(reader, writer)
+        regular(destination)
+        if sha(destination) != hashes[extension]["sha256"] or sha(source) != hashes[extension]["sha256"]:
+            raise ValueError("runtime copy failed authentication: " + extension)
+        evidence[extension] = {"path": str(destination), "initial_sha256": sha(destination)}
+    return directory / "deepquarry.dmb", evidence
+
+
 def apply_step(source, step):
     if "before" not in step and "after" not in step:
         return source
@@ -232,7 +252,8 @@ def main():
                 hashes = fresh.admit_pair(result, acquired, output / "artifacts/probe.dme",
                                          output / "store", slots, h.regular, h.sha)
                 row[mode + "_pair"] = {"published": result, "acquired": acquired, "outputs": hashes}
-                dmb = Path(acquired["dmb"])
+                dmb, runtime_evidence = runtime_copies(acquired, hashes, output / "runtime-owned", h.regular, h.sha)
+                row[mode + "_pair"]["runtime_copies"] = runtime_evidence
                 run(label + "/" + mode + "-runtime", args.dd,
                     [str(dmb), "-close", "-trusted", "-invisible", "-logself"], 30, runtime=True)
                 row[mode] = observations(dmb.with_suffix(".log"), expected)
@@ -241,6 +262,11 @@ def main():
                 for extension in ("dmb", "rsc"):
                     if h.sha(Path(acquired[extension])) != hashes[extension]["sha256"]:
                         raise ValueError("acquired runtime input changed: " + mode + " " + extension)
+                    stored = output / "store/pairs" / result["pair_id"] / ("deepquarry." + extension)
+                    h.regular(stored)
+                    if h.sha(stored) != hashes[extension]["sha256"]:
+                        raise ValueError("immutable published input changed: " + mode + " " + extension)
+                    runtime_evidence[extension]["after_runtime_sha256"] = h.sha(dmb.with_suffix("." + extension))
             # admit_pair returns location-bearing evidence. Compare the actual artifact bytes explicitly.
             row["fresh_byte_oracle"] = {extension: {
                 mode: h.sha(root / label / mode / "artifacts" / ("probe." + extension))
