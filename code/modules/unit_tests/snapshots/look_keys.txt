@@ -17655,7 +17655,7 @@
 /obj/machinery/requests_console/preset/research	afce964aaa7d364c	active_power_usage,announcement,circuit,component_parts,department,dir_at_make,idle_power_usage,maintenance_flags,message,newmessagepriority,open,panel_open,power_area,power_channel,power_forced,priority,use_power
 /obj/machinery/requests_console/preset/security	ef5808b4f9e91d71	active_power_usage,announcement,circuit,component_parts,department,dir_at_make,idle_power_usage,maintenance_flags,message,newmessagepriority,open,panel_open,power_area,power_channel,power_forced,priority,use_power
 /obj/machinery/rnd	97f37048578bb21c	*
-/obj/machinery/rnd/destructive_analyzer	771f7a94490cd74d	*
+/obj/machinery/rnd/destructive_analyzer	6fd30df00dc59a37	*
 /obj/machinery/rnd/production	152cd1747bdda3a0	*
 /obj/machinery/rnd/production/circuit_imprinter	86a9d78e604b954c	*
 /obj/machinery/rnd/production/protolathe	875ce0fc3a28d6cf	*
@@ -18379,8 +18379,8 @@
 /obj/soulgem	6d86566764bb344e	brainmobs
 /obj/spellbutton	26d8400f961fcdcb	ability_icon_state,spellpath
 /obj/structure	29088e4df73b9293	
-/obj/structure/AIcore	7fc5bb96beaaaa5c	laws,state
-/obj/structure/AIcore/deactivated	b2a882836575cf90	laws,state
+/obj/structure/AIcore	5391b46b1569ef2b	laws,state
+/obj/structure/AIcore/deactivated	1e0e8441383b2a9d	laws,state
 /obj/structure/alien	271b5026a0f2cccc	
 /obj/structure/alien/membrane	5353c62feed405e5	
 /obj/structure/alien/wall	a0005ef1cc59ea5d	
@@ -20986,8 +20986,8 @@
 /turf/unsimulated/floor/sky	8798dd3b38ad5064	
 /turf/unsimulated/floor/snow_decor	2b132d8846477806	
 /turf/unsimulated/floor/wood_appearance	3e4ca8a63e76b598	
-/turf/unsimulated/map	a41d83cd6f06bba7	
-/turf/unsimulated/map/edge	041b83055d62b0f5	map_is_to_my,wrap_buddy
+/turf/unsimulated/map	fcfcd2c62df8bc1c	coord_marks
+/turf/unsimulated/map/edge	0c5df5588db6b026	coord_marks,map_is_to_my,wrap_buddy
 /turf/unsimulated/mask	7eb1c45318e32216	
 /turf/unsimulated/mineral	151a2557a649f59d	
 /turf/unsimulated/shuttle	8301a6af4c31ffad	
