@@ -1,0 +1,67 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-996c0240a0401c5b.exe",
+  "binary_sha256": "f24f156c6d92d409cffade7265e05ce0318652d7fb0a2336a3ff3cbfb59a9c01",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "procedure_policy::canonical::tests",
+      "selected": [
+        "procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation"
+      ],
+      "exit": 0,
+      "seconds": 0.1250434999819845,
+      "stdout": "\nrunning 1 test\ntest procedure_policy::canonical::tests::canonical_owner_reuses_exact_inputs_and_rejects_mutation ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::tests::frame_retention::frame_metadata_admits_shared_and_equal_abi_owners_but_rejects_changed_layout",
+      "selected": [
+        "composition::tests::frame_retention::frame_metadata_admits_shared_and_equal_abi_owners_but_rejects_changed_layout"
+      ],
+      "exit": 0,
+      "seconds": 0.06361399998422712,
+      "stdout": "\nrunning 1 test\ntest composition::tests::frame_retention::frame_metadata_admits_shared_and_equal_abi_owners_but_rejects_changed_layout ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.03s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::procedure_plan::argument_sources_tests",
+      "selected": [
+        "composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order"
+      ],
+      "exit": 0,
+      "seconds": 0.028326199972070754,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members",
+      "selected": [
+        "lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members"
+      ],
+      "exit": 0,
+      "seconds": 0.044916899991221726,
+      "stdout": "\nrunning 1 test\ntest lowering::symbolic_input::retained::tests::symbolic_census_deduplicates_shared_records_and_counts_pruned_members ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "heap_census::cold_boundary::tests",
+      "selected": [
+        "heap_census::cold_boundary::tests::combined_current_projection_deduplicates_shared_field_payloads"
+      ],
+      "exit": 0,
+      "seconds": 0.03267939999932423,
+      "stdout": "\nrunning 1 test\ntest heap_census::cold_boundary::tests::combined_current_projection_deduplicates_shared_field_payloads ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "driver_facts::abi_body_release_tests",
+      "selected": [
+        "driver_facts::abi_body_release_tests::abi_roster_releases_bodies_and_current_consumer_matches_artifact_path"
+      ],
+      "exit": 0,
+      "seconds": 0.21945179998874664,
+      "stdout": "\nrunning 1 test\ntest driver_facts::abi_body_release_tests::abi_roster_releases_bodies_and_current_consumer_matches_artifact_path ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 650 filtered out; finished in 0.04s\n\n",
+      "stderr": ""
+    }
+  ]
+}
