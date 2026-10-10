@@ -58,38 +58,38 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 		var/obj/item/forensics/swab/swab = sample()
 
 		report.name = "GSR report #[++report_num]: [swab.name]"
-		report.info = span_bold("Scanned item:") + "<br>[swab.name]<br><br>"
+		report.set_info(span_bold("Scanned item:") + "<br>[swab.name]<br><br>")
 
 		if(swab.gsr)
-			report.info += "Residue from a [swab.gsr] bullet detected."
+			report.set_info(report.info + ("Residue from a [swab.gsr] bullet detected."))
 		else
-			report.info += "No gunpowder residue found."
+			report.set_info(report.info + ("No gunpowder residue found."))
 
 	else if(istype(sample(), /obj/item/sample/fibers))
 		var/obj/item/sample/fibers/fibers = sample()
 		report.name = "Fiber report #[++report_num]: [fibers.name]"
-		report.info = span_bold("Scanned item:") + "<br>[fibers.name]<br><br>"
+		report.set_info(span_bold("Scanned item:") + "<br>[fibers.name]<br><br>")
 		if(fibers.evidence)
-			report.info = "Molecular analysis on provided sample has determined the presence of unique fiber strings.<br><br>"
+			report.set_info("Molecular analysis on provided sample has determined the presence of unique fiber strings.<br><br>")
 			for(var/fiber in fibers.evidence)
-				report.info += span_notice("Most likely match for fibers: [fiber]") + "<br><br>"
+				report.set_info(report.info + (span_notice("Most likely match for fibers: [fiber]") + "<br><br>"))
 		else
-			report.info += "No fibers found."
+			report.set_info(report.info + ("No fibers found."))
 	else if(istype(sample(), /obj/item/sample/print))
 		report.name = "Fingerprint report #[report_num]: [sample().name]"
-		report.info = span_bold("Fingerprint analysis report #[report_num]") + ": [sample().name]<br>"
+		report.set_info(span_bold("Fingerprint analysis report #[report_num]") + ": [sample().name]<br>")
 		var/obj/item/sample/print/card = sample()
 		if(card.evidence && length(card.evidence))
-			report.info += "Surface analysis has determined unique fingerprint strings:<br><br>"
+			report.set_info(report.info + ("Surface analysis has determined unique fingerprint strings:<br><br>"))
 			for(var/prints in card.evidence)
-				report.info += span_notice("Fingerprint string: ")
+				report.set_info(report.info + (span_notice("Fingerprint string: ")))
 				if(!is_complete_print(LAZYACCESS(card.evidence, prints)))
-					report.info += "INCOMPLETE PRINT:[LAZYACCESS(card.evidence, prints)]"
+					report.set_info(report.info + ("INCOMPLETE PRINT:[LAZYACCESS(card.evidence, prints)]"))
 				else
-					report.info += "[prints]"
-				report.info += "<br>"
+					report.set_info(report.info + ("[prints]"))
+				report.set_info(report.info + ("<br>"))
 		else
-			report.info += "No information available."
+			report.set_info(report.info + ("No information available."))
 
 	if(report)
 		if(report.info)

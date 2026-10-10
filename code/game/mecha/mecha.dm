@@ -1047,7 +1047,7 @@ TRACKED(/obj/mecha, current_processes)
 /obj/mecha/proc/phase()	// Force the mecha to move forward by phasing.
 	if(can_phase)
 		can_phase = FALSE
-		flick("[initial_icon]-phase", src)
+		flick("[mecha_base_state()]-phase", src)
 		forceMove(get_step(src,src.dir))
 		after(src, get_step_delay() * 3, PROC_REF(phase_ready))
 		return TRUE	// In the event this is sequenced
@@ -1525,12 +1525,10 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		rel_set(mmi_as_oc, nameof(mmi_as_oc.mecha), src)
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
-		update_icon()
 		set_dir(dir_in)
 		src.mecha_log_message("[mmi_as_oc] moved in as pilot.")
 		if(!mech_body_plan().has_affliction(src))
 			src?.slot_item(MECHA_SLOT_PILOT) << sound('sound/mecha/nominal.ogg',volume=50)
-		update_icon()
 		return 1
 	else
 		return 0
@@ -1842,7 +1840,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			return
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
-		update_icon()
 		if(occupant.hud_used)
 			rel_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
 
@@ -1935,7 +1932,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
-		update_icon()
 		set_dir(dir_in)
 
 

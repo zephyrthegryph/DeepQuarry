@@ -51,6 +51,7 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		return
 
 CAPABILITIES(/obj/item/glass_jar)
+	slot(CONTAINER_SLOT_JAR)
 	// the old attack_self: empty the jar (help keeps a fish's water in)
 	op("empty", in_hand(), stance(I_HELP), label("Empty"), then(PROC_REF(emptied_gently)))
 	op("dump", in_hand(), stance(I_DISARM, I_GRAB, I_HURT), label("Empty, dumping the water"), then(PROC_REF(interaction_self)))
@@ -154,8 +155,7 @@ TRACKED(/obj/item/glass_jar, filled)
 			jar_name = can_fill ? "tip tank" : "tip jar"
 			jar_desc = "A [jar_name] with money inside."
 			var/i = 0
-			for(var/obj/item/spacecash/S in contents_of(src))
-				look.watch(S)
+			for(var/obj/item/spacecash/S as anything in look.things_in(src, CONTAINER_SLOT_JAR, /obj/item/spacecash))
 				i++
 				var/matrix/small = matrix()
 				small.Scale(0.6)
@@ -163,22 +163,19 @@ TRACKED(/obj/item/glass_jar, filled)
 		if(JAR_ANIMAL)
 			//tank
 			if(can_fill)
-				for(var/mob/M in contents_of(src))
-					look.watch(M)
+				for(var/mob/M as anything in look.things_in(src, CONTAINER_SLOT_JAR, /mob))
 					var/matrix/shrunk = matrix()
 					shrunk.Scale(0.7)
 					look.underlay(look_overlay_image(of = M, pixel_y = 4, transform = shrunk))
 					jar_name = "[initial(name)] with [M]"
 					jar_desc = "A large [jar_name] with [M] inside."
 			else
-				for(var/mob/M in contents_of(src))
-					look.watch(M)
+				for(var/mob/M as anything in look.things_in(src, CONTAINER_SLOT_JAR, /mob))
 					look.underlay(look_overlay_image(of = M, pixel_y = 6))
 					jar_name = "glass jar with [M]"
 					jar_desc = "A small jar with [M] inside."
 		if(JAR_SPIDER)
-			for(var/obj/effect/spider/spiderling/S in contents_of(src))
-				look.watch(S)
+			for(var/obj/effect/spider/spiderling/S as anything in look.things_in(src, CONTAINER_SLOT_JAR, /obj/effect/spider/spiderling))
 				look.underlay(look_overlay_image(of = S))
 				if(can_fill)
 					jar_name = "[initial(name)] with [S]"

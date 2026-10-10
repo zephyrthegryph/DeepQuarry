@@ -158,7 +158,6 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 		rel_clear(src, nameof(cell))
 		user.put_in_hands(removed)
 		removed.add_fingerprint(user)
-		removed.update_icon()
 		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE

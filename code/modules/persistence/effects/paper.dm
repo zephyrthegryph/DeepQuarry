@@ -15,7 +15,7 @@
 	if(requires_noticeboard && LAZYLEN(board.notices) >= board.max_notices)
 		return
 	var/obj/item/paper/paper = new paper_type(creating)
-	paper.info = token["message"]
+	paper.set_info(token["message"])
 	paper.name = token["name"]
 	if(!paper.name)
 		paper.name = "No Title"

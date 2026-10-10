@@ -131,7 +131,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 		add_underlay(T,, dir)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/hide(i) //to make the little pipe section invisible, the icon changes.
-	changed(src)
 	update_underlays()
 
 /// The gauge, to someone beside it.

@@ -34,7 +34,6 @@
 		else
 			return TRUE
 	if(init)
-		below_turf?.update_icon() // So the 'ceiling-less' overlay gets added.
 		our_turf.vis_contents += below_turf
 
 	if(is_blocked_turf(our_turf)) //Show girders below closed turfs

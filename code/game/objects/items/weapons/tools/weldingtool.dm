@@ -230,14 +230,11 @@ CAPABILITIES(/obj/item/weldingtool)
 	else
 		look.held_state(initial(item_state))
 
+	look.watch(reagents) // the fuel counter follows the fuel in the tank
 	if(change_icons && get_max_fuel())
 		var/ratio = get_fuel() / get_max_fuel()
 		ratio = CEILING(ratio * 4, 1) * 25
 		look.overlay("[initial(icon_state)][ratio]")
-
-/// Fuel in the tank redraws the counter.
-/obj/item/weldingtool/on_reagent_change()
-	changed(src)
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/weldingtool/proc/mousedrop_input(datum/act/input/A)

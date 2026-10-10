@@ -118,22 +118,8 @@ TRACKED(/obj/item/tape, crumpled)
 	if(ismob(loc))
 		look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 
-/obj/item/taperoll/dropped(mob/user, equipping, slot)
-	changed(src)
-	return ..()
-
-/obj/item/taperoll/pickup(mob/user)
-	changed(src)
-	return ..()
-
-/// Old attack_hand.
-/obj/item/taperoll/proc/interaction_hand(datum/act/op/A)
-	changed(src)
-	return OP_DECLINE
-
 CAPABILITIES(/obj/item/taperoll)
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
-	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)
 	var/mob/user = A.actor

@@ -591,3 +591,15 @@ config flag, so it is not name-banned). `om_mob_event_setup` on the overmap simp
 - `om_world_*` / `om_rate_*` definitions in `code/datums/om/world_watch.dm`: the Rust world bridge itself, deleted with its last caller above.
 - `om_unlink` hard ban: kept as `banned_outside` with the gibber exception until KR5 lands.
 - `/datum/om/*` carriers kept for compatibility (`global_owner`, `behaviour/internal/timers`, `edge`): needed while the legacy relation and timer paths exist.
+
+**IX-R2 follow-up: what of the bridge is still live (checked before deleting)**
+
+Deleted: the six `/datum/interaction/entry_*` parent types in `code/datums/interactions/entries.dm` (no user anywhere; hard-banned). `dq_actor_can_act` stays: `guestpass.dm` and `food_replicator.dm` call it.
+
+Not deletable yet, each still on a live path:
+
+- `resolver.dm` / `interactions_for()`: the player interaction menu (`menu.dm`, `presentation.dm`, opened from `keybindings/adapters.dm`) and `native_resolution_adapter.dm` (`op_legacy_candidates`) both call it. The adapter is how entries built by `capabilities()` tables and library `lib_op` calls reach the op engine.
+- `/datum/interaction/capability` and subtypes (`use_at`, `slot_insert`, `slot_eject`, `toggle`, `construction_step`): the entry type for 30 production files using `cap_op` / `lib_op` / `cap_use_self` / `cap_use_at` (including `code/game/machinery/computer/medical.dm`) and 49 `capabilities()` tables; `actions.dm`, `cap_op.dm`, `op_ctx.dm` build on it.
+- `allows_interaction()` in `keybindings/adapters.dm`: called by the resolver and `actions.dm` (`action_entry_for`).
+- `use_tool()` in `tools.dm`: 51 production callers.
+- Deleting these needs the `capabilities()` tables and library capabilities converted to `op()` first; it is a wave, not a deletion.

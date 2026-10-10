@@ -3,7 +3,6 @@
 	if(!move_into(src, nameof(src.installed_modules), mod, user))
 		return
 	mod.installed(src)
-	update_icon()
 
 /// Old attackby: lock, install a tank, module or cell, or hand the item to a module.
 /obj/item/rig/proc/rig_item(datum/act/op/A)
@@ -170,7 +169,6 @@
 	own_take_member(src, nameof(installed_modules), removed)
 	removed.forceMove(get_turf(src))
 	removed.removed()
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 

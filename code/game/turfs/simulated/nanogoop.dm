@@ -369,10 +369,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		digest_robot = FALSE
 		active = FALSE
 		for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
-			R.icon_modifier = "inactive_"
-			R.icon_state = "inactive_railing0"
-		for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
-			R.update_icon()
+			R.set_icon_modifier("inactive_")
 		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 			stairs.icon_state = "stair_hazard"
 		return
@@ -389,10 +386,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	digest_robot = robot
 	active = TRUE
 	for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
-		R.icon_modifier = "active_"
-		R.icon_state = "active_railing0"
-	for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
-		R.update_icon()
+		R.set_icon_modifier("active_")
 	for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 		depth = 1
 		movement_cost = 8

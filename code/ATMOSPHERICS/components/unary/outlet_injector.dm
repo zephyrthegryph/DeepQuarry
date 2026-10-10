@@ -139,7 +139,6 @@
 		return //do not update_icon
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-	changed(src)
 
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
 	update_underlays()

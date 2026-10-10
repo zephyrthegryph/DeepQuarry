@@ -145,7 +145,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 	P.name = "Synthesizer Instructions"
 	P.desc = "A photocopy of a handwritten note."
-	P.info = {"Hello there! This device is a new NanoTrasen product currently being shipped to select facilities \
+	P.set_info({"Hello there! This device is a new NanoTrasen product currently being shipped to select facilities \
 	for internal testing! We haven't finished the instruction manual yet so each unit shipped with this pamphlet \
 	(I really hope you can read my handwriting). This machine is a programmable chemical synthesizer which, if used \
 	correctly, will allow you to queue up some recipes and go work on something else while the medicine manufactures. \
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/chemical_synthesizer)
 	example recipe. \
 	<BR><BR> Name: Dylovene (60u) \
 	<BR> Number of steps: 3 \
-	<BR> Recipe string: Silicon,20,Nitrogen,20,Potassium,20"}
+	<BR> Recipe string: Silicon,20,Nitrogen,20,Potassium,20"})
 
 /obj/machinery/chemical_synthesizer/examine(mob/user)
 	. = ..()

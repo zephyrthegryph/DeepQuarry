@@ -40,6 +40,8 @@ CAPABILITIES(/obj/machinery/rnd/server)
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 
+TRACKED(/obj/machinery/rnd/server, working)
+
 /// The look (the draw sweep: from its template).
 /obj/machinery/rnd/server/draw(datum/look/look)
 	..()
@@ -58,13 +60,12 @@ CAPABILITIES(/obj/machinery/rnd/server)
 /// Checks if we should be working or not, and updates accordingly.
 /obj/machinery/rnd/server/proc/refresh_working()
 	if(power_lost() || emp_disabled(src) || research_disabled)
-		working = FALSE
+		set_working(FALSE)
 	else
-		working = TRUE
+		set_working(TRUE)
 
 	// update_current_power_usage()
 	update_heat_output()
-	changed(src)
 
 /// Only a working server runs hot; halted or EMP'd it emits nothing.
 /obj/machinery/rnd/server/current_heat_output()

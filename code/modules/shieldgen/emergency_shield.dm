@@ -279,7 +279,6 @@ CAPABILITIES(/obj/machinery/shieldgen)
 /obj/machinery/shieldgen/proc/on_emag(datum/act/op/A)
 	if(!malfunction)
 		set_malfunction(TRUE)
-		changed(src)
 		return OP_OK
 	return OP_DECLINE
 
@@ -291,7 +290,6 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	repair_damage(max_integrity)
 	set_malfunction(0)
 	to_chat(user, span_notice("You repair the [src]!"))
-	changed(src)
 
 /obj/machinery/shieldgen/proc/interaction_toggle_lock(datum/act/op/A)
 	var/mob/user = A.actor

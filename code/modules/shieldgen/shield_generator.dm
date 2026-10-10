@@ -164,7 +164,6 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	mitigation_em = 0
 	mitigation_physical = 0
 	mitigation_heat = 0
-	changed(src)
 
 // Generates the field objects. Deletes existing field, if applicable.
 /obj/machinery/power/shield_generator/proc/regenerate_field()
@@ -311,7 +310,6 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 		SE.update_visuals()
 
 	//Phew, update our own icon
-	changed(src)
 
 /obj/machinery/power/shield_generator/proc/do_corner_shield(obj/effect/shield/S, new_dir, force_outside)
 	S.enabled_icon_state = "blank"
@@ -487,7 +485,6 @@ MSG_DEF_SELF(shield_generator/running, "Turn off %T% first!")
 		set_running(SHIELD_SPINNING_UP)
 		spinup_counter = round(spinup_delay / idle_multiplier)
 	work_start(src)
-	changed(src)
 
 /// The window's data.
 /obj/machinery/power/shield_generator/ui_data(datum/act/eval/A)

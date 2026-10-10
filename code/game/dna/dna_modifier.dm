@@ -404,7 +404,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 			if(!move_into(src, nameof(src.disk), I, user))
 				return OP_DECLINE
 			to_chat(user, "You insert [I].")
-			changed(src) // the window shows the disk
 	else
 		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
 	return OP_OK

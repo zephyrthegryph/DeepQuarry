@@ -389,10 +389,6 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	..()
 	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = FLY_LAYER, plane = MOB_PLANE, dir = dir))
 
-/obj/vehicle/train/engine/set_dir()
-	..()
-	changed(src)
-
 //-------------------------------------------------------
 // Cargo tugs for reagent transport from chemical refinery
 //-------------------------------------------------------
@@ -478,7 +474,7 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 /obj/vehicle/train/trolley_tank/proc/repainted(datum/act/op/A)
 	var/new_paint = A.step_value("paint")
 	if(new_paint)
-		paint_color = new_paint
+		set_paint_color(new_paint)
 	return TRUE
 
 /obj/vehicle/train/trolley_tank/proc/label_title(datum/act/op/A)
@@ -513,6 +509,7 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/draw(datum/look/look)
 	..()
+	look.watch(reagents) // the level and the colour of what it holds are tracked on the holder
 	var/drawn_state = look.state_so_far(src)
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
@@ -529,9 +526,6 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 			if(90 to INFINITY) percent = 100
 		look.overlay(look_overlay_image(icon, "[drawn_state]_r_[percent]", color = reagents.get_color(), dir = NORTH))
 	look.overlay(look_overlay_image(icon, "[drawn_state]_c", color = paint_color, dir = NORTH))
-
-/obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
-	changed(src)
 
 /obj/vehicle/train/engine/ownership()
 	. = ..()

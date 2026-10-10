@@ -1142,7 +1142,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
 		if(H.nif)
 			var/obj/item/nif/nif = H.nif //L o c a l
 			if(nif.stat == NIF_TEMPFAIL)
-				nif.stat = NIF_INSTALLING
+				nif.set_stat(NIF_INSTALLING)
 			nif.repair(removed)
 
 /datum/reagent/firefighting_foam
@@ -1213,7 +1213,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
 		if(H.nif)
 			var/obj/item/nif/nif = H.nif //L o c a l
 			if(nif.stat == NIF_TEMPFAIL)
-				nif.stat = NIF_INSTALLING
+				nif.set_stat(NIF_INSTALLING)
 			nif.repair(removed*0.1)
 
 //Special toxins for solargrubs

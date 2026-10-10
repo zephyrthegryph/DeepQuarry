@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/ticket_printer)
 
 	var/obj/item/paper/sec_ticket/p = new /obj/item/paper/sec_ticket(our_turf)
 
-	p.info = final
+	p.set_info(final)
 	p.name = "Security Citation: [ticket_name]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/item/ticket_printer)
 
 	var/obj/item/paper/permit_ticket/p = new /obj/item/paper/permit_ticket(our_turf)
 
-	p.info = final
+	p.set_info(final)
 	p.name = "Permit Ticket: [ticket_name]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 

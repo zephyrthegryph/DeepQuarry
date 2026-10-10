@@ -329,7 +329,6 @@ init_new_child	code/modules/instruments/stationary.dm	rel_set(src, nameof(song),
 init_new_child	code/modules/integrated_electronics/subtypes/camera.dm	rel_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
 init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
-init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
 init_new_child	code/modules/maint_recycler/code/maint_vendor.dm	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 init_new_child	code/modules/mining/drilling/drill.dm	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
 init_new_child	code/modules/mining/machine_silo.dm	rel_set(src, nameof(materials), new /datum/material_container( \

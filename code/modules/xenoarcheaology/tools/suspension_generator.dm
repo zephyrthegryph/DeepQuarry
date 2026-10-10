@@ -57,7 +57,6 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	else if(cell)
 		cell.forceMove(loc)
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
 		icon_state = "suspension"
 		rel_take(src, nameof(cell))

@@ -141,7 +141,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 
 		rel_set(src, nameof(human), H) // the pair sets H.nif too
-		stat = NIF_INSTALLING
+		set_stat(NIF_INSTALLING)
 		grant(H, granted_verb(/mob/living/carbon/human/proc/set_nif_examine), src)
 		rel_set(src, nameof(menu_ref), new /datum/nif_menu(H))
 		if(starting_software)
@@ -186,14 +186,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/datum/nifsoft/soulcatcher/SC = imp_check(NIF_SOULCATCHER)
 	if(SC) //Clean up stored people, this is dirty but the easiest way.
 		own_clear(SC, nameof(SC.brainmobs), OWN_DELETE)
-	stat = NIF_PREINSTALL
+	set_stat(NIF_PREINSTALL)
 	vis_update()
 	if(H)
 		revoke(H, granted_verb(/mob/living/carbon/human/proc/set_nif_examine), src)
 	rel_clear(src, nameof(menu_ref))
 	unregister_human()
 	install_done = null
-	changed(src)
 
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)
@@ -205,8 +204,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	if(durability <= 0)
 		set_durability(0)	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
-		stat = NIF_TEMPFAIL
-		changed(src)
+		set_stat(NIF_TEMPFAIL)
 
 		if(human)
 			notify("Danger! General system insta#^!($",TRUE)
@@ -222,6 +220,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 //Attackby proc, for maintenance
 
 TRACKED(/obj/item/nif, open)
+TRACKED(/obj/item/nif, stat)
 TRACKED(/obj/item/nif, durability)
 
 MSG_DEF(nif/rewired, span_notice("You replace any burned out wiring in %T%."), "%U% replaces some wiring in %T%.")
@@ -238,28 +237,23 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 
 /obj/item/nif/proc/wiring_checked(datum/act/op/A)
 	set_open(3)
-	changed(src)
 
 /obj/item/nif/proc/rewire_done(datum/act/op/A)
 	set_open(2)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	changed(src)
 
 /obj/item/nif/proc/pry_open_done(datum/act/op/A)
 	playsound(src, A.held?.usesound, 50, 1)
 	set_open(1)
-	changed(src)
 
 /obj/item/nif/proc/reseal_done(datum/act/op/A)
 	playsound(src, A.held?.usesound, 50, 1)
 	set_open(FALSE)
 	repair(initial(durability))
-	stat = NIF_PREINSTALL
-	changed(src)
+	set_stat(NIF_PREINSTALL)
 
 /obj/item/nif/proc/reset_circuits_done(datum/act/op/A)
 	set_open(3)
-	changed(src)
 
 //Icon updating
 /// Appearance reader: the icon_state suffix for the open panel or install state.
@@ -297,7 +291,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 		else
 			notify("You are not an authorized user for this device. Please contact [owner].",TRUE)
 			unimplant(human)
-			stat = NIF_TEMPFAIL
+			set_stat(NIF_TEMPFAIL)
 			return FALSE
 
 	var/percent_done = (world.time - (install_done - (15 MINUTES))) / (15 MINUTES) // 35 minutes down to 15 minutes.
@@ -334,7 +328,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 
 		//Finishing up
 		if(1.0 to INFINITY)
-			stat = NIF_WORKING
+			set_stat(NIF_WORKING)
 			owner = human.mind.name
 			name = initial(name) + " ([owner])"
 			if(comm)
@@ -355,7 +349,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 		if(NIF_WORKING)
 			//Perform our passive drain
 			if(!use_charge(power_usage))
-				stat = NIF_POWFAIL
+				set_stat(NIF_POWFAIL)
 				vis_update()
 				notify("Insufficient energy!",TRUE)
 				return FALSE
@@ -371,7 +365,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 			if(human && human.nutrition < 100)
 				return FALSE
 			else
-				stat = NIF_WORKING
+				set_stat(NIF_WORKING)
 				vis_update()
 				notify("System Reboot Complete.")
 
@@ -422,7 +416,7 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 
 /// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
 /obj/item/nif/proc/install_refusal(datum/nifsoft/path)
-	if(stat == NIF_TEMPFAIL) // ALLOW(reads): a NIF's state and software are asked when the software is chosen, never cached
+	if(stat == NIF_TEMPFAIL)
 		return /datum/msg/nif/tempfail
 	if(nifsofts[initial(path.list_pos)])
 		return /datum/msg/nif/already_installed

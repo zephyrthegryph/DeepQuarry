@@ -18,7 +18,6 @@
 	play_sfx(FD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	if(unblock)
 		FD.set_blocked(0)
-		changed(FD)
 		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 		FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
 	else

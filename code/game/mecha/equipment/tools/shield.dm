@@ -10,7 +10,6 @@
 
 	var/obj/item/shield_projector/line/exosuit/my_shield = null
 	var/my_shield_type = /obj/item/shield_projector/line/exosuit
-	var/icon/drone_overlay
 
 	equip_type = EQUIP_HULL
 
@@ -29,18 +28,14 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 	my_shield.adjust_health(-200)
 	return
 
-// the shield drone overlay comes off the chassis and its shields drop.
+// its shields drop.
 /obj/item/mecha_parts/mecha_equipment/combat_shield/lifecycle_prerelease()
 	..()
-	chassis?.cut_overlay(drone_overlay)
 	my_shield?.destroy_shields()
 
-/obj/item/mecha_parts/mecha_equipment/combat_shield/add_equip_overlay(obj/mecha/M as obj)
+/obj/item/mecha_parts/mecha_equipment/combat_shield/equip_look(datum/look/look)
 	..()
-	if(!drone_overlay)
-		drone_overlay = new(src.icon, icon_state = "shield_droid")
-	M.add_overlay(drone_overlay)
-	return
+	look.overlay("shield_droid", icon = icon)
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/attach(obj/mecha/M as obj)
 	..()
@@ -51,7 +46,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/detach()
-	chassis.cut_overlay(drone_overlay)
 	..()
 	my_shield.destroy_shields()
 	rel_clear(my_shield, nameof(my_shield.my_mecha))

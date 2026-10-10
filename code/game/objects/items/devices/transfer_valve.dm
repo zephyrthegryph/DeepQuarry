@@ -46,7 +46,7 @@
 			return OP_OK
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
 		rel_set(AS, nameof(AS.holder), src)
-		AS.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
+		AS.toggle_secure()	//securing it redraws the bomb it sits in (the holder watches its parts).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")

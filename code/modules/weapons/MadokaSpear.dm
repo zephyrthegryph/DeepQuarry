@@ -23,20 +23,17 @@
 	var/unwieldsound = null
 	var/base_icon
 
+TRACKED(/obj/item/oldtwohanded, wielded)
+
 /obj/item/oldtwohanded/proc/unwield()
-	wielded = 0
+	set_wielded(0)
 	force = initial(force)
 	name = "[initial(name)]"
-	changed(src)
-	changed(src)
 
 /obj/item/oldtwohanded/proc/wield()
-	wielded = 1
+	set_wielded(1)
 	force = force_wielded
 	name = "[initial(name)] (Wielded)"
-	changed(src)
-	changed(src)
-	changed(src)
 
 TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
 
@@ -111,10 +108,9 @@ CAPABILITIES(/obj/item/oldtwohanded)
 /obj/item/oldtwohanded/offhand/wield()
 	spent(src)
 
-/// The look (the draw sweep: from APPEARANCE_NONE).
+/// Shows the mapped sprite, none of the parent's states.
 /obj/item/oldtwohanded/offhand/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
 	look.state(null)
 
 //spears, bay edition

@@ -309,11 +309,9 @@ CAPABILITIES(/obj/machinery/chem_master)
 			color = col
 			break
 	if(length(color) && color != "CLEAR")
-		loaded_pill_bottle.wrapper_color = color
-		loaded_pill_bottle.update_icon()
+		loaded_pill_bottle.set_wrapper_color(color)
 	else
-		loaded_pill_bottle.wrapper_color = null
-		loaded_pill_bottle.cut_overlays()
+		loaded_pill_bottle.set_wrapper_color(null)
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_addcustom(datum/act/op/A, list/arguments)
@@ -471,15 +469,15 @@ CAPABILITIES(/obj/machinery/chem_master)
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 
 	var/obj/item/paper/P = new /obj/item/paper(loc)
-	P.info = "<center><b>Chemical Analysis</b></center><br>"
-	P.info += span_bold("Time of analysis:") + " [worldtime2stationtime(world.time)]<br><br>"
-	P.info += span_bold("Chemical name:") + " [R.name]<br>"
+	P.set_info("<center><b>Chemical Analysis</b></center><br>")
+	P.set_info(P.info + (span_bold("Time of analysis:") + " [worldtime2stationtime(world.time)]<br><br>"))
+	P.set_info(P.info + (span_bold("Chemical name:") + " [R.name]<br>"))
 	if(istype(R, /datum/reagent/blood))
 		var/datum/reagent/blood/B = R
-		P.info += span_bold("Description:") + " N/A<br><b>Blood Type:</b> [B.data["blood_type"]]<br><b>DNA:</b> [B.data["blood_DNA"]]"
+		P.set_info(P.info + (span_bold("Description:") + " N/A<br><b>Blood Type:</b> [B.data["blood_type"]]<br><b>DNA:</b> [B.data["blood_DNA"]]"))
 	else
-		P.info += span_bold("Description:") + " [R.description]"
-	P.info += "<br><br><b>Notes:</b><br>"
+		P.set_info(P.info + (span_bold("Description:") + " [R.description]"))
+	P.set_info(P.info + ("<br><br><b>Notes:</b><br>"))
 	P.name = "Chemical Analysis - [R.name]"
 	after(src, 5 SECONDS, PROC_REF(printing_done))
 

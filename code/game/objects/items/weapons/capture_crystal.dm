@@ -15,7 +15,8 @@
 	var/mob/living/bound_mob			//Reference to our bound mob
 	var/spawn_mob_type					//The kind of mob an inactive crystal will try to spawn when activated
 	var/activate_cooldown = 30 SECONDS	//How long do we wait between unleashing and recalling
-	COOLDOWN_DECLARE(activate_cooldown_until) //Automatically set by things that try to move the bound mob or capture things
+	/// Set by things that try to move the bound mob or capture things, until the cooldown is over.
+	var/recharging = FALSE
 	var/empty_icon = "empty"
 	var/full_icon = "full"
 	var/spawn_mob_name = "A mob"
@@ -245,6 +246,9 @@ CAPABILITIES(/obj/item/capture_crystal)
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 	return OP_OK
 
+TRACKED(/obj/item/capture_crystal, spawn_mob_type)
+TRACKED(/obj/item/capture_crystal, recharging)
+
 /obj/item/capture_crystal/draw(datum/look/look)
 	..()
 	var/drawn_state = look.state_so_far(src)
@@ -252,22 +256,22 @@ CAPABILITIES(/obj/item/capture_crystal)
 		drawn_state = look.state(full_icon)
 	else if(!bound_mob)
 		drawn_state = look.state("inactive")
-	else if(bound_mob in contents)
-		drawn_state = look.state(full_icon)
 	else
-		drawn_state = look.state(empty_icon)
-	if(!cooldown_check())
+		look.watch(bound_mob) // it goes in and comes out
+		drawn_state = look.state(bound_mob.loc == src ? full_icon : empty_icon)
+	if(recharging)
 		drawn_state = look.state("[drawn_state]-busy")
 
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
-	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-	after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon), key = "cooldown_icon")
+	set_recharging(TRUE)
+	after(src, activate_cooldown, PROC_REF(activate_cooldown_over), key = "cooldown_icon")
+
+/obj/item/capture_crystal/proc/activate_cooldown_over()
+	set_recharging(FALSE)
 
 /obj/item/capture_crystal/proc/cooldown_check()
-	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
-		return FALSE
-	else return TRUE
+	return !recharging
 
 /obj/item/capture_crystal/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(bound_mob)
@@ -504,7 +508,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
 		bound_mob.faction = user.faction
-		spawn_mob_type = null
+		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
@@ -549,7 +553,6 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
-		changed(src)
 		return
 	//The target is not a mob, so let's not do anything.
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -571,7 +574,6 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	else						//No we don't have a mob, let's reset the crystal.
 		to_chat(U, span_notice("\The [src] clicks unsatisfyingly."))
 		active = FALSE
-		changed(src)
 		rel_clear(src, nameof(owner))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
@@ -587,7 +589,6 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_IN)
-		changed(src)
 	else
 		to_chat(user, span_notice("\The [src] clicks and emits a small, unpleasant tone. \The [bound_mob] cannot be recalled."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -611,7 +612,6 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
-	changed(src)
 
 //Let's make a flashy sparkle when someone appears or disappears!
 /obj/item/capture_crystal/proc/animate_action(atom/thing)
@@ -1002,7 +1002,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 /obj/item/capture_crystal/random/Initialize(mapload)
 	var/subchoice = pickweight(possible_mob_types)		//Some of the lists have nested lists, so let's pick one of them
 	var/choice = pickweight(subchoice)					//And then we'll pick something from whatever's left
-	spawn_mob_type = choice								//Now when someone uses this, we'll spawn whatever we picked!
+	set_spawn_mob_type(choice)								//Now when someone uses this, we'll spawn whatever we picked!
 	return ..()
 
 /mob/living
@@ -1054,7 +1054,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
 		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
 		bound_mob.faction = user.faction
-		spawn_mob_type = null
+		set_spawn_mob_type(null)
 		capture(bound_mob, user)
 	if(bound_mob)								//We have a mob! Let's finish setting up.
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
@@ -1094,7 +1094,6 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
-		changed(src)
 		return
 	//The target is not a mob, so let's not do anything.
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)

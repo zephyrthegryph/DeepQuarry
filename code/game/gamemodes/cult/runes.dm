@@ -586,7 +586,7 @@ TRACKED(/obj/effect/rune, manifesting)
 		if(R.word1==GLOB.cultwords["travel"] && R.word2==GLOB.cultwords["self"])  //teleport
 			T = new(src.loc)
 			T.imbue = "[R.word3]"
-			T.info = "[R.word3]"
+			T.set_info("[R.word3]")
 			imbued_from = R
 			break
 		if(R.word1==GLOB.cultwords["see"] && R.word2==GLOB.cultwords["blood"] && R.word3==GLOB.cultwords["hell"]) //tome

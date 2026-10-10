@@ -54,7 +54,7 @@
 /proc/create_contract_document(atom/location, document_name, document_info, contract_id, document_kind, destination, list/payload)
 	var/obj/item/paper/document = new(location)
 	document.name = document_name
-	document.info = document_info
+	document.set_info(document_info)
 	new /datum/contract_document(document, contract_id, document_kind, destination, payload)
 	return document
 
@@ -351,7 +351,7 @@
 	signed_participant.consent_evidence_id = evidence_id
 	rel_set(signed_participant, nameof(signed_participant.consent_record), paper)
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
-	paper.info += "<br><b>Registered subject:</b> [subject.real_name]<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this signed form with genuine body-scanner reports from before exposure and at least one minute after exposure, then fax the packet to [CONTRACT_FAX_VEYMED]."
+	paper.set_info(paper.info + ("<br><b>Registered subject:</b> [subject.real_name]<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this signed form with genuine body-scanner reports from before exposure and at least one minute after exposure, then fax the packet to [CONTRACT_FAX_VEYMED]."))
 	paper.updateinfolinks()
 	to_chat(subject, span_notice("VeyMed registers your signed consent for study [trial.profile.code_name]. A body scan is still required before exposure."))
 	emit_contract_event(CONTRACT_EVENT_DOCUMENT_SIGNED, list(
@@ -370,7 +370,7 @@
 	payload["signed"] = TRUE
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed [paper.name]"
-	paper.info += "<br><b>Status:</b> Signed withdrawal pending receipt by [destination]."
+	paper.set_info(paper.info + ("<br><b>Status:</b> Signed withdrawal pending receipt by [destination]."))
 	paper.updateinfolinks()
 	emit_contract_event(CONTRACT_EVENT_DOCUMENT_SIGNED, list(
 		"contract_id" = contract_id,
