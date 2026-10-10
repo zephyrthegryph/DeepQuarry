@@ -4063,3 +4063,8 @@ Every site that declared `DECLARE_INTERACTIONS`, `EXTEND_INTERACTIONS` or a `/da
   - The i7 snapshots record the legacy resolver's ids and blocked reasons: the construction edges, the silicon equip-module spec and the disposal ids are ops now.
   - The look state pin gains the cyborg `shell` rows (`shell=1`/`2` drops the eyes, `shell=0` brings them back; `robot_look.dm` draws `!shell || deployed`): the robot's analyzer key moved with
     this branch, so the type was probed again and its recorded rows, never extended since the shell state was tracked, were completed.
+
+
+### Generic silicon module Equip preservation (requirements re-land, 2026-10-09)
+
+The native `/obj/item` module Equip conversion preserves its old stable key `gen_silicon_item_silicon_equip_module` and silicon menu availability. An item outside a robot module retains the disabled Equip row with `not possible right now` for both robots and AI. Module containment is a null-or-reason requirement, not a selector that hides refusal rows. A module-contained item still equips for a robot; an AI retains its old successful no-op. The native remote binding and DEFAULT - 50 priority remain. This restores the pre-conversion behavior; no requirement snapshot rows are re-blessed. The resolver explanation's key spelling is updated to match that preserved key.
