@@ -134,3 +134,16 @@
 	var/obj/item/gun/projectile/artifact/G = allocate(/obj/item/gun/projectile/artifact, B)
 	for(var/obj/item/ammo_casing/artifact/C in G.loaded)
 		TEST_ASSERT(istype(C.BB, G.projectile_type || /obj/item/projectile/bullet/foam_dart_riot), "an artifact casing holds its gun's bullet")
+
+/// A vehicle cage starts with its vehicle and lets it out (not deleted) when taken apart or destroyed.
+/datum/unit_test/dq_decl_vehicle_cage/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/structure/vehiclecage/spacebike/C = allocate(/obj/structure/vehiclecage/spacebike, T)
+	var/obj/vehicle/V = C.my_vehicle
+	TEST_ASSERT(istype(V, /obj/vehicle/bike), "the cage starts with its bike")
+	qdel(C)
+	TEST_ASSERT(!QDELETED(V) && V.loc == T, "a destroyed cage puts its bike out")
+	var/obj/item/integrated_circuit/reagent/storage/S = allocate(/obj/item/integrated_circuit/reagent/storage, T)
+	TEST_ASSERT_EQUAL(S.reagents?.maximum_volume, S.volume, "a reagent storage circuit holds its volume")
+	var/obj/item/integrated_circuit/reagent/pump/P = allocate(/obj/item/integrated_circuit/reagent/pump, T)
+	TEST_ASSERT(isnull(P.reagents), "a pump circuit holds nothing")

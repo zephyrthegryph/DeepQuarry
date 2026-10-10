@@ -29,7 +29,6 @@ TRACKED(/obj/structure/vehiclecage, paint_color)
 /obj/structure/vehiclecage/Initialize(mapload)
 	. = ..()
 	if(my_vehicle_type)
-		rel_set(src, nameof(my_vehicle), new my_vehicle_type(src))
 		for(var/obj/I in get_turf(src))
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 				continue
@@ -39,6 +38,7 @@ MSG_DEF(vehiclecage/unbolting, "You begin loosening %T%'s bolts.", "%U% begins l
 MSG_DEF(vehiclecage/cutting, "You begin cutting %T%'s bolts.", "%U% begins cutting %T%'s bolts.")
 
 CAPABILITIES(/obj/structure/vehiclecage)
+	owns_one(nameof(my_vehicle), /obj/vehicle, starts = nameof(my_vehicle_type), on_destroy = ON_DESTROY_SPILL) // a cage destroyed any other way than taken apart puts its vehicle out
 	op("unbolt", tool(TOOL_WRENCH), label("Take apart"), wait(6 SECONDS), begins(MSG(vehiclecage/unbolting)), then(PROC_REF(taken_apart)))
 	op("cut_bolts", tool(TOOL_WIRECUTTER), label("Cut apart"), wait(7 SECONDS), begins(MSG(vehiclecage/cutting)), then(PROC_REF(taken_apart)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/structure/vehiclecage)
 		if(AM.simulated)
 			AM.forceMove(T)
 
-	rel_clear(src, nameof(my_vehicle))
+	rel_take(src, nameof(my_vehicle)) // released, not deleted: it was moved out above
 	act_message(user, src, MSG_SELF(span_notice("You finally release %T%.")), \
 		MSG_OTHERS(span_notice("%U% release %T%.")), \
 		MSG_BLIND(span_notice("You hear creaking metal.")))

@@ -10120,13 +10120,13 @@
 /obj/item/integrated_circuit/power/transmitter/large	5dbfbf40b21d2fac	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
 /obj/item/integrated_circuit/reagent	93d4a2f76092502b	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
 /obj/item/integrated_circuit/reagent/filter	5c5f4a14114efdc1	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/injector	60ce945348477b8d	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
+/obj/item/integrated_circuit/reagent/injector	59a2ea2773933b65	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
 /obj/item/integrated_circuit/reagent/pump	46d529aad5944b77	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/smoke	61cea6a911fc921b	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/storage	13f55ad64fe0a437	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/storage/big	7506591f7a626055	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/storage/cryo	ecf6edaeb807abf0	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
-/obj/item/integrated_circuit/reagent/storage/scan	f1fb9c186e921c12	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
+/obj/item/integrated_circuit/reagent/smoke	13eade804985cb89	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
+/obj/item/integrated_circuit/reagent/storage	04d3ac9b60365345	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
+/obj/item/integrated_circuit/reagent/storage/big	b5bec8ca3c4dc5d6	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
+/obj/item/integrated_circuit/reagent/storage/cryo	520b252d79bdef40	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
+/obj/item/integrated_circuit/reagent/storage/scan	d6339ae7075e8e46	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice,volume
 /obj/item/integrated_circuit/smart	898976cef9f4eb47	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
 /obj/item/integrated_circuit/smart/advanced_pathfinder	d7a0ea53db793750	activators,carried_afflictions,economic_adoption,idc,identity,inputs,mind_host,outputs,possessed_voice
 /obj/item/integrated_circuit/smart/basic_pathfinder	6c27d39f0fae5ab5	activators,carried_afflictions,economic_adoption,identity,inputs,mind_host,outputs,possessed_voice
@@ -11842,7 +11842,7 @@
 /obj/item/projectile/energy/blob/freezing/splattering	af03155cc943ddfd	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
 /obj/item/projectile/energy/blob/moth	1855135a6cedaf90	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
 /obj/item/projectile/energy/blob/rainbowfly	4ad78704289014aa	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
-/obj/item/projectile/energy/blob/splattering	3ed48fe9753119aa	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
+/obj/item/projectile/energy/blob/splattering	b20e0293a6e4d70b	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,splatter_volume,trajectory
 /obj/item/projectile/energy/blob/toxic	cd09bc5dd2b3c649	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
 /obj/item/projectile/energy/blob/toxic/splattering	5b15d8f94f479c7d	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
 /obj/item/projectile/energy/blood_bullet	084dc28dfdf2d095	beam_segments,carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,trajectory
@@ -20519,10 +20519,10 @@
 /obj/structure/tubes	b357aa8957b50433	
 /obj/structure/undies_wardrobe	eb02bce720d82b32	
 /obj/structure/urinal	f924fe306d3c33c4	
-/obj/structure/vehiclecage	b2a35572254d7e2a	paint_color
-/obj/structure/vehiclecage/quadbike	4870874c4b037c80	paint_color
-/obj/structure/vehiclecage/quadtrailer	9da9ef9f1c8627f1	paint_color
-/obj/structure/vehiclecage/spacebike	41ac0c53c6eb8a51	paint_color
+/obj/structure/vehiclecage	a315f282544998c3	my_vehicle,my_vehicle_type,paint_color
+/obj/structure/vehiclecage/quadbike	4409e42776f658e0	my_vehicle,my_vehicle_type,paint_color
+/obj/structure/vehiclecage/quadtrailer	f6ebb18f99f6a9c5	my_vehicle,my_vehicle_type,paint_color
+/obj/structure/vehiclecage/spacebike	9980a2fc23cc4d50	my_vehicle,my_vehicle_type,paint_color
 /obj/structure/windoor_assembly	2f6e619d93078fe8	constructed,electronics,facing,secure,start_dir
 /obj/structure/windoor_assembly/secure	0f165f8e3a5c6e0f	constructed,electronics,facing,secure,start_dir
 /obj/structure/window	30ec4b83096130f3	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign

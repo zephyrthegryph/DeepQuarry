@@ -3,10 +3,9 @@
 	var/volume = 0
 	unacidable = TRUE
 
-/obj/item/integrated_circuit/reagent/Initialize(mapload)
-	. = ..()
-	if(volume)
-		create_reagents(volume)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/smoke)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/smoke
 	name = "smoke generator"
@@ -55,6 +54,9 @@
 		smoke_system.start()
 	reagents.clear_reagents()
 	activate_pin(2)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/injector
 	name = "integrated hypo-injector"
@@ -274,6 +276,9 @@
 				return
 			target.reagents.trans_to(source, transfer_amount)
 		activate_pin(2)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/storage)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/storage
 	name = "reagent storage"
