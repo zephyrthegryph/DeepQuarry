@@ -5,11 +5,13 @@ human|none menu: Relase Entity
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
 robot|none menu: Eat Entity
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Relase Entity
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Eat Entity (refused: You can't reach that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -75,5 +77,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Relase Entity
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: break_out, collect_item, deactivate, deploy, drag_buckle, equip_module, free_occupant, ghost_trap_hidden_vore_effect, kit_customize, kit_customize_last, move_to_top, pick_up_item, release_occupant_effect, self, toggle_digestable
+keys: break_out, collect_item, deactivate, deploy, drag_buckle, free_occupant, gen_silicon_item_silicon_equip_module, ghost_trap_hidden_vore_effect, kit_customize, kit_customize_last, move_to_top, pick_up_item, release_occupant_effect, self, toggle_digestable
 

@@ -8,6 +8,7 @@ human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Alternate use
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: HALT! (refused: You can't do that.)
 robot|none menu: Move To Top
 robot|none menu: Pick up
@@ -16,6 +17,7 @@ robot|none menu: Select phrase
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
 robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: HALT! (refused: You can't do that.)
 ghost|none menu: Move To Top (refused: You can't reach that.)
@@ -130,5 +132,5 @@ human|/obj/item/card/emag menu: Select phrase
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable
 

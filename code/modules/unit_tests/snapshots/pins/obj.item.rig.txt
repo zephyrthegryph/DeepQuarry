@@ -19,6 +19,7 @@ human|none click: Click: Rig shock hand
 robot|none menu: Configure Voice Synthesiser (refused: You can't do that.)
 robot|none menu: Deploy Hardsuit (refused: You can't do that.)
 robot|none menu: Engage Module (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Open Hardsuit Interface (refused: You can't do that.)
 robot|none menu: Pick up
@@ -34,6 +35,7 @@ robot|none menu: Toggle Helmet (refused: You can't do that.)
 robot|none menu: Toggle Module (refused: You can't do that.)
 robot|none menu: Toggle Visor (refused: You can't do that.)
 robot|none click: Click: Rig shock hand
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Configure Voice Synthesiser (refused: You can't do that.)
 ghost|none menu: Deploy Hardsuit (refused: You can't do that.)
@@ -291,5 +293,5 @@ human|/obj/item menu: Toggle Module (refused: You can't do that.)
 human|/obj/item menu: Toggle Visor (refused: You can't do that.)
 human|/obj/item click: Click: Rig item
 wires: AI Override, Interface Lock, Interface Shock, Security, System Control
-keys: collect_item, drag_buckle, emag.subvert, emag.use, equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
 

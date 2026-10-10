@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Reset camera bug (refused: You can't do that.)
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Pick up
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Reset camera bug (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Reset camera bug (refused: You can't do that.)
@@ -84,5 +86,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Reset camera bug (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Hit
-keys: collect_item, crush, drag_buckle, equip_module, hit, kit_customize, kit_customize_last, move_to_top, pair, pick_up_item, reset, secure, toggle_digestable
+keys: collect_item, crush, drag_buckle, gen_silicon_item_silicon_equip_module, hit, kit_customize, kit_customize_last, move_to_top, pair, pick_up_item, reset, secure, toggle_digestable
 

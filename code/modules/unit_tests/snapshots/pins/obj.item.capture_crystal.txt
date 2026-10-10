@@ -8,12 +8,14 @@ human|none menu: Toggle Follow (refused: You can't do that.)
 human|none click: Click: Pick up
 robot|none menu: Destroy Crystal (refused: You can't do that.)
 robot|none menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Release Ownership (refused: You can't do that.)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Toggle Follow (refused: You can't do that.)
 robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Destroy Crystal (refused: You can't do that.)
 ghost|none menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
@@ -103,5 +105,5 @@ human|/obj/item/storage menu: Release Ownership (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Follow (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
-keys: collect_item, destroy, drag_buckle, equip_module, follow, invite_ghosts, kit_customize, kit_customize_last, move_to_top, pick_up_item, release, toggle_digestable, use
+keys: collect_item, destroy, drag_buckle, follow, gen_silicon_item_silicon_equip_module, invite_ghosts, kit_customize, kit_customize_last, move_to_top, pick_up_item, release, toggle_digestable, use
 
