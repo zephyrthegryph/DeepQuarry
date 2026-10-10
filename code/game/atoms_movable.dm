@@ -328,7 +328,7 @@
 		tracked_changed(src, nameof(dir))
 	if(blocks_light)
 		light_blocking_moved(old_loc)
-	om_emit_moved(src, old_loc, direction, forced)
+	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))
 		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)

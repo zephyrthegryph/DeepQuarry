@@ -559,3 +559,35 @@ Twelve opt-outs in machinery and none in power were reviewed. Nine remain becaus
 ### K19-K25 follow-up (rewrite/fw-gaps-k)
 
 Sites the new forms unblock that are not converted yet, so the next wave knows where they are: the empty sandbag fill, the bore pull cord and the tourniquet loosen verb (each needs its holder or an existing pinned test reworked: a series over a stack must finish its `use()` in `then()`, see "Repeating and unbounded waits" in final_api.html), the straw sip, butchering cuts, the dog-borg re-arm, nanopaste and the medical stack (balloon refusals with interpolated text need a `MSG_BALLOON` per case), and every `/mob/living` ability (K23, proposal in doc/rewrite/proposals/mob_living_root.md).
+
+### IX-R2: interactions and om_ leftovers census (rewrite/ix-r2, 2026-10-09)
+
+Census at 1e8a10cbe2. `DECLARE_INTERACTIONS` / `EXTEND_INTERACTIONS` / `/datum/interaction` lines: 394 (261 production, 133 unit tests).
+No production type declares `DECLARE_INTERACTIONS` any more, and none of the 394 lines is in `code/game/machinery` or `code/modules/power`.
+Every remaining production line is the bridge itself, so there was nothing in class (a) to convert. `om_*(` lines in production
+code: 90 before, 67 after this lane (29 of the 67 are the definitions in `code/datums/om/world_watch.dm`).
+
+Converted and hard-banned this lane (callers moved, definitions deleted): `om_emit_examine`, `om_emit_moved` (callers use `PUBLISH_LEGACY`),
+`om_handle_forward` (callers use `rel_forward_identity`), `om_forward_family`, `om_forward_compatible`, `om_forward_state`, `om_run`,
+`om_field_written`, `om_world_dropped`, `om_world_tick_of` (now `world_tick_of`), and the dead `om_pipeline_audit` proc (its name is also a live
+config flag, so it is not name-banned). `om_mob_event_setup` on the overmap simplemob markers became `observe_parent`.
+
+**(c) The bridge, deleted when (b) and (d) reach zero**
+
+- `code/datums/interactions/{resolver,interaction,menu,presentation,entries,tools,native_resolution_adapter,shared_effects}.dm`: the legacy resolver and `use_tool`.
+- `/datum/interaction/capability` and its subtypes (`use_at`, `slot_insert`, `slot_eject`, `toggle`, `construction_step`) in `code/datums/capabilities/` and `code/datums/operations/`: the entry type every library capability still builds through `lib_op`/`adopt_entry`.
+- `allows_interaction()` in `code/modules/keybindings/adapters.dm`: filters resolver entries per actor kind; goes with the resolver.
+
+**(b) In machinery/power (Codex)**
+
+- None for `datum/interaction` and none for `om_*(` calls: both greps are empty under `code/game/machinery` and `code/modules/power`. The machinery work left is the `capabilities()` / `cap_*` tables that still build entries through the bridge.
+
+**(d) Blocked on a missing form**
+
+- `om_unlink` in `code/modules/food/kitchen/gibber.dm`: the occupant is a `/datum/om/relation/slot/occupant/gibber` containment slot with a ledger (KR5); there is no declared-link form for a slot that is unlinked without a ledger move.
+- `om_rate_linear/read/set_rate/remove` in `code/datums/rules/binding.dm` and `om_world_on_rate` in `rules/world_adapter.dm`: Rust rate models for rule hold timers; no `hold(lasts =)` form drives a native rate yet.
+- `om_world_when` in `code/domains/atmos/gas_level.dm`: Rust threshold watch on a mixture cell; needs `observe()` on a native handle with a condition.
+- `om_world_diagnostics` in the profiler, behaviours profiler and `_benchmark.dm`: reads the scheduler's native wake counters; needs the kernel metrics source to expose them.
+- `om_world_*` / `om_rate_*` definitions in `code/datums/om/world_watch.dm`: the Rust world bridge itself, deleted with its last caller above.
+- `om_unlink` hard ban: kept as `banned_outside` with the gibber exception until KR5 lands.
+- `/datum/om/*` carriers kept for compatibility (`global_owner`, `behaviour/internal/timers`, `edge`): needed while the legacy relation and timer paths exist.

@@ -64,6 +64,7 @@ for round in 1 2 3; do
 	echo "== dq_push_master: round $round: merging origin/master"
 	bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
 	if why="$(dirty)"; then die "the merge left $why"; fi
+	bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt regeneration failed"
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
 

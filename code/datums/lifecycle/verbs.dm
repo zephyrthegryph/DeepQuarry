@@ -65,7 +65,7 @@
 		if(QDELETED(built))
 			return null
 		original.set_containment_successor(built)
-		om_handle_forward(original, built)
+		rel_forward_identity(original, built)
 		ending_cause(original, END_REPLACED, built)
 		qdel(original)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
@@ -78,7 +78,7 @@
 	if(QDELETED(successor))
 		return null
 	original.set_containment_successor(successor)
-	om_handle_forward(original, successor)
+	rel_forward_identity(original, successor)
 	ending_cause(original, END_REPLACED, successor)
 	qdel(original)
 	// Into the slot only once the original has left it: a one-item slot (a
