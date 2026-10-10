@@ -225,7 +225,7 @@
 
 /datum/unit_test/om/task_step_results/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
-	var/datum/task/T = task_start(/datum/task/test_steps, E)
+	var/datum/task/T = task_begin(/datum/task/test_steps, E, list(), src)
 	TEST_ASSERT(istype(T), "the steps task starts: [T]")
 	scheduler_advance(1.1)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a", "step a runs after its delay")
@@ -238,18 +238,18 @@
 	TEST_ASSERT_EQUAL(T.state, TASK_DONE, "the task is done")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/task/F = task_start(/datum/task/test_steps_fail, E)
+	var/datum/task/F = task_begin(/datum/task/test_steps_fail, E, list(), src)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,f,cancel:nope", "STEP_FAIL cancels with its reason and later steps never run")
 	TEST_ASSERT_EQUAL(F.reason, "nope", "the reason is kept")
 
 	LAZYCLEARLIST(E.log)
-	task_start(/datum/task/test_steps_done, E)
+	task_begin(/datum/task/test_steps_done, E, list(), src)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "d,complete", "STEP_DONE completes early")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/task/C = task_start(/datum/task/test_steps, E)
+	var/datum/task/C = task_begin(/datum/task/test_steps, E, list(), src)
 	scheduler_advance(0.5)
 	TEST_ASSERT(task_cancel(C, "stop"), "cancelling mid-task is safe")
 	scheduler_advance(3)
@@ -257,7 +257,7 @@
 
 	LAZYCLEARLIST(E.log)
 	var/datum/om_test_entity/thing = entity(made)
-	var/datum/task/W = task_start(/datum/task/test_steps, E, null, thing = thing)
+	var/datum/task/W = task_begin(/datum/task/test_steps, E, list(null, thing = thing), src)
 	var/datum/task/test_steps/WS = W
 	TEST_ASSERT_EQUAL(WS.thing, thing, "a datum param is task state")
 	qdel(thing)
@@ -320,7 +320,7 @@
 	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")
 
 	LAZYCLEARLIST(E.log)
-	var/datum/task/T = task_start(/datum/task/test_steps_sleepy, E)
+	var/datum/task/T = task_begin(/datum/task/test_steps_sleepy, E, list(), src)
 	scheduler_advance(1.5)
 	set_global("om_expect_sleep", FALSE)
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")
