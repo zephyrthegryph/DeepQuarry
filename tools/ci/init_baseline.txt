@@ -831,7 +831,6 @@ initialize	code/modules/vore/fluffstuff/custom_items.dm	/obj/item/clothing/acces
 initialize	code/modules/vore/resizing/holder_micro.dm	/obj/item/holder/micro/Initialize(mapload, mob/held)
 initialize	code/modules/vore/smoleworld/smoleworld.dm	/obj/structure/smoletrack/Initialize(mapload)
 initialize	code/modules/xenoarcheaology/artifacts/replicator.dm	/obj/machinery/replicator/Initialize(mapload)
-initialize	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	/obj/item/ammo_casing/artifact/Initialize(mapload) //These should ONLY ever be in artifact weapons. If you spawn outside of artifact weapons, it'll have a riot foam dart inside of it as the bullet.
 initialize	code/modules/xenoarcheaology/tools/ano_device_battery.dm	/obj/item/anobattery/Initialize(mapload)
 initialize	code/modules/xenoarcheaology/tools/artifact_harvester.dm	/obj/machinery/artifact_harvester/Initialize(mapload)
 initialize	code/modules/xenoarcheaology/tools/tools.dm	/obj/item/storage/box/samplebags/Initialize(mapload)
