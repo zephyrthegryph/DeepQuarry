@@ -570,7 +570,8 @@ run_worlds() {
 			if [ "$n" -gt 1 ]; then shard="$i/$n"; fi
 			add_world "look$i" "$shard" "$LOOK_PARAMS" "${look_group[@]}"
 		done
-	elif [ ${#look_group[@]} -gt 0 ]; then
+	elif [ "$look_world" -ne 1 ] && [ ${#look_group[@]} -gt 0 ]; then
+		# Unprepared look runs stay full; an incremental plan with zero stale types needs no look world.
 		add_world look "" "" "${look_group[@]}"
 	fi
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do echo "== worlds: ${W_LABEL[$i]}${W_SHARD[$i]:+ (slice ${W_SHARD[$i]})}"; done
