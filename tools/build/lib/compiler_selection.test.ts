@@ -7,7 +7,7 @@ import { captureShadowOutputPair } from './shadow_output';
 import path from 'node:path';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -175,6 +175,46 @@ test('native internal status 70 falls back once and propagates BYOND failure', a
   expect(calls).toBe(1);
   expect(failure).toBe(expected);
   expect(failure.code).toBe(37);
+});
+
+test('explicit native one-shot option preserves defaults and configuration identity', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  delete process.env.DQ_NATIVE_NO_DAEMON;
+  const defaultIdentity = compilerCacheIdentity();
+  let byondCalls = 0;
+  for (const setting of [undefined, '0', '1']) {
+    if (setting === undefined) delete process.env.DQ_NATIVE_NO_DAEMON;
+    else process.env.DQ_NATIVE_NO_DAEMON = setting;
+    let argumentsSeen: string[] = [];
+    const failure = await selectedCompiler('project.dme', {}, async () => { byondCalls++; }, async (_executable, args) => {
+      argumentsSeen = args;
+      return { code: 2, combined: 'source rejection' };
+    }).then(() => null, error => error);
+    expect(failure.code).toBe(2);
+    expect(argumentsSeen.includes('--no-daemon')).toBe(setting === '1');
+    expect(argumentsSeen).not.toContain('--no-cache');
+    if (setting === '1') expect(compilerCacheIdentity()).not.toBe(defaultIdentity);
+    else expect(compilerCacheIdentity()).toBe(defaultIdentity);
+  }
+  expect(byondCalls).toBe(0);
+});
+
+test('invalid native one-shot option rejects before launching either compiler', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let calls = 0;
+  for (const value of ['', 'true', '2', '-1', ' 1', '01']) {
+    process.env.DQ_NATIVE_NO_DAEMON = value;
+    await expect(selectedCompiler('project.dme', {}, async () => { calls++; }, async () => {
+      calls++;
+      return { code: 0, combined: '' };
+    })).rejects.toThrow('DQ_NATIVE_NO_DAEMON must be 0 or 1');
+    expect(() => compilerCacheIdentity()).toThrow('DQ_NATIVE_NO_DAEMON must be 0 or 1');
+  }
+  expect(calls).toBe(0);
 });
 
 test('successful internal fallback records BYOND as the actual test compiler', async () => {

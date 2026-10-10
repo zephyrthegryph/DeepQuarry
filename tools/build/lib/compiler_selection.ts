@@ -59,10 +59,16 @@ export function compilerMode(): CompilerMode {
   }
   return mode;
 }
+function nativeNoDaemon(): boolean {
+  const value = process.env.DQ_NATIVE_NO_DAEMON ?? '0';
+  if (value !== '0' && value !== '1') throw new Error('DQ_NATIVE_NO_DAEMON must be 0 or 1.');
+  return value === '1';
+}
 /** Include backend configuration and actual binaries in derived-build admission. */
 export function compilerCacheIdentity(): string {
   const mode = compilerMode();
   if (mode === 'byond') return mode;
+  const noDaemon = nativeNoDaemon();
   const hash = createHash('sha256');
   hash.update(mode);
   for (const variable of ['DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_DMB_INSPECT']) {
@@ -75,6 +81,8 @@ export function compilerCacheIdentity(): string {
     }
   }
   hash.update(process.env.DQ_NATIVE_WORKERS ?? '8');
+  // Unset and explicit zero preserve the existing default configuration identity.
+  if (noDaemon) hash.update('DQ_NATIVE_NO_DAEMON=1');
   return hash.digest('hex');
 }
 function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string, invocation?: CompilerInvocation): [string, string[]] {
@@ -98,6 +106,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
     throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
   }
   const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
+  if (nativeNoDaemon()) args.push('--no-daemon');
   for (const define of options.defines ?? []) args.push(`-D${define}`);
   if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--exact-inputs', '--no-cache');
   return [executable, args];
