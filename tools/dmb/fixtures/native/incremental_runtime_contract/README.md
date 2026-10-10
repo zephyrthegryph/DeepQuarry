@@ -21,6 +21,10 @@ The helper independently acquires both exact native generations and checks
 their DMB/RSC SHA-256 byte equality. Three separate DD worlds must match the
 declared ordered markers and report no runtime errors. Each world starts anew;
 the compiler retains state, not the runtime's procedure-static variables.
+Native worlds run on independent writable copies of the authenticated acquired
+pair. DreamDaemon may modify a runtime archive; acquisition and immutable store
+hashes must still match after execution. Runtime archive hashes are recorded
+separately and are not treated as immutable compiler output.
 
 Run after the parent coordinator releases build/measurement holds:
 
