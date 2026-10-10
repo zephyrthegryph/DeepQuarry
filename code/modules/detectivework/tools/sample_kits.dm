@@ -13,10 +13,11 @@
 		copy_evidence(supplied)
 		name = "[initial(name)] (\the [supplied])"
 
-/obj/item/sample/print/Initialize(mapload, supplied)
-	. = ..()
-	if(evidence && length(evidence))
-		icon_state = "fingerprint1"
+/// A print card that holds prints shows them.
+/obj/item/sample/print/draw(datum/look/look)
+	..()
+	if(length(evidence))
+		look.state("fingerprint1")
 
 /obj/item/sample/proc/copy_evidence(atom/supplied)
 	var/list/fibre_data = supplied.forensic_data.get_fibres()

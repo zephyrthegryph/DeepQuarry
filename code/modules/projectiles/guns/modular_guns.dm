@@ -30,13 +30,10 @@
 // Fitted parts sit in the gun's contents.
 /obj/item/gun/energy/modular/ownership()
 	. = ..()
-	. += owns(nameof(guncomponents), policy = OWN_CONTAINED, is_list = TRUE)
+	. += owns(nameof(guncomponents), policy = OWN_CONTAINED, is_list = TRUE, starts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/micro_laser, /obj/item/stock_parts/manipulator))
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
-	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
-	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
-	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 	CheckParts()
 	FireModeModify()
 

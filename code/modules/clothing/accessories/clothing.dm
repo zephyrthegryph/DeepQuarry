@@ -95,12 +95,14 @@
 /obj/item/clothing/accessory/hawaiian_random
 	name = "random hawaiian shirt"
 
-// ALLOW(init/INSTANCE_STATE): picks its shirt colour at random
-/obj/item/clothing/accessory/hawaiian_random/Initialize(mapload)
-	var/random_color = pick("blue", "pink", "red", "yellow", "cyan")
-	icon_state = "hawaiian_[random_color]"
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian_random)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/accessory/hawaiian_random/proc/roll_look(datum/roller/R)
+	var/random_color = R.choose(list("blue", "pink", "red", "yellow", "cyan"))
 	name = "[random_color] hawaiian shirt"
-	. = ..()
+	return "hawaiian_[random_color]"
 
 /obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
@@ -148,17 +150,15 @@ CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel out of touch."
 	icon_state = "miamivice"
 
-// ALLOW(init/INSTANCE_STATE): picks its tropical shirt variant at random
-/obj/item/clothing/accessory/tropical_random/Initialize(mapload)
-	. = ..()
-	var/obj/item/clothing/accessory/new_item = pick(/obj/item/clothing/accessory/tropical,
-													/obj/item/clothing/accessory/tropical/green,
-													/obj/item/clothing/accessory/tropical/pink,
-													/obj/item/clothing/accessory/tropical/blue)
+CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/accessory/tropical_random/proc/roll_look(datum/roller/R)
+	var/obj/item/clothing/accessory/new_item = R.choose(list(/obj/item/clothing/accessory/tropical, /obj/item/clothing/accessory/tropical/green, /obj/item/clothing/accessory/tropical/pink, /obj/item/clothing/accessory/tropical/blue))
 	name = initial(new_item.name)
 	desc = initial(new_item.desc)
-	icon_state = initial(new_item.icon_state)
+	return initial(new_item.icon_state)
 
 /*
  * Chaps

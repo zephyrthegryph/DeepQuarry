@@ -9,14 +9,17 @@
 	var/datum/song/stationary/song
 
 CAPABILITIES(/obj/structure/musician)
-	owns_one(nameof(song), /datum/song/stationary)
+	owns_one(nameof(song), /datum/song/stationary, starts = PROC_REF(make_song))
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/musician/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(song), new /datum/song/stationary(src, allowed_instrument_ids))
 	allowed_instrument_ids = null
+
+/// The starting song (owns_one(starts =)).
+/obj/structure/musician/proc/make_song(current)
+	return new /datum/song/stationary(src, allowed_instrument_ids)
 
 
 /obj/structure/musician/proc/can_play(atom/music_player)

@@ -56,8 +56,9 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	offset_tunnel()
 
 // the tunnel collapses and spits out the micros inside it.
+DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(message = "%SRC% collapses!"))
+
 /obj/structure/micro_tunnel/on_destroy(force)
-	visible_message(span_warning("\The [src] collapses!"))
 	for(var/mob/thing in contents_of(src))
 		visible_message(span_warning("\The [thing] tumbles out!"))
 		thing.forceMove(get_turf(src.loc))

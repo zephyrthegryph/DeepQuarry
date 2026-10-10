@@ -1179,7 +1179,6 @@
 	. = ..()
 	if(icon_state == "ranger_uniform") //allows for custom items
 		name = "[unicolor] ranger uniform"
-		icon_state = "[unicolor]_ranger_uniform"
 
 /obj/item/clothing/under/color/ranger/black
 	unicolor = "black"
@@ -2485,3 +2484,9 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	rel_set(box, nameof(box.prompt), src)
 	box.tgui_interact(user)
 	return box
+
+/// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
+/obj/item/clothing/under/color/ranger/draw(datum/look/look)
+	..()
+	if(look.state_so_far(src) == "ranger_uniform")
+		look.state("[unicolor]_ranger_uniform")

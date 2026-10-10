@@ -32,7 +32,7 @@ TRACKED(/obj/item/gun/magnetic, removable_components)
 
 CAPABILITIES(/obj/item/gun/magnetic)
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
-	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
+	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
@@ -51,8 +51,7 @@ CAPABILITIES(/obj/item/gun/magnetic)
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()
 	// So you can have some spawn with components
-	if(ispath(capacitor))
-		rel_set(src, nameof(capacitor), new capacitor(src))
+	if(capacitor) // made from the declared starting type: it starts charged
 		capacitor.set_charge(capacitor.max_charge)
 
 	if(capacitor)

@@ -8,9 +8,6 @@
 
 /obj/machinery/reagent_refinery/Initialize(mapload)
 	. = ..()
-	// reagent control
-	if(default_max_vol > 0)
-		create_reagents(default_max_vol, reagent_type)
 
 // its reagents are flushed.
 /obj/machinery/reagent_refinery/on_destroy(force)
@@ -52,6 +49,7 @@
 /// Unanchored refinery machines are disconnected and do nothing.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/reagent_refinery)
+	reagents(nameof(default_max_vol), holder = nameof(reagent_type))
 	rotatable()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), STAT_OPERABLE), unpowered = TRUE)
 	op("reagent_refinery_drain", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), when(req_bool(PROC_REF(has_reagents_holder_holds))), needs(req_reagents(0, more = TRUE, because = MSG(reagent_refinery/nothing_to_drain))), then(PROC_REF(interaction_drain)))

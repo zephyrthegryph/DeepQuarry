@@ -167,7 +167,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/potted_plant)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/potted_plant/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/potted_plant/roll_icon_state(datum/roller/R)
 	return "potplant[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/thicket
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/thicket)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/thicket/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/thicket/roll_icon_state(datum/roller/R)
 	return "thicket[R.number(0, 6)]"
 
 /obj/structure/flora/desert_planet/shrub
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/shrub)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/shrub/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/shrub/roll_icon_state(datum/roller/R)
 	return "shrub[R.number(0, 5)]"
 
 /obj/structure/flora/desert_planet/bush
@@ -203,7 +203,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/bush)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/bush/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/bush/roll_icon_state(datum/roller/R)
 	return "bush[R.number(0, 5)]"
 
 /obj/structure/flora/desert_planet/barrelcacti
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/barrelcacti)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/barrelcacti/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/barrelcacti/roll_icon_state(datum/roller/R)
 	return "barrelcacti[R.number(0, 3)]"
 
 /obj/structure/flora/desert_planet/palmy
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/palmy)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/palmy/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/palmy/roll_icon_state(datum/roller/R)
 	return "palmy[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/shrubber
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/shrubber)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/shrubber/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/shrubber/roll_icon_state(datum/roller/R)
 	return "shrubber[R.number(0, 2)]"
 
 /obj/structure/flora/desert_planet/lbarrelcacti
@@ -251,7 +251,7 @@ CAPABILITIES(/obj/structure/flora/desert_planet/lbarrelcacti)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/desert_planet/lbarrelcacti/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/desert_planet/lbarrelcacti/roll_icon_state(datum/roller/R)
 	return "lbarrelcacti[R.number(0, 2)]"
 
 // Trees

@@ -30,7 +30,7 @@
 
 CAPABILITIES(/obj/machinery/maint_vendor)
 	after_init(0, then(PROC_REF(move_after_init)))
-	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	owns_many(nameof(product_datums))
 	interface("RecyclerVendor")
 	op("purchase", ui_act("purchase", arg("index", num())), then(PROC_REF(ui_act_purchase)))
@@ -46,7 +46,6 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 		entry.initialize()
 		rel_add(src, nameof(product_datums), entry)
 	//move to relevant location
-	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon

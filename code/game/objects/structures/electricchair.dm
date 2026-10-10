@@ -8,7 +8,6 @@
 
 /obj/structure/bed/chair/e_chair/Initialize(mapload)
 	. = ..()
-	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
 	return
 
 /// The ledger slot its kit sits in: a chair's only other slot is its buckle seat, which takes mobs, so `part` names this one.
@@ -82,3 +81,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 /obj/structure/bed/chair/e_chair/ownership()
 	. = ..()
 	. += owns(nameof(part), policy = OWN_CONTAINED)
+
+/obj/structure/bed/chair/e_chair/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/obj/objects.dmi', "echair_over", layer = MOB_LAYER + 1, dir = dir))

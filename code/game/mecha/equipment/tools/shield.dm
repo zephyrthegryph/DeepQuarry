@@ -14,12 +14,11 @@
 	equip_type = EQUIP_HULL
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
-	owns_one(nameof(my_shield), /obj/item/shield_projector/line/exosuit)
+	owns_one(nameof(my_shield), /obj/item/shield_projector/line/exosuit, starts = nameof(my_shield_type), starts_args = NO_LOC)
 	op("toggle_shield", topic("toggle_shield"), then(PROC_REF(topic_toggle_shield)))
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(my_shield), new my_shield_type)
 	my_shield.shield_regen_delay = equip_cooldown
 	rel_set(my_shield, nameof(my_shield.my_tool), src)
 

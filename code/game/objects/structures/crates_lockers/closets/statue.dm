@@ -16,6 +16,9 @@
 	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
 
+/// The sprite of the encased mob's shape ("human_female", "monkey", "corgi"), or null for the mapped one.
+/obj/structure/closet/statue/var/statue_shape
+
 /// The mob turned to stone (its constructor param, dropped after init).
 /obj/structure/closet/statue/var/tmp/mob/living/statue_of
 
@@ -39,17 +42,19 @@
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
-				icon_state = "human_female"
+				statue_shape = "human_female"
 		else if(L.isMonkey())
 			name = "statue of a monkey"
-			icon_state = "monkey"
+			statue_shape = "monkey"
 		else if(iscorgi(L))
 			name = "statue of a corgi"
-			icon_state = "corgi"
+			statue_shape = "corgi"
 			desc = "If it takes forever, I will wait for you..."
 
 	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
+	if(statue_shape)
+		changed(src)
 
 	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 
@@ -133,7 +138,8 @@ CAPABILITIES(/obj/structure/closet/statue)
 
 /// A statue keeps its mapped sprite (the encased mob's shape), with none of a closet's door states.
 /obj/structure/closet/statue/closet_look(datum/look/look)
-	return
+	if(statue_shape)
+		look.state(statue_shape)
 
 /obj/structure/closet/statue/proc/shatter(mob/user as mob)
 	if (user)

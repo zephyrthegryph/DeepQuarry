@@ -101,6 +101,7 @@ CAPABILITIES(/obj/effect/directional_shield)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/shield_projector)
+	when(nameof(always_on), after_init(0, then(PROC_REF(raise_after_init))))
 	owns_many(nameof(active_shields))
 	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
 
@@ -115,8 +116,6 @@ TRACKED(/obj/item/shield_projector, regenerating)
 	max_integrity = max_integrity
 	dq_add_recursive_move(src)
 	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(moved_event)))
-	if(always_on)
-		after(src, 0, PROC_REF(create_shields))
 	return ..()
 
 // its shields come down.
@@ -132,6 +131,10 @@ TRACKED(/obj/item/shield_projector, regenerating)
 	var/obj/effect/directional_shield/S = new(newloc, src)
 	S.dir = new_dir
 	rel_add(src, nameof(active_shields), S)
+
+/// An always-on projector raises its shields once init is done (after_init()).
+/obj/item/shield_projector/proc/raise_after_init(datum/act/A)
+	create_shields()
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.

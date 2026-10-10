@@ -203,7 +203,7 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
-	owns_one(nameof(soundloop), /datum/looping_sound/small_motor)
+	owns_one(nameof(soundloop), /datum/looping_sound/small_motor, starts = /datum/looping_sound/small_motor)
 	// Pulls the cord (2 seconds a pull) until the motor starts.
 	op("pull_cord", ai(), takes("pulls"), wait(2 SECONDS, repeats = PROC_REF(pull_more), after_step = PROC_REF(pull_lap)), on_interrupt(PROC_REF(pull_abandoned)), then(PROC_REF(start_motor)))
 
@@ -229,7 +229,6 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 
 /obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
 
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)

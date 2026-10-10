@@ -18,12 +18,11 @@ TRACKED(/obj/structure/flora/tree, is_stump)
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 
-/obj/structure/flora/tree/Initialize(mapload)
-	icon_state = choose_icon_state()
-
-	. = ..()
+/// Rolled before init: the tree's look (a winter tree one of six, a pine one of three).
+/obj/structure/flora/tree/roll_icon_state(datum/roller/R)
 	if(TYPE_TABLE_GET(src, winter_icon_suffix))
-		icon_state = "[base_state][rand(1, 6)]"
+		return "[base_state][R.number(1, 6)]"
+	return choose_icon_state(R)
 
 /obj/structure/flora/tree/update_transform()
 	var/matrix/M = matrix()
@@ -32,7 +31,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 	animate(src, transform = M, time = 10)
 
 // Override this for special icons.
-/obj/structure/flora/tree/proc/choose_icon_state()
+/obj/structure/flora/tree/proc/choose_icon_state(datum/roller/R)
 	return icon_state
 
 /obj/structure/flora/tree/can_harvest(obj/item/I)
@@ -168,8 +167,8 @@ CAPABILITIES(/obj/structure/flora/tree)
 	product = /obj/item/stack/material/log
 	shake_animation_degrees = 3
 
-/obj/structure/flora/tree/pine/choose_icon_state()
-	return "[base_state]_[rand(1, 3)]"
+/obj/structure/flora/tree/pine/choose_icon_state(datum/roller/R)
+	return "[base_state]_[R.number(1, 3)]"
 
 // ition Start 15/2/20 TFF - Holodeck variation trees, drop no wood.
 /obj/structure/flora/tree/pine/holo
@@ -195,7 +194,7 @@ TRACKED(/obj/structure/flora/tree/pine/xmas/presents, ckeys_that_took)
 CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
 	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req_bool(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))
 
-/obj/structure/flora/tree/pine/xmas/presents/choose_icon_state()
+/obj/structure/flora/tree/pine/xmas/presents/choose_icon_state(datum/roller/R)
 	return "pinepresents"
 
 /// Requirement: one present per player.
@@ -233,8 +232,8 @@ MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on."
 	max_integrity = 200
 	pixel_x = 0
 
-/obj/structure/flora/tree/palm/choose_icon_state()
-	return "[base_state][rand(1, 2)]"
+/obj/structure/flora/tree/palm/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 2)]"
 
 
 // Dead trees
@@ -247,8 +246,8 @@ MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on."
 	product_amount = 5
 	max_integrity = 200
 
-/obj/structure/flora/tree/dead/choose_icon_state()
-	return "[base_state]_[rand(1, 6)]"
+/obj/structure/flora/tree/dead/choose_icon_state(datum/roller/R)
+	return "[base_state]_[R.number(1, 6)]"
 
 // ition Start 15/2/20 TFF - Holodeck variation trees, drop no wood.
 /obj/structure/flora/tree/dead/holo
@@ -267,8 +266,8 @@ MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on."
 	max_integrity = 400
 	pixel_x = -32
 
-/obj/structure/flora/tree/jungle_small/choose_icon_state()
-	return "[base_state][rand(1, 6)]"
+/obj/structure/flora/tree/jungle_small/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 6)]"
 
 // Big jungle trees
 
@@ -283,8 +282,8 @@ MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on."
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/jungle/choose_icon_state()
-	return "[base_state][rand(1, 6)]"
+/obj/structure/flora/tree/jungle/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 6)]"
 
 // Winter Trees
 
@@ -349,8 +348,8 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 
 	var/light_shift = 0
 
-/obj/structure/flora/tree/sif/choose_icon_state()
-	light_shift = rand(0, 5)
+/obj/structure/flora/tree/sif/choose_icon_state(datum/roller/R)
+	light_shift = R.number(0, 5)
 	return "[base_state][light_shift]"
 
 /obj/structure/flora/tree/sif/draw(datum/look/look)

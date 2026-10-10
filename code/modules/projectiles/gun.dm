@@ -162,9 +162,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
 
-	if(dna_lock)
-		rel_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
-
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
 		new_mode.apply_to(src)
@@ -883,7 +880,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 /obj/item/gun/ownership()
 	. = ..()
-	. += owns(nameof(attached_lock), policy = OWN_CONTAINED)
+	. += owns(nameof(attached_lock), policy = OWN_CONTAINED, starts = when(nameof(dna_lock), /obj/item/dnalockingchip))
 
 /// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()

@@ -55,7 +55,7 @@ TRACKED(/obj/vehicle, paint_color)
 STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/vehicle)
-	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine)
+	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine, starts = /datum/looping_sound/idle_carengine)
 	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
 	emp_disable(PROC_REF(emp_outage))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
@@ -69,7 +69,6 @@ CAPABILITIES(/obj/vehicle)
 //-------------------------------------------
 /obj/vehicle/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 
 ///obj/vehicle/New()
 //	..()

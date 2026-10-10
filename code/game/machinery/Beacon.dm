@@ -12,12 +12,11 @@
 
 CAPABILITIES(/obj/machinery/bluespace_beacon)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(Beacon), /obj/item/radio/beacon)
+	owns_one(nameof(Beacon), /obj/item/radio/beacon, starts = /obj/item/radio/beacon, starts_args = NO_LOC)
 
 /obj/machinery/bluespace_beacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = src.loc
-	rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
 	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))

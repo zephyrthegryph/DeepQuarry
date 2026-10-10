@@ -69,15 +69,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 	name = "Pressure Tank (Air)"
 	icon_state = "air_map"
 
-/obj/machinery/atmospherics/pipe/tank/air/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_multi(GAS_O2,  (start_pressure*O2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()), \
-								GAS_N2,(start_pressure*N2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/air)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_O2 = O2STANDARD, GAS_N2 = N2STANDARD), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/oxygen
 	tank_state = "o2"
@@ -86,14 +79,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/oxygen)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_O2 = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen
 	tank_state = "n2"
@@ -103,14 +90,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/nitrogen)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_N2 = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide
 	tank_state = "co2"
@@ -119,14 +100,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_CO2 = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/phoron
 	tank_state = "phoron"
@@ -136,14 +111,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/phoron)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_PHORON = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide
 	tank_state = "n2o"
@@ -152,14 +121,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T0C)
-
-	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-
-	. = ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide)
+	gas_store(nameof(air_temporary), nameof(volume), T0C, list(GAS_N2O = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/methane
 	tank_state = "ch4"
@@ -169,13 +132,8 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
 
 
 
-/obj/machinery/atmospherics/pipe/tank/methane/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-	air_temporary.set_volume(volume)
-	heat_set(air_temporary, T20C)
-
-	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/methane)
+	gas_store(nameof(air_temporary), nameof(volume), T20C, list(GAS_CH4 = 1), pressure = nameof(start_pressure))
 
 /obj/machinery/atmospherics/pipe/tank/phoron/full
 	start_pressure = 15000

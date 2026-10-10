@@ -16,17 +16,16 @@
 	var/camera_datum_type = /datum/tgui_module/camera
 
 CAPABILITIES(/obj/machinery/computer/security)
-	owns_one(nameof(camera), /datum/tgui_module/camera)
+	owns_one(nameof(camera), /datum/tgui_module/camera, starts = PROC_REF(make_camera))
 	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	op("security_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
 
-// ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
-/obj/machinery/computer/security/Initialize(mapload)
-	. = ..()
+/// The starting camera view (owns_one(starts =)): built for the networks the map gave it, else the default ones.
+/obj/machinery/computer/security/proc/make_camera(current)
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	rel_set(src, nameof(camera), new camera_datum_type(src, network))
+	return new camera_datum_type(src, network)
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
@@ -99,8 +98,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
-
-	add_overlay(MAT_GLASS)
 
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
@@ -258,3 +255,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	network = list(NETWORK_XENOBIO)
 	circuit = /obj/item/circuitboard/security/xenobio
 	light_color = "#F9BBFC"
+
+/obj/machinery/computer/security/telescreen/entertainment/draw(datum/look/look)
+	..()
+	look.overlay(MAT_GLASS)

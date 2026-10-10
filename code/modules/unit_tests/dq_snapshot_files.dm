@@ -93,8 +93,12 @@
 			if(!(line in actual))
 				mismatches += "missing snapshot: [line]"
 				differs = TRUE
+		// The current rows of a differing type go to data/test-snapshots/<name>/; a type that matches now drops any file an earlier
+		// run left there, so the directory never shows rows that no longer differ.
 		if(differs)
 			dq_snapshot_write("data/test-snapshots/[name]/", type, actual)
+		else
+			fdel(dq_snapshot_type_file("data/test-snapshots/[name]/", type))
 	if(!length(mismatches))
 		return null
 	var/report = "[length(mismatches)] snapshot rows differ (current rows in data/test-snapshots/[name]/; `bash tools/dq_focused_test.sh --bless <test>` rewrites [dir]):"

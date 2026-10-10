@@ -227,10 +227,16 @@ CAPABILITIES(/turf/simulated/shuttle)
 	light_on = TRUE
 	block_tele = TRUE
 
+CAPABILITIES(/turf/simulated/shuttle/floor/alien)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/turf/simulated/shuttle/floor/alien/proc/roll_look(datum/roller/R)
+	return "alienpod[R.number(1, 9)]"
+
 // ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
 /turf/simulated/shuttle/floor/alien/Initialize(mapload)
 	. = ..()
-	icon_state = "alienpod[rand(1, 9)]"
 	update_light()
 
 /turf/simulated/shuttle/floor/alienplating

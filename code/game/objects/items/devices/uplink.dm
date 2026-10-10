@@ -236,9 +236,10 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	icon_state = "radio"
 	uplink = TRUE
 
-/obj/item/radio/uplink/Initialize(mapload)
+/// It carries a hidden uplink from the start.
+/obj/item/radio/uplink/ownership()
 	. = ..()
-	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held)
 	. = ..()
@@ -250,16 +251,18 @@ CAPABILITIES(/obj/item/uplink/hidden)
 /obj/item/multitool/uplink
 	uplink = TRUE
 
-/obj/item/multitool/uplink/Initialize(mapload)
+/// It carries a hidden uplink from the start.
+/obj/item/multitool/uplink/ownership()
 	. = ..()
-	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 
-/obj/item/radio/headset/uplink/Initialize(mapload)
+/// It carries a hidden uplink from the start.
+/obj/item/radio/headset/uplink/ownership()
 	. = ..()
-	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item

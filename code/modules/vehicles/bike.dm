@@ -43,7 +43,6 @@ CAPABILITIES(/obj/vehicle/bike)
 	. = ..()
 	ion.set_up(src)
 	turn_off()
-	icon_state = "[bike_icon]_off"
 
 /// A frame the builder fits a cell to: it starts without the factory cell.
 /obj/vehicle/bike/built/ownership()

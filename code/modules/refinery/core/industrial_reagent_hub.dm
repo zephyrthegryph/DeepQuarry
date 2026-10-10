@@ -11,6 +11,7 @@
 	default_max_vol = 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/hub)
+	without(CAP_REAGENTS) // a hub holds nothing: it moves a tanker's load
 	after_init(0, then(PROC_REF(apply_default_parts)))
 
 /obj/machinery/reagent_refinery/hub/refinery_step()

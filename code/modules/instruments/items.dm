@@ -16,13 +16,16 @@
 	var/instrument_range = 15
 
 CAPABILITIES(/obj/item/instrument)
-	owns_one(nameof(song), /datum/song/handheld)
+	owns_one(nameof(song), /datum/song/handheld, starts = PROC_REF(make_song))
 	op("controls", in_hand(), label("Open instrument controls"), then(PROC_REF(instrument_controls_opened)))
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
+
+/// The starting song (owns_one(starts =)).
+/obj/item/instrument/proc/make_song(current)
+	return new /datum/song/handheld(src, allowed_instrument_ids, instrument_range)
 
 
 /obj/item/instrument/proc/can_play(atom/music_player)
