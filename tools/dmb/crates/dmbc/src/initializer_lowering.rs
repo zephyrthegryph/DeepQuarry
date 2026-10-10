@@ -379,7 +379,7 @@ fn lower_plan<R: Resolver>(
         }
     };
     if let Some(allocation) = allocation {
-        allocation.order_runtime(plan, &mut classified)?;
+        allocation.order_runtime(plan, &mut classified, host)?;
     }
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);

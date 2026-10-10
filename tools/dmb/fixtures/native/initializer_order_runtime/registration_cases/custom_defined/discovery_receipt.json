@@ -1,0 +1,69 @@
+{
+  "pins": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+  },
+  "cases": {
+    "custom_declared": {
+      "source_sha256": "ce6a9344024f4ac9b1612af0a358cd5678571c2eda669d28dd9f40efa161ec39",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "ee2a933e2af8aee7bf255068ad6420cf3e9e8171c9369de7a07fc868b4b45fba",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.32056120003107935,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.245592899969779,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER finished"
+      ]
+    },
+    "custom_field": {
+      "source_sha256": "baf7adbb5bbe20348baf9dfa67eea08ee37087f70e42df7365f7e273340bddac",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "da8d00aecc07cd7d046ea818df77c4d3c273be7c6c2a0f484b7ef47d67cce689",
+      "compile": {
+        "exit": 0,
+        "wall_s": 0.4866558000212535,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "runtime": {
+        "exit": 0,
+        "wall_s": 1.198714199999813,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "markers": [
+        "DQ_REGISTER field",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER finished"
+      ]
+    }
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58761216,
+    "samples": 17,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 47852,
+        "private_bytes": 58761216
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "owned daemon and registered harness children (compiler/client/inspector); 200ms samples include observation overhead; excludes unrelated processes and unregistered descendants"
+  }
+}

@@ -552,9 +552,10 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let startup_allocation = crate::startup_allocation::StartupAllocationRoster::issue(
+    let startup_allocation = crate::startup_allocation::StartupAllocationRoster::issue_current(
         plan,
         declarations.source_type_order,
+        frontend,
     )
     .map_err(ColdError::InitializerInvariant)?;
     let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(

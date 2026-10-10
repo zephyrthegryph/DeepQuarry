@@ -56,6 +56,39 @@ pub struct AllocationEvent {
 pub struct AllocationLedger {
     pub events: AllocationEvents,
 }
+impl AllocationLedger {
+    /// Root-global semantics and allocation registration are separate: a bare
+    /// declaration following a non-root procedure joins its late registrations.
+    /// An explicitly qualified var declaration resets that registration context.
+    pub fn root_field_registrations(&self) -> impl Iterator<Item = (Span, Option<SymbolId>)> + '_ {
+        let root = SymbolId::of("/");
+        let mut procedure = None;
+        self.events
+            .iter()
+            .filter_map(move |event| match event.kind {
+                AllocationKind::Procedure { owner, .. } => {
+                    procedure = Some(owner);
+                    None
+                }
+                AllocationKind::Type { .. } | AllocationKind::Namespace { .. } => {
+                    procedure = None;
+                    None
+                }
+                AllocationKind::Field {
+                    owner,
+                    var_namespace,
+                    ..
+                } => {
+                    if var_namespace {
+                        procedure = None;
+                    }
+                    (owner == root)
+                        .then_some((event.header_span, procedure.filter(|owner| *owner != root)))
+                }
+                AllocationKind::Parent { .. } => None,
+            })
+    }
+}
 #[derive(Clone, Debug)]
 pub struct Error {
     pub span: Span,

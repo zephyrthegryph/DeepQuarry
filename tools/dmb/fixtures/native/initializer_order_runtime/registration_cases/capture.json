@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "scope": "independently captured pinned BYOND startup registration sequences; not general or dense allocation parity",
+  "cases": {
+    "world_bare": {
+      "source_sha256": "47e09342d770773d1a96ca2ec50f24366767c74455e80111d2086e6e6324117f",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "8ef08a925f8b71394ba49ea6dd3fe0f0aabc5f4caef9930f71cf664453d1bca6",
+      "expected": [
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-327eba5c1fc44ad8914153c3a4aa5acf\\receipt.json",
+      "reference_receipt_sha256": "e25dce69fd42d2124bf86e525eb853d9aa10037526314f0f8fe2b6db2825024e"
+    },
+    "world_explicit": {
+      "source_sha256": "af167d6be691f4aed49dc1a49118df22f5af4e219f06d4192cda99c431e2e404",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "1f6d340260a76f0863a1e319dcb6fbb7f2dbb1aabc3ff30f2da5b7ff9737327e",
+      "expected": [
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-327eba5c1fc44ad8914153c3a4aa5acf\\receipt.json",
+      "reference_receipt_sha256": "e25dce69fd42d2124bf86e525eb853d9aa10037526314f0f8fe2b6db2825024e"
+    },
+    "root_proc": {
+      "source_sha256": "d3db7580d0d9e7f21a1277f888ac26b5736593155e211dd39e66c5498539f82c",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "df9e1b451f668a8504fc1e0f4051b24df1e859800fa57f0c49eecdb8e1540843",
+      "expected": [
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER static",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-327eba5c1fc44ad8914153c3a4aa5acf\\receipt.json",
+      "reference_receipt_sha256": "e25dce69fd42d2124bf86e525eb853d9aa10037526314f0f8fe2b6db2825024e"
+    },
+    "custom_forward": {
+      "source_sha256": "a36d0414a482d42e73bc2fc2cc93d8a5b58f4cad854b41e0c581c9732508ef6d",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "4cb9d281269a6e5249e56f22d8150055045913e6e36eae9ff57cfeaf4cffc6d1",
+      "expected": [
+        "DQ_REGISTER first",
+        "DQ_REGISTER field",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-bca7fd753b1b4038a27e9a4348c1db55\\receipt.json",
+      "reference_receipt_sha256": "d9e4c04eee11a9bb251ae435b355dd3df531c67f9fc916a4ca06eb0c6b4f6ad2"
+    },
+    "custom_defined": {
+      "source_sha256": "baf7adbb5bbe20348baf9dfa67eea08ee37087f70e42df7365f7e273340bddac",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "da8d00aecc07cd7d046ea818df77c4d3c273be7c6c2a0f484b7ef47d67cce689",
+      "expected": [
+        "DQ_REGISTER field",
+        "DQ_REGISTER static",
+        "DQ_REGISTER late",
+        "DQ_REGISTER first",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-ec4dc7df2f574bb08d4e5b753541c5eb\\receipt.json",
+      "reference_receipt_sha256": "5044f8a77e946efecd514921cb454d3a34e6fc06c2cd560f0910c7ccd22ad618"
+    },
+    "mixed_known_then_forward": {
+      "source_sha256": "c5517b849b100b3044e1f4bddea01188a6e8661211b06e8eae3e6cae3c3879ae",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "e5e9fa0a388215bb49e2ea17ce9df3699038f2475f9729513308c95fa3418ebf",
+      "expected": [
+        "DQ_REGISTER eager",
+        "DQ_REGISTER static_future",
+        "DQ_REGISTER bare_future",
+        "DQ_REGISTER root",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-11c54af51b324969bf9f26717312d032\\receipt.json",
+      "reference_receipt_sha256": "d4a0e0cac62b4bb0d1be05f0cf09d40f2d9fc36aa9e15027b1b496ec01dfbad4"
+    },
+    "mixed_forward_then_known": {
+      "source_sha256": "49fe8f9a08ee5a7f886a78c8b36f48bc1fc277bbc1c590cd6100d5d90addfa8e",
+      "manifest_sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "dmb_sha256": "3b2396660f12f4fdddbf896ad9489672e7b6ea6221d5051e4aa8e17566b3cca4",
+      "expected": [
+        "DQ_REGISTER future_field",
+        "DQ_REGISTER known_static",
+        "DQ_REGISTER bare_future",
+        "DQ_REGISTER root",
+        "DQ_REGISTER finished"
+      ],
+      "pins": {
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+      },
+      "reference_receipt": "E:\\dq-cache\\dmb-initializer-order\\registration-6c0688850af74a17b1bedb59d34ee48f\\receipt.json",
+      "reference_receipt_sha256": "dce9c854d807895052a16cd4912dca346aa2001f5afc3097b875faa8335e0131"
+    }
+  }
+}
