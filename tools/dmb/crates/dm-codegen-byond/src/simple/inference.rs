@@ -216,7 +216,7 @@ impl Compiler<'_> {
             ],
         );
         self.emit(0xba, vec![]);
-        self.input_filter_warning(!types.is_empty(), choices.is_some(), mask, source_ordinal);
+        self.input_filter_warning(types, choices.is_some(), mask, source_ordinal);
         Ok(())
     }
 
