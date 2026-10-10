@@ -16225,8 +16225,8 @@
 /obj/item/twohanded/fireaxe	b240f09903b47e23	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/twohanded/fireaxe/fluff	e7d3e8806d9a963d	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/twohanded/fireaxe/fluff/mjollnir	0335fb82aa71b5fe	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/uav	ca15670548c2672b	*
-/obj/item/uav/loaded	e982aa65723429d7	*
+/obj/item/uav	940b9aadd97eb8a7	*
+/obj/item/uav/loaded	f27d7314298ced59	*
 /obj/item/universal_translator	8ecc79fdc2b3d77d	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,translation_enabled
 /obj/item/universal_translator/ear	6ff0d747aea98ce7	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,translation_enabled
 /obj/item/universal_translator/glamour	116104590b80d64d	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice,translation_enabled
@@ -20537,7 +20537,7 @@
 /obj/structure/window/eris/phoronreinforced	5f652ba23dd8da36	basestate,blend_objects,connections,constructed,fulltile,glasstype,noblend_objects,other_connections,reinf,silicate,smooth_mask,state,tilt_sign
 /obj/structure/window/eris/reinforced	5a1b2cde3647e562	basestate,blend_objects,connections,constructed,fulltile,glasstype,noblend_objects,other_connections,reinf,silicate,smooth_mask,state,tilt_sign
 /obj/structure/window/fancy_shuttle	cd4cafa0a0e55706	basestate,connections,constructed,fancy_shuttle_tag,fulltile,glasstype,reinf,silicate,state,tilt_sign
-/obj/structure/window/maintenance_panel	023a69a0eb2a8224	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign
+/obj/structure/window/maintenance_panel	e95e55e6a36801ea	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign
 /obj/structure/window/phoronbasic	3acbaf50f9ca7c8f	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign
 /obj/structure/window/phoronbasic/full	bfa32ba4a83da484	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign
 /obj/structure/window/phoronreinforced	48351442ee3a94f2	basestate,connections,constructed,fulltile,glasstype,reinf,silicate,state,tilt_sign
