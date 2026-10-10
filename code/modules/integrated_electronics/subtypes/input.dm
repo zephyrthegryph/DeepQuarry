@@ -481,11 +481,13 @@
 	var/code = 30
 	var/datum/radio_frequency/radio_connection
 
+CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
+	after_init(4 SECONDS, then(PROC_REF(retune_after_init)))
+
 /obj/item/integrated_circuit/input/signaler/Initialize(mapload)
 	. = ..()
 	set_pin_data(IC_INPUT, 1, frequency)
 	set_pin_data(IC_INPUT, 2, code)
-	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
 
 /obj/item/integrated_circuit/input/signaler/on_data_written()
 	var/new_freq = get_pin_data(IC_INPUT, 1)
@@ -505,6 +507,10 @@
 	signal.data["message"] = "ACTIVATE"
 	radio_connection.post_signal(src, signal)
 	activate_pin(2)
+
+/// Four seconds after init (after_init()): tunes to the frequency it was made with.
+/obj/item/integrated_circuit/input/signaler/proc/retune_after_init(datum/act/A)
+	set_frequency(frequency)
 
 /obj/item/integrated_circuit/input/signaler/proc/set_frequency(new_frequency)
 	if(!frequency)

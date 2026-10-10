@@ -16,17 +16,16 @@
 	var/camera_datum_type = /datum/tgui_module/camera
 
 CAPABILITIES(/obj/machinery/computer/security)
-	owns_one(nameof(camera), /datum/tgui_module/camera)
+	owns_one(nameof(camera), /datum/tgui_module/camera, starts = PROC_REF(make_camera))
 	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	op("security_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
 
-// ALLOW(init/INSTANCE_STATE): its camera view is built for the networks the map gave it
-/obj/machinery/computer/security/Initialize(mapload)
-	. = ..()
+/// The starting camera view (owns_one(starts =)): built for the networks the map gave it, else the default ones.
+/obj/machinery/computer/security/proc/make_camera(current)
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	rel_set(src, nameof(camera), new camera_datum_type(src, network))
+	return new camera_datum_type(src, network)
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()

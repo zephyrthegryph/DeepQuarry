@@ -18,6 +18,8 @@
 	var/slips = 0
 
 CAPABILITIES(/obj/effect/effect/foam)
+	when(nameof(dries), after_init(15 SECONDS, then(PROC_REF(harden))))
+	when(nameof(dries), after_init(12 SECONDS, then(PROC_REF(pre_harden))))
 	param(nameof(metal), pos = 1)
 
 // ALLOW(init/INSTANCE_STATE): foam bubbles, spreads and, when it dries, hardens on timers from its creation
@@ -26,17 +28,15 @@ CAPABILITIES(/obj/effect/effect/foam)
 	play_sfx(src, SFX_EFFECTS_BUBBLES2)
 	if(dries)
 		after(src, 3 + metal * 3, PROC_REF(post_spread))
-		after(src, 12 SECONDS, PROC_REF(pre_harden))
-		after(src, 15 SECONDS, PROC_REF(harden))
 
 /obj/effect/effect/foam/proc/post_spread()
 	periodic_step()
 	checkReagents()
 
-/obj/effect/effect/foam/proc/pre_harden()
+/obj/effect/effect/foam/proc/pre_harden(datum/act/A)
 	return
 
-/obj/effect/effect/foam/proc/harden()
+/obj/effect/effect/foam/proc/harden(datum/act/A)
 	if(metal)
 		var/obj/structure/foamedmetal/M = new(src.loc)
 		M.metal = metal

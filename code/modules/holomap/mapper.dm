@@ -46,7 +46,7 @@
 CAPABILITIES(/obj/item/mapping_unit)
 	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
 	owns_one(nameof(cell), /obj/item/cell)
-	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder)
+	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder, starts = /atom/movable/screen/mapper/extras_holder, starts_args = NO_LOC)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
@@ -96,7 +96,6 @@ CAPABILITIES(/obj/item/mapping_unit)
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	rel_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'

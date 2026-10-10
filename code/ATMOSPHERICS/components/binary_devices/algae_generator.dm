@@ -39,7 +39,7 @@ TRACKED(/obj/machinery/atmospherics/binary/algae_farm, working)
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
-	owns_one(nameof(internal), /datum/gas_mixture)
+	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")
 	part_replacement()
 	gas_watch(air = nameof(air1), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_COMPOSITION)
@@ -67,16 +67,8 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
-	// TODO - Make these in actual icon states so its not silly like this
-	var/image/I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = dir)
-	I.color = PIPE_COLOR_BLUE
-	add_overlay(I)
-	I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = GLOB.reverse_dir[dir])
-	I.color = PIPE_COLOR_BLACK
-	add_overlay(I)
 
 /obj/machinery/atmospherics/binary/algae_farm/power_change()
 	. = ..()
@@ -159,6 +151,9 @@ TRACKED(/obj/machinery/atmospherics/binary/algae_farm, recent_moles_transferred)
 		look.state("algae-off")
 	else
 		look.state(recent_moles_transferred > 0 ? "algae-full" : "algae-on")
+	// TODO - Make these in actual icon states so its not silly like this
+	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
+	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = GLOB.reverse_dir[dir], color = PIPE_COLOR_BLACK))
 
 /obj/machinery/atmospherics/binary/algae_farm/derived()
 	. = ..()

@@ -21,7 +21,7 @@
 
 CAPABILITIES(/obj/mecha/working/ripley)
 	op("ripley_detect_ore", menu(), label("Detect Ores"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(ripley_detect_ore)))
-	owns_one(nameof(orescanner), /obj/item/mining_scanner)
+	owns_one(nameof(orescanner), /obj/item/mining_scanner, starts = /obj/item/mining_scanner, starts_args = NO_LOC)
 
 TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull/durable, \
@@ -119,7 +119,6 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 
 /obj/mecha/working/ripley/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(orescanner), new /obj/item/mining_scanner)
 
 /// Old verb "Detect Ores".
 /obj/mecha/working/ripley/proc/ripley_detect_ore(datum/act/op/A)

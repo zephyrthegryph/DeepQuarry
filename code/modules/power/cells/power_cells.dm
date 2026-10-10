@@ -202,7 +202,6 @@
 
 /obj/item/fbp_backup_cell/Initialize(mapload)
 	. = ..()
-	add_overlay("[icon_state]_100")
 
 /obj/item/fbp_backup_cell/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!used && ishuman(M))
@@ -295,3 +294,7 @@ CAPABILITIES(/obj/item/cell/void)
 
 /obj/item/cell/giga/empty
 	charge = 0
+
+/obj/item/fbp_backup_cell/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]_100")

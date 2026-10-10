@@ -239,35 +239,35 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Memo RE: proper analysis procedure"
 	P.set_info("<br>We keep test dummies in pens here for a reason, so standard procedure should be to activate newfound alien artifacts and place the two in close proximity. Promising items I might even approve monkey testing on.")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Memo RE: materials gathering"
 	P.set_info("Corasang,<br>the hands-on approach to gathering our samples may very well be slow at times, but it's safer than allowing the blundering miners to roll willy-nilly over our dig sites in their mechs, destroying everything in the process. And don't forget the escavation tools on your way out there!<br>- R.W")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Memo RE: ethical quandaries"
 	P.set_info("Darion-<br><br>I don't care what his rank is, our business is that of science and knowledge - questions of moral application do not come into this. Sure, so there are those who would employ the energy-wave particles my modified device has managed to abscond for their own personal gain, but I can hardly see the practical benefits of some of these artifacts our benefactors left behind. Ward--")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "READ ME! Before you people destroy any more samples"
 	P.set_info("how many times do i have to tell you people, these xeno-arch samples are del-i-cate, and should be handled so! careful application of a focussed, concentrated heat or some corrosive liquids should clear away the extraneous carbon matter, while application of an energy beam will most decidedly destroy it entirely - like someone did to the chemical dispenser! W, <b>the one who signs your paychecks</b>")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Reminder regarding the anomalous material suits"
 	P.set_info("Do you people think the anomaly suits are cheap to come by? I'm about a hair trigger away from instituting a log book for the damn things. Only wear them if you're going out for a dig, and for god's sake don't go tramping around in them unless you're field testing something, R")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 // Rework this whole thing, it was bad.
@@ -283,14 +283,14 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Staff Notice: Patient rooms"
 	P.set_info("<br>No matter how many times I've said this, it doesn't seem to stick, so I'm leaving this reminder: Screwing patients in the patient rooms is a serious breach of professionality and your code of ethics. Take it to the dorms.")
 	P.stamped = list(/obj/item/stamp/cmo)
-	P.add_overlay("paper_stamped_cmo")
+	P.add_stamp_mark("paper_stamped_cmo", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Staff Notice: Breakroom & Storage"
 	P.set_info("<br>Enjoy the view from the new breakroom. You've also got a storage room full of leftover supplies from the shift before yours.")
 	P.stamped = list(/obj/item/stamp/cmo)
-	P.add_overlay("paper_stamped_cmo")
+	P.add_stamp_mark("paper_stamped_cmo", 0, 0)
 	P.forceMove(src)
 	. = ..()
 
@@ -303,7 +303,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Staff Notice: Toxins Mixing"
 	P.set_info("<br>Toxins Mixing is currently shut down for the time being, due to damage requiring parts from off station to fix. Please do not use at this time, or risk setting the entire outpost on fire.")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 	. = ..()
 
@@ -316,7 +316,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Staff Notice: Nanite Laboratory"
 	P.set_info("<br>The Nanite Laboratory is nearly complete. We're simply awaiting specialized machinery and equipment from central. The lab is currently shut down. Please do not use at this time.")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 	. = ..()
 
@@ -329,7 +329,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Staff Notice: Blueshield Special Reserve"
 	P.set_info("<br>This secure storage unit is intended to be used for special equipment specifically for the use of Blueshield Agents in the event of a Code Red threat to Heads of Staff. Heads of Staff found 'commandeering' this equipment can expect to be severely reprimanded.<br><br>(Underneath, there is a messy handwritten addition.)<br><i>Sorry, we haven't had time or spare funds to issue anything yet. You know how frontier budgets are! Sit tight, champ. -Z.V.</i>")
 	P.stamped = list(/obj/item/stamp/centcomm)
-	P.add_overlay("paper_stamped_cent")
+	P.add_stamp_mark("paper_stamped_cent", 0, 0)
 	P.forceMove(src)
 	. = ..()
 
@@ -356,21 +356,21 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Memo: Prototype ship"
 	P.set_info("<br> With the lost of our last Research installation and the damage sustained to the old exploration shuttle,We've decided to finally approve the construction of the Prototype Star-Runner class Exploration Vessel. Keep in mind it's a prototype, so try not to scratch it's paint. We don't have a second.")
 	P.stamped = list(/obj/item/stamp/centcomm)
-	P.add_overlay("paper_stamped_cent")
+	P.add_stamp_mark("paper_stamped_cent", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Memo RE: Expedition Requirements"
 	P.set_info("Jones,<br>For the last time, Expeditions regulations require atleast three crew members, including the Pathfinder and/or Research Director. The next time you activate your bluespace drive with less then that, and you're fired from the department.I won't have this conversation again. <br>- R.F")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 
 	P = new()
 	P.name = "Memo RE: Pilot duties"
 	P.set_info("Pilots, As you're fully aware, we're on the edge of civilized space out here. <br> Leaving the shuttle area is dangerious. This is why the Prototype is equipped with a proper camera system to keep an eye on the explorers. If you get yourselves killed, and an explorer has to crash land the ship back here, the company is NOT going to be happy.<br>- R.F")
 	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
+	P.add_stamp_mark("paper_stamped_rd", 0, 0)
 	P.forceMove(src)
 	. = ..()
 
@@ -382,6 +382,6 @@ CAPABILITIES(/obj/structure/noticeboard)
 	P.name = "Staff Notice: Airlock Proceedure"
 	P.set_info("<br>Due to the large amount of new staff unfamiliar with our proceedures we've left you some instructions. <br> To exit through an airlock, simply hit the button to open the interior, and then cycle to exterior once inside. To re-enter the station, enter the airlock, Close the exterior hatch, and look for the customized thermal regulators installed on the wall. <br>This should heat up the air in the airlock, allowing you to open the interior door with no issues.")
 	P.stamped = list(/obj/item/stamp/captain)
-	P.add_overlay("paper_stamp-cap")
+	P.add_stamp_mark("paper_stamp-cap", 0, 0)
 	P.forceMove(src)
 	. = ..()

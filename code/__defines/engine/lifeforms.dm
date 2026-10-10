@@ -38,6 +38,9 @@
 #define MAKE_UNSET "\[make:unset]"
 /// In starts_args, make_args() or a make() argument: the instance that is creating it (the holder of the starts =, the caller's src).
 #define OWNER /datum/lifeform_owner
+/// First in starts_args: the starting occupant is constructed without the holder as its first argument (`new type(rest...)`), for a
+/// datum whose constructor's first argument is not a location (a gas mixture's volume, a sound's output list). starts_args = NO_LOC: `new type()`.
+#define NO_LOC /datum/lifeform_no_loc
 
 // ---- registry() ----
 /// by = REG_GLOBAL (default): one index for the whole world.

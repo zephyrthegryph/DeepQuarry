@@ -35,8 +35,7 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
-	else
-		rel_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
+	else if(has_extinguisher)
 		observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 
 
@@ -130,4 +129,4 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 
 /obj/structure/extinguisher_cabinet/ownership()
 	. = ..()
-	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED)
+	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED, starts = when(cond_not(nameof(building)), /obj/item/extinguisher))

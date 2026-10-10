@@ -13,14 +13,13 @@
 	var/tooltype = /obj/item/tool/wrench/power
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool)
-	owns_one(nameof(my_tool), /obj/item)
+	owns_one(nameof(my_tool), /obj/item, starts = nameof(tooltype))
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/Initialize(mapload)
-	rel_set(src, nameof(my_tool), new tooltype(src))
+	. = ..()
 	my_tool.name = name
 	my_tool.set_anchored(TRUE)
 	my_tool.canremove = FALSE
-	return ..()
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)

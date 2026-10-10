@@ -28,7 +28,7 @@
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
-	owns_one(nameof(blob_type), /datum/blob_type)
+	owns_one(nameof(blob_type), /datum/blob_type, starts = PROC_REF(make_blob_type))
 	param(nameof(placed), pos = 1)
 	param(nameof(blob_points), pos = 2, default = 60)
 	param(nameof(desired_blob_type), pos = 3)
@@ -47,21 +47,20 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
 	real_name = new_name
-	if(desired_blob_type)
-		rel_set(src, nameof(blob_type), new desired_blob_type())
-	else
-		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		rel_set(src, nameof(blob_type), new BT())
-	color = blob_type.complementary_color
-	if(blob_core())
-		blob_core().sync_overmind_look() // the core draws the new type's colour
-
 	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
 		default_language_static = languages[1]
 
-	return ..()
+	. = ..()
+	color = blob_type.complementary_color
+	if(blob_core())
+		blob_core().sync_overmind_look() // the core draws the new type's colour
+
+/// The starting blob type (owns_one(starts =)): the one asked for, else any.
+/mob/observer/blob/proc/make_blob_type(current)
+	var/datum/blob_type/BT = desired_blob_type || pick(subtypesof(/datum/blob_type))
+	return new BT()
 
 REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 

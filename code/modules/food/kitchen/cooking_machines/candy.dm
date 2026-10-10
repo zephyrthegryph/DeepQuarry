@@ -18,13 +18,12 @@
 		)
 
 CAPABILITIES(/obj/machinery/appliance/mixer/candy)
-	owns_one(nameof(candymaker_loop), /datum/looping_sound/candymaker)
+	owns_one(nameof(candymaker_loop), /datum/looping_sound/candymaker, starts = /datum/looping_sound/candymaker)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 /obj/machinery/appliance/mixer/candy/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
 /// The candy maker hums while it is on, beside the mixer's own sound.

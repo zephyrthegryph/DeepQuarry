@@ -45,7 +45,7 @@ CAPABILITIES(/mob/living)
 	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened)
 	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire)
 	owns_one(nameof(inventory_panel), /datum/inventory_panel)
-	owns_one(nameof(say_list), /datum/say_list)
+	owns_one(nameof(say_list), /datum/say_list, starts = PROC_REF(make_say_list))
 	owns_one(nameof(shadekin), /datum/shadekin)
 	owns_one(nameof(turfslip), /datum/turfslip)
 	owns_one(nameof(vore_panel_button), /datum/vore_panel_button)
@@ -82,6 +82,12 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// Creates the brain for a mob that opts in. Subtypes that should never get
 /// a brain (player-controlled mobs like succlet, synx, borer) override this
 /// to return FALSE.
+/// The starting say list (owns_one(starts =)): only a mob that overrides the default type gets one.
+/// Most mobs inherit /datum/say_list (empty bark tables) and allocate nothing; idle_speak and hear_say handle null.
+/mob/living/proc/make_say_list(current)
+	if(say_list_type && say_list_type != /datum/say_list)
+		return say_list_type
+
 /mob/living/proc/initialize_ai_brain()
 	if(!use_modern_ai)
 		return FALSE
@@ -124,7 +130,5 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	// type. Most mobs inherit /datum/say_list (empty bark tables) — those get
 	// no allocation, which matters at world-init when thousands of simple_mobs
 	// spawn. Callers (idle_speak behavior, hear_say) already handle null.
-	if(say_list_type && say_list_type != /datum/say_list)
-		rel_set(src, nameof(say_list), new say_list_type(src))
 	if(!ai_brain)
 		initialize_ai_brain()

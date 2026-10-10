@@ -106,7 +106,6 @@ TRACKED(/obj/machinery/rnd/server, working)
 /obj/machinery/rnd/server/master/Initialize(mapload)
 	. = ..()
 	name = "\improper Master " + name
-	add_overlay("RD-server-objective-stripes")
 
 CAPABILITIES(/obj/machinery/rnd/server/master)
 	op("block", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_block)))
@@ -116,3 +115,7 @@ CAPABILITIES(/obj/machinery/rnd/server/master)
 	return TRUE
 
 #undef SERVER_NOMINAL_TEXT
+
+/obj/machinery/rnd/server/master/draw(datum/look/look)
+	..()
+	look.overlay("RD-server-objective-stripes")

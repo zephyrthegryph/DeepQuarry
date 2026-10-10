@@ -25,6 +25,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 MSG_DEF(loot_pile/searching, "You search through %T%.", "%U% searches through %T%.")
 
 CAPABILITIES(/obj/structure/loot_pile)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
 	silicon_hand(adjacent = TRUE)
 	op("search", hand(), label("Search"), claims(), needs(req(/mob/living, of = ON_ACTOR, silent = TRUE)), needs(req_loot_unsearched(), req_loot_not_picked_clean()), begins(MSG(loot_pile/searching)), wait(PROC_REF(search_time)), loot_rolls())
 
@@ -32,10 +33,9 @@ CAPABILITIES(/obj/structure/loot_pile)
 /obj/structure/loot_pile/proc/search_time(datum/act/op/A)
 	return rand(4 SECONDS, 6 SECONDS)
 
-/obj/structure/loot_pile/Initialize(mapload)
-	if(icon_states_to_use && length(icon_states_to_use))
-		icon_state = DEFAULTPICK(icon_states_to_use, null)
-	. = ..()
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/loot_pile/proc/roll_look(datum/roller/R)
+	return length(icon_states_to_use) ? R.choose(icon_states_to_use) : icon_state
 
 
 // Maintenance junk piles with common to fun loot

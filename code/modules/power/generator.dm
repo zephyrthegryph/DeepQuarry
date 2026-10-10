@@ -45,7 +45,7 @@ MSG_DEF_SELF(teg/not_ready, "It isn't bolted down and working.")
 CAPABILITIES(/obj/machinery/power/generator)
 	rotatable()
 	after_init(0, then(PROC_REF(connect_circulators)))
-	owns_one(nameof(soundloop), /datum/looping_sound/generator)
+	owns_one(nameof(soundloop), /datum/looping_sound/generator, starts = /datum/looping_sound/generator)
 	owns_many(nameof(loop_watches), /datum/native_watch/gas)
 	membership(joins = REGISTRY_TURBINES)
 	interface("TEGenerator")
@@ -55,7 +55,6 @@ CAPABILITIES(/obj/machinery/power/generator)
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/power/generator/Initialize(mapload)
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
 	. = ..()
 
