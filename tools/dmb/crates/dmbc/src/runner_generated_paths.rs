@@ -21,6 +21,11 @@ pub(super) fn paths(
             .join(".dmbc"),
     );
     if command == BuildCommand::Compile {
+        // Prepared RSC installation lives in a reserved namespace beside the
+        // destination, including externally routed artifact directories.
+        if let Some(parent) = output_project.parent() {
+            result.push(parent.join(".dmbc"));
+        }
         for extension in ["dmb", "rsc", "dmb-pair.json"] {
             result.push(output_project.with_extension(extension));
         }

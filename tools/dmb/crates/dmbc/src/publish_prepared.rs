@@ -44,7 +44,12 @@ impl ProbeOutput {
     pub(super) fn new(destination: Option<&Path>) -> Self {
         let writer = destination.and_then(|destination| {
             let identity = destinations::absolute_identity(destination).ok()?;
-            let staged = StagedPath::new(temporary_file(destination).ok()?);
+            // Keep live staging outside searched source-directory membership. The
+            // namespace is declared before capture and remains on the destination
+            // filesystem so adoption can still use atomic replacement.
+            let staging = destination.parent().unwrap_or(Path::new("."))
+                .join(".dmbc").join("prepared-output").join("resource.rsc");
+            let staged = StagedPath::new(temporary_file(&staging).ok()?);
             let file = OpenOptions::new().write(true).open(staged.path()).ok()?;
             Some((BufWriter::with_capacity(128 * 1024, file), staged, identity))
         });
@@ -102,6 +107,27 @@ mod tests {
             0,
         )
         .unwrap()
+    }
+    #[test]
+    fn live_resource_stage_does_not_invalidate_source_folder_membership() {
+        let store = super::super::tests::store();
+        let destination = store.root.join("output.rsc");
+        fs::write(&destination, b"old output").unwrap();
+        let provider = crate::input_snapshot::GeneratedOutputInputs::new(
+            FileSystemInputs, [store.root.join(".dmbc")]);
+        let capture = crate::input_snapshot::RecordingInputs::new(&provider, 0);
+        capture.record_search_folder(&store.root).unwrap();
+        let inputs = capture.into_snapshot().unwrap();
+        let probe = ProbeOutput::new(Some(&destination));
+        let (_, staged, _) = probe.writer.as_ref().expect("private stage");
+        assert_eq!(staged.path().parent().unwrap(), store.root.join(".dmbc/prepared-output"));
+        assert!(inputs.restat(&provider).unwrap().unchanged());
+        assert_eq!(fs::read(&destination).unwrap(), b"old output");
+        let path = staged.path().to_owned();
+        drop(probe);
+        assert!(!path.exists());
+        fs::write(store.root.join("new-asset.png"), b"asset").unwrap();
+        assert!(!inputs.restat(&provider).unwrap().unchanged());
     }
     #[test]
     fn staging_keeps_destination_untouched_then_adopts_isolated_writer() {

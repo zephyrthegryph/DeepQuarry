@@ -69,6 +69,17 @@ pub(super) fn admit(
         validation.changed.len(),
         validation.changed.iter().take(8).collect::<Vec<_>>()
     );
+    for path in validation.changed.iter().take(8) {
+        if let Some(crate::input_snapshot::FolderListing::Present(old)) = inputs.folders().get(path) {
+            if let crate::input_snapshot::FolderListing::Present(mut current) = provider.list(path)? {
+                current.retain(|name| !inputs.generated_outputs().contains(
+                    &dm_preprocess::regions::canonical_path(&path.join(name))));
+                let removed: Vec<_> = old.iter().filter(|name| current.binary_search(name).is_err()).take(8).collect();
+                let added: Vec<_> = current.iter().filter(|name| old.binary_search(name).is_err()).take(8).collect();
+                crate::daemon_eprintln!("native changed folder {:?}: added {:?}, removed {:?}", path, added, removed);
+            }
+        }
+    }
     Err(Box::new(InputsMoved::default()))
 }
 

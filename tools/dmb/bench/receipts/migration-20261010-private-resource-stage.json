@@ -1,0 +1,32 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "ca379ebb7ce4636b2a8446226ec8ac49bdd354ee911c59ba9cfa47d0ac8a34a4",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "publish::prepared::tests::",
+      "selected": [
+        "publish::prepared::tests::failed_secondary_staging_keeps_primary_archive_and_pin",
+        "publish::prepared::tests::failed_secondary_write_removes_stage_without_failing_archive",
+        "publish::prepared::tests::live_resource_stage_does_not_invalidate_source_folder_membership",
+        "publish::prepared::tests::staging_keeps_destination_untouched_then_adopts_isolated_writer",
+        "publish::prepared::tests::tampered_identity_or_destination_rejects_and_cleans_private_stage"
+      ],
+      "exit": 0,
+      "seconds": 0.10926210001343861,
+      "stdout": "\nrunning 5 tests\ntest publish::prepared::tests::failed_secondary_staging_keeps_primary_archive_and_pin ... ok\ntest publish::prepared::tests::failed_secondary_write_removes_stage_without_failing_archive ... ok\ntest publish::prepared::tests::live_resource_stage_does_not_invalidate_source_folder_membership ... ok\ntest publish::prepared::tests::staging_keeps_destination_untouched_then_adopts_isolated_writer ... ok\ntest publish::prepared::tests::tampered_identity_or_destination_rejects_and_cleans_private_stage ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 669 filtered out; finished in 0.08s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "request_runner::runner_freshness::tests::",
+      "selected": [
+        "request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt",
+        "request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures"
+      ],
+      "exit": 0,
+      "seconds": 0.026735000021290034,
+      "stdout": "\nrunning 2 tests\ntest request_runner::runner_freshness::tests::changed_capture_never_publishes_even_on_final_attempt ... ok\ntest request_runner::runner_freshness::tests::rebuild_policy_stops_at_three_and_does_not_retry_unrelated_failures ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.00s\n\n",
+      "stderr": "native publication rejected: 1 changed inputs; first paths: [\"source.dm\"]\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\nnative inputs changed before publication; rebuilding (1/2)\nnative inputs changed before publication; rebuilding (2/2)\n"
+    }
+  ]
+}
