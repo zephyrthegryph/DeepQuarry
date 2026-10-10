@@ -23,9 +23,25 @@ pub(super) struct FragmentWithRecipes {
     pub code: AssignmentFragment,
     pub recipes: Option<Vec<crate::modified_initializers::ExpressionRecipe>>,
 }
-struct RetainedFragment {
+pub(crate) struct RetainedFragment {
     code: AssignmentFragment,
     recipes: Vec<crate::modified_initializers::ExpressionRecipe>,
+}
+impl RetainedFragment {
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn retained_parts(
+        &self,
+    ) -> (
+        &dm_codegen_byond::lower_resolver::ResolverProc,
+        &Vec<crate::modified_initializers::ExpressionRecipe>,
+        &Vec<dm_ir::SymRef>,
+    ) {
+        (
+            self.code.code(),
+            &self.recipes,
+            self.code.modified_references(),
+        )
+    }
 }
 impl Default for InitializerFragments {
     fn default() -> Self {
@@ -95,6 +111,10 @@ fn semantic_key(
     )
 }
 impl InitializerFragments {
+    /// Diagnostic-only borrowing; callback must not re-enter this store.
+    pub(crate) fn visit_storage(&self, visit: impl FnMut(receipts::Storage<'_, RetainedFragment>)) {
+        self.values.visit_storage(visit);
+    }
     pub(super) fn retain_keys(&self, keys: &HashMap<usize, receipts::Binding>) {
         self.values
             .retain_current_keys(keys.values().map(|binding| binding.key.as_ref()));

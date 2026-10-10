@@ -22,25 +22,85 @@ impl HeapCensus {
                 super::resident_owner_projection::inspect_into(self, store);
             }
         }
-        macro_rules! unavailable {
-            ($field:ident, $name:literal) => {
-                if let Some(owner) = &memo.$field {
-                    if self.arc_object($name, owner) {
-                        self.unknown($name, "live store owner present; nested backing not visited by this combined boundary adapter, independent diagnostic reports must not be summed");
+        if let Some(store) = &memo.symbolic {
+            if self.arc_object("cold_boundary.symbolic_store", store) {
+                store.retained_census(self);
+            }
+        }
+        if let Some(store) = &memo.abi {
+            if self.arc_object("cold_boundary.abi_store", store) {
+                self.abi_artifacts(store);
+            }
+        }
+        if let Some(store) = &memo.initializer_fragments {
+            if self.arc_object("cold_boundary.fragment_store", store) {
+                store.visit_storage(|view| match view {
+                    dm_session::ObservedArtifactStorageView::Store { buckets, entries } => {
+                        self.observe_items("cold_boundary.fragment_index", entries);
+                        if buckets != 0 { self.unknown("cold_boundary.fragment_index", "private observed-store BTree nodes/control blocks excluded; exposed fragment owners counted separately"); }
+                    }
+                    dm_session::ObservedArtifactStorageView::Bucket { address, len, capacity, element_size } => {
+                        self.buffer("cold_boundary.fragment_buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
+                    }
+                    dm_session::ObservedArtifactStorageView::Entry { key, reads, versions, value } => {
+                        self.slice("cold_boundary.fragment_keys", key, true);
+                        self.receipt("cold_boundary.fragment_reads", reads);
+                        self.slice("cold_boundary.fragment_versions", versions, true);
+                        for read in reads.iter() {
+                            match &read.answer {
+                                crate::initializer_lowering::receipts::Answer::Semantic(answer) => super::resident_weight::answer(self, answer),
+                                crate::initializer_lowering::receipts::Answer::Input(inputs) => self.initializer_receipt(inputs),
+                            }
+                        }
+                        if self.arc_object("cold_boundary.fragment_payload", value) {
+                            let (code, recipes, references) = value.retained_parts();
+                            self.resolver_code(code);
+                            self.initializer_fragment_recipes(recipes, references);
+                        }
+                    }
+                });
+            }
+        }
+        if let Some(store) = &memo.required_types {
+            if self.arc_object("cold_boundary.required_types_store", store) {
+                self.required_type_artifacts(store);
+            }
+        }
+        if let Some(store) = &memo.link_bindings {
+            if self.arc_object("cold_boundary.link_bindings_store", store) {
+                store.visit_current(|tables| {
+                    if let Some(tables) = tables {
+                        let (address, bytes, assignments, slots) = tables.storage();
+                        if self.buffer("cold_boundary.link_bindings_payload", address, bytes, bytes) {
+                            self.observe_items("cold_boundary.link_assignments", assignments);
+                            self.observe_items("cold_boundary.link_slots", slots);
+                            if assignments != 0 || slots != 0 {
+                                self.unknown("cold_boundary.link_bindings_indexes", "BTree assignment/slot node allocation backing and Arc control blocks private; logical entry counts are not capacity measurements");
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        if self.arc_object("cold_boundary.rich_store", &memo.values) {
+            memo.values.visit_storage(|view| match view {
+                dm_session::ArtifactStorageView::Store { buckets, entries } => {
+                    self.observe_items("cold_boundary.rich_index", entries);
+                    if buckets != 0 { self.unknown("cold_boundary.rich_index", "private ArtifactStore BTree node allocation backing/control blocks excluded"); }
+                }
+                dm_session::ArtifactStorageView::Bucket { address, len, capacity, element_size } => {
+                    self.buffer("cold_boundary.rich_buckets", address, len.saturating_mul(element_size), capacity.saturating_mul(element_size));
+                }
+                dm_session::ArtifactStorageView::Entry { key, reads, versions, value } => {
+                    self.slice("cold_boundary.rich_keys", key, true);
+                    self.retained_symbolic_ledger(reads, versions);
+                    if self.arc_object("cold_boundary.rich_values", value) {
+                        self.lowered_unit(&value.unit);
+                        self.vec_payload("cold_boundary.rich_debug_offsets", &value.relative_debug);
                     }
                 }
-            };
+            });
         }
-        unavailable!(symbolic, "cold_boundary.symbolic_store");
-        unavailable!(abi, "cold_boundary.abi_store");
-        unavailable!(initializer_fragments, "cold_boundary.fragment_store");
-        unavailable!(required_types, "cold_boundary.required_types_store");
-        unavailable!(link_bindings, "cold_boundary.link_bindings_store");
-        self.arc_object("cold_boundary.rich_store", &memo.values);
-        self.unknown(
-            "cold_boundary.rich_store",
-            "rich memo payload/index backing not visited by this combined adapter",
-        );
     }
     pub(crate) fn procedure_inputs(
         &mut self,
@@ -85,6 +145,9 @@ impl HeapCensus {
             self.items("prepared_source_abi.executable_body", &unit.executable_body);
             if let Some(abi) = &unit.abi {
                 self.abi(abi);
+            }
+            if let Some(certificate) = &unit.canonical {
+                self.prepared_canonical(certificate);
             }
             if !unit.inputs.parameter_types.is_empty()
                 || !unit.inputs.readonly_parameters.is_empty()

@@ -55,6 +55,12 @@ pub struct RetainedBindings {
     current: std::sync::Mutex<Option<BindingTables>>,
 }
 impl RetainedBindings {
+    /// Observe the current immutable owner without cloning or rebuilding tables.
+    /// The callback must not call back into this retained owner.
+    pub fn visit_current(&self, visitor: impl FnOnce(Option<&BindingTables>)) {
+        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        visitor(current.as_ref());
+    }
     pub fn build(&self, inventory: LinkInventory) -> Result<LinkTables, LinkError> {
         let previous = self
             .current

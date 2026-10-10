@@ -102,6 +102,13 @@ fn symbolic_census_deduplicates_shared_records_and_counts_pruned_members() {
     let shared = memo.retention_stats();
     assert_eq!(shared.records, 2);
     assert_eq!(shared.known_capacity_bytes, one.known_capacity_bytes);
+    let mut combined = HeapCensus::new("combined_boundary");
+    assert_eq!(memo.retained_census(&mut combined), 2);
+    assert_eq!(memo.retained_census(&mut combined), 2);
+    assert_eq!(
+        combined.finish().unique_known_capacity_bytes,
+        shared.known_capacity_bytes
+    );
     assert!(shared
         .owners
         .owners

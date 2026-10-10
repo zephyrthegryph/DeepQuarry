@@ -47,11 +47,27 @@ impl SessionSymbolicMemo {
         }
     }
     pub(crate) fn retention_stats(&self) -> SymbolicRetentionStats {
+        let mut census = HeapCensus::new("session_symbolic.retained");
+        let records = self.retained_census(&mut census);
+        let owners = census.finish();
+        SymbolicRetentionStats {
+            declines: self.decline_stats(),
+            records,
+            successful_admissions: self.admitted.load(Ordering::Relaxed),
+            successful_reuses: self.reused.load(Ordering::Relaxed),
+            pruned_members: self.pruned.load(Ordering::Relaxed),
+            known_capacity_bytes: owners.unique_known_capacity_bytes,
+            unknown_capacity_payload_bytes: owners.unknown_capacity_payload_bytes,
+            owners,
+        }
+    }
+    /// Borrow one quiescent record roster into the caller's allocation ledger.
+    /// No materialization, decoder, resolver or callback into this store runs.
+    pub(crate) fn retained_census(&self, mut census: &mut HeapCensus) -> usize {
         let records = self
             .records
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        let mut census = HeapCensus::new("session_symbolic.retained");
         for record in records.values() {
             if !census.arc_object("session_symbolic.records", record) {
                 continue;
@@ -89,17 +105,7 @@ impl SessionSymbolicMemo {
             }
         }
         census.unknown("session_symbolic.records", "BTreeMap index node capacity, Arc control blocks, allocator overhead and freed pages are not exposed; this is not private-memory measurement");
-        let owners = census.finish();
-        SymbolicRetentionStats {
-            declines: self.decline_stats(),
-            records: records.len(),
-            successful_admissions: self.admitted.load(Ordering::Relaxed),
-            successful_reuses: self.reused.load(Ordering::Relaxed),
-            pruned_members: self.pruned.load(Ordering::Relaxed),
-            known_capacity_bytes: owners.unique_known_capacity_bytes,
-            unknown_capacity_payload_bytes: owners.unknown_capacity_payload_bytes,
-            owners,
-        }
+        records.len()
     }
 }
 

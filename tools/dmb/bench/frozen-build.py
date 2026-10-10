@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--commit", required=True)
     parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
     parser.add_argument("--seconds", type=int, default=300)
+    parser.add_argument("--allocation-counting", action="store_true",
+                        help="diagnostic-only requested-byte counters; never acceptance timing")
     parser.add_argument("--dmbc-codegen-units", type=int, choices=(16, 64, 256), default=16,
                         help="prototype-only dmbc LLVM partitioning; dependencies remain unchanged")
     parser.add_argument("--dmbc-opt-level", type=int, choices=(0, 1, 2, 3), default=3,
@@ -114,6 +116,8 @@ def main():
         command = ["E:/cargo/bin/cargo.exe", "build", "--release", "--locked",
                    "--offline", "-j1", "-p", "dmbc", "--bin", "dmbc",
                    "--config", f"profile.release.package.dmbc.codegen-units={args.dmbc_codegen_units}"]
+        if args.allocation_counting:
+            command.extend(["--features", "allocation-counting"])
         # Leave the default command untouched to preserve existing Cargo fingerprints.
         if args.dmbc_opt_level != 3:
             command.extend(["--config", f"profile.release.package.dmbc.opt-level={args.dmbc_opt_level}"])
@@ -136,6 +140,7 @@ def main():
                        dmbc_codegen_units=args.dmbc_codegen_units,
                        dmbc_opt_level=args.dmbc_opt_level,
                        dm_tree_opt_level=args.tree_opt_level,
+                       allocation_counting=args.allocation_counting,
                        owned_child_cleanup=cleanup)
         if code == 0:
             binary = Path(env["CARGO_TARGET_DIR"]) / "release/dmbc.exe"

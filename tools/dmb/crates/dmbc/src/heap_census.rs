@@ -2,6 +2,7 @@
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
+mod abi_certificates;
 mod cache_batch;
 mod cold_boundary;
 mod declaration_syntax;
@@ -77,11 +78,13 @@ pub struct HeapCensusReport {
     pub scope: &'static str,
     pub unique_known_capacity_bytes: u64,
     pub unknown_capacity_payload_bytes: u64,
+    pub rust_requested_live_bytes: Option<u64>,
     pub owners: Vec<OwnerReport>,
     pub limitations: Vec<&'static str>,
     pub frozen_code_metrics: relocation_metrics::RelocationMetrics,
 }
 pub struct HeapCensus {
+    rust_requested_live_bytes: Option<u64>,
     stage: String,
     owners: BTreeMap<String, OwnerReport>,
     // Addresses stay private to this diagnostic, never become output identities.
@@ -92,7 +95,13 @@ pub struct HeapCensus {
 }
 impl HeapCensus {
     pub fn new(stage: impl Into<String>) -> Self {
+        // Sample before any census-owned allocation or traversal.
+        #[cfg(feature = "allocation-counting")]
+        let rust_requested_live_bytes = Some(dm_profile::CountingAllocator::live_requested_bytes());
+        #[cfg(not(feature = "allocation-counting"))]
+        let rust_requested_live_bytes = None;
         Self {
+            rust_requested_live_bytes,
             stage: stage.into(),
             owners: BTreeMap::new(),
             allocations: HashSet::new(),
@@ -765,21 +774,24 @@ impl HeapCensus {
         self.vec_payload("lowered_units", &batch.units);
         self.vec_payload("lowered_units", &batch.diagnostics);
         for unit in &batch.units {
-            self.resolver_code(&unit.code);
-            self.procedure_metadata("semantic_metadata", &unit.metadata);
-            if let Some(abi) = &unit.abi {
-                self.abi(abi);
-            }
-            self.debug("lowered_units", &unit.debug_origins);
-            self.source_location("lowered_units", &unit.origin.source);
-            self.vec_payload("lowered_units", &unit.source_helpers);
-            for helper in &unit.source_helpers {
-                self.resolver_code(&helper.code);
-                self.debug("lowered_units", &helper.debug_origins);
-            }
+            self.lowered_unit(unit);
         }
         for diagnostic in &batch.diagnostics {
             self.string("lowered_units", &diagnostic.message);
+        }
+    }
+    pub(crate) fn lowered_unit(&mut self, unit: &crate::lowering::LoweredUnit) {
+        self.resolver_code(&unit.code);
+        self.procedure_metadata("semantic_metadata", &unit.metadata);
+        if let Some(abi) = &unit.abi {
+            self.abi(abi);
+        }
+        self.debug("lowered_units", &unit.debug_origins);
+        self.source_location("lowered_units", &unit.origin.source);
+        self.vec_payload("lowered_units", &unit.source_helpers);
+        for helper in &unit.source_helpers {
+            self.resolver_code(&helper.code);
+            self.debug("lowered_units", &helper.debug_origins);
         }
     }
     pub(crate) fn entry_content(&mut self, owner: &str, content: &dm_link::EntryContent) {
@@ -892,6 +904,7 @@ impl HeapCensus {
         let owners: Vec<_> = self.owners.into_values().collect();
         HeapCensusReport {
             schema: 1,
+            rust_requested_live_bytes: self.rust_requested_live_bytes,
             stage: self.stage,
             scope: "retained_accessible_container_payload_and_capacity_not_total_heap",
             unique_known_capacity_bytes: owners
@@ -910,6 +923,7 @@ impl HeapCensus {
                 "Arc control blocks, allocator size-class rounding/metadata, stack storage, private indexes, and explicitly unknown backing are excluded.",
                 "Slices without exposed capacity contribute logical-length lower bounds, marked in their owner; this is not a complete heap or RSS total.",
                 "The census is diagnostic-only, opt-in, and O(accessible retained nodes); its temporary pointer ledger is excluded.",
+                "rust_requested_live_bytes samples successful Rust GlobalAlloc Layout requested bytes before census allocation; null when allocation-counting is disabled. It excludes direct native C allocations, allocator pages/metadata, and OS private memory.",
             ],
         }
     }

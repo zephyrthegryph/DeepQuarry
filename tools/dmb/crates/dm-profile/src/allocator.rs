@@ -10,6 +10,16 @@ thread_local! {
     static LOCAL_PEAK: Cell<u64> = const {Cell::new(0)};
 }
 pub struct CountingAllocator;
+impl CountingAllocator {
+    /// Successful Rust global-allocator requested bytes still live at this instant.
+    /// Valid only when this executable installs CountingAllocator. Native C
+    /// allocations, allocator pages/metadata and OS private bytes are excluded.
+    /// Sample before constructing diagnostic reports, ideally at quiescence.
+    #[cfg(feature = "allocation-counting")]
+    pub fn live_requested_bytes() -> u64 {
+        LIVE.load(Ordering::Relaxed)
+    }
+}
 // Diagnostic counting wraps the same allocator as the acceptance executable.
 static BACKEND: mimalloc::MiMalloc = mimalloc::MiMalloc;
 fn allocated(size: usize) {
@@ -101,6 +111,15 @@ pub(crate) fn peak() -> u64 {
 mod tests {
     use super::*;
     use std::sync::{atomic::AtomicBool, Arc, Barrier};
+
+    #[test]
+    fn requested_live_realloc_tracks_growth_shrink_and_zero() {
+        let live = AtomicU64::new(37);
+        assert_eq!(replace_live(&live, 37, 103), 103);
+        assert_eq!(replace_live(&live, 103, 11), 11);
+        assert_eq!(replace_live(&live, 11, 0), 0);
+        assert_eq!(live.load(Ordering::Relaxed), 0);
+    }
 
     #[test]
     fn concurrent_peak_observations_preserve_maximum_and_never_regress() {
