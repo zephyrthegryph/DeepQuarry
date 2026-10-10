@@ -109,12 +109,14 @@ impl Compiler<'_> {
                         self.emit(opcode::ITER_POP, vec![]);
                     }
                     self.emit(
-                        if depth < self.try_depth {
+                        if self.try_depth > 0 {
+                            // Authored protected gotos use TryJmp, even when
+                            // their target remains inside the same try frame.
                             0x12f
-                        } else if self.iterator_depth > 0 {
-                            opcode::JMP_LOOP
                         } else {
-                            opcode::JMP
+                            // Authored forward and backward gotos both perform
+                            // native budget dispatch; synthetic routing uses JMP.
+                            opcode::JMP_LOOP
                         },
                         vec![Word::Branch(label)],
                     );
@@ -667,6 +669,9 @@ impl Compiler<'_> {
                     cases,
                     else_branch,
                 } => {
+                    if self.native_switch(selector, cases, else_branch, &statement.raw_header)? {
+                        continue;
+                    }
                     let slot = self.locals.len() as u32;
                     let name = format!("__dmb_switch_{slot}");
                     self.locals.push(name.clone());

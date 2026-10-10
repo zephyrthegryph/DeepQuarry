@@ -490,19 +490,15 @@ fn switch_alternatives_and_inclusive_range_decode() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
     let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
-    assert_eq!(
-        decoded
-            .iter()
-            .filter(|instruction| instruction.opcode == opcode::TEQ)
-            .count(),
-        2
-    );
-    assert!(decoded
+    assert_eq!(compiled.local_count, 0);
+    let table = decoded
         .iter()
-        .any(|instruction| instruction.opcode == opcode::TGE));
-    assert!(decoded
+        .find(|instruction| instruction.opcode == 0x7a)
+        .unwrap();
+    assert_eq!(table.branch_targets().unwrap().len(), 4);
+    assert!(!decoded
         .iter()
-        .any(|instruction| instruction.opcode == opcode::TLE));
+        .any(|instruction| instruction.opcode == opcode::TEQ));
 }
 
 #[test]

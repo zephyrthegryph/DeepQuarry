@@ -970,6 +970,8 @@ mod inference;
 mod resolution;
 #[path = "simple/statements.rs"]
 mod statements;
+#[path = "simple/typed_switch.rs"]
+mod typed_switch;
 #[path = "simple/typed_statements.rs"]
 mod typed_statements;
 use helpers::{
