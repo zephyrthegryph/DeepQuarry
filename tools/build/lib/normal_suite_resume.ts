@@ -3,13 +3,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import type { CompilerProvenance } from './compiler_provenance';
-import { assertDirectoryChain, parseCompileResult, type NativePairOutput, type CompiledOutput } from './native_pair';
-import { exactNormalUnion, normalSuiteBatches, sameSuiteRuntime, suiteRowSucceeded, type IssuedNormalInventory, type RuntimeIdentity } from './normal_suite_plan';
+import { assertDirectoryChain, parseAcquiredResult, parseCompileResult, type NativePairOutput, type CompiledOutput } from './native_pair';
+import { bindNormalPlan, exactNormalUnion, normalSuiteBatches, sameSuiteRuntime, suiteRowSucceeded, type IssuedNormalInventory, type RuntimeIdentity } from './normal_suite_plan';
 
 export type ResumeRun = { compilation: CompilerProvenance | null; results: Record<string, { status: number; runtimes?: number }> | null;
   killedByWatchdog: boolean; clean: boolean; runtimeIdentity?: RuntimeIdentity };
 export type ResumeEvidence<R extends ResumeRun> = { batchSize: number; compilation: CompilerProvenance | null;
   selectionProtocol?: string;
+  nativeOutput?: NativePairOutput; status?: string;
   inventory?: R & { inventory?: IssuedNormalInventory }; plan?: { path?: string | null; sha256?: string | null; eligibleOrder: string[] };
   batches: { requested: string[]; run: R }[] };
 export type NormalResumeCheckpoint = { schema: 1; kind: 'historical_normal_suite_resume'; inputClosureAuthenticated: false;
@@ -73,6 +74,7 @@ export function validateCompletedPrefix<R extends ResumeRun>(evidence: ResumeEvi
   if (evidence.batches.length && evidence.selectionProtocol !== 'normal-select-v1') throw new Error('resume completed batches used another selection protocol');
   const issued = evidence.inventory;
   if (!issued?.inventory || !issued.clean || issued.killedByWatchdog || !sameSuiteRuntime(issued.runtimeIdentity, checkpoint.runtimeIdentity)) throw new Error('resume inventory/runtime unavailable');
+  if (JSON.stringify(issued.compilation) !== JSON.stringify(checkpoint.compilation)) throw new Error('resume inventory compilation differs');
   const plan = { ...issued.inventory, eligible: evidence.plan?.eligibleOrder ?? issued.inventory.eligible };
   normalSuiteBatches(plan, batchSize);
   if (plan.eligible.length !== issued.inventory.eligible.length || plan.eligible.some(name => !issued.inventory!.eligible.includes(name))) throw new Error('resume plan differs from issued inventory');
@@ -128,6 +130,59 @@ export function issueNormalContinuation<R extends ResumeRun>(priorPath: string, 
   authenticatedJson(evidencePath, evidenceSha256);
   const checkpoint: NormalResumeCheckpoint = { ...prior.checkpoint,
     evidence: { path: path.resolve(evidencePath), sha256: evidenceSha256 } };
+  const bytes = Buffer.from(`${JSON.stringify(checkpoint, null, 2)}\n`);
+  fs.writeFileSync(destination, bytes, { flag: 'wx' });
+  return { path: path.resolve(destination), sha256: createHash('sha256').update(bytes).digest('hex'),
+    completedBatches: admitted.completed.length, totalBatches: admitted.batches.length };
+}
+
+/** Seed an actual native continuation from pinned final evidence and the existing
+ * acquire receipt. The retained independent files remain owned by the caller.
+ * This issues generation identity only, never current input closure or passing tests. */
+export function issueNativeNormalResume<R extends ResumeRun>(evidencePath: string, evidenceSha256: string,
+  acquisitionPath: string, acquisitionSha256: string, destination: string) {
+  const evidence = authenticatedJson(evidencePath, evidenceSha256) as ResumeEvidence<R>;
+  const compilation = evidence.compilation;
+  if (!compilation || compilation.actualBackend !== 'native' || compilation.requestedBackend !== 'native'
+    || compilation.fallback !== null || !evidence.nativeOutput || !evidence.inventory?.runtimeIdentity
+    || !evidence.plan?.path || !evidence.plan.sha256) throw new Error('native seed lacks actual native output/reference plan/runtime');
+  const reference = authenticatedJson(evidence.plan.path, evidence.plan.sha256) as ResumeEvidence<R>;
+  if (reference.compilation?.actualBackend !== 'byond' || reference.compilation.requestedBackend !== 'byond'
+    || reference.compilation.fallback !== null || !reference.inventory?.inventory
+    || !['passed', 'failed'].includes(reference.status ?? '') || reference.batchSize !== evidence.batchSize
+    || JSON.stringify(reference.compilation.orderedDefines) !== JSON.stringify(compilation.orderedDefines)) {
+    throw new Error('native seed reference is not the completed matching BYOND plan');
+  }
+  const referencePlan = { ...reference.inventory.inventory, eligible: reference.plan?.eligibleOrder ?? reference.inventory.inventory.eligible };
+  const referenceBatches = normalSuiteBatches(referencePlan, reference.batchSize);
+  if (reference.batches.length !== referenceBatches.length || !evidence.inventory.inventory
+    || JSON.stringify(bindNormalPlan(evidence.inventory.inventory, referencePlan).eligible) !== JSON.stringify(evidence.plan.eligibleOrder)) {
+    throw new Error('native seed changed reference order or reference is incomplete');
+  }
+  const acquired = authenticatedJson(acquisitionPath, acquisitionSha256) as { slot?: unknown };
+  if (!acquired || typeof acquired.slot !== 'string' || !path.isAbsolute(acquired.slot)) throw new Error('native seed acquisition slot unavailable');
+  const pair = parseAcquiredResult(acquired, evidence.nativeOutput, path.dirname(acquired.slot));
+  const checkpoint: NormalResumeCheckpoint = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false,
+    evidence: { path: path.resolve(evidencePath), sha256: evidenceSha256 }, compilation,
+    runtimeIdentity: evidence.inventory.runtimeIdentity, nativeOutput: evidence.nativeOutput,
+    pair: { dmb: pair.dmb, rsc: pair.rsc, dmbBytes: evidence.nativeOutput.dmbBytes, rscBytes: evidence.nativeOutput.rscBytes,
+      dmbSha256: hashFile(pair.dmb), rscSha256: hashFile(pair.rsc) } };
+  resumeOutput(checkpoint);
+  const admitted = validateCompletedPrefix(evidence, checkpoint, evidence.batchSize);
+  const referenceAdmission = validateCompletedPrefix(reference, { ...checkpoint,
+    compilation: reference.compilation!, runtimeIdentity: reference.inventory.runtimeIdentity! }, reference.batchSize);
+  const boundReference = bindNormalPlan(admitted.plan, referenceAdmission.plan);
+  if (!sameSuiteRuntime(checkpoint.runtimeIdentity, reference.inventory.runtimeIdentity)
+    || JSON.stringify(boundReference.eligible) !== JSON.stringify(admitted.plan.eligible)
+    || JSON.stringify(boundReference.automaticRows) !== JSON.stringify(admitted.plan.automaticRows)) {
+    throw new Error('native seed runtime/reference plan differs');
+  }
+  if (!path.isAbsolute(destination) || process.platform === 'win32' && !/^e:[\\/]/i.test(destination)) throw new Error('seed destination must be an owned absolute E: path');
+  assertDirectoryChain(path.dirname(destination));
+  authenticatedJson(evidencePath, evidenceSha256);
+  authenticatedJson(acquisitionPath, acquisitionSha256);
+  authenticatedJson(evidence.plan.path, evidence.plan.sha256);
+  verifyResumeAcquiredPair(checkpoint, pair.dmb);
   const bytes = Buffer.from(`${JSON.stringify(checkpoint, null, 2)}\n`);
   fs.writeFileSync(destination, bytes, { flag: 'wx' });
   return { path: path.resolve(destination), sha256: createHash('sha256').update(bytes).digest('hex'),

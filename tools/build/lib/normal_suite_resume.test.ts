@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { issueNormalContinuation, loadNormalResume, verifyResumeAcquiredPair, validateCompletedPrefix, type NormalResumeCheckpoint, type ResumeEvidence, type ResumeRun } from './normal_suite_resume';
+import { issueNativeNormalResume, issueNormalContinuation, loadNormalResume, verifyResumeAcquiredPair, validateCompletedPrefix, type NormalResumeCheckpoint, type ResumeEvidence, type ResumeRun } from './normal_suite_resume';
 const runtime = { executable: 'E:/dd.exe', sha256: 'a'.repeat(64), version: null, security: 'trusted' } as const;
 const compilation = { requestedBackend: 'byond', actualBackend: 'byond', compiler: { executable: 'E:/dm.exe', sha256: 'b'.repeat(64), version: 516, build: 1687 }, orderedDefines: ['UNIT_TESTS'], fallback: null, nativePair: null } as const;
 const checkpoint = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false, compilation, runtimeIdentity: runtime } as unknown as NormalResumeCheckpoint;
@@ -30,7 +30,13 @@ describe('historical normal continuation', () => {
       const nativeEvidence = evidence(); nativeEvidence.compilation = nativeCompilation;
       nativeEvidence.inventory!.compilation = nativeCompilation;
       nativeEvidence.batches[0].run.compilation = nativeCompilation;
-      nativeEvidence.plan = { path: path.join(root, 'plan.final.json'), sha256: 'f'.repeat(64), eligibleOrder: nativeEvidence.inventory!.inventory!.eligible };
+      const reference = evidence(); reference.status = 'failed';
+      reference.batches.push({ requested: ['/datum/unit_test/b'], run: { ...reference.batches[0].run,
+        results: { '/datum/unit_test/b': { status: 0 }, framework: { status: 0 } } } });
+      const referenceBytes = Buffer.from(JSON.stringify(reference));
+      const referencePath = write('plan.final.json', referenceBytes);
+      nativeEvidence.plan = { path: referencePath, sha256: hash(referenceBytes), eligibleOrder: nativeEvidence.inventory!.inventory!.eligible };
+      nativeEvidence.nativeOutput = { kind: 'native_pair', compiler: executable, store: root, outputProject: path.join(root, 'absent.dme'), ...pair };
       const evidenceBytes = Buffer.from(JSON.stringify(nativeEvidence)); const evidencePath = write('evidence.json', evidenceBytes);
       const doc: NormalResumeCheckpoint = { ...checkpoint, compilation: nativeCompilation,
         evidence: { path: evidencePath, sha256: hash(evidenceBytes) },
@@ -39,9 +45,26 @@ describe('historical normal continuation', () => {
       const save = (value: NormalResumeCheckpoint, name: string) => { const bytes = Buffer.from(JSON.stringify(value)); return [write(name, bytes), hash(bytes)] as const; };
       const [file, digest] = save(doc, 'checkpoint.json');
       const admitted = loadNormalResume(file, digest, 1);
-      expect(admitted.output.kind).toBe('native_pair'); expect(admitted.originalPlan?.sha256).toBe('f'.repeat(64));
+      expect(admitted.output.kind).toBe('native_pair'); expect(admitted.originalPlan?.sha256).toBe(hash(referenceBytes));
       const next = issueNormalContinuation(file, digest, evidencePath, hash(evidenceBytes), 1, path.join(root, 'next.json'));
       expect(loadNormalResume(next.path, next.sha256, 1).output.kind).toBe('native_pair');
+      const slot = path.join(root, 'slot'); fs.mkdirSync(slot);
+      const acquiredDmb = path.join(slot, 'deepquarry.dmb'), acquiredRsc = path.join(slot, 'deepquarry.rsc');
+      fs.writeFileSync(acquiredDmb, dmbBytes); fs.writeFileSync(acquiredRsc, rscBytes);
+      fs.writeFileSync(path.join(slot, 'slot-complete'), pair.pairId);
+      const acquisition = { schema_version: 1, kind: 'acquired_pair', store: root, slot, dmb: acquiredDmb, rsc: acquiredRsc,
+        pair_id: pair.pairId, dmb_hash: pair.dmbHash, rsc_hash: pair.rscHash, dmb_bytes: pair.dmbBytes, rsc_bytes: pair.rscBytes };
+      const acquisitionBytes = Buffer.from(JSON.stringify(acquisition)); const acquisitionPath = write('acquisition.json', acquisitionBytes);
+      const seeded = issueNativeNormalResume(evidencePath, hash(evidenceBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'seed.json'));
+      expect(loadNormalResume(seeded.path, seeded.sha256, 1).originalPlan?.sha256).toBe(hash(referenceBytes));
+      expect(() => issueNativeNormalResume(evidencePath, '0'.repeat(64), acquisitionPath, hash(acquisitionBytes), path.join(root, 'bad-seed.json'))).toThrow();
+      const fallbackEvidence = Buffer.from(JSON.stringify({ ...nativeEvidence,
+        compilation: { ...nativeCompilation, fallback: 'internal_error_70' } }));
+      const fallbackEvidencePath = write('fallback-evidence.json', fallbackEvidence);
+      expect(() => issueNativeNormalResume(fallbackEvidencePath, hash(fallbackEvidence), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'fallback-seed.json'))).toThrow('actual native');
+      fs.writeFileSync(path.join(slot, 'slot-complete'), '4'.repeat(32));
+      expect(() => issueNativeNormalResume(evidencePath, hash(evidenceBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'bad-slot.json'))).toThrow();
       verifyResumeAcquiredPair(doc, dmb);
       fs.writeFileSync(rsc, 'changed'); expect(() => verifyResumeAcquiredPair(doc, dmb)).toThrow(); fs.writeFileSync(rsc, rscBytes);
       const [badFile, badHash] = save({ ...doc, nativeOutput: { ...doc.nativeOutput!, pairId: '4'.repeat(32) } }, 'bad-pair.json');
@@ -103,6 +126,8 @@ describe('historical normal continuation', () => {
   test('rejects wrong generation, runtime, non-prefix and missing rows', () => {
     const changed = evidence(); changed.compilation = { ...compilation, orderedDefines: ['CHANGED'] };
     expect(() => validateCompletedPrefix(changed, checkpoint, 1)).toThrow();
+    const inventoryGeneration = evidence(); inventoryGeneration.inventory!.compilation = { ...compilation, orderedDefines: ['OTHER_GENERATION'] };
+    expect(() => validateCompletedPrefix(inventoryGeneration, checkpoint, 1)).toThrow('inventory compilation');
     const wrong = evidence(); wrong.batches[0].run.runtimeIdentity = { ...runtime, sha256: 'c'.repeat(64) };
     expect(() => validateCompletedPrefix(wrong, checkpoint, 1)).toThrow();
     const nonprefix = evidence(); nonprefix.batches[0].requested = ['/datum/unit_test/b'];
