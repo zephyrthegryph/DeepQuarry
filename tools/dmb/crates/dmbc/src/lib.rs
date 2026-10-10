@@ -23,6 +23,7 @@ pub mod request_failure;
 pub mod request_runner;
 pub mod resource_manifest;
 pub mod runner_host;
+mod runner_retained_census;
 pub mod session;
 pub mod telemetry;
 pub mod verification;

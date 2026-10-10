@@ -413,7 +413,7 @@ fn run_build_attempt(
         prior_outputs = Some(hint.outputs.clone());
     }
     let host_facts = if executable { host.host_facts() } else { None };
-    let (frontend_memo, execution, semantic_state) = host.execution(
+    let (frontend_memo, execution, mut semantic_state) = host.execution(
         workers,
         expansion_memo
             .as_ref()
@@ -472,7 +472,7 @@ fn run_build_attempt(
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
-            semantic_state,
+            semantic_state.as_deref_mut(),
         )
     };
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
@@ -498,8 +498,7 @@ fn run_build_attempt(
         let bytes = &retained_engine.bytes;
         let engine = &retained_engine.snapshot;
         dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
-        // Quiescent, opt-in ownership traversal also covers retained memo stages.
-        host.emit_idle_census("active-frontend-ready");
+        crate::runner_retained_census::emit(semantic_state.as_deref())?;
         if progress_enabled {
             dmbc::daemon_eprintln!(
                 "native captured facts started: {} types, {} members, {} bodies",
