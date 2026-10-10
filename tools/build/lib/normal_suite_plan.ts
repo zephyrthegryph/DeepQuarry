@@ -2,16 +2,26 @@
  * This module neither discovers tests nor authenticates the compiler receipt.
  * The caller must bind inventory and all batches to the same CompiledOutput.
  */
-export type IssuedNormalInventory = {
+export type SuiteTier = 'normal' | 'all' | 'exhaustive';
+export type IssuedSuiteInventory = {
   schema: 1;
-  tier: 'normal';
+  tier: SuiteTier;
   eligible: string[];
   automaticRows: string[];
   excluded: { name: string; reason: 'abstract' | 'focus_only' | 'exhaustive' }[];
+  /** Optional for historical normal receipts; new runtime inventories issue both. */
+  preTierCount?: number;
+  tierExcluded?: { name: string; tier: 'normal' | 'exhaustive' }[];
 };
+export type IssuedNormalInventory = IssuedSuiteInventory & { tier: 'normal' };
 
 export function normalSuiteBatches(inventory: IssuedNormalInventory, batchSize: number): string[][] {
-  if (inventory.schema !== 1 || inventory.tier !== 'normal') throw new Error('unsupported runtime inventory');
+  if (inventory.tier !== 'normal') throw new Error('unsupported normal runtime inventory');
+  return suiteBatches(inventory, batchSize);
+}
+
+export function suiteBatches(inventory: IssuedSuiteInventory, batchSize: number): string[][] {
+  if (inventory.schema !== 1 || !['normal', 'all', 'exhaustive'].includes(inventory.tier)) throw new Error('unsupported runtime inventory');
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 32) throw new Error('batch size must be1..32');
   const seen = new Set<string>();
   for (const name of inventory.eligible) {
@@ -23,6 +33,16 @@ export function normalSuiteBatches(inventory: IssuedNormalInventory, batchSize: 
     if (!row.name.startsWith('/datum/unit_test/') || seen.has(row.name)
       || !['abstract', 'focus_only', 'exhaustive'].includes(row.reason)) throw new Error('invalid/overlapping exclusion');
     seen.add(row.name);
+  }
+  if (inventory.tier !== 'normal' || inventory.preTierCount !== undefined || inventory.tierExcluded !== undefined) {
+    if (!Number.isSafeInteger(inventory.preTierCount) || !Array.isArray(inventory.tierExcluded)) throw new Error('invalid pre-tier coverage');
+    for (const row of inventory.tierExcluded) {
+      if (!row.name.startsWith('/datum/unit_test/') || seen.has(row.name)
+        || !['normal', 'exhaustive'].includes(row.tier) || inventory.tier === 'all'
+        || row.tier === inventory.tier) throw new Error('invalid tier exclusion');
+      seen.add(row.name);
+    }
+    if (seen.size !== inventory.preTierCount) throw new Error('pre-tier coverage incomplete');
   }
   for (const name of inventory.automaticRows) {
     if (!name || seen.has(name)) throw new Error('invalid/overlapping automatic row');
@@ -44,6 +64,13 @@ export function exactNormalUnion<T>(inventory: IssuedNormalInventory, batches: r
   tests: Record<string, T>; frameworkFindings: T[];
 } {
   normalSuiteBatches(inventory, 1);
+  return exactSuiteUnion(inventory, batches);
+}
+
+export function exactSuiteUnion<T>(inventory: IssuedSuiteInventory, batches: readonly BatchRows<T>[]): {
+  tests: Record<string, T>; frameworkFindings: T[];
+} {
+  suiteBatches(inventory, 1);
   const expected = new Set(inventory.eligible);
   const requested = new Set<string>();
   const tests: Record<string, T> = Object.create(null);
@@ -73,6 +100,12 @@ export function exactNormalUnion<T>(inventory: IssuedNormalInventory, batches: r
 /** Admit a previously runtime-issued plan only against today's full runtime roster. */
 export function bindNormalPlan(current: IssuedNormalInventory, previous: IssuedNormalInventory): IssuedNormalInventory {
   normalSuiteBatches(current, 1); normalSuiteBatches(previous, 1);
+  return bindSuitePlan(current, previous) as IssuedNormalInventory;
+}
+
+export function bindSuitePlan(current: IssuedSuiteInventory, previous: IssuedSuiteInventory): IssuedSuiteInventory {
+  suiteBatches(current, 1); suiteBatches(previous, 1);
+  if (current.tier !== previous.tier) throw new Error('captured suite tier differs');
   const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every(name => b.includes(name));
   if (!sameSet(current.eligible, previous.eligible) || !sameSet(current.automaticRows, previous.automaticRows)) {
     throw new Error('captured normal plan does not match current runtime inventory');

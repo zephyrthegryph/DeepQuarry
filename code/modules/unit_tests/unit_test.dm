@@ -1008,6 +1008,9 @@ GLOBAL_VAR(dq_test_select_names)
 		qdel(map_bot)
 
 	var/list/tests_to_run = subtypesof(/datum/unit_test)
+	// Capture the complete compiled type roster before focus/shard/domain/tier
+	// selection. A filtered inventory cannot satisfy the consumer's full count.
+	var/list/pre_tier_tests = world.params[TEST_INVENTORY_FILE_PARAMETER] ? tests_to_run.Copy() : null
 	var/list/focused_tests = GLOB.focused_tests
 	if(length(focused_tests))
 		tests_to_run = focused_tests.Copy()
@@ -1046,8 +1049,8 @@ GLOBAL_VAR(dq_test_select_names)
 
 	// Tier: a plain run is the normal tier; "all" adds the exhaustive sweeps,
 	// "exhaustive" runs only those. A focused run runs exactly what it named.
+	var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
 	if(!length(focused_tests))
-		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
 		var/want_normal = tier_param != "exhaustive"
 		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
 		var/list/tiered = list()
@@ -1065,6 +1068,11 @@ GLOBAL_VAR(dq_test_select_names)
 	if(world.params[TEST_INVENTORY_FILE_PARAMETER])
 		var/list/eligible = list()
 		var/list/excluded = list()
+		var/list/tier_excluded = list()
+		for(var/datum/unit_test/test_path in pre_tier_tests)
+			var/test_tier = initial(test_path.tier) == TEST_TIER_EXHAUSTIVE ? "exhaustive" : "normal"
+			if(tier_param != "all" && test_tier != tier_param)
+				tier_excluded += list(list("name" = "[test_path]", "tier" = test_tier))
 		for(var/test_path in tests_to_run)
 			var/reason = dq_test_ineligibility(test_path)
 			if(reason)
@@ -1073,7 +1081,7 @@ GLOBAL_VAR(dq_test_select_names)
 				eligible += "[test_path]"
 		var/inventory_file = world.params[TEST_INVENTORY_FILE_PARAMETER]
 		fdel(inventory_file)
-		file(inventory_file) << json_encode(list("schema" = 1, "tier" = "normal", "eligible" = eligible, "excluded" = excluded, "automaticRows" = dq_test_automatic_rows()))
+		file(inventory_file) << json_encode(list("schema" = 1, "tier" = tier_param, "eligible" = eligible, "excluded" = excluded, "automaticRows" = dq_test_automatic_rows(), "preTierCount" = length(pre_tier_tests), "tierExcluded" = tier_excluded))
 		var/result_file = world.params[TEST_RESULTS_FILE_PARAMETER] || "data/unit_tests.json"
 		fdel(result_file)
 		file(result_file) << "{}"

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { issueNativeNormalResume, issueNormalContinuation, loadNormalResume, verifyResumeAcquiredPair, validateCompletedPrefix, type NormalResumeCheckpoint, type ResumeEvidence, type ResumeRun } from './normal_suite_resume';
+import { issueNativeNormalResume, issueNativeSuiteResume, issueNormalContinuation, loadNormalResume, loadSuiteResume, verifyResumeAcquiredPair, validateCompletedPrefix, type NormalResumeCheckpoint, type ResumeEvidence, type ResumeRun } from './normal_suite_resume';
 const runtime = { executable: 'E:/dd.exe', sha256: 'a'.repeat(64), version: null, security: 'trusted' } as const;
 const compilation = { requestedBackend: 'byond', actualBackend: 'byond', compiler: { executable: 'E:/dm.exe', sha256: 'b'.repeat(64), version: 516, build: 1687 }, orderedDefines: ['UNIT_TESTS'], fallback: null, nativePair: null } as const;
 const checkpoint = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false, compilation, runtimeIdentity: runtime } as unknown as NormalResumeCheckpoint;
@@ -57,6 +57,18 @@ describe('historical normal continuation', () => {
       const acquisitionBytes = Buffer.from(JSON.stringify(acquisition)); const acquisitionPath = write('acquisition.json', acquisitionBytes);
       const seeded = issueNativeNormalResume(evidencePath, hash(evidenceBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'seed.json'));
       expect(loadNormalResume(seeded.path, seeded.sha256, 1).originalPlan?.sha256).toBe(hash(referenceBytes));
+      const allReference = structuredClone(reference); allReference.inventory!.inventory!.tier = 'all';
+      Object.assign(allReference.inventory!.inventory!, { preTierCount: 2, tierExcluded: [] });
+      allReference.selectionProtocol = 'suite-select-v1';
+      const allReferenceBytes = Buffer.from(JSON.stringify(allReference)); const allReferencePath = write('all-reference.json', allReferenceBytes);
+      const allNative = structuredClone(nativeEvidence); allNative.inventory!.inventory!.tier = 'all';
+      Object.assign(allNative.inventory!.inventory!, { preTierCount: 2, tierExcluded: [] });
+      allNative.selectionProtocol = 'suite-select-v1'; allNative.plan!.path = allReferencePath; allNative.plan!.sha256 = hash(allReferenceBytes);
+      const allNativeBytes = Buffer.from(JSON.stringify(allNative)); const allNativePath = write('all-native.json', allNativeBytes);
+      const allSeed = issueNativeSuiteResume(allNativePath, hash(allNativeBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'all-seed.json'));
+      expect(loadSuiteResume(allSeed.path, allSeed.sha256, 1).plan.tier).toBe('all');
+      expect(loadSuiteResume(allSeed.path, allSeed.sha256, 1).originalPlan?.sha256).toBe(hash(allReferenceBytes));
+      expect(() => issueNativeNormalResume(allNativePath, hash(allNativeBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'not-normal.json'))).toThrow('normal');
       expect(() => issueNativeNormalResume(evidencePath, '0'.repeat(64), acquisitionPath, hash(acquisitionBytes), path.join(root, 'bad-seed.json'))).toThrow();
       const fallbackEvidence = Buffer.from(JSON.stringify({ ...nativeEvidence,
         compilation: { ...nativeCompilation, fallback: 'internal_error_70' } }));

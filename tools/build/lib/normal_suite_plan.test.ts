@@ -1,8 +1,23 @@
 import { describe, expect, test } from 'bun:test';
-import { normalSuiteBatches, exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type IssuedNormalInventory } from './normal_suite_plan';
+import { normalSuiteBatches, exactNormalUnion, bindNormalPlan, suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRowSucceeded, type IssuedSuiteInventory, type IssuedNormalInventory } from './normal_suite_plan';
 const inventory: IssuedNormalInventory = { schema: 1, tier: 'normal',
   eligible: ['/datum/unit_test/b', '/datum/unit_test/a', '/datum/unit_test/c'],
   excluded: [{ name: '/datum/unit_test/base', reason: 'abstract' }], automaticRows: ['issued_framework'] };
+
+test('all and exhaustive inventories retain actual tiers and exact pre-tier omissions', () => {
+  const all: IssuedSuiteInventory = { ...inventory, tier: 'all', preTierCount: 4, tierExcluded: [] };
+  expect(suiteBatches(all, 2)).toHaveLength(2);
+  expect(() => normalSuiteBatches(all as IssuedNormalInventory, 2)).toThrow('normal');
+  const exhaustive: IssuedSuiteInventory = { ...all, tier: 'exhaustive', eligible: [inventory.eligible[0]],
+    tierExcluded: inventory.eligible.slice(1).map(name => ({ name, tier: 'normal' })) };
+  expect(suiteBatches(exhaustive, 2)).toEqual([[inventory.eligible[0]]]);
+  expect(() => bindSuitePlan(all, exhaustive)).toThrow('tier');
+  expect(() => suiteBatches({ ...exhaustive, preTierCount: 3 }, 1)).toThrow('coverage');
+  expect(() => suiteBatches({ ...all, tierExcluded: [{ name: '/datum/unit_test/x', tier: 'normal' }] }, 1)).toThrow('exclusion');
+  expect(exactSuiteUnion(exhaustive, [{ requested: exhaustive.eligible, results: {
+    [exhaustive.eligible[0]]: { status: 1 }, issued_framework: { status: 0 },
+  } }]).tests[exhaustive.eligible[0]].status).toBe(1);
+});
 describe('runtime-issued normal inventory', () => {
   test('preserves issued priority order, exact automatic rows and original failures', () => {
     expect(normalSuiteBatches(inventory, 2)).toEqual([inventory.eligible.slice(0, 2), inventory.eligible.slice(2)]);

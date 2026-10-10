@@ -5,16 +5,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { compareNormalSuiteResults, type ComparableNormalSuite } from './lib/normal_suite_compare';
-import { bindNormalPlan, normalSuiteBatches, sameSuiteRuntime, type IssuedNormalInventory, type RuntimeIdentity } from './lib/normal_suite_plan';
+import { compareSuiteResults, type ComparableSuite } from './lib/normal_suite_compare';
+import { bindSuitePlan, suiteBatches, sameSuiteRuntime, type IssuedSuiteInventory, type RuntimeIdentity } from './lib/normal_suite_plan';
 import type { CompilerProvenance } from './lib/compiler_provenance';
 import type { UnitTestEntry } from './lib/bench';
-import { loadNormalResume } from './lib/normal_suite_resume';
+import { loadSuiteResume } from './lib/normal_suite_resume';
 
 type Run = {
   compilation: CompilerProvenance; killedByWatchdog: boolean; clean: boolean;
   runtimeIdentity: RuntimeIdentity; results: Record<string, UnitTestEntry> | null;
-  inventory?: IssuedNormalInventory;
+  inventory?: IssuedSuiteInventory;
 };
 type Evidence = {
   schema: number; status: string; batchSize: number; compilation: CompilerProvenance;
@@ -58,16 +58,18 @@ function runtime(value: RuntimeIdentity) {
   }
 }
 
-function admitted(value: Evidence, backend: 'byond' | 'native'): ComparableNormalSuite {
-  if (!value || value.schema !== 1 || value.selectionProtocol !== 'normal-select-v1' || !['passed', 'failed'].includes(value.status) || !value.plan
+function admitted(value: Evidence, backend: 'byond' | 'native', generalized: boolean): ComparableSuite {
+  if (!value || value.schema !== 1 || !(generalized ? ['normal-select-v1', 'suite-select-v1'] : ['normal-select-v1']).includes(value.selectionProtocol) || !['passed', 'failed'].includes(value.status) || !value.plan
       || typeof value.plan.observedOrderDiffers !== 'boolean' || !value.inventory?.inventory || !Array.isArray(value.batches)) {
     throw new Error('suite has no completed issued inventory/plan');
   }
   if (value.inventory.clean !== true) throw new Error('inventory boot was not clean');
+  if (!generalized && value.inventory.inventory.tier !== 'normal') throw new Error('normal comparison requires normal inventories');
+  if (value.inventory.inventory.tier !== 'normal' && value.selectionProtocol !== 'suite-select-v1') throw new Error('suite selection protocol differs');
   compiler(value.compilation, backend);
   runtime(value.inventory.runtimeIdentity);
-  const plan = bindNormalPlan(value.inventory.inventory, { ...value.inventory.inventory, eligible: value.plan.eligibleOrder });
-  const expected = normalSuiteBatches(plan, value.batchSize);
+  const plan = bindSuitePlan(value.inventory.inventory, { ...value.inventory.inventory, eligible: value.plan.eligibleOrder });
+  const expected = suiteBatches(plan, value.batchSize);
   if (!equal(expected, value.batches.map(batch => batch.requested))) throw new Error('batch boundaries/order differ from issued plan');
   if (value.plan.observedOrderDiffers !== !equal(value.plan.eligibleOrder, value.inventory.inventory.eligible)) {
     throw new Error('observed inventory order disclosure differs');
@@ -90,19 +92,19 @@ function read(file: string, expected: string) {
   return JSON.parse(bytes.toString('utf8')) as Evidence;
 }
 
-export function compareEvidence(referenceFile: string, referenceSha256: string, nativeFile: string, nativeSha256: string) {
+export function compareEvidence(referenceFile: string, referenceSha256: string, nativeFile: string, nativeSha256: string, generalized = false) {
   const reference = read(referenceFile, referenceSha256), native = read(nativeFile, nativeSha256);
-  const left = admitted(reference, 'byond'), right = admitted(native, 'native');
+  const left = admitted(reference, 'byond', generalized), right = admitted(native, 'native', generalized);
   if (native.plan.sha256 !== referenceSha256 || reference.batchSize !== native.batchSize
       || !equal(reference.plan.eligibleOrder, native.plan.eligibleOrder)
       || !equal(reference.compilation.orderedDefines, native.compilation.orderedDefines)) {
     throw new Error('native suite does not authenticate the same reference plan/batch size/configuration');
   }
-  let historicalByondGeneration = null as null | { checkpoint: string; sha256: string; pair: ReturnType<typeof loadNormalResume>['checkpoint']['pair'] };
+  let historicalByondGeneration = null as null | { checkpoint: string; sha256: string; pair: ReturnType<typeof loadSuiteResume>['checkpoint']['pair'] };
   if (reference.continuation !== undefined) {
     const continuation = reference.continuation;
     if (!continuation || typeof continuation.checkpoint !== 'string' || typeof continuation.sha256 !== 'string') throw new Error('malformed reference continuation');
-    const previous = loadNormalResume<Run>(continuation.checkpoint, continuation.sha256, reference.batchSize);
+    const previous = loadSuiteResume<Run>(continuation.checkpoint, continuation.sha256, reference.batchSize);
     if (previous.output.kind !== 'conventional' || !equal(previous.checkpoint.compilation, reference.compilation)
       || !sameSuiteRuntime(previous.checkpoint.runtimeIdentity, reference.inventory.runtimeIdentity)
       || !equal(previous.plan, left.inventory)
@@ -116,7 +118,7 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
   if (native.continuation !== undefined) {
     const continuation = native.continuation;
     if (!continuation || typeof continuation.checkpoint !== 'string' || typeof continuation.sha256 !== 'string') throw new Error('malformed native continuation');
-    const previous = loadNormalResume<Run>(continuation.checkpoint, continuation.sha256, native.batchSize);
+    const previous = loadSuiteResume<Run>(continuation.checkpoint, continuation.sha256, native.batchSize);
     if (previous.output.kind !== 'native_pair' || !equal(previous.checkpoint.compilation, native.compilation)
       || !sameSuiteRuntime(previous.checkpoint.runtimeIdentity, native.inventory.runtimeIdentity)
       || !equal(previous.plan, right.inventory) || previous.originalPlan?.sha256 !== referenceSha256
@@ -126,10 +128,12 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
     }
     historicalNativeGeneration = { checkpoint: previous.checkpointPath, sha256: previous.checkpointSha256, pairId: previous.output.pairId };
   }
-  const comparison = compareNormalSuiteResults(left, right);
+  const comparison = compareSuiteResults(left, right);
   const referenceClean = reference.inventory.clean && reference.batches.every(batch => batch.run.clean);
   const nativeClean = native.inventory.clean && native.batches.every(batch => batch.run.clean);
-  return { schema: 1, kind: 'preliminary_normal_suite_comparison', inputClosureAuthenticated: false,
+  return { schema: 1, kind: generalized ? 'preliminary_suite_comparison' : 'preliminary_normal_suite_comparison', tier: left.inventory.tier,
+    tierCoverage: { reference: { preTierCount: left.inventory.preTierCount ?? null, tierExcluded: left.inventory.tierExcluded ?? null },
+      native: { preTierCount: right.inventory.preTierCount ?? null, tierExcluded: right.inventory.tierExcluded ?? null } }, inputClosureAuthenticated: false,
     generationIdentityAuthenticated: historicalByondGeneration !== null, historicalByondGeneration,
     nativeGenerationIdentityAuthenticated: historicalNativeGeneration !== null, historicalNativeGeneration,
     referenceClean, nativeClean,
@@ -154,17 +158,22 @@ if (import.meta.main) {
     const flags = ['--reference', '--reference-sha256', '--native', '--native-sha256'];
     const values = new Map<string, string>();
     let requireClean = false;
+    let generalized = false;
     for (let index = 0; index < args.length;) {
       if (args[index] === '--require-clean') {
         if (requireClean) throw new Error('duplicate --require-clean');
         requireClean = true; index++; continue;
+      }
+      if (args[index] === '--suite') {
+        if (generalized) throw new Error('duplicate --suite');
+        generalized = true; index++; continue;
       }
       if (!flags.includes(args[index]) || values.has(args[index]) || !args[index + 1]) throw new Error('invalid/duplicate CLI argument');
       values.set(args[index], args[index + 1]);
       index += 2;
     }
     if (values.size !== flags.length) throw new Error('required: --reference PATH --reference-sha256 HEX --native PATH --native-sha256 HEX');
-    const result = compareEvidence(...flags.map(flag => values.get(flag)!) as [string, string, string, string]);
+    const result = compareEvidence(...flags.map(flag => values.get(flag)!) as [string, string, string, string], generalized);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = comparisonExitCode(result, requireClean);
   } catch (error) {

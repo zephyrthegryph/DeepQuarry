@@ -59,8 +59,8 @@ import {
   type WorldBenchDocument,
   writeJson,
 } from './lib/bench';
-import { loadNormalResume, verifyResumeAcquiredPair } from './lib/normal_suite_resume';
-import { normalSuiteBatches, exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type RuntimeIdentity, type IssuedNormalInventory } from './lib/normal_suite_plan';
+import { loadNormalResume, loadSuiteResume, verifyResumeAcquiredPair } from './lib/normal_suite_resume';
+import { suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRowSucceeded, type RuntimeIdentity, type IssuedSuiteInventory } from './lib/normal_suite_plan';
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
@@ -471,6 +471,9 @@ export const NormalPlanParameter = new Juke.Parameter({ type: 'string' });
 export const NormalResumeParameter = new Juke.Parameter({ type: 'string' });
 export const NormalResumeSha256Parameter = new Juke.Parameter({ type: 'string', name: 'normal-resume-sha256' });
 export const NormalBatchesParameter = new Juke.Parameter({ type: 'number' });
+export const SuiteBatchesParameter = new Juke.Parameter({ type: 'number' });
+export const SuiteResumeParameter = new Juke.Parameter({ type: 'string' });
+export const SuiteResumeSha256Parameter = new Juke.Parameter({ type: 'string', name: 'suite-resume-sha256' });
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 /** `dm-test --exhaustive`: shorthand for `--tier=all`. */
 export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
@@ -753,7 +756,7 @@ function linkOrCopy(from: string, to: string): void {
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
-type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedNormalInventory; runtimeIdentity?: RuntimeIdentity };
+type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedSuiteInventory; runtimeIdentity?: RuntimeIdentity };
 
 /**
  * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
@@ -864,7 +867,7 @@ async function runIsolatedTestWorld(
       // the world died before finishing
     }
     receiptOutcome.resultsAvailable = results !== null;
-    const inventory = options.issueInventory ? JSON.parse(fs.readFileSync(inventoryFile, 'utf8')) as IssuedNormalInventory : undefined;
+    const inventory = options.issueInventory ? JSON.parse(fs.readFileSync(inventoryFile, 'utf8')) as IssuedSuiteInventory : undefined;
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
       compilation: compiled.provenance ?? null,
@@ -1635,26 +1638,31 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
 }
 
 /** Sequential normal suite, issued by the compiled runtime, never a source scanner. */
-async function runNormalBatches(get: any, batchSize: number): Promise<void> {
-  if (resolveTier(get) !== 'normal' || focusedTestNames(get) || get(ShardsParameter) !== undefined && get(ShardsParameter) !== null || get(DomainsParameter)?.length
-      || get(AffectedParameter) || get(IncrementalParameter)) throw new Error('normal-batches requires unfiltered normal tier');
-  const resumePath = get(NormalResumeParameter);
-  const resume = resumePath ? loadNormalResume<IsolatedRun>(resumePath, String(get(NormalResumeSha256Parameter) ?? ''), batchSize) : null;
+async function runSuiteBatches(get: any, batchSize: number, generalized = false): Promise<void> {
+  const tier = resolveTier(get);
+  if ((!generalized && tier !== 'normal') || focusedTestNames(get) || get(ShardsParameter) !== undefined && get(ShardsParameter) !== null || get(DomainsParameter)?.length
+      || get(AffectedParameter) || get(IncrementalParameter)) throw new Error('batch suites require an unfiltered tier; normal-batches requires normal');
+  const resumePath = get(generalized ? SuiteResumeParameter : NormalResumeParameter);
+  const resume = resumePath ? (generalized ? loadSuiteResume<IsolatedRun> : loadNormalResume<IsolatedRun>)(resumePath,
+    String(get(generalized ? SuiteResumeSha256Parameter : NormalResumeSha256Parameter) ?? ''), batchSize) : null;
+  if (resume && resume.plan.tier !== tier) throw new Error('resume tier differs from requested suite');
   if (resume && (JSON.stringify([...TEST_DEFINES, ...get(DefineParameter)]) !== JSON.stringify(resume.checkpoint.compilation.orderedDefines) || compilerMode() !== resume.checkpoint.compilation.requestedBackend || get(DmVersionParameter))) throw new Error('historical resume requires identical ordered defines/backend and no compiler-version override');
   const output = resume?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
-  const id = runIdentity('normal-batches');
-  const evidenceFile = `data/normal-suite/${id.id}-${randomUUID()}.json`;
+  const id = runIdentity(generalized ? 'suite-batches' : 'normal-batches');
+  const evidenceFile = `data/${generalized ? 'suite' : 'normal-suite'}/${id.id}-${randomUUID()}.json`;
   const evidence: { schema: number; status: string; compilation: unknown; nativeOutput?: CompiledOutput; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
     batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; error?: string } = {
     schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, nativeOutput: output.kind === 'native_pair' ? output : undefined,
-    batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false, selectionProtocol: 'normal-select-v1',
+    batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false,
+    selectionProtocol: generalized ? 'suite-select-v1' : 'normal-select-v1',
     continuation: resume ? { checkpoint: resume.checkpointPath, sha256: resume.checkpointSha256, scope: 'historical same compiled generation; current source closure is not authenticated' } : undefined };
   writeJson(evidenceFile, evidence);
   try {
-    const issued = resume?.inventory ?? await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': 'normal' }, null,
+    const issued = resume?.inventory ?? await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, null,
       { compiledOutput: output, issueInventory: true, watchdogTimeoutMs: 300_000, label: 'normal inventory' });
     evidence.inventory = issued; writeJson(evidenceFile, evidence);
     if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error('runtime inventory admission failed');
+    if (issued.inventory.tier !== tier) throw new Error('runtime issued another suite tier');
     let plan = resume?.plan ?? issued.inventory;
     const previousPath = get(NormalPlanParameter);
     if (previousPath) {
@@ -1664,15 +1672,15 @@ async function runNormalBatches(get: any, batchSize: number): Promise<void> {
       if (!expectedHash || actualHash !== String(expectedHash).toLowerCase()) throw new Error('captured plan SHA256 missing/differs');
       const previous = JSON.parse(bytes.toString('utf8')) as { inventory?: IsolatedRun; batchSize?: number };
       if (!previous.inventory?.inventory || previous.batchSize !== batchSize) throw new Error('captured plan lacks issued inventory or identical batch size');
-      plan = bindNormalPlan(issued.inventory, previous.inventory.inventory);
+      plan = bindSuitePlan(issued.inventory, previous.inventory.inventory);
     }
     evidence.plan = { path: previousPath ?? resume?.originalPlan?.path ?? null, sha256: previousPath ? String(get(NormalPlanSha256Parameter)).toLowerCase() : resume?.originalPlan?.sha256 ?? null,
       eligibleOrder: plan.eligible, observedOrderDiffers: JSON.stringify(plan.eligible) !== JSON.stringify(issued.inventory.eligible) };
-    const batches = normalSuiteBatches(plan, batchSize);
+    const batches = suiteBatches(plan, batchSize);
     evidence.status = 'running'; writeJson(evidenceFile, evidence);
     for (let index = evidence.batches.length; index < batches.length; index++) {
       const requested = batches[index];
-      const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': 'normal' }, requested,
+      const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, requested,
         { compiledOutput: output, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
           watchdogTimeoutMs: 300_000, label: `normal batch${index + 1}/${batches.length}` });
       evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
@@ -1680,8 +1688,8 @@ async function runNormalBatches(get: any, batchSize: number): Promise<void> {
       if (!run.results || run.killedByWatchdog) throw new Error('batch exited without complete results');
       recordTestRun(run, `normal-batch${index + 1}`, get(DefineParameter));
     }
-    if (resume) loadNormalResume<IsolatedRun>(resume.checkpointPath, resume.checkpointSha256, batchSize);
-    const union = exactNormalUnion(plan, evidence.batches.map(({ requested, run }) => ({ requested, results: run.results })));
+    if (resume) loadSuiteResume<IsolatedRun>(resume.checkpointPath, resume.checkpointSha256, batchSize);
+    const union = exactSuiteUnion(plan, evidence.batches.map(({ requested, run }) => ({ requested, results: run.results })));
     if (evidence.batches.some(({ run }) => !run.clean)
         || Object.values(union.tests).some(row => !suiteRowSucceeded(row))
         || union.frameworkFindings.some(row => !suiteRowSucceeded(row))) throw new Error('normal suite contains test/runtime/framework failures');
@@ -1704,6 +1712,9 @@ export const DmTestTarget = new Juke.Target({
     FocusParameter,
     ShardsParameter,
     NormalBatchesParameter,
+    SuiteBatchesParameter,
+    SuiteResumeParameter,
+    SuiteResumeSha256Parameter,
     NormalResumeParameter,
     NormalResumeSha256Parameter,
     NormalPlanParameter,
@@ -1715,7 +1726,7 @@ export const DmTestTarget = new Juke.Target({
     ExhaustiveParameter,
     ProfileTestsParameter,
   ],
-  dependsOn: ({ get }) => get(NormalResumeParameter) ? [] : [
+  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) ? [] : [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
@@ -1724,13 +1735,23 @@ export const DmTestTarget = new Juke.Target({
   ],
   executes: async ({ get }) => {
     const normalBatches = get(NormalBatchesParameter);
+    const suiteBatchCount = get(SuiteBatchesParameter);
+    if (suiteBatchCount != null && normalBatches != null) throw new Error('suite-batches and normal-batches are exclusive');
+    if (get(SuiteResumeSha256Parameter) && !get(SuiteResumeParameter)) throw new Error('suite-resume-sha256 requires suite-resume');
+    if (get(SuiteResumeParameter) && (suiteBatchCount == null || get(NormalResumeParameter) || get(NormalPlanParameter))) throw new Error('suite-resume requires suite-batches and forbids other resume/plan options');
+    if (suiteBatchCount != null && get(NormalResumeParameter)) throw new Error('suite-batches requires suite-resume, not normal-resume');
     if (get(NormalResumeSha256Parameter) && !get(NormalResumeParameter)) throw new Error('normal-resume-sha256 requires normal-resume');
     if (get(NormalResumeParameter) && (normalBatches == null || get(NormalPlanParameter))) throw new Error('normal-resume requires normal-batches and forbids normal-plan');
     if (get(NormalPlanSha256Parameter) && !get(NormalPlanParameter)) throw new Error('normal-plan-sha256 requires normal-plan');
-    if (get(NormalPlanParameter) && (normalBatches === null || normalBatches === undefined)) throw new Error('normal-plan requires normal-batches');
+    if (get(NormalPlanParameter) && normalBatches == null && suiteBatchCount == null) throw new Error('normal-plan requires a batch runner');
+    if (suiteBatchCount != null) {
+      if (!Number.isInteger(suiteBatchCount) || suiteBatchCount < 1 || suiteBatchCount > 32) throw new Error('suite-batches must be1..32');
+      await runSuiteBatches(get, suiteBatchCount, true);
+      return;
+    }
     if (normalBatches !== null && normalBatches !== undefined) {
       if (!Number.isInteger(normalBatches) || normalBatches < 1 || normalBatches > 32) throw new Error('normal-batches must be1..32');
-      await runNormalBatches(get, normalBatches);
+      await runSuiteBatches(get, normalBatches);
       return;
     }
     const focus = focusedTestNames(get);

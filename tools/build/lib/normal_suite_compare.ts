@@ -1,4 +1,4 @@
-import { exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type IssuedNormalInventory, type RuntimeIdentity, type BatchRows } from './normal_suite_plan';
+import { exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRowSucceeded, type IssuedSuiteInventory, type IssuedNormalInventory, type RuntimeIdentity, type BatchRows } from './normal_suite_plan';
 import type { UnitTestEntry } from './bench';
 
 export type ComparableNormalSuite = {
@@ -6,16 +6,21 @@ export type ComparableNormalSuite = {
   runtime: RuntimeIdentity;
   batches: BatchRows<UnitTestEntry>[];
 };
+export type ComparableSuite = Omit<ComparableNormalSuite, 'inventory'> & { inventory: IssuedSuiteInventory };
 
 /** Result comparison only. Callers must independently authenticate source and compiler inputs.
  * Descriptions are compared exactly and remain in the original rows.
  * Timings and tick statistics are excluded from semantic comparison.
  */
 export function compareNormalSuiteResults(reference: ComparableNormalSuite, native: ComparableNormalSuite) {
-  bindNormalPlan(reference.inventory, native.inventory);
+  if (reference.inventory.tier !== 'normal' || native.inventory.tier !== 'normal') throw new Error('normal comparison requires normal inventories');
+  return compareSuiteResults(reference, native);
+}
+export function compareSuiteResults(reference: ComparableSuite, native: ComparableSuite) {
+  bindSuitePlan(reference.inventory, native.inventory);
   if (!sameSuiteRuntime(reference.runtime, native.runtime)) throw new Error('suite runtime inputs differ');
-  const left = exactNormalUnion(reference.inventory, reference.batches);
-  const right = exactNormalUnion(native.inventory, native.batches);
+  const left = exactSuiteUnion(reference.inventory, reference.batches);
+  const right = exactSuiteUnion(native.inventory, native.batches);
   if (JSON.stringify(reference.batches.map(batch => batch.requested)) !== JSON.stringify(native.batches.map(batch => batch.requested))) {
     throw new Error('suite batch boundaries/order differ');
   }

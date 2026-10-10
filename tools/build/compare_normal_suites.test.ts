@@ -58,6 +58,20 @@ test('authenticated synthetic matching receipts remain preliminary', () => fixtu
   expect(result.acceptedRuntimeBaseline).toBe(false);
 }));
 
+test('all-tier comparison is explicit and retains real coverage without relabeling normal', () => fixture(({ native, referenceFile, nativeFile, write }) => {
+  const reference = suite('byond', null);
+  for (const value of [reference, native]) {
+    (value.inventory.inventory as { tier: string }).tier = 'all'; value.selectionProtocol = 'suite-select-v1';
+    Object.assign(value.inventory.inventory, { preTierCount: 1, tierExcluded: [] });
+  }
+  const bytes = JSON.stringify(reference); fs.writeFileSync(referenceFile, bytes); native.plan.sha256 = sha(bytes);
+  const nativeHash = write();
+  expect(() => compareEvidence(referenceFile, sha(bytes), nativeFile, nativeHash)).toThrow();
+  const result = compareEvidence(referenceFile, sha(bytes), nativeFile, nativeHash, true);
+  expect(result.kind).toBe('preliminary_suite_comparison'); expect(result.tier).toBe('all');
+  expect(result.tierCoverage.reference.preTierCount).toBe(1); expect(result.acceptedRuntimeBaseline).toBe(false);
+}));
+
 test('native continuation independently authenticates its generation and original reference plan', () => fixture(({ native, referenceHash, nativeFile, write, referenceFile }) => {
   const directory = path.dirname(nativeFile);
   const executable = path.join(directory, 'compiler.exe'); fs.writeFileSync(executable, 'synthetic compiler');
