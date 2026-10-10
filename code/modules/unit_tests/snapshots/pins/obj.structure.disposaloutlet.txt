@@ -27,7 +27,7 @@ human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool menu: Use multitool (refused: its panel is closed)
 human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top

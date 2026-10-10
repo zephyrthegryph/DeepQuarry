@@ -33,7 +33,8 @@ human|/obj/item/tool/wrench menu: Interaction item
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Set transfer amount
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Interaction item
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Interaction alt
@@ -101,5 +102,5 @@ human|/obj/item/assembly_holder menu: Move To Top
 human|/obj/item/assembly_holder menu: Set transfer amount
 human|/obj/item/assembly_holder menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly_holder click: Click: Fueltank interaction item
-keys: climb.climb, climb.climb_menu, drag_buckle, fueltank_interaction_item, hand, interaction_alt, interaction_item, melee_hit, reagent_dispenser_set_aptft
+keys: climb.climb, climb.climb_menu, drag_buckle, fueltank_interaction_item, hand, interaction_alt, interaction_item, melee_hit, reagent_dispenser_set_aptft, use_wrench
 

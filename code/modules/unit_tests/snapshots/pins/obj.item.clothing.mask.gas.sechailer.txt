@@ -40,7 +40,7 @@ human|/obj/item/tool/crowbar menu: Select gas mask phrase (refused: You can't do
 human|/obj/item/tool/crowbar menu: Select phrase
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar menu: Use crowbar (refused: this mask has an integrated hailer, you can't remove it)
 human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: HALT! (refused: You can't do that.)

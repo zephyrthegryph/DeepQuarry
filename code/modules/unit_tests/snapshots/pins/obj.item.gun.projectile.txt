@@ -27,11 +27,11 @@ human|/obj/item/tool/screwdriver menu: Fit
 human|/obj/item/tool/screwdriver menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Remove the DNA lock (refused: the gun is not accepting modifications at this time)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Unload
-human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Remove the DNA lock
 human|/obj/item/tool/crowbar menu: Fit
 human|/obj/item/tool/crowbar menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
