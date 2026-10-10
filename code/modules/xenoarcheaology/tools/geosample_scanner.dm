@@ -296,8 +296,8 @@ TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 	if(!anom_found)
 		data += " - No anomalous data<br>"
 
-	P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-	P.info += span_bold("Scanned item:") + " [scanned_item().name]<br><br>" + data
+	P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
+	P.set_info(P.info + (span_bold("Scanned item:") + " [scanned_item().name]<br><br>" + data))
 	last_scan_data = P.info
 
 	P.forceMove(loc)

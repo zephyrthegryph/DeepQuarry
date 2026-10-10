@@ -70,7 +70,7 @@
 	//add some memos
 	var/obj/item/paper/P = new()
 	P.name = "Memo RE: proper analysis procedure"
-	P.info = "<br>We keep test dummies in pens here for a reason"
+	P.set_info("<br>We keep test dummies in pens here for a reason")
 	move_into(src, null, P)
 
 /obj/item/folder/yellow_ce

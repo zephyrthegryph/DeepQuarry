@@ -356,19 +356,19 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 		idrank = "Stationbound synthetic"
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
-	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
-	reqform.info += "REQUESTED BY: [idname]<br>"
-	reqform.info += "RANK: [idrank]<br>"
-	reqform.info += "REASON: [reason]<br>"
-	reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
-	reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
+	reqform.set_info(reqform.info + ("<h3>[station_name()] Supply Requisition Form</h3><hr>"))
+	reqform.set_info(reqform.info + ("INDEX: #[SSsupply.ordernum]<br>"))
+	reqform.set_info(reqform.info + ("REQUESTED BY: [idname]<br>"))
+	reqform.set_info(reqform.info + ("RANK: [idrank]<br>"))
+	reqform.set_info(reqform.info + ("REASON: [reason]<br>"))
+	reqform.set_info(reqform.info + ("SUPPLY CRATE TYPE: [S.name]<br>"))
+	reqform.set_info(reqform.info + ("ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"))
 	if(amount)
-		reqform.info += "AMOUNT: [amount]<br>"
-	reqform.info += "CONTENTS:<br>"
-	reqform.info += S.get_html_manifest()
-	reqform.info += "<hr>"
-	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
+		reqform.set_info(reqform.info + ("AMOUNT: [amount]<br>"))
+	reqform.set_info(reqform.info + ("CONTENTS:<br>"))
+	reqform.set_info(reqform.info + (S.get_html_manifest()))
+	reqform.set_info(reqform.info + ("<hr>"))
+	reqform.set_info(reqform.info + ("STAMP BELOW TO APPROVE THIS REQUISITION:<br>"))
 	changed(reqform)
 
 /// Refuses unless this console accepts orders.

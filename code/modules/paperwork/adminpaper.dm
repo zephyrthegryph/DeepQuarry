@@ -141,9 +141,9 @@ CAPABILITIES(/obj/item/paper/admin)
 /obj/item/paper/admin/proc/apply_send_confirmation(selected)
 	if(selected == "Yes")
 		if(headerOn)
-			info = header + info
+			set_info(header + info)
 		if(footerOn)
-			info += footer
+			set_info(info + (footer))
 		updateinfolinks()
 		SStgui.close_uis(src)
 		admindatum().faxCallback(src, destination())
@@ -204,10 +204,9 @@ CAPABILITIES(/obj/item/paper/admin)
 	if(id != "end")
 		addtofield(text2num(id), t)
 	else
-		info += t
+		set_info(info + (t))
 		updateinfolinks()
 	update_space(t)
-	changed(src)
 
 /obj/item/paper/admin/proc/updateDisplay()
 	SStgui.update_uis(src)

@@ -27,9 +27,9 @@
 
 	// Damaged printer causes the resulting paper to be somewhat harder to read.
 	if(get_integrity_damage() > damage_malfunction)
-		P.info = stars(text_to_print, 100-malfunction_probability)
+		P.set_info(stars(text_to_print, 100-malfunction_probability))
 	else
-		P.info = text_to_print
+		P.set_info(text_to_print)
 	if(paper_title)
 		P.name = paper_title
 	P.fields = count_fields(P.info)

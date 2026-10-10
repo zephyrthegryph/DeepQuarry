@@ -695,11 +695,11 @@ CAPABILITIES(/datum/system/supply)
 			else
 				slip = new /obj/item/paper/manifest(pickedloc)
 			slip.is_copy = 0
-			slip.info = "<h3>[command_name()] Shipping Manifest</h3><hr><br>"
-			slip.info +="Order #[SO.ordernum]<br>"
-			slip.info +="Destination: [station_name()]<br>"
-			slip.info +="[orderedamount] PACKAGES IN THIS SHIPMENT<br>"
-			slip.info +="CONTENTS:<br><ul>"
+			slip.set_info("<h3>[command_name()] Shipping Manifest</h3><hr><br>")
+			slip.set_info(slip.info + ("Order #[SO.ordernum]<br>"))
+			slip.set_info(slip.info + ("Destination: [station_name()]<br>"))
+			slip.set_info(slip.info + ("[orderedamount] PACKAGES IN THIS SHIPMENT<br>"))
+			slip.set_info(slip.info + ("CONTENTS:<br><ul>"))
 
 		var/list/contains
 		// any pack may have a variant_pool; pick from it per spawn.
@@ -728,12 +728,12 @@ CAPABILITIES(/datum/system/supply)
 				var/atom/B2 = spawn_with_variant(typepath, A || pickedloc, use_variant)
 
 				if(slip)
-					slip.info += "<li>[B2.name]</li>" //add the item to the manifest
+					slip.set_info(slip.info + ("<li>[B2.name]</li>")) //add the item to the manifest
 
 		//manifest finalisation
 		if(slip)
-			slip.info += "</ul><br>"
-			slip.info += "CHECK CONTENTS AND STAMP BELOW THE LINE TO CONFIRM RECEIPT OF GOODS<hr>"
+			slip.set_info(slip.info + ("</ul><br>"))
+			slip.set_info(slip.info + ("CHECK CONTENTS AND STAMP BELOW THE LINE TO CONFIRM RECEIPT OF GOODS<hr>"))
 
 	log_game(shopping_log)
 	return

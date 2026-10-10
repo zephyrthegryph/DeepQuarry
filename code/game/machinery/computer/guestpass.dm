@@ -283,7 +283,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 		dat += "[entry]<br><hr>"
 	var/obj/item/paper/P = new/obj/item/paper( loc )
 	P.name = "activity log"
-	P.info = dat
+	P.set_info(dat)
 	add_fingerprint(A.actor)
 	return TRUE
 

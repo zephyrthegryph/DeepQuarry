@@ -3937,6 +3937,51 @@ recycling panels, space vines and the maintenance vendor glow now draw through `
 * **Pump state pin** (`look_states/obj.machinery.pump.txt`, `on=1` and `on=2`): the running pump's rows change from the `pump-running-tank` / `pump-running-glass` layers (named from the state the previous redraw left) to the
   `pump` -> `pump-running` base state, with the tank and glass layers named from the type's own state and so unchanged. Harness: the bless also wrote a lone newline into empty files (six `look_states/` files); restored.
 
+## Draw final: rig, mecha, mineral turfs, paper and the last `changed(src)` calls (rewrite/draw-final)
+
+The hardsuit and the protean rig, nail polish, the mecha and its equipment, mineral turfs, the maintenance recycler, pill bottles, capture crystals, paper `info`, the net and the jar,
+and the small items below draw from tracked state, slots and relations. Left as they were, with the reason: the remote scene tool and voodoo doll (the doll composes another mob's
+whole look and would have to hear every change of that mob), the compass holder, the omni devices' port icons, the quantum pad (reads `power_region`), and `code/game/machinery` and
+`code/modules/power` (the machinery lane).
+
+* **Hardsuit.** The `mob_icon` cache is gone: `get_worn_icon_file()` answers the species' sheet, else the rig's `default_mob_icon` (null for a protean rig: no forced sprite, as the
+  empty icon it built before). The rig itself draws nothing of its own. The pieces' sealed or retracted state is still their own `icon_state`, so the wearer redraws the shoes, gloves,
+  head, suit and back slots through `refresh_worn_pieces()` where the old redraw did (reset, cut, a finished seal, putting it on). The chestpiece of a deployed suit draws the overlay of each
+  installed module (`master_rig`, `look.watch()`); a module's `suit_overlay` is tracked and `refresh_suit_overlay()` writes it through `set_suit_overlay()`. Installing or removing a module
+  redraws the chest through the relation; `rig_attackby.dm` and the protean install and removal no longer ask.
+* **Nail polish.** `open` and `colour` are tracked (the remover's `open` too: it was drawn from a plain var); the colour and top layers are underlays of the look.
+* **Mecha.** `initial_icon` (a paint kit sets it), `show_pilot`, `face_state` and `pilot_lift` are tracked; the base state is `mecha_base_state()` (the type's own state when `initial_icon` is
+  empty; it was written by the first draw). The pilot is read from the pilot slot: a mech that shows its pilot watches it, any other only asks whether the slot is occupied. The pilot picture and
+  the face are layers of the look; each piece of equipment adds its own through `equip_look()`: the repair droid shows `repair_droid_a` while it works (it showed the idle layer until the next
+  redraw), the shield drone and the crisis drone (`enabled` is tracked) are drawn from their state. The gunpod's stripes and the shuttle craft's hull paint are tracked colours. The raw
+  `add_overlay()`/`cut_overlay()` calls of equipment attach, detach and destroy are gone.
+* **Mineral turfs.** Rock and sand draw from `rock_edges` (the adjacency index: open sides, sides facing space, sides facing rock), `sand_dug`, `overlay_detail`, the two archaeology
+  overlays and `mineral_static`. Ore no longer spreads each time the rock is redrawn (the old provider called `MineralSpread()` from the draw: once at creation through `sim_after_init()`
+  and once from each spread target stay); the archaeology and excavation marks are drawn once, not once per side. The cave carver, the expedition template and the rogueminer zone
+  no longer sweep their turfs for `update_icon()`: density, the masks and the tracked marks redraw each turf.
+* **Maintenance recycler.** The item inside is a layer of the machine's look (`look.watch()`), shrunk and offset between the underlay and the machine; the `item_overlay` object and the
+  underlay written at `Initialize()` are gone. The hatch and the screen stay objects of their own (they flick).
+* **Pill bottle:** `wrapper_color` is tracked and the wrapper is drawn from it (a chem master recolouring it redrew nothing; it cut the overlays).
+* **Capture crystal:** the recharge is a tracked `recharging` set when the cooldown starts and cleared by a timer when it ends (the timer called `update_icon()`, a no-op on a drawn type);
+  `spawn_mob_type` is tracked; the bound creature is watched and its place read from `loc`.
+* **Paper.** `info` is tracked and every writer goes through `set_info()` (the tracked lint listed 219 sites: printers, forms, the ATM, accounts, the noticeboard, the photocopier ...). The sites in
+  `code/game/machinery` (card, medical, security, skills, supply, message, adv_med, pandemic, bomb_tester, guestpass, requests console, telecrystal storage) are the same one-line rewrite;
+  they are in that lane's files only because the lint is hard. The five `changed(src)` calls of `paper.dm` and the admin fax are gone.
+* **Net and jar** declare a slot (`CONTAINER_SLOT_NET`, `CONTAINER_SLOT_JAR`) and draw what it holds through `look.things_in()`; the five `changed(src)` calls of the net are gone.
+* **Tracked, with the writers behind setters, and the `changed(src)` after them gone:** the grille's `destroyed`, a snow turf's footprints (the same copy-on-write list as the floor snow; the footprint
+  overlay now names its icon, state and direction: the old `image(icon, "footprint1", dir)` passed the state as the location), a vehicle's `on`, `open` and `paint_color`, the panic button's `glass`,
+  the ready button's `ready`, the sticky pad's `papers`, the NIF's `stat`, the old two-handed weapon's `wielded`, the spaceflare's `active`, the mech fabricator's `being_built`, the server's `working`,
+  the refinery reactor's `toggle_mode`, a sorting junction's `panel_open`, a railing's `icon_modifier` (the nanite goop wrote the state by hand and asked `update_icon()`), the algae farm's
+  readout (its `ALLOW(derived_reads)` is gone), a stored item's `amount` (a smartfridge draws its fill from the records it watches).
+* **Redundant calls removed:** a dispatched call (an op, a timer, a periodic step) re-runs the draws of what it touched, so the `changed(src)` after one never did anything; those after
+  `rel_set()` / `rel_add()` / `move_into()` of something the draw reads were redundant too. They go from the distillery, the grinder, the walkpod, the police tape, the multitool, the DNA console,
+  the unary and binary pipe bases, the vent scrubber and the smartfridge; the pump's target-reached hook, the tether host's and handheld's `update_icon()` calls and the defib kit's `paddles in contents`
+  (now `look.watch(paddles)` and `paddles.loc == src`) are part of it. `update_icon()` calls on types that are all drawn were deleted (`look_sweep dead` with the unit-test probe types ignored, and by hand:
+  the electrovore and turf-transparency behaviours, turf changing, the inducer, blood reveal, stairs, the cargo and vehicle cells, syringes, pill bottles, casino collars, space vines, the turbolift panel).
+* **Look ratchet:** `look_converted` now holds 230 more folders (every folder of `code/game`, `code/modules`, `code/datums` and `code/library` that has no `update_icon()` call and no legacy
+  appearance declaration left, machinery and power excepted).
+* **Removed behaviour:** `EO.update_icon()` in the NIF's medichines was tested for a return value the base proc never gave, so `UpdateDamageIcon()` never ran; both lines are gone.
+
 ## Timed actions wave 9 (rewrite/timed)
 
 * **Lockpick on a simple door.** The legacy pick worked from the lockpick's `afterattack()` after the door's item handler ran. The door's handler hit the door with the pick first (`breakable`); it now returns `OP_PASS` for a lockpick so the pick's own `pick` op works the lock and the door is no longer struck.

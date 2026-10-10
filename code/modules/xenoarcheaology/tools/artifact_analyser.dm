@@ -140,9 +140,9 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	atom_say("Scanning complete.")
 	var/obj/item/paper/P = new(src.loc)
 	P.name = "[src] report #[++report_num]"
-	P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-	P.info += "<br>"
-	P.info += "[bicon(scanned_object())] [results]"
+	P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
+	P.set_info(P.info + ("<br>"))
+	P.set_info(P.info + ("[bicon(scanned_object())] [results]"))
 	P.stamped = list(/obj/item/stamp)
 	P.add_overlay("paper_stamped")
 

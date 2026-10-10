@@ -242,14 +242,14 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		var/obj/item/paper/R = new /obj/item/paper(P)
 		rel_set(P, nameof(P.wrapped), R)
 		R.name = "Account information: [M.owner_name]"
-		R.info = span_bold("Account details (confidential)") + "<br><hr><br>"
-		R.info += "<i>Account holder:</i> [M.owner_name]<br>"
-		R.info += "<i>Account number:</i> [M.account_number]<br>"
-		R.info += "<i>Account pin:</i> [M.remote_access_pin]<br>"
-		R.info += "<i>Starting balance:</i> $[M.money]<br>"
-		R.info += "<i>Date and time:</i> [stationtime2text()], [GLOB.current_date_string]<br><br>"
-		R.info += "<i>Creation terminal ID:</i> [source_db.machine_id]<br>"
-		R.info += "<i>Authorised NT officer overseeing creation:</i> [source_db.held_card.registered_name]<br>"
+		R.set_info(span_bold("Account details (confidential)") + "<br><hr><br>")
+		R.set_info(R.info + ("<i>Account holder:</i> [M.owner_name]<br>"))
+		R.set_info(R.info + ("<i>Account number:</i> [M.account_number]<br>"))
+		R.set_info(R.info + ("<i>Account pin:</i> [M.remote_access_pin]<br>"))
+		R.set_info(R.info + ("<i>Starting balance:</i> $[M.money]<br>"))
+		R.set_info(R.info + ("<i>Date and time:</i> [stationtime2text()], [GLOB.current_date_string]<br><br>"))
+		R.set_info(R.info + ("<i>Creation terminal ID:</i> [source_db.machine_id]<br>"))
+		R.set_info(R.info + ("<i>Authorised NT officer overseeing creation:</i> [source_db.held_card.registered_name]<br>"))
 
 		//stamp the paper
 		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')

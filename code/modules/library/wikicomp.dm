@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/librarywikicomp)
 
 		var/obj/item/paper/paper = new /obj/item/paper(loc)
 		paper.name = doc_title
-		paper.info = doc_body
+		paper.set_info(doc_body)
 	. = TRUE
 
 /obj/machinery/librarywikicomp/proc/ui_act_setsubcat(datum/act/op/A, data)

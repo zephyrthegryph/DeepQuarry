@@ -172,7 +172,7 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 	P.name = "paper - [form_title]"
-	P.info = "[dat]"
+	P.set_info("[dat]")
 	if(ishuman(user))
 		user.put_in_hands(P)
 	user.visible_message("\The [src] spits out a piece of paper.")

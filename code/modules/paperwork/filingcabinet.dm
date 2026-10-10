@@ -146,14 +146,14 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 					S = R
 					break
 			var/obj/item/paper/P = new /obj/item/paper(src)
-			P.info = "<CENTER>" + span_bold("Security Record") + "</CENTER><BR>"
-			P.info += "Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"
-			P.info += "<BR>\n<CENTER>" + span_bold("Security Data") + "</CENTER><BR>\nCriminal Status: [S?.fields["criminal"]]<BR>\n<BR>\nMinor Crimes: [S?.fields["mi_crim"]]<BR>\nDetails: [S?.fields["mi_crim_d"]]<BR>\n<BR>\nMajor Crimes: [S?.fields["ma_crim"]]<BR>\nDetails: [S?.fields["ma_crim_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[S?.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"
+			P.set_info("<CENTER>" + span_bold("Security Record") + "</CENTER><BR>")
+			P.set_info(P.info + ("Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"))
+			P.set_info(P.info + ("<BR>\n<CENTER>" + span_bold("Security Data") + "</CENTER><BR>\nCriminal Status: [S?.fields["criminal"]]<BR>\n<BR>\nMinor Crimes: [S?.fields["mi_crim"]]<BR>\nDetails: [S?.fields["mi_crim_d"]]<BR>\n<BR>\nMajor Crimes: [S?.fields["ma_crim"]]<BR>\nDetails: [S?.fields["ma_crim_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[S?.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"))
 			var/counter = 1
 			while(S?.fields["com_[counter]"])
-				P.info += "[S?.fields["com_[counter]"]]<BR>"
+				P.set_info(P.info + ("[S?.fields["com_[counter]"]]<BR>"))
 				counter++
-			P.info += "</TT>"
+			P.set_info(P.info + ("</TT>"))
 			P.name = "Security Record ([G.fields["name"]])"
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
@@ -192,15 +192,15 @@ CAPABILITIES(/obj/structure/filingcabinet/security)
 					break
 			if(M)
 				var/obj/item/paper/P = new /obj/item/paper(src)
-				P.info = "<CENTER>" + span_bold("Medical Record") + "</CENTER><BR>"
-				P.info += "Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"
+				P.set_info("<CENTER>" + span_bold("Medical Record") + "</CENTER><BR>")
+				P.set_info(P.info + ("Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"))
 
-				P.info += "<BR>\n<CENTER>" + span_bold("Medical Data") + "</CENTER><BR>\nBlood Type: [M.fields["b_type"]]<BR>\nDNA: [M.fields["b_dna"]]<BR>\n<BR>\nMinor Disabilities: [M.fields["mi_dis"]]<BR>\nDetails: [M.fields["mi_dis_d"]]<BR>\n<BR>\nMajor Disabilities: [M.fields["ma_dis"]]<BR>\nDetails: [M.fields["ma_dis_d"]]<BR>\n<BR>\nAllergies: [M.fields["alg"]]<BR>\nDetails: [M.fields["alg_d"]]<BR>\n<BR>\nCurrent Diseases: [M.fields["cdi"]] (per disease info placed in log/comment section)<BR>\nDetails: [M.fields["cdi_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[M.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"
+				P.set_info(P.info + ("<BR>\n<CENTER>" + span_bold("Medical Data") + "</CENTER><BR>\nBlood Type: [M.fields["b_type"]]<BR>\nDNA: [M.fields["b_dna"]]<BR>\n<BR>\nMinor Disabilities: [M.fields["mi_dis"]]<BR>\nDetails: [M.fields["mi_dis_d"]]<BR>\n<BR>\nMajor Disabilities: [M.fields["ma_dis"]]<BR>\nDetails: [M.fields["ma_dis_d"]]<BR>\n<BR>\nAllergies: [M.fields["alg"]]<BR>\nDetails: [M.fields["alg_d"]]<BR>\n<BR>\nCurrent Diseases: [M.fields["cdi"]] (per disease info placed in log/comment section)<BR>\nDetails: [M.fields["cdi_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[M.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"))
 				var/counter = 1
 				while(M.fields["com_[counter]"])
-					P.info += "[M.fields["com_[counter]"]]<BR>"
+					P.set_info(P.info + ("[M.fields["com_[counter]"]]<BR>"))
 					counter++
-				P.info += "</TT>"
+				P.set_info(P.info + ("</TT>"))
 				P.name = "Medical Record ([G.fields["name"]])"
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.

@@ -902,9 +902,9 @@ CAPABILITIES(/obj/machinery/computer/skills)
  */
 /obj/machinery/computer/skills/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
-	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
+	P.set_info("<center>" + span_bold("Medical Record") + "</center><br>")
 	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
-		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		P.set_info(P.info + ({"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
 		<br>\nAge: [active1().fields["age"]]
@@ -919,12 +919,12 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		<br>\nMental Status: [active1().fields["m_stat"]]<br>
 		<br>\nEmployment/Skills Summary: [active1().fields["notes"]]
 		<br>\n
-		<center><b>Comments/Log</b></center><br>"}
+		<center><b>Comments/Log</b></center><br>"}))
 		for(var/c in active1().fields["comments"])
-			P.info += "[c["header"]]<br>[c["text"]]<br>"
+			P.set_info(P.info + ("[c["header"]]<br>[c["text"]]<br>"))
 	else
-		P.info += span_bold("General Record Lost!") + "<br>"
-	P.info += "</tt>"
+		P.set_info(P.info + (span_bold("General Record Lost!") + "<br>"))
+	P.set_info(P.info + ("</tt>"))
 	P.name = "paper - 'Employment Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)
