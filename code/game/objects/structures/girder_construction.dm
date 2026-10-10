@@ -85,7 +85,7 @@ MSG_DEF_SELF(girder/column_disassembled, "You disassembled the girder!")
 // ---- Cult columns: the wrench takes them apart, nothing else. ----
 
 CAPABILITIES(/obj/structure/girder/cult)
-	op("disassemble_column", tool(TOOL_WRENCH), priority(above("secure")), label("Disassemble the column"), wait(4 SECONDS), begins(MSG(girder/disassembling)), says(MSG(girder/column_disassembled)), then(PROC_REF(column_disassembled)))
+	op("disassemble_column", tool(TOOL_WRENCH), priority(OP_PRIORITY_PART + 2), label("Disassemble the column"), wait(4 SECONDS), begins(MSG(girder/disassembling)), says(MSG(girder/column_disassembled)), then(PROC_REF(column_disassembled)))
 
 /obj/structure/girder/cult/proc/column_disassembled(datum/act/op/A)
 	dismantle()
