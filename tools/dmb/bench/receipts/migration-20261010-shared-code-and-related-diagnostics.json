@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "kind": "focused_migration_gate",
+  "source_commit": "4ee86f9f90",
+  "scope": "Focused Rust fixture gates; not a full runtime comparison or performance benchmark",
+  "changes": [
+    "Daemon sessions share immutable procedure words, relocations and labels through exact artifact observations and current-roster leases",
+    "Primary and previous-declaration diagnostics rebind to current issued source coordinates in resident and disk replay",
+    "Certified missing calls are source errors; opaque and dynamic calls retain conservative classification",
+    "Daemon global active worker admission is configurable and observed by the six-client iteration harness"
+  ],
+  "focused_fixtures": {
+    "passed": 17,
+    "failed": 0,
+    "evidence": [
+      {
+        "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-165203-aa27b8d5-focused.json",
+        "sha256": "017e33afa4df44fa5cd713faf4a6ab95c78650aa25c3c6543d5ebf0540c1db8d"
+      },
+      {
+        "path": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-165204-a6d96a65-focused.json",
+        "sha256": "e41934c79050cd8ea52835d575f100186bee741b8218b2401f16bc10e4e8f081"
+      }
+    ]
+  },
+  "reference_runtime_prefix": {
+    "backend": "byond",
+    "completed_batches": 49,
+    "total_batches": 63,
+    "selected_passed": 1508,
+    "selected_failed": 2,
+    "selected_skipped": 58,
+    "automatic_framework_passed": 49,
+    "recorded_runtimes": 0,
+    "checkpoint": "E:/dq-cache/dmb-native-v2/integration-gates/reference-pair-20261010-c1f53304/normal-checkpoint-49.json",
+    "checkpoint_sha256": "a8cbaf12982f8b4d3fb125970b8791ff970a3e74922913ec279db31169134d68",
+    "complete": false,
+    "shared_input_closure_authenticated": false
+  },
+  "remaining_gates": [
+    "Real runtime regression with the newly frozen executable",
+    "Complete native versus BYOND suite including exhaustive coverage",
+    "Real six-worktree concurrent incremental builds and fresh byte oracles",
+    "Complete shared input closure and structural comparison",
+    "Accepted throughput and memory measurements"
+  ]
+}
