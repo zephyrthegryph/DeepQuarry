@@ -388,7 +388,7 @@ CAPABILITIES(/obj/item)
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
-	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(req(/mob/living/silicon, of = ON_ACTOR)), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
+	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
 /// Other silicons preserve the module action's successful no-op.
 /mob/living/silicon/proc/equip_item_from_module(obj/item/I)
 	return OP_OK
