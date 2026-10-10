@@ -3980,6 +3980,14 @@ whole look and would have to hear every change of that mob), the compass holder,
   the electrovore and turf-transparency behaviours, turf changing, the inducer, blood reveal, stairs, the cargo and vehicle cells, syringes, pill bottles, casino collars, space vines, the turbolift panel).
 * **Look ratchet:** `look_converted` now holds 230 more folders (every folder of `code/game`, `code/modules`, `code/datums` and `code/library` that has no `update_icon()` call and no legacy
   appearance declaration left, machinery and power excepted).
+* **Pins blessed (`look_trees/`):** one row, by hand: `obj.mecha.combat.hades` `state: hades-open` becomes `hades_broken-open`. The type sets `initial_icon = "hades_broken"`, `Initialize()` writes
+  `icon_state += "-open"` and the legacy provider never ran in the frozen sweep (a mech was drawn only when something asked); every mech now draws at creation from `mecha_base_state()`, and
+  the other mechs' rows are the same state either way. No `look_states` row moved. Nail polish, the rock and the sand keep their rows (the sand's detail overlay draws from its decals state:
+  the legacy provider added the decals *file* as an overlay, which drew nothing; a tile that rolled a detail now shows it).
+* **Found by the new tests (no change to the framework, a note for the next conversion):** a `null` argument takes the proc's default in DM, so `look.overlay("state", maybe_null)` always draws:
+  the sand's dug mark read `sand_dug` (null until dug) and drew on every sand tile until it was written `!!sand_dug`. The distillery's input and output layers
+  (`look.overlay("...-input", InputBeaker)`) have that shape and still draw with no beaker (the pin rows record it; not changed here). A state named `color` beside a named `color =` loses its state when it
+  is passed positionally (`look.md`; `dq_draw_final_overlay_image_keeps_a_state_named_color`).
 * **Removed behaviour:** `EO.update_icon()` in the NIF's medichines was tested for a return value the base proc never gave, so `UpdateDamageIcon()` never ran; both lines are gone.
 
 ## Timed actions wave 9 (rewrite/timed)
