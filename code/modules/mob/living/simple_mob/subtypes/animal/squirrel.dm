@@ -181,7 +181,7 @@
 
 	endurance = 200
 	movement_cooldown = 1
-	set_meat_amount(6)
+	meat_amount = 6
 	harm_intent_damage = 1
 
 	pixel_x = -32

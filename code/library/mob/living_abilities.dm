@@ -43,7 +43,7 @@
 /// Cutting up a carcass (butchering.dm): a lap of cutting per piece of meat, then the butchering itself. Nobody else may work on it meanwhile (the carcass is claimed, not the butcher's hands).
 /proc/living_butchering()
 	return list(
-		op("harvest", ai(), claims(CLAIM_TARGET), needs(req_capable()), wait(TYPE_PROC_REF(/mob/living, harvest_time), repeats = TYPE_PROC_REF(/mob/living, harvest_more), after_step = TYPE_PROC_REF(/mob/living, harvest_cut)), then(TYPE_PROC_REF(/mob/living, harvest_finished))),
+		op("harvest", ai(), claims(CLAIM_TARGET), needs(req_capable()), takes("cuts"), wait(TYPE_PROC_REF(/mob/living, harvest_time), repeats = TYPE_PROC_REF(/mob/living, harvest_more), after_step = TYPE_PROC_REF(/mob/living, harvest_cut)), then(TYPE_PROC_REF(/mob/living, harvest_finished))),
 		op("butcher", ai(), claims(CLAIM_TARGET), needs(req_capable()), wait(TYPE_PROC_REF(/mob/living, butcher_time)), then(TYPE_PROC_REF(/mob/living, butcher_finished))))
 
 /// The windup of an armed swing (melee_swing.dm): no bar, no cog, and nothing held but the swinger's own feet and weapon hand.

@@ -11,14 +11,12 @@
 	var/list/butchery_loot				// Associated list, path = number.
 
 
-TRACKED(/mob/living, meat_amount)
-
 // Harvest an animal's delicious byproducts: one cut of meat per lap of the "harvest" op, then the "butcher" op (code/library/mob/living_abilities.dm).
 /mob/living/proc/harvest(mob/user, obj/item/I)
 	if(op_claimed(src))
 		return
 	if(meat_type && meat_amount > 0 && stat == DEAD)
-		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+		perform_op(user, src, "harvest", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cuts" = meat_amount))
 		return
 
 	if(!meat_amount)
@@ -34,11 +32,12 @@ TRACKED(/mob/living, meat_amount)
 	if(name_the_meat)
 		meat.name = "[src.name] [meat.name]"
 	new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-	set_meat_amount(meat_amount - 1)
+	meat_amount--
+	LAZYSET(A.args, "cuts", A.arg("cuts") - 1)
 
-/// Another cut while there is meat left.
+/// Another cut while there are cuts left (the op counts them: the meat was counted when it began).
 /mob/living/proc/harvest_more(datum/act/op/A)
-	return meat_amount > 0
+	return A.arg("cuts") > 0
 
 /// The last cut is made: the carcass is butchered.
 /mob/living/proc/harvest_finished(datum/act/op/A)
