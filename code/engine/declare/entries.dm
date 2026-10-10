@@ -122,11 +122,14 @@
 /// `only_if` (nameof(flag)) makes on_destroy conditional: it applies while the holder's flag var is true, else `otherwise` does (a robot's MMI is spilled
 /// only once the borg had a mind to give it). `successor` / `successor_var` are where ON_DESTROY_HAND_OVER sends the value: the holder's var naming the successor and the
 /// successor's var that takes it.
-/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null)
-	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var))
+/// starts_set = list(var = value) configures each starting occupant once it is built (a value through the occupant's set_<var>() when it has one,
+/// else written; the camera's assembly starts_set = list(nameof(/obj/item/camera_assembly::state) = 4)). on_lost = PROC_REF(x) runs x(thing) on the
+/// holder whenever an occupant leaves the var, however it was filled (it was deleted, or moved out of a contained slot).
+/proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null)
+	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost))
 
 /// `count =` makes that many of `starts` (or of `type` when starts is left out): owns_many(nameof(cells), /obj/item/cell, count = 2).
-/proc/owns_many(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, count = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null)
+/proc/owns_many(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, count = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null)
 	if(!isnull(count))
 		var/made = isnull(starts) ? type : starts
 		if(ispath(made))
@@ -134,7 +137,7 @@
 			starts[made] = count
 		else
 			declare_report("owns_many(\"[var_name]\", count = [count]): count needs one type in starts = or type =")
-	return entry_make(ENTRY_OWNS_MANY, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var))
+	return entry_make(ENTRY_OWNS_MANY, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost))
 
 /// link_pair(/type::var, /type::var): the macro of code/__defines/engine/declare.dm passes each end as the text it was written as.
 /// `a_many` / `b_many` say an end is a list var (DM has no way to read a var's declared type; the generator will derive it).

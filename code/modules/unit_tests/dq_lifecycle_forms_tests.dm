@@ -393,3 +393,31 @@ CAPABILITIES(/obj/item/dq_forms_keeps)
 	var/obj/item/dq_forms_keeps/held = allocate(/obj/item/dq_forms_keeps, H)
 	TEST_ASSERT(!QDELETED(held), "a holding keeps_if() keeps it")
 	TEST_ASSERT(!init_discard_pending?[held], "and leaves no mark")
+
+/// owns_one(starts_set =, on_lost =): the occupant is configured once built; the holder hears it leave.
+/obj/item/dq_forms_set_child
+	var/tuned = 0
+	var/via_setter = 0
+
+/obj/item/dq_forms_set_child/proc/set_via_setter(value)
+	via_setter = value * 10
+
+/obj/item/dq_forms_set_holder
+	var/obj/item/dq_forms_set_child/child
+	var/lost_count = 0
+
+/obj/item/dq_forms_set_holder/proc/child_lost(obj/item/dq_forms_set_child/C)
+	lost_count++
+
+CAPABILITIES(/obj/item/dq_forms_set_holder)
+	owns_one(nameof(child), /obj/item/dq_forms_set_child, starts = /obj/item/dq_forms_set_child, starts_set = list("tuned" = 3, "via_setter" = 2), on_lost = PROC_REF(child_lost))
+
+/datum/unit_test/dq_forms_starts_set_on_lost/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_forms_set_holder/H = allocate(/obj/item/dq_forms_set_holder, T)
+	TEST_ASSERT_NOTNULL(H.child, "the occupant is built before the type's own init")
+	TEST_ASSERT_EQUAL(H.child.tuned, 3, "starts_set writes a var")
+	TEST_ASSERT_EQUAL(H.child.via_setter, 20, "starts_set goes through set_<var>() when there is one")
+	qdel(H.child)
+	TEST_ASSERT_NULL(H.child, "a deleted occupant leaves the var")
+	TEST_ASSERT_EQUAL(H.lost_count, 1, "on_lost hears it")
