@@ -1,8 +1,8 @@
 //! Per-type independent evaluation; token issuance and output ordering remain serial.
 use super::*;
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
     Mutex,
+    atomic::{AtomicUsize, Ordering},
 };
 struct Bucket {
     ordinals: Vec<usize>,
@@ -83,9 +83,6 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     if factory_policy.is_none() {
         if let Some(reuse) = reuse {
             artifact::retain_roster(reuse, &[]);
-            if let Some(keys) = &reuse.store.prepared_keys {
-                keys.clear();
-            }
             reuse.store.roster.clear();
             reuse.store.modifiers.retain_keys(&[]);
             reuse
@@ -141,7 +138,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         issues.sort_by_key(|issue| issue.source_ordinal);
         return Err(ClassificationError { issues });
     }
-    let prepared_keys = reuse.map(|reuse| {
+    let locators = reuse.map(|reuse| {
         let mut ordered_facts = vec![None; writes.len()];
         for (bucket, facts) in buckets.iter().zip(&admitted) {
             for (&ordinal, &fact) in bucket.ordinals.iter().zip(facts) {
@@ -153,22 +150,20 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             .map(|fact| fact.expect("modifier buckets cover the write roster"))
             .collect();
         let policy = factory_policy.expect("certified reuse policy");
-        let keys = reuse
-            .store
-            .prepared_keys
-            .as_ref()
-            .and_then(|owner| owner.prepare(writes, &ordered_facts, reuse, policy))
-            .unwrap_or_else(|| {
-                Arc::new(
-                    writes
-                        .iter()
-                        .zip(&ordered_facts)
-                        .map(|(write, &fact)| {
-                            Arc::<[u8]>::from(artifact::key(write, fact, reuse, policy))
-                        })
-                        .collect(),
-                )
-            });
+        let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
+        let keys = Arc::new(
+            writes
+                .iter()
+                .zip(&ordered_facts)
+                .map(|(write, &fact)| {
+                    let mut key = artifact::key(write, fact, reuse, policy);
+                    let duplicate = duplicates.entry(key.clone()).or_default();
+                    key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
+                    *duplicate += 1;
+                    Arc::<[u8]>::from(key)
+                })
+                .collect::<Vec<_>>(),
+        );
         artifact::retain_roster(reuse, &keys);
         keys
     });
@@ -193,8 +188,11 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                         global,
                         evaluator,
                         reuse,
-                        prepared_keys.as_ref().map(|keys| &keys[global]),
+                        locators.as_ref().map(|keys| &keys[global]),
                         receipt_pool.as_ref().filter(|_| bucket.ordinals.len() > 1),
+                        modifier_keys
+                            .as_ref()
+                            .map(|keys| keys[global].shared_input()),
                     )
                 })
                 .collect()

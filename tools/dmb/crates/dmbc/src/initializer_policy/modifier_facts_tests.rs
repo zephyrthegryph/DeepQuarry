@@ -19,6 +19,97 @@ struct Worker<'a> {
     resolver: &'a dyn Resolver,
     captures: &'a AtomicU64,
 }
+
+#[test]
+fn modifier_locator_replays_full_inputs_and_shares_classification_write_owner() {
+    let mut symbols = SymbolTable::default();
+    let original = write(&mut symbols);
+    let dependency = Dependency(AtomicU32::new(8));
+    let captures = AtomicU64::new(0);
+    let worker = Worker {
+        resolver: &dependency,
+        captures: &captures,
+    };
+    let factory = ParallelEvaluator {
+        factory: &worker,
+        engine: None,
+    };
+    let store = InitializerArtifacts::default();
+    let reuse = InitializerReuse {
+        store: &store,
+        resolver: &dependency,
+        policy: 1,
+        resource_search_context: None,
+    };
+    let roster = vec![original.clone(), original.clone()];
+    let candidates = keys(&roster, factory, reuse).unwrap();
+    assert_ne!(
+        candidates[0].bytes, candidates[1].bytes,
+        "duplicate placement has independent slot"
+    );
+    modifier_facts_reused(
+        roster.iter(),
+        &symbols,
+        &worker,
+        &[0, 1],
+        factory,
+        reuse,
+        &candidates,
+    )
+    .unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    super::super::classification::parallel::classify_with_reuse(
+        &roster,
+        &symbols,
+        factory,
+        false,
+        &executor,
+        Some(reuse),
+    )
+    .unwrap();
+    let mut modifier_owners = Vec::new();
+    store.visit_modifier_storage(|view| {
+        if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
+            modifier_owners.push(Arc::clone(&value.input));
+        }
+    });
+    let mut shared_count = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
+            let input = value.input_write().expect("classified exact input");
+            assert!(
+                modifier_owners
+                    .iter()
+                    .any(|write| Arc::ptr_eq(write, input))
+            );
+            shared_count += 1;
+        }
+    });
+    assert_eq!(shared_count, 2);
+    let mut edited = original;
+    edited.declaration_flags = Some(8);
+    let changed = keys(&[edited.clone()], factory, reuse).unwrap();
+    assert_eq!(
+        changed[0].bytes, candidates[0].bytes,
+        "full input is receipt, not locator"
+    );
+    let before = captures.load(Ordering::Relaxed);
+    modifier_facts_reused(
+        std::iter::once(&edited),
+        &symbols,
+        &worker,
+        &[0],
+        factory,
+        reuse,
+        &changed,
+    )
+    .unwrap();
+    assert_eq!(
+        captures.load(Ordering::Relaxed),
+        before + 1,
+        "changed exact input must recompute"
+    );
+}
 impl CapturedInitializerEvaluator for Worker<'_> {
     fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
         Err("modifier admission must not evaluate initializer values".into())
@@ -68,7 +159,7 @@ fn write(symbols: &mut SymbolTable) -> InitializerWrite {
     let name = symbols.intern("output").unwrap();
     InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Shared {
+        target: InitializerTarget::Shared {
             slot: SymbolId::of("output.slot"),
             owner,
             name,

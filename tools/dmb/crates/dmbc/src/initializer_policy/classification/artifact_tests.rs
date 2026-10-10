@@ -2,6 +2,8 @@ use super::*;
 use std::sync::atomic::AtomicU32;
 #[path = "ancestry_receipts_tests.rs"]
 mod ancestry_receipts_tests;
+#[path = "direct_input_tests.rs"]
+mod direct_input_tests;
 
 struct Host {
     value: AtomicU32,
@@ -284,15 +286,19 @@ fn ordered_roster_reassembly_preserves_tokens_groups_and_modifier_error_preceden
     assert!(census_before.owners.iter().any(|owner| owner.owner
         == "initializer_classification.runtime_ast"
         && owner.unique_known_capacity_bytes > 0));
-    assert!(census_after
-        .owners
-        .iter()
-        .all(|owner| owner.owner != "initializer_classification.runtime_ast"));
-    assert!(census_after
-        .owners
-        .iter()
-        .any(|owner| owner.owner == "initializer_token_roster.tokens"
-            && owner.unique_known_capacity_bytes > 0));
+    assert!(
+        census_after
+            .owners
+            .iter()
+            .all(|owner| owner.owner != "initializer_classification.runtime_ast")
+    );
+    assert!(
+        census_after
+            .owners
+            .iter()
+            .any(|owner| owner.owner == "initializer_token_roster.tokens"
+                && owner.unique_known_capacity_bytes > 0)
+    );
     // The accepted semantic owners and their global token roster survive; only
     // recreatable source-local expression caches are released.
     let after_pressure = run();

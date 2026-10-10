@@ -60,17 +60,32 @@ pub(crate) fn weight(
 /// Modifier facts are fixed Copy scalars. Reuse the same actual-ledger traversal;
 /// its initializer envelope is intentionally a conservative upper charge here.
 pub(crate) fn modifier_weight(
+    input: &Arc<dm_ir::InitializerWrite>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
-    weight(
+    let envelope = weight(
         &DefaultValue::Scalar(dm_ir::SemanticValue::Null),
         None,
         None,
         key,
         reads,
         versions,
+    )?;
+    let mut census = HeapCensus::new("resident_modifier_input");
+    census.shared_initializer_write("resident_modifier_input", input);
+    let encounters = census.buffer_encounters;
+    let report = census.finish();
+    if report.unknown_capacity_payload_bytes != 0
+        || report.owners.iter().any(|owner| !owner.unknown.is_empty())
+    {
+        return None;
+    }
+    Some(
+        envelope
+            .saturating_add(usize::try_from(report.unique_known_capacity_bytes).ok()?)
+            .saturating_add(encounters.saturating_mul(64)),
     )
 }
 

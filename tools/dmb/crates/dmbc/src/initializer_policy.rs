@@ -557,7 +557,7 @@ impl std::fmt::Display for ClassificationError {
     }
 }
 impl std::error::Error for ClassificationError {}
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum HeaderDomain {
     Client,
     World,
@@ -589,7 +589,7 @@ impl HeaderDomain {
         Ok(())
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ModifierFact {
     Header(HeaderDomain),
     Known(u32),

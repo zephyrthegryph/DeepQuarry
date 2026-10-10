@@ -2,8 +2,8 @@
 //! No current syntax, origins, dense table IDs, or independent dependency cache.
 use super::*;
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
     Mutex,
+    atomic::{AtomicU64, Ordering},
 };
 #[derive(Default)]
 pub(super) struct CurrentRoster {

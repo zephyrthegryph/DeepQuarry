@@ -977,7 +977,7 @@ mod body_arena;
 
 mod generation;
 
-#[path = "heap_census/initializer_prepared_keys.rs"]
-mod initializer_prepared_keys;
+#[path = "heap_census/initializer_inputs.rs"]
+mod initializer_inputs;
 
 mod receipts;

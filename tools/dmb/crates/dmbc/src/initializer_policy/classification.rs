@@ -65,7 +65,7 @@ fn classify_pending<'a>(
             ModifierFact::Known(flags) => flags & 2 != 0,
             ModifierFact::MutableInstance => false,
             ModifierFact::Header(_) => {
-                return Err("header classification fact was not consumed".into())
+                return Err("header classification fact was not consumed".into());
             }
         };
         let write = original.clone();
@@ -159,7 +159,7 @@ fn classify_pending<'a>(
         let (default, phase) = match &write.value {
             InitializerValue::NoAuthoredValue => (DefaultValue::Scalar(SemanticValue::Null), None),
             InitializerValue::ArrayAllocation(_) => {
-                return Err("array allocation lacks authored shape".into())
+                return Err("array allocation lacks authored shape".into());
             }
             InitializerValue::Expression(value) => {
                 let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
@@ -354,6 +354,3 @@ pub(super) mod parallel;
 
 #[path = "classification/token_roster.rs"]
 mod token_roster;
-
-#[path = "classification/prepared_keys.rs"]
-pub(crate) mod prepared_keys;

@@ -104,9 +104,11 @@ mod tests {
         assert_eq!(Some(matrix), record.transform);
         let mut ordinary = target();
         ordinary.declaration_flags = Some(0);
-        assert!(fold(&ordinary, &ast, source, &symbols, &Numeric)
-            .unwrap()
-            .is_none());
+        assert!(
+            fold(&ordinary, &ast, source, &symbols, &Numeric)
+                .unwrap()
+                .is_none()
+        );
         let source = "matrix()";
         let ast = dm_syntax::parse_expression(source).expr.unwrap();
         assert_eq!(
@@ -115,8 +117,10 @@ mod tests {
         );
         let source = "matrix(2,0,runtime_value,0,4,5)";
         let ast = dm_syntax::parse_expression(source).expr.unwrap();
-        assert!(fold(&target(), &ast, source, &symbols, &Numeric)
-            .unwrap()
-            .is_none());
+        assert!(
+            fold(&target(), &ast, source, &symbols, &Numeric)
+                .unwrap()
+                .is_none()
+        );
     }
 }

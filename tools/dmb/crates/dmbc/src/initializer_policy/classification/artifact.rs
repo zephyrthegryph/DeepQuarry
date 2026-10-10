@@ -1,5 +1,6 @@
 //! Per-write semantics, independently admitted by the shared dependency ledger.
-//! Current declarations, ordinals and runtime syntax never escape into this store.
+//! Immutable input descriptors retain exact source-relative tokens. Current
+//! ordinals/provenance never escape; runtime syntax uses the existing reissuer.
 use super::*;
 #[path = "receipts.rs"]
 mod receipts;
@@ -21,17 +22,44 @@ enum RuntimeRecipe {
     },
 }
 pub(crate) struct SemanticClassification {
+    input: Option<ClassificationInput>,
     default: DefaultValue,
     phase: Option<Phase>,
     runtime: Option<RuntimeRecipe>,
     key: Option<Vec<u8>>,
+}
+#[derive(PartialEq, Eq)]
+pub(crate) struct ClassificationInput {
+    pub(crate) write: Arc<InitializerWrite>,
+    fact: ModifierFact,
+    policy: u128,
+    factory_policy: u128,
+    resource_context: Option<u128>,
+    engine: Option<u128>,
+}
+impl ClassificationInput {
+    fn new(
+        write: Arc<InitializerWrite>,
+        fact: ModifierFact,
+        reuse: InitializerReuse<'_>,
+        factory: ParallelEvaluator<'_>,
+        factory_policy: u128,
+    ) -> Self {
+        Self {
+            write,
+            fact,
+            policy: reuse.policy,
+            factory_policy,
+            resource_context: reuse.resource_search_context,
+            engine: factory.engine.map(|engine| engine.identity()),
+        }
+    }
 }
 pub struct InitializerArtifacts {
     pub(in crate::initializer_policy) modifiers:
         crate::initializer_policy::modifier_facts::ModifierArtifacts,
     values: dm_session::ArtifactStore<SemanticClassification>,
     bounded: bool,
-    pub(super) prepared_keys: Option<super::prepared_keys::PreparedKeys>,
     pub(super) roster: super::token_roster::CurrentRoster,
     pub(super) roster_enabled: bool,
     pub hits: AtomicU64,
@@ -43,7 +71,6 @@ impl Default for InitializerArtifacts {
         Self {
             values: dm_session::ArtifactStore::current_revision(),
             bounded: false,
-            prepared_keys: Some(Default::default()),
             modifiers: Default::default(),
             roster: Default::default(),
             roster_enabled: true,
@@ -60,25 +87,14 @@ impl InitializerArtifacts {
     ) {
         self.values.visit_storage(visitor);
     }
-    pub(crate) fn visit_prepared_key_storage(
-        &self,
-        visitor: impl FnMut(
-            dm_session::ObservedArtifactStorageView<
-                '_,
-                super::prepared_keys::PreparedKey,
-                (),
-                Arc<super::prepared_keys::Inputs>,
-                (),
-            >,
-        ),
-    ) {
-        if let Some(keys) = &self.prepared_keys {
-            keys.visit_storage(visitor);
-        }
-    }
     pub(crate) fn visit_modifier_storage(
         &self,
-        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierFact>),
+        visitor: impl FnMut(
+            dm_session::ArtifactStorageView<
+                '_,
+                crate::initializer_policy::modifier_facts::ModifierArtifact,
+            >,
+        ),
     ) {
         self.modifiers.visit_storage(visitor);
     }
@@ -137,7 +153,6 @@ impl InitializerArtifacts {
         Self {
             values: dm_session::ArtifactStore::with_limit(bytes),
             bounded: true,
-            prepared_keys: None,
             // Preserve the explicit compatibility budget; the new full-current
             // modifier owner is enabled only by retained-session defaults.
             modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
@@ -171,7 +186,7 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v4\0".to_vec();
+    let mut key = b"dmbc-initializer-classification-v5-exact-input\0".to_vec();
     key.extend_from_slice(&reuse.policy.to_le_bytes());
     key.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
@@ -193,7 +208,12 @@ pub(super) fn key(
             key.push(0);
         }
     }
-    write.write_canonical(|bytes| key.extend_from_slice(bytes));
+    key.push(u8::from(
+        write.source_site == dm_ir::InitializerSite::Declaration,
+    ));
+    key.extend_from_slice(&crate::initializer_lowering::receipts::fragment_locator(
+        write,
+    ));
     key
 }
 pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Arc<[u8]>]) {
@@ -203,6 +223,9 @@ pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Arc<[u8]>]) {
         .retain_current_keys(keys.iter().map(AsRef::as_ref));
 }
 impl SemanticClassification {
+    pub(crate) fn input_write(&self) -> Option<&Arc<InitializerWrite>> {
+        self.input.as_ref().map(|input| &input.write)
+    }
     #[allow(clippy::type_complexity)]
     pub(crate) fn visit_retained_parts(
         &self,
@@ -298,6 +321,7 @@ impl SemanticClassification {
             }
         };
         Some(Self {
+            input: None,
             default: pending.write.default.clone(),
             phase: pending.write.phase,
             runtime,
@@ -401,6 +425,7 @@ pub(super) fn classify_one_keyed(
         reuse,
         prepared_key,
         None,
+        None,
     )
 }
 #[allow(clippy::too_many_arguments)]
@@ -414,8 +439,9 @@ pub(super) fn classify_one_keyed_grouped(
     reuse: InitializerReuse<'_>,
     prepared_key: Option<&Arc<[u8]>>,
     receipt_pool: Option<&ReceiptPool>,
+    shared_write: Option<&Arc<InitializerWrite>>,
 ) -> Result<PendingWrite, ClassificationFailure> {
-    let Some(_) = factory.factory.recording_policy_identity() else {
+    let Some(factory_policy) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
         let mut pending = classify_pending(
@@ -431,6 +457,18 @@ pub(super) fn classify_one_keyed_grouped(
         return Ok(pending);
     };
     let key = prepared_key.expect("certified classification has a prepared key");
+    let input = ClassificationInput::new(
+        shared_write
+            .cloned()
+            .unwrap_or_else(|| Arc::new(write.clone())),
+        fact,
+        reuse,
+        factory,
+        factory_policy,
+    );
+    if input.write.as_ref() != write {
+        return Err("classification shared input differs from current write".into());
+    }
     let host = ResolverView(reuse.resolver);
     let recorder = crate::lowering_memo::RecordingResolver::new(&host);
     let mut result = None;
@@ -443,7 +481,14 @@ pub(super) fn classify_one_keyed_grouped(
                     result.is_none(),
                     "initializer recording factory invoked twice"
                 );
-                if let Some(value) = reuse.store.values.lookup(key, &host) {
+                if let Some(value) = reuse
+                    .store
+                    .values
+                    .visit_explained(key, &host, &mut |value| {
+                        value.input.as_ref() == Some(&input)
+                    })
+                    .0
+                {
                     if let Some(mut current) = value.bind(write, symbols, ordinal) {
                         current.accepted = Some(Arc::clone(&value));
                         hit = true;
@@ -500,11 +545,12 @@ pub(super) fn classify_one_keyed_grouped(
     if captured && hit {
         reuse.store.hits.fetch_add(1, Ordering::Relaxed);
     } else if captured {
-        let Some(value) = SemanticClassification::capture(&mut pending, symbols) else {
+        let Some(mut value) = SemanticClassification::capture(&mut pending, symbols) else {
             reuse.store.declined.fetch_add(1, Ordering::Relaxed);
             reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);
             return Ok(pending);
         };
+        value.input = Some(input);
         let reads = recorder.reads();
         let versions = recorder.domain_receipts();
         let dimensions = match &value.runtime {
@@ -525,6 +571,15 @@ pub(super) fn classify_one_keyed_grouped(
                 &reads,
                 &versions,
             )
+            .and_then(|weight| {
+                crate::heap_census::resident_modifier_weight(
+                    value.input_write()?,
+                    &[],
+                    &Vec::new(),
+                    &Vec::new(),
+                )
+                .and_then(|input_weight| weight.checked_add(input_weight))
+            })
             .and_then(|weight| match &value.runtime {
                 Some(
                     RuntimeRecipe::Expression(syntax)

@@ -132,9 +132,23 @@ fn collect<'a>(
 }
 
 pub(super) struct ModifierArtifacts {
-    values: dm_session::ArtifactStore<ModifierFact>,
+    values: dm_session::ArtifactStore<ModifierArtifact>,
     pub(super) hits: AtomicU64,
     pub(super) recomputed: AtomicU64,
+}
+pub(crate) struct ModifierArtifact {
+    pub(crate) input: Arc<InitializerWrite>,
+    fact: ModifierFact,
+}
+pub(super) struct ModifierKey {
+    bytes: Vec<u8>,
+    pub(super) input: Arc<InitializerWrite>,
+    admitted: std::sync::OnceLock<Arc<InitializerWrite>>,
+}
+impl ModifierKey {
+    pub(super) fn shared_input(&self) -> &Arc<InitializerWrite> {
+        self.admitted.get().unwrap_or(&self.input)
+    }
 }
 impl Default for ModifierArtifacts {
     fn default() -> Self {
@@ -148,7 +162,7 @@ impl Default for ModifierArtifacts {
 impl ModifierArtifacts {
     pub(super) fn visit_storage(
         &self,
-        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierFact>),
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierArtifact>),
     ) {
         self.values.visit_storage(visitor);
     }
@@ -178,12 +192,13 @@ pub(super) fn keys(
     writes: &[InitializerWrite],
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
-) -> Option<Vec<Vec<u8>>> {
+) -> Option<Vec<ModifierKey>> {
     let policy = factory.factory.recording_policy_identity()?;
+    let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
     let keys = writes
         .iter()
         .map(|write| {
-            let mut key = b"dmbc-modifier-fact-v1\0".to_vec();
+            let mut key = b"dmbc-modifier-fact-v2-exact-input\0".to_vec();
             key.extend_from_slice(&reuse.policy.to_le_bytes());
             key.extend_from_slice(&policy.to_le_bytes());
             match reuse.resource_search_context {
@@ -202,11 +217,24 @@ pub(super) fn keys(
             }
             // The existing certified evaluator may inspect any write field. Full exact
             // inputs avoid inventing a weaker modifier-only policy contract.
-            write.write_canonical(|chunk| key.extend_from_slice(chunk));
-            key
+            key.extend_from_slice(&crate::initializer_lowering::receipts::fragment_locator(
+                write,
+            ));
+            let duplicate = duplicates.entry(key.clone()).or_default();
+            key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
+            *duplicate += 1;
+            ModifierKey {
+                bytes: key,
+                input: Arc::new(write.clone()),
+                admitted: Default::default(),
+            }
         })
         .collect::<Vec<_>>();
-    reuse.store.modifiers.retain_keys(&keys);
+    reuse
+        .store
+        .modifiers
+        .values
+        .retain_current_keys(keys.iter().map(|key| key.bytes.as_slice()));
     Some(keys)
 }
 pub(super) fn modifier_facts_reused<'a>(
@@ -216,13 +244,23 @@ pub(super) fn modifier_facts_reused<'a>(
     ordinals: &[usize],
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
-    keys: &[Vec<u8>],
+    keys: &[ModifierKey],
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
     let host = Host(reuse.resolver);
     collect(writes, Some(ordinals), |write, ordinal| {
-        if let Some(fact) = reuse.store.modifiers.values.lookup(&keys[ordinal], &host) {
+        if keys[ordinal].input.as_ref() != write {
+            return capture(write, symbols, evaluator, ordinal);
+        }
+        if let Some(value) = reuse
+            .store
+            .modifiers
+            .values
+            .lookup(&keys[ordinal].bytes, &host)
+            .filter(|value| value.input.as_ref() == write)
+        {
+            let _ = keys[ordinal].admitted.set(Arc::clone(&value.input));
             reuse.store.modifiers.hits.fetch_add(1, Ordering::Relaxed);
-            return Ok(*fact);
+            return Ok(value.fact);
         }
         let recording = crate::lowering_memo::RecordingResolver::new(&host);
         let mut result = None;
@@ -244,17 +282,24 @@ pub(super) fn modifier_facts_reused<'a>(
             .recomputed
             .fetch_add(1, Ordering::Relaxed);
         if captured {
+            let _ = keys[ordinal].admitted.set(Arc::clone(&keys[ordinal].input));
             let reads = recording.reads();
             let versions = recording.domain_receipts();
-            if let Some(weight) =
-                crate::heap_census::resident_modifier_weight(&keys[ordinal], &reads, &versions)
-            {
+            if let Some(weight) = crate::heap_census::resident_modifier_weight(
+                &keys[ordinal].input,
+                &keys[ordinal].bytes,
+                &reads,
+                &versions,
+            ) {
                 reuse.store.modifiers.values.insert_with(
-                    keys[ordinal].clone().into(),
+                    keys[ordinal].bytes.clone().into(),
                     reads,
                     versions,
                     weight,
-                    || fact,
+                    || ModifierArtifact {
+                        input: Arc::clone(&keys[ordinal].input),
+                        fact,
+                    },
                 );
             }
         }

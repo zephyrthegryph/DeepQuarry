@@ -50,6 +50,9 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
     if !c.arc_object("initializer_classification.payload", value) {
         return;
     }
+    if let Some(write) = value.input_write() {
+        c.shared_initializer_write("initializer_classification.inputs", write);
+    }
     value.visit_retained_parts(|default, key, dimensions, expression| {
         match default {
             DefaultValue::Transform(_) => (),
@@ -89,10 +92,11 @@ impl HeapCensus {
                 classification,
             )
         });
-        super::initializer_prepared_keys::inspect(self, store);
         store.visit_modifier_storage(|view| {
             storage(self, "initializer_modifiers.store", view, |c, value| {
-                c.arc_object("initializer_modifiers.payload", value);
+                if c.arc_object("initializer_modifiers.payload", value) {
+                    c.shared_initializer_write("initializer_modifiers.inputs", &value.input);
+                }
             })
         });
         store.visit_token_roster(|accepted, tokens, groups| {
