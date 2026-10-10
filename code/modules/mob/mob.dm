@@ -878,16 +878,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
-/datum/task/timed/mob_yank_out
-	duration = 3 SECONDS
-	complete_proc = /mob/proc/yank_out_done
-	var/obj/item/selection
-	var/self
-
-/mob/proc/yank_out_done(datum/task/timed/mob_yank_out/task)
-	var/mob/U = task.actor
-	var/obj/item/selection = task.selection
-	var/self = task.self
+/mob/proc/yank_out_done(datum/act/op/A)
+	var/mob/U = A.actor
+	var/obj/item/selection = A.arg("selection")
+	var/self = A.arg("self")
 	var/mob/S = src
 	var/list/valid_objects
 	if(!selection || !S || !U)
@@ -1010,7 +1004,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	else
 		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
 
-	task_start(/datum/task/timed/mob_yank_out, U, src, receiver = src, selection = selection, self = self)
+	perform_op(U, src, "yank_out", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("selection" = selection, "self" = self))
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()

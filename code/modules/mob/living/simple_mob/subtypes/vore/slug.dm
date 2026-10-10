@@ -209,22 +209,29 @@
 	if(my_slug.ai_brain?.primary_threat == victim)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
+CAPABILITIES(/obj/effect/slug_glue)
+	op("tug_free", ai(), reach(REACH_ADJACENT), takes("buckled"), wait(PROC_REF(escape_time_of), keeps = HELD | ADJACENT | TARGET_PRESENT | STAY), then(PROC_REF(tugged_free)))
+
 /obj/effect/slug_glue/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	to_chat(user, "You tug and strain against the sticky substance...")
-	var/escape_time
-	switch(buckled_mob.size_multiplier)
-		if(RESIZE_TINY - 1 to RESIZE_A_NORMALSMALL) //24% to 75% size scale, 1% below 25% is to account for microcillin sometimes going slightly below 25%
-			escape_time = 2 * base_escape_time
-		if(RESIZE_A_NORMALSMALL to RESIZE_A_BIGNORMAL) //75% to 125% size scale
-			escape_time = base_escape_time
-		if(RESIZE_A_BIGNORMAL to RESIZE_HUGE + 1) //125% to 201% size scale, 1% above 200% is to acount for macrocillin sometimes going slightly above 200%
-			escape_time = 0.5 * base_escape_time
-		else
-			escape_time = base_escape_time //Admeme size scale
-	task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_slug_glue_done), done_args = list(buckled_mob, user))
+	perform_op(user, src, "tug_free", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("buckled" = buckled_mob))
 
-/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(mob/living/buckled_mob, mob/user)
+/// How long the struggle takes: scaled by the size of whoever is stuck.
+/obj/effect/slug_glue/proc/escape_time_of(datum/act/A)
+	var/mob/living/buckled_mob = A.arg("buckled")
+	switch(buckled_mob?.size_multiplier)
+		if(RESIZE_TINY - 1 to RESIZE_A_NORMALSMALL) //24% to 75% size scale, 1% below 25% is to account for microcillin sometimes going slightly below 25%
+			return 2 * base_escape_time
+		if(RESIZE_A_NORMALSMALL to RESIZE_A_BIGNORMAL) //75% to 125% size scale
+			return base_escape_time
+		if(RESIZE_A_BIGNORMAL to RESIZE_HUGE + 1) //125% to 201% size scale, 1% above 200% is to acount for macrocillin sometimes going slightly above 200%
+			return 0.5 * base_escape_time
+	return base_escape_time //Admeme size scale
+
+/obj/effect/slug_glue/proc/tugged_free(datum/act/op/A)
+	var/mob/living/buckled_mob = A.arg("buckled")
+	var/mob/user = A.actor
 	if(!has_buckled_mobs())
 		return
 	to_chat(user, "You tug free of the tacky, rubbery strands!")

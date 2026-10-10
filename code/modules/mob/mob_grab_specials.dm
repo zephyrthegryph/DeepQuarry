@@ -288,9 +288,11 @@ TRACKED(/obj/item/grab, inspect_zone)
 		return
 
 	act_message(attacker, target, others = span_danger("%U% starts forcing %T% to the ground!"))
-	task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
+	perform_op(attacker, src, "pin_down", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
+/obj/item/grab/proc/pin_down_grab_done(datum/act/op/A)
+	var/mob/attacker = A.actor
+	var/mob/target = grab_target()
 	if(!(target))
 		return
 	note_action()

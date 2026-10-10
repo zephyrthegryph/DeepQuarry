@@ -4183,3 +4183,10 @@ Classes: (a) held-item and incapacitation keeps become the `ai()` op defaults, (
 * Protean, shapeshifter, bloodsuck, shred limb, injection, succubus bite, rainbows, relocate joint, hand games, modular limbs, lleill contact: the old task cancelled on any change of the actor's active hand or a stun; the `ai()` op keeps the actor in place, the target present and the actor alive. A swapped hand item no longer cancels these waits. (a)
 * Hand games and rainbows: the old task cancelled when the other party took a single step; the ops keep the other party within 2 tiles (7 for rainbows) instead. (a)
 * Left on the legacy form (KF1): butchering, melee swing windup, revert beast form, egg laying, underwater absorb devour.
+## Timed actions round 3 (rewrite/timed3-G)
+
+| Class | Site | Change |
+|---|---|---|
+| (b) target no longer cancels | stardog eating weather, kururak hatch rending, worm eating a wall / object / field / door, Nikki hat warp, slug glue | The old task also ended when the target (event, mech, wall, door, guided mob) moved; the self-target `ai()` op ends only when the actor moves. Kururak and the hat re-check adjacency at the end; the worm and stardog rely on the target being fixed. |
+| (b) dead check dropped | grab pin down | `pin_down_grab_done` reads `grab_target()` when the wait ends instead of the old `target` argument. |
+| (c) vertical nom, holo nom, dominate/lend control, beacon insert, body writing, eat minerals, climb down | left on the legacy task form | See KG1 in framework_gaps.md. |

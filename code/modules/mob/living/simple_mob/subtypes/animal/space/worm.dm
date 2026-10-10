@@ -264,13 +264,13 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 	if(istype(target,/turf/simulated/wall))
 		var/turf/simulated/wall/W = target
 		// 10 seconds for an R-wall, 5 seconds for a normal one.
-		task_timed(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		perform_op(src, src, "eat_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = W))
 		return
 	if(istype(target,/atom/movable))
 		if(istype(target,/mob))
 			eat_movable(target)
 		else // 5 ticks to eat stuff like tables.
-			task_timed(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+			perform_op(src, src, "eat_object", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("object" = target))
 		return
 	eat_finished(FALSE)
 
@@ -279,9 +279,22 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 		rel_clear(src, nameof(currentlyEating))
 	ai_busy_end()
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
+/// 10 seconds for an R-wall, 5 seconds for a normal one.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_time(datum/act/A)
+	var/turf/simulated/wall/W = A.arg("wall")
+	return W?.reinf_material ? 10 SECONDS : 5 SECONDS
+
+/// Whatever the maw was working on slipped away or was interrupted.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_interrupted(datum/act/op/A)
+	eat_finished(FALSE)
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(datum/act/op/A)
+	var/turf/simulated/wall/W = A.arg("wall")
 	W.dismantle_wall()
 	eat_finished(TRUE)
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_object_done(datum/act/op/A)
+	eat_movable(A.arg("object"))
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_movable(atom/movable/objectOrMob)
 	if(istype(objectOrMob, /obj/machinery/door))	// Doors and airlocks take time based on their durability and our damageo.
@@ -295,44 +308,52 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 		else
 			EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
 		// No eating shields.
-		task_timed(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
+		perform_op(src, src, "eat_field", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("field" = EF))
 		return
 	eat_consume(objectOrMob)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
-	task_start(/datum/task/timed/worm_batter_door, src, D, hits_left = total_hits - hit + 1)
+	perform_op(src, src, "batter_door", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = D, "hits_left" = total_hits - hit + 1))
 
-/// Battering a door (the target) a hit every half second until it breaks or the hits run out,
-/// then swallowing it.
-/datum/task/timed/worm_batter_door
-	steps = list(/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck = 5)
-	cancel_proc = /mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed
-	var/hits_left = 1
+/// Another blow follows while the door still holds and hits are left.
+/mob/living/simple_mob/animal/space/space_worm/proc/batter_more(datum/act/op/A)
+	return A.arg("hits_left") > 0
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed(datum/task/timed/task)
-	eat_finished(FALSE)
-
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/task/timed/worm_batter_door/task)
-	var/obj/machinery/door/D = task.target
+/// One blow: the door breaks open and is swallowed, or the hits run out and it is swallowed anyway.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/act/op/A)
+	var/obj/machinery/door/D = A.arg("door")
+	if(QDELETED(D))
+		LAZYSET(A.args, "hits_left", 0)
+		eat_finished(FALSE)
+		return
 	D.visible_message(span_danger("Something crashes against \the [D]!"))
 	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
 	if(QDELETED(D))
-		return STEP_FAIL("gone")
+		LAZYSET(A.args, "hits_left", 0)
+		eat_finished(FALSE)
+		return
 	if(!D.operable())
 		D.open(TRUE)
+		LAZYSET(A.args, "hits_left", 0)
 		eat_consume(D)
-		return STEP_DONE
-	if(--task.hits_left > 0)
-		return STEP_REPEAT(5)
-	eat_consume(D)
-	return STEP_DONE
+		return
+	var/left = A.arg("hits_left") - 1
+	LAZYSET(A.args, "hits_left", left)
+	if(left <= 0)
+		eat_consume(D)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(obj/effect/energy_field/EF)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_time(datum/act/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
+	return EF.get_strength() * 5
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(datum/act/op/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
 	EF.adjust_strength(rand(-8, -10))
 	EF.visible_message(span_danger("\The [src] crashes through \the [EF]!"))
 	eat_finished(FALSE)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_failed(obj/effect/energy_field/EF)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_failed(datum/act/op/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
 	EF.visible_message(span_danger("\The [EF] reverberates as it returns to normal."))
 	eat_finished(FALSE)
 
@@ -432,3 +453,8 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
 	immune_to_incapacitation()
+	op("eat_wall", ai(), takes("wall"), wait(PROC_REF(eat_wall_time)), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_wall_done)))
+	op("eat_object", ai(), takes("object"), wait(0.5 SECONDS), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_object_done)))
+	op("eat_field", ai(), takes("field"), wait(PROC_REF(eat_field_time)), on_interrupt(PROC_REF(eat_field_failed)), then(PROC_REF(eat_field_done)))
+	// Battering a door a hit every half second until it breaks or the hits run out, then swallowing it.
+	op("batter_door", ai(), takes("door", "hits_left"), wait(0.5 SECONDS, repeats = PROC_REF(batter_more), after_step = PROC_REF(eat_door_struck)), on_interrupt(PROC_REF(eat_interrupted)))

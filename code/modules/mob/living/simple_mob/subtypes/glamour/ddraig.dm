@@ -90,6 +90,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/proc/set_size, login = TRUE)
 	verb_entry(/mob/living/proc/polymorph, login = TRUE)
+	op("polymorph_shift", ai(), takes("beast_options", "chosen_beast"), wait(10 SECONDS), on_interrupt(PROC_REF(polymorph_living_failed)), then(PROC_REF(polymorph_living_done)))
 	verb_entry(/mob/living/proc/glamour_invisibility, login = TRUE)
 
 /mob/living/simple_mob/vore/ddraig/Login()
@@ -341,26 +342,19 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 		return
 
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> begins significantly shifting their form."))
-	task_start(/datum/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
+	perform_op(src, src, "polymorph_shift", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast_options" = beast_options, "chosen_beast" = chosen_beast))
 	return TRUE
 
-/datum/task/timed/living_polymorph_living
-	duration = 10 SECONDS
-	complete_proc = /mob/living/proc/polymorph_living_done
-	cancel_proc = /mob/living/proc/polymorph_living_failed
-	var/list/beast_options
-	var/chosen_beast
-
-/mob/living/proc/polymorph_living_done(datum/task/timed/living_polymorph_living/task)
-	var/list/beast_options = task.beast_options
-	var/chosen_beast = task.chosen_beast
+/mob/living/proc/polymorph_living_done(datum/act/op/A)
+	var/list/beast_options = A.arg("beast_options")
+	var/chosen_beast = A.arg("chosen_beast")
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
 	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(coolanimation, chosen_beast, beast_options[chosen_beast]))
 
-/mob/living/proc/polymorph_living_failed(datum/task/timed/living_polymorph_living/task)
+/mob/living/proc/polymorph_living_failed(datum/act/op/A)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
 	return 0
 

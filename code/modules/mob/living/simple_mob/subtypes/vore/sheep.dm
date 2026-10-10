@@ -84,16 +84,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 //If you just update icon_living it should still work with vore states and dying, you'll just need to make and label the sprites appropriately.
 //Make sure you un-comment the variables above too.
 
-//Add op("shear", item(/obj/item), stance(I_HELP), label("Shear"), then(PROC_REF(sheep_interaction_shear))) to the sheep's CAPABILITIES block when re-enabling.
-/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O)
-	if(!istype(O, /obj/item/material/knife) && !O.has_tool_quality(TOOL_WIRECUTTER))
-		return FALSE
-	if(!harvestable_wool)
-		return FALSE
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
-	return TRUE
-
-/mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
+//Add op("shear", item(/obj/item), stance(I_HELP), label("Shear"), wait(3 SECONDS), then(PROC_REF(shear_done))) to the sheep's CAPABILITIES block when re-enabling (with a when() for a knife or wirecutters and harvestable_wool).
+/mob/living/simple_mob/vore/sheep/proc/shear_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!harvestable_wool)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = O)
