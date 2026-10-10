@@ -553,7 +553,7 @@ export async function DreamDaemon(
   const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
   return withCompiledOutput(output, Juke.exec, async dmbFile => {
     options.onPreparedOutput?.(dmbFile);
-    const hosted = { ...options, dmbFile };
+    const hosted = { ...options, dmbFile, compiledOutput: output };
     try { return await runHostedWorld(hosted, args); }
     finally {
       if (output.kind === 'native_pair' && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
