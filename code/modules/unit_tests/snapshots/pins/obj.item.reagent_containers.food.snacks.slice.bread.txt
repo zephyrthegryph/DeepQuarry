@@ -1,0 +1,86 @@
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Rename food
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Rename food
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Rename food (refused: You can't cook!)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Rename food
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rename food
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rename food
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Rename food
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rename food
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rename food
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rename food
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rename food
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rename food
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Rename food
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Rename food
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Rename food
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+human|/obj/item/material/kitchen/utensil menu: Move To Top
+human|/obj/item/material/kitchen/utensil menu: Rename food
+human|/obj/item/material/kitchen/utensil menu: Scoop up
+human|/obj/item/material/kitchen/utensil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/material/kitchen/utensil click: Click: Scoop up
+human|/obj/item/reagent_containers/food/snacks menu: Make a sandwich
+human|/obj/item/reagent_containers/food/snacks menu: Move To Top
+human|/obj/item/reagent_containers/food/snacks menu: Rename food
+human|/obj/item/reagent_containers/food/snacks menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/snacks click: Click: Make a sandwich
+human|/obj/item/material/shard menu: Make a sandwich
+human|/obj/item/material/shard menu: Move To Top
+human|/obj/item/material/shard menu: Rename food
+human|/obj/item/material/shard menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/material/shard click: Click: Make a sandwich
+keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, shard_sandwich, slice, start_sandwich, stuff, toggle_digestable, unwrap
+

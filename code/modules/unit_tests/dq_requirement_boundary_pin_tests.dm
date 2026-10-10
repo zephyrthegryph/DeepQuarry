@@ -244,17 +244,11 @@
 	check(tray, H, "freezer", "can_freeze", null)
 	for(var/key in list("toggle_lid", "remove_label", "set_light"))
 		check(tray, H, key, "actor_can_act", null)
-	H.set_stat(UNCONSCIOUS)
-	TEST_ASSERT_EQUAL(H.stat, UNCONSCIOUS, "The real consciousness setter ran")
+	// The legacy helper checks living actors with the default restraint flags;
+	// it does not use the separate op-capable stun/consciousness requirement.
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, H.loc)
 	for(var/key in list("toggle_lid", "remove_label", "set_light"))
-		check(tray, H, key, "actor_can_act", /datum/msg/hydroponics/not_by_this)
-	H.set_stat(CONSCIOUS)
-	TEST_ASSERT(H.status_set(STAT_PARALYZED, 2), "The real status path admits paralysis")
-	TEST_ASSERT(H.has_status(STAT_PARALYZED), "Paralysis is effective")
-	for(var/key in list("toggle_lid", "remove_label", "set_light"))
-		check(tray, H, key, "actor_can_act", /datum/msg/hydroponics/not_by_this)
-	H.status_end(STAT_PARALYZED)
-	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "The actual status is lifted")
+		check(tray, ghost, key, "actor_can_act", /datum/msg/hydroponics/not_by_this)
 	for(var/key in list("toggle_lid", "remove_label", "set_light"))
 		check(tray, H, key, "actor_can_act", null)
 

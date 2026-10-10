@@ -1,0 +1,162 @@
+human|none menu: Climb
+human|none menu: Rotate Clockwise
+human|none menu: Rotate Counter Clockwise
+human|none menu: Toggle Lock
+human|none menu: Turn Around
+human|none click: Click: Toggle Lock
+robot|none menu: Climb
+robot|none menu: Rotate Clockwise
+robot|none menu: Rotate Counter Clockwise
+robot|none menu: Toggle Lock
+robot|none menu: Turn Around
+robot|none menu: Use
+robot|none click: Click: Toggle Lock
+ai|none click: nothing
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: Rotate Clockwise
+ghost|none menu: Rotate Counter Clockwise
+ghost|none menu: Toggle Lock
+ghost|none menu: Turn Around
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Lock
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver click: Click: Toggle Lock
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Lock
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar click: Click: Toggle Lock
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Toggle (refused: You can't reach the anchoring bolts when the door is closed!)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Lock
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Lock
+human|/obj/item/tool/wirecutters menu: Turn Around
+human|/obj/item/tool/wirecutters click: Click: Open
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Lock
+human|/obj/item/multitool menu: Turn Around
+human|/obj/item/multitool click: Click: Toggle Lock
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Lock
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool menu: Weld shut
+human|/obj/item/weldingtool click: Click: Weld shut
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rig
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Lock
+human|/obj/item/stack/cable_coil menu: Turn Around
+human|/obj/item/stack/cable_coil click: Click: Rig
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Lock
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel click: Click: Toggle Lock
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Lock
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Lock
+human|/obj/item menu: Turn Around
+human|/obj/item click: Click: Toggle Lock
+human|/obj/item/radio/electropack menu: Climb
+human|/obj/item/radio/electropack menu: Hit
+human|/obj/item/radio/electropack menu: Move To Top
+human|/obj/item/radio/electropack menu: Rotate Clockwise
+human|/obj/item/radio/electropack menu: Rotate Counter Clockwise
+human|/obj/item/radio/electropack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/radio/electropack menu: Toggle Lock
+human|/obj/item/radio/electropack menu: Turn Around
+human|/obj/item/radio/electropack click: Click: Toggle Lock
+human|/obj/item/pda menu: Climb
+human|/obj/item/pda menu: Hit
+human|/obj/item/pda menu: Move To Top
+human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
+human|/obj/item/pda menu: Remove id (refused: You can't do that.)
+human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
+human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
+human|/obj/item/pda menu: Rotate Clockwise
+human|/obj/item/pda menu: Rotate Counter Clockwise
+human|/obj/item/pda menu: Toggle
+human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pda menu: Toggle Lock
+human|/obj/item/pda menu: Turn Around
+human|/obj/item/pda click: Click: Toggle
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Rotate Clockwise
+human|/obj/item/card/emag menu: Rotate Counter Clockwise
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Lock
+human|/obj/item/card/emag menu: Turn Around
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/melee/energy/blade menu: Climb
+human|/obj/item/melee/energy/blade menu: Hit
+human|/obj/item/melee/energy/blade menu: Move To Top
+human|/obj/item/melee/energy/blade menu: Rotate Clockwise
+human|/obj/item/melee/energy/blade menu: Rotate Counter Clockwise
+human|/obj/item/melee/energy/blade menu: Slice open
+human|/obj/item/melee/energy/blade menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/melee/energy/blade menu: Toggle Lock
+human|/obj/item/melee/energy/blade menu: Turn Around
+human|/obj/item/melee/energy/blade click: Click: Slice open
+keys: anchor.toggle, attach_pack, break_out, climb.climb, climb.climb_menu, cutters_touch, cut_apart, cut_rigging, devour, door, drag_buckle, emag.subvert, emag.use, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, rig, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_down, silicon_hand, slice, stuff, stuff_grab, weld_shut.toggle
+
