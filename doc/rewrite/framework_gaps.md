@@ -233,6 +233,11 @@ All sites of the group were converted; these are the places where the form fits 
 | KE1 | `on_interrupt()` that continues the work (detective scanner stages) | The pending op is still active while `on_interrupt()` runs (`cancel()` calls it before `end_pending()`), so a `perform_op(..., ORIGIN_SYSTEM)` for the next stage is refused (`BUSY_REFUSE`). The scanner defers the follow-up with `after(src, 0, ...)`. | Run the interrupted handler after `end_pending()`, or document that a follow-up from `on_interrupt()` goes through `after(0)`. |
 | KE2 | `takes("victim")` as a keep (fryer `fry_mob`) | The op is on the fryer and the victim is a value, so the victim walking away is not a keep (the old task had the victim as its target and was cancelled by it moving). The done handler re-checks `Adjacent`. | `takes("victim", keeps = ADJACENT | TARGET_PRESENT)` or `keeps_answer` for a taken value (K22 for `takes()`). |
 | KE3 | `wait()` with a start that can refuse (crafting `make`) | `starts()` runs only for a wait that lasts, so a recipe with `time = 0` skips the pre-wait checks (the done handler re-checks and says the failure). | `starts()` for an instant wait, or a `needs()` that may read `A.arg()` of a `ui_act` arg and name a dynamic text. |
+### KT3. Found converting timed actions round 3 (rewrite/timed3-F, prefix KF)
+
+| ID | Where | Problem | Change |
+|---|---|---|---|
+| KF1 | `/mob/living` timed abilities (K23 in practice) | Five sites are on `/mob/living` with a non-human target or none: `butchering.dm` (`harvest`, `handle_butcher`: a dead animal of any `/mob/living` type, `claims`), `melee_swing.dm` (`begin_melee_swing`: the swinger itself, any mob), `lleill_abilities.dm` `revert_beast_form` and `station_special_abilities.dm` `mobegglaying` (the actor itself, a beast mob that is not a human), and `absorb_devour_chosen` (a `/mob/living` target and pred). The op has to be looked up on the target, and the one `CAPABILITIES(/mob/living)` is the protected combat_ai file (K23). Left on `task_timed()`/`task_start()`. | Adopt `proposals/mob_living_root.md` (one `living_abilities()` line in that block, ops in `code/library/mob/living.dm`); then these become `ai()`/`menu()` ops with `claims()` (butchering: `wait(t, repeats =)`), no new framework form. |
 
 ## K. Relations conversion (rewrite/relations, prefix KR)
 
