@@ -78,6 +78,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 // Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
 // losing the bolt ends it with the notches drawn so far, and the string relaxes.
 CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
 
 /obj/item/gun/launcher/crossbow/update_release_force()
@@ -166,7 +167,8 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 		return
 
 
-/obj/item/gun/launcher/crossbow/screwdriver_used(datum/act/op/A)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/launcher/crossbow/proc/screwdriver_worked(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(cell())

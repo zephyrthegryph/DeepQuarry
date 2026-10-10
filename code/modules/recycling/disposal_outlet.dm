@@ -35,7 +35,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
-	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), needs(req(PROC_REF(config_refusal))), then(PROC_REF(multitool_used)))
 
 /// Old attackby.
 /obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)
@@ -78,11 +78,13 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	C.set_density(TRUE)
 	replace_with(src, C)
 
+/// A closed (screwed) outlet's range cannot be set.
+/obj/structure/disposaloutlet/proc/config_refusal(datum/act/op/A)
+	return read_once(mode) == OUTLET_SCREWED ? "its panel is closed" : null
+
 /obj/structure/disposaloutlet/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
-	if(mode == OUTLET_SCREWED)
-		return OP_OK
 	ask_outlet_range(user, I)
 	return OP_OK
 

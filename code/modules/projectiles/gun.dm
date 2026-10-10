@@ -131,7 +131,8 @@ CAPABILITIES(/obj/item/gun)
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
 	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req_bool(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART - 1), label("Remove the DNA lock"), needs(req(PROC_REF(lock_refusal))),
+		begins(PROC_REF(lock_removal_begins)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE), wait(2.5 SECONDS), then(PROC_REF(lock_removed)))
 
 MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
@@ -327,21 +328,22 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	return OP_DECLINE
 
-/obj/item/gun/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
-		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
-		return OP_OK
-	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return OP_OK
+/// The DNA lock comes off only a gun that has one its controller does not hold.
+/obj/item/gun/proc/lock_refusal(datum/act/op/A)
+	if(!read_once(dna_lock) || !read_once(attached_lock) || read_once(attached_lock.controller_lock))
+		return "\the [src] is not accepting modifications at this time"
 
-/obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
+/obj/item/gun/proc/lock_removal_begins(datum/act/op/A)
+	return msg_text("You begin removing \the [attached_lock] from \the [src].")
+
+/// After 2.5 seconds with the screwdriver, the lock comes off into the hand.
+/obj/item/gun/proc/lock_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	set_dna_lock(FALSE)
 	rel_take(src, nameof(attached_lock))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

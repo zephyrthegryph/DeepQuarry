@@ -12,7 +12,14 @@
 
 /// The fixture's tool ops answer as their *_result says: SUCCESS commits, BLOCKING refuses (the handler never runs), anything else declines.
 /atom/movable/unit_test_interaction_target/proc/crowbar_refusal(datum/act/op/A)
-	return crowbar_result == ITEM_INTERACT_BLOCKING ? "blocked" : null // ALLOW(reads): the fixture flag is set by the test before each click and never changes during one
+	return read_once(crowbar_result) == ITEM_INTERACT_BLOCKING ? "blocked" : null
+
+/// A declining hook (NONE, SKIP_TO_ATTACK) is no candidate: the tool goes on to its next quality, then to attackby.
+/atom/movable/unit_test_interaction_target/proc/crowbar_answers(datum/act/op/A)
+	return read_once(crowbar_result) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)
+
+/atom/movable/unit_test_interaction_target/proc/wrench_answers(datum/act/op/A)
+	return read_once(wrench_result) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)
 
 /atom/movable/unit_test_interaction_target/proc/crowbar_used(datum/act/op/A)
 	primary_crowbar_calls++
@@ -24,8 +31,8 @@
 
 /// Secondary tool use reaches the declared ops pinned to the right-click gesture.
 CAPABILITIES(/atom/movable/unit_test_interaction_target)
-	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), needs(req(PROC_REF(crowbar_refusal))), then(PROC_REF(crowbar_used)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), when(PROC_REF(crowbar_answers)), needs(req(PROC_REF(crowbar_refusal))), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), when(PROC_REF(wrench_answers)), then(PROC_REF(wrench_used)))
 	op("unit_test_secondary_wrench", tool(TOOL_WRENCH), gesture(GESTURE_RIGHT), wait(0), label("Test secondary wrench"), then(PROC_REF(note_secondary_wrench)))
 
 /atom/movable/unit_test_interaction_target/proc/note_secondary_wrench(datum/act/op/A)
@@ -64,7 +71,7 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	user.put_in_hands(tool)
 	var/primary_result = target.item_interaction(user, tool, list())
 	TEST_ASSERT(primary_result & ITEM_INTERACT_SUCCESS, "Primary tool interaction did not report success.")
-	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 1, "The first quality was not attempted exactly once.")
+	TEST_ASSERT_EQUAL(target.primary_crowbar_calls, 0, "A declining first quality has no op to run.")
 	TEST_ASSERT_EQUAL(target.primary_wrench_calls, 1, "A later quality was not attempted after the first declined.")
 	TEST_ASSERT_EQUAL(target.attackby_calls, 0, "A successful focused interaction incorrectly fell through to attackby().")
 	TEST_ASSERT_EQUAL(tool_acted_calls, 1, "A successful tool interaction did not emit the generic success signal exactly once.")

@@ -64,7 +64,8 @@
 	if(Adjacent(user))
 		. += "It has [emitter ? emitter : "no micro laser"] installed."
 
-/obj/item/gun/energy/floragun/screwdriver_used(datum/act/op/A)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/energy/floragun/proc/screwdriver_worked(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(emitter)
@@ -102,6 +103,7 @@
 	..()
 
 CAPABILITIES(/obj/item/gun/energy/floragun)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
 
 /// Old Select Gene verb.

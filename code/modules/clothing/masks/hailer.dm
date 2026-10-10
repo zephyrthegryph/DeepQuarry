@@ -61,7 +61,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
-	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), needs(req(PROC_REF(hailer_removal_refusal))), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
@@ -152,14 +152,15 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	aggressiveness = 5
 	return OP_OK
 
+/// The hailer comes off only a mask that has a separate one, and only when the mask's holder lets it go.
+/obj/item/clothing/mask/gas/sechailer/proc/hailer_removal_refusal(datum/act/op/A)
+	if(!read_once(hailer()))
+		return "this mask has an integrated hailer, you can't remove it"
+	return read_once(loc?.release_refusal(src, A.actor))
+
 /obj/item/clothing/mask/gas/sechailer/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	if(!hailer())
-		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
-		return OP_OK
-	if(loc?.release_refusal(src, user))
-		return OP_OK
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
 	playsound(src, tool.usesound, 50, TRUE)
 	transfer_blooddna_to(mask)

@@ -45,7 +45,7 @@
 	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "A deleted captured tool cannot alter the range")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The deleted-tool request ends")
 
-	outlet.interaction_tool_act(actor, null, TOOL_MULTITOOL)
+	outlet.ask_outlet_range(actor, null)
 	ask = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(ask), "The original optional null-tool public argument remains usable")
 	TEST_ASSERT_NULL(ask.subject, "A null original tool has no captured subject")
@@ -53,7 +53,7 @@
 	TEST_ASSERT_EQUAL(ask.outcome, REQ_ANSWERED, "Raw numeric zero still completes the actual optional-tool request")
 	TEST_ASSERT_EQUAL(outlet.eject_range, 0, "The actual callback preserves raw numeric semantics beyond modal-only bounds")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The optional-tool answer closes its request")
-	outlet.interaction_tool_act(actor, null, TOOL_MULTITOOL)
+	outlet.ask_outlet_range(actor, null)
 	ask = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(ask), "An additional optional-tool request opens before explicit cancellation")
 	test_answer(actor, null, REQ_CANCELLED)

@@ -50,7 +50,8 @@
 		manipulator_rating += MA.rating
 	FireModeModify()
 
-/obj/item/gun/energy/modular/screwdriver_used(datum/act/op/A)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/energy/modular/proc/screwdriver_worked(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
@@ -59,6 +60,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/gun/energy/modular)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/gun/energy/modular/proc/crowbar_used(datum/act/op/A)

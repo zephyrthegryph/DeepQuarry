@@ -31,6 +31,7 @@ TRACKED(/obj/item/gun/magnetic, removable_components)
 /obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
 
 CAPABILITIES(/obj/item/gun/magnetic)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(screwdriver_worked)))
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
@@ -134,7 +135,8 @@ CAPABILITIES(/obj/item/gun/magnetic)
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
-/obj/item/gun/magnetic/screwdriver_used(datum/act/op/A)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/magnetic/proc/screwdriver_worked(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(!removable_components)

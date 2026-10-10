@@ -11,25 +11,28 @@
 CAPABILITIES(/obj/item/assembly/shock_kit)
 	owns_one(nameof(part1), /obj/item/clothing/head/helmet)
 	owns_one(nameof(part2), /obj/item/radio/electropack)
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), needs(req(PROC_REF(disassembly_refusal))), then(PROC_REF(wrench_used)))
 
 
+/// A secured kit is not taken apart, nor one its holder will not let go of.
+/obj/item/assembly/shock_kit/proc/disassembly_refusal(datum/act/op/A)
+	if(read_once(status))
+		return "it is secured"
+	return read_once(loc?.release_refusal(src, A.actor))
+
+/// The kit comes apart into its two parts.
 /obj/item/assembly/shock_kit/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!status)
-		if(loc?.release_refusal(src, user))
-			return OP_OK
-		var/turf/T = loc
-		if(ismob(T))
-			T = T.loc
-		part1.forceMove(T)
-		part2.forceMove(T)
-		rel_clear(part1, nameof(part1.master))
-		rel_clear(part2, nameof(part2.master))
-		rel_take(src, nameof(part1))
-		rel_take(src, nameof(part2))
-		consume(src, user)
-		return OP_OK
+	var/turf/T = loc
+	if(ismob(T))
+		T = T.loc
+	part1.forceMove(T)
+	part2.forceMove(T)
+	rel_clear(part1, nameof(part1.master))
+	rel_clear(part2, nameof(part2.master))
+	rel_take(src, nameof(part1))
+	rel_take(src, nameof(part2))
+	consume(src, user)
 	return OP_OK
 
 /obj/item/assembly/shock_kit/screwdriver_used(datum/act/op/A)
