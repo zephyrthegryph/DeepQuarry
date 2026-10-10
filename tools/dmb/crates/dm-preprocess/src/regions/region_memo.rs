@@ -25,6 +25,39 @@ pub const FRAGMENT_VERSION: u32 = 1;
 mod fragment_tests {
     use super::*;
     #[test]
+    fn shared_chunk_preserves_legacy_wire_matching_and_budget_charge() {
+        #[derive(Serialize)]
+        struct Legacy<'a> {
+            schema: u32,
+            source: &'a Arc<str>,
+            payload: &'a Arc<[u8]>,
+        }
+        let source: Arc<str> = Arc::from("/datum/probe\n    var/name = \"α\"\n");
+        let payload: Arc<[u8]> = Arc::from([1u8, 2, 3]);
+        let shared =
+            FragmentRecord::new_shared_source(3, Arc::clone(&source), Arc::clone(&payload))
+                .unwrap();
+        let copied = FragmentRecord::new(3, &source, Arc::clone(&payload)).unwrap();
+        assert!(Arc::ptr_eq(shared.shared_source(), &source));
+        assert!(!Arc::ptr_eq(copied.shared_source(), &source));
+        assert_eq!(shared.retained_size_bytes(), copied.retained_size_bytes());
+        let legacy = dm_wire::encode(
+            FRAGMENT_VERSION,
+            &Legacy {
+                schema: 3,
+                source: &source,
+                payload: &payload,
+            },
+        )
+        .unwrap();
+        assert_eq!(shared.to_bytes().unwrap(), legacy);
+        assert_eq!(FragmentRecord::from_bytes(&legacy).unwrap(), shared);
+        assert!(shared.matches(3, &source));
+        assert!(!shared.matches(3, "/datum/other\n"));
+        assert!(!shared.matches(4, &source));
+    }
+
+    #[test]
     fn independent_fragment_requires_exact_source_and_schema() {
         let record = FragmentRecord::new(3, "/datum/probe\n", Arc::from([1u8, 2, 3])).unwrap();
         let restored = FragmentRecord::from_bytes(&record.to_bytes().unwrap()).unwrap();
@@ -66,9 +99,13 @@ impl FragmentRecord {
         hash.digest128()
     }
     pub fn new(schema: u32, source: &str, payload: Arc<[u8]>) -> Option<Self> {
+        Self::new_shared_source(schema, source.into(), payload)
+    }
+    /// Shares immutable chunk bytes; matching and parser admission remain mandatory.
+    pub fn new_shared_source(schema: u32, source: Arc<str>, payload: Arc<[u8]>) -> Option<Self> {
         Some(Self {
             schema,
-            source: source.into(),
+            source,
             payload,
         })
     }
@@ -77,6 +114,9 @@ impl FragmentRecord {
     }
     pub fn matches(&self, schema: u32, source: &str) -> bool {
         self.schema == schema && self.source.as_ref() == source
+    }
+    pub fn shared_source(&self) -> &Arc<str> {
+        &self.source
     }
     pub fn payload(&self) -> &[u8] {
         &self.payload

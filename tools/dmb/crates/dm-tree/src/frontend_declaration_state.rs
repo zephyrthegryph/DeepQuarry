@@ -351,6 +351,23 @@ mod tests {
             .capture(&key, text, 0, ast.items, facts, ledger)
             .unwrap();
         let shifted = store.get_shared(&key, text, 80).unwrap();
+        let fragment = dm_preprocess::regions::FragmentRecord::new_shared_source(
+            super::super::parserwire::VERSION,
+            first.shared_source(),
+            Arc::from([1u8, 2]),
+        )
+        .unwrap();
+        assert!(Arc::ptr_eq(fragment.shared_source(), &first.value.source));
+        assert!(Arc::ptr_eq(
+            fragment.shared_source(),
+            &shifted.shared_source()
+        ));
+        assert!(Arc::ptr_eq(
+            fragment.shared_source(),
+            first.syntax.shared_relative().shared_source().unwrap()
+        ));
+        assert!(fragment.matches(super::super::parserwire::VERSION, text));
+
         // Force the same locator for different equal-length source. A collision
         // must decline before any old syntax or semantic facts are issued.
         let foreign = text.replace("=1", "=2");
@@ -476,6 +493,9 @@ pub(super) struct CurrentContribution {
     offset: usize,
 }
 impl CurrentContribution {
+    pub(super) fn shared_source(&self) -> Arc<str> {
+        Arc::clone(&self.value.source)
+    }
     fn bind(value: Arc<Contribution>, text: &str, offset: usize) -> Option<Self> {
         if value.source.as_ref() != text {
             return None;

@@ -285,26 +285,11 @@ pub(super) fn parse_declarations_with_state(
                                 } else {
                                     None
                                 };
-                            if !cached_fragment_hit {
-                                if let Some(memo) = memo {
-                                    if let Some(bytes) = &produced_payload {
-                                        if let Some(record) =
-                                            dm_preprocess::regions::FragmentRecord::new(
-                                                parserwire::VERSION,
-                                                text,
-                                                Arc::clone(bytes),
-                                            )
-                                        {
-                                            memo.insert_fragment(Arc::new(record));
-                                        }
-                                    }
-                                }
-                            }
                             let fragment = if has_cached_facts {
                                 None
                             } else {
                                 receipt.zip(relative).and_then(|(_, span)| {
-                                    produced_payload.map(|bytes| (receipt_index, span, bytes))
+                                    produced_payload.as_ref().map(|bytes| (receipt_index, span, Arc::clone(bytes)))
                                 })
                             };
                             let current = facts.and_then(|(facts,ledger)| {
@@ -315,6 +300,21 @@ pub(super) fn parse_declarations_with_state(
                                 };
                                 current.ok_or_else(||vec![crate::AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
                             });
+                            if !cached_fragment_hit {
+                                if let Some(memo) = memo {
+                                    if let Some(bytes) = &produced_payload {
+                                        if let Some(record) =
+                                            dm_preprocess::regions::FragmentRecord::new_shared_source(
+                                                parserwire::VERSION,
+                                                current.as_ref().map_or_else(|_| Arc::from(text), |bound| bound.shared_source()),
+                                                Arc::clone(bytes),
+                                            )
+                                        {
+                                            memo.insert_fragment(Arc::new(record));
+                                        }
+                                    }
+                                }
+                            }
                             if sender
                                 .send((index, offset, errors, fragment, current))
                                 .is_err()
