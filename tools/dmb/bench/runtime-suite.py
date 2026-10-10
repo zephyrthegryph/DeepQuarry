@@ -216,6 +216,7 @@ def main(argv=None):
         cargo_home = owned_cache_path(args.cargo_home or args.output / 'cargo-home')
         env.update(DQ_COMPILER=args.backend, DM_EXE=str(args.byond_exe), DQ_DD_SECURITY=args.security,
             DQ_DD_WATCHDOG_MINUTES='5', DQ_FOCUS_TIMEOUT_MINUTES='5', BUN_RUNTIME_TRANSPILER_CACHE_PATH='0',
+            MSYS2_ARG_CONV_EXCL='--focus=',
             CARGO_BUILD_JOBS='1', CARGO_TARGET_DIR=str(cargo_target), CARGO_HOME=str(cargo_home), DQ_ICON_WORKERS='4')
         receipt['build_configuration'] = {'workers': args.workers if args.backend == 'native' else None,
             'ordered_extra_defines': args.define, 'security': args.security, 'cargo_home': str(cargo_home), 'cargo_target': str(cargo_target)}
