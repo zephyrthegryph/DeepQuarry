@@ -109,3 +109,64 @@ fn grouping_keeps_conflicting_answers_and_rejects_noncanonical_input() {
         )
         .is_err());
 }
+
+#[test]
+fn six_workers_preserve_all_observer_edges_and_request_isolation() {
+    let pool = ReceiptGroupPool::default();
+    let receipt = pool
+        .intern_receipt(reads(), |a, b| a.query / 2 == b.query / 2)
+        .unwrap();
+    let host = Host {
+        calls: AtomicUsize::new(0),
+        present: false,
+    };
+    let admission = ReceiptAdmission::new(&host);
+    let start = std::sync::Barrier::new(6);
+    let observed = std::thread::scope(|scope| {
+        let workers: Vec<_> = (0..6)
+            .map(|_| {
+                let admission = &admission;
+                let receipt = &receipt;
+                let start = &start;
+                scope.spawn(move || {
+                    start.wait();
+                    let mut edges = Vec::new();
+                    assert_eq!(
+                        admission.first_changed(receipt, |leaf| {
+                            assert_eq!(admission.first_changed(receipt, |_| {}), None);
+                            edges.extend(leaf.iter().map(|read| (read.query, read.answer)));
+                        }),
+                        None
+                    );
+                    edges
+                })
+            })
+            .collect();
+        workers
+            .into_iter()
+            .map(|worker| worker.join().unwrap())
+            .collect::<Vec<_>>()
+    });
+    for edges in observed {
+        assert_eq!(edges, vec![(0, None), (1, None), (2, None), (3, None)]);
+    }
+    // Racing first readers may resolve the same immutable leaf independently.
+    let initial = host.calls.load(Ordering::Relaxed);
+    assert!((4..=24).contains(&initial));
+    let mut replayed = 0;
+    assert_eq!(
+        admission.first_changed(&receipt, |leaf| replayed += leaf.len()),
+        None
+    );
+    assert_eq!(replayed, 4);
+    assert_eq!(host.calls.load(Ordering::Relaxed), initial);
+    let next = Host {
+        calls: AtomicUsize::new(0),
+        present: true,
+    };
+    assert_eq!(
+        ReceiptAdmission::new(&next).first_changed(&receipt, |_| panic!("stale negative verdict")),
+        Some(0)
+    );
+    assert_eq!(next.calls.load(Ordering::Relaxed), 1);
+}
