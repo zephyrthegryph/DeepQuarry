@@ -526,7 +526,6 @@ initialize	code/modules/integrated_electronics/subtypes/memory.dm	/obj/item/inte
 initialize	code/modules/integrated_electronics/subtypes/output.dm	/obj/item/integrated_circuit/output/text_to_speech/advanced/Initialize(mapload)
 initialize	code/modules/integrated_electronics/subtypes/output.dm	/obj/item/integrated_circuit/output/sound/Initialize(mapload)
 initialize	code/modules/integrated_electronics/subtypes/output.dm	/obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
-initialize	code/modules/integrated_electronics/subtypes/reagents.dm	/obj/item/integrated_circuit/reagent/Initialize(mapload)
 initialize	code/modules/library/lib_machines.dm	/obj/machinery/librarycomp/Initialize(mapload)
 initialize	code/modules/lighting/lighting_fake_sun.dm	/obj/effect/fake_sun/Initialize(mapload)
 initialize	code/modules/looking_glass/lg_area.dm	/area/looking_glass/Initialize(mapload)

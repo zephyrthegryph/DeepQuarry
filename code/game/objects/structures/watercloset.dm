@@ -1343,7 +1343,7 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 	if(muffinmonster() && muffin_mode)
 		muffinmonster().name = "Muffin Monster"
 		muffinmonster().forceMove(get_turf(src))
-		rel_clear(src, nameof(muffinmonster))
+		rel_take(src, nameof(muffinmonster)) // let out, not deleted
 		muffin_mode = FALSE
 	return OP_OK
 
