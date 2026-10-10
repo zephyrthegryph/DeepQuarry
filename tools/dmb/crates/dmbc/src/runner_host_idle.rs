@@ -8,6 +8,50 @@ impl BuildHost {
         drop(self.executor.take());
     }
 
+    /// Intermediate pressure tier: retain the existing semantic/source issuer,
+    /// discard optional downstream owners. Escaped request Arcs may live until
+    /// their consumers finish, but cannot repopulate these detached host slots.
+    pub(crate) fn release_idle_compiler_artifacts(&mut self) {
+        self.emit_idle_census("before-compiler-release");
+        self.release_idle_executor();
+        self.rich_generation = self.rich_generation.saturating_add(1);
+        self.procedures = None;
+        self.symbolic = None;
+        self.initializers = None;
+        self.startup = None;
+        self.abi = None;
+        self.initializer_fragments = None;
+        self.initializer_assemblies = None;
+        self.class_projections = None;
+        self.required_types = None;
+        self.link_bindings = None;
+        self.generation = None;
+        self.host_facts = None;
+        self.maps = None;
+        if self.memo.is_some() {
+            self.memo = Some(Default::default());
+        }
+        if self.prepared_sources.is_some() {
+            self.prepared_sources = Some(Arc::new(Default::default()));
+        }
+        // Preserve current read-only query availability only for the exact
+        // retained semantic owner; no old snapshot can retain another tree.
+        let mut query = self
+            .query_state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if query.snapshot.as_ref().is_some_and(|snapshot| {
+            self.semantic
+                .as_ref()
+                .and_then(|state| state.snapshot_tree())
+                .is_none_or(|tree| !snapshot.matches_tree(tree))
+        }) {
+            *query = Default::default();
+        }
+        drop(query);
+        self.emit_idle_census("after-compiler-release");
+    }
+
     pub(crate) fn release_idle_artifacts(&mut self) {
         self.emit_idle_census("before-rich-release");
         // First pressure tier releases rich and physical buffers, retaining the
@@ -97,3 +141,7 @@ mod tests {
         assert!(host.semantic.is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "runner_host_idle_compiler_tests.rs"]
+mod compiler_tests;

@@ -14,7 +14,7 @@ pub struct ReusableProcedureArtifact {
     metadata_recipe: Arc<crate::composition::ProcedureMetadataRecipe>,
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
-    frame: FrozenFrame,
+    frame: Arc<FrozenFrame>,
     abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
     strings: OwnedStrings,
     slots: Slots,
@@ -127,14 +127,6 @@ impl ReusableProcedureArtifact {
             .collect()
     }
 }
-fn clone_frame(frame: &FrozenFrame) -> FrozenFrame {
-    FrozenFrame {
-        local_count: frame.local_count,
-        local_names: frame.local_names.clone(),
-        argument_names: frame.argument_names.clone(),
-        argument_type_flags: frame.argument_type_flags.clone(),
-    }
-}
 impl Clone for HelperArtifact {
     fn clone(&self) -> Self {
         Self {
@@ -158,7 +150,7 @@ impl Clone for ReusableProcedureArtifact {
             metadata_recipe: Arc::clone(&self.metadata_recipe),
             image_owner: Arc::clone(&self.image_owner),
             features: self.features,
-            frame: clone_frame(&self.frame),
+            frame: Arc::clone(&self.frame),
             instances: self.instances.clone(),
             abi: self.abi.clone(),
             strings: self.strings.clone(),

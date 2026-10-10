@@ -7,8 +7,9 @@ fn frame_reuse_checks_used_ids_instead_of_unrelated_table_frontiers() {
     for has_local in [false, true] {
         let (mut batch, _) = ownership_fixture_source("/proc/frontier_probe()\n    return 1\n");
         if has_local {
-            batch.units[0].lowered.frame.local_count = 1;
-            batch.units[0].lowered.frame.local_names = vec!["frontier_local".into()];
+            Arc::make_mut(&mut batch.units[0].lowered.frame).local_count = 1;
+            Arc::make_mut(&mut batch.units[0].lowered.frame).local_names =
+                vec!["frontier_local".into()];
         }
         let mut baseline =
             Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
@@ -95,8 +96,8 @@ fn frame_reuse_checks_used_ids_instead_of_unrelated_table_frontiers() {
 fn one_shot_frame_emission_skips_retention_and_matches_retained_output() {
     use std::sync::Arc;
     let (mut batch, _) = ownership_fixture_source("/proc/cold_frame_probe()\n    return 1\n");
-    batch.units[0].lowered.frame.local_count = 1;
-    batch.units[0].lowered.frame.local_names = vec!["current_local".into()];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_count = 1;
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_names = vec!["current_local".into()];
     let baseline =
         Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
     let emit = |retain| {
@@ -152,8 +153,8 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
     use procedure_plan::{PreparedMetadata, ProcedureMetadata, Slot};
     use std::sync::Arc;
     let (mut batch, symbols) = ownership_fixture_source("/proc/metadata_probe()\n    return 1\n");
-    batch.units[0].lowered.frame.argument_names = vec!["argument".into()];
-    batch.units[0].lowered.frame.argument_type_flags = vec![0];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).argument_names = vec!["argument".into()];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).argument_type_flags = vec![0];
     Arc::make_mut(batch.units[0].lowered.abi.as_mut().unwrap()).argument_sources =
         vec![dm_codegen_byond::procedure_abi::ArgumentSource::Helper { argument: 0 }];
     let identity = batch.units[0].lowered.identity;
@@ -279,8 +280,8 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
 fn pressure_release_recomputes_identical_frame_output() {
     use std::sync::Arc;
     let (mut batch, _) = ownership_fixture_source("/proc/pressure_probe()\n    return 1\n");
-    batch.units[0].lowered.frame.local_count = 1;
-    batch.units[0].lowered.frame.local_names = vec!["pressure_local".into()];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_count = 1;
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_names = vec!["pressure_local".into()];
     let baseline =
         Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
     let emit = |model: &mut Dmb| {
@@ -324,4 +325,72 @@ fn pressure_release_recomputes_identical_frame_output() {
         .lock()
         .unwrap()
         .is_some());
+}
+
+#[test]
+fn retained_frame_shares_immutable_payload_and_checks_distinct_values() {
+    use std::sync::Arc;
+    let (mut batch, _) = ownership_fixture_source("/proc/shared_frame_probe()\n    return 1\n");
+    let frame = Arc::make_mut(&mut batch.units[0].lowered.frame);
+    frame.local_count = 1;
+    frame.local_names = vec!["shared_local".into()];
+    let baseline =
+        Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
+    let emit = |model: &mut Dmb, unit: &crate::symbolic::FrozenUnit| {
+        let mut index = StringIndex::build(model).unwrap();
+        frame_contribution::emit(
+            model,
+            &mut index,
+            unit,
+            Arc::new(vec![1]),
+            procedure_plan::ProcedureMetadata {
+                declared: Some(true),
+                path: Ok(Arc::from("/proc/shared_frame_probe")),
+                default_display: Ok(Arc::from("shared frame probe")),
+                value_sources: Vec::new(),
+            },
+            true,
+        )
+        .unwrap();
+    };
+    assert_eq!(Arc::strong_count(&batch.units[0].lowered.frame), 1);
+    let mut expected = baseline.clone();
+    emit(&mut expected, &batch.units[0]);
+    assert_eq!(Arc::strong_count(&batch.units[0].lowered.frame), 2);
+    let first = batch.units[0]
+        .metadata_recipe
+        .frame_owner()
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap();
+    // A distinct equal compatibility value must retain the exact same numeric receipt.
+    batch.units[0].lowered.frame = Arc::new((*batch.units[0].lowered.frame).clone());
+    let mut equal = baseline.clone();
+    emit(&mut equal, &batch.units[0]);
+    assert_eq!(equal, expected);
+    assert!(Arc::ptr_eq(
+        &first,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_names[0] = "changed_local".into();
+    let mut changed = baseline;
+    emit(&mut changed, &batch.units[0]);
+    assert!(!Arc::ptr_eq(
+        &first,
+        batch.units[0]
+            .metadata_recipe
+            .frame_owner()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+    ));
+    assert_ne!(changed, expected);
 }

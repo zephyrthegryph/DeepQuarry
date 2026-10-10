@@ -124,6 +124,7 @@ pub(crate) fn finalize_headers_with_engine(
         .into_iter()
         .collect::<HashSet<_>>();
     let mut own: HashMap<u32, HashSet<&str>> = HashMap::new();
+    let mut null_names = HashSet::new();
     let mut override_own: HashMap<u32, HashSet<&str>> = HashMap::new();
     for field in projection
         .fields
@@ -142,6 +143,16 @@ pub(crate) fn finalize_headers_with_engine(
                 field.name, field.owner
             ))
         })?;
+        if name == "name" {
+            if matches!(
+                field.value,
+                crate::initializer_policy::DefaultValue::Scalar(dm_ir::SemanticValue::Null)
+            ) {
+                null_names.insert(id);
+            } else {
+                null_names.remove(&id);
+            }
+        }
         // Runtime override tokens are authored defaults too. Header slots use
         // scalar locks only, retaining the initial parent value until runtime.
         override_own.entry(id).or_default().insert(name);
@@ -241,13 +252,14 @@ pub(crate) fn finalize_headers_with_engine(
                 .collect();
             let local_owned = local.iter().map(|name| (*name).to_owned()).collect();
             let native_owned = native_override_names.iter().cloned().collect();
-            let (key, recipe) = store.obtain(
+            let (key, recipe) = store.obtain_with_name_reset(
                 path,
                 &authored_owned,
                 &override_owned,
                 local_owned,
                 native_owned,
                 &parent_recipe,
+                null_names.contains(&id),
             );
             retained_request.recipes.push(key);
             recipe_native_names = Some(recipe.native_overrides.iter().cloned().collect());
@@ -312,7 +324,7 @@ pub(crate) fn finalize_headers_with_engine(
         }
         if authored.contains("name") && dmb.classes[id as usize].name_string_id() == NONE {
             // Native null-name reset restores the type leaf instead of leaving
-            // a null display name. Keep this an authored effective name.
+            // a null display name. Its generated name is not inherited.
             let path = dmb
                 .string(dmb.classes[id as usize].path_string_id())
                 .ok_or(ProjectionError::MissingMember)?;
@@ -328,7 +340,7 @@ pub(crate) fn finalize_headers_with_engine(
                 .map_err(|error| ProjectionError::Unsupported(format!("header name {error:?}")))?;
             dmb.classes[id as usize].initial_ids[2] = name;
         }
-        if authored.contains("name") || inherited_name {
+        if !null_names.contains(&id) && (authored.contains("name") || inherited_name) {
             authored_name.insert(id);
         }
         if authored.contains("text") || inherited_text {
@@ -648,6 +660,10 @@ fn append_override_rows(
 #[cfg(test)]
 #[path = "headers_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "headers_null_name_tests.rs"]
+mod null_name_tests;
 
 #[cfg(test)]
 mod routing_tests {

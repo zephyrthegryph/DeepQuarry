@@ -21,7 +21,9 @@ impl Deadline {
 }
 
 fn target(age: Duration, pressured: bool, previous: usize) -> usize {
-    if age >= SESSION_IDLE || pressured && previous >= 2 {
+    if age >= SESSION_IDLE || pressured && previous >= 3 {
+        4
+    } else if pressured && previous >= 2 {
         3
     } else if pressured {
         2
@@ -64,7 +66,7 @@ impl Shared {
             {
                 continue;
             }
-            if next == 3 {
+            if next == 4 {
                 let removed = slots.remove(&key);
                 drop(slots);
                 let before = transport::private_bytes();
@@ -91,9 +93,13 @@ impl Shared {
             if next >= 2 {
                 let before = transport::private_bytes();
                 let started = Instant::now();
-                host.release_idle_artifacts();
+                if next == 3 {
+                    host.release_idle_compiler_artifacts();
+                } else {
+                    host.release_idle_artifacts();
+                }
                 super::super::emit_stderr(format_args!(
-                    "dmbd rich release project={} private-before={before:?} private-after={:?} seconds={:.6}",
+                    "dmbd artifact release tier={next} project={} private-before={before:?} private-after={:?} seconds={:.6}",
                     key.manifest.display(),
                     transport::private_bytes(),
                     started.elapsed().as_secs_f64()
@@ -101,7 +107,9 @@ impl Shared {
             }
             super::super::emit_stderr(format_args!(
                 "dmbd idle release tier={} project={} pressure={pressured}",
-                if next >= 2 {
+                if next == 3 {
+                    "compiler-artifacts"
+                } else if next >= 2 {
                     "rich-buffers"
                 } else {
                     "executor"
@@ -130,9 +138,11 @@ mod tests {
         assert_eq!(target(Duration::from_secs(30), false, 0), 1);
         assert_eq!(target(Duration::from_secs(120), false, 1), 1);
         assert_eq!(target(Duration::from_secs(599), false, 1), 1);
-        assert_eq!(target(Duration::from_secs(600), false, 2), 3);
+        assert_eq!(target(Duration::from_secs(600), false, 2), 4);
         assert_eq!(target(Duration::ZERO, true, 0), 2);
         assert_eq!(target(Duration::ZERO, true, 2), 3);
+        assert_eq!(target(Duration::ZERO, false, 3), 0);
+        assert_eq!(target(Duration::ZERO, true, 3), 4);
     }
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {

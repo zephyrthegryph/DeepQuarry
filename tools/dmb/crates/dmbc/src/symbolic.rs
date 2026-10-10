@@ -31,8 +31,9 @@ pub struct FrozenUnitMetadata {
     pub origin: dm_tree::frontend::BodyOccurrence,
     pub abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
     pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
-    pub frame: FrozenFrame,
+    pub frame: Arc<FrozenFrame>,
 }
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrozenFrame {
     pub local_count: u32,
     pub local_names: Vec<String>,
@@ -47,12 +48,12 @@ impl FrozenUnitMetadata {
             origin: unit.origin,
             abi: unit.abi,
             debug_origins: unit.debug_origins.into(),
-            frame: FrozenFrame {
+            frame: Arc::new(FrozenFrame {
                 local_count: procedure.local_count,
                 local_names: procedure.local_names,
                 argument_names: procedure.argument_names,
                 argument_type_flags: procedure.argument_type_flags,
-            },
+            }),
         }
     }
 }

@@ -1,3 +1,19 @@
+## 2026-10-10 current integration and measured limits
+
+Committed through `2ec3cac345`: shared declaration receipts, immutable cache age eviction, one streamed cache publication per completed request, buffered structural reports, and numeric metadata pressure release. The current workspace/all-target check passes. Shared frozen-frame ownership, an intermediate compiler-artifact pressure tier, frontend stage telemetry, and three captured BYOND default/header corrections are undergoing focused checks; they are not represented by a measured compiler yet.
+
+Latest partial prototype cohort: `607e2c961f`, dmbc optimization level zero, two workers, captured DeepQuarry `ac1af55d1a`.
+
+| Request | Retained end-to-end seconds | Independent fresh seconds |
+| --- | ---: | ---: |
+| Initial cache population | 83.371 | 36.741 |
+| Unchanged | 1.941 | 38.030 |
+| Procedure body edit | 65.849 | 38.520 |
+
+All three completed rows match fresh native DMB/RSC bytes. New-procedure children completed in 64.392/36.887 seconds and their pair hashes were checked equal afterward, but the row was not admitted: its structural inspector failed with Windows disk-full error 112. Remaining edit cases did not run. The owned daemon was reaped. This is a partial prototype cohort, not optimized performance or BYOND correctness acceptance. Evidence: `bench/receipts/phase2-20261010-shared-leaf-iteration.json`.
+
+The body request rebuilt the semantic tree after whole-session memory-pressure eviction; tree resolution alone took 10.590 seconds. The intermediate pressure tier retains that exact semantic owner while releasing compiler artifacts. Whether it stays below the unchanged 4 GB daemon limit remains unmeasured. Initializer assembly, canonical projection and output work remain substantial. BYOND structural comparison still reports 1,858,610 unexplained differences and incomplete semantic coverage. Runtime parity remains deferred to Phase 5; compile-error parity, history replay, six-worktree acceptance and production readiness remain open. No complete migration or speedup claim.
+
 ## 2026-10-09 current migration integration (unmeasured)
 
 Work continues beyond the d65 prototype cohort. Compact frozen disk replay now includes argument-source helper procedures with current ABI/origin/licensing checks. Retained type reachability has exact field-request and parent-index contributions. First pressure cleanup preserves symbolic dependency receipts while releasing rich, numeric-image and runtime-AST buffers. Canonical initializer roster hits preserve current diagnostic ordinals.

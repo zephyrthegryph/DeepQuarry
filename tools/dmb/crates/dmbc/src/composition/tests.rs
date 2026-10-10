@@ -784,8 +784,8 @@ fn artifact_emission_lists_share_output_backing_after_current_variable_allocatio
         }
     }
     let (mut batch, symbols) = ownership_fixture();
-    batch.units[0].lowered.frame.local_names = vec!["kept_local".into()];
-    batch.units[0].lowered.frame.local_count = 1;
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_names = vec!["kept_local".into()];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).local_count = 1;
     let observer = Observe(Mutex::new(Vec::new()));
     let compose = || {
         compose_records_access(
@@ -929,8 +929,8 @@ fn frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_author
 fn frame_contribution_requires_current_resolved_argument_source_numbers() {
     use std::sync::Arc;
     let (mut batch, _) = ownership_fixture_source("/proc/frame_argument_probe()\n    return 1\n");
-    batch.units[0].lowered.frame.argument_names = vec!["argument".into()];
-    batch.units[0].lowered.frame.argument_type_flags = vec![0];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).argument_names = vec!["argument".into()];
+    Arc::make_mut(&mut batch.units[0].lowered.frame).argument_type_flags = vec![0];
     Arc::make_mut(batch.units[0].lowered.abi.as_mut().unwrap()).argument_sources =
         vec![dm_codegen_byond::procedure_abi::ArgumentSource::Helper { argument: 0 }];
     let baseline =

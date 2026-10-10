@@ -22,10 +22,7 @@ pub(super) struct FrameContribution {
     start: Frontier,
     declared: bool,
     identity: crate::lowering::UnitIdentity,
-    local_count: u32,
-    locals_names: Vec<String>,
-    argument_names: Vec<String>,
-    argument_flags: Vec<u32>,
+    frame: Arc<crate::symbolic::FrozenFrame>,
     abi: Arc<crate::procedure_policy::PreparedAbi>,
     path: Arc<str>,
     display: Arc<str>,
@@ -38,12 +35,7 @@ pub(super) struct FrameContribution {
 impl FrameContribution {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         let owner = "procedure_metadata.frame";
-        census.vec_payload(owner, &self.locals_names);
-        census.vec_payload(owner, &self.argument_names);
-        for name in self.locals_names.iter().chain(&self.argument_names) {
-            census.exposed_buffer(owner, name.as_ptr() as usize, name.len(), name.capacity());
-        }
-        census.vec_payload(owner, &self.argument_flags);
+        census.frozen_frame(owner, &self.frame);
         census.vec_payload(owner, &self.variables);
         census.vec_payload(owner, &self.strings);
         for request in &self.strings {
@@ -78,10 +70,7 @@ impl FrameContribution {
             || symbols.text(unit.lowered.identity.owner).is_none()
             || symbols.text(unit.lowered.identity.name).is_none()
             || self.identity != unit.lowered.identity
-            || self.local_count != frame.local_count
-            || self.locals_names != frame.local_names
-            || self.argument_names != frame.argument_names
-            || self.argument_flags != frame.argument_type_flags
+            || !(Arc::ptr_eq(&self.frame, frame) || self.frame.as_ref() == frame.as_ref())
             || **abi != *self.abi
             || frame.argument_names.len() != frame.argument_type_flags.len()
             || frame.argument_names.len() != abi.argument_sources.len()
@@ -167,10 +156,7 @@ impl FrameContribution {
         let frame = &unit.lowered.frame;
         if metadata.declared != Some(self.declared)
             || self.identity != unit.lowered.identity
-            || self.local_count != frame.local_count
-            || self.locals_names != frame.local_names
-            || self.argument_names != frame.argument_names
-            || self.argument_flags != frame.argument_type_flags
+            || !(Arc::ptr_eq(&self.frame, frame) || self.frame.as_ref() == frame.as_ref())
             || unit
                 .lowered
                 .abi
@@ -184,7 +170,7 @@ impl FrameContribution {
                 .default_display
                 .as_ref()
                 .is_ok_and(|x| x.as_ref() == self.display.as_ref())
-            || metadata.value_sources.len() != self.argument_names.len()
+            || metadata.value_sources.len() != self.frame.argument_names.len()
             || metadata
                 .value_sources
                 .iter()
@@ -351,10 +337,7 @@ pub(super) fn emit(
         start,
         declared: declared.expect("successful declaration admission"),
         identity: unit.lowered.identity,
-        local_count: proc.local_count,
-        locals_names: proc.local_names.clone(),
-        argument_names: proc.argument_names.clone(),
-        argument_flags: proc.argument_type_flags.clone(),
+        frame: Arc::clone(&unit.lowered.frame),
         abi: Arc::clone(abi),
         path: admitted_path.expect("successful path"),
         display: admitted_display.expect("successful display"),

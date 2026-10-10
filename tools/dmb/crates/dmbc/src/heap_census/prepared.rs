@@ -2,6 +2,17 @@
 use super::*;
 
 impl HeapCensus {
+    pub(crate) fn frozen_frame(
+        &mut self,
+        owner: &'static str,
+        frame: &Arc<crate::symbolic::FrozenFrame>,
+    ) {
+        if self.arc_object(owner, frame) {
+            self.strings(owner, &frame.local_names);
+            self.strings(owner, &frame.argument_names);
+            self.vec_payload(owner, &frame.argument_type_flags);
+        }
+    }
     pub fn prepared(&mut self, contributions: &Vec<crate::symbolic::PreparedContribution>) {
         if self.vec_payload("prepared_contributions", contributions) {
             for contribution in contributions {
@@ -12,7 +23,7 @@ impl HeapCensus {
     pub(crate) fn prepared_procedure_parts(
         &mut self,
         frozen: &std::sync::Arc<dm_codegen_byond::FrozenProc>,
-        frame: &crate::symbolic::FrozenFrame,
+        frame: &Arc<crate::symbolic::FrozenFrame>,
         abi: &Option<std::sync::Arc<crate::procedure_policy::PreparedAbi>>,
         origin: &dm_tree::frontend::BodyOccurrence,
         debug: &crate::debug_sources::FrozenDebugOrigins,
@@ -26,9 +37,7 @@ impl HeapCensus {
         for origin in origin.setting_context_origins.iter() {
             self.source_location(owner, origin);
         }
-        self.strings(owner, &frame.local_names);
-        self.strings(owner, &frame.argument_names);
-        self.vec_payload(owner, &frame.argument_type_flags);
+        self.frozen_frame(owner, frame);
         if let Some(abi) = abi {
             self.abi(abi);
         }

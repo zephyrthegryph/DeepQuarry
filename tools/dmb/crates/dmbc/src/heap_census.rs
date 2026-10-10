@@ -2,8 +2,8 @@
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 use serde::Serialize;
-mod declaration_syntax;
 mod cache_batch;
+mod declaration_syntax;
 mod dmb_image;
 mod effective_metadata;
 pub(crate) mod initializer_artifacts;
@@ -822,9 +822,7 @@ impl HeapCensus {
             crate::composition::ProcedureMetadataRecipe::census(&unit.metadata_recipe, self);
             self.frozen_code(&unit.frozen);
             self.frozen_debug("frozen_units", &unit.lowered.debug_origins);
-            self.strings("frozen_units", &unit.lowered.frame.local_names);
-            self.strings("frozen_units", &unit.lowered.frame.argument_names);
-            self.vec_payload("frozen_units", &unit.lowered.frame.argument_type_flags);
+            self.frozen_frame("frozen_units", &unit.lowered.frame);
             if let Some(abi) = &unit.lowered.abi {
                 self.abi(abi);
             }

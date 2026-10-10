@@ -452,6 +452,11 @@ pub(crate) fn materialize_members_with_roster(
             let Some((record, flags)) = shared_records.remove(key) else {
                 continue;
             };
+            // Captured DreamMaker keeps the real procedure-static slot named
+            // vars, but excludes it from the global vars declaration footer.
+            if matches!(key, Key::ProcedureStatic(identity) if text(identity.name)? == "vars") {
+                continue;
+            }
             // BYOND retains tmp on the class declaration, but strips it from
             // the shared VM slot footer (including globals and proc statics).
             footer.extend([record, flags & !4]);
@@ -626,7 +631,9 @@ pub(crate) fn materialize_members_with_roster(
                         }
                     }
                 }
-                "dir" => dmb.classes[class as usize].direction = integer(0.0, 255.0)? as u8,
+                "dir" => {
+                    dmb.classes[class as usize].direction = direction::header_direction(numeric)?;
+                }
                 "maptext_width" | "maptext_height" | "maptext_x" | "maptext_y" => {
                     let slot = match name {
                         "maptext_width" => 0,
@@ -750,3 +757,9 @@ mod gender_tests;
 #[cfg(test)]
 #[path = "members_mob_numeric_tests.rs"]
 mod mob_numeric_tests;
+#[cfg(test)]
+#[path = "static_vars_tests.rs"]
+mod static_vars_tests;
+
+#[path = "members_direction.rs"]
+mod direction;

@@ -57,7 +57,7 @@ impl BoundContribution {
     /// Only retained completion payloads are compacted; discarded rich IR is untouched.
     fn compact_retained(&mut self) {
         compact_vec(&mut self.instances);
-        let frame = &mut self.unit.lowered.frame;
+        let frame = Arc::make_mut(&mut self.unit.lowered.frame);
         compact_names(&mut frame.local_names);
         compact_names(&mut frame.argument_names);
         compact_vec(&mut frame.argument_type_flags);

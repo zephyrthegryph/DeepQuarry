@@ -6,13 +6,11 @@ impl HeapCensus {
     pub(crate) fn retained_symbolic_procedure(
         &mut self,
         frozen: &Arc<dm_codegen_byond::FrozenProc>,
-        frame: &crate::symbolic::FrozenFrame,
+        frame: &Arc<crate::symbolic::FrozenFrame>,
         abi: &Option<Arc<crate::procedure_policy::PreparedAbi>>,
     ) {
         self.frozen_code(frozen);
-        self.strings("session_symbolic.frame", &frame.local_names);
-        self.strings("session_symbolic.frame", &frame.argument_names);
-        self.vec_payload("session_symbolic.frame", &frame.argument_type_flags);
+        self.frozen_frame("session_symbolic.frame", frame);
         if let Some(abi) = abi {
             self.abi(abi);
         }

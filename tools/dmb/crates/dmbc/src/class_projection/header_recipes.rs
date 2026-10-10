@@ -185,6 +185,7 @@ impl HeaderRecipes {
         self.defaults
             .retain_current_keys(std::iter::empty::<&[u8]>());
     }
+    #[cfg(test)]
     pub(crate) fn obtain(
         &self,
         owner: &[u8],
@@ -194,7 +195,21 @@ impl HeaderRecipes {
         native: BTreeSet<Vec<u8>>,
         parent: &Arc<HeaderRecipe>,
     ) -> (Vec<u8>, Arc<HeaderRecipe>) {
-        let mut key = b"dmbc-header-decisions-v3-shared-fields\0".to_vec();
+        self.obtain_with_name_reset(owner, authored, overrides, local, native, parent, false)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn obtain_with_name_reset(
+        &self,
+        owner: &[u8],
+        authored: &BTreeSet<String>,
+        overrides: &BTreeSet<String>,
+        local: BTreeSet<String>,
+        native: BTreeSet<Vec<u8>>,
+        parent: &Arc<HeaderRecipe>,
+        name_reset: bool,
+    ) -> (Vec<u8>, Arc<HeaderRecipe>) {
+        let mut key = b"dmbc-header-decisions-v4-null-name\0".to_vec();
+        key.push(u8::from(name_reset));
         key.extend_from_slice(&(owner.len() as u64).to_le_bytes());
         key.extend_from_slice(owner);
         strings(&mut key, authored);
@@ -209,7 +224,10 @@ impl HeaderRecipes {
             self.hits.fetch_add(1, Ordering::Relaxed);
             return (key, value);
         }
-        let value = produce(owner, authored, overrides, local, native, parent);
+        let mut value = produce(owner, authored, overrides, local, native, parent);
+        if name_reset {
+            value.authored_name = false;
+        }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         // Current-revision retention is bounded by the issued owner roster, not an approximate byte budget.
         let stored = self

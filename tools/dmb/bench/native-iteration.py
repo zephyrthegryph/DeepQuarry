@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import shutil
 import subprocess
 import time
 import uuid
@@ -51,6 +52,18 @@ def safe_e(path):
         if ancestor.exists() and getattr(ancestor.lstat(), "st_file_attributes", 0) & 0x400:
             raise ValueError(f"reparse ancestor rejected: {ancestor}")
     return path
+
+
+def disk_preflight(destination, minimum_free_bytes):
+    """Observed headroom only: concurrent writers can consume it after this check."""
+    existing = destination
+    while not existing.exists():
+        existing = existing.parent
+    usage = shutil.disk_usage(existing)
+    return {"status": "passed" if usage.free >= minimum_free_bytes else "failed",
+            "checked_path": str(existing), "free_bytes": usage.free,
+            "total_bytes": usage.total, "required_free_bytes": minimum_free_bytes,
+            "policy": "configurable headroom floor; no reservation or completion guarantee"}
 
 
 def isolate(source, destination, detached=()):
@@ -278,6 +291,8 @@ def main():
     parser.add_argument("--workers", type=int, choices=(2, 8), default=2)
     parser.add_argument("--output-root", default="E:/dq-cache/dmb-native-iterations")
     parser.add_argument("--overall-seconds", type=int, default=1800)
+    parser.add_argument("--minimum-free-gib", type=int, default=16,
+                        help="E: headroom floor before isolation/children (default 16 GiB; no reservation)")
     parser.add_argument("--require-owned-daemon", action="store_true",
                         help="opt in only for binaries implementing DMB_DAEMON_AUTOSTART=0")
     parser.add_argument("--worktree-sources", help="JSON array of exactly six distinct real E: Git worktree roots")
@@ -288,6 +303,24 @@ def main():
         parser.error("owned daemon lifecycle requires Windows")
     if not 1 <= args.overall_seconds <= 3600:
         parser.error("overall deadline must be between 1 and 3600 seconds")
+    if args.minimum_free_gib < 1:
+        parser.error("minimum free space must be at least 1 GiB")
+    output_parent = safe_e(args.output_root)
+    if not output_parent.is_relative_to(Path("E:/dq-cache")):
+        raise ValueError("output must be beneath E:/dq-cache")
+    # Previous real cohorts exhausted E: at roughly 10 GB free. Keep a
+    # configurable 16 GiB floor, outside all measured timers and before scans.
+    headroom = disk_preflight(output_parent, args.minimum_free_gib * 1024 ** 3)
+    if headroom["status"] != "passed":
+        root = output_parent / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
+        root.mkdir(parents=True)
+        failure = {"schema_version": 1, "status": "failed", "root": str(root),
+                   "failure_stage": "disk_preflight", "disk_preflight": headroom,
+                   "error": "insufficient observed E: headroom; no compiler child or source isolation started",
+                   "rows": []}
+        (root / "receipt.json").write_text(json.dumps(failure, indent=2), encoding="utf-8")
+        print(json.dumps({"receipt": str(root / "receipt.json"), "status": "failed"}))
+        return 1
     executable = safe_e(args.compiler)
     regular(executable)
     build_proof = build_receipt.authenticate(safe_e(args.build_receipt), executable, sha) if args.build_receipt else None
@@ -346,12 +379,10 @@ def main():
     source_snapshot_path = safe_e(args.source_snapshot)
     source_snapshot = json.loads(source_snapshot_path.read_text(encoding="utf-8"))
     closure_sha = authenticate_source_snapshot(source_snapshot, safe_e(args.input_closure), structural.pin, sha)
-    output_parent = safe_e(args.output_root)
-    if not output_parent.is_relative_to(Path("E:/dq-cache")):
-        raise ValueError("output must be beneath E:/dq-cache")
     root = output_parent / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
     root.mkdir(parents=True)
     receipt = {"schema_version": 1, "status": "running", "root": str(root),
+               "disk_preflight": headroom,
                "compiler_sha256": sha(executable), "template_sha256": sha(template),
                "build_provenance": build_proof,
                "scenario_sha256": sha(scenario_path), "workers": args.workers,
