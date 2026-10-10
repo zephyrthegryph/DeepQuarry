@@ -103,6 +103,11 @@ impl DriverInheritedFacts<'_> {
     /// even when a nearer implementation has authored different flags.
     fn source_predecessor(&self, member: MemberId) -> Result<Option<MemberId>, AbiError> {
         let tree = &self.frontend.snapshot.tree;
+        if let Ok(roster) = self.frontend.callable_roster() {
+            if let (Some(ordinal), Some(abi)) = (roster.ordinal(member), roster.abi()) {
+                return Ok(abi.entries()[ordinal].predecessor);
+            }
+        }
         let first = tree
             .member(member)
             .ok_or_else(|| AbiError::unsupported("indexed procedure member missing"))?
@@ -224,10 +229,21 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
     Ok(result)
 }
 
+#[path = "driver_facts/prepared_units.rs"]
+mod prepared_units;
+pub(crate) use prepared_units::PreparedAbiUnits;
 pub struct PreparedSourceAbi {
-    /// Encounter order, regardless of topological/worker completion order.
-    pub units: Vec<(MemberId, crate::procedure_policy::PreparedUnit)>,
+    units: Arc<PreparedAbiUnits>,
     pub diagnostics: Vec<(usize, AbiError)>,
+}
+impl PreparedSourceAbi {
+    /// Immutable producer order; source contexts remain on the current frontend.
+    pub fn units(&self) -> &[(MemberId, crate::procedure_policy::PreparedUnit)] {
+        self.units.entries()
+    }
+    pub(crate) fn units_owner(&self) -> &Arc<PreparedAbiUnits> {
+        &self.units
+    }
 }
 pub struct PreparedPinnedSourceAbi {
     pub policy_identity: u128,
@@ -449,15 +465,37 @@ fn prepare_source_abi_mode_on_executor(
     resource_search_context: Option<u128>,
     executor: &dm_exec::BuildExecutor,
     lexical_statics: bool,
-    issued_units: Option<&BTreeMap<UnitIdentity, MemberId>>,
+    issued_units: Option<&Arc<BTreeMap<UnitIdentity, MemberId>>>,
     artifacts: Option<&AbiArtifacts>,
 ) -> Result<PreparedSourceAbi, AbiError> {
+    let batch_inputs = artifacts.and_then(|store| {
+        abi_artifacts::batch::inputs(
+            store,
+            frontend,
+            engine,
+            boundaries,
+            evaluator,
+            resource_search_context,
+            lexical_statics,
+        )
+    });
+    if let (Some(store), Some(inputs)) = (artifacts, batch_inputs.as_ref()) {
+        if let Some(prepared) = abi_artifacts::batch::replay(store, inputs, evaluator.resolver) {
+            return Ok(prepared);
+        }
+    }
+    let batch_capture = batch_inputs
+        .as_ref()
+        .map(|_| abi_artifacts::batch::Capture::default());
+    let semantic_host = abi_artifacts::admission::SemanticHost(evaluator.resolver);
+    let shared_admission = (!evaluator.resolver.observes_reads())
+        .then(|| dm_session::ReceiptAdmission::new(&semantic_host));
     let artifact_keys = std::sync::Mutex::new(Vec::new());
     let owned_index;
     let index = match issued_units {
         Some(index) => index,
         None => {
-            owned_index = unit_members(frontend)?;
+            owned_index = Arc::new(unit_members(frontend)?);
             &owned_index
         }
     };
@@ -557,6 +595,8 @@ fn prepare_source_abi_mode_on_executor(
                                                 &inherited,
                                                 lexical_statics,
                                                 resource_search_context,
+                                                shared_admission.as_ref(),
+                                                batch_capture.as_ref(),
                                             ),
                                             None => policy.prepare_view(metadata, parsed, &context),
                                         }
@@ -627,16 +667,29 @@ fn prepare_source_abi_mode_on_executor(
     if let Some(artifacts) = artifacts {
         artifacts.prune(&artifact_keys);
     }
-    Ok(PreparedSourceAbi {
-        units: results
-            .into_iter()
-            .enumerate()
-            .filter_map(|(ordinal, result)| {
-                result.map(|unit| (frontend.bodies[ordinal].member, unit))
-            })
-            .collect(),
-        diagnostics: failures.into_iter().collect(),
-    })
+    let entries = results
+        .into_iter()
+        .enumerate()
+        .filter_map(|(ordinal, result)| result.map(|unit| (frontend.bodies[ordinal].member, unit)))
+        .collect();
+    let diagnostics: Vec<_> = failures.into_iter().collect();
+    let units =
+        PreparedAbiUnits::issue(frontend, Arc::clone(index), entries, diagnostics.is_empty())?;
+    let prepared = PreparedSourceAbi { units, diagnostics };
+    if prepared.diagnostics.is_empty() {
+        if let (Some(store), Some(inputs)) = (artifacts, batch_inputs) {
+            if let Some(capture) = &batch_capture {
+                abi_artifacts::batch::remember(
+                    store,
+                    inputs,
+                    evaluator.resolver,
+                    capture,
+                    prepared.units_owner(),
+                );
+            }
+        }
+    }
+    Ok(prepared)
 }
 
 /// Immutable prepared-unit consumer for the existing lowering trait. Only this
@@ -644,7 +697,6 @@ fn prepare_source_abi_mode_on_executor(
 pub struct FrozenPreparedPolicy<'a> {
     frontend: &'a ColdFrontend,
     prepared: &'a PreparedSourceAbi,
-    by_identity: BTreeMap<UnitIdentity, usize>,
     members: Arc<BTreeMap<UnitIdentity, MemberId>>,
     roster: &'a dm_tree::frontend::CallableRoster,
 }
@@ -658,7 +710,7 @@ impl<'a> FrozenPreparedPolicy<'a> {
                 "cannot lower a failed ABI preparation batch",
             ));
         }
-        let members = Arc::new(unit_members(frontend)?);
+        let members = Arc::clone(prepared.units.members());
         Self::new_with_units(frontend, prepared, members)
     }
     pub(crate) fn new_with_units(
@@ -677,40 +729,10 @@ impl<'a> FrozenPreparedPolicy<'a> {
                 "issued callable index differs from frontend",
             ));
         }
-        let mut by_identity = BTreeMap::new();
-        for (index, (member, unit)) in prepared.units.iter().enumerate() {
-            unit.require_production_abi()?;
-            let issued = roster.identity_for_member(*member).ok_or_else(|| {
-                AbiError::unsupported("prepared member belongs to another frontend")
-            })?;
-            let identity = UnitIdentity {
-                owner: issued.owner,
-                name: issued.name,
-                namespace: if issued.verb {
-                    Namespace::Verb
-                } else {
-                    Namespace::Proc
-                },
-                occurrence: issued.occurrence,
-            };
-            if members.get(&identity) != Some(member) {
-                return Err(AbiError::unsupported(
-                    "issued callable index differs from frontend",
-                ));
-            }
-            if by_identity.insert(identity, index).is_some() {
-                return Err(AbiError::unsupported("duplicate prepared member"));
-            }
-        }
-        if by_identity.len() != members.len() {
-            return Err(AbiError::unsupported(
-                "prepared ABI batch does not cover all bodies",
-            ));
-        }
+        prepared.units.admit(frontend, &members)?;
         Ok(Self {
             frontend,
             prepared,
-            by_identity,
             members,
             roster,
         })
@@ -719,11 +741,22 @@ impl<'a> FrozenPreparedPolicy<'a> {
         &self,
         identity: UnitIdentity,
     ) -> Result<&crate::procedure_policy::PreparedUnit, String> {
-        self.by_identity
+        let member = self
+            .members
             .get(&identity)
-            .map(|index| &self.prepared.units[*index].1)
+            .ok_or("prepared ABI identity missing")?;
+        let ordinal = self
+            .roster
+            .ordinal(*member)
+            .ok_or("prepared ABI member missing")?;
+        self.prepared
+            .units()
+            .get(ordinal)
+            .filter(|(id, _)| id == member)
+            .map(|(_, unit)| unit)
             .ok_or_else(|| "prepared ABI identity missing".into())
     }
+
     fn validate(
         &self,
         identity: UnitIdentity,

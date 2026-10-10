@@ -252,6 +252,13 @@ impl dm_ir::Resolver for SemanticTree {
                     })
                     .unwrap_or(M::Missing)
             }
+            Q::MemberCallableName(name) => {
+                return if self.source_member_callable_name(name) == Some(true) {
+                    M::Presence(true)
+                } else {
+                    M::Unsupported(query)
+                };
+            }
             Q::GlobalVar(name) => member(root, name, MemberKind::Var),
             Q::GlobalProc(name) => member(root, name, MemberKind::Proc),
             Q::DeclarationChain { owner, name, verb } => {

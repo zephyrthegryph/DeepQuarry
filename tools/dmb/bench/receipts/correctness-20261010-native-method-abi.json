@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "scope": "Focused executable-method and shared request/ABI checks; not full runtime or full migration acceptance",
+  "gates": [
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-183538-c811957e-focused.json",
+      "binary_sha256": "ab3623815636f2aa57b3c5d0483e0f4a46806fe224c0bc426d834541759be56d",
+      "filters": [
+        {
+          "filter": "lowering::tests::incomplete_expression::",
+          "selected": 6,
+          "exit": 0
+        },
+        {
+          "filter": "engine_host::intrinsic_methods::closed_namespace_tests::",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-183539-f191252d-focused.json",
+      "binary_sha256": "74853fedeed0e560d70314edb650d859c1a2fa3c786e0d8f01de37fab82f477e",
+      "filters": [
+        {
+          "filter": "lower_resolver::missing_call_tests::",
+          "selected": 5,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-182809-a6ee05f0-focused.json",
+      "binary_sha256": "96f0d3bba7b2420afd3e0c912ff9ddacf9ba1cce892b2d1facb1252c051f66f1",
+      "filters": [
+        {
+          "filter": "engine_host::intrinsic_methods::closed_namespace_tests::",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "driver_facts::abi_artifacts::production_tests::",
+          "selected": 7,
+          "exit": 0
+        },
+        {
+          "filter": "driver_facts::abi_artifacts::tests::shared_abi_semantic_leaf",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-182809-05f9244e-focused.json",
+      "binary_sha256": "a87aeffd180632121fe54d2abde8ad201dd867e37c2931b405e63df358d1fbca",
+      "filters": [
+        {
+          "filter": "observations::receipt_admission::request_certificate_tests::",
+          "selected": 3,
+          "exit": 0
+        },
+        {
+          "filter": "artifacts::tests::custom_receipt_validation_preserves_rejection_and_old_replay",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    }
+  ],
+  "remaining": [
+    "Safe-call and catch diagnostics corrections",
+    "Windows absolute-include runtime path integration",
+    "Current frozen native full game suite",
+    "Structural incremental scheduling and initializer migration",
+    "Six worktrees and real history oracle"
+  ],
+  "performance": "No accepted benchmark in this receipt"
+}

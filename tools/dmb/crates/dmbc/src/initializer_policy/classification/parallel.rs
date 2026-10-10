@@ -1,12 +1,10 @@
 //! Per-type independent evaluation; token issuance and output ordering remain serial.
+use super::token_roster::preparation::{Bucket, Policy, Preparation};
 use super::*;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Mutex,
 };
-struct Bucket {
-    ordinals: Vec<usize>,
-}
 fn map_buckets<T: Send>(
     buckets: &[Bucket],
     evaluator: ParallelEvaluator<'_>,
@@ -92,22 +90,15 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
     }
     let reuse = reuse.filter(|_| factory_policy.is_some());
-    let mut buckets: Vec<Bucket> = Vec::new();
-    let mut indexes = std::collections::HashMap::new();
-    for (ordinal, write) in writes.iter().enumerate() {
-        let index = *indexes.entry(write.lexical_owner).or_insert_with(|| {
-            let index = buckets.len();
-            buckets.push(Bucket {
-                ordinals: Vec::new(),
-            });
-            index
-        });
-        buckets[index].ordinals.push(ordinal);
-    }
+    let preparation = match reuse.filter(|reuse| reuse.store.roster_enabled) {
+        Some(reuse) => reuse.store.roster.preparation(writes),
+        None => Preparation::new(writes),
+    };
+    let buckets = preparation.buckets.as_ref();
     let modifier_keys = reuse.and_then(|reuse| {
         crate::initializer_policy::modifier_facts::keys(writes, evaluator, reuse)
     });
-    let facts = map_buckets(&buckets, evaluator, executor, |_, bucket, worker| {
+    let facts = map_buckets(buckets, evaluator, executor, |_, bucket, worker| {
         if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {
             return crate::initializer_policy::modifier_facts::modifier_facts_reused(
                 bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
@@ -125,6 +116,12 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             worker,
             Some(&bucket.ordinals),
         )
+    })
+    .map_err(|error| {
+        if let Some(reuse) = reuse {
+            reuse.store.roster.clear_preparation();
+        }
+        error
     })?;
     let mut issues = Vec::new();
     let mut admitted = Vec::with_capacity(facts.len());
@@ -135,10 +132,28 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
     }
     if !issues.is_empty() {
+        if let Some(reuse) = reuse {
+            reuse.store.roster.clear_preparation();
+        }
         issues.sort_by_key(|issue| issue.source_ordinal);
         return Err(ClassificationError { issues });
     }
     let locators = reuse.map(|reuse| {
+        let policy = factory_policy.expect("certified reuse policy");
+        let preparation_policy = Policy {
+            classification: reuse.policy,
+            factory: policy,
+            resource: reuse.resource_search_context,
+            engine: evaluator.engine.map(|engine| engine.identity()),
+        };
+        if reuse.store.roster_enabled {
+            if let Some(keys) = modifier_keys.as_ref().and_then(|keys| {
+                preparation.admitted_locations(keys, &admitted, preparation_policy)
+            }) {
+                artifact::retain_roster(reuse, &keys.keys);
+                return keys.keys.clone();
+            }
+        }
         let mut ordered_facts = vec![None; writes.len()];
         for (bucket, facts) in buckets.iter().zip(&admitted) {
             for (&ordinal, &fact) in bucket.ordinals.iter().zip(facts) {
@@ -149,7 +164,6 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             .into_iter()
             .map(|fact| fact.expect("modifier buckets cover the write roster"))
             .collect();
-        let policy = factory_policy.expect("certified reuse policy");
         let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
         let keys = Arc::new(
             writes
@@ -165,6 +179,16 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .collect::<Vec<_>>(),
         );
         artifact::retain_roster(reuse, &keys);
+        if reuse.store.roster_enabled {
+            if let Some(inputs) = modifier_keys.as_ref() {
+                preparation.remember_locations(
+                    inputs,
+                    ordered_facts,
+                    keys.clone(),
+                    preparation_policy,
+                );
+            }
+        }
         keys
     });
     // No evaluation begins unless every modifier boundary was admitted.
@@ -175,7 +199,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         reuse.map(|reuse| &reuse.store.roster),
     );
     let receipt_pool = reuse.map(|_| artifact::ReceiptPool::default());
-    let classified = map_buckets(&buckets, evaluator, executor, |index, bucket, worker| {
+    let classified = map_buckets(buckets, evaluator, executor, |index, bucket, worker| {
         let mut ordinal = 0;
         let result = if let Some(reuse) = reuse {
             bucket
@@ -215,6 +239,12 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             source_ordinal: bucket.ordinals[ordinal],
             reason: failure.reason,
         })
+    })
+    .map_err(|error| {
+        if let Some(reuse) = reuse {
+            reuse.store.roster.clear_preparation();
+        }
+        error
     })?;
     let mut ordered: Vec<Option<PendingWrite>> = (0..writes.len()).map(|_| None).collect();
     let mut errors = Vec::new();
@@ -230,6 +260,9 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
     }
     if let Some(error) = errors.into_iter().min_by_key(|error| error.source_ordinal) {
+        if let Some(reuse) = reuse {
+            reuse.store.roster.clear_preparation();
+        }
         return Err(ClassificationError {
             issues: vec![error],
         });
@@ -247,11 +280,16 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         ),
         _ => finish_pending_shared(pending, &mut source_ordinal, tokens.issuer()),
     };
-    result.map_err(|reason| ClassificationError {
-        issues: vec![ClassificationIssue {
-            kind: ClassificationIssueKind::Unsupported,
-            source_ordinal,
-            reason,
-        }],
+    result.map_err(|reason| {
+        if let Some(reuse) = reuse {
+            reuse.store.roster.clear_preparation();
+        }
+        ClassificationError {
+            issues: vec![ClassificationIssue {
+                kind: ClassificationIssueKind::Unsupported,
+                source_ordinal,
+                reason,
+            }],
+        }
     })
 }

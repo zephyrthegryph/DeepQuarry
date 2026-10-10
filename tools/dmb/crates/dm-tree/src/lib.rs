@@ -131,6 +131,7 @@ pub struct SemanticTree {
     types: Arc<[TypeNode]>,
     members: MemberArena,
     host_selections: Arc<host_declaration_selection::Selections>,
+    member_callable_names: Arc<std::collections::BTreeMap<SymbolId, u8>>,
     owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
     owner_ancestry: Arc<std::collections::BTreeMap<SymbolId, Arc<[SymbolId]>>>,
     owner_callables: Arc<std::collections::BTreeMap<SymbolId, u128>>,
@@ -561,6 +562,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         types: types.into(),
         members: MemberArena::default(),
         host_selections: Arc::new(Default::default()),
+        member_callable_names: Arc::new(Default::default()),
         owner_hierarchy: Arc::new(Default::default()),
         owner_ancestry: Arc::new(Default::default()),
         owner_callables: Arc::new(Default::default()),
@@ -789,6 +791,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         Some((_, retained)) => retained.publish_members(&members, member_projection.as_ref()),
         None => members.bind_all(),
     };
+    tree.refresh_member_callable_names();
     if rebuild_inventory {
         if let Some((index, retained)) = normalization {
             tree.rebuild_inventory_retained(index, &retained.storage, None);
@@ -825,6 +828,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
 mod tree_identity;
 use tree_identity::metadata_fingerprint;
 mod resolver_impl;
+mod resolver_member_names;
 
 #[cfg(test)]
 #[path = "tree_tests.rs"]

@@ -10,24 +10,36 @@ use std::sync::{
 #[path = "abi_observations.rs"]
 pub(crate) mod observations;
 use observations::{Answer, Domain, Query};
-pub(crate) struct Artifact {
+#[path = "abi_admission.rs"]
+pub(super) mod admission;
+pub(crate) struct UnitArtifact {
     pub(crate) canonical: Option<Arc<crate::procedure_policy::PreparedCanonical>>,
     pub(crate) inputs: Arc<ProcedureInputs>,
     pub(crate) abi: Arc<PreparedAbi>,
 }
+#[path = "abi_batch.rs"]
+pub(super) mod batch;
+pub(crate) enum Artifact {
+    Unit(Arc<UnitArtifact>),
+    Batch(Arc<batch::Recipe>),
+}
 pub struct AbiArtifacts {
     store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
+    groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
     reused: AtomicUsize,
     recomputed: AtomicUsize,
+    batch_reused: AtomicUsize,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
         Self {
             store: dm_session::ObservedArtifactStore::current_revision(),
             engine_owner: None,
+            groups: Default::default(),
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
+            batch_reused: AtomicUsize::new(0),
         }
     }
 }
@@ -50,6 +62,12 @@ impl AbiArtifacts {
     ) {
         self.store.visit_storage(visitor);
     }
+    pub(crate) fn visit_group_storage(&self, visitor: impl FnMut(usize, usize, usize)) {
+        self.groups.visit_storage(visitor);
+    }
+    pub fn batch_reused(&self) -> usize {
+        self.batch_reused.load(Ordering::Relaxed)
+    }
     pub fn totals(&self) -> (usize, usize) {
         (
             self.reused.load(Ordering::Relaxed),
@@ -60,6 +78,7 @@ impl AbiArtifacts {
         let keys = keys.lock().unwrap_or_else(|error| error.into_inner());
         self.store
             .retain_current_keys(keys.iter().map(|key| key.as_ref()));
+        self.groups.prune();
     }
 }
 struct BorrowedResolver<'a>(&'a dyn Resolver);
@@ -83,6 +102,8 @@ pub(super) fn prepare(
     inherited: &DriverInheritedFacts<'_>,
     lexical: bool,
     resource: Option<u128>,
+    admission: Option<&admission::Admission<'_>>,
+    batch_capture: Option<&batch::Capture>,
 ) -> Result<PreparedUnit, AbiError> {
     // Always authenticate the current issued header/settings before accepting old answers.
     let authenticated = settings.is_some_and(|proof| proof.authenticates(parsed, metadata));
@@ -148,11 +169,23 @@ pub(super) fn prepare(
     let key = observations::locator(context.identity);
     let base = BorrowedResolver(evaluator.resolver);
     if let Some(current) = &current {
-        if let Some(artifact) = store.store.lookup(&key, current) {
+        if let Some(accepted) = store
+            .store
+            .visit_receipted_with(
+                &key,
+                &mut |reads, versions| admission::changed(reads, versions, current, admission),
+                &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
+            )
+            .0
+        {
             keys.lock()
                 .unwrap_or_else(|error| error.into_inner())
                 .push(Arc::clone(&key));
             store.reused.fetch_add(1, Ordering::Relaxed);
+            let Artifact::Unit(artifact) = accepted.value.as_ref() else {
+                unreachable!("unit consumer checked")
+            };
+            batch::record(batch_capture, context.identity, artifact, &accepted.reads);
             return Ok(PreparedUnit {
                 canonical: artifact.canonical.clone(),
                 inputs: artifact.inputs.clone(),
@@ -200,7 +233,18 @@ pub(super) fn prepare(
         );
         let inputs = Arc::clone(&unit.inputs);
         let reads = observations::reads(current.inputs, recording.reads());
-        let versions = recording
+        // Inputs stays a separate leaf; semantic runs share only exact individual
+        // observations and domain identities. No dependency edges are collapsed.
+        let reads = store
+            .groups
+            .intern_receipt(reads, |a, b| {
+                matches!(
+                    (&a.query, &b.query),
+                    (Query::Semantic(_), Query::Semantic(_))
+                ) && a.domain == b.domain
+            })
+            .map_err(AbiError::invariant)?;
+        let versions: Vec<_> = recording
             .domain_receipts()
             .into_iter()
             .map(|(domain, version)| (Domain::Semantic(domain), version))
@@ -210,15 +254,23 @@ pub(super) fn prepare(
         let charge = std::mem::size_of::<Artifact>()
             + std::mem::size_of::<observations::Inputs>()
             + key.len();
-        if store
-            .store
-            .insert_with_owned(Arc::clone(&key), reads, versions, charge, || Artifact {
-                inputs,
-                abi,
-                canonical: unit.canonical.clone(),
-            })
-            .is_some()
-        {
+        let captured_reads = reads.clone();
+        if let Some(accepted) = store.store.insert_with_receipt(
+            Arc::clone(&key),
+            reads,
+            versions.into(),
+            charge,
+            || {
+                Artifact::Unit(Arc::new(UnitArtifact {
+                    inputs,
+                    abi,
+                    canonical: unit.canonical.clone(),
+                }))
+            },
+        ) {
+            if let Artifact::Unit(artifact) = accepted.as_ref() {
+                batch::record(batch_capture, context.identity, artifact, &captured_reads);
+            }
             keys.lock()
                 .unwrap_or_else(|error| error.into_inner())
                 .push(key);

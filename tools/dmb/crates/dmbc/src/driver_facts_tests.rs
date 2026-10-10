@@ -360,7 +360,7 @@ impl Resolver for MissingHost {
 fn abi_failures_keep_each_captured_source_and_specific_cause() {
     let frontend = frontend();
     let prepared = PreparedSourceAbi {
-        units: Vec::new(),
+        units: PreparedAbiUnits::failed_empty(),
         diagnostics: vec![
             (
                 1,
@@ -407,7 +407,7 @@ fn pinned_constructor_prepares_source_dependency_without_caller_fresh_map() {
         "{:?}",
         prepared.prepared.diagnostics
     );
-    assert_eq!(prepared.prepared.units.len(), frontend.bodies.len());
+    assert_eq!(prepared.prepared.units().len(), frontend.bodies.len());
     assert_ne!(prepared.policy_identity, engine.identity());
     let policy = FrozenPreparedPolicy::new(&frontend, &prepared.prepared).unwrap();
     let mut overlay = dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
@@ -474,14 +474,14 @@ fn predecessor_abi_waves_preserve_encounter_order_and_inherited_layout() {
     let batch = prepare_source_abi(&frontend, &engine, &evaluator, &boundaries, None, 2).unwrap();
     assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
     assert_eq!(
-        batch.units.iter().map(|(id, _)| *id).collect::<Vec<_>>(),
+        batch.units().iter().map(|(id, _)| *id).collect::<Vec<_>>(),
         frontend
             .bodies
             .iter()
             .map(|body| body.member)
             .collect::<Vec<_>>()
     );
-    for (_, unit) in &batch.units {
+    for (_, unit) in batch.units() {
         assert_eq!(
             unit.require_production_abi()
                 .unwrap()
@@ -515,7 +515,7 @@ fn unknown_root_abi_is_not_fresh_and_blocks_descendants() {
     };
     let batch =
         prepare_source_abi(&frontend, &engine, &evaluator, &BTreeMap::new(), None, 8).unwrap();
-    assert!(batch.units.is_empty());
+    assert!(batch.units().is_empty());
     assert_eq!(batch.diagnostics.len(), frontend.bodies.len());
     assert!(batch
         .diagnostics

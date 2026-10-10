@@ -41,6 +41,13 @@ fn body_shift_reuses_indexes_with_current_source_and_structural_edits_replace_th
     let roster = current.callable_roster().unwrap();
     assert!(Arc::ptr_eq(old_roster, roster));
     assert_eq!(roster.members().len(), 2);
+    let abi = current.callable_abi_roster().unwrap().unwrap();
+    assert!(Arc::ptr_eq(
+        old.callable_abi_roster().unwrap().unwrap(),
+        abi
+    ));
+    assert_eq!(abi.entries()[0].predecessor, None);
+    assert_eq!(abi.entries()[1].predecessor, Some(abi.entries()[0].member));
     assert_eq!(roster.ready(), &[0]);
     assert_eq!(roster.dependents(0), &[1]);
     assert_eq!(roster.identity(0).unwrap().occurrence, 0);
@@ -50,6 +57,7 @@ fn body_shift_reuses_indexes_with_current_source_and_structural_edits_replace_th
     let mut tampered = current.clone();
     tampered.bodies = Arc::clone(&old.bodies);
     assert!(tampered.callable_roster().is_err());
+    assert!(tampered.callable_abi_roster().is_err());
     let changed = build(
         &mut state,
         "/datum/test/proc/p()\n    return 3\n/datum/test/proc/q()\n    return 2\n",
@@ -61,4 +69,28 @@ fn body_shift_reuses_indexes_with_current_source_and_structural_edits_replace_th
         old_roster.identity(1).unwrap().name,
         dm_ir::SymbolId::of("p")
     );
+}
+
+#[test]
+fn abi_roster_equality_covers_settings_signature_and_current_parent_structure() {
+    let mut state = RetainedSemanticTree::default();
+    let first = build(
+        &mut state,
+        "/datum/base/proc/p(x=1)\n    set waitfor = 0\n    return x\n/datum/base/child\n",
+    );
+    let before = first.callable_abi_roster().unwrap().unwrap();
+    let shifted = build(&mut state, "// moved\n/datum/base/proc/p(x=1)\n    set waitfor = 0\n    return x+2\n/datum/base/child\n");
+    assert!(before == shifted.callable_abi_roster().unwrap().unwrap());
+    let signature = build(
+        &mut state,
+        "/datum/base/proc/p(x=2)\n    set waitfor = 0\n    return x\n/datum/base/child\n",
+    );
+    assert!(before != signature.callable_abi_roster().unwrap().unwrap());
+    let settings = build(
+        &mut state,
+        "/datum/base/proc/p(x=1)\n    set waitfor = 1\n    return x\n/datum/base/child\n",
+    );
+    assert!(before != settings.callable_abi_roster().unwrap().unwrap());
+    let ancestry = build(&mut state, "/datum/base/proc/p(x=1)\n    set waitfor = 0\n    return x\n/datum/base/child\n    parent_type = /datum\n");
+    assert!(before != ancestry.callable_abi_roster().unwrap().unwrap());
 }

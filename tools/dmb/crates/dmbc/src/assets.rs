@@ -66,7 +66,8 @@ pub fn discover_extra(
         }
     }
     for skin in skins {
-        let relative = skin.path.strip_prefix(project_root).map_err(|_| {
+        let relative = dm_preprocess::regions::relative_filesystem_path(&skin.path, project_root)
+            .ok_or_else(|| {
             CaptureError::Invalid(
                 "skin include outside project requires an explicit archive alias".into(),
             )
@@ -164,6 +165,22 @@ pub fn capture_discovered_on_executor<P: CaptureProvider + Sync>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(windows)]
+    #[test]
+    fn mixed_drive_prefix_skin_keeps_input_identity_and_rejects_external_alias() {
+        let mut skin = CapturedSkin {
+            path: Arc::new(PathBuf::from(r"E:\game\interface\main.dmf")),
+            include_occurrence: 4,
+            source: Arc::from("window \"main\"\n"),
+            source_identity: 0,
+        };
+        let extra =
+            discover_extra(Path::new(r"\\?\E:\game"), &[], std::slice::from_ref(&skin)).unwrap();
+        assert_eq!(extra.skins[0].archive_name, "interface/main.dmf");
+        assert_eq!(&extra.skins[0].disk_path, skin.path.as_ref());
+        skin.path = Arc::new(PathBuf::from(r"E:\game-other\interface\main.dmf"));
+        assert!(discover_extra(Path::new(r"\\?\E:\game"), &[], &[skin]).is_err());
+    }
     #[test]
     fn map_resources_have_exact_assignment_sources_and_skin_encoding_is_bound() {
         let map=dm_tree::maps::plan(dm_tree::maps::CapturedMap {path:Arc::new(PathBuf::from("game/maps/probe.dmm")),include_occurrence:3,source:Arc::from("\"a\"=(/obj{icon='icons/a.dmi';message=\"ordinary 'ignored.png'\";sound='sound/a.ogg'})\n(1,1,1)={\"a\"}")}).unwrap();

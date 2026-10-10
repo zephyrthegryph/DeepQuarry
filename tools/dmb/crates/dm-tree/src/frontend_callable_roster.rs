@@ -7,6 +7,9 @@ use std::{
     sync::Arc,
 };
 
+#[path = "frontend_callable_abi_roster.rs"]
+mod abi;
+pub use abi::{CallableAbiEntry, CallableAbiRoster};
 #[derive(Debug)]
 pub struct CallableRoster {
     tree: Arc<SemanticTree>,
@@ -15,6 +18,7 @@ pub struct CallableRoster {
     ordinals: HashMap<MemberId, usize>,
     dependents: Vec<Vec<usize>>,
     ready: Vec<usize>,
+    abi: Option<Arc<CallableAbiRoster>>,
 }
 impl PartialEq for CallableRoster {
     fn eq(&self, other: &Self) -> bool {
@@ -67,6 +71,7 @@ impl CallableRoster {
                 }
             }
         }
+        let abi = CallableAbiRoster::issue(tree, &members, &identities).ok();
         Ok(Arc::new(Self {
             tree: Arc::clone(tree),
             members,
@@ -74,6 +79,7 @@ impl CallableRoster {
             ordinals,
             dependents,
             ready,
+            abi,
         }))
     }
     pub(super) fn matches(&self, tree: &Arc<SemanticTree>, bodies: &[BodyOccurrence]) -> bool {
@@ -96,6 +102,9 @@ impl CallableRoster {
     }
     pub fn identity_for_member(&self, member: MemberId) -> Option<ProcedureIdentity> {
         self.identity(self.ordinal(member)?)
+    }
+    pub fn abi(&self) -> Option<&Arc<CallableAbiRoster>> {
+        self.abi.as_ref()
     }
     pub fn members(&self) -> &[MemberId] {
         &self.members

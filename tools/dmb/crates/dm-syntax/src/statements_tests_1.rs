@@ -370,6 +370,7 @@ fn try_catch_and_throw_are_structured() {
     let StatementKind::Try {
         body: protected,
         catch_binding,
+        catch_header_span: _,
         catch_body,
     } = &body.statements[0].kind
     else {

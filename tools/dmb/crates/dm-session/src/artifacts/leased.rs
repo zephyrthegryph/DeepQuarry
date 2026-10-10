@@ -14,6 +14,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 leases: BTreeMap::new(),
                 next_lease: 0,
                 claims: BTreeMap::new(),
+                incidence: None,
             }),
             retention: Retention::SharedCurrentRosters,
         })
@@ -53,6 +54,9 @@ fn release<T, Q, A, D>(
     let removed = bucket.remove(index);
     if bucket.is_empty() {
         state.buckets.remove(&hash);
+    }
+    if let Some(index) = &mut state.incidence {
+        index.remove(pointer as u64);
     }
     state.bytes = state.bytes.saturating_sub(removed.weight);
     Some(removed)
@@ -130,6 +134,8 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
         self.store.visit_storage(visit);
     }
+}
+impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
     fn claim(&self, key: &[u8], receipt: ObservedArtifact<T, Q, A, D>) -> Arc<T> {
         let mut state = self
             .store
@@ -150,6 +156,8 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
             .map(|entry| Arc::clone(&entry.key));
         let key = stored_key.clone().unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
+            let incidence_reads = state.incidence.as_ref().map(|_| receipt.reads.clone());
+            let bucket = state.buckets.get_mut(&hash).expect("claimed bucket");
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads: receipt.reads,
@@ -157,6 +165,9 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
                 value: Arc::clone(&receipt.value),
                 weight: receipt.weight,
             });
+            if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
+                index.insert(pointer as u64, &reads);
+            }
             state.bytes = state.bytes.saturating_add(receipt.weight);
         }
         let detached = assign(&mut state, self.id, key, hash, pointer);
@@ -223,6 +234,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .state
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
         let bucket = state
             .buckets
             .entry(hash)
@@ -241,6 +253,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 value: Arc::clone(&value),
                 weight,
             });
+            if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
+                index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+            }
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)
         };

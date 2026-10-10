@@ -88,6 +88,9 @@ fn distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline() {
     for previous_prefix in [
         b"dmbc-procedure-memo-v7-diagnostic-anchors\0".as_slice(),
         b"dmbc-procedure-memo-v8-certified-missing-calls\0".as_slice(),
+        b"dmbc-procedure-memo-v9-formal-scope\0".as_slice(),
+        b"dmbc-procedure-memo-v10-typed-missing-member\0".as_slice(),
+        b"dmbc-procedure-memo-v11-member-call-namespace\0".as_slice(),
     ] {
         let mut previous = previous_prefix.to_vec();
         previous.extend_from_slice(&bytes[PREFIX.len()..]);

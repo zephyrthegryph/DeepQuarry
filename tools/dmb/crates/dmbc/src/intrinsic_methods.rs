@@ -4,15 +4,24 @@
 use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId, SymbolTable};
 use std::{collections::BTreeMap, sync::Arc};
 
+#[path = "intrinsic_methods/closed_namespace.rs"]
+mod closed_namespace;
+pub(super) use closed_namespace::ClosedNamespace;
+pub(super) use closed_namespace::EVIDENCE as CLOSED_NAMESPACE_POLICY;
+
 pub(super) type NativeMethods = Arc<BTreeMap<(SymbolId, SymbolId), Arc<[u8]>>>;
 #[derive(Clone, Debug)]
 pub(super) struct IntrinsicMethods {
     source: Arc<dm_tree::SemanticTree>,
     methods: NativeMethods,
+    closed: Option<Arc<ClosedNamespace>>,
 }
 
 impl IntrinsicMethods {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        if let Some(closed) = &self.closed {
+            closed.census(census);
+        }
         let owner = "host.intrinsic_methods";
         if census.arc_object(owner, &self.methods) {
             census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
@@ -36,10 +45,22 @@ impl IntrinsicMethods {
         current
             .merge_from(&spellings)
             .map_err(|error| format!("native symbol {error:?}"))?;
-        Ok(Self { source, methods })
+        Ok(Self {
+            source,
+            methods,
+            closed: None,
+        })
     }
-    pub(super) fn from_payload(source: Arc<dm_tree::SemanticTree>, methods: NativeMethods) -> Self {
-        Self { source, methods }
+    pub(super) fn from_payload(
+        source: Arc<dm_tree::SemanticTree>,
+        methods: NativeMethods,
+        closed: Arc<ClosedNamespace>,
+    ) -> Self {
+        Self {
+            source,
+            methods,
+            closed: Some(closed),
+        }
     }
     pub(super) fn capture_payload(
         catalog: &serde_json::Value,
@@ -120,6 +141,9 @@ impl IntrinsicMethods {
         Ok((Arc::new(methods), spellings))
     }
     pub(super) fn resolve(&self, query: ResolveQuery) -> Option<ResolvedMeaning> {
+        if let ResolveQuery::MemberCallableName(name) = query {
+            return self.closed.as_ref()?.member_name(&self.source, name);
+        }
         let (owner, name, verb) = match query {
             ResolveQuery::Proc { owner, name, verb }
             | ResolveQuery::MethodProcedureValue { owner, name, verb } => (owner, name, Some(verb)),
@@ -129,11 +153,21 @@ impl IntrinsicMethods {
         if owner == SymbolId::of("/") {
             return None;
         }
+        let excludes = self
+            .closed
+            .as_ref()
+            .is_some_and(|closed| closed.excludes(&self.source, owner, name));
+        let negative = || {
+            excludes.then(|| match verb {
+                None => ResolvedMeaning::Presence(false),
+                Some(_) => ResolvedMeaning::Missing,
+            })
+        };
         let mut current = self.source.lookup_type(owner)?;
         loop {
             let declaring_owner = self.source.type_node(current)?.path;
             if declaring_owner == SymbolId::of("/") {
-                return None;
+                return negative();
             }
             if self.methods.contains_key(&(declaring_owner, name)) {
                 return Some(match verb {
@@ -147,7 +181,10 @@ impl IntrinsicMethods {
                     Some(true) => ResolvedMeaning::Missing,
                 });
             }
-            current = self.source.parent(current)?;
+            let Some(parent) = self.source.parent(current) else {
+                return negative();
+            };
+            current = parent;
         }
     }
 }
@@ -314,3 +351,7 @@ mod tests {
             .is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "intrinsic_methods/closed_namespace_tests.rs"]
+mod closed_namespace_tests;

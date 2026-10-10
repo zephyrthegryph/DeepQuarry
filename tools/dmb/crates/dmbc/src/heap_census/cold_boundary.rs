@@ -146,9 +146,29 @@ impl HeapCensus {
         &mut self,
         prepared: &crate::driver_facts::PreparedSourceAbi,
     ) {
-        self.vec_payload("prepared_source_abi.units", &prepared.units);
+        self.prepared_abi_units(prepared.units_owner());
         self.vec_payload("prepared_source_abi.diagnostics", &prepared.diagnostics);
-        for (_, unit) in &prepared.units {
+        if !prepared.diagnostics.is_empty() {
+            self.unknown(
+                "prepared_source_abi.diagnostics",
+                "nested ABI error payloads not exposed by this boundary adapter",
+            );
+        }
+    }
+    pub(crate) fn prepared_abi_units(
+        &mut self,
+        owner: &std::sync::Arc<crate::driver_facts::PreparedAbiUnits>,
+    ) {
+        if !self.arc_object("prepared_source_abi.owner", owner) {
+            return;
+        }
+        owner.visit_storage(|entries, roster, members| {
+            if let Some(roster) = roster { self.callable_abi_roster(roster); }
+            if self.arc_object("prepared_source_abi.member_index", members) {
+                if !members.is_empty() { self.unknown("prepared_source_abi.member_index", "BTree index nodes have private allocation backing; keys and values are inline identifiers"); }
+            }
+            if !self.slice("prepared_source_abi.units", entries, true) { return; }
+        for (_, unit) in entries.iter() {
             self.shared_procedure_inputs(&unit.inputs);
             self.items("prepared_source_abi.executable_body", &unit.executable_body);
             if let Some(abi) = &unit.abi {
@@ -163,12 +183,7 @@ impl HeapCensus {
                 self.unknown("prepared_source_abi.input_indexes", "HashMap parameter type buckets and BTree readonly parameter nodes have private allocation backing; nested strings counted");
             }
         }
-        if !prepared.diagnostics.is_empty() {
-            self.unknown(
-                "prepared_source_abi.diagnostics",
-                "nested ABI error payloads not exposed by this boundary adapter",
-            );
-        }
+        });
     }
     fn projection_default(&mut self, value: &DefaultValue) {
         match value {

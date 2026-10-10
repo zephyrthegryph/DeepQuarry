@@ -144,7 +144,7 @@ def main():
         h._owned_job = previous_job
         (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
         print(root / "receipt.json")
-    return 0 if receipt["complete"] and receipt.get("acceptance_agrees") else 1
+    return 0 if receipt["complete"] and receipt.get("acceptance_agrees") and receipt.get("rejection_class_agrees") else 1
 
 if __name__ == "__main__":
     raise SystemExit(main())

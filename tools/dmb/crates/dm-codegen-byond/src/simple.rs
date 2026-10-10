@@ -812,6 +812,7 @@ fn supported_statements(
             StatementKind::Try {
                 body,
                 catch_binding,
+                catch_header_span: _,
                 catch_body,
             } => {
                 catch_binding
@@ -969,3 +970,5 @@ mod tests;
 
 #[path = "simple/local_declaration_diagnostics.rs"]
 mod local_declaration_diagnostics;
+#[path = "simple/member_call_validation.rs"]
+mod member_call_validation;

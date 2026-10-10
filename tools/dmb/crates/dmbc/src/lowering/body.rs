@@ -407,7 +407,9 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         .span
                         .and_then(|span| frontend.location(span.start))
                         .unwrap_or_else(|| body.source.clone()),
-                    message: if e.statement.is_empty() {
+                    message: if e.kind == dm_codegen_byond::LowerErrorKind::SourceError
+                        || e.statement.is_empty()
+                    {
                         e.reason
                     } else {
                         format!("{}: {}", e.statement, e.reason)

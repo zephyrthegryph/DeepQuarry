@@ -53,7 +53,12 @@ fn abi_roster_releases_bodies_and_current_consumer_matches_artifact_path() {
         plain.prepared.diagnostics
     );
     assert!(retained.prepared.diagnostics.is_empty());
-    for (_, unit) in plain.prepared.units.iter().chain(&retained.prepared.units) {
+    for (_, unit) in plain
+        .prepared
+        .units()
+        .iter()
+        .chain(retained.prepared.units())
+    {
         assert!(unit.executable_body.is_empty());
     }
     let body = &front.bodies[0];

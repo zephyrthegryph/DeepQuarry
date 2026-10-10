@@ -40,7 +40,7 @@ fn compare_golden_flags(value: &PreparedPinnedSourceAbi) {
 fn flags(value: &PreparedPinnedSourceAbi) -> Vec<u32> {
     value
         .prepared
-        .units
+        .units()
         .iter()
         .map(|(_, unit)| unit.abi.as_ref().unwrap().layout.flags)
         .collect()

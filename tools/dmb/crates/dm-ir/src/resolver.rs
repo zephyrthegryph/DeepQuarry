@@ -134,6 +134,8 @@ pub enum ResolveQuery {
         name: SymbolId,
         verb: bool,
     },
+    /// Name availability for explicit dynamic member dispatch, excluding global procs.
+    MemberCallableName(SymbolId),
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -148,6 +150,7 @@ pub enum ProcedureDefinition {
 impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
+            Self::MemberCallableName(_) => ReadDomain::Tree,
             Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
             Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {

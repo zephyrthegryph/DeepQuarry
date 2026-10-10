@@ -10,6 +10,7 @@ pub(crate) struct PinnedEngineProviders {
     pub(super) variables: VariableProviders,
 }
 pub(super) struct CallableProviders {
+    pub closed: Arc<intrinsic_methods::ClosedNamespace>,
     pub issuer: Option<u64>,
     pub engine: u128,
     pub retained: RetainedMethods,
@@ -54,6 +55,7 @@ impl CallableProviders {
         Ok(Self {
             issuer,
             engine: engine.identity(),
+            closed: intrinsic_methods::ClosedNamespace::capture(&catalog)?,
             retained,
             methods,
             spellings,
@@ -160,6 +162,7 @@ impl PinnedEngineProviders {
         if !census.arc_object("host.engine.providers", self) {
             return;
         }
+        self.callables.closed.census(census);
         if census.arc_object("host.intrinsic_methods", &self.callables.methods) {
             census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
                 "host.intrinsic_methods",

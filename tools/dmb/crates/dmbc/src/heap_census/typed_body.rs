@@ -162,6 +162,7 @@ impl HeapCensus {
                         StatementKind::Try {
                             body,
                             catch_binding,
+                            catch_header_span: _,
                             catch_body,
                         } => {
                             statements(self, owner, body, &mut pending);

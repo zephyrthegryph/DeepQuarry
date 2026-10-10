@@ -6,6 +6,9 @@ impl HeapCensus {
         if !self.arc_object(name, roster) {
             return;
         }
+        if let Some(abi) = roster.abi() {
+            self.callable_abi_roster(abi);
+        }
         roster.visit_storage(|view| match view {
             V::Members(values) => { self.vec_payload(name, values); },
             V::Identities(values) => { self.vec_payload(name, values); },

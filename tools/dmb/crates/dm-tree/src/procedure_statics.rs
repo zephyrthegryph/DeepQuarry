@@ -74,6 +74,11 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
     }
 }
 impl<R: dm_ir::Resolver> dm_ir::Resolver for StaticResolver<'_, R> {
+    fn observes_reads(&self) -> bool {
+        // The immutable static inventory has no observer; delegated host reads do.
+        self.underlying.observes_reads()
+    }
+
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         match domain {
             dm_ir::ReadDomain::OwnerProcedureStatic(procedure) => {
@@ -415,6 +420,27 @@ fn walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn immutable_static_overlay_preserves_underlying_read_observers() {
+        use dm_ir::Resolver;
+        struct Host(bool);
+        impl Resolver for Host {
+            fn observes_reads(&self) -> bool {
+                self.0
+            }
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                dm_ir::ResolvedMeaning::Unsupported(query)
+            }
+        }
+        let observing = Host(true);
+        let immutable = Host(false);
+        let id = identity();
+        let observed = StaticResolver::new(&observing, &[(id, capture(id, &[]).unwrap())]).unwrap();
+        let unobserved =
+            StaticResolver::new(&immutable, &[(id, capture(id, &[]).unwrap())]).unwrap();
+        assert!(observed.observes_reads());
+        assert!(!unobserved.observes_reads());
+    }
     #[test]
     fn domain_version_certifies_empty_static_inventory_and_invalidates_new_declarations() {
         use dm_ir::{ReadDomain, Resolver};

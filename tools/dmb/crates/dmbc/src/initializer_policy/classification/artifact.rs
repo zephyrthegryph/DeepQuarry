@@ -140,6 +140,12 @@ impl InitializerArtifacts {
     ) {
         self.roster.visit(visitor);
     }
+    pub(crate) fn visit_preparation(
+        &self,
+        visitor: impl FnOnce(&Arc<super::token_roster::preparation::Preparation>),
+    ) {
+        self.roster.visit_preparation(visitor);
+    }
 
     pub fn modifier_reuse_counts(&self) -> (u64, u64) {
         (

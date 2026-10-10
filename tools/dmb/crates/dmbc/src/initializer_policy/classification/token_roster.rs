@@ -1,6 +1,8 @@
 //! A single current canonical token/group layout, admitted by the same per-write owners.
 //! No current syntax, origins, dense table IDs, or independent dependency cache.
 use super::*;
+#[path = "preparation.rs"]
+pub(super) mod preparation;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Mutex,
@@ -8,6 +10,7 @@ use std::sync::{
 #[derive(Default)]
 pub(super) struct CurrentRoster {
     value: Mutex<Option<Roster>>,
+    preparation: Mutex<Option<Arc<preparation::Preparation>>>,
     pub(super) hits: AtomicU64,
     pub(super) recomputed: AtomicU64,
 }
@@ -37,6 +40,32 @@ impl CurrentRoster {
     }
     pub(super) fn clear(&self) {
         *self.value.lock().unwrap_or_else(|error| error.into_inner()) = None;
+        self.clear_preparation();
+    }
+    pub(super) fn clear_preparation(&self) {
+        *self
+            .preparation
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = None;
+    }
+    pub(super) fn preparation(&self, writes: &[InitializerWrite]) -> Arc<preparation::Preparation> {
+        let previous = self
+            .preparation
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        if let Some(previous) = previous.filter(|previous| previous.matches(writes)) {
+            return previous;
+        }
+        let current = preparation::Preparation::new(writes);
+        *self.preparation.lock().unwrap_or_else(|e| e.into_inner()) = Some(current.clone());
+        current
+    }
+    pub(super) fn visit_preparation(&self, visit: impl FnOnce(&Arc<preparation::Preparation>)) {
+        let guard = self.preparation.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(preparation) = guard.as_ref() {
+            visit(preparation);
+        }
     }
     #[allow(clippy::type_complexity)]
     pub(super) fn visit(

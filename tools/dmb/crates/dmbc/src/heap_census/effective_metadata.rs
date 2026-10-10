@@ -162,6 +162,15 @@ pub(super) fn selections(census: &mut HeapCensus, tree: &dm_tree::SemanticTree) 
         );
     }
 
+    let names = tree.member_callable_name_storage();
+    if census.arc_object("host.member_callable_names", names) {
+        census.observe_items("host.member_callable_names", names.len());
+        census.unknown(
+            "host.member_callable_names",
+            "private BTree node backing excluded",
+        );
+    }
+
     let owners = tree.host_declaration_selection_storage();
     if census.arc_object("host.declaration_selection.index", owners) {
         census.observe_items("host.declaration_selection.index", owners.len());

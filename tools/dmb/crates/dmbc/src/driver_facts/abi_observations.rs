@@ -3,21 +3,28 @@ use super::*;
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) enum Query {
     Inputs,
+    BatchInputs,
     Semantic(ResolveQuery),
 }
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) enum Domain {
     Inputs,
+    BatchInputs,
     Semantic(ReadDomain),
 }
 #[derive(Clone)]
 pub(crate) enum Answer {
+    /// Request-wide semantic host cannot authorize per-unit Inputs.
+    Unissued,
     Inputs(Arc<Inputs>),
+    BatchInputs(Arc<super::batch::Inputs>),
     Semantic(ResolvedMeaning),
 }
 impl PartialEq for Answer {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::Unissued, Self::Unissued) => true,
+            (Self::BatchInputs(a), Self::BatchInputs(b)) => Arc::ptr_eq(a, b) || a == b,
             (Self::Inputs(a), Self::Inputs(b)) => Arc::ptr_eq(a, b) || a == b,
             (Self::Semantic(a), Self::Semantic(b)) => a == b,
             _ => false,
@@ -98,12 +105,13 @@ impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
     fn answer(&self, query: &Query) -> Answer {
         match query {
             Query::Inputs => Answer::Inputs(Arc::clone(&self.inputs)),
+            Query::BatchInputs => Answer::Unissued,
             Query::Semantic(query) => Answer::Semantic(self.resolver.resolve(*query)),
         }
     }
     fn version(&self, domain: &Domain) -> Option<u128> {
         match domain {
-            Domain::Inputs => None,
+            Domain::Inputs | Domain::BatchInputs => None,
             Domain::Semantic(domain) => self.resolver.domain_version(*domain),
         }
     }

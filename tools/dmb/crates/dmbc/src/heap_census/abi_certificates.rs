@@ -25,6 +25,13 @@ impl HeapCensus {
         if let Some(engine) = artifacts.engine_owner() {
             self.abi_engine_owner(engine);
         }
+        artifacts.visit_group_storage(|address, len, capacity| {
+            self.buffer("prepared_abi.receipt_group_index", address, len, capacity);
+            self.unknown(
+                "prepared_abi.receipt_group_index",
+                "private weak-group BTree keys/nodes excluded",
+            );
+        });
         artifacts.visit_storage(|view| match view {
             dm_session::ObservedArtifactStorageView::Store { buckets, entries } => {
                 self.observe_items("prepared_abi.artifact_index", entries);
@@ -58,8 +65,23 @@ impl HeapCensus {
                 if self.receipt("prepared_abi.reads", reads) {
                     for read in reads.iter() {
                         match &read.answer {
+                            crate::driver_facts::abi_artifacts::observations::Answer::Unissued => {},
                             crate::driver_facts::abi_artifacts::observations::Answer::Semantic(answer) =>
                                 super::resident_weight::answer(self, answer),
+                            crate::driver_facts::abi_artifacts::observations::Answer::BatchInputs(inputs) => {
+                                if self.arc_object("prepared_abi.batch_inputs", inputs) {
+                                    self.callable_abi_roster(&inputs.roster);
+                                    self.abi_engine_owner(&inputs.engine);
+                                    self.observe_items("prepared_abi.batch_boundaries", inputs.boundaries.len());
+                                    self.unknown("prepared_abi.batch_boundaries", "private BTree backing excluded");
+                                    for boundary in inputs.boundaries.values() {
+                                        if let crate::driver_facts::abi_artifacts::observations::Boundary::Intrinsic{layout,..}=boundary {
+                                            for bytes in [&layout.display_name,&layout.description].into_iter().flatten() {self.vec_payload("prepared_abi.boundary_layout",bytes);}
+                                            if let dm_codegen_byond::procedure_abi::Category::Text(bytes)=&layout.category {self.vec_payload("prepared_abi.boundary_layout",bytes);}
+                                        }
+                                    }
+                                }
+                            }
                             crate::driver_facts::abi_artifacts::observations::Answer::Inputs(inputs) => {
                                 if self.arc_object("prepared_abi.observed_inputs", inputs) {
                                     self.procedure_metadata("prepared_abi.metadata", &inputs.metadata);
@@ -80,13 +102,47 @@ impl HeapCensus {
                 }
                 self.slice("prepared_abi.versions", versions, true);
                 if self.arc_object("prepared_abi.artifact_payload", value) {
-                    self.shared_procedure_inputs(&value.inputs);
-                    self.abi(&value.abi);
-                    if let Some(certificate) = &value.canonical {
-                        self.prepared_canonical(certificate);
+                    match value.as_ref() {
+                        crate::driver_facts::abi_artifacts::Artifact::Unit(unit) => self.abi_unit_artifact(unit),
+                        crate::driver_facts::abi_artifacts::Artifact::Batch(recipe) => {
+                            if self.arc_object("prepared_abi.batch_recipe", recipe) {
+                                self.prepared_abi_units(&recipe.prepared);
+                                if self.vec_payload("prepared_abi.batch_keys", &recipe.keys) {
+                                    for key in &recipe.keys {self.slice("prepared_abi.artifact_keys",key,true);}
+                                }
+                            }
+                        }
                     }
                 }
             }
         });
+    }
+    fn abi_unit_artifact(&mut self, unit: &Arc<crate::driver_facts::abi_artifacts::UnitArtifact>) {
+        if self.arc_object("prepared_abi.unit_payload", unit) {
+            self.shared_procedure_inputs(&unit.inputs);
+            self.abi(&unit.abi);
+            if let Some(certificate) = &unit.canonical {
+                self.prepared_canonical(certificate);
+            }
+        }
+    }
+    pub(crate) fn callable_abi_roster(
+        &mut self,
+        roster: &Arc<dm_tree::frontend::CallableAbiRoster>,
+    ) {
+        if self.arc_object("frontend.callable_abi_roster", roster) {
+            roster.visit_storage(|entries, types| {
+                if self.vec_payload("frontend.callable_abi_entries", entries) {
+                    for entry in entries {
+                        self.procedure_metadata("prepared_abi.metadata", &entry.metadata);
+                    }
+                }
+                if self.slice("frontend.callable_abi_types", types, true) {
+                    for ty in types.iter() {
+                        self.slice("frontend.callable_abi_type_members", &ty.members, true);
+                    }
+                }
+            });
+        }
     }
 }

@@ -792,6 +792,7 @@ impl Compiler<'_> {
                 StatementKind::Try {
                     body,
                     catch_binding,
+                    catch_header_span,
                     catch_body,
                 } => {
                     let catch_label = self.label();
@@ -807,12 +808,22 @@ impl Compiler<'_> {
                         let name = local_name(binding).ok_or_else(|| {
                             error(&statement.raw_header, "unsupported catch binding")
                         })?;
-                        if self.local_slots.contains_key(name) {
-                            return Err(error(&statement.raw_header, "repeated catch binding"));
-                        }
+                        let catch_span = LowerSpan {
+                            start: catch_header_span.start,
+                            end: catch_header_span.end,
+                        };
+                        self.check_local_declaration(name, &statement.raw_header, catch_span)?;
                         let slot = self.locals.len() as u32;
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
+                        self.local_declarations.insert(slot, catch_span);
+                        if let Some((path, _)) = binding
+                            .strip_prefix("var/")
+                            .and_then(|raw| raw.rsplit_once('/'))
+                        {
+                            self.local_types
+                                .insert(name.into(), runtime_declaration_path(path));
+                        }
                         self.emit(
                             opcode::SET_VAR,
                             vec![Word::Variable(VariableWord::Local(slot))],

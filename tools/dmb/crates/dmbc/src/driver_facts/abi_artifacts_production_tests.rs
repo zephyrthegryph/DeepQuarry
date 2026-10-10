@@ -50,6 +50,11 @@ fn prepared(
     )
     .with_pinned_variables(engine, front)
     .unwrap();
+    assert!(!host.observes_reads());
+    assert!(
+        !startup.resolver(front, &host).unwrap().observes_reads(),
+        "pinned ABI static overlay must retain immutable host admission"
+    );
     let pool = dm_exec::BuildExecutor::new(2).unwrap();
     prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
         front, engine, &host, &startup, None, &pool, store,
@@ -63,8 +68,12 @@ fn same(retained: &PreparedPinnedSourceAbi, fresh: &PreparedPinnedSourceAbi) {
         "{:?}",
         retained.prepared.diagnostics
     );
-    assert_eq!(retained.prepared.units.len(), fresh.prepared.units.len());
-    for ((a_member, a), (b_member, b)) in retained.prepared.units.iter().zip(&fresh.prepared.units)
+    assert_eq!(
+        retained.prepared.units().len(),
+        fresh.prepared.units().len()
+    );
+    for ((a_member, a), (b_member, b)) in
+        retained.prepared.units().iter().zip(fresh.prepared.units())
     {
         assert_eq!(a_member, b_member);
         assert_eq!(
@@ -118,7 +127,10 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     let before = prepared(&original, &engine, Some(&store));
     let mut structural = 0;
     store.visit_storage(|view| {
-        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, value, .. } = view {
+            if !matches!(value.as_ref(), Artifact::Unit(_)) {
+                return;
+            }
             for read in reads {
                 if let observations::Query::Semantic(query) = &read.query {
                     assert!(!matches!(query, ResolveQuery::OverrideChain { .. }));
@@ -137,22 +149,33 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     let reused = prepared(&edited, &engine, Some(&store));
     same(&reused, &prepared(&edited, &engine, None));
     assert!(
+        Arc::ptr_eq(before.prepared.units_owner(), reused.prepared.units_owner()),
+        "batch replay shares the complete immutable unit roster"
+    );
+    FrozenPreparedPolicy::new(&edited, &reused.prepared).unwrap();
+    assert_eq!(
+        store.batch_reused(),
+        1,
+        "body/source shifts must bypass ABI scheduling"
+    );
+    assert!(
         store.totals().0 >= 2,
         "ordinary bodies must not invalidate ABI"
     );
-    for ((_, old), (_, current)) in before.prepared.units.iter().zip(&reused.prepared.units) {
+    for ((_, old), (_, current)) in before.prepared.units().iter().zip(reused.prepared.units()) {
         assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
         assert!(Arc::ptr_eq(
             old.abi.as_ref().unwrap(),
             current.abi.as_ref().unwrap()
         ));
     }
+    let batch_hits = store.batch_reused();
     let recomputed = store.totals().1;
     let changed=frontend("/var/const/C = 9\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x+1\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     let changed_result = prepared(&changed, &engine, Some(&store));
     same(&changed_result, &prepared(&changed, &engine, None));
     assert_eq!(
-        before.prepared.units[0]
+        before.prepared.units()[0]
             .1
             .abi
             .as_ref()
@@ -162,7 +185,7 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
         Some(7)
     );
     assert_eq!(
-        changed_result.prepared.units[0]
+        changed_result.prepared.units()[0]
             .1
             .abi
             .as_ref()
@@ -171,6 +194,11 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
             .invisibility,
         Some(9)
     );
+    assert_eq!(
+        store.batch_reused(),
+        batch_hits,
+        "changed scalar must decline batch"
+    );
     assert!(
         store.totals().1 > recomputed,
         "captured constant dependency must invalidate"
@@ -178,6 +206,11 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     let previous = store.totals().1;
     let signature=frontend("/var/const/C = 9\n/datum/base/proc/p(x=11,y=1)\n    set invisibility = C\n    return x+y\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     let signature_result = prepared(&signature, &engine, Some(&store));
+    assert_eq!(
+        store.batch_reused(),
+        batch_hits,
+        "changed signature must decline batch"
+    );
     same(&signature_result, &prepared(&signature, &engine, None));
     assert!(
         store.totals().1 > previous,
@@ -197,7 +230,11 @@ fn authored_setting_error_and_blocked_override_preserve_source_diagnostics() {
     .unwrap();
     let engine = &engine_owner.snapshot;
     let front=frontend("/datum/base/proc/p()\n    set invisibility = 200\n    return 1\n/datum/base/child/p()\n    return ..()\n",&engine);
-    let batch = prepared(&front, &engine, None);
+    let store = AbiArtifacts::with_engine_owner(engine_owner.clone());
+    let batch = prepared(&front, &engine, Some(&store));
+    let repeated = prepared(&front, &engine, Some(&store));
+    assert_eq!(batch.prepared.diagnostics, repeated.prepared.diagnostics);
+    assert_eq!(store.batch_reused(), 0, "failed recipes are never admitted");
     assert_eq!(batch.prepared.diagnostics.len(), 2);
     let diagnostics = abi_diagnostics(&front, &batch.prepared).unwrap();
     assert!(diagnostics
@@ -232,7 +269,11 @@ fn typed_abi_requires_actual_engine_owner_and_prunes_failed_or_deleted_units() {
         &prepared(&front, engine, Some(&store)),
         &prepared(&front, engine, None),
     );
-    assert_eq!(stored_entries(&store), 1);
+    assert_eq!(
+        stored_entries(&store),
+        2,
+        "one unit plus successful batch recipe"
+    );
     let foreign = (*engine).clone();
     same(
         &prepared(&front, &foreign, Some(&store)),
@@ -288,10 +329,10 @@ fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
     );
     let reused = prepared(&current, engine, Some(&store));
     same(&reused, &prepared(&current, engine, None));
-    assert_eq!(before.prepared.units.len(), 1);
+    assert_eq!(before.prepared.units().len(), 1);
     assert!(Arc::ptr_eq(
-        &before.prepared.units[0].1.inputs,
-        &reused.prepared.units[0].1.inputs
+        &before.prepared.units()[0].1.inputs,
+        &reused.prepared.units()[0].1.inputs
     ));
     let query = ResolveQuery::DeclarationChain {
         owner: SymbolId::of("/datum/probe"),
@@ -313,7 +354,10 @@ fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
     );
     let mut inputs = 0;
     store.visit_storage(|view| {
-        if let dm_session::ObservedArtifactStorageView::Entry { reads, .. } = view {
+        if let dm_session::ObservedArtifactStorageView::Entry { reads, value, .. } = view {
+            if !matches!(value.as_ref(), Artifact::Unit(_)) {
+                return;
+            }
             for read in reads {
                 if let observations::Answer::Inputs(current) = &read.answer {
                     assert!(!matches!(current.boundary, observations::Boundary::Absent));
@@ -324,4 +368,52 @@ fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
         }
     });
     assert_eq!(inputs, 1);
+}
+
+#[test]
+fn abi_batch_signature_away_and_back_keeps_actual_chosen_unit_and_receipt() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let original = frontend(
+        "/var/const/C = 7\n/datum/probe/proc/p(x=C)\n    return x\n",
+        engine,
+    );
+    let first = prepared(&original, engine, Some(&store));
+    let away = frontend(
+        "/var/const/C = 9\n/datum/probe/proc/p(x=2,y=C)\n    return x+y\n",
+        engine,
+    );
+    let changed = prepared(&away, engine, Some(&store));
+    same(&changed, &prepared(&away, engine, None));
+    assert_eq!(store.batch_reused(), 0);
+    let restored = prepared(&original, engine, Some(&store));
+    same(&restored, &prepared(&original, engine, None));
+    assert_eq!(store.batch_reused(), 0);
+    assert_eq!(
+        first.prepared.units()[0].1.inputs.parameter_defaults,
+        restored.prepared.units()[0].1.inputs.parameter_defaults
+    );
+    let moved = frontend(
+        "// current origin\n/var/const/C = 7\n/datum/probe/proc/p(x=C)\n    return x+1\n",
+        engine,
+    );
+    let reused = prepared(&moved, engine, Some(&store));
+    same(&reused, &prepared(&moved, engine, None));
+    assert_eq!(store.batch_reused(), 1);
+    assert!(Arc::ptr_eq(
+        &restored.prepared.units()[0].1.inputs,
+        &reused.prepared.units()[0].1.inputs
+    ));
+    assert!(Arc::ptr_eq(
+        restored.prepared.units()[0].1.abi.as_ref().unwrap(),
+        reused.prepared.units()[0].1.abi.as_ref().unwrap()
+    ));
+    FrozenPreparedPolicy::new(&moved, &reused.prepared).unwrap();
 }

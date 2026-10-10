@@ -291,7 +291,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                     selections_only: false,
                     modified: Some(&issuer),
                 },
-                &abi.prepared.units[0].1
+                &abi.prepared.units()[0].1
             )
             .is_err());
         let mut bad = decode(&bytes).unwrap();
@@ -306,11 +306,11 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                     selections_only: false,
                     modified: Some(&issuer),
                 },
-                &abi.prepared.units[0].1
+                &abi.prepared.units()[0].1
             )
             .is_err());
     }
-    let ready = &abi.prepared.units[0].1;
+    let ready = &abi.prepared.units()[0].1;
     if !modifiers {
         let extra = std::collections::BTreeSet::from([dm_ir::SymRef::Instance(
             dm_ir::SymbolId::of("unselected descriptor"),
@@ -483,7 +483,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         )
         .unwrap();
         let shifted_body = &shifted.bodies[0];
-        let shifted_ready = &shifted_abi.prepared.units[0].1;
+        let shifted_ready = &shifted_abi.prepared.units()[0].1;
         let shifted_debug =
             crate::lowering_memo::rebase_debug(&shifted, shifted_body, &offsets).unwrap();
         let artifact = value.shared_artifact();

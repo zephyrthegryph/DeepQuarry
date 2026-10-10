@@ -99,6 +99,39 @@ impl HeapCensus {
                 }
             })
         });
+        store.visit_preparation(|preparation| {
+            if !self.arc_object("initializer_preparation.owner", preparation) {
+                return;
+            }
+            self.slice("initializer_preparation.owners", &preparation.owners, true);
+            if self.slice(
+                "initializer_preparation.buckets",
+                &preparation.buckets,
+                true,
+            ) {
+                for bucket in preparation.buckets.iter() {
+                    self.slice("initializer_preparation.ordinals", &bucket.ordinals, true);
+                }
+            }
+            preparation.visit_locations(|locations| {
+                if !self.arc_object("initializer_preparation.locations", locations) {
+                    return;
+                }
+                if self.slice("initializer_preparation.inputs", &locations.inputs, true) {
+                    for input in locations.inputs.iter() {
+                        self.shared_initializer_write("initializer_preparation.inputs", input);
+                    }
+                }
+                self.slice("initializer_preparation.modifiers", &locations.facts, true);
+                if self.arc_object("initializer_preparation.keys_owner", &locations.keys)
+                    && self.vec_payload("initializer_preparation.keys", &locations.keys)
+                {
+                    for key in locations.keys.iter() {
+                        self.slice("initializer_preparation.key_bytes", key, true);
+                    }
+                }
+            });
+        });
         store.visit_token_index(|owner| {
             if self.arc_object("initializer_token_roster.index", owner) {
                 let index = owner.lock().unwrap_or_else(|error| error.into_inner());

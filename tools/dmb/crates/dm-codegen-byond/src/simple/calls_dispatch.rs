@@ -66,12 +66,7 @@ impl Compiler<'_> {
             return Ok(());
         }
         if let dm_syntax::CallTarget::SafeMember { object, selector } = target_kind {
-            let proc_selector = self
-                .expression_member_proc(object, selector)?
-                .map(member_proc_selector)
-                .unwrap_or_else(|| {
-                    VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
-                });
+            let proc_selector = self.safe_member_call_selector(object, selector, statement)?;
             self.record_call_selection(callee, selector, &proc_selector, true);
             self.expression(object, statement)?;
             let end = self.label();
@@ -150,12 +145,15 @@ impl Compiler<'_> {
                 }
                 return Ok(());
             }
-            let proc_selector = self
-                .expression_member_proc(object, selector)?
-                .map(member_proc_selector)
-                .unwrap_or_else(|| {
-                    VariableWord::DynamicProc(self.intern_string(&selector.replace('_', " ")))
-                });
+            let via_colon = matches!(
+                &callee.kind,
+                ExprKind::Member {
+                    via_colon: true,
+                    ..
+                }
+            );
+            let proc_selector =
+                self.member_call_selector(object, selector, via_colon, statement)?;
             self.record_call_selection(callee, selector, &proc_selector, false);
             let mut safe_labels = Vec::new();
             if let Ok(owner) = self.variable_expr(object, statement) {

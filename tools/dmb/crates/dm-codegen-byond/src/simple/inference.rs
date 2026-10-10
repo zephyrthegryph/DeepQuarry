@@ -58,7 +58,42 @@ impl Compiler<'_> {
         name: &str,
     ) -> Result<Option<SymRef>, LowerError> {
         match self.inferred_expression_type(object)? {
-            Some(owner) => self.member_proc(&owner, name),
+            Some(owner) => {
+                let selected = self.member_proc(&owner, name)?;
+                // None also represents an admitted native method dispatched by
+                // name: it has no emitted source procedure reference. Distinguish
+                // that positive meaning from exact absence through the same ledger.
+                let missing = if selected.is_none() {
+                    if let Some(lookup) = self.lookup {
+                        !self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberProc {
+                            owner: SymbolId::of(&owner),
+                            name: SymbolId::of(name),
+                        }))?
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+                if missing {
+                    let receiver = match &object.kind {
+                        ExprKind::Ident(name) => name.as_str(),
+                        _ => {
+                            return Err({
+                                let mut failure =
+                                    error("member call", &format!("{name}: undefined proc"));
+                                failure.kind = LowerErrorKind::SourceError;
+                                failure
+                            })
+                        }
+                    };
+                    let mut failure =
+                        error("member call", &format!("{receiver}.{name}: undefined proc"));
+                    failure.kind = LowerErrorKind::SourceError;
+                    return Err(failure);
+                }
+                Ok(selected)
+            }
             None => Ok(None),
         }
     }

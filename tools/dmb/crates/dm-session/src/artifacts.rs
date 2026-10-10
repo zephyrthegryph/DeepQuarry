@@ -10,6 +10,9 @@ use std::{
     collections::BTreeMap,
     sync::{Arc, Mutex},
 };
+mod incidence;
+#[cfg(test)]
+mod incidence_tests;
 mod leased;
 pub use leased::ObservedArtifactLease;
 pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
@@ -55,6 +58,7 @@ struct Resident<T, Q, A, D> {
     leases: BTreeMap<u64, BTreeMap<Arc<[u8]>, usize>>,
     next_lease: u64,
     claims: BTreeMap<usize, (u128, usize)>,
+    incidence: Option<incidence::Incidence<Q, A, D>>,
 }
 
 /// Hashes choose buckets only; exact key bytes and all semantic answers authorize
@@ -106,6 +110,17 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             }
         }
     }
+    /// Optional incidence census shares the caller's leaf allocation ledger.
+    /// Counts expose logical private BTree entries, not invented node bytes.
+    pub fn visit_incidence_storage(
+        &self,
+        mut visit: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Option<(usize, usize, usize, usize)> {
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let index = state.incidence.as_ref()?;
+        index.visit_storage(&mut visit);
+        Some(index.counts())
+    }
     pub fn with_limit(limit: usize) -> Self {
         Self {
             state: Mutex::new(Resident {
@@ -114,6 +129,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 leases: BTreeMap::new(),
                 next_lease: 0,
                 claims: BTreeMap::new(),
+                incidence: None,
             }),
             retention: Retention::Budgeted(limit),
         }
@@ -126,6 +142,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 leases: BTreeMap::new(),
                 next_lease: 0,
                 claims: BTreeMap::new(),
+                incidence: None,
             }),
             retention: Retention::RetainedCurrentRevision,
         }
@@ -138,10 +155,22 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         }
         let keys: std::collections::BTreeSet<&[u8]> = keys.into_iter().collect();
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let mut removed_ids = Vec::new();
         state.buckets.retain(|_, bucket| {
-            bucket.retain(|entry| keys.contains(entry.key.as_ref()));
+            bucket.retain(|entry| {
+                let keep = keys.contains(entry.key.as_ref());
+                if !keep {
+                    removed_ids.push(Arc::as_ptr(&entry.value) as usize as u64);
+                }
+                keep
+            });
             !bucket.is_empty()
         });
+        if let Some(index) = &mut state.incidence {
+            for id in removed_ids {
+                index.remove(id);
+            }
+        }
         state.bytes = state
             .buckets
             .values()
@@ -165,6 +194,33 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ObservedArtifactStore<T, Q, A, D>
 {
+    /// Enable optional scheduling incidence once on the retained store owner.
+    /// Existing entries are indexed once; future lifecycle changes update it.
+    pub fn enable_incidence(&self) {
+        let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        if state.incidence.is_some() {
+            return;
+        }
+        let mut index = incidence::Incidence::default();
+        for entry in state.buckets.values().flatten() {
+            index.insert(Arc::as_ptr(&entry.value) as usize as u64, &entry.reads);
+        }
+        state.incidence = Some(index);
+    }
+    /// Borrow dirty candidates under the store lock. This is scheduling only:
+    /// exact key/current inputs and receipt admission remain mandatory.
+    pub fn visit_affected(&self, domains: &[D], mut visit: impl FnMut(&Arc<[u8]>, &Arc<T>)) {
+        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(index) = &state.incidence else {
+            return;
+        };
+        let affected = index.affected(domains);
+        for entry in state.buckets.values().flatten() {
+            if affected.contains(&(Arc::as_ptr(&entry.value) as usize as u64)) {
+                visit(&entry.key, &entry.value);
+            }
+        }
+    }
     pub fn lookup<R: ObservationHost<Q, A, D>>(&self, key: &[u8], resolver: &R) -> Option<Arc<T>> {
         self.lookup_explained(key, resolver).0
     }
@@ -320,19 +376,27 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
         // Resident storage evicts before admitting a new value. Results are
         // independently published; an oversized value needs no resident copy.
         if let Retention::RetainedCurrentRevision = self.retention {
             let mut removed = 0;
+            let mut removed_ids = Vec::new();
             if let Some(bucket) = state.buckets.get_mut(&hash) {
                 bucket.retain(|entry| {
                     if entry.key == key {
                         removed += entry.weight;
+                        removed_ids.push(Arc::as_ptr(&entry.value) as usize as u64);
                         false
                     } else {
                         true
                     }
                 });
+            }
+            if let Some(index) = &mut state.incidence {
+                for id in removed_ids {
+                    index.remove(id);
+                }
             }
             state.bytes -= removed;
             let value = Arc::new(create());
@@ -352,6 +416,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     weight,
                 });
             state.bytes += weight;
+            if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
+                index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+            }
             return Some(value);
         }
         let Retention::Budgeted(limit) = self.retention else {
@@ -367,6 +434,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             let bucket = state.buckets.get_mut(&oldest_bucket).unwrap();
             let removed = bucket.remove(0);
             let empty = bucket.is_empty();
+            if let Some(index) = &mut state.incidence {
+                index.remove(Arc::as_ptr(&removed.value) as usize as u64);
+            }
             state.bytes -= removed.weight;
             if empty {
                 state.buckets.remove(&oldest_bucket);
@@ -379,6 +449,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 // Removing a variant releases accounted storage below.
                 let removed = bucket.remove(index);
                 let removed_weight = removed.weight;
+                let removed_id = Arc::as_ptr(&removed.value) as usize as u64;
                 let value = Arc::new(create());
                 bucket.push(Variant {
                     key,
@@ -387,6 +458,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     value: Arc::clone(&value),
                     weight,
                 });
+                if let Some(index) = &mut state.incidence {
+                    index.remove(removed_id);
+                    index.insert(
+                        Arc::as_ptr(&value) as usize as u64,
+                        incidence_reads.as_ref().unwrap(),
+                    );
+                }
                 state.bytes = state.bytes - removed_weight + weight;
                 return Some(value);
             }
@@ -400,6 +478,9 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             weight,
         });
         state.bytes += weight;
+        if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
+            index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+        }
         Some(value)
     }
 }

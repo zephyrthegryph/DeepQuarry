@@ -63,7 +63,9 @@ fn replay_errors(
                     occurrence: identity.occurrence,
                 }),
                 origin,
-                message: if error.statement.is_empty() {
+                message: if error.kind == dm_codegen_byond::LowerErrorKind::SourceError
+                    || error.statement.is_empty()
+                {
                     error.reason
                 } else {
                     format!("{}: {}", error.statement, error.reason)

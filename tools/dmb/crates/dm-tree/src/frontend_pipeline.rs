@@ -406,6 +406,18 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     }
     .map_err(|message| vec![internal(&message)])?;
 
+    // Ineligible/custom metadata preserves the ordinary downstream ABI error path.
+    let abi_settings_complete = callable_roster.abi().is_some_and(|abi| {
+        issued_settings.len() == abi.entries().len()
+            && issued_settings
+                .iter()
+                .zip(abi.entries())
+                .all(|(settings, entry)| {
+                    settings.as_ref().is_some_and(|owner| {
+                        Arc::ptr_eq(owner, &entry.metadata) || owner == &entry.metadata
+                    })
+                })
+    });
     let mut ranks = vec![0; plan.regions.len()];
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
@@ -425,6 +437,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
     Ok(ColdFrontend {
         callable_roster,
+        abi_settings_complete,
         timings,
         engine: config.engine.map(|seed| EngineModelStatus {
             identity: seed.identity,

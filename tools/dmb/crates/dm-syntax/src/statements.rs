@@ -95,6 +95,7 @@ pub enum StatementKind {
     Try {
         body: Vec<Statement>,
         catch_binding: Option<String>,
+        catch_header_span: Span,
         catch_body: Vec<Statement>,
     },
     Throw(Expr),
@@ -258,6 +259,7 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
                     kind: StatementKind::Try {
                         body: parse_sequence(&item.children, diagnostics),
                         catch_binding,
+                        catch_header_span: catch.header_span,
                         catch_body: parse_sequence(&catch.children, diagnostics),
                     },
                     span: Span::new(item.span.start, catch.span.end),

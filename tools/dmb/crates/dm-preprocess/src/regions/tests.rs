@@ -346,6 +346,39 @@ fn canonical_paths_preserve_unresolved_parent_components() {
     );
 }
 
+#[cfg(windows)]
+#[test]
+fn equivalent_drive_prefixes_preserve_project_containment() {
+    let root = canonical_path(Path::new(r"\\?\E:\project"));
+    let skin = canonical_path(Path::new(r"E:\project\interface\skin.dmf"));
+    assert_eq!(
+        relative_filesystem_path(&skin, &root).unwrap(),
+        Path::new(r"interface\skin.dmf")
+    );
+    assert_eq!(root, Path::new(r"\\?\E:\project"));
+    for outside in [
+        r"E:\project-other\skin.dmf",
+        r"E:\project\..\outside\skin.dmf",
+        r"F:\project\skin.dmf",
+    ] {
+        assert!(relative_filesystem_path(Path::new(outside), &root).is_none());
+    }
+    for special in [
+        r"\\?\E:\project\name.",
+        r"\\?\E:\project\name ",
+        r"\\?\E:\project\NUL.txt",
+        r"\\?\E:\project\file:stream",
+        r"\\.\E:\project",
+        r"\\?\UNC\server\share\project",
+    ] {
+        assert_eq!(canonical_path(Path::new(special)), Path::new(special));
+        assert_eq!(
+            path_prefix::equivalent_prefix(PathBuf::from(special)),
+            Path::new(special)
+        );
+    }
+}
+
 #[test]
 fn nested_parent_includes_keep_authored_semantic_paths_across_roots() {
     for root in [

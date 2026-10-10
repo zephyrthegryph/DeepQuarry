@@ -284,6 +284,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         self.intrinsic_methods = Some(Arc::new(intrinsic_methods::IntrinsicMethods::from_payload(
             Arc::clone(&frontend.snapshot.tree),
             Arc::clone(&providers.methods),
+            Arc::clone(&providers.closed),
         )));
         self.callable_issuer = providers.issuer;
         self.callable_absence = Some(
@@ -363,7 +364,8 @@ impl<R: Resolver> EngineResolverHost<R> {
             bytes.extend_from_slice(&retained.identity().to_le_bytes());
         }
         if self.callable_absence.is_some() {
-            bytes.extend_from_slice(b"pinned-callable-policy-v3;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
+            bytes.extend_from_slice(intrinsic_methods::CLOSED_NAMESPACE_POLICY);
+            bytes.extend_from_slice(b"pinned-callable-policy-v5;documented-member-name-union;documented-datum-closed-namespace;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
             ));
@@ -529,6 +531,21 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
             }
             _ => {
                 let answer = self.tree.resolve(query);
+                if matches!(answer, M::Missing | M::Presence(false)) {
+                    // Source completeness cannot erase a pinned native receiver
+                    // method whose implementation is deliberately opaque to the tree.
+                    // Only actual positive provider answers may override source absence.
+                    if let Some(positive) = self
+                        .intrinsic_methods
+                        .as_ref()
+                        .and_then(|catalog| catalog.resolve(query))
+                        .filter(|value| {
+                            matches!(value, M::IntrinsicProc { .. } | M::Presence(true))
+                        })
+                    {
+                        return positive;
+                    }
+                }
                 if !matches!(answer, M::Unsupported(_)) {
                     return answer;
                 }

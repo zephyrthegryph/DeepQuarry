@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 mod directive_memo;
 mod directives;
+mod path_prefix;
 pub use directive_memo::{DirectiveRecord, DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
@@ -214,6 +215,14 @@ pub fn canonical_path(path: &Path) -> PathBuf {
         }
     }
     out
+}
+
+/// Compare lexical filesystem containment without changing provider keys or
+/// authored provenance. Only equivalent ordinary Windows drive spellings unify.
+pub fn relative_filesystem_path(path: &Path, root: &Path) -> Option<PathBuf> {
+    let path = path_prefix::equivalent_prefix(canonical_path(path));
+    let root = path_prefix::equivalent_prefix(canonical_path(root));
+    path.strip_prefix(root).ok().map(Path::to_path_buf)
 }
 
 /// Decode the literal operand using the ordered directive pass's exact path

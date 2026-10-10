@@ -6,11 +6,13 @@
 mod callable_roster;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
-pub use callable_roster::{CallableRoster, CallableRosterStorage};
-#[path = "parserwire.rs"]
-mod parserwire;
+pub use callable_roster::{
+    CallableAbiEntry, CallableAbiRoster, CallableRoster, CallableRosterStorage,
+};
 #[path = "frontend_diagnostic_cursor.rs"]
 mod diagnostic_cursor;
+#[path = "parserwire.rs"]
+mod parserwire;
 
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};
@@ -212,6 +214,7 @@ pub struct ColdFrontend {
     source_by_path: Arc<HashMap<PathBuf, FileId>>,
     pub bodies: Arc<[BodyOccurrence]>,
     callable_roster: Arc<CallableRoster>,
+    abi_settings_complete: bool,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
     issued_settings: Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>,
@@ -227,6 +230,16 @@ impl ColdFrontend {
         &self.issued_settings
     }
 
+    /// Aggregate authority is issued only after all current setting receipts agree
+    /// with current metadata. Public compatibility mutation declines this path.
+    pub fn callable_abi_roster(&self) -> Result<Option<&Arc<CallableAbiRoster>>, String> {
+        let roster = self.callable_roster()?;
+        Ok(
+            (self.abi_settings_complete && Arc::ptr_eq(&self.syntax, &self.issued_syntax))
+                .then(|| roster.abi())
+                .flatten(),
+        )
+    }
     /// Borrow only the exact issued source-neutral roster beside current bodies.
     pub fn callable_roster(&self) -> Result<&Arc<CallableRoster>, String> {
         if !Arc::ptr_eq(&self.bodies, &self.issued_bodies)
