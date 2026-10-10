@@ -92,3 +92,32 @@ fn rich_warning_replay_rejects_invalid_receipts_and_binds_current_coordinates() 
     helper.code.warnings[0].source_ordinal = Some(1);
     assert!(helper.rehydrate(&Host, 1).is_none());
 }
+
+#[test]
+fn executable_empty_warning_roster_roundtrips_all_positional_fields() {
+    let ast = dm_syntax::parse("/proc/p()\n    var/value = 7\n    return value\n");
+    let code = dm_codegen_byond::compile_simple_proc_with_resolver(
+        &ast.items[0].children,
+        &Default::default(),
+        &Default::default(),
+        &Host,
+    )
+    .unwrap();
+    assert!(code.procedure.warnings.is_empty());
+    assert!(!code.procedure.local_names.is_empty());
+    let key = b"empty warning roster";
+    let bytes = encode_executable(key, &[], &[], &code).unwrap();
+    validate(&bytes).unwrap();
+    let restored = decode_executable(&bytes, key, &Host, 0).unwrap();
+    assert_eq!(restored.procedure, code.procedure);
+    let framed = dm_cache::encode_variants(&[bytes]).unwrap();
+    assert_eq!(
+        candidates(&framed)
+            .unwrap()
+            .anonymous(key, &Host, 0)
+            .code
+            .unwrap()
+            .procedure,
+        code.procedure
+    );
+}
