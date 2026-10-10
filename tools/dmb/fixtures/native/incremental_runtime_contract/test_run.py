@@ -2,6 +2,8 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("runtime_contract_run", HERE / "run.py")
@@ -48,6 +50,18 @@ class RuntimeContractHelperTests(unittest.TestCase):
             helper.apply_step("duplicate duplicate", {"before": "duplicate", "after": "x"})
         with self.assertRaisesRegex(ValueError, "eight integer"):
             helper.expected_markers([0] * 7)
+
+    def test_owned_namespace_matches_probe_daemon_and_client_despite_ambient_namespace(self):
+        launch = SimpleNamespace(_daemon_namespace="previous", Endpoint=lambda name: ("endpoint", name))
+        with patch.dict(helper.os.environ, {"DMB_DAEMON_NAMESPACE": "foreign"}):
+            namespace, endpoint, environment = helper.owned_daemon_route(launch, Path("E:/owned/cache"))
+            other, _, _ = helper.owned_daemon_route(launch, Path("E:/owned/cache"))
+        self.assertRegex(namespace, r"^runtime-contract-[0-9a-f]{32}$")
+        self.assertNotEqual(namespace, other)
+        self.assertEqual(endpoint, ("endpoint", namespace))
+        self.assertEqual(environment["DMB_DAEMON_NAMESPACE"], namespace)
+        self.assertEqual(environment["DMB_CACHE_DIR"], "E:\\owned\\cache")
+        self.assertEqual(launch._daemon_namespace, other)
 
     def test_actual_daemon_route_cannot_silently_become_one_shot_or_byond(self):
         retained = helper.compile_arguments(Path("E:/owned/probe.dme"), Path("E:/owned/retained"), Path("E:/template.bin"), True)

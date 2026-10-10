@@ -87,6 +87,16 @@ def compile_arguments(project, output, template, retained):
     return arguments
 
 
+def owned_daemon_route(h, cache):
+    """Configure the probe and client launcher for one private daemon endpoint."""
+    namespace = "runtime-contract-" + uuid.uuid4().hex
+    h._daemon_namespace = namespace
+    environment = os.environ.copy()
+    environment["DMB_CACHE_DIR"] = str(cache)
+    environment["DMB_DAEMON_NAMESPACE"] = namespace
+    return namespace, h.Endpoint(namespace), environment
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):
@@ -110,6 +120,7 @@ def main():
     daemon = None
     memory = None
     previous_memory = h._owned_memory
+    previous_namespace = h._daemon_namespace
     status = 1
     deadline = time.monotonic() + 300  # Includes owned daemon lifetime, all compiles/acquires/runtimes.
     try:
@@ -128,8 +139,9 @@ def main():
             directory.mkdir()
             shutil.copyfile(HERE / "probe.dme", directory / "probe.dme")
         cache = root / "cache"
-        endpoint = h.Endpoint()
-        endpoint.probe()  # Fail before launching if any foreign daemon occupies this account endpoint.
+        namespace, endpoint, environment = owned_daemon_route(h, cache)
+        receipt["daemon_namespace"] = namespace
+        endpoint.probe()  # Refuse an occupied endpoint; never replace another process.
         memory = OwnedMemory(4_000_000_000)
         h._owned_memory = memory
         memory.start()
@@ -146,8 +158,6 @@ def main():
             if result["exit"] != 0:
                 raise ValueError(label + " failed; owned child evidence preserved")
 
-        environment = os.environ.copy()
-        environment["DMB_CACHE_DIR"] = str(cache)
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             with retirement.hidden_error_mode():
                 daemon = subprocess.Popen([str(args.native), "--serve-daemon"], stdout=out, stderr=err,
@@ -249,6 +259,8 @@ def main():
     except Exception as error:
         receipt["error"] = str(error)
     finally:
+        h._owned_memory = previous_memory
+        h._daemon_namespace = previous_namespace
         if daemon is not None:
             record_daemon_cleanup(receipt, terminate_owned(daemon))
             if receipt.get("status") == "failed":
@@ -260,7 +272,6 @@ def main():
             if receipt["memory"]["status"] == "failed":
                 receipt.update(complete=False, matches=False)
                 status = 1
-        h._owned_memory = previous_memory
         # All acquired outputs and logs remain under this new owned E: root for review.
         (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
         print(root / "receipt.json")
