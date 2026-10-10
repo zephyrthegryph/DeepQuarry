@@ -339,7 +339,9 @@
 
 /datum/unit_test/dq_resolver_reader_pin/Run()
 	var/saved_seed = GLOB.loot_seed
+	var/saved_serial = GLOB.loot_roll_serial
 	GLOB.loot_seed = dq_loot_pin_seed(7) // a map-time roll depends on the round seed, the position and the type: pin the seed
+	GLOB.loot_roll_serial = 0 // a roll made after the world's own map load also depends on how many rolls came before it: start the count at zero
 	rand_seed(dq_test_seed_for("resolver reader pin")) // gibs and the like draw from the world's generator: whatever ran before must not matter
 	var/z = world.increment_max_z()
 	var/datum/map_template/template = new("[DQ_LOOT_PIN_DIR]resolver_fixture.dmm")
@@ -389,6 +391,7 @@
 		GLOB.recycler_locations -= T
 	GLOB.multi_point_spawns -= "dq_pin"
 	GLOB.loot_seed = saved_seed
+	GLOB.loot_roll_serial = saved_serial
 	var/report = dq_loot_pin_compare("resolver_reader", rows)
 	TEST_ASSERT(isnull(report), report)
 

@@ -7,6 +7,7 @@
 /datum/unit_test/round2_lasertag_suicide_projectile_cleanup/proc/exercise_toy()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode() // the test block has no air: without it the user passes out mid-wait and the op's ALIVE keep stops the second attempt
 	var/obj/item/gun/energy/lasertag/toy = allocate(/obj/item/gun/energy/lasertag, T)
 	var/obj/item/gun/energy/lasertag/control = allocate(/obj/item/gun/energy/lasertag, T)
 	TEST_ASSERT(user.put_in_active_hand(toy), "actual laser-tag gun occupies the initiating human hand")

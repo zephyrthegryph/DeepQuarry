@@ -1,35 +1,21 @@
 // A forceMove into a holder that declares a slot registers in its default slot through the ledger's own note_enter(), like move_into() does,
 // also when the holder never built its ledger; leaving unregisters; a thing that came through move_into() is not registered twice.
 
-/// A real fishing net with the one slot a net's draw reads (the net itself declares none yet).
-/obj/item/material/fishing_net/dq_slotted_test
-	abstract_type = /obj/item/material/fishing_net/dq_slotted_test // a fixture: the look sweeps skip it
-
-CAPABILITIES(/obj/item/material/fishing_net/dq_slotted_test)
-	slot(CONTAINER_SLOT_FUEL)
-
-/// A real glass jar with a slot, for the same.
-/obj/item/glass_jar/dq_slotted_test
-	abstract_type = /obj/item/glass_jar/dq_slotted_test // a fixture: the look sweeps skip it
-
-CAPABILITIES(/obj/item/glass_jar/dq_slotted_test)
-	slot(CONTAINER_SLOT_FUEL)
-
 /datum/unit_test/dq_force_move_registers_in_net
 
 /datum/unit_test/dq_force_move_registers_in_net/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/item/material/fishing_net/dq_slotted_test/holder = allocate(/obj/item/material/fishing_net/dq_slotted_test, T)
+	var/obj/item/material/fishing_net/holder = allocate(/obj/item/material/fishing_net, T)
 	var/mob/living/simple_mob/animal/passive/mouse/critter = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	dq_force_move_check(holder, critter, CONTAINER_SLOT_FUEL)
+	dq_force_move_check(holder, critter, CONTAINER_SLOT_NET)
 
 /datum/unit_test/dq_force_move_registers_in_jar
 
 /datum/unit_test/dq_force_move_registers_in_jar/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/item/glass_jar/dq_slotted_test/holder = allocate(/obj/item/glass_jar/dq_slotted_test, T)
+	var/obj/item/glass_jar/holder = allocate(/obj/item/glass_jar, T)
 	var/mob/living/simple_mob/animal/passive/mouse/critter = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	dq_force_move_check(holder, critter, CONTAINER_SLOT_FUEL)
+	dq_force_move_check(holder, critter, CONTAINER_SLOT_JAR)
 
 /// Moves `critter` into `holder` with forceMove() (the holder's ledger was never asked for), out again, in through move_into(), and checks the ledger each time.
 /datum/unit_test/proc/dq_force_move_check(atom/holder, atom/movable/critter, slot_id)

@@ -924,6 +924,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/ant_builder_builds/run_pin()
 	var/mob/living/simple_mob/animal/tyr/mineral_ants/builder/B = allocate(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, run_loc_floor_bottom_left)
+	B.build_type = /obj/effect/ant_structure/wall // the default is a random pick, and one of its entries (an ant hill) is not an ant_structure
 	B.set_nutrition(150)
 	var/turf/T = get_turf(B)
 	TEST_ASSERT(B.build_tile(T), "the builder starts building")
