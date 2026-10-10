@@ -6,12 +6,14 @@ human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Anchor frame
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
@@ -22,7 +24,8 @@ human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -61,5 +64,5 @@ human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Use
-keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, welder_wrong_stage, wrench_wrong_stage
+keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, use_crowbar, use_screwdriver, use_wirecutter, welder_wrong_stage, wrench_wrong_stage
 

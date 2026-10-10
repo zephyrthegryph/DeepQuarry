@@ -20,17 +20,20 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -80,5 +83,5 @@ human|/obj/item menu: Rename Circuit (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: assembly_item, assembly_rename, assembly_robot_use, assembly_self, collect_item, drag_buckle, export_circuit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, open_circuit, pick_up_item, remove_all_wires, remove_cell, remove_circuit, rename, toggle_digestable, update_component_position, wire_internal
+keys: assembly_item, assembly_rename, assembly_robot_use, assembly_self, collect_item, drag_buckle, export_circuit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, open_circuit, pick_up_item, remove_all_wires, remove_cell, remove_circuit, rename, toggle_digestable, update_component_position, use_crowbar, use_screwdriver, use_wrench, wire_internal
 

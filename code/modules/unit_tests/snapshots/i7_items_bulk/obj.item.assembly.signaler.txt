@@ -20,6 +20,7 @@ human|/obj/item/tool/screwdriver menu: Threaten to push the button! (refused: Yo
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Transfer
 human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Transfer
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Threaten to push the button! (refused: You can't do that.)
@@ -91,5 +92,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Transfer
 human|/obj/item menu: Use
 human|/obj/item click: Click: Transfer
-keys: attach, code, collect_item, deadman_it_effect, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, reset, signal, toggle_digestable, transfer, use
+keys: attach, code, collect_item, deadman_it_effect, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, reset, signal, toggle_digestable, transfer, use, use_screwdriver
 

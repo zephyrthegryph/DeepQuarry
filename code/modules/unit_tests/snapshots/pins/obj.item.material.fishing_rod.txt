@@ -31,7 +31,8 @@ human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Repair
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Repair
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Repair
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -76,5 +77,5 @@ human|/obj/item menu: Repair
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Repair
-keys: collect_item, drag_buckle, fishing_rod_item, fishing_rod_string, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable
+keys: collect_item, drag_buckle, fishing_rod_item, fishing_rod_string, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable, use_wirecutter
 

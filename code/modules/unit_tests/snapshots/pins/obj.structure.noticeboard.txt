@@ -10,7 +10,8 @@ human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -20,7 +21,8 @@ human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -58,5 +60,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, hand, item, look, melee_hit, noticeboard_silicon_examine, read, remove, write
+keys: drag_buckle, hand, item, look, melee_hit, noticeboard_silicon_examine, read, remove, use_screwdriver, use_wrench, write
 

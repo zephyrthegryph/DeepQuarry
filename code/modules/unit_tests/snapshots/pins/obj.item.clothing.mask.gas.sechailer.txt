@@ -31,7 +31,8 @@ human|/obj/item/tool/screwdriver menu: Select gas mask phrase (refused: You can'
 human|/obj/item/tool/screwdriver menu: Select phrase
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -39,7 +40,8 @@ human|/obj/item/tool/crowbar menu: Select gas mask phrase (refused: You can't do
 human|/obj/item/tool/crowbar menu: Select phrase
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
@@ -55,7 +57,8 @@ human|/obj/item/tool/wirecutters menu: Select gas mask phrase (refused: You can'
 human|/obj/item/tool/wirecutters menu: Select phrase
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: HALT! (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
@@ -132,5 +135,5 @@ human|/obj/item/card/emag menu: Select phrase
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable, use_crowbar, use_screwdriver, use_wirecutter
 

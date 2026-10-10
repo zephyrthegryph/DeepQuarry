@@ -23,7 +23,8 @@ human|/obj/item/tool/screwdriver menu: Forced Shutdown
 human|/obj/item/tool/screwdriver menu: Interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Interaction item
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Forced Shutdown
 human|/obj/item/tool/crowbar menu: Interaction item
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -33,7 +34,8 @@ human|/obj/item/tool/wrench menu: Forced Shutdown
 human|/obj/item/tool/wrench menu: Interaction item
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Interaction item
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Forced Shutdown
 human|/obj/item/tool/wirecutters menu: Interaction item
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -90,5 +92,5 @@ human|/obj/item menu: Interaction item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Interaction item
-keys: collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, weld_repair
+keys: collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, use_screwdriver, use_wrench, weld_repair
 

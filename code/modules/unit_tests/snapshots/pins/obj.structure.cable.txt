@@ -21,12 +21,14 @@ human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: Click: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -54,5 +56,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, item, melee_hit
+keys: drag_buckle, item, melee_hit, use_multitool, use_wirecutter
 

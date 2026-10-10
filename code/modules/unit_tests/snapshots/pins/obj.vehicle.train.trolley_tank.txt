@@ -18,8 +18,9 @@ human|/obj/item/tool/screwdriver menu: Load
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Unlatch
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver menu: Vehicle item
-human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Interaction train hand
@@ -28,8 +29,9 @@ human|/obj/item/tool/crowbar menu: Load
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Unlatch
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar menu: Vehicle item
-human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Interaction train hand
@@ -69,8 +71,9 @@ human|/obj/item/weldingtool menu: Load
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Unlatch
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool menu: Vehicle item
-human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Interaction train hand
@@ -148,5 +151,5 @@ human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pen menu: Unlatch
 human|/obj/item/pen menu: Vehicle item
 human|/obj/item/pen click: Click: Relabel
-keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, vehicle_item
+keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, use_crowbar, use_screwdriver, use_welder, vehicle_item
 

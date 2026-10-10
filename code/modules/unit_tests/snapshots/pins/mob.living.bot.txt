@@ -27,7 +27,8 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Shove with
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use on
-human|/obj/item/tool/screwdriver click: Click: Bot item
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Bot item
 human|/obj/item/tool/crowbar menu: Disarm
 human|/obj/item/tool/crowbar menu: Eject pai blocked (refused: )
@@ -78,7 +79,8 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Shove with
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use on
-human|/obj/item/weldingtool click: Click: Bot item
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Bot item
 human|/obj/item/stack/cable_coil menu: Disarm
 human|/obj/item/stack/cable_coil menu: Grab
@@ -132,5 +134,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
-keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, use_screwdriver, use_welder, ventcrawl_in, vertical_nom, work, yank_out, zmove
 

@@ -34,7 +34,8 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Fit
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Aim Down Sights (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Fit
 human|/obj/item/tool/crowbar menu: Give DNA (refused: You can't do that.)
@@ -161,5 +162,5 @@ human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Insert cell
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, monorifle_verb_sights, move_to_top, pick_up_item, suicide, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, monorifle_verb_sights, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver
 
