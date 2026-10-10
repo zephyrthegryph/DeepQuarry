@@ -364,7 +364,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 		playsound(src, "sound/machines/printer.ogg", 50, 1)
 		var/obj/item/paper/P = new(get_turf(src))
 		P.name = "Explosive Simulator printout"
-		P.info = simulation_results
+		P.set_info(simulation_results)
 
 /obj/machinery/bomb_tester/proc/format_gas_for_results(datum/gas_mixture/G)
 	// G.update_values() removed; no-op under LINDA.

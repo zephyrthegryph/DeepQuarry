@@ -23,6 +23,10 @@
 #define CONTAINER_SLOT_FUEL "fuel"
 /// A transit tube pod's rider(s) (C11).
 #define CONTAINER_SLOT_TRANSIT_POD "transit_pod"
+/// What a glass jar or tank holds: coins, a creature or a spiderling.
+#define CONTAINER_SLOT_JAR "jar"
+/// The creature a fishing or butterfly net holds.
+#define CONTAINER_SLOT_NET "net"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.

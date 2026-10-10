@@ -56,6 +56,7 @@
 	var/last_sort = FALSE
 	var/sort_scan = TRUE
 	var/panel_open = FALSE
+TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 
 /obj/structure/disposalpipe/sortjunction/proc/updatedesc()
 	desc = initial(desc)
@@ -116,10 +117,9 @@
 	return OP_PASS
 
 /obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	playsound(src, I.usesound, 100, 1)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
-	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)

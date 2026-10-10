@@ -55,12 +55,12 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 		var/mob/L = A
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
-		changed(src) // what it holds is not a published slot
 		update_weight()
 		return
 	return ..()
 
 CAPABILITIES(/obj/item/material/fishing_net)
+	slot(CONTAINER_SLOT_NET)
 	op("fishing_net_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(fishing_net_self)))
 	op("fishing_net_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing net item"), then(PROC_REF(fishing_net_item)))
 
@@ -75,7 +75,6 @@ CAPABILITIES(/obj/item/material/fishing_net)
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	changed(src) // what it holds is not a published slot
 	update_weight()
 	return OP_OK
 
@@ -94,8 +93,7 @@ CAPABILITIES(/obj/item/material/fishing_net)
 	..()
 	look.identity(name = initial(name), desc = initial(desc))
 	var/trapped = 0
-	for(var/mob/M in contents_of(src))
-		look.watch(M)
+	for(var/mob/M as anything in look.things_in(src, CONTAINER_SLOT_NET, /mob))
 		look_trapped(look, M)
 		trapped++
 	look.state(trapped ? contain_state : empty_state)
@@ -174,7 +172,6 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
 		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
-		changed(src) // what it holds is not a published slot
 		update_weight()
 		return
 	return ..()
@@ -196,7 +193,6 @@ CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	changed(src) // what it holds is not a published slot
 	update_weight()
 	return
 
@@ -207,7 +203,6 @@ CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
 		else
 			M.forceMove(get_turf(src))
 		to_chat(M, span_warning("You climb out of \the [src]."))
-		changed(src) // what it holds is not a published slot
 		update_weight()
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))

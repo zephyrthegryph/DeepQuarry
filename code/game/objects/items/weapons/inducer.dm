@@ -184,7 +184,6 @@ CAPABILITIES(/obj/item/inducer)
 	induce(C, task.coefficient)
 	if(task.charged)
 		fx_sparks(task.charged, 5, FALSE)
-	task.device?.update_icon()
 	task.done_any = TRUE
 	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
 

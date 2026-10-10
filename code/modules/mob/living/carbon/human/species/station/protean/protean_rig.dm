@@ -367,7 +367,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	to_chat(user, "You install \the [mod] into \the [src].")
 	mod.forceMove(src)
 	mod.installed(src) // pair: installed_modules gains mod
-	update_icon()
 	return 1
 
 /obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
@@ -430,7 +429,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed() // pair: installed_modules loses it
-	update_icon()
 
 /// Revival of a dormant core, one step per tool. Each step is a treatment
 /// mechanism the core_dormancy affliction answers to.

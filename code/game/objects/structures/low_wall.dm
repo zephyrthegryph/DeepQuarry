@@ -312,7 +312,7 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 
 /obj/structure/grille/bay/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's states and layers
 	look.state(null)
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 

@@ -130,7 +130,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	NC.cableColor("red")
 	NC.set_d1(0)
 	NC.set_d2(fdirn)
-	changed(NC)
 
 	if(last_piece() && last_piece().d2 != chassis.dir)
 		last_piece().set_d1(min(last_piece().d2, chassis.dir))

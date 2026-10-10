@@ -264,7 +264,7 @@ MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's
 				deaf_message = span_bold("[src]") + " flashes green!", runemessage= "RATTLE RATTLE")
 				var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 				P.name = "[drone_name] blackbox transcript"
-				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
+				P.set_info("[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]")
 				has_paper = FALSE
 
 	return OP_DECLINE

@@ -31,14 +31,14 @@
 	var/obj/item/paper/R = new(src.loc)
 	R.name = "Steps to success: Correct EFTPOS Usage"
 	//Temptative new manual:
-	R.info += span_bold("First EFTPOS setup:") + "<br>"
-	R.info += "1. Memorise your EFTPOS command code (provided with all EFTPOS devices).<br>"
-	R.info += "2. Connect the EFTPOS to the account in which you want to receive the funds.<br><br>"
-	R.info += span_bold("When starting a new transaction:") + "<br>"
-	R.info += "1. Enter the amount of money you want to charge and a purpose message for the new transaction.<br>"
-	R.info += "2. Lock the new transaction. If you want to modify or cancel the transaction, you simply have to reset your EFTPOS device.<br>"
-	R.info += "3. Give the EFTPOS device to your customer, he/she must finish the transaction by swiping their ID card or a charge card with enough funds.<br>"
-	R.info += "4. If everything is done correctly, the money will be transferred. To unlock the device you will have to reset the EFTPOS device.<br>"
+	R.set_info(R.info + (span_bold("First EFTPOS setup:") + "<br>"))
+	R.set_info(R.info + ("1. Memorise your EFTPOS command code (provided with all EFTPOS devices).<br>"))
+	R.set_info(R.info + ("2. Connect the EFTPOS to the account in which you want to receive the funds.<br><br>"))
+	R.set_info(R.info + (span_bold("When starting a new transaction:") + "<br>"))
+	R.set_info(R.info + ("1. Enter the amount of money you want to charge and a purpose message for the new transaction.<br>"))
+	R.set_info(R.info + ("2. Lock the new transaction. If you want to modify or cancel the transaction, you simply have to reset your EFTPOS device.<br>"))
+	R.set_info(R.info + ("3. Give the EFTPOS device to your customer, he/she must finish the transaction by swiping their ID card or a charge card with enough funds.<br>"))
+	R.set_info(R.info + ("4. If everything is done correctly, the money will be transferred. To unlock the device you will have to reset the EFTPOS device.<br>"))
 
 	//stamp the paper
 	if(!R.stamped)
@@ -50,9 +50,9 @@
 /obj/item/eftpos/proc/print_reference()
 	var/obj/item/paper/R = new(src.loc)
 	R.name = "Reference: [eftpos_name]"
-	R.info = span_bold("[eftpos_name] reference") + "<br><br>"
-	R.info += "Access code: [access_code]<br><br>"
-	R.info += span_bold("Do not lose or misplace this code.") + "<br>"
+	R.set_info(span_bold("[eftpos_name] reference") + "<br><br>")
+	R.set_info(R.info + ("Access code: [access_code]<br><br>"))
+	R.set_info(R.info + (span_bold("Do not lose or misplace this code.") + "<br>"))
 
 	//stamp the paper
 	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')

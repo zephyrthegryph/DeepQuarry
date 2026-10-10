@@ -83,7 +83,7 @@
 		LAZYCLEARLIST(I.instances)
 		if(drop_policy == SLOT_DROP_SPILL && drop && !QDELETED(drop))
 			I.materialize_all(drop)
-		I.amount = 0
+		I.set_amount(0)
 
 /// Units a thing costs in a stock slot.
 /proc/dq_stock_units(atom/movable/thing)

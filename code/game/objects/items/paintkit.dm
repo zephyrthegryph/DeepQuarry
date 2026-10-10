@@ -197,7 +197,7 @@
 		return 0
 
 	for(var/type in allowed_types)
-		if(type == M.initial_icon)
+		if(type == M.mecha_base_state())
 			return 1
 
 /obj/item/kit/paint/set_info(kit_name, kit_desc, kit_icon, kit_icon_file = CUSTOM_ITEM_OBJ, kit_icon_override_file = CUSTOM_ITEM_MOB, additional_data)
@@ -224,10 +224,9 @@
 	act_message(user, src, others = "%U% opens %T% and spends some quality time customising [M].")
 	M.name = new_name
 	M.desc = new_desc
-	M.initial_icon = new_icon
 	if(new_icon_file)
 		M.icon = new_icon_file
-	M.update_icon()
+	M.set_initial_icon(new_icon)
 	use(1, user)
 
 /// Old /obj/mecha/attackby override: a paint kit customises the mech. Declared in mecha.dm.
@@ -252,11 +251,11 @@
 	if(!istype(M)) //Kicks it back and gives proper error text.
 		return ..()
 	if(showpilot)
-		M.show_pilot = TRUE
-		M.pilot_lift = 5
+		M.set_show_pilot(TRUE)
+		M.set_pilot_lift(5)
 	else
-		M.show_pilot = FALSE
-		M.pilot_lift = 0
+		M.set_show_pilot(FALSE)
+		M.set_pilot_lift(0)
 	. = ..() //Has to be done AFTER show_pilot being set in order to update the icon properly.
 
 /obj/item/kit/paint/ripley/death

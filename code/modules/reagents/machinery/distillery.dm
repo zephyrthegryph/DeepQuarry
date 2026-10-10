@@ -296,7 +296,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 			use_power(power_rating * CELLRATE * 0.5)
 			reagents.trans_to_holder(OutputBeaker.reagents, amount = rand(1, 5))
 
-	changed(src) // the gas temperature the lamp shows is not published
 	if(!on)
 		distillery_heat(0, null)
 		if(isnull(heat_body))

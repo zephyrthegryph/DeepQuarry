@@ -333,7 +333,7 @@ CAPABILITIES(/obj/machinery/account_database)
 			</table>
 		"}
 
-	P.info = text
+	P.set_info(text)
 	state("The terminal prints out a report.")
 
 /obj/machinery/account_database/ownership()

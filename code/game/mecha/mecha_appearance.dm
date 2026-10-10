@@ -6,10 +6,6 @@
 
 	// The state of the 'face', or the thing that overlays on the pilot. If this isn't set, it will probably look really weird.
 	var/face_state = null
-	var/icon/face_overlay
-
-	var/icon/pilot_image
-
 	// How many pixels do we bump the pilot upward?
 	var/pilot_lift = 0
 
@@ -21,48 +17,39 @@
 	animate(src, transform = M, time = 10)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/mecha, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/mecha/appearance_overlays()
-	. = list()
-	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	if(!initial_icon)
-		initial_icon = initial(icon_state)
+/// The state of the mech's own sprite: its type's, or the one a paint kit gave it.
+/obj/mecha/proc/mecha_base_state()
+	return initial_icon ? initial_icon : initial(icon_state)
 
-	if(occupant)
-		icon_state = initial_icon
-	else
-		icon_state = "[initial_icon]-open"
+/// The pilot as the mech shows it (its four faces, cut by the mech's own cutter mask), or null for a pilot that is not drawn (a brain).
+/obj/mecha/proc/pilot_picture(mob/living/carbon/pilot)
+	if(istype(pilot, /mob/living/carbon/brain))
+		return null
+	var/icon/picture = getCompoundIcon(pilot)
+	if(icon_exists(icon, "[mecha_base_state()]_cutter"))
+		picture.Blend(icon(icon, "[mecha_base_state()]_cutter"), ICON_MULTIPLY, y = (-1 * pilot_lift))
+	return picture
 
-
+/// The mech with or without a pilot (its open state when empty), the pilot a paint kit made visible, its face and what is bolted on.
+/obj/mecha/draw(datum/look/look)
+	..()
+	var/base = mecha_base_state()
+	var/occupied
 	if(show_pilot)
-		if(occupant)
-			pilot_image = getCompoundIcon(occupant)
-
-			if(!istype(occupant, /mob/living/carbon/brain))
-
-				var/icon/Cutter
-
-				if(icon_exists(icon, "[initial_icon]_cutter"))
-					Cutter = new(src.icon, "[initial_icon]_cutter")
-
-				if(Cutter)
-					pilot_image.Blend(Cutter, ICON_MULTIPLY, y = (-1 * pilot_lift))
-
-				var/image/Pilot = image(pilot_image)
-
-				Pilot.pixel_y = pilot_lift
-
-				. += Pilot
-		else
-			pilot_image = null
-
-	if(face_state && !face_overlay)
-		face_overlay = new(src.icon, icon_state = face_state)
-
-	if(face_overlay)
-		. += face_overlay
-
+		for(var/mob/living/carbon/pilot in look.things_in(src, MECHA_SLOT_PILOT, /mob/living/carbon))
+			occupied = TRUE
+			var/icon/picture = pilot_picture(pilot)
+			if(picture)
+				look.overlay(look_overlay_image(picture, null, pixel_y = pilot_lift))
+			break
+	else
+		occupied = length(look.contents_of(src, MECHA_SLOT_PILOT, /mob/living/carbon)) > 0
+	look.state(occupied ? base : "[base]-open")
+	look.overlay(face_state, face_state)
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
-		ME.add_equip_overlay(src)
-	return .
+		ME.equip_look(look)
 
+TRACKED(/obj/mecha, show_pilot)
+TRACKED(/obj/mecha, face_state)
+TRACKED(/obj/mecha, pilot_lift)
+TRACKED(/obj/mecha, initial_icon)

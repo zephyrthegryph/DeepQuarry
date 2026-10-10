@@ -28,7 +28,7 @@
 			MSG_BLIND(span_notice("You hear a *pop*.")))
 		var/obj/item/paper/Joke = new /obj/item/paper(user.loc)
 		Joke.name = "[pick("awful","terrible","unfunny")] joke"
-		Joke.info = pick("What did one snowman say to the other?\n\n" + span_italics("'Is it me or can you smell carrots?'"),
+		Joke.set_info(pick("What did one snowman say to the other?\n\n" + span_italics("'Is it me or can you smell carrots?'"),
 			"Why couldn't the snowman get laid?\n\n" + span_italics("He was frigid!"),
 			"Where are santa's helpers educated?\n\n" + span_italics("Nowhere, they're ELF-taught."),
 			"What happened to the man who stole advent calanders?\n\n" + span_italics("He got 25 days."),
@@ -37,7 +37,7 @@
 			"What do you get from eating tree decorations?\n\n" + span_italics("Tinsilitis!"),
 			"What do snowmen wear on their heads?\n\n" + span_italics("Ice caps!"),
 			"Why is Christmas just like life on ss13?\n\n" + span_italics("You do all the work and the fat guy gets all the credit."),
-			"Why doesn't Santa have any children?\n\n" + span_italics("Because he only comes down the chimney."))
+			"Why doesn't Santa have any children?\n\n" + span_italics("Because he only comes down the chimney.")))
 		new /obj/item/clothing/head/festive(target.loc)
 		user.update_icons()
 		cracked = 1

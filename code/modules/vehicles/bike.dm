@@ -69,7 +69,7 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	var/picked = A.step_value("colour")
 	if(isnull(picked))
 		return
-	paint_color = picked
+	set_paint_color(picked)
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)
@@ -186,7 +186,6 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	ion.start()
 	set_anchored(TRUE)
 
-	changed(src)
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
@@ -197,7 +196,6 @@ CAPABILITIES(/obj/vehicle/bike/random)
 	ion.stop()
 	set_anchored(kickstand)
 
-	changed(src)
 
 	..()
 

@@ -351,8 +351,8 @@ CAPABILITIES(/datum/material_service)
 		SScontracts.retain_evidence(tool.engineering_evidence_id)
 	var/obj/item/paper/report = new(get_turf(src))
 	report.name = "engineering measurement — [reading["name"]]"
-	report.info = "<h3>Engineering measurement</h3>"
-	report.info += "<b>Observer:</b> [html_encode("[reading["observer_name"] || "Unidentified operator"]")]<br>"
+	report.set_info("<h3>Engineering measurement</h3>")
+	report.set_info(report.info + ("<b>Observer:</b> [html_encode("[reading["observer_name"] || "Unidentified operator"]")]<br>"))
 	var/static/list/labels = list("name" = "Assembly", "assembly" = "Serial", "configuration" = "Configuration revision", "duration" = "Observed duration (seconds)", "input_joules" = "Input energy (J)", "output_joules" = "Delivered energy (J)", "minimum_output_watts" = "Minimum delivered power (W)", "minimum_flow_moles" = "Minimum gas transfer (mol/s)", "minimum_pressure_kpa" = "Minimum delivery pressure (kPa)", "maximum_temperature_k" = "Peak temperature (K)")
 	for(var/key in labels)
 		var/value = reading[key]
@@ -360,8 +360,8 @@ CAPABILITIES(/datum/material_service)
 			continue
 		if(isnum(value))
 			value = round(value, 0.1)
-		report.info += "<b>[labels[key]]:</b> [html_encode("[value]")]<br>"
-	report.info += "<b>Measured efficiency:</b> [round(reading["efficiency"] * 100, 0.1)]%<br>"
+		report.set_info(report.info + ("<b>[labels[key]]:</b> [html_encode("[value]")]<br>"))
+	report.set_info(report.info + ("<b>Measured efficiency:</b> [round(reading["efficiency"] * 100, 0.1)]%<br>"))
 	report.attach_contract_evidence(tool.engineering_evidence_id)
 	toner--
 	use_power(active_power_usage)

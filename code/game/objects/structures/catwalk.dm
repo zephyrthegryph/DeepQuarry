@@ -116,9 +116,6 @@ CAPABILITIES(/obj/structure/catwalk)
 			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
 	return OP_OK
 
-/obj/structure/catwalk/refresh_neighbors()
-	return
-
 /obj/structure/catwalk/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src))
 		visible_message(span_warning("\The [src] breaks down!"))

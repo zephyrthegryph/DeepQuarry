@@ -226,7 +226,7 @@
 	payload["contact_mode"] = contract.contact_mode
 	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed external freight subcontract — [contract.id]"
-	paper.info += "<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"))
 	paper.updateinfolinks()
 	return TRUE
 
@@ -247,7 +247,7 @@
 		loaded_crate.cargo_market_router_account = 0
 		loaded_crate.cargo_market_contract_key = null
 	paper.name = "withdrawn external freight subcontract — [contract.id]"
-	paper.info += "<br><b>Authenticated withdrawal:</b> [html_encode(account.owner_name)] withdrew this routing credential and preserved it for potential station review.<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated withdrawal:</b> [html_encode(account.owner_name)] withdrew this routing credential and preserved it for potential station review.<br>"))
 	paper.updateinfolinks()
 	to_chat(user, span_warning("You withdrew the route and forfeited its faction payment. Security must physically receive and examine this agreement before it becomes evidence; this declaration promises no immunity."))
 	return TRUE
@@ -260,7 +260,7 @@
 	var/list/signer_departments = payload["signer_departments"]
 	if(!istype(contract) || !islist(signers) || !islist(signer_departments) || !contract.register_endorsement(paper, user, evidence_id, signers, signer_departments))
 		return FALSE
-	paper.info += "<br><b>Authenticated endorsement:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated endorsement:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br>"))
 	paper.updateinfolinks()
 	return TRUE
 
@@ -277,7 +277,7 @@
 	payload["approach"] = selected_approach
 	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed faction operation charter — [contract.id]"
-	paper.info += "<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"))
 	paper.updateinfolinks()
 	return TRUE
 

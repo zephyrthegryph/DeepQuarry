@@ -69,7 +69,6 @@ CAPABILITIES(/datum/turbolift)
 	for(var/obj/machinery/door/airlock/door in doors)
 		turbolift_fire_safeties(door, src, new_fire_mode)
 	update_ext_panel_icons()
-	control_panel_interior.update_icon()
 
 // Cancel all pending calls
 /// Fire mode holds a door's safeties off for the lift; out of fire mode the lift lets go (the door's own safeties are back).

@@ -380,9 +380,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	close_connection(reason = "Connection timed out")
 	..()
 
-// Proc: update_icon()
+// Proc: appearance_comm_suffix()
 // Parameters: None
-// Description: Self explanatory
+// Description: The state suffix of the communicator's video call
 /obj/item/communicator/proc/appearance_comm_suffix()
 	if(video_source)
 		return "-video"

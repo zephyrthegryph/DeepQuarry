@@ -144,7 +144,6 @@ initialize	code/game/mecha/equipment/tools/powertool.dm	/obj/item/mecha_parts/me
 initialize	code/game/mecha/equipment/tools/shield.dm	/obj/item/mecha_parts/mecha_equipment/combat_shield/Initialize(mapload)
 initialize	code/game/mecha/equipment/tools/shield_omni.dm	/obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 initialize	code/game/mecha/equipment/tools/syringe_gun.dm	/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
-initialize	code/game/mecha/equipment/tools/syringe_gun.dm	/obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
 initialize	code/game/mecha/mech_sensor.dm	/obj/machinery/mech_sensor/Initialize(mapload)
 initialize	code/game/mecha/mecha.dm	/obj/mecha/Initialize(mapload)
 initialize	code/game/mecha/space/hoverpod.dm	/obj/mecha/working/hoverpod/Initialize(mapload)

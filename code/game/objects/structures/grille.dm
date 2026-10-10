@@ -13,6 +13,7 @@
 	max_integrity = 16
 	integrity_failure = 0.375
 	var/destroyed = FALSE
+TRACKED(/obj/structure/grille, destroyed)
 
 /// The look (the draw sweep: from its template).
 /obj/structure/grille/draw(datum/look/look)
@@ -177,8 +178,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	. = ..()
 	if(!destroyed)
 		set_density(FALSE)
-		destroyed = TRUE
-		changed(src) // the RCD repair in turfs/simulated/walls.dm writes `destroyed` by hand, so it cannot be a tracked var until that file goes through a setter
+		set_destroyed(TRUE)
 		new /obj/item/stack/rods(get_turf(src))
 
 // Reaching 0 integrity clears the grille entirely, dropping its last rod.

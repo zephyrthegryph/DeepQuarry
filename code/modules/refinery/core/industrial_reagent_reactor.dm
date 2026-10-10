@@ -44,12 +44,11 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	if(COOLDOWN_FINISHED(src, next_mode_toggle))
 		if(toggle_mode == REACTOR_MODE_INTAKE)
 			if(reagents && reagents.total_volume > 0 && amount_per_transfer_from_this > 0)
-				toggle_mode = REACTOR_MODE_OUTPUT // Only drain if anything in it!
+				set_toggle_mode(REACTOR_MODE_OUTPUT) // Only drain if anything in it!
 			COOLDOWN_START(src, next_mode_toggle, drain_time SECONDS)
 		else
-			toggle_mode = REACTOR_MODE_INTAKE
+			set_toggle_mode(REACTOR_MODE_INTAKE)
 			COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
-		changed(src)
 
 	if(amount_per_transfer_from_this <= 0 || reagents.total_volume <= 0)
 		return
@@ -62,6 +61,8 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 		var/obj/machinery/reagent_refinery/target = locate_within(get_step(loc,dir), /obj/machinery/reagent_refinery)
 		if(target)
 			transfer_tank( reagents, target, dir)
+
+TRACKED(/obj/machinery/reagent_refinery/reactor, toggle_mode)
 
 /obj/machinery/reagent_refinery/reactor/draw(datum/look/look)
 	..()
@@ -92,7 +93,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 
 /obj/machinery/reagent_refinery/reactor/rewrenched()
 	update_gas_network()
-	toggle_mode = REACTOR_MODE_INTAKE
+	set_toggle_mode(REACTOR_MODE_INTAKE)
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 
 /obj/machinery/reagent_refinery/reactor/proc/update_gas_network()

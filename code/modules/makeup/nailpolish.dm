@@ -9,8 +9,6 @@
 	icon_state = "nailpolish"
 	w_class = ITEMSIZE_SMALL
 	var/colour = "#FFFFFF"
-	var/image/top_underlay
-	var/image/color_underlay
 	var/open = FALSE
 	drop_sound = SFX_ITEMS_DROP_GLASS
 	pickup_sound = SFX_ITEMS_PICKUP_GLASS
@@ -19,14 +17,17 @@
 /obj/item/nailpolish/Initialize(mapload)
 	. = ..()
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)
-	top_underlay = image(icon, "top")
-	color_underlay = image(icon, "color")
-	update_icon()
 
+SETTER(/obj/item/nailpolish, colour)
 /obj/item/nailpolish/proc/set_colour(_colour)
+	if(TRACKED_UNCHANGED(colour, _colour))
+		return FALSE
 	colour = _colour
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)
-	update_icon()
+	tracked_changed(src, nameof(colour))
+	return TRUE
+
+TRACKED(/obj/item/nailpolish, open)
 
 CAPABILITIES(/obj/item/nailpolish)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -34,20 +35,17 @@ CAPABILITIES(/obj/item/nailpolish)
 /// Old attack_self.
 /obj/item/nailpolish/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	open = !open
+	set_open(!open)
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/nailpolish/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
-	top_underlay.icon_state = "top[open ? "-open" : ""]"
-	color_underlay.icon_state = "color[open ? "-open" : ""]"
-	color_underlay.color = colour
-	underlays = list(color_underlay, top_underlay)
+/// The look: the cap state, and the colour and top layers beneath it.
+/obj/item/nailpolish/draw(datum/look/look)
+	..()
+	var/suffix = open ? "-open" : ""
+	look.state("[initial(icon_state)][suffix]")
+	look.underlay(look_overlay_image(icon = icon, icon_state = "color[suffix]", color = colour))
+	look.underlay(look_overlay_image(icon, "top[suffix]"))
 
 /obj/item/organ/external/proc/get_polish(colour)
 	var/static/forbidden_parts = BP_ALL - list(BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT)
@@ -127,13 +125,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 	icon_state = "nailpolishremover"
 	var/open = FALSE
 
+TRACKED(/obj/item/nailpolish_remover, open)
+
 CAPABILITIES(/obj/item/nailpolish_remover)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/nailpolish_remover/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	open = !open
+	set_open(!open)
 	to_chat(user, span_notice("You [open ? "open" : "close"] \the [src]."))
 	return TRUE
 

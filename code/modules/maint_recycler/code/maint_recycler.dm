@@ -31,7 +31,6 @@
 
 	var/obj/effect/overlay/recycler/hatch
 	var/obj/effect/overlay/recycler/monitor_screen
-	var/obj/effect/overlay/recycler/item_overlay
 
 	var/item_offset_x = -7
 	var/item_offset_y = 0
@@ -117,7 +116,6 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
-	owns_one(nameof(item_overlay), /obj/effect/overlay/recycler)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
 	interface("RecyclerInterface")
 	without("ui_open")
@@ -141,12 +139,6 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	hatch.layer = src.layer+0.1
 	src.vis_contents |= hatch
 
-	var/image/underlay = image('code/modules/maint_recycler/icons/maint_recycler.dmi',src,"underlay")
-	underlay.layer = src.layer-0.2 //we need the underlay as a kind of inbetween, we sandwich the item overlay between it and us
-	//so even the big boy chunky items don't clip.
-	//at least for 32x32 stuff!
-	src.underlays |= underlay
-
 	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
@@ -155,11 +147,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 
 	src.vis_contents |= monitor_screen
 
-	rel_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
-	item_overlay.layer = src.layer-0.1
-	src.vis_contents |= item_overlay
-
-	//ditto for the monitor and door. sure, these COULD be overlays, but that is way more effort
+	//the monitor and door are objects of their own because they animate. The item inside and the underlay are drawn by draw().
 
 /// A mapped one moves to a marker, once the markers exist.
 /obj/machinery/maint_recycler/proc/move_after_init(datum/act/timer/A)
@@ -225,7 +213,6 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		move_into(src, nameof(src.inserted_item), O, user)
 
-	update_icon()
 	return OP_DECLINE
 
 /obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -238,7 +225,6 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
 				move_into(src, nameof(src.inserted_item), source)
-				update_icon()
 				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)
 				return
@@ -331,7 +317,6 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 	ejected.forceMove(get_turf(src))
 	visible_message(span_warning("[src] ejects \the [ejected] from its recycling chamber!"))
 	ejected.throw_at(get_step(src,SOUTH),5,1,src)
-	update_icon()
 
 /obj/machinery/maint_recycler/proc/start_recycling(mob/user)
 	if(inserted_item)
@@ -362,35 +347,22 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 	set_screen_state("screen_cashout",10)
 	door_locked = FALSE
 	open_door(user)
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/maint_recycler/appearance_overlays()
-	. = list()
-	if(inserted_item != null)
-		item_overlay.appearance = inserted_item.appearance;
-		//todo, assoc list for icon states from type
-		if(istype(inserted_item,/mob/living/simple_mob/animal/passive/mouse))
-			item_overlay.icon = src.icon
-			item_overlay.icon_state = "hepme" //the creature deserves its horrible end
-
-		item_overlay.vis_flags = VIS_INHERIT_ID //gotta reapply
-		item_overlay.appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE
-
-		item_overlay.plane = src.plane
-		item_overlay.layer = src.layer - 0.1
-		item_overlay.pixel_x = item_offset_x
-		item_overlay.pixel_y = item_offset_y
-		var/matrix/scaleMatrix = new()
-		scaleMatrix.Scale(item_overlay_scale,item_overlay_scale)
-		item_overlay.transform = scaleMatrix
-	else //hide it
-		item_overlay.icon = null
-		item_overlay.icon_state = "fsdfsd"
-		item_overlay.overlays = null
-		item_overlay.underlays = null
-
-	. += ..()
+/// The underlay the item sits on, and the item inside shrunk and offset between the underlay and the machine (the mouse shows the creature's end).
+/obj/machinery/maint_recycler/draw(datum/look/look)
+	..()
+	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
+	//so even the big boy chunky items don't clip.
+	//at least for 32x32 stuff!
+	if(!inserted_item)
+		return
+	look.watch(inserted_item)
+	var/matrix/scaled = matrix()
+	scaled.Scale(item_overlay_scale, item_overlay_scale)
+	if(istype(inserted_item, /mob/living/simple_mob/animal/passive/mouse))
+		look.overlay(look_overlay_image(icon, "hepme", layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
+	else
+		look.overlay(look_overlay_image(layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, of = inserted_item, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE))
 
 /obj/machinery/maint_recycler/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor

@@ -45,7 +45,6 @@
 
 		living_user.adjust_nutrition(-todrain)
 		source_cell.give(min((totransfer * 15), (source_cell.maxcharge - source_cell.charge)))
-		source_cell.update_icon()
 
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
@@ -63,7 +62,6 @@
 
 		living_user.adjust_nutrition((totransfer / 15) * coefficient)
 		source_cell.use(totransfer)
-		source_cell.update_icon()
 
 		fx_sparks(source_cell, 3, FALSE)
 

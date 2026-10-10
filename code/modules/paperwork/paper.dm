@@ -153,18 +153,19 @@ CAPABILITIES(/obj/item/paper)
 		desc = "This is a paper titled '" + name + "'."
 
 	if(info != initial(info))
-		info = html_encode(info)
-		info = replacetext(info, "\n", "<BR>")
-		info = parsepencode(info)
+		set_info(html_encode(info))
+		set_info(replacetext(info, "\n", "<BR>"))
+		set_info(parsepencode(info))
 
 	update_space(info)
 	updateinfolinks()
 
 TRACKED(/obj/item/paper, crumpled)
+TRACKED(/obj/item/paper, info)
 TRACKED(/obj/item/paper, stamp_marks)
 
-/// The sheet: blank or written (or a scrap once crumpled), with the stamps on it. The words are the plain `info` var every
-/// printer and form writes, so a write after creation asks for the redraw with changed(src).
+/// The sheet: blank or written (or a scrap once crumpled), with the stamps on it. The words are the tracked `info` var every printer and form writes
+/// through set_info().
 /obj/item/paper/draw(datum/look/look)
 	..()
 	look_parts(look)
@@ -325,14 +326,13 @@ TRACKED(/obj/item/paper, stamp_marks)
 		addtofield(text2num(id), t)
 		on_field_written(user, text2num(id), i)
 	else
-		info += t
+		set_info(info + (t))
 		updateinfolinks()
 	last_modified_ckey = user.ckey
 	update_space(t)
 	if(contains_signature)
 		on_signature(user, get_signature(i, user))
 	play_sfx(src, SFX_BUREAUCRACY_PEN, 0.5)
-	changed(src)
 
 /obj/item/paper/proc/on_signature(mob/living/user, signature)
 	return
@@ -388,11 +388,10 @@ TRACKED(/obj/item/paper, stamp_marks)
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return
 		//crumple dat paper
-		info = stars(info,85)
+		set_info(stars(info,85))
 		act_message(user, src, others = "%U% crumples %T% into a ball!")
 		play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 		set_crumpled(TRUE)
-		changed(src)
 		return
 	user.examinate(src)
 	if(rigged && (GLOB.Holiday == "April Fool's Day"))
@@ -445,9 +444,8 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 /obj/item/paper/proc/set_content(text,title)
 	if(title)
 		name = title
-	info = html_encode(text)
-	info = parsepencode(text)
-	changed(src)
+	set_info(html_encode(text))
+	set_info(parsepencode(text))
 	update_space(info)
 	updateinfolinks()
 
@@ -484,7 +482,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	else
 		var/before = copytext(info, 1, textindex)
 		var/after = copytext(info, textindex)
-		info = before + text + after
+		set_info(before + text + after)
 		updateinfolinks()
 
 /obj/item/paper/proc/updateinfolinks()
@@ -496,13 +494,12 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 
 
 /obj/item/paper/proc/clearpaper()
-	info = null
+	set_info(null)
 	stamps = null
 	free_space = MAX_PAPER_MESSAGE_LEN
 	stamped = list()
 	set_stamp_marks(null)
 	updateinfolinks()
-	changed(src)
 
 /obj/item/paper/proc/get_signature(obj/item/pen/P, mob/user as mob)
 	return pen_signature(P, user)

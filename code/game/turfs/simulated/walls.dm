@@ -1386,9 +1386,8 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			return TRUE
 		if(RCD_WINDOWGRILLE)
 			if(destroyed)
-				destroyed = 0
+				set_destroyed(0)
 				repair_damage(max_integrity)
-				changed(src)
 				set_density(1)
 				to_chat(user, span_notice("You repair \the [src]."))
 				return TRUE

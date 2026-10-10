@@ -1,4 +1,6 @@
-GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in code/game/turfs/simulated/dungeon/wall.dm (outside scope)
+/// What the adjacency index keeps of the four sides of a rock or sand tile: one bit per cardinal direction in each of three bytes.
+#define ROCK_EDGE_SPACE_SHIFT 4
+#define ROCK_EDGE_DENSE_SHIFT 8
 
 /**********************Mineral deposits**************************/
 /turf/unsimulated/mineral
@@ -85,6 +87,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
 	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
 
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
@@ -152,25 +155,6 @@ CAPABILITIES(/turf/simulated/mineral)
 		if(SSair)
 			SSair.mark_for_update(src)
 
-/turf/simulated/mineral/proc/get_cached_border(cache_id, direction, icon_file, icon_state, offset = 32)
-	//Cache miss
-	if(!GLOB.mining_overlay_cache["[cache_id]_[direction]"])
-		var/image/new_cached_image = image(icon_state, dir = direction, layer = ABOVE_TURF_LAYER)
-		switch(direction)
-			if(NORTH)
-				new_cached_image.pixel_y = offset
-			if(SOUTH)
-				new_cached_image.pixel_y = -offset
-			if(EAST)
-				new_cached_image.pixel_x = offset
-			if(WEST)
-				new_cached_image.pixel_x = -offset
-		GLOB.mining_overlay_cache["[cache_id]_[direction]"] = new_cached_image
-		return new_cached_image
-
-	//Cache hit
-	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
-
 // ALLOW(init/INSTANCE_STATE): rolls its ore and its rock detail per tile
 /turf/simulated/mineral/Initialize(mapload)
 	. = ..()
@@ -185,8 +169,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	else if (turf_resource_types & TURF_HAS_ORE)
 		make_ore()
 	if(prob(20))
-		overlay_detail = "asteroid[rand(0,9)]"
-	update_icon()
+		set_overlay_detail("asteroid[rand(0,9)]")
 	if(random_icon)
 		dir = pick(GLOB.alldirs)
 
@@ -199,56 +182,57 @@ CAPABILITIES(/turf/simulated/mineral)
 	if(density && mineral())
 		MineralSpread()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/turf/simulated/mineral/appearance_overlays()
-	. = list()
-
-	//We are a wall (why does this system work like this??)
+/// The rock draws its sprite, a lip toward each open side and the archaeology marks; the sand draws its dug mark, its edge against space and the rock
+/// around it, and its detail. Which sides are open, space or rock is kept by the adjacency index (rock_edges, code/game/turfs/turf_edges.dm).
+/turf/simulated/mineral/draw(datum/look/look)
+	..()
 	if(density)
-		if(mineral())
-			name = "[mineral().display_name] deposit"
-		else
-			name = "rock"
-
-		icon = rock_icon_path
-		icon_state = rock_icon_state
-
-		//Apply overlays if we should have borders
+		look.identity(name = mineral() ? "[mineral().display_name] deposit" : "rock")
+		look.set_icon(rock_icon_path)
+		look.state(rock_icon_state)
 		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src,direction)
-			if(T && !T.density)
-				. += get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state)
+			if(rock_edges & direction)
+				look.overlay(CACHED_KEY(rock_border_overlays, "[rock_side_icon_state]_[direction]_32", rock_side_icon_state, direction, 32))
+		look.overlay(archaeo_overlay, archaeo_overlay)
+		look.overlay(excav_overlay, excav_overlay)
+		return
+	look.identity(name = floor_name)
+	look.set_icon(sand_icon_path)
+	look.state(sand_icon_state)
+	look.overlay("dug_overlay", !!sand_dug) // a null condition would take the default, TRUE
+	for(var/direction in GLOB.cardinal)
+		if(rock_edges & (direction << ROCK_EDGE_SPACE_SHIFT))
+			look.overlay(CACHED_KEY(rock_border_overlays, "asteroid_edge_[direction]_0", "asteroid_edge", direction, 0))
+		else if(rock_edges & (direction << ROCK_EDGE_DENSE_SHIFT))
+			look.overlay(CACHED_KEY(rock_border_overlays, "[rock_side_icon_state]_[direction]_32", rock_side_icon_state, direction, 32))
+	look.overlay(overlay_detail, icon = overlay_detail_icon_path)
 
-			if(archaeo_overlay)
-				. += archaeo_overlay
+/// The sides of this tile that are open (a neighbour that is not dense), that face open space (not the cracked asteroid) and that face rock, written by
+/// the adjacency index.
+/turf/simulated/mineral/var/rock_edges = 0
+TRACKED(/turf/simulated/mineral, rock_edges)
 
-			if(excav_overlay)
-				. += excav_overlay
+/turf/simulated/mineral/edges_changed(mask)
+	..()
+	var/edges = 0
+	for(var/direction in GLOB.cardinal)
+		var/turf/T = get_step(src, direction)
+		if(!T)
+			continue
+		if(!T.density)
+			edges |= direction
+		if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
+			edges |= direction << ROCK_EDGE_SPACE_SHIFT
+		else if(T.density)
+			edges |= direction << ROCK_EDGE_DENSE_SHIFT
+	set_rock_edges(edges)
+	log_edge_trace("[type] at [x],[y],[z]: rock edges [rock_edges]")
 
-	//We are a sand floor
-	else
-		name = floor_name
-		icon = sand_icon_path
-		icon_state = sand_icon_state
-
-		if(sand_dug)
-			. += "dug_overlay"
-
-		//Apply overlays if there's space
-		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src, direction)
-			if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
-				. += get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0)
-			//Or any time
-			else
-				if(T?.density)
-					. += get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state)
-
-		if(overlay_detail)
-			. += overlay_detail_icon_path
-
-	// Neighbouring rock, sand and walls draw edges against us: tell them when we change.
-	appearance_notify_neighbours("[type]|[density]", /turf/simulated)
+TRACKED(/turf/simulated/mineral, sand_dug)
+TRACKED(/turf/simulated/mineral, overlay_detail)
+TRACKED(/turf/simulated/mineral, archaeo_overlay)
+TRACKED(/turf/simulated/mineral, excav_overlay)
+TRACKED(/turf/simulated/mineral, mineral_static)
 
 /// Rock is drilled out by a blast rather than losing integrity.
 // ALLOW(sys_entry_override): the blast sink of rock: it is drilled out (GetDrilled) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it
@@ -326,7 +310,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 			if(prob(mineral().spread_chance))
 				var/turf/simulated/mineral/target_turf = get_step(src, trydir)
 				if(istype(target_turf) && target_turf.density && !target_turf.mineral())
-					target_turf.mineral_static = mineral()
+					target_turf.set_mineral_static(mineral())
 					target_turf.UpdateMineral()
 					target_turf.MineralSpread()
 
@@ -335,7 +319,6 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 	clear_ore_effects()
 	if(mineral())
 		new /obj/effect/mineral(src)
-	update_icon()
 
 MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 
@@ -551,19 +534,14 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 		artifact_debris()
 
 /turf/simulated/mineral/proc/update_archeo_overlays(excavation_amount = 0)
-	var/updateIcon = 0
-
 	//archaeo overlays
 	if(!archaeo_overlay && finds && finds.len)
 		var/datum/find/F = finds[1]
 		if(F.excavation_required <= excavation_level + F.view_range)
-			cut_overlay(archaeo_overlay)
-			archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-			add_overlay(archaeo_overlay)
+			set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 	else if(archaeo_overlay && (!finds || !finds.len))
-		cut_overlay(archaeo_overlay)
-		archaeo_overlay = null
+		set_archaeo_overlay(null)
 
 	//there's got to be a better way to do this
 	var/update_excav_overlay = 0
@@ -582,12 +560,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 		var/excav_quadrant = round(excavation_level / 25) + 1
 		if(excav_quadrant > 5)
 			excav_quadrant = 5
-		cut_overlay(excav_overlay)
-		excav_overlay = "overlay_excv[excav_quadrant]_[rand(1,3)]"
-		add_overlay(excav_overlay)
-
-	if(updateIcon)
-		update_icon()
+		set_excav_overlay("overlay_excv[excav_quadrant]_[rand(1,3)]")
 
 /turf/simulated/mineral/proc/clear_ore_effects()
 	turf_resource_types &= ~(TURF_HAS_ORE | TURF_HAS_RARE_ORE)
@@ -624,10 +597,9 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 
 	if(!density)
 		if(!sand_dug)
-			sand_dug = 1
+			set_sand_dug(1)
 			for(var/i=0;i<5;i++)
 				new/obj/item/ore/glass(src)
-			update_icon()
 		return
 
 	if (mineral() && mineral().result_amount)
@@ -662,7 +634,6 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 		new /obj/structure/closet/crate/secure/loot(src)
 
 	make_floor()
-	update_icon()
 
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds
@@ -731,9 +702,8 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 		mineral_name = pickweight(list(ORE_MARBLE = 3, ORE_QUARTZ = 10, ORE_COPPER = 20, ORE_TIN = 15, ORE_BAUXITE = 15, ORE_URANIUM = 10, ORE_PLATINUM = 10, ORE_HEMATITE = 70, ORE_RUTILE = 15, ORE_CARBON = 70, ORE_DIAMOND = 2, ORE_GOLD = 10, ORE_SILVER = 10, ORE_PHORON = 20, ORE_LEAD = 3, ORE_VOPAL = 1, ORE_VERDANTIUM = 1, ORE_PAINITE = 1))
 
 	if(mineral_name && (mineral_name in GLOB.ore_data))
-		mineral_static = GLOB.ore_data[mineral_name]
+		set_mineral_static(GLOB.ore_data[mineral_name])
 		UpdateMineral()
-	update_icon()
 
 // V5 turfs
 

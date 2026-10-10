@@ -45,7 +45,8 @@
 	. = ..()
 	. += span_notice("[src] will fill [equip_type?"a [equip_type]":"any"] slot.")
 
-/obj/item/mecha_parts/mecha_equipment/proc/add_equip_overlay(obj/mecha/M as obj)
+/// What this equipment adds to the look of the mech it is bolted on (the mech's draw asks each piece).
+/obj/item/mecha_parts/mecha_equipment/proc/equip_look(datum/look/look)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/update_chassis_page()

@@ -223,18 +223,18 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 	play_sfx(loc, SFX_MACHINES_PRINTER)
 
-	P.info = span_underline(span_huge(span_bold("<center> Releasing Virus </center>")))
-	P.info += "<HR>"
-	P.info += span_underline("Name of the Virus:") + " [D.name] <BR>"
-	P.info += span_underline("Symptoms:") + " [symptoms]<BR>"
-	P.info += span_underline("Spreads by:") + " [D.spread_text]<BR>"
-	P.info += span_underline("Cured by:") + " [D.cure_text]<BR>"
-	P.info += "<BR>"
-	P.info += span_underline("Reason for releasing:") + " [reason]"
-	P.info += "<HR>"
-	P.info += "The Virologist is responsible for any biohazards caused by the virus released.<BR>"
-	P.info += span_underline("Virologist's sign:") + " [signature]<BR>"
-	P.info += "If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"
+	P.set_info(span_underline(span_huge(span_bold("<center> Releasing Virus </center>"))))
+	P.set_info(P.info + ("<HR>"))
+	P.set_info(P.info + (span_underline("Name of the Virus:") + " [D.name] <BR>"))
+	P.set_info(P.info + (span_underline("Symptoms:") + " [symptoms]<BR>"))
+	P.set_info(P.info + (span_underline("Spreads by:") + " [D.spread_text]<BR>"))
+	P.set_info(P.info + (span_underline("Cured by:") + " [D.cure_text]<BR>"))
+	P.set_info(P.info + ("<BR>"))
+	P.set_info(P.info + (span_underline("Reason for releasing:") + " [reason]"))
+	P.set_info(P.info + ("<HR>"))
+	P.set_info(P.info + ("The Virologist is responsible for any biohazards caused by the virus released.<BR>"))
+	P.set_info(P.info + (span_underline("Virologist's sign:") + " [signature]<BR>"))
+	P.set_info(P.info + ("If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"))
 	P.updateinfolinks()
 	P.name = "Releasing Virus - [D.name]"
 	printing = FALSE

@@ -105,13 +105,13 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	play_sfx(src, SFX_MACHINES_PRINTER)
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(target))
 	var/name = occupant ? occupant.name : "Unknown"
-	P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"
-	P.info += span_bold("Time of scan:") + " [stationtime2text()]<br><br>"
-	P.info += "[generate_printing_text()]"
+	P.set_info("<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>")
+	P.set_info(P.info + (span_bold("Time of scan:") + " [stationtime2text()]<br><br>"))
+	P.set_info(P.info + ("[generate_printing_text()]"))
 	var/mob/living/carbon/human/scanned_human = occupant
 	if(istype(scanned_human))
-		P.info += scanned_human.clinical_exposure_printout()
-	P.info += "<br><br>" + span_bold("Notes:") + "<br>"
+		P.set_info(P.info + (scanned_human.clinical_exposure_printout()))
+	P.set_info(P.info + ("<br><br>" + span_bold("Notes:") + "<br>"))
 	P.name = "Body Scan - [name] ([stationtime2text()])"
 	if(istype(scanned_human))
 		var/datum/money_account/operator_account = medical_trial_account_for_mob(A.actor)

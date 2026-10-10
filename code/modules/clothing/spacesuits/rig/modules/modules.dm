@@ -54,6 +54,8 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 	var/list/stat_modules
 
+TRACKED(/obj/item/rig_module, suit_overlay)
+
 CAPABILITIES(/obj/item/rig_module)
 	owns_many(nameof(stat_modules))
 	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged), because = MSG(rig_module/undamaged))),
@@ -101,7 +103,7 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 /obj/item/rig_module/Initialize(mapload)
 	. = ..()
 	if(suit_overlay_inactive)
-		suit_overlay = suit_overlay_inactive
+		set_suit_overlay(suit_overlay_inactive)
 
 	if(charges && charges.len)
 		var/list/processed_charges = list()
@@ -329,11 +331,10 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 		return 1
 	return 0
 
-/// The suit overlay follows the module's state, a tick after it changes.
+/// The suit overlay follows the module's state, a tick after it changes (the chestpiece draws it).
 /obj/item/rig_module/proc/refresh_suit_overlay()
 	if(active)
-		suit_overlay = suit_overlay_active
+		set_suit_overlay(suit_overlay_active)
 	else
-		suit_overlay = suit_overlay_inactive
-	holder?.update_icon()
+		set_suit_overlay(suit_overlay_inactive)
 

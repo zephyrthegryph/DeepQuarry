@@ -89,8 +89,7 @@ SYSTEM_DEF(xenoarch)
 				//sometimes a find will be close enough to the surface to show
 				var/datum/find/F = archeo_turf.finds[1]
 				if(F.excavation_required <= F.view_range) //view_range is by default 40.
-					archeo_turf.archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-					archeo_turf.update_icon()
+					archeo_turf.set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 			//have a chance for an artifact to spawn here, but not in animal or plant digsites
 			if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
@@ -181,8 +180,7 @@ SYSTEM_DEF(xenoarch)
 				//sometimes a find will be close enough to the surface to show
 				var/datum/find/F = archeo_turf.finds[1]
 				if(F.excavation_required <= F.view_range) //view_range is by default 40.
-					archeo_turf.archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-					archeo_turf.update_icon()
+					archeo_turf.set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 			//have a chance for an artifact to spawn here, but not in animal or plant digsites
 			if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)

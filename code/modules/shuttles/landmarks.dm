@@ -163,6 +163,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	icon_state = "bluflare"
 	light_color = "#3728ff"
 	var/active
+TRACKED(/obj/item/spaceflare, active)
 
 CAPABILITIES(/obj/item/spaceflare)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -183,13 +184,12 @@ CAPABILITIES(/obj/item/spaceflare)
 	if(istype(M) && !M.unEquip(src, T))
 		return
 
-	active = 1
+	set_active(1)
 	set_anchored(TRUE)
 
 	var/obj/effect/shuttle_landmark/automatic/mark = new(T)
 	mark.name = ("Beacon signal ([T.x],[T.y])")
 	T.hotspot_expose(1500, 5)
-	changed(src)
 
 /obj/item/spaceflare/draw(datum/look/look)
 	..()

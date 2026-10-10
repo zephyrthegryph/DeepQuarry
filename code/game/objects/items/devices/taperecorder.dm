@@ -421,7 +421,7 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		if (findtextEx(printedmessage,"*",1,2)) //replace action sounds
 			printedmessage = "\[[time2text(mytape.timestamp[i]*10,"mm:ss")]\] (Unrecognized sound)"
 		t1 += "[printedmessage]<BR>"
-	P.info = t1
+	P.set_info(t1)
 	P.name = "Transcript"
 	COOLDOWN_START(src, canprint, 30 SECONDS)
 

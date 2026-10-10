@@ -818,7 +818,6 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 					if(safety_ckey == selected_collar.sentientprizeckey)
 						to_chat(user, span_warning("[selected_collar.sentientprizename] collar has been deleted from registry!"))
 						selected_collar.icon_state = "casinoslave"
-						selected_collar.update_icon()
 						selected_collar.name = "disabled Sentient Prize Collar: [selected_collar.sentientprizename]"
 						selected_collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [selected_collar.sentientprizename], but harsh red text informs you its been disabled."
 						LAZYREMOVE(sentientprizes_ckeys_list, selected_collar.sentientprizeckey)

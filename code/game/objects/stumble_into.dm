@@ -115,7 +115,6 @@
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, M))
 		return ..()
 	set_isopen(0)
-	changed(src)
 	add_fingerprint(M)
 	M.stop_flying()
 

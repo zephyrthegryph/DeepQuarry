@@ -200,10 +200,10 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
 
-/// The look (the draw sweep: from APPEARANCE_NONE).
+/// The look: the mapped sprite, none of what the types above draw.
 /obj/structure/toilet/wooden/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's states and layers
 	look.state(null)
 
 //cooking pot
@@ -218,7 +218,7 @@ CAPABILITIES(/obj/structure/toilet/wooden)
 
 /obj/machinery/microwave/cookingpot/draw(datum/look/look)
 	..()
-	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	// the mapped sprite, without the parent's states and layers
 	look.state(null)
 	if(broken)
 		look.state("cookingpotb")

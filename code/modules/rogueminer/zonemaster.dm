@@ -126,8 +126,6 @@
 
 	GLOB.rm_controller.dbg("ZM(pa): The asteroid has [A.map.len] X-lists.")
 
-	var/list/changedturfs = list()
-
 	for(var/Ix=1, Ix <= A.map.len, Ix++)
 		var/list/curr_x = A.map[Ix]
 		GLOB.rm_controller.dbg("ZM(pa): Now doing X:[Ix] which has [curr_x.len] Y-lists.")
@@ -154,7 +152,6 @@
 
 					GLOB.rm_controller.dbg("ZM(pa): Replacing [P.type] with [T].")
 					var/turf/newturf = P.ChangeTurf(T)
-					changedturfs += newturf
 					switch(newturf.type)
 						if(/turf/simulated/mineral/vacuum)
 							place_resources(newturf)
@@ -162,9 +159,6 @@
 				else //Anything not a turf
 					GLOB.rm_controller.dbg("ZM(pa): Creating [T].")
 					new T(spot)
-
-	for(var/turf/T in changedturfs)
-		T.update_icon()
 
 /datum/rogue/zonemaster/proc/place_resources(turf/simulated/mineral/M)
 	#define XENOARCH_SPAWN_CHANCE 0.3
@@ -244,8 +238,7 @@
 			//sometimes a find will be close enough to the surface to show
 			var/datum/find/F = archeo_turf.finds[1]
 			if(F.excavation_required <= F.view_range)
-				archeo_turf.archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-				archeo_turf.update_icon()
+				archeo_turf.set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 		//have a chance for an artifact to spawn here, but not in plant digsites
 		if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)

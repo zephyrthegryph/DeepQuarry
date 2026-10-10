@@ -250,12 +250,12 @@ CAPABILITIES(/obj/machinery/atm)
 
 	var/obj/item/paper/R = new(loc)
 	R.name = "Account balance: [authenticated_account().owner_name]"
-	R.info = span_bold("NT Automated Teller Account Statement") + "<br><br>"
-	R.info += span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"
-	R.info += span_italics("Account number:") + " [authenticated_account().account_number]<br>"
-	R.info += span_italics("Balance:") + " $[authenticated_account().money]<br>"
-	R.info += span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"
-	R.info += span_italics("Service terminal ID:") + " [machine_id]<br>"
+	R.set_info(span_bold("NT Automated Teller Account Statement") + "<br><br>")
+	R.set_info(R.info + (span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"))
+	R.set_info(R.info + (span_italics("Account number:") + " [authenticated_account().account_number]<br>"))
+	R.set_info(R.info + (span_italics("Balance:") + " $[authenticated_account().money]<br>"))
+	R.set_info(R.info + (span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"))
+	R.set_info(R.info + (span_italics("Service terminal ID:") + " [machine_id]<br>"))
 
 	//stamp the paper
 	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
@@ -284,30 +284,30 @@ CAPABILITIES(/obj/machinery/atm)
 
 	var/obj/item/paper/R = new(loc)
 	R.name = "Transaction logs: [authenticated_account().owner_name]"
-	R.info = span_bold("Transaction logs") + "<br>"
-	R.info += span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"
-	R.info += span_italics("Account number:") + " [authenticated_account().account_number]<br>"
-	R.info += span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"
-	R.info += span_italics("Service terminal ID:") + " [machine_id]<br>"
-	R.info += "<table border=1 style='width:100%'>"
-	R.info += "<tr>"
-	R.info += "<td>" + span_bold("Date") + "</td>"
-	R.info += "<td>" + span_bold("Time") + "</td>"
-	R.info += "<td>" + span_bold("Target") + "</td>"
-	R.info += "<td>" + span_bold("Purpose") + "</td>"
-	R.info += "<td>" + span_bold("Value") + "</td>"
-	R.info += "<td>" + span_bold("Source terminal ID") + "</td>"
-	R.info += "</tr>"
+	R.set_info(span_bold("Transaction logs") + "<br>")
+	R.set_info(R.info + (span_italics("Account holder:") + " [authenticated_account().owner_name]<br>"))
+	R.set_info(R.info + (span_italics("Account number:") + " [authenticated_account().account_number]<br>"))
+	R.set_info(R.info + (span_italics("Date and time:") + " [stationtime2text()], [GLOB.current_date_string]<br><br>"))
+	R.set_info(R.info + (span_italics("Service terminal ID:") + " [machine_id]<br>"))
+	R.set_info(R.info + ("<table border=1 style='width:100%'>"))
+	R.set_info(R.info + ("<tr>"))
+	R.set_info(R.info + ("<td>" + span_bold("Date") + "</td>"))
+	R.set_info(R.info + ("<td>" + span_bold("Time") + "</td>"))
+	R.set_info(R.info + ("<td>" + span_bold("Target") + "</td>"))
+	R.set_info(R.info + ("<td>" + span_bold("Purpose") + "</td>"))
+	R.set_info(R.info + ("<td>" + span_bold("Value") + "</td>"))
+	R.set_info(R.info + ("<td>" + span_bold("Source terminal ID") + "</td>"))
+	R.set_info(R.info + ("</tr>"))
 	for(var/datum/transaction/T in authenticated_account().transaction_log)
-		R.info += "<tr>"
-		R.info += "<td>[T.date]</td>"
-		R.info += "<td>[T.time]</td>"
-		R.info += "<td>[T.target_name]</td>"
-		R.info += "<td>[T.purpose]</td>"
-		R.info += "<td>$[T.amount]</td>"
-		R.info += "<td>[T.source_terminal]</td>"
-		R.info += "</tr>"
-	R.info += "</table>"
+		R.set_info(R.info + ("<tr>"))
+		R.set_info(R.info + ("<td>[T.date]</td>"))
+		R.set_info(R.info + ("<td>[T.time]</td>"))
+		R.set_info(R.info + ("<td>[T.target_name]</td>"))
+		R.set_info(R.info + ("<td>[T.purpose]</td>"))
+		R.set_info(R.info + ("<td>$[T.amount]</td>"))
+		R.set_info(R.info + ("<td>[T.source_terminal]</td>"))
+		R.set_info(R.info + ("</tr>"))
+	R.set_info(R.info + ("</table>"))
 
 	//stamp the paper
 	var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
