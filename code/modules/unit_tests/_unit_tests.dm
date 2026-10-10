@@ -1,3 +1,5 @@
+#define TEST_INVENTORY_FILE_PARAMETER "test-inventory-file"
+#define TEST_EXACT_AUTOMATIC_ROWS_PARAMETER "test-exact-automatic-rows"
 //include unit test files in this module in this ifdef
 //Keep this sorted alphabetically
 

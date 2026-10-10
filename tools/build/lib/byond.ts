@@ -1,3 +1,4 @@
+import { CompilerProvenanceError } from './compiler_provenance';
 import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -9,6 +10,7 @@ import { regQuery } from './winreg';
 import { resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
+import { stageRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -314,6 +316,8 @@ type DDOptions = {
   compiledOutput?: CompiledOutput;
   /** After exact acquisition, before runtime preparation or spawn. Failure stops hosting. */
   onPreparedOutput?: (dmbFile: string) => void;
+  onRuntimeIdentity?: (identity: { executable: string; sha256: string; version: null; security: string; library?: HostedLibraryIdentity }) => void;
+  watchdogMaximumMs?: number;
   namedDmVersion?: string | null;
   /**
    * Watchdog for runs that terminate themselves (e.g. the unit-test boot, which
@@ -433,7 +437,7 @@ function runDreamDaemonWithWatchdog(
   // runner's per-shard estimate) -- it exists for exactly the case where
   // that estimate is wrong for someone's machine/run.
   const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
-  const hardTimeoutMs = envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 45 * 60 * 1000);
+  const hardTimeoutMs = Math.min(options.watchdogMaximumMs ?? Infinity, envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 45 * 60 * 1000));
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',
@@ -563,8 +567,19 @@ export async function DreamDaemon(
 
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
   checkVerdigrisAbi();
+  const library = options.compiledOutput?.kind === 'native_pair'
+    ? stageRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
+    : undefined;
+  let runtimeFailed = false;
+  try {
   await approveWorldDlls(options.dmbFile);
   const ddExePath = await resolveDreamDaemonExecutable(options.namedDmVersion, getDmPath);
+  if (options.onRuntimeIdentity) {
+    // Hash the actual resolved file; unresolved PATH commands cannot certify it.
+    if (!path.isAbsolute(ddExePath)) throw new CompilerProvenanceError('runtime identity requires an absolute DreamDaemon executable');
+    options.onRuntimeIdentity({ executable: ddExePath, sha256: createHash('sha256').update(fs.readFileSync(ddExePath)).digest('hex'),
+      version: null, security: args.find(arg => ['-safe', '-trusted', '-ultrasafe'].includes(arg)) ?? 'unspecified', ...(library ? { library: library.identity } : {}) });
+  }
 
   if (options.watchdogFile) {
     // On Windows dreamdaemon.exe writes nothing to our stdout, so a world that
@@ -575,7 +590,17 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
       fs.rmSync(options.daemonLog, { force: true });
       args = [...args, '-logself'];
     }
-    return runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
+    return await runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
   }
-  return Juke.exec(ddExePath, [options.dmbFile, ...args]);
+  return await Juke.exec(ddExePath, [options.dmbFile, ...args]);
+  } catch (error) {
+    runtimeFailed = true;
+    throw error;
+  } finally {
+    try { library?.remove(); }
+    catch (error) {
+      if (!runtimeFailed) throw error;
+      console.warn('Runtime library cleanup failed; preserving the original runtime failure:', error);
+    }
+  }
 }

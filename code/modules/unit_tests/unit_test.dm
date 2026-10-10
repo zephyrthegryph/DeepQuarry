@@ -754,11 +754,19 @@ GLOBAL_VAR(dq_test_select_names)
 	text2file(profile, file_name)
 	log_test("Profile for [test_path] written to [file_name]")
 
-/proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
+/// One eligibility predicate for execution and runtime-issued inventories.
+/proc/dq_test_ineligibility(datum/unit_test/test_path)
 	if(ispath(test_path, /datum/unit_test/focus_only))
-		return
-
+		return "focus_only"
 	if(initial(test_path.abstract_type) == test_path)
+		return "abstract"
+	return null
+
+/proc/dq_test_automatic_rows()
+	return list("ownership_framework_checks")
+
+/proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
+	if(dq_test_ineligibility(test_path))
 		return
 
 	var/datum/unit_test/test = new test_path
@@ -1044,6 +1052,28 @@ GLOBAL_VAR(dq_test_select_names)
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 
+	// Compile-once batch orchestration receives the exact runtime roster.
+	// Normal source selection above remains authoritative; no source scanner.
+	if(world.params[TEST_INVENTORY_FILE_PARAMETER])
+		var/list/eligible = list()
+		var/list/excluded = list()
+		for(var/test_path in tests_to_run)
+			var/reason = dq_test_ineligibility(test_path)
+			if(reason)
+				excluded += list(list("name" = "[test_path]", "reason" = reason))
+			else
+				eligible += "[test_path]"
+		var/inventory_file = world.params[TEST_INVENTORY_FILE_PARAMETER]
+		fdel(inventory_file)
+		file(inventory_file) << json_encode(list("schema" = 1, "tier" = "normal", "eligible" = eligible, "excluded" = excluded, "automaticRows" = dq_test_automatic_rows()))
+		var/result_file = world.params[TEST_RESULTS_FILE_PARAMETER] || "data/unit_tests.json"
+		fdel(result_file)
+		file(result_file) << "{}"
+		SSticker.force_ending = ADMIN_FORCE_END_ROUND
+		SSticker.declare_completion()
+		return
+
+
 	var/list/test_results = list()
 	var/total_tests = length(tests_to_run)
 	var/current_test_index = 0
@@ -1091,8 +1121,10 @@ GLOBAL_VAR(dq_test_select_names)
 		GLOB.failed_any_test = TRUE
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [line]")
 		log_test(line)
-	if(length(framework_failures))
-		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
+	if(length(framework_failures) || world.params[TEST_EXACT_AUTOMATIC_ROWS_PARAMETER])
+		var/list/automatic_rows = dq_test_automatic_rows()
+		var/framework_row = automatic_rows[1]
+		test_results[framework_row] = list("status" = length(framework_failures) ? UNIT_TEST_FAILED : UNIT_TEST_PASSED, "message" = jointext(framework_failures, "\n"), "name" = framework_row, "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)

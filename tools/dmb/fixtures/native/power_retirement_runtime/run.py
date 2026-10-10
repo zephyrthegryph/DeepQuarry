@@ -74,6 +74,7 @@ def observations(file):
 
 
 def main(*, fixture_directory=None, observation_reader=None,
+         prepare_runtime=None,
          scope="four deterministic retirement decoder cases only"):
     fixture_directory = HERE if fixture_directory is None else Path(fixture_directory)
     observation_reader = observations if observation_reader is None else observation_reader
@@ -150,7 +151,8 @@ def main(*, fixture_directory=None, observation_reader=None,
                 acquired = fresh.read_json(acquired_file, 65536)
                 fresh.admit_pair(result, acquired, artifacts / "probe.dme", store, slots, h.regular, h.sha)
                 dmb = Path(acquired["dmb"])
-            run(backend + "-runtime", args.dd, [str(dmb), "-close", "-trusted", "-invisible", "-logself"], 30)
+            runtime_arguments = [] if prepare_runtime is None else prepare_runtime(dmb, backend, receipt)
+            run(backend + "-runtime", args.dd, [str(dmb), "-close", "-trusted", "-invisible", "-logself", *runtime_arguments], 30)
             receipt[backend] = observation_reader(dmb.with_suffix(".log"))
             for name in ("probe.dm", "probe.dme"):
                 if h.sha(directory / name) != receipt["fixture_sources"][name] or h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:

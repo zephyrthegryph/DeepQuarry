@@ -53,7 +53,7 @@ function assertRegular(file: string): void {
   const stat = fs.lstatSync(file);
   if (!stat.isFile() || stat.isSymbolicLink()) throw new Error(`Expected regular owned native file: ${file}`);
 }
-function assertDirectoryChain(directory: string): void {
+export function assertDirectoryChain(directory: string): void {
   let current = path.resolve(directory);
   for (;;) {
     const stat = fs.lstatSync(current);

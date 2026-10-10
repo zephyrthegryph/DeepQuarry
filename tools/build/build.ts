@@ -8,7 +8,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
@@ -59,6 +59,7 @@ import {
   type WorldBenchDocument,
   writeJson,
 } from './lib/bench';
+import { normalSuiteBatches, exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type RuntimeIdentity, type IssuedNormalInventory } from './lib/normal_suite_plan';
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
@@ -464,6 +465,9 @@ export const LabelParameter = new Juke.Parameter({ type: 'string' });
  * pickAutoShardCount()). Omitted, it defaults to defaultShardCount() (cores
  * minus one, capped at 4); `--shards=1` is the single-world mode. See
  * doc/testing.md "Sharded runs". */
+export const NormalPlanSha256Parameter = new Juke.Parameter({ type: 'string', name: 'normal-plan-sha256' });
+export const NormalPlanParameter = new Juke.Parameter({ type: 'string' });
+export const NormalBatchesParameter = new Juke.Parameter({ type: 'number' });
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 /** `dm-test --exhaustive`: shorthand for `--tier=all`. */
 export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
@@ -746,7 +750,7 @@ function linkOrCopy(from: string, to: string): void {
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
-type IsolatedRun = WorldRun & { logDir: string };
+type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedNormalInventory; runtimeIdentity?: RuntimeIdentity };
 
 /**
  * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
@@ -759,7 +763,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
@@ -769,6 +773,8 @@ async function runIsolatedTestWorld(
   const runBase = `${base}.${slot.tag}`;
   const logDir = `data/logs/${slot.tag}`;
   const resultsFile = `${slot.dir}/unit_tests.json`;
+  const inventoryFile = `${slot.dir}/normal_inventory.json`;
+  let runtimeIdentity: RuntimeIdentity | undefined;
   const receiptOutcome = { resultsAvailable: false, killedByWatchdog: false, error: null as string | null };
   let escapedFailure = false;
   try {
@@ -800,6 +806,8 @@ async function runIsolatedTestWorld(
       'spritesheet-dir': spritesheetDir,
       ...worldParams,
     };
+    if (options.issueInventory) params['test-inventory-file'] = inventoryFile;
+    if (options.exactBatch) params['test-exact-automatic-rows'] = '1';
     if (focus) {
       const focusFile = `${slot.dir}/focus.txt`;
       fs.writeFileSync(focusFile, `${focus.join('\n')}\n`);
@@ -821,6 +829,8 @@ async function runIsolatedTestWorld(
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
           onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
+          watchdogMaximumMs: options.issueInventory || options.exactBatch ? 300_000 : undefined,
+          onRuntimeIdentity: options.issueInventory || options.exactBatch ? identity => { runtimeIdentity = identity; } : undefined,
         },
         String(port),
         '-close',
@@ -849,10 +859,12 @@ async function runIsolatedTestWorld(
       // the world died before finishing
     }
     receiptOutcome.resultsAvailable = results !== null;
+    const inventory = options.issueInventory ? JSON.parse(fs.readFileSync(inventoryFile, 'utf8')) as IssuedNormalInventory : undefined;
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
       compilation: compiled.provenance ?? null,
       compilerReceipt: compilerReceipt.file,
+      inventory, runtimeIdentity,
       clean: cleanText !== null,
       cleanText,
       results,
@@ -1617,6 +1629,59 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   }
 }
 
+/** Sequential normal suite, issued by the compiled runtime, never a source scanner. */
+async function runNormalBatches(get: any, batchSize: number): Promise<void> {
+  if (resolveTier(get) !== 'normal' || focusedTestNames(get) || get(ShardsParameter) !== undefined && get(ShardsParameter) !== null || get(DomainsParameter)?.length
+      || get(AffectedParameter) || get(IncrementalParameter)) throw new Error('normal-batches requires unfiltered normal tier');
+  const output = await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const id = runIdentity('normal-batches');
+  const evidenceFile = `data/normal-suite/${id.id}-${randomUUID()}.json`;
+  const evidence: { schema: number; status: string; compilation: unknown; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
+    batches: { requested: string[]; run: IsolatedRun }[]; error?: string } = {
+    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, batches: [] };
+  writeJson(evidenceFile, evidence);
+  try {
+    const issued = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': 'normal' }, null,
+      { compiledOutput: output, issueInventory: true, watchdogTimeoutMs: 300_000, label: 'normal inventory' });
+    evidence.inventory = issued; writeJson(evidenceFile, evidence);
+    if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error('runtime inventory admission failed');
+    let plan = issued.inventory;
+    const previousPath = get(NormalPlanParameter);
+    if (previousPath) {
+      const expectedHash = get(NormalPlanSha256Parameter);
+      const bytes = fs.readFileSync(previousPath);
+      const actualHash = createHash('sha256').update(bytes).digest('hex');
+      if (!expectedHash || actualHash !== String(expectedHash).toLowerCase()) throw new Error('captured plan SHA256 missing/differs');
+      const previous = JSON.parse(bytes.toString('utf8')) as { inventory?: IsolatedRun; batchSize?: number };
+      if (!previous.inventory?.inventory || previous.batchSize !== batchSize) throw new Error('captured plan lacks issued inventory or identical batch size');
+      plan = bindNormalPlan(issued.inventory, previous.inventory.inventory);
+    }
+    evidence.plan = { path: previousPath ?? null, sha256: previousPath ? String(get(NormalPlanSha256Parameter)).toLowerCase() : null,
+      eligibleOrder: plan.eligible, observedOrderDiffers: JSON.stringify(plan.eligible) !== JSON.stringify(issued.inventory.eligible) };
+    const batches = normalSuiteBatches(plan, batchSize);
+    evidence.status = 'running'; writeJson(evidenceFile, evidence);
+    for (let index = 0; index < batches.length; index++) {
+      const requested = batches[index];
+      const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': 'normal' }, requested,
+        { compiledOutput: output, exactBatch: true, watchdogTimeoutMs: 300_000, label: `normal batch${index + 1}/${batches.length}` });
+      evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
+      if (!sameSuiteRuntime(run.runtimeIdentity, issued.runtimeIdentity)) throw new Error('DreamDaemon identity/security changed');
+      if (!run.results || run.killedByWatchdog) throw new Error('batch exited without complete results');
+      recordTestRun(run, `normal-batch${index + 1}`, get(DefineParameter));
+    }
+    const union = exactNormalUnion(plan, evidence.batches.map(({ requested, run }) => ({ requested, results: run.results })));
+    if (evidence.batches.some(({ run }) => !run.clean)
+        || Object.values(union.tests).some(row => !suiteRowSucceeded(row))
+        || union.frameworkFindings.some(row => !suiteRowSucceeded(row))) throw new Error('normal suite contains test/runtime/framework failures');
+    evidence.status = 'passed';
+  } catch (error) {
+    evidence.status = 'failed'; evidence.error = String(error); throw error;
+  } finally {
+    writeJson(evidenceFile, evidence);
+    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+  }
+}
+
 export const DmTestTarget = new Juke.Target({
   parameters: [
     DefineParameter,
@@ -1626,6 +1691,9 @@ export const DmTestTarget = new Juke.Target({
     LabelParameter,
     FocusParameter,
     ShardsParameter,
+    NormalBatchesParameter,
+    NormalPlanParameter,
+    NormalPlanSha256Parameter,
     DomainsParameter,
     TierParameter,
     AffectedParameter,
@@ -1641,6 +1709,14 @@ export const DmTestTarget = new Juke.Target({
     MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
+    const normalBatches = get(NormalBatchesParameter);
+    if (get(NormalPlanSha256Parameter) && !get(NormalPlanParameter)) throw new Error('normal-plan-sha256 requires normal-plan');
+    if (get(NormalPlanParameter) && (normalBatches === null || normalBatches === undefined)) throw new Error('normal-plan requires normal-batches');
+    if (normalBatches !== null && normalBatches !== undefined) {
+      if (!Number.isInteger(normalBatches) || normalBatches < 1 || normalBatches > 32) throw new Error('normal-batches must be1..32');
+      await runNormalBatches(get, normalBatches);
+      return;
+    }
     const focus = focusedTestNames(get);
     // Sharded by default (defaultShardCount()); --shards=1 is the single-world
     // mode, --shards=0 sizes from free dd-slots. A --focus run is one world:
