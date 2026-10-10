@@ -221,7 +221,7 @@
 /obj/item/organ/internal/heart/grey/colormatch/slime vol=5 holder=/datum/reagents 
 /obj/item/organ/internal/heart/machine vol=5 holder=/datum/reagents 
 /obj/item/organ/internal/heart/machine/anomalock vol=5 holder=/datum/reagents 
-/obj/item/organ/internal/heart/machine/anomalock/prebuilt runtime
+/obj/item/organ/internal/heart/machine/anomalock/prebuilt vol=5 holder=/datum/reagents 
 /obj/item/organ/internal/heart/horror vol=5 holder=/datum/reagents 
 /obj/item/organ/internal/heart/replicant vol=5 holder=/datum/reagents 
 /obj/item/organ/internal/heart/replicant/rage vol=5 holder=/datum/reagents 

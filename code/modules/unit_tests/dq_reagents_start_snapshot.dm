@@ -74,6 +74,7 @@
 	for(var/root in roots())
 		var/list/rows = list()
 		for(var/type in typesof(root))
+			rand_seed(1) // a type that rolls its contents (random vials, old food, flavoured gum) rolls the same way whatever ran before it
 			var/atom/A
 			try
 				if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))

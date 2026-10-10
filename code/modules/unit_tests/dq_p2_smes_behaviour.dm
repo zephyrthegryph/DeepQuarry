@@ -1012,7 +1012,8 @@
 	var/obj/machinery/power/smes/S = p2_network(supply_watts = 0)
 	var/area/load_area = get_area(p2_load_spot())
 	var/requires = load_area.requires_power
-	load_area.requires_power = TRUE
+	load_area.set_requires_power(TRUE)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc/p2_test, p2_load_spot())
 	A.connect_to_network()
 	p2_apc_load(A, 20000)
@@ -1028,7 +1029,8 @@
 	p2_steps(3)
 	TEST_ASSERT_EQUAL(p2_net_avail(p2_load), 0, "an empty unit supplies nothing")
 	p2_apc_load(A, -20000)
-	load_area.requires_power = requires
+	load_area.set_requires_power(requires)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	qdel(A)
 
 /// A broken unit neither takes nor gives.

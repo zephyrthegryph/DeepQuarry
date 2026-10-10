@@ -11,6 +11,8 @@
 // A subtype with other gases declares gas_store() again on the same var: it replaces the parent's (one per var).
 
 /datum/capability/gas_store
+	/// The engine runs on_holder_init() for a type declared in a CAPABILITIES block; a legacy capabilities() table reaches legacy_holder_init() itself.
+	holder_hooks = HOLDER_HOOK_INIT
 	/// The holder var that owns the mixture.
 	var/var_name
 	/// Litres, or the name of a holder var.
@@ -50,3 +52,7 @@
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * litres / (R_IDEAL_GAS_EQUATION * kelvin))
 	rel_set(holder, var_name, mix)
+
+/// The engine form of the init: the same mixture, made once (a var already holding one is kept, so a table type running both forms makes one).
+/datum/capability/gas_store/on_holder_init(datum/act/eval/A)
+	legacy_holder_init(A.holder, A.mapload)

@@ -7,6 +7,7 @@
 /// The two tiles (east of the test floor) a test works on, and what they were. A tile that is changed is a new object: the tests hold where
 /// it is and read it again.
 /datum/unit_test/dq_turf_edges
+	abstract_type = /datum/unit_test/dq_turf_edges
 	var/list/first_at
 	var/list/second_at
 	var/first_type

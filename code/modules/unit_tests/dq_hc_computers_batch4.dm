@@ -162,3 +162,5 @@
 	test_click(H, C, E)
 	TEST_ASSERT_EQUAL(E.uses, 6, "an unlinked console declines without spending a use")
 	TEST_ASSERT(!C.emag, "an unlinked console cannot start a reboot")
+	for(var/obj/effect/effect/sparks/S in range(2, C)) // the emag's sparks are the test's to clean up
+		own(S)

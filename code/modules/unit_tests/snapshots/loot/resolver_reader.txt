@@ -9,7 +9,7 @@
 /obj/effect/floor_decal/fancy_shuttle => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/floor_decal/reset => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/gibspawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core
-/obj/effect/gibspawner/human => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core, 0,0 /obj/effect/decal/cleanable/blood/gibs/down
+/obj/effect/gibspawner/human => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/blood/gibs, 0,0 /obj/effect/decal/cleanable/blood/gibs/core, 0,0 /obj/effect/decal/cleanable/blood/gibs/down
 /obj/effect/graffitispawner => turf /turf/simulated/floor/tiled/steel | decals 0 | 0,0 /obj/effect/decal/cleanable/crayon
 /obj/effect/instantboom {devastation = 0; heavyboom = 0; lightboom = 0; flash = 0} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing
 /obj/effect/landmark {name = "blobstart"} => turf /turf/simulated/floor/tiled/steel | decals 0 | nothing

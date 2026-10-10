@@ -64,13 +64,10 @@
 
 /datum/unit_test/dq_headset_keeps_radio_use/Run()
 	var/obj/item/radio/headset/H = allocate(/obj/item/radio/headset, test_floor())
-	var/has_use = FALSE
-	var/has_insert = FALSE
-	for(var/datum/interaction/I as anything in interaction_candidates(H))
-		if(I.default_action == INPUT_ACTION_USE && !I.tool && I.name != "Insert key")
-			has_use = TRUE
+	// the radio's Use is its "controls" op, in hand (CAPABILITIES(/obj/item/radio)); the headset inherits it
+	var/has_use = op_known_anywhere(null, H, null, "controls")
 	// the key slot is the headset's own op now (CAPABILITIES(/obj/item/radio/headset), "Insert key")
-	has_insert = op_known_anywhere(null, H, null, "item")
+	var/has_insert = op_known_anywhere(null, H, null, "item")
 	TEST_ASSERT(has_use, "a headset keeps the radio's Use")
 	TEST_ASSERT(has_insert, "and has its own Insert key")
 

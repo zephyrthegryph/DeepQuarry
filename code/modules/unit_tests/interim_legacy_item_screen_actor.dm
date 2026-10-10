@@ -16,6 +16,7 @@
 	TEST_ASSERT(!light.on, "another mob cannot activate an item it does not contain")
 	km_synthetic_click(actor, button)
 	TEST_ASSERT(light.on, "the native legacy screen supplies its actor to the real flashlight action")
+	appearance_flush() // the draw runs on the presentation lane, not inside the click
 	TEST_ASSERT_EQUAL(light.icon_state, "flashlight-on", "the real legacy screen action updates actual item appearance")
 	TEST_ASSERT_EQUAL(button.click_with_actor(actor, null, null, null), 1, "the actor helper preserves the successful legacy screen return")
 	TEST_ASSERT(!light.on, "a second real item action turns the actual held flashlight off")

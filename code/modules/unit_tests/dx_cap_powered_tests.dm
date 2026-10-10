@@ -42,19 +42,15 @@
 	TEST_ASSERT("It is unpowered." in caps_examine(A, H), "the unpowered line shows")
 	TEST_ASSERT_EQUAL(poke.why_not(H, A, null), "it has no power", "entries refuse while unpowered")
 
-/// power_change() marks the machine changed, so its look follows the power.
+/// power_change() marks the machine changed, so its look follows the power. The machine's power is the area's channel read (a hold here forces it);
+/// power_change() acts on the flip the machine has not seen yet.
 /datum/unit_test/dx_cap_powered_power_change/Run()
 	var/obj/machinery/cap_fixture_powered/M = allocate(/obj/machinery/cap_fixture_powered, run_loc_floor_bottom_left)
 	refresh_flush()
-	// Put the machine in the opposite of its real power state, so power_change() flips it.
-	if(M.powered(M.power_channel))
-		M.set_grid_power(FALSE)
-	else
-		M.set_grid_power(TRUE)
-	changed(M)
-	refresh_flush()
 	var/was_dark = cap_test_has_layer(M, "dark")
-	TEST_ASSERT(M.power_change(), "power_change() flips the power state")
+	// Put the machine in the opposite of its real power state.
+	M.set_grid_power(M.power_lost())
+	TEST_ASSERT(M.power_change(), "power_change() sees the power state flip")
 	TEST_ASSERT(M.refresh_queued, "power_change() marks the machine changed")
 	refresh_flush()
 	TEST_ASSERT_NOTEQUAL(cap_test_has_layer(M, "dark"), was_dark, "the dark layer follows the power")

@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
 		spent(old_parent)
 	if(air_temporary)
-		loc.assume_air(air_temporary)
+		loc?.assume_air(air_temporary) // a pipe taken apart in nullspace (a type table probe) has no turf to give it to
 		rel_clear(src, nameof(air_temporary))
 
 /// A stable leak sleeps: it watches both mixtures either side of it (Rust reports their changes) and wakes only once they no longer match,

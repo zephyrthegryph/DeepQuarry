@@ -25,6 +25,7 @@
 	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT(bystander, next_click), 0, "viewer refusal does not spend the unrelated actor cooldown")
 	km_synthetic_click(actor, button)
 	TEST_ASSERT(light.on, "the real item action turns the actual flashlight on")
+	appearance_flush() // the draw runs on the presentation lane, not inside the click
 	TEST_ASSERT_EQUAL(light.icon_state, "flashlight-on", "the actual action updates the target appearance")
 	TEST_ASSERT(COOLDOWN_TIMELEFT(actor, next_click) > 0, "the accepted actor click starts its actual cooldown")
 	button.click_with_actor(actor, null, null, "left=1")

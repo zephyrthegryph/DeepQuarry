@@ -21,6 +21,7 @@
 	maintenance_flags = MACHINE_MAINT_PANEL
 
 /datum/unit_test/dq_machine_maintenance
+	abstract_type = /datum/unit_test/dq_machine_maintenance
 
 /datum/unit_test/dq_machine_maintenance/proc/tool(path, turf/T)
 	var/obj/item/I = allocate(path, T)

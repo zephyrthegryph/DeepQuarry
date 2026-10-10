@@ -138,7 +138,7 @@
 	while(stock.hot && steps < 200)
 		steps++
 		heat_test_world_seconds(2)
-		stock.periodic_step()
+		stock.processed_alloy_step(null)
 		if(steps in list(1, 10, 30))
 			seen += "step [steps]: [round(material_batch_temperature(stock.physical_batch()), 0.1)] K"
 	log_test("hot stock: [jointext(seen, ", ")]; stopped glowing after [steps] steps of 2 s")

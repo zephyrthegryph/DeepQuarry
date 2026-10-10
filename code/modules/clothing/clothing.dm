@@ -711,7 +711,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
 		rel_take(src, nameof(holding))
-		cut_overlay("[icon_state]_knife")
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
 		holding.forceMove(src)

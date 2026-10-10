@@ -361,7 +361,8 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 	S.set_output_attempt(TRUE)
 	var/area/load_area = get_area(p2_load_spot())
 	var/requires = load_area.requires_power
-	load_area.requires_power = TRUE
+	load_area.set_requires_power(TRUE)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc/p2_test, p2_load_spot())
 	A.connect_to_network()
 	dq_area_load(p2_load_spot(), 20000, EQUIP)
@@ -377,7 +378,8 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 	p2_steps(3)
 	TEST_ASSERT_EQUAL(p2_smes_charge(S), held, "a unit with input and output off holds its charge")
 	dq_area_load(p2_load_spot(), -20000, EQUIP)
-	load_area.requires_power = requires
+	load_area.set_requires_power(requires)
+	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	qdel(A)
 
 #endif

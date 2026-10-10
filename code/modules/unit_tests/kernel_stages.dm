@@ -65,7 +65,8 @@
 		TEST_ASSERT(W.phase == KERNEL_PHASE_P, "[stage_type] lands in phase P")
 		items += W
 		by_family["[T.pipeline]:[T.family]"] = W
-	TEST_ASSERT(adapted > 0, "the registry still holds the stages not yet off the engine (retired pipelines left it, intended_changes.md): [adapted]")
+	// The pipelines have all left the engine (intended_changes.md): an empty registry is the finished state, and the checks below are vacuous until a stage returns.
+	log_test("kernel_stage_adapter_graph: [adapted] stage(s) still on the engine")
 	TEST_ASSERT_EQUAL(with_reads, declared_reads, "declared reads carry over to the adapters (no stage left in the registry declares any once the AI stages are gone)")
 	// The stage after-edges, within a pipeline, as work-item edges.
 	for(var/datum/work_item/stage/W as anything in items)
