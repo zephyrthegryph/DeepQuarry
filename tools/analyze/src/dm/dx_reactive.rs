@@ -393,8 +393,8 @@ pub fn own_roots_of(proc: &Proc, tree: &Tree, relations: &HashSet<String>) -> (H
     let capability_data_expr = pat_match!(r"\bcapability_data\s*\(\s*(\w+)\s*\)");
     let relation_expr = pat_match!(r"(?:(\w+)\s*\??\.\s*)?(\w+)\s*$");
     let dotted_root = pat_match!(r"(\w+)\s*\??\.");
-    // `look.watch(X)` declares the draw's read through X: the last name of X is a relation, like a watched REL.
-    let look_watch = pat!(r"look\s*\.\s*watch\s*\(\s*([\w.?]+)\s*\)");
+    // `look.watch(X)` (and `look.watch_look(X)`, the hop read of X's look only) declares the draw's read through X: the last name of X is a relation, like a watched REL.
+    let look_watch = pat!(r"look\s*\.\s*watch(?:_look)?\s*\(\s*([\w.?]+)\s*\)");
     let last_name = pat_match!(r"(?:\w+\s*\??\.\s*)*(\w+)$");
     // `look.neighbours(...)` is a watched read too: a local it fills (`var/x = look.neighbours(..)[1]`, `for(var/x in look.neighbours(..))`) is a relation.
     let look_neighbours = pat!(r"\bvar/(?:[\w/]+/)?(\w+)\s*(?:=|in)\s*look\s*\.\s*neighbours?\s*\(");

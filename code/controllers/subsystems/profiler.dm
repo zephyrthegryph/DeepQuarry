@@ -120,7 +120,7 @@ SYSTEM_DEF(profiler)
 	subsystems["radiation"] += SSradiation.performance_diagnostics()
 	subsystems["explosions"] += SSexplosions.performance_diagnostics()
 	// Rust world wakes (timers, keys, rate crossings, native watches) on the OM scheduler.
-	subsystems["world_step"] = om_world_diagnostics()
+	subsystems["world_step"] = world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
 		"world_time_ds" = EXPIRY_AT(src, CLOCK_WORLD, 0),

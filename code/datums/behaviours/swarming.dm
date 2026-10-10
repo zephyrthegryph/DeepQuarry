@@ -74,6 +74,3 @@ CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 		animate(owner, pixel_x = owner.pixel_x - owner.swarm_offset_x, pixel_y = owner.pixel_y - owner.swarm_offset_y, time = 2)
 		owner.is_swarming = FALSE
 
-/atom/movable/relations()
-	. = ..()
-	. += rel_many(nameof(swarm_members))

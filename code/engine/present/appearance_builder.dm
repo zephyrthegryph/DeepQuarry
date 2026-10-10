@@ -42,6 +42,9 @@
 	var/list/watched
 	/// look.neighbours(): the types of the neighbours this draw looked for (the watched turfs tell the holder only of those).
 	var/list/neighbour_types
+	/// look.watch_look(): own key -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
+	/// (look_published()) redraws the holder, and the serials are part of the change key, so the holder's look is applied again when one moved.
+	var/list/watched_looks
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -72,6 +75,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	identity_desc = null
 	effects = null
 	watched = null
+	watched_looks = null
 	neighbour_types = null
 	touched = FALSE
 
@@ -201,6 +205,19 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
 	LAZYOR(watched, OWN_KEY(thing))
+
+/**
+ * This draw composes `thing`'s whole look (a voodoo doll that wears the look of its necklace's wearer, a remote scene tool): the holder redraws when THAT
+ * ATOM'S LOOK changes (it applied a new look, or a mob's worn layers changed: look_published()), and not on every var `thing` writes, which watch() would. The
+ * subscription follows the draw. Read `thing` through the name given here (the reads lint takes it as a watched relation, like watch()), and compose from what it
+ * shows (its overlays, its worn layers, its sprite vars); a value that is not part of its look (a name, a client) is tracked on the holder, or watch() instead.
+ *	look.watch_look(wearer)
+ *	var/image/shown = get_humanoid_displacement_map_image(wearer, discarded, map)
+ */
+/datum/look/proc/watch_look(atom/thing)
+	if(!isatom(thing) || QDELETED(thing))
+		return
+	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
 
 /**
  * What stands on the turfs `dirs` away from `holder`: the movables of `type` there (a list, empty when none), and the draw hears about them. It watches
@@ -517,6 +534,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(vis)
 		for(var/atom/movable/thing as anything in vis)
 			parts += "vis:[SHARED_CACHE_UID(thing)]"
+	for(var/key in watched_looks)
+		parts += "look:[key]=[watched_looks[key]]" // the other atom's look version: images built from it have no key of their own
 	return jointext(parts, "|")
 
 /// The key of one overlay entry: an icon_state as it is; an image or mutable_appearance by what it
@@ -527,7 +546,14 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		return entry
 	if(isimage(entry) || istype(entry, /mutable_appearance))
 		var/image/I = entry
-		return "{[I.icon]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]}"
+		. = "{[I.icon]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
+		// A transform and a maptext are part of the key only when the image has one, so the keys of the images that set neither stay as they were.
+		var/matrix/M = I.transform
+		if(M && !(M.a == 1 && M.b == 0 && M.c == 0 && M.d == 0 && M.e == 1 && M.f == 0))
+			. += ":t[M.a],[M.b],[M.c],[M.d],[M.e],[M.f]"
+		if(length(I.maptext))
+			. += ":m[I.maptext],[I.maptext_x],[I.maptext_y],[I.maptext_width],[I.maptext_height]"
+		return . + "}"
 	return "[entry]"
 
 #define LOOK_SET_ICON (1<<0)

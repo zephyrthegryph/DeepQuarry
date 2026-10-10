@@ -62,6 +62,7 @@ MSG_DEF_SELF(sleeper/occupied, "Your sleeper is already occupied.")
 MSG_DEF_SELF(sleeper/buckled, "%T% is buckled and can not be put into your sleeper.")
 
 CAPABILITIES(/obj/item/dogborg/sleeper)
+	ref_many(nameof(items_preserved))
 	// ingestion: the plain sleeper takes a person (5 seconds), the compactor an item, a mouse or a person (3 seconds)
 	op("sleeper_take_patient", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_plain)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled)), req_bool(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(5 SECONDS), then(PROC_REF(intake_patient_done)))
 	op("sleeper_compact_item", at_target(/obj/item), at_target(/obj/effect/decal/remains), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req_bool(PROC_REF(sleeper_fits), because = MSG(sleeper/too_large))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
@@ -102,10 +103,6 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).
-/obj/item/dogborg/sleeper/relations()
-	. = ..()
-	. += rel_many(nameof(items_preserved))
-
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)
 	go_out()

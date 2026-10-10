@@ -180,6 +180,7 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
+	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
 	ref_many(nameof(tamers))

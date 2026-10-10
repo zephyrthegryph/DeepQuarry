@@ -210,7 +210,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	for(var/i in 1 to 40)
 		if(!SScontracts.is_contract_batching())
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch went to sleep with its contract batch still open")
 
 /// A lane step whose blast delivery runs out of budget resumes it next tick: every queued atom
@@ -228,7 +228,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	for(var/i in 1 to 80)
 		if(!SScontracts.is_contract_batching())
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT_EQUAL(SSexplosions.pending_blast_count(), 0, "blasts were left queued after the epoch")
 	TEST_ASSERT(length(GLOB.dq_blast_probe_log) >= 6, "only [length(GLOB.dq_blast_probe_log)] of 6 probes got a packet")
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch ended with its contract batch still open")

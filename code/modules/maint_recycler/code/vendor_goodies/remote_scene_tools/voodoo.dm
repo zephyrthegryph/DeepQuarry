@@ -59,16 +59,16 @@
 	primary =/obj/item/remote_scene_tool/voodoo_doll
 	secondary =/obj/item/remote_scene_tool/voodoo_necklace
 
+TRACKED(/obj/item/remote_scene_tool/voodoo_doll, no_fun_mode)
+
 CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	op("voodoo_doll_verb_toggle_fun", menu(), label("Disable Special Rendering"), needs(carried()), then(PROC_REF(voodoo_doll_verb_toggle_fun)))
 
 /// Old Disable Special Rendering verb: Disables the displacement-based rendering on the doll, leaving it as just a doll at all times.
 /obj/item/remote_scene_tool/voodoo_doll/proc/voodoo_doll_verb_toggle_fun(datum/act/op/A)
 	var/mob/user = A.actor
-	no_fun_mode = !no_fun_mode
+	set_no_fun_mode(!no_fun_mode)
 	to_chat(user,span_notice("you turn the dial on the back of \the [src], and turn the advanced projection matrix [no_fun_mode ? "off" : "on"]"))
-	update_icon() //force a refresh
-
 
 /obj/item/remote_scene_tool/voodoo_doll/Move(atom/newloc, direct, movetime)
 	. = ..()
@@ -85,7 +85,19 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	output.Scale(data[DATA_SCALE], data[DATA_SCALE])
 	return output
 
-/obj/item/remote_scene_tool/voodoo_doll/proc/generate_layer_image(image/input, matrix/newtransform, outline_width = 0, outline_color = rgb(50,50,50))
+/// The outline colour of the wearer's tail: a grey, or a darker version of the tail's colouration.
+/obj/item/remote_scene_tool/voodoo_doll/proc/tail_outline_color(mob/living/carbon/human/buddy)
+	if(buddy.tail_style?.do_colouration)
+		return get_outline_color(buddy.r_tail, buddy.g_tail, buddy.b_tail, buddy.a_tail)
+	return rgb(50,50,50)
+
+/// The outline colour of the wearer's wings, the same way.
+/obj/item/remote_scene_tool/voodoo_doll/proc/wing_outline_color(mob/living/carbon/human/buddy)
+	if(buddy.wing_style?.do_colouration)
+		return get_outline_color(buddy.r_wing, buddy.g_wing, buddy.b_wing, buddy.a_wing)
+	return rgb(50,50,50)
+
+/obj/item/remote_scene_tool/voodoo_doll/proc/generate_layer_image(image/input, matrix/newtransform, outline_width = 0, outline_color = rgb(50,50,50), mask_inverse = FALSE)
 	if(input == null)
 		return null
 
@@ -94,91 +106,70 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 	input.layer = FLOAT_LAYER
 	if(outline_width > 0)
 		input.filters += filter(type="outline", size = outline_width, color = outline_color)
+	if(mask_inverse)
+		input.filters += filter(type = "alpha", flags = MASK_INVERSE)
 
 	return input
 
-DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool/voodoo_doll, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/remote_scene_tool/voodoo_doll/appearance_overlays()
-	. = list()
-	. += ..()
-	//reset
-	overlays?.Cut()
-	underlays?.Cut()
-	filters = null
-	dir = SOUTH
-	name = initial(name)
-	desc = initial(desc)
-	var/matrix/rotateMatrix = matrix()
-	transform = rotateMatrix
+/// The doll shows its necklace's wearer: the wearer's worn layers displaced onto the doll, with the ears, hat, tail and wings drawn as layers of their own.
+/// It composes the wearer's whole look through look.watch_look(), so it is drawn again when that look changes and not when the wearer writes any other var.
+/obj/item/remote_scene_tool/voodoo_doll/draw(datum/look/look)
+	..()
+	look.set_dir(SOUTH)
+	var/mob/owner = partner_wearer
+	look.identity(owner ? "Voodoo doll of [partner_name]" : initial(name), owner ? "A small, marketable doll that looks suspiciously like [partner_name]... " : initial(desc))
+	if(!owner)
+		return
+	if(istype(owner, /mob/living/carbon/human/teshari))
+		return //no flesh horror, sorry
+	if(!worn_mob)
+		return //only render the funny when we're on a humie
+	if(no_fun_mode)
+		return //no fun allowed
+	if(!ishuman(owner))
+		return
+	var/mob/living/carbon/human/buddy = owner
+	look.watch_look(buddy)
+	var/is_tail_taur = istaurtail(buddy.tail_style)
+	var/icon/displacement_map = icon(src.icon, is_tail_taur ? "taurdisplacement" : "displacement", SOUTH)
+	var/image/displacement_rendered = get_humanoid_displacement_map_image(buddy, discarded_layer_indicies, displacement_map, 2, null)
 
-	if(!linked())
-		return .
+	//tails need special attention because taurs
+	var/tailoutlinecolor = tail_outline_color(buddy) //default to a grey, otherwise we use a darker version of one of the tail colors
+	var/image/tail_image
+	if(is_tail_taur)
+		tail_image = generate_layer_image(buddy.get_tail_image(), generate_layer_matrix(taur_data), outline_size, tailoutlinecolor, mask_inverse = TRUE)
+	else
+		tail_image = generate_layer_image(buddy.get_tail_image(), generate_layer_matrix(tail_data), outline_size, tailoutlinecolor)
 
-	var/mob/owner = linked().getWearer()
-	if(!owner) return;
+	//same kind of scenario for wings
+	var/wingoutlinecolor = wing_outline_color(buddy)
+	var/image/wing_image = generate_layer_image(buddy.get_wing_image(FALSE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
+	var/image/under_wing_image = generate_layer_image(buddy.get_wing_image(TRUE), generate_layer_matrix(wing_data), outline_size, wingoutlinecolor)
 
-	name = "Voodoo doll of " + owner.name
-	desc = "A small, marketable doll that looks suspiciously like [owner]... "
+	//the rest are pretty simple
+	var/ear_icon = buddy.get_ears_overlay()
+	var/image/ear_image = generate_layer_image(image(icon = ear_icon), generate_layer_matrix(ear_data))
 
+	//hat
+	var/hat_icon = buddy.get_equipped_item(SLOT_ID_HEAD)?.make_worn_icon(body_type = buddy.species.get_bodytype(src), slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
+	var/image/hat_image = generate_layer_image(image(icon = hat_icon), generate_layer_matrix(hat_data))
 
-	if(istype(owner,/mob/living/carbon/human/teshari)) return //no flesh horror, sorry
+	//add them all
+	look.overlay(displacement_rendered)
+	look.overlay(ear_image)
+	look.overlay(hat_image)
+	if(is_tail_taur)
+		look.overlay(tail_image)
+	else
+		look.underlay(tail_image)
+	look.underlay(wing_image)
+	look.underlay(under_wing_image)
 
-	if(!ismob(loc) && !ismob(loc.loc)) return //only render the funny when we're on a humie
-
-	if(no_fun_mode) return //no fun allowed
-
-	if(ishuman(owner)) //TODO, refactor the fuck out of this once I port the tgui filter manager stuff over.
-		var/mob/living/carbon/human/buddy = owner
-		var/is_tail_taur = istaurtail(buddy.tail_style)
-		var/icon/displacement_map = icon(src.icon,is_tail_taur ? "taurdisplacement" : "displacement",SOUTH)
-		var/image/displacement_rendered = get_humanoid_displacement_map_image(buddy,discarded_layer_indicies,displacement_map,2,null)
-
-		//tails need special attention because taurs
-		var/tailoutlinecolor = rgb(50,50,50) //default to a grey, otherwise we use a darker version of one of the tail colors
-		if(buddy.tail_style?.do_colouration)
-			tailoutlinecolor = get_outline_color(buddy.r_tail,buddy.g_tail,buddy.b_tail,buddy.a_tail)
-
-		var/image/tail_image = buddy.get_tail_image()
-		if(is_tail_taur)
-			tail_image = generate_layer_image(buddy.get_tail_image(),generate_layer_matrix(taur_data),outline_size,tailoutlinecolor)
-			tail_image.filters += filter(type="alpha", flags = MASK_INVERSE)
-		else
-			tail_image = generate_layer_image(buddy.get_tail_image(),generate_layer_matrix(tail_data),outline_size,tailoutlinecolor)
-
-		//same kind of scenario for wings
-		var/wingoutlinecolor = rgb(50,50,50)
-		if(buddy.wing_style?.do_colouration)
-			wingoutlinecolor = get_outline_color(buddy.r_wing,buddy.g_wing,buddy.b_wing,buddy.a_wing)
-		var/image/wing_image = generate_layer_image(buddy.get_wing_image(FALSE),generate_layer_matrix(wing_data),outline_size,wingoutlinecolor)
-		var/image/under_wing_image = generate_layer_image(buddy.get_wing_image(TRUE),generate_layer_matrix(wing_data),outline_size,wingoutlinecolor)
-
-		//the rest are pretty simple
-		var/ear_icon = buddy.get_ears_overlay()
-		var/image/ear_image = generate_layer_image(image(icon = ear_icon),generate_layer_matrix(ear_data))
-
-		//hat
-		var/hat_icon = buddy.get_equipped_item(SLOT_ID_HEAD)?.make_worn_icon(body_type = buddy.species.get_bodytype(src), slot_name = slot_head_str, default_icon = INV_HEAD_DEF_ICON, default_layer = HEAD_LAYER)
-		var/image/hat_image = generate_layer_image(image(icon = hat_icon),generate_layer_matrix(hat_data))
-
-
-
-		//add them all
-		overlays |= displacement_rendered
-		. += ear_image
-		. += hat_image
-
-		if(!is_tail_taur)
-			underlays += tail_image
-		else
-			. += tail_image
-
-		underlays |= wing_image
-		underlays |= under_wing_image
-
-		//filtering time
-
-		rotateMatrix.Turn(2) //very slight blur. this is unironically the best way to do it, any of the blur filters are just way too strong at a minimum value.
-		transform = rotateMatrix
+	//filtering time: a very slight blur. this is unironically the best way to do it, any of the blur filters are just way too strong at a minimum value.
+	var/matrix/blur = matrix()
+	blur.Turn(2)
+	look.set_transform(blur)
 
 #undef DATA_X_OFFSET
 #undef DATA_Y_OFFSET

@@ -40,14 +40,11 @@
 MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
 
 CAPABILITIES(/obj/item/robotic_multibelt)
+	ref_one(nameof(selected_item))
 	owns_many(nameof(cyborg_integrated_tools))
 	op("multibelt_self", in_hand(), label("Use"), needs(req_is(nameof(cyborg_integrated_tools), TRUE, because = MSG(multibelt/cyborg_integrated_tools))), asks(/datum/prompt/choice, fields = list("radial" = TRUE, "choices" = computed(PROC_REF(tool_options)), "anchor" = computed(PROC_REF(tool_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "tool"), then(PROC_REF(tool_chosen)))
 
 /// The selected tool: one of cyborg_integrated_tools, which owns it.
-/obj/item/robotic_multibelt/relations()
-	. = ..()
-	. += rel_one(nameof(selected_item))
-
 /obj/item/robotic_multibelt/item_ctrl_click(mob/user)
 	if(selected_item)
 		selected_item.attack_self(user)
@@ -593,6 +590,8 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	ref_one(nameof(current_pocket))
+	ref_one(nameof(our_robot))
 	ref_one(nameof(held_item), /obj/item)
 	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1)
 	owns_many(nameof(pockets))
@@ -622,10 +621,6 @@ CAPABILITIES(/obj/item/gripper)
 	return interaction_item(A, I_HURT)
 
 /// The selected pocket (one of `pockets`) or item.
-/obj/item/gripper/relations()
-	. = ..()
-	. += rel_one(nameof(current_pocket))
-	. += rel_one(nameof(our_robot))
 
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE

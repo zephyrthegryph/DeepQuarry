@@ -617,13 +617,11 @@ config flag, so it is not name-banned). `om_mob_event_setup` on the overmap simp
 
 **(d) Blocked on a missing form**
 
-- `om_unlink` in `code/modules/food/kitchen/gibber.dm`: the occupant is a `/datum/om/relation/slot/occupant/gibber` containment slot with a ledger (KR5); there is no declared-link form for a slot that is unlinked without a ledger move.
-- `om_rate_linear/read/set_rate/remove` in `code/datums/rules/binding.dm` and `om_world_on_rate` in `rules/world_adapter.dm`: Rust rate models for rule hold timers; no `hold(lasts =)` form drives a native rate yet.
-- `om_world_when` in `code/domains/atmos/gas_level.dm`: Rust threshold watch on a mixture cell; needs `observe()` on a native handle with a condition.
-- `om_world_diagnostics` in the profiler, behaviours profiler and `_benchmark.dm`: reads the scheduler's native wake counters; needs the kernel metrics source to expose them.
-- `om_world_*` / `om_rate_*` definitions in `code/datums/om/world_watch.dm`: the Rust world bridge itself, deleted with its last caller above.
-- `om_unlink` hard ban: kept as `banned_outside` with the gibber exception until KR5 lands.
-- `/datum/om/*` carriers kept for compatibility (`global_owner`, `behaviour/internal/timers`, `edge`): needed while the legacy relation and timer paths exist.
+- `om_unlink` in `code/modules/food/kitchen/gibber.dm`: **DONE (rewrite/small-forms)**: `slot_release(thing)` (code/engine/refs/containment/api.dm) files a thing under the holder's default slot without moving it; the gibber's remains use it; `om_unlink` is deleted and hard-banned.
+- **DONE (rewrite/small-forms)** `om_rate_*` / `om_world_on_rate` / `dq_rx_on_rate`: a rule's `hold_for` is a keyed kernel timer of its binding (`after(src, left, PROC_REF(hold_done), key = "hold:<i>")`); the time held is counted while the condition holds and kept while it does not. The Rust rate models have no DM caller left (the DM test of the models went with the wrappers; the models stay in verdigris).
+- **DONE** `om_world_when` / `om_world_on_change` / `om_world_new_watch`: moved to `code/engine/time/world_watches.dm` as `world_watch_when()` / `world_watch_changed()` / `world_watch_new()` (the watch type is the engine's `/datum/native_watch/world`).
+- **DONE** `om_world_diagnostics` (profiler, behaviours profiler, `_benchmark.dm`) and the test trace helpers: `world_diagnostics()`, `world_wake_trace()`, `world_wake_traced()`, `world_wake_untrace()` in the same file. `code/datums/om/world_watch.dm` is deleted; all of the names above are hard-banned.
+- `/datum/om/*` carriers are NOT removable yet: `/datum/om/scheduler` (kernel, measure, profilers), `/datum/om/relation/slot/*` (about 100 containment slot declarations, KR5), `/datum/om/edge`, `/datum/om/behaviour`, `/datum/om/check`, `/datum/om/type_table`, `global_owner`, `behaviour/internal/timers` are all live. See doc/rewrite/proposals/om_carriers.md.
 
 **IX-R2 follow-up: what of the bridge is still live (checked before deleting)**
 
@@ -636,3 +634,15 @@ Not deletable yet, each still on a live path:
 - `allows_interaction()` in `keybindings/adapters.dm`: called by the resolver and `actions.dm` (`action_entry_for`).
 - `use_tool()` in `tools.dm`: 51 production callers.
 - Deleting these needs the `capabilities()` tables and library capabilities converted to `op()` first; it is a wave, not a deletion.
+
+
+## M. Small forms (rewrite/small-forms)
+
+| ID | Form | Change |
+|---|---|---|
+| SF1 (DONE) | `look_part_key()` names an image's transform and maptext (only when it has one, so no recorded key moves) | The compass holder's markers are turned by a transform and labelled by a maptext, so a marker that turned kept its key and never redrew. The holder now publishes its marker list and heading through their tracked setters (a fresh list or image each time) and its `update_icon` / `changed(src)` calls are gone (`rebuild_overlay_lists()` and `update_compass()` lose their `update_icon` argument). |
+| SF2 (DONE) | `look.watch_look(thing)` (appearance_builder.dm), `look_published(A)` (refresh.dm), `cap_engine_state.look_watchers` / `look_watching_looks` / `look_serial` | The hop read of another atom's whole look. `thing`'s look being applied (or a human's `apply_layer()` / `remove_layer()`) marks the draws that compose it; its other vars do not. The other atom's look serial is part of the holder's change key, because images built from a human's layers have no key of their own. Read it through the name given to `watch_look()` (dx_reactive reads it like `watch()`). Converted: `/obj/item/remote_scene_tool` (`partner_live` and `partner_wearer` are tracked mirrors written by `linked_updated()`) and `/obj/item/remote_scene_tool/voodoo_doll` (`no_fun_mode` tracked); both legacy `DECLARE_APPEARANCE_PROC` providers are deleted. Behaviour difference: the doll renders the funny when its own `worn_mob` is set (it is worn or carried by a mob or a clothing item), not whenever `loc.loc` is a mob. |
+| SF3 (DONE) | `slot_release(thing)` | See IX-R2 (d). |
+| SF4 (DONE) | `world_watch_when/changed`, `world_diagnostics`, rule hold timers | See IX-R2 (d). |
+| SF5 (DONE for everything outside machinery and power) | `ref_one` / `ref_many` (`by =`, new `target_key =` when the holder and the target keep the id in differently named vars: a pad's `map_pad_link_id` names its partner's `map_pad_id`), `links()`, `owns_one` | 43 `relations()` procs converted in 36 files (ten pairs became one `links()` line each, the `rel_key()` target lines went with the keyed `by =`). `relations()` is `banned_outside` for `code/engine/`, `code/game/machinery/`, `code/modules/power/`, `code/modules/unit_tests/` and `code/modules/shieldgen/shield_gen.dm` (its `rel_key(id)` is declared by the shield button in `door_control.dm`, which moves with machinery); the ban becomes hard when those are converted. |
+| SF6 (DONE) | Unit-test helpers `dq_test_ticks`, `dq_test_wait_for`, `dq_test_has_arrived`, `dq_test_all_woken`, `dq_wake_test`, `dq_wakes_pending`, `dq_settle`, `dq_wait_for_wake`, `dq_test_global_hit`, `dq_cf_global_hit` | Renamed from their `om_` names, the last `om_*(` procs in code; each old name is hard-banned. What still says `om_` are comments naming deleted procs and the `/datum/om/*` carriers (doc/rewrite/proposals/om_carriers.md). |

@@ -634,15 +634,12 @@
 /datum/tgui/proc/state() as /datum/tgui_state
 	return state_static
 
+CAPABILITIES(/datum/tgui)
+	links(/datum/tgui::user, /mob::tgui_open_uis, b_many = TRUE, a_on_unlink = PROC_REF(participant_gone))
+	ref_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
+	ref_one(nameof(window), on_unlink = PROC_REF(participant_gone))
+
 /// The parent_ui this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 
-/datum/tgui/relations()
-	. = ..()
-	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis), on_unlink = PROC_REF(participant_gone))
-	. += rel_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
-	. += rel_one(nameof(window), on_unlink = PROC_REF(participant_gone))
-/mob/relations()
-	. = ..()
-	. += rel_many(nameof(tgui_open_uis), back = nameof(/datum/tgui::user))

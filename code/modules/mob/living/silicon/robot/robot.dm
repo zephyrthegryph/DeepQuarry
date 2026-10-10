@@ -1711,12 +1711,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
 	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-/mob/living/silicon/robot/relations()
-	. = ..()
-	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
-	. += rel_one(nameof(cell))
-
-// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living/silicon/robot, sight_mode)
 TRACKED(/mob/living/silicon/robot, emagged)
 TRACKED(/mob/living/silicon/robot, lockdown)

@@ -31,6 +31,7 @@
 	var/tmp/atom/movable/emissive_blocker/em_block
 
 CAPABILITIES(/atom/movable)
+	ref_many(nameof(swarm_members))
 	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
 	owns_one(nameof(experiment_handler), /datum/experiment_handler)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)

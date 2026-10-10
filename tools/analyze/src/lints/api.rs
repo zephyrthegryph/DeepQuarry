@@ -309,7 +309,7 @@ impl Lint for Api {
         for l in pattern_sites(f, &self.accessor_macros) {
             emit(out, f, "accessor_macros", l);
         }
-        if rel != "code/engine/time/native_wakes.dm" && rel != "code/datums/om/world_watch.dm" {
+        if rel != "code/engine/time/native_wakes.dm" && rel != "code/engine/time/world_watches.dm" && rel != "code/datums/om/world_watch.dm" {
             for l in pattern_sites(f, &self.raw_world_bind) {
                 emit(out, f, "raw_world_bind", l);
             }

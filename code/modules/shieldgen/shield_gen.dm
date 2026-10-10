@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 // Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
 /obj/machinery/shield_gen/relations()
 	. = ..()
-	// Remote shield buttons find generators by id (REL_KEYED sources).
+	// Remote shield buttons find generators by id (REL_KEYED sources). Moves to the button's ref_many(by = nameof(id)) with code/game/machinery/door_control.dm.
 	. += rel_key(nameof(id))
 
 /obj/machinery/shield_gen/Initialize(mapload)

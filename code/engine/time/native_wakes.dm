@@ -51,7 +51,7 @@
 	/// Wakes by owner type, bounded at OM_MAX_STAT_TYPES types (the rest under "other").
 	var/list/world_wakes_by_type = list() // ALLOW(instance_list): d: one live scheduler (plus test ones); counted on every world wake
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-	/// Tests: owner -> wakes delivered + 1 (om_world_trace()).
+	/// Tests: owner -> wakes delivered + 1 (world_wake_trace()).
 	var/list/world_traced
 #endif
 

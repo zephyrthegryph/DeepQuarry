@@ -47,6 +47,7 @@ MSG_DEF_SELF(lift_door/internal, "This door is internally controlled.")
 
 // A lift's door takes no emag: the sequencer is refused with a word and spends nothing.
 CAPABILITIES(/obj/machinery/door/airlock/lift)
+	links(/obj/machinery/door/airlock/lift::lift, /datum/turbolift::doors, b_many = TRUE)
 	without(CAP_EMAG)
 	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
 		needs(req_bool(PROC_REF(emag_welcome), because = MSG(lift_door/internal))), then(PROC_REF(nothing_done)))
@@ -67,11 +68,5 @@ CAPABILITIES(/obj/machinery/door/airlock/lift)
 	return floor
 
 // Interior doors: two-sided with the lift's doors list.
-/obj/machinery/door/airlock/lift/relations()
-	. = ..()
-	. += rel_one(nameof(lift), back = nameof(/datum/turbolift::doors))
-/datum/turbolift/relations()
-	. = ..()
-	. += rel_many(nameof(doors), back = nameof(/obj/machinery/door/airlock/lift::lift))
 // Exterior doors: a floor lists its doors (airlocks and firedoors) in a one-sided REL_LIST
 // (turbolift_floor.dm), and each door names its floor in a one-sided view.

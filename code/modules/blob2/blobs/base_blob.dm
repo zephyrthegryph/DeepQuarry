@@ -23,6 +23,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 CAPABILITIES(/obj/structure/blob)
+	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -475,11 +476,3 @@ TRACKED(/obj/structure/blob, look_tint)
 /turf/simulated/wall/blob_act(obj/structure/blob/B)
 	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)
 
-// Every blob names its overmind (a one-sided view); only resource blobs pair with its
-// resource_blobs list (resource.dm).
-/obj/structure/blob/relations()
-	. = ..()
-	. += rel_one(nameof(overmind))
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(resource_blobs), back = nameof(/obj/structure/blob/resource::overmind))

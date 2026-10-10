@@ -18,9 +18,8 @@ SYSTEM_DEF(pois)
 	. = ..()
 	. += every(1 SECOND, PROC_REF(place_pois), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/system/pois/relations()
-	. = ..()
-	. += rel_many(nameof(allocated_gamma_items))
+CAPABILITIES(/datum/system/pois)
+	ref_many(nameof(allocated_gamma_items))
 
 /// Queued loader landmarks: each qdels itself once placed.
 /datum/system/pois/declared_cache_vars()

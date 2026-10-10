@@ -159,7 +159,7 @@
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.
 	// Wake count is load-independent (it's driven by game events, not wall clock).
-	var/list/world_step = om_world_diagnostics()
+	var/list/world_step = world_diagnostics()
 	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
 	count_metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
 	// OM deadline wheel entries (timers, task steps, throttles) at the window's ends: a boot

@@ -12,7 +12,7 @@
 	if(other)
 		LAZYADD(other.log, "[tag] via")
 
-/proc/om_test_global_hit(datum/om_test_entity/L, tag)
+/proc/dq_test_global_hit(datum/om_test_entity/L, tag)
 	LAZYADD(L.log, tag)
 
 /datum/om_test_entity/var/step_calls = 0
@@ -71,7 +71,7 @@
 	TEST_ASSERT(id, "om_after with a proc returns a timer id")
 	TEST_ASSERT(timer_pending(E, id), "the timer is pending")
 	after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("live", witness))
-	after(null, 1 SECONDS, /proc/om_test_global_hit, with = list(witness, "global"))
+	after(null, 1 SECONDS, /proc/dq_test_global_hit, with = list(witness, "global"))
 	qdel(E)
 	scheduler_advance(2)
 	TEST_ASSERT(!("gone via" in witness.log), "a deleted owner's timer never runs")

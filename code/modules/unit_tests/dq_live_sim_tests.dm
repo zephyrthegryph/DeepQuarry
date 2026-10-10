@@ -1,5 +1,5 @@
 // Live simulation: timed cadence grants, the world step length, and gas threshold watches
-// (code/datums/om/cadence.dm, code/controllers/subsystems/vg.dm, code/datums/om/world_watch.dm),
+// (code/datums/om/cadence.dm, code/controllers/subsystems/vg.dm, code/engine/time/world_watches.dm),
 // and the null-safety helpers (code/_helpers/null_safety.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -77,18 +77,18 @@
 	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
 	tank.adjust_gas(/datum/gas/oxygen, 10)
 	var/limit = tank.return_pressure() + 500
-	var/datum/native_watch/world/watch = om_world_when(sub, COND_ABOVE_H(WORLD_GAS_HANDLE(tank), CH_GAS_PRESSURE, limit, 50), TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), LANE_URGENT)
+	var/datum/native_watch/world/watch = world_watch_when(sub, COND_ABOVE_H(WORLD_GAS_HANDLE(tank), CH_GAS_PRESSURE, limit, 50), TYPE_PROC_REF(/datum/world_threshold_subscriber, on_cross), LANE_URGENT)
 	TEST_ASSERT_NOTNULL(watch, "the watch was created")
 	SSair.run_gas_frames(2)
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(sub.wakes, 0, "the sensor stays quiet below the threshold")
 	tank.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
 	// The crossing is queued by the frame above, but the wake is delivered by the kernel's urgent phase, which
 	// a loaded full-suite world (sharded boots, overrun ticks) can skip for several ticks. Wait for the delivery
 	// itself, with a generous bound, instead of assuming six ticks always reach it.
-	om_test_wait_for(sub, nameof(sub.wakes))
-	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire; world wake diagnostics: [json_encode(om_world_diagnostics())]")
+	dq_test_wait_for(sub, nameof(sub.wakes))
+	TEST_ASSERT(sub.wakes >= 1, "the pressure crossed [limit] kPa ([tank.return_pressure()]) but the watch did not fire; world wake diagnostics: [json_encode(world_diagnostics())]")
 	qdel(watch)
 	qdel(tank)
 
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/test_gas_holder)
 	TEST_ASSERT_NOTNULL(state, "the level keeps its state in the holder's activation")
 	TEST_ASSERT_EQUAL(state.armed_id, first.arena_id(), "armed on the air's mixture")
 	SSair.run_gas_frames(2)
-	om_test_ticks(3)
+	dq_test_ticks(3)
 	kernel_drain_now()
 	TEST_ASSERT(!holder.crowded, "the var is FALSE while the pressure is below the level")
 	TEST_ASSERT_EQUAL(holder.crossings, 0, "quiet while the pressure is below the level")

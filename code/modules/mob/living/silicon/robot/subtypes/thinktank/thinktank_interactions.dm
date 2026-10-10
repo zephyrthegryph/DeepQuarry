@@ -1,4 +1,6 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
+	ref_one(nameof(recharging))
+	ref_many(nameof(stored_atoms))
 	op("platform_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_item)))
 	op("platform_hand", hand(), ungated(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_hand)))
 	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))

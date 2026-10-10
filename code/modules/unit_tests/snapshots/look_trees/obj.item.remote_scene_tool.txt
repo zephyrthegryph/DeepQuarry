@@ -6,6 +6,10 @@
 /obj/item/remote_scene_tool/voodoo_doll state: voodoo_doll_inactive
 /obj/item/remote_scene_tool/voodoo_doll dir: 2
 /obj/item/remote_scene_tool/voodoo_doll overlay: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi:voodoo_doll_inactive:8:#000000
+/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting icon: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi
+/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting state: voodoo_doll_inactive
+/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting dir: 2
+/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting overlay: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi:voodoo_doll_inactive:8:#000000
 /obj/item/remote_scene_tool/voodoo_necklace icon: code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi
 /obj/item/remote_scene_tool/voodoo_necklace state: necklace_inactive
 /obj/item/remote_scene_tool/voodoo_necklace dir: 2
