@@ -1,5 +1,5 @@
 import unittest
-from iteration_memory import OwnedMemory, request_concurrency
+from iteration_memory import OwnedMemory, request_concurrency, iteration_concurrency
 
 
 class Child:
@@ -53,6 +53,13 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(request_concurrency(6, 8, True), 1)
         for workers in (2, 8):
             self.assertLessEqual(request_concurrency(6, workers, True) * workers, 8)
+
+    def test_hot_daemon_clients_queue_at_server_without_raising_worker_budget(self):
+        self.assertEqual(iteration_concurrency('initial', 6, 2, False, 2), 1)
+        for kind in ('unchanged', 'body', 'structural'):
+            self.assertEqual(iteration_concurrency(kind, 6, 2, False, 2), 6)
+            self.assertEqual(iteration_concurrency(kind, 6, 2, True, 2), 1)
+        with self.assertRaises(ValueError): iteration_concurrency('body', 6, 2, False, 1)
 
 
 if __name__ == "__main__":

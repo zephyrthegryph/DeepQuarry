@@ -251,6 +251,7 @@ pub fn abi_diagnostics(
                 AbiError::invariant("ABI diagnostic body ordinal is outside captured frontend")
             })?;
             Ok(crate::lowering::LoweringDiagnostic {
+                related: Vec::new(),
                 kind: match message.kind {
                     dm_codegen_byond::procedure_abi::AbiErrorKind::Source => {
                         dm_tree::frontend::DiagnosticKind::SourceError

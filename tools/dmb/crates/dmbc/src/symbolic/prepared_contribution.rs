@@ -138,6 +138,9 @@ impl PreparedContribution {
 
     /// Retain the immutable payload without retaining source/debug provenance
     /// or any current output table assignment.
+    pub(crate) fn share_code(&mut self, lease: &super::shared_procedure_code::Lease) {
+        self.contribution.share_code(lease);
+    }
     pub fn shared_artifact(&self) -> Arc<ReusableProcedureArtifact> {
         self.contribution.shared_artifact()
     }

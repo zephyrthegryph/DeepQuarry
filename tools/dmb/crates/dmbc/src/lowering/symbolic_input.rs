@@ -15,6 +15,8 @@ pub use retained::SymbolicRetentionStats;
 #[derive(Default)]
 pub(crate) struct SessionSymbolicMemo {
     records: Mutex<BTreeMap<UnitIdentity, Arc<Record>>>,
+    shared_code: Option<crate::symbolic::shared_procedure_code::Lease>,
+    shared_code_pool: Option<Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>>,
     admitted: AtomicU64,
     reused: AtomicU64,
     pruned: AtomicU64,
@@ -180,7 +182,7 @@ impl CompletedInput {
         external: &crate::symbolic::ReferenceBindings,
         detail: bool,
     ) -> Result<crate::symbolic::PreparedContribution, crate::cold::ColdError> {
-        let value = match self.inner {
+        let mut value = match self.inner {
             Input::Selections(_, _, _, _) => {
                 unreachable!("query-only facts cannot become executable contribution")
             }
@@ -192,6 +194,16 @@ impl CompletedInput {
                     .map_err(crate::cold::ColdError::Linking)?
             }
         };
+        if let Some(lease) = self
+            .admission
+            .as_ref()
+            .and_then(|admission| admission.store.as_ref())
+            .and_then(|store| store.shared_code.as_ref())
+        {
+            if value.is_reusable() {
+                value.share_code(lease);
+            }
+        }
         if let Some(admission) = self.admission {
             if let Some(writer) = &admission.disk {
                 writer.queue_compact(
@@ -241,6 +253,15 @@ impl CompletedInput {
     }
 }
 impl SessionSymbolicMemo {
+    pub(crate) fn with_shared_code(
+        owner: &Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
+    ) -> Self {
+        Self {
+            shared_code: Some(owner.lease()),
+            shared_code_pool: Some(Arc::clone(owner)),
+            ..Self::default()
+        }
+    }
     /// Idle pressure release preserves code, observation ledgers and rebind
     /// recipes. Numeric link/wire answers are recreated on the next request.
     pub(crate) fn release_bound_images(&self) -> usize {
@@ -269,9 +290,21 @@ impl SessionSymbolicMemo {
             .collect();
         let mut records = self.records.lock().unwrap_or_else(|e| e.into_inner());
         let before = records.len();
-        records.retain(|identity, _| identities.contains(identity));
+        let mut code_keys = Vec::new();
+        records.retain(|identity, record| {
+            let retained = identities.contains(identity);
+            if retained && self.shared_code.is_some() {
+                if let RecordValue::Executable(artifact) = &record.value {
+                    code_keys.extend(artifact.code_owner_keys());
+                }
+            }
+            retained
+        });
         self.pruned
             .fetch_add((before - records.len()) as u64, Ordering::Relaxed);
+        if let Some(lease) = &self.shared_code {
+            lease.retain_current_keys(code_keys.iter().map(Vec::as_slice));
+        }
         drop(records);
         self.receipt_groups.prune();
     }

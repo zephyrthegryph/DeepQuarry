@@ -312,6 +312,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         note(MemoOutcome::DiskHit, None, None);
         let current = source_unit_identity(frontend, body).map_err(|message| {
             vec![LoweringDiagnostic {
+                related: Vec::new(),
                 kind: dm_tree::frontend::DiagnosticKind::Internal,
                 identity: None,
                 origin: body.source.clone(),
@@ -480,6 +481,7 @@ fn body_diagnostic(
     diagnostic: dm_tree::frontend::Diagnostic,
 ) -> Vec<LoweringDiagnostic> {
     vec![LoweringDiagnostic {
+        related: Vec::new(),
         kind: diagnostic.kind,
         identity: None,
         origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),

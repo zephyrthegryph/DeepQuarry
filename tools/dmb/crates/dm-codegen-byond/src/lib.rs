@@ -16,6 +16,7 @@ pub use builtin_catalog::is_intrinsic_named_call;
 pub mod encoder;
 pub use encoder::{freeze_proc, FreezeError, FrozenProc, OperandEncoding, OperandSite};
 pub mod initializer;
+mod lower_diagnostics;
 pub mod lower_resolver;
 pub mod parameter_abi;
 pub mod procedure_abi;
@@ -32,8 +33,8 @@ pub use simple::{
     compile_typed_statements_with_resolver, decode_constant_string_literal, nameof_reference,
     typed_statement_view_supported, typed_statements_supported,
     typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider,
-    DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerSpan, ProcedureWarning,
-    SharedLowerBindings, SimpleProc,
+    DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan,
+    ProcedureWarning, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

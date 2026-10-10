@@ -85,6 +85,11 @@ fn distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline() {
     };
     let tail = PreparedKey::Parsed(vec![1, 2, 3]);
     let bytes = input.materialize(&tail);
+    let previous_prefix = b"dmbc-procedure-memo-v7-diagnostic-anchors\0";
+    let mut previous = previous_prefix.to_vec();
+    previous.extend_from_slice(&bytes[PREFIX.len()..]);
+    assert!(KeyRecipe::new(&previous, Arc::clone(&metadata)).is_none());
+    assert!(!input.matches(&previous, None, &tail));
     let equal = KeyRecipe::new(&bytes, Arc::new((*metadata).clone())).unwrap();
     assert!(!Arc::ptr_eq(&equal.metadata, &metadata));
     assert!(input.matches(&bytes, Some(&equal), &tail));

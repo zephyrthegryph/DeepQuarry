@@ -1,8 +1,9 @@
 use super::*;
 #[test]
-fn borrowed_failure_is_legacy_byte_identical_and_points_inside_frame() {
+fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
     let key = b"exact-key";
     let errors = [dm_codegen_byond::LowerError {
+        related: Vec::new(),
         statement: "return Ω".into(),
         reason: "unsupported exact model".into(),
         span: None,
@@ -24,7 +25,7 @@ fn borrowed_failure_is_legacy_byte_identical_and_points_inside_frame() {
         },
     ];
     let bytes = encode_failure(key, None, &reads, &[], &errors).unwrap();
-    // Legacy owned field roster, including original tuple/struct sequence shape.
+    // Current owned field roster, including complete secondary diagnostics.
     let legacy = (
         key.to_vec(),
         Option::<ProcedureIdentity>::None,
@@ -38,9 +39,27 @@ fn borrowed_failure_is_legacy_byte_identical_and_points_inside_frame() {
             errors[0].reason.clone(),
             errors[0].span,
             errors[0].kind,
+            errors[0].related.clone(),
         )],
     );
     assert_eq!(bytes, dm_wire::encode(FAILURE_SCHEMA, &legacy).unwrap());
+    let old_shape = (
+        key.to_vec(),
+        Option::<ProcedureIdentity>::None,
+        Vec::<(ResolveQuery, Vec<u8>)>::new(),
+        Vec::<(dm_ir::ReadDomain, u128)>::new(),
+        vec![(
+            errors[0].statement.clone(),
+            errors[0].reason.clone(),
+            errors[0].span,
+            errors[0].kind,
+        )],
+    );
+    let old_frame = dm_wire::encode(0x0206_0002, &old_shape).unwrap();
+    assert!(
+        validate(&old_frame).is_err(),
+        "old failure schema must cleanly miss"
+    );
     let borrowed: FailurePayload =
         dm_wire::decode_borrowed(FAILURE_SCHEMA, &bytes, bytes.len()).unwrap();
     assert!(matches!(borrowed.key, Cow::Borrowed(_)));

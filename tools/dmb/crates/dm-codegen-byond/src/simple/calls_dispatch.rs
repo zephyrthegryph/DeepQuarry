@@ -104,10 +104,16 @@ impl Compiler<'_> {
         if let dm_syntax::CallTarget::Member { object, selector } = target_kind {
             if dm_syntax::is_global_receiver(object) {
                 if !self.has_global_proc(selector)? {
-                    return Err(error(
+                    let mut failure = error(
                         statement,
                         &format!("unresolved global procedure: {selector}"),
-                    ));
+                    );
+                    // Only a definitive current resolver absence is a source
+                    // rejection. Opaque queries fail in has_global_proc itself.
+                    if self.lookup.is_some() {
+                        failure.kind = LowerErrorKind::SourceError;
+                    }
+                    return Err(failure);
                 }
                 if named_arguments {
                     self.named_arguments(args, statement)?;

@@ -31,6 +31,7 @@ fn publish_failure(cache: &dm_cache::Cache, key: &[u8], host: &impl Resolver, re
     let recorder = RecordingResolver::new(host);
     recorder.resolve(ResolveQuery::GlobalVar(dm_ir::SymbolId::of("absent")));
     let errors = [dm_codegen_byond::LowerError {
+        related: Vec::new(),
         statement: "unsupported".into(),
         reason: reason.into(),
         span: None,

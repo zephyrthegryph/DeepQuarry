@@ -8,7 +8,7 @@ use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 const EXECUTABLE_SCHEMA: u32 = 0x0206_0011;
-const FAILURE_SCHEMA: u32 = 0x0206_0002;
+const FAILURE_SCHEMA: u32 = 0x0206_0012;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
 #[path = "lowering_memo_read_wire.rs"]
@@ -336,10 +336,13 @@ pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
     {
         validate_versions(&value.versions)?;
         if value.errors.is_empty()
-            || value
-                .errors
-                .iter()
-                .any(|error| error.kind == dm_codegen_byond::LowerErrorKind::Internal)
+            || value.errors.iter().any(|error| {
+                error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                    || error
+                        .related
+                        .iter()
+                        .any(|note| note.span.start > note.span.end)
+            })
         {
             return Err("uncacheable failure payload".into());
         }
@@ -355,9 +358,13 @@ pub(crate) fn encode_failure(
     errors: &[dm_codegen_byond::LowerError],
 ) -> Option<Vec<u8>> {
     if errors.is_empty()
-        || errors
-            .iter()
-            .any(|error| error.kind == dm_codegen_byond::LowerErrorKind::Internal)
+        || errors.iter().any(|error| {
+            error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                || error
+                    .related
+                    .iter()
+                    .any(|note| note.span.start > note.span.end)
+        })
     {
         return None;
     }
@@ -391,10 +398,13 @@ pub(crate) fn decode_failure<R: Resolver>(
         dm_wire::decode_borrowed(FAILURE_SCHEMA, bytes, bytes.len()).ok()?;
     if validate_versions(&payload.versions).is_err()
         || payload.errors.is_empty()
-        || payload
-            .errors
-            .iter()
-            .any(|error| error.kind == dm_codegen_byond::LowerErrorKind::Internal)
+        || payload.errors.iter().any(|error| {
+            error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                || error
+                    .related
+                    .iter()
+                    .any(|note| note.span.start > note.span.end)
+        })
     {
         return None;
     }
@@ -654,10 +664,13 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
         {
             validate_versions(&value.versions)?;
             if value.errors.is_empty()
-                || value
-                    .errors
-                    .iter()
-                    .any(|error| error.kind == dm_codegen_byond::LowerErrorKind::Internal)
+                || value.errors.iter().any(|error| {
+                    error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                        || error
+                            .related
+                            .iter()
+                            .any(|note| note.span.start > note.span.end)
+                })
             {
                 return Err("uncacheable failure candidate".into());
             }

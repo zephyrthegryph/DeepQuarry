@@ -13,38 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub enum LowerErrorKind {
-    SourceError,
-    #[default]
-    UnsupportedModel,
-    Internal,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct LowerSpan {
-    pub start: usize,
-    pub end: usize,
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct LowerError {
-    pub statement: String,
-    pub reason: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub span: Option<LowerSpan>,
-    #[serde(default)]
-    pub kind: LowerErrorKind,
-}
-
-impl LowerError {
-    fn at(mut self, span: Option<LowerSpan>) -> Self {
-        if self.span.is_none() {
-            self.span = span;
-        }
-        self
-    }
-}
+pub use crate::lower_diagnostics::{LowerError, LowerErrorKind, LowerRelated, LowerSpan};
 
 /// Successful diagnostic recipe; ordinal is rebound through the current body origin.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -580,6 +549,7 @@ fn compile_with_lookup_mode(
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
         local_slots: dm_syntax::ScopeMap::default(),
+        local_declarations: HashMap::new(),
         local_types: dm_syntax::ScopeMap::default(),
         string_roster: StringRoster::default(),
         seen_classes: BTreeSet::new(),
@@ -930,6 +900,7 @@ struct Compiler<'a> {
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
     locals: Vec<String>,
     local_slots: dm_syntax::ScopeMap<u32>,
+    local_declarations: HashMap<u32, LowerSpan>,
     local_types: dm_syntax::ScopeMap<String>,
     string_roster: StringRoster,
     seen_classes: BTreeSet<SymbolId>,

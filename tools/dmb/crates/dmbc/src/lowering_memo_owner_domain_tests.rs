@@ -19,6 +19,7 @@ fn process_local_owner_versions_are_omitted_from_disk_but_queries_remain() {
         &[read],
         &versions,
         &[dm_codegen_byond::LowerError {
+            related: Vec::new(),
             statement: "unsupported".into(),
             reason: "fixture refusal".into(),
             span: None,

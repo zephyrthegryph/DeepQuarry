@@ -21,7 +21,14 @@ impl std::fmt::Display for InitializerLoweringError {
         match self {
             Self::Unsupported(message) | Self::Invariant(message) => output.write_str(message),
             Self::Diagnostics(errors) => {
-                write!(output, "{} initializer lowering diagnostics", errors.len())
+                write!(
+                    output,
+                    "{} initializer lowering diagnostics",
+                    errors
+                        .iter()
+                        .map(|error| 1 + error.related.len())
+                        .sum::<usize>()
+                )
             }
         }
     }
@@ -48,38 +55,60 @@ pub fn map_captured_lower_errors(
     plan: &InitializerPlan,
     write_ordinals: &[usize],
 ) -> Result<Vec<LoweringDiagnostic>, InitializerLoweringError> {
-    let origins = errors
-        .iter()
-        .map(|error| {
-            let local = error
-                .span
-                .ok_or_else(|| {
-                    InitializerLoweringError::Unsupported(format!(
-                        "initializer lowering has no assignment coordinate: {}",
-                        error.reason
-                    ))
-                })?
-                .start;
-            let ordinal = *write_ordinals.get(local).ok_or_else(|| {
+    let mut origins = Vec::new();
+    let mut counts = Vec::with_capacity(errors.len());
+    for error in &errors {
+        let primary = error.span.ok_or_else(|| {
+            InitializerLoweringError::Unsupported(format!(
+                "initializer lowering has no assignment coordinate: {}",
+                error.reason
+            ))
+        })?;
+        counts.push(1 + error.related.len());
+        for span in std::iter::once(primary).chain(error.related.iter().map(|note| note.span)) {
+            if span.start != span.end {
+                return Err(InitializerLoweringError::Invariant(
+                    "initializer diagnostic requires one issued assignment ordinal".into(),
+                ));
+            }
+            let ordinal = *write_ordinals.get(span.start).ok_or_else(|| {
                 InitializerLoweringError::Invariant(format!(
-                    "initializer local write coordinate {local} is outside its unit"
+                    "initializer local write coordinate {} is outside its unit",
+                    span.start
                 ))
             })?;
-            let origin = plan.origins.get(ordinal).ok_or_else(|| {
+            origins.push(plan.origins.get(ordinal).ok_or_else(|| {
                 InitializerLoweringError::Invariant(format!(
                     "initializer source write coordinate {ordinal} is outside captured plan"
                 ))
-            })?;
-            Ok(origin)
-        })
-        .collect::<Result<Vec<_>, InitializerLoweringError>>()?;
+            })?);
+        }
+    }
     let locations = captured_locations(frontend, &origins)?;
+    let mut cursor = 0usize;
     errors
         .into_iter()
-        .zip(locations)
-        .map(|(mut error, location)| {
+        .zip(counts)
+        .map(|(mut error, count)| {
+            let end = cursor.checked_add(count).ok_or_else(|| {
+                InitializerLoweringError::Invariant(
+                    "initializer diagnostic coordinate overflow".into(),
+                )
+            })?;
+            let sources = locations.get(cursor..end).ok_or_else(|| {
+                InitializerLoweringError::Invariant(
+                    "initializer diagnostic projection is incomplete".into(),
+                )
+            })?;
+            cursor = end;
             error.span = Some(dm_codegen_byond::LowerSpan { start: 0, end: 0 });
-            Ok(map_lower_errors(vec![error], &[location])?.remove(0))
+            for (index, note) in error.related.iter_mut().enumerate() {
+                note.span = dm_codegen_byond::LowerSpan {
+                    start: index + 1,
+                    end: index + 1,
+                };
+            }
+            Ok(map_lower_errors(vec![error], sources)?.remove(0))
         })
         .collect()
 }
@@ -206,7 +235,15 @@ pub fn map_lower_errors(
         let origin = sources.get(ordinal).ok_or_else(|| InitializerLoweringError::Invariant(
             format!("initializer assignment coordinate {ordinal} exceeds captured sidecar length {}", sources.len())
         ))?.clone();
-        Ok(LoweringDiagnostic {
+        let related = error.related.into_iter().map(|note| {
+            let origin = sources.get(note.span.start).ok_or_else(||
+                InitializerLoweringError::Invariant("secondary initializer coordinate exceeds current source roster".into()))?.clone();
+            if note.span.start > note.span.end || note.span.end > sources.len() {
+                return Err(InitializerLoweringError::Invariant("invalid secondary initializer coordinate".into()));
+            }
+            Ok(crate::lowering::RelatedDiagnostic { origin, message: note.message })
+        }).collect::<Result<Vec<_>, InitializerLoweringError>>()?;
+        Ok(LoweringDiagnostic { related,
             kind: match error.kind {
                 LowerErrorKind::SourceError => DiagnosticKind::SourceError,
                 LowerErrorKind::UnsupportedModel => DiagnosticKind::UnsupportedModel,
@@ -242,11 +279,13 @@ mod tests {
         let sources = [source("class.dm", 90, 4), source("static.dm", 12, 9)];
         let errors = vec![
             LowerError {
+                related: Vec::new(),
                 reason: "unsupported meaning".into(),
                 span: Some(LowerSpan { start: 1, end: 1 }),
                 ..Default::default()
             },
             LowerError {
+                related: Vec::new(),
                 reason: "bad label".into(),
                 kind: LowerErrorKind::SourceError,
                 span: Some(LowerSpan { start: 0, end: 0 }),
@@ -285,6 +324,7 @@ mod tests {
         let errors = [1, 0, 2]
             .into_iter()
             .map(|ordinal| LowerError {
+                related: Vec::new(),
                 reason: "unsupported assignment".into(),
                 span: Some(LowerSpan {
                     start: ordinal,
@@ -305,6 +345,28 @@ mod tests {
         assert!(diagnostics
             .iter()
             .all(|error| error.origin.semantic_path.ends_with("body.dm")));
+        let related = dm_codegen_byond::LowerRelated {
+            span: LowerSpan { start: 1, end: 1 },
+            message: "previous definition".into(),
+        };
+        let error = LowerError {
+            span: Some(LowerSpan { start: 0, end: 0 }),
+            related: vec![related.clone()],
+            kind: LowerErrorKind::SourceError,
+            ..Default::default()
+        };
+        // Unit-local [0,1] refers to captured writes [2,0], not the dense
+        // source roster. Both primary and related must use this SAME issuance.
+        let bound =
+            map_captured_lower_errors(vec![error.clone()], &frontend, startup.plan(), &[2, 0])
+                .unwrap();
+        assert_eq!(bound[0].origin.line, 5);
+        assert_eq!(bound[0].related[0].origin.line, 1);
+        assert!(bound[0].related[0]
+            .origin
+            .semantic_path
+            .ends_with("body.dm"));
+        assert!(map_captured_lower_errors(vec![error], &frontend, startup.plan(), &[2]).is_err());
     }
     #[test]
     fn missing_or_invalid_coordinates_never_fall_back_to_first_write() {
@@ -315,6 +377,7 @@ mod tests {
         assert!(matches!(
             map_lower_errors(
                 vec![LowerError {
+                    related: Vec::new(),
                     span: Some(LowerSpan { start: 9, end: 9 }),
                     ..Default::default()
                 }],
@@ -360,6 +423,7 @@ mod tests {
         let ordinals = (0..128).collect::<Vec<_>>();
         let errors = (0..16384)
             .map(|index| LowerError {
+                related: Vec::new(),
                 reason: format!("boundary {index}"),
                 span: Some(LowerSpan {
                     start: 127 - index % 128,

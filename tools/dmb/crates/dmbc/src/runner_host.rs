@@ -47,6 +47,7 @@ pub struct BuildHost {
     prepared_sources: Option<Arc<crate::input_snapshot::PreparedInputArtifacts>>,
     shared_engines: Option<Arc<EnginePayloads>>,
     shared_executors: Option<Arc<ExecutorPools>>,
+    shared_procedure_code: Option<Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>>,
     engine: Option<Arc<RetainedEngine>>,
     memo: Option<memo::ResidentMemo>,
     executor: Option<dm_exec::BuildExecutor>,
@@ -111,6 +112,7 @@ impl Default for BuildHost {
             )),
             shared_engines: None,
             shared_executors: None,
+            shared_procedure_code: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -208,9 +210,11 @@ impl BuildHost {
     pub(crate) fn with_daemon_owners(
         engines: Arc<EnginePayloads>,
         executors: Arc<ExecutorPools>,
+        procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
     ) -> Self {
         let mut host = Self::with_shared_engines(engines);
         host.shared_executors = Some(executors);
+        host.shared_procedure_code = Some(procedures);
         host
     }
     pub(crate) fn with_shared_engines(shared_engines: Arc<EnginePayloads>) -> Self {
@@ -230,6 +234,7 @@ impl BuildHost {
             prepared_sources: None,
             shared_engines: None,
             shared_executors: None,
+            shared_procedure_code: None,
             engine: None,
             executor: None,
             procedures: None,
@@ -365,7 +370,15 @@ impl BuildHost {
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
-            self.symbolic = Some((policy, Arc::new(Default::default())));
+            let symbolic =
+                self.shared_procedure_code
+                    .as_ref()
+                    .map_or_else(Default::default, |owner| {
+                        crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(
+                            owner,
+                        )
+                    });
+            self.symbolic = Some((policy, Arc::new(symbolic)));
         }
         if self
             .initializers
@@ -666,7 +679,13 @@ mod tests {
         let engines = Arc::new(EnginePayloads::default());
         let pools = Arc::new(ExecutorPools::default());
         let mut hosts = (0..6)
-            .map(|_| BuildHost::with_daemon_owners(Arc::clone(&engines), Arc::clone(&pools)))
+            .map(|_| {
+                BuildHost::with_daemon_owners(
+                    Arc::clone(&engines),
+                    Arc::clone(&pools),
+                    Arc::new(Default::default()),
+                )
+            })
             .collect::<Vec<_>>();
         let mut prior = None;
         for host in &mut hosts {

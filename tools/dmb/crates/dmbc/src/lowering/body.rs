@@ -46,6 +46,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let tree = &frontend.snapshot.tree;
     let error = |identity, message| {
         vec![LoweringDiagnostic {
+            related: Vec::new(),
             kind: DiagnosticKind::Internal,
             identity,
             origin: body.source.clone(),
@@ -66,6 +67,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let owner = identity.owner;
     let unsupported = |message| {
         vec![LoweringDiagnostic {
+            related: Vec::new(),
             kind: DiagnosticKind::UnsupportedModel,
             identity: Some(identity),
             origin: body.source.clone(),
@@ -80,6 +82,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
     let parsed = bodies.take_parsed(body).map_err(|diagnostic| {
         vec![LoweringDiagnostic {
+            related: Vec::new(),
             kind: diagnostic.kind,
             identity: Some(identity),
             origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
@@ -187,6 +190,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 && !mask.hides_diagnostic(diagnostic)
         }) {
             return Err(vec![LoweringDiagnostic {
+                related: Vec::new(),
                 kind: DiagnosticKind::SourceError,
                 identity: Some(identity),
                 origin: frontend
@@ -349,6 +353,15 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                             return None;
                         }
                     }
+                    for note in &mut error.related {
+                        note.span.start = note.span.start.checked_sub(body.expanded_span.start)?;
+                        note.span.end = note.span.end.checked_sub(body.expanded_span.start)?;
+                        if note.span.start > note.span.end
+                            || note.span.end > body.expanded_span.end - body.expanded_span.start
+                        {
+                            return None;
+                        }
+                    }
                     Some(error)
                 })
                 .collect::<Option<Vec<_>>>();
@@ -356,24 +369,39 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         }
         errors
             .into_iter()
-            .map(|e| LoweringDiagnostic {
-                kind: match e.kind {
-                    dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
-                    dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
-                        DiagnosticKind::UnsupportedModel
-                    }
-                    dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
-                },
-                identity: Some(identity),
-                origin: e
-                    .span
-                    .and_then(|span| frontend.location(span.start))
-                    .unwrap_or_else(|| body.source.clone()),
-                message: if e.statement.is_empty() {
-                    e.reason
-                } else {
-                    format!("{}: {}", e.statement, e.reason)
-                },
+            .map(|e| {
+                let Some(related) = super::related::bind_related(frontend, body, e.related, false)
+                else {
+                    return LoweringDiagnostic {
+                        related: Vec::new(),
+                        kind: DiagnosticKind::Internal,
+                        identity: Some(identity),
+                        origin: body.source.clone(),
+                        message: "invalid secondary diagnostic source span".into(),
+                    };
+                };
+                LoweringDiagnostic {
+                    related,
+                    kind: match e.kind {
+                        dm_codegen_byond::LowerErrorKind::SourceError => {
+                            DiagnosticKind::SourceError
+                        }
+                        dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
+                            DiagnosticKind::UnsupportedModel
+                        }
+                        dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
+                    },
+                    identity: Some(identity),
+                    origin: e
+                        .span
+                        .and_then(|span| frontend.location(span.start))
+                        .unwrap_or_else(|| body.source.clone()),
+                    message: if e.statement.is_empty() {
+                        e.reason
+                    } else {
+                        format!("{}: {}", e.statement, e.reason)
+                    },
+                }
             })
             .collect::<Vec<_>>()
     })?;

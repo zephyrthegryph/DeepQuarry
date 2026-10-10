@@ -321,7 +321,12 @@ fn actual_cached_failure_revalidates_member_global_and_deleted_callable() {
             batch
                 .diagnostics
                 .iter()
-                .map(|d| format!("{:?}|{:?}|{:?}|{}", d.kind, d.identity, d.origin, d.message))
+                .map(|d| {
+                    format!(
+                        "{:?}|{:?}|{:?}|{}|{:?}",
+                        d.kind, d.identity, d.origin, d.message, d.related
+                    )
+                })
                 .collect::<Vec<_>>()
         };
         assert_eq!(diagnostics(&actual), diagnostics(&fresh));
@@ -365,6 +370,14 @@ fn actual_cached_failure_revalidates_member_global_and_deleted_callable() {
         unknown_answer, missing_answer,
         "finite member coverage changes the negative answer"
     );
+    assert!(initial
+        .diagnostics
+        .iter()
+        .all(|error| error.kind == dm_tree::frontend::DiagnosticKind::UnsupportedModel));
+    assert!(member
+        .diagnostics
+        .iter()
+        .all(|error| error.kind == dm_tree::frontend::DiagnosticKind::SourceError));
     let (global, positive_answer) = run(GLOBAL, &reader);
     assert!(global.diagnostics.is_empty(), "{:?}", global.diagnostics);
     assert_ne!(missing_answer, positive_answer);
@@ -384,6 +397,25 @@ fn actual_cached_failure_revalidates_member_global_and_deleted_callable() {
     let (disk_deleted, _) = run(UNKNOWN, &disk_reader);
     assert!(!disk_deleted.diagnostics.is_empty());
     drop(disk_reader);
+    let (duplicate, _) = run(
+        "/proc/probe()\n    var/value = 7\n    var/value = 9\n",
+        &reader,
+    );
+    assert_eq!(duplicate.diagnostics.len(), 1);
+    assert_eq!(duplicate.diagnostics[0].related.len(), 1);
+    cache.publish(&reader.take_pending()).unwrap();
+    let note_reader = ProcedureMemo::with_disk(91, cache.snapshot().unwrap());
+    let (shifted, _) = run(
+        "// shifted\n\n/proc/probe()\n    var/value = 7\n    var/value = 9\n",
+        &note_reader,
+    );
+    assert_eq!(shifted.diagnostics[0].origin.line, 5);
+    assert_eq!(shifted.diagnostics[0].related[0].origin.line, 4);
+    assert!(
+        note_reader.counts.disk_hits.load(Ordering::Relaxed) > 0,
+        "secondary diagnostics must replay through current source binding"
+    );
+    drop(note_reader);
     drop(reader);
     drop(cache);
     std::fs::remove_dir_all(&root).unwrap();

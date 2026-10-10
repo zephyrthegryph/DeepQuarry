@@ -6,11 +6,13 @@ fn shared() -> Arc<Shared> {
     Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
+        procedures: Arc::new(Default::default()),
         compiler: 1,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
         running: Mutex::new(0),
         workers: Mutex::new(0),
+        max_workers: 8,
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     })

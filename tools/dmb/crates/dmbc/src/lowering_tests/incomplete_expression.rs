@@ -83,3 +83,46 @@ fn missing_unary_operand_is_source_error_through_actual_lowering() {
     assert!(result.diagnostics.is_empty(), "{:?}", result.diagnostics);
     assert_eq!(result.units.len(), 1);
 }
+
+#[test]
+fn duplicate_local_related_diagnostic_uses_current_source_and_renderer() {
+    for (source, previous, current) in [
+        (
+            "/proc/probe()\n    var/value = 7\n    var/value = 9\n",
+            2,
+            3,
+        ),
+        (
+            "// shifted\n\n/proc/probe()\n    var/value = 7\n    var/value = 9\n",
+            4,
+            5,
+        ),
+    ] {
+        let result = production_lower(source);
+        assert_eq!(result.diagnostics.len(), 1);
+        let error = &result.diagnostics[0];
+        assert_eq!(error.kind, DiagnosticKind::SourceError);
+        assert_eq!(error.origin.line, current);
+        assert_eq!(error.related.len(), 1);
+        assert_eq!(error.related[0].origin.line, previous);
+        assert_eq!(
+            error.related[0].origin.path.as_path(),
+            Path::new("project.dme")
+        );
+        assert_eq!(error.related[0].message, "value: previous definition");
+        let mut text = Vec::new();
+        crate::diagnostics::write_lowering_diagnostics(&mut text, &result.diagnostics).unwrap();
+        let text = String::from_utf8(text).unwrap();
+        assert_eq!(text.matches(":error:").count(), 2, "{text}");
+        assert!(
+            text.contains(&format!("project.dme:{current}:error:")),
+            "{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "project.dme:{previous}:error: value: previous definition"
+            )),
+            "{text}"
+        );
+    }
+}

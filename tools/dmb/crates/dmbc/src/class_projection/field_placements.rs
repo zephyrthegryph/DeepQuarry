@@ -1,8 +1,8 @@
 //! Sparse current source positions beside source-neutral retained contributions.
 use super::{ClassProjection, FieldProjection, ProjectionError};
 use dm_tree::{
-    OccurrenceId,
     frontend::{ColdFrontend, SourceLocation},
+    OccurrenceId,
 };
 use std::{collections::BTreeMap, sync::Arc};
 #[derive(Clone, Debug, Default)]
@@ -135,6 +135,7 @@ impl ClassProjection {
         message: String,
     ) -> Option<crate::lowering::LoweringDiagnostic> {
         Some(crate::lowering::LoweringDiagnostic {
+            related: Vec::new(),
             kind: dm_tree::frontend::DiagnosticKind::SourceError,
             identity: None,
             origin: self.field_placements.locations.get(&field)?.clone(),

@@ -16,6 +16,9 @@ fn repeated_local_declarations_are_source_errors_at_current_typed_headers() {
         assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
         assert_eq!(errors[0].reason, "value: duplicate definition");
         assert_eq!(errors[0].span.unwrap().start, expected);
+        assert_eq!(errors[0].related.len(), 1);
+        assert_eq!(errors[0].related[0].span.start, source.find("var/value = 7").unwrap());
+        assert_eq!(errors[0].related[0].message, "value: previous definition");
     }
 }
 

@@ -91,6 +91,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
         for body in &bodies {
             if frontend.body_input(body).is_err() || !seen.insert(body.declaration.0) {
                 invalid.push(LoweringDiagnostic {
+                    related: Vec::new(),
                     kind: DiagnosticKind::Internal,
                     identity: None,
                     origin: body.source.clone(),
@@ -173,6 +174,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                     .iter()
                                     .map(|body| {
                                         Err(vec![LoweringDiagnostic {
+                                            related: Vec::new(),
                                             kind: DiagnosticKind::Internal,
                                             identity: None,
                                             origin: body.source.clone(),
@@ -200,6 +202,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                 .iter()
                 .map(|body| {
                     Err(vec![LoweringDiagnostic {
+                        related: Vec::new(),
                         kind: DiagnosticKind::Internal,
                         identity: None,
                         origin: body.source.clone(),

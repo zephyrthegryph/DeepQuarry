@@ -38,6 +38,13 @@ pub fn write_lowering_diagnostics(
             Some(&diagnostic.origin),
             &diagnostic.message,
         )?;
+        for note in &diagnostic.related {
+            writeln!(
+                output,
+                "{}:{}:error: {}",
+                note.origin.semantic_path, note.origin.line, note.message
+            )?;
+        }
     }
     output.flush()
 }

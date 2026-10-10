@@ -44,6 +44,7 @@ fn replay_errors(
                 }
             };
             Some(LoweringDiagnostic {
+                related: related::bind_related(frontend, body, error.related, true)?,
                 kind: match error.kind {
                     dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
                     dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
@@ -71,6 +72,8 @@ fn replay_errors(
         })
         .collect()
 }
+#[path = "lowering/related.rs"]
+mod related;
 struct MemoDebugProvider<'a> {
     original: FrontendDebugProvider<'a>,
     base: usize,
@@ -185,6 +188,7 @@ pub fn source_unit_roster(
         match source_unit_identity(frontend, body) {
             Ok(unit) => units.push(unit),
             Err(message) => diagnostics.push(LoweringDiagnostic {
+                related: Vec::new(),
                 kind: DiagnosticKind::Internal,
                 identity: None,
                 origin: body.source.clone(),
@@ -292,8 +296,14 @@ pub struct LoweredUnit {
 }
 #[derive(Clone, Debug)]
 pub struct LoweringDiagnostic {
+    pub related: Vec<RelatedDiagnostic>,
     pub kind: DiagnosticKind,
     pub identity: Option<UnitIdentity>,
+    pub origin: SourceLocation,
+    pub message: String,
+}
+#[derive(Clone, Debug)]
+pub struct RelatedDiagnostic {
     pub origin: SourceLocation,
     pub message: String,
 }
@@ -518,6 +528,7 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
                     .bodies
                     .iter()
                     .map(|body| LoweringDiagnostic {
+                        related: Vec::new(),
                         kind: DiagnosticKind::Internal,
                         identity: None,
                         origin: body.source.clone(),

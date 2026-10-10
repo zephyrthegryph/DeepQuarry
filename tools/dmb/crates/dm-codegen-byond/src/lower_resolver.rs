@@ -434,6 +434,7 @@ impl ProjectResolver<'_> {
             _ => String::new(),
         };
         LowerError {
+            related: Vec::new(),
             statement: String::new(),
             reason: format!("{reason}: {query:?}{names}"),
             ..LowerError::default()
@@ -636,3 +637,7 @@ mod tests;
 #[cfg(test)]
 #[path = "parent_warning_tests.rs"]
 mod parent_warning_tests;
+
+#[cfg(test)]
+#[path = "missing_call_tests.rs"]
+mod missing_call_tests;

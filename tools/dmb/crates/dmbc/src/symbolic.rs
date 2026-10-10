@@ -5,6 +5,7 @@ use dm_codegen_byond::FrozenProc;
 use dm_ir::{SymRef, SymbolId, SymbolTable};
 use dm_link::{Entry, Key, LinkInventory, LinkTables, ProcedureImage, SlotAlias, SourceBindings};
 use std::sync::Arc;
+pub(crate) mod shared_procedure_code;
 
 /// External engine/class/proc/instance/list/resource facts must be captured by the
 /// caller. No legacy ledger, dense IDs or fabricated missing payloads are used.

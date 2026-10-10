@@ -3,6 +3,9 @@
 mod required_type_artifacts;
 use super::*;
 impl HeapCensus {
+    pub(crate) fn shared_frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
+        self.frozen_code(code);
+    }
     pub(crate) fn retained_symbolic_procedure(
         &mut self,
         frozen: &Arc<dm_codegen_byond::FrozenProc>,

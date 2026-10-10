@@ -25,7 +25,7 @@ from iteration_history import EditHistory
 import host_context
 import worktree_authority
 import build_receipt
-from iteration_memory import OwnedMemory, request_concurrency
+from iteration_memory import OwnedMemory, iteration_concurrency
 from upgrade_owned_job import OwnedJob
 from session_acceptance import required_edit_coverage, bounded_policy
 
@@ -510,6 +510,7 @@ def main():
         daemon_environment = os.environ.copy()
         daemon_environment["DMB_CACHE_DIR"] = str(cache_directory)
         daemon_environment["DMB_DAEMON_NAMESPACE"] = _daemon_namespace
+        daemon_environment["DMB_DAEMON_MAX_WORKERS"] = str(args.total_workers)
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(executable), "--serve-daemon"], stdout=out, stderr=err, env=daemon_environment,
                                       creationflags=subprocess.CREATE_NO_WINDOW | 0x4)
@@ -526,6 +527,10 @@ def main():
             if daemon.poll() is not None or time.monotonic() >= ready_deadline:
                 raise RuntimeError("owned daemon did not become ready within 20 seconds")
             time.sleep(0.05)
+        startup = (root / "daemon.stderr").read_text(encoding="utf8", errors="replace")
+        if f"max-workers={args.total_workers} " not in startup:
+            raise RuntimeError("owned daemon did not report the requested global worker admission limit")
+        receipt["daemon_worker_limit_observed"] = args.total_workers
         # Initial population, unchanged request, then each real ordered edit.
         edit_history = EditHistory(len(projects))
         receipt["preparation"]["status"] = "complete"
@@ -551,10 +556,10 @@ def main():
                 return root / str(ordinal) / mode if len(projects) == 1 else root / str(ordinal) / f"session-{index}" / mode
             row["host_context_before_retained"] = host_context.sample()
             burst_started = time.monotonic()
-            concurrency = min(request_concurrency(len(projects), args.workers, args.one_shot_requests), args.total_workers // args.workers)
+            concurrency = iteration_concurrency(kind, len(projects), args.workers, args.one_shot_requests, args.total_workers)
             row["client_concurrency"] = concurrency
             row["active_worker_budget"] = args.total_workers
-            row["worker_budget_scope"] = "one-shot launch bound" if args.one_shot_requests else "harness launch bound; daemon independently caps eight workers"
+            row["worker_budget_scope"] = "one-shot launch bound" if args.one_shot_requests else "configured daemon global worker admission; client queue does not increase worker budget"
             with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
                 futures = [executor.submit(compile_one, executable, project, manifest,
                     args.workers, semantic, destination(index, "retained"), logs(index, "retained"),

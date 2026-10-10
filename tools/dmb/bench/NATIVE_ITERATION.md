@@ -16,8 +16,12 @@ For six real worktree sources, provide `--worktree-sources E:/path/roots.json`,
 an array of exactly six distinct E: Git checkout/worktree roots, and
 `--project deepquarry.dme` when those sources use the production manifest.
 Each worktree is independently isolated under a unique E:/dq-cache run root.
-Six retained clients are submitted concurrently per revision; the daemon owns
-its configured global scheduling limit. Fresh native oracles run sequentially
+Cold population is limited by the worker budget. After population, six retained
+clients are submitted concurrently per revision; the owned daemon enforces
+`DMB_DAEMON_MAX_WORKERS` from `--total-workers` (default two). The runner checks
+its startup observation and rejects old binaries that ignore the requested
+limit. Concurrent clients queue without increasing the active worker budget.
+Fresh native oracles run sequentially
 after the entire retained burst. Stable per-session publication destinations
 exercise unchanged-output reuse. All daemon and client requests inherit a new
 run-specific `DMB_CACHE_DIR`; historical cache population is excluded.

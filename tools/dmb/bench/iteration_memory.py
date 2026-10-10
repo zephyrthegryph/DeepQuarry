@@ -10,6 +10,15 @@ def request_concurrency(projects, workers, one_shot):
     return min(projects, 8 // workers) if one_shot else projects
 
 
+def iteration_concurrency(kind, projects, workers, one_shot, total_workers):
+    if not workers <= total_workers <= 8:
+        raise ValueError("active worker budget must cover a request and stay bounded")
+    clients = request_concurrency(projects, workers, one_shot)
+    # Cold population is deliberately bounded. Once populated, real concurrent
+    # daemon clients queue independently of the server's physical worker limit.
+    return min(clients, total_workers // workers) if one_shot or kind == 'initial' else clients
+
+
 class Counters(ctypes.Structure):
     _fields_ = [("cb", wintypes.DWORD), ("faults", wintypes.DWORD)] + [
         (name, ctypes.c_size_t) for name in ("peak_working", "working", "peak_paged",

@@ -1,8 +1,8 @@
 //! Exact lowering variants with retained dependency answers and source replay.
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
-// Encoder receiver-cache policy changes invalidate persisted frozen words.
-pub const PROCEDURE_VERSION: u32 = 13;
+// Certified missing calls now issue source errors; old failure meanings miss.
+pub const PROCEDURE_VERSION: u32 = 14;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -690,7 +690,7 @@ pub(crate) fn key(
     let member = tree.member(body.member)?;
     let owner = tree.type_node(member.owner)?.path;
     let source = frontend.expanded.text.get(body.expanded_span.range())?;
-    let mut key = b"dmbc-procedure-memo-v7-diagnostic-anchors\0".to_vec();
+    let mut key = key_recipe::PREFIX.to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.extend_from_slice(&owner.bits().to_le_bytes());
     key.extend_from_slice(&member.name.bits().to_le_bytes());

@@ -532,10 +532,17 @@ impl Compiler<'_> {
                 && matches!(proc_selector, VariableWord::DynamicProc(_))
                 && !self.current_has_declared_member_proc(name)?
             {
-                return Err(error(
+                let mut failure = error(
                     statement,
                     &format!("unresolved unqualified procedure: {name}"),
-                ));
+                );
+                // Resolver-backed presence queries have returned definitive
+                // negatives. Unsupported/opaque answers exit before this point.
+                // Legacy fixture bindings do not issue that semantic proof.
+                if self.lookup.is_some() {
+                    failure.kind = LowerErrorKind::SourceError;
+                }
+                return Err(failure);
             }
             self.record_named_call_selection(expr, name, &proc_selector);
             if named_arguments {

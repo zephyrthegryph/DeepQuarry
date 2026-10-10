@@ -134,6 +134,7 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
     for unit in batch.units {
         if unit.value.identity() != unit.identity {
             return Err(vec![LoweringDiagnostic {
+                related: Vec::new(),
                 kind: DiagnosticKind::Internal,
                 identity: Some(unit.identity),
                 origin: unit.value.source().clone(),
@@ -142,6 +143,7 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
         }
         let Some(body) = current.remove(&unit.identity) else {
             return Err(vec![LoweringDiagnostic {
+                related: Vec::new(),
                 kind: DiagnosticKind::Internal,
                 identity: Some(unit.identity),
                 origin: unit.value.source().clone(),
@@ -208,6 +210,7 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
 
 fn diagnostic(body: &BodyOccurrence, message: &str) -> LoweringDiagnostic {
     LoweringDiagnostic {
+        related: Vec::new(),
         kind: DiagnosticKind::Internal,
         identity: None,
         origin: body.source.clone(),

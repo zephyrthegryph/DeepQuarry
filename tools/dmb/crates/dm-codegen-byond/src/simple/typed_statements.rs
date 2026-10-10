@@ -193,6 +193,16 @@ impl Compiler<'_> {
                             &format!("{name}: duplicate definition"),
                         );
                         failure.kind = LowerErrorKind::SourceError;
+                        if let Some(previous) = self
+                            .local_slots
+                            .get(name)
+                            .and_then(|slot| self.local_declarations.get(slot))
+                        {
+                            failure.related.push(LowerRelated {
+                                span: *previous,
+                                message: format!("{name}: previous definition"),
+                            });
+                        }
                         return Err(failure.at(Some(LowerSpan {
                             start: statement.header_span.start,
                             end: statement.header_span.end,
@@ -201,6 +211,13 @@ impl Compiler<'_> {
                     let slot = self.locals.len() as u32;
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
+                    self.local_declarations.insert(
+                        slot,
+                        LowerSpan {
+                            start: statement.header_span.start,
+                            end: statement.header_span.end,
+                        },
+                    );
                     if let Some(dimensions) = local_array_dimensions(declaration) {
                         self.local_array_declaration(
                             &dimensions,

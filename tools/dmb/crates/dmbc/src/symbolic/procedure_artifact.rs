@@ -83,6 +83,15 @@ impl Contribution {
     }
 }
 impl ReusableProcedureArtifact {
+    pub(crate) fn code_owner_keys(&self) -> Vec<Vec<u8>> {
+        let mut keys = vec![super::shared_procedure_code::key(self.identity, None)];
+        keys.extend(
+            self.helpers.iter().map(|helper| {
+                super::shared_procedure_code::key(self.identity, Some(helper.argument))
+            }),
+        );
+        keys
+    }
     pub(crate) fn release_bound_images(&self) -> usize {
         self.helpers.iter().fold(
             self.image_owner
@@ -285,6 +294,26 @@ impl Contribution {
                 debug: debug_origins,
                 helpers: helper_origins,
             },
+        }
+    }
+    pub(super) fn share_code(&mut self, lease: &super::shared_procedure_code::Lease) {
+        // Reused artifacts already have an admitted physical owner. Never mutate
+        // another contribution's current facade or image state.
+        if let Some(artifact) = Arc::get_mut(&mut self.artifact) {
+            super::shared_procedure_code::share(
+                lease,
+                artifact.identity,
+                None,
+                &mut artifact.frozen,
+            );
+            for helper in &mut artifact.helpers {
+                super::shared_procedure_code::share(
+                    lease,
+                    artifact.identity,
+                    Some(helper.argument),
+                    &mut helper.frozen,
+                );
+            }
         }
     }
     pub(super) fn shared_artifact(&self) -> Arc<ReusableProcedureArtifact> {

@@ -15,6 +15,8 @@ use std::{
 };
 #[path = "admission_deadline.rs"]
 mod admission_deadline;
+#[path = "admission_limits.rs"]
+mod admission_limits;
 #[path = "service_housekeeping.rs"]
 mod housekeeping;
 #[cfg(test)]
@@ -119,7 +121,10 @@ struct SessionKey {
     bootstrap: bool,
 }
 impl Slot {
-    fn lock_request_until(&self, deadline: &admission_deadline::AdmissionDeadline) -> io::Result<std::sync::MutexGuard<'_, ()>> {
+    fn lock_request_until(
+        &self,
+        deadline: &admission_deadline::AdmissionDeadline,
+    ) -> io::Result<std::sync::MutexGuard<'_, ()>> {
         loop {
             control::checkpoint()?;
             let remaining = deadline.remaining(Instant::now())?;
@@ -154,11 +159,13 @@ impl Slot {
 struct Shared {
     engines: Arc<crate::runner_host::EnginePayloads>,
     executors: Arc<crate::runner_host::ExecutorPools>,
+    procedures: Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
     compiler: u128,
     retiring: AtomicBool,
     slots: Mutex<BTreeMap<SessionKey, Arc<Slot>>>,
     running: Mutex<usize>,
     workers: Mutex<usize>,
+    max_workers: usize,
     capacity: Condvar,
     connections: AtomicUsize,
 }
@@ -167,6 +174,7 @@ impl Shared {
         *host = crate::runner_host::BuildHost::with_daemon_owners(
             Arc::clone(&self.engines),
             Arc::clone(&self.executors),
+            Arc::clone(&self.procedures),
         );
     }
     fn slot(
@@ -189,6 +197,7 @@ impl Shared {
                     host: Mutex::new(crate::runner_host::BuildHost::with_daemon_owners(
                         Arc::clone(&self.engines),
                         Arc::clone(&self.executors),
+                        Arc::clone(&self.procedures),
                     )),
                     newest: Mutex::new(BTreeMap::new()),
                     last: Mutex::new(Instant::now()),
@@ -220,18 +229,21 @@ impl Shared {
         private_bytes: impl Fn() -> Option<u64>,
     ) -> io::Result<Permit> {
         let workers = workers.max(1);
-        if workers > 8 {
-            return Err(io::Error::other("daemon supports at most eight workers per request; use --no-daemon for a larger pool"));
+        if workers > self.max_workers {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, format!(
+                "request needs {workers} workers but daemon DMB_DAEMON_MAX_WORKERS limit is {}; use --no-daemon for a larger pool", self.max_workers)));
         }
         let mut active = self.running.lock().unwrap_or_else(|e| e.into_inner());
         let initial_private = private_bytes();
         if initial_private.is_none() {
-            super::emit_stderr(format_args!("dmbd memory admission probe unavailable; count-only admission"));
+            super::emit_stderr(format_args!(
+                "dmbd memory admission probe unavailable; count-only admission"
+            ));
         }
         // Soft throttle, not a hard private-memory ceiling: one admitted build
         // can grow past the limit. Preserve a single-build progress lane.
         while (*active >= 3
-            || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > 8
+            || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > self.max_workers
             || *active > 0 && private_bytes().is_some_and(|bytes| bytes >= 4_000_000_000))
             && !self.retiring.load(Ordering::Acquire)
         {
@@ -277,20 +289,24 @@ impl Drop for Connection {
     }
 }
 pub(super) fn serve() -> io::Result<()> {
+    let max_workers = admission_limits::max_workers()?;
     super::emit_stderr(format_args!(
-        "dmbd start pid={} max-builds=3 max-workers=8 soft-private-limit=4000000000",
-        std::process::id()
+        "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit=4000000000",
+        std::process::id(),
+        max_workers
     ));
     let endpoint = transport::Endpoint::current()?;
     let listener: transport::Listener = transport::listener(&endpoint)?;
     let shared = Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
+        procedures: Arc::new(Default::default()),
         compiler: super::compiler_identity()?,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
         running: Mutex::new(0),
         workers: Mutex::new(0),
+        max_workers,
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     });
@@ -500,7 +516,9 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                 Err(error) => {
                     return protocol::send(
                         &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
-                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(
+                            &error,
+                        )),
                     )
                 }
             };
@@ -546,11 +564,13 @@ mod tests {
         Arc::new(Shared {
             engines: Arc::new(Default::default()),
             executors: Arc::new(Default::default()),
+            procedures: Arc::new(Default::default()),
             compiler: 1,
             retiring: AtomicBool::new(false),
             slots: Mutex::new(BTreeMap::new()),
             running: Mutex::new(0),
             workers: Mutex::new(0),
+            max_workers: 8,
             capacity: Condvar::new(),
             connections: AtomicUsize::new(0),
         })
@@ -592,6 +612,31 @@ mod tests {
         let zero = shared.acquire(0).unwrap();
         assert_eq!(*shared.workers.lock().unwrap(), 1);
         drop(zero);
+    }
+    #[test]
+    fn configured_worker_limit_rejects_large_requests_and_bounds_combined_permits() {
+        let mut shared = shared();
+        Arc::get_mut(&mut shared).unwrap().max_workers = 2;
+        let error = shared.acquire(3).err().unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+        assert!(error.to_string().contains("limit is 2"));
+        let occupied = shared.acquire(2).unwrap();
+        let deadline = admission_deadline::AdmissionDeadline::new(
+            Instant::now() - Duration::from_millis(599_950),
+        );
+        let error = shared
+            .acquire_until_observing(1, &deadline, || Some(0))
+            .err()
+            .unwrap();
+        assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+        assert_eq!(*shared.workers.lock().unwrap(), 2);
+        assert_eq!(*shared.running.lock().unwrap(), 1);
+        drop(occupied);
+        let first = shared.acquire(1).unwrap();
+        let second = shared.acquire(1).unwrap();
+        assert_eq!(*shared.workers.lock().unwrap(), 2);
+        drop((first, second));
+        assert_eq!(*shared.workers.lock().unwrap(), 0);
     }
     #[test]
     fn superseded_admission_does_not_wait_for_worker_capacity() {
