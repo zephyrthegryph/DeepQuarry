@@ -14,10 +14,12 @@ TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list
 /obj/item/projectile/energy/blob/splattering
 	splatter = TRUE
 
+CAPABILITIES(/obj/item/projectile/energy/blob/splattering)
+	reagents(nameof(splatter_volume)) // the cloud it bursts into
+
 /obj/item/projectile/energy/blob/Initialize(mapload)
 	. = ..()
 	if(splatter)
-		create_reagents(splatter_volume)
 		ready_chemicals()
 
 /obj/item/projectile/energy/blob/on_impact(atom/A)
