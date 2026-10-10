@@ -32,9 +32,6 @@ impl TraceArena {
     pub(super) fn chain(&mut self, chain: &[&str]) -> Arc<[Arc<str>]> {
         self.chain_iter(chain.iter().copied())
     }
-    pub(super) fn chain_strings(&mut self, chain: &[String]) -> Arc<[Arc<str>]> {
-        self.chain_iter(chain.iter().map(String::as_str))
-    }
     fn chain_iter<'a>(&mut self, chain: impl Iterator<Item = &'a str> + Clone) -> Arc<[Arc<str>]> {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         let len = chain.clone().count();
@@ -67,15 +64,16 @@ mod tests {
         let first = arena.name("OUTER");
         assert!(Arc::ptr_eq(&first, &arena.name("OUTER")));
         let chain = arena.chain(&["OUTER", "INNER"]);
-        let wire = vec!["OUTER".to_owned(), "INNER".to_owned()];
-        assert!(Arc::ptr_eq(&chain, &arena.chain_strings(&wire)));
+        let wire = ["OUTER".to_owned(), "INNER".to_owned()];
+        let borrowed = [wire[0].as_str(), wire[1].as_str()];
+        assert!(Arc::ptr_eq(&chain, &arena.chain(&borrowed)));
         assert!(Arc::ptr_eq(&first, &chain[0]));
         assert_ne!(chain, arena.chain(&["INNER", "OUTER"]));
         let other = arena.chain(&["DIFFERENT"]);
         for bucket in arena.chains.values_mut() {
             bucket.insert(0, Arc::clone(&other));
         }
-        assert!(Arc::ptr_eq(&chain, &arena.chain_strings(&wire)));
+        assert!(Arc::ptr_eq(&chain, &arena.chain(&borrowed)));
         drop(arena);
         assert_eq!(chain[0].as_ref(), "OUTER");
     }

@@ -1,0 +1,28 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_preprocess-34a5ab19716d6e61.exe",
+  "binary_sha256": "3e629380c371624311af3ee4820f0f6a430fe1ea77df9a9590d9770696bd4db7",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "regions::region_memo::shared_receipt_tests::",
+      "selected": [
+        "regions::region_memo::shared_receipt_tests::parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire",
+        "regions::region_memo::shared_receipt_tests::retained_trace_owners_share_capture_and_rebind_current_definition_origin"
+      ],
+      "exit": 0,
+      "seconds": 0.026815199991688132,
+      "stdout": "\nrunning 2 tests\ntest regions::region_memo::shared_receipt_tests::parser_enrichment_shares_expansion_receipts_and_preserves_legacy_wire ... ok\ntest regions::region_memo::shared_receipt_tests::retained_trace_owners_share_capture_and_rebind_current_definition_origin ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 137 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "regions::trace_arena::",
+      "selected": [
+        "regions::trace_arena::tests::complete_ordered_text_controls_sharing_and_survives_arena_drop"
+      ],
+      "exit": 0,
+      "seconds": 0.023182099976111203,
+      "stdout": "\nrunning 1 test\ntest regions::trace_arena::tests::complete_ordered_text_controls_sharing_and_survives_arena_drop ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 138 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

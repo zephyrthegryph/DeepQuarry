@@ -82,10 +82,10 @@ impl ExpansionRecord {
         for line in self.lines.iter() {
             visit(vector_storage(&line.traces));
             for trace in &line.traces {
-                visit(string_storage(&trace.name));
-                visit(vector_storage(&trace.replacement_chain));
-                for name in &trace.replacement_chain {
-                    visit(string_storage(name));
+                visit(ExpansionStorageView::Text(&trace.name));
+                visit(slice_storage(&trace.replacement_chain));
+                for name in trace.replacement_chain.iter() {
+                    visit(ExpansionStorageView::Text(name));
                 }
             }
         }
@@ -110,10 +110,9 @@ mod tests {
         message.push_str("diagnostic");
         let pointer = message.as_ptr() as usize;
         let capacity = message.capacity();
-        let mut chain = Vec::with_capacity(7);
-        chain.push(String::from("nested"));
+        let chain: Arc<[Arc<str>]> = Arc::from([Arc::from("nested")]);
         let chain_pointer = chain.as_ptr() as usize;
-        let chain_capacity = chain.capacity() * size_of::<String>();
+        let chain_capacity = chain.len() * size_of::<Arc<str>>();
         let fragment: Arc<[u8]> = Arc::from([1u8, 2, 3]);
         let fragment_pointer = fragment.as_ptr() as usize;
         let record = ExpansionRecord {
@@ -127,7 +126,7 @@ mod tests {
                 output: Span::new(0, 6),
                 input: 0,
                 traces: vec![Trace {
-                    name: String::from("macro"),
+                    name: Arc::from("macro"),
                     invocation_span: Span::new(0, 1),
                     replacement_chain: chain,
                 }],

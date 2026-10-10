@@ -214,10 +214,10 @@ pub struct MacroRead {
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Trace {
-    name: String,
+    name: Arc<str>,
     #[serde(with = "span_wire")]
     invocation_span: Span,
-    replacement_chain: Vec<String>,
+    replacement_chain: Arc<[Arc<str>]>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Line {
@@ -271,10 +271,13 @@ impl ExpansionRecord {
             .saturating_add(vector(&self.locations, |(_, _, name)| name.capacity()))
             .saturating_add(vector(&self.lines, |line| {
                 vector(&line.traces, |trace| {
-                    trace
-                        .name
-                        .capacity()
-                        .saturating_add(vector(&trace.replacement_chain, String::capacity))
+                    slice::<u8>(trace.name.len())
+                        .saturating_add(slice::<Arc<str>>(trace.replacement_chain.len()))
+                        .saturating_add(
+                            trace.replacement_chain.iter().fold(0usize, |bytes, name| {
+                                bytes.saturating_add(slice::<u8>(name.len()))
+                            }),
+                        )
                 })
             }))
             .saturating_add(vector(&self.diagnostics, |error| error.message.capacity()))
@@ -514,13 +517,9 @@ pub(super) fn expand(
                 traces: traces
                     .iter()
                     .map(|trace| Trace {
-                        name: trace.name.to_string(),
+                        name: Arc::clone(&trace.name),
                         invocation_span: trace.invocation_span,
-                        replacement_chain: trace
-                            .replacement_chain
-                            .iter()
-                            .map(|name| name.to_string())
-                            .collect(),
+                        replacement_chain: Arc::clone(&trace.replacement_chain),
                     })
                     .collect(),
             })
@@ -603,7 +602,7 @@ fn hydrate(
         lines: Default::default(),
         diagnostics: Vec::new(),
     };
-    let mut trace_arena = super::trace_arena::TraceArena::default();
+    let trace_arena = super::trace_arena::TraceArena::default();
     let mut lines =
         super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
     for line in record.lines.iter() {
@@ -612,9 +611,9 @@ fn hydrate(
             .traces
             .iter()
             .map(|trace| MacroExpansion {
-                name: trace_arena.name(&trace.name),
+                name: Arc::clone(&trace.name),
                 invocation_span: trace.invocation_span,
-                replacement_chain: trace_arena.chain_strings(&trace.replacement_chain),
+                replacement_chain: Arc::clone(&trace.replacement_chain),
                 definition: region.segments[segment]
                     .macros
                     .definition_origin(&trace.name)
