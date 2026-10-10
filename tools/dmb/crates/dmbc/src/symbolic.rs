@@ -630,6 +630,7 @@ fn finish_frozen_inventory(
 
     drop(source_bindings);
     drop(string_inventory);
+    procedure_order::complete(&mut inventory).map_err(IntegrationError::InvalidInitializer)?;
     let tables = {
         let _profile = dm_profile::stage("linking.table_assignment");
         match bindings {
@@ -847,6 +848,7 @@ pub(crate) use initializer_contribution::InitializerEncoding;
 mod helper_reuse_tests;
 pub(crate) mod origin_roster;
 mod parallel;
+mod procedure_order;
 mod prepared_contribution;
 pub(crate) mod procedure_artifact;
 pub use prepared_contribution::{

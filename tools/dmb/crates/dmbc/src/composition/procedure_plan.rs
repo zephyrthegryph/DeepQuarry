@@ -212,17 +212,37 @@ impl CachedPlan {
         executor: Option<&dm_exec::BuildExecutor>,
     ) -> Vec<Result<PreparedMetadata, CompositionError>> {
         let current = self.bindings.same_owner(&batch.tables.binding_tables());
-        if current {
-            if let Some(hit) = self
-                .metadata
-                .as_ref()
-                .and_then(|owner| owner.admit(slots, batch, projection, symbols, references))
-            {
-                return hit;
+        let admitted = current
+            .then(|| {
+                self.metadata
+                    .as_ref()
+                    .and_then(|owner| owner.admit(slots, batch, projection, symbols, references))
+            })
+            .flatten();
+        if let Some(rows) = &admitted {
+            if rows.iter().all(Option::is_some) {
+                if let Some(owner) = &mut self.metadata {
+                    owner.retain_current_prefix(slots.len());
+                }
+                return rows
+                    .iter()
+                    .map(|row| {
+                        Ok(PreparedMetadata::Retained(std::sync::Arc::clone(
+                            row.as_ref().expect("all rows admitted"),
+                        )))
+                    })
+                    .collect();
             }
         }
-        let prepared = prepare_metadata(
-            slots, batch, projection, symbols, references, executor, true,
+        let prepared = prepare_metadata_with_admitted(
+            slots,
+            batch,
+            projection,
+            symbols,
+            references,
+            executor,
+            true,
+            admitted.as_deref(),
         );
         self.metadata = if current {
             metadata_roster::MetadataRoster::capture(
@@ -350,7 +370,88 @@ pub(super) fn prepare_metadata(
     executor: Option<&dm_exec::BuildExecutor>,
     retain_frames: bool,
 ) -> Vec<Result<PreparedMetadata, CompositionError>> {
-    let prepare = |slot: &Slot<UnitIdentity>| match slot.artifact {
+    prepare_metadata_with_admitted(
+        slots,
+        batch,
+        projection,
+        symbols,
+        references,
+        executor,
+        retain_frames,
+        None,
+    )
+}
+fn prepare_metadata_with_admitted(
+    slots: &[Slot<UnitIdentity>],
+    batch: &FrozenBatch,
+    projection: Option<&crate::class_projection::ClassProjection>,
+    symbols: &SymbolTable,
+    references: &dm_link::ArgumentSourceReferences,
+    executor: Option<&dm_exec::BuildExecutor>,
+    retain_frames: bool,
+    admitted: Option<&[Option<std::sync::Arc<super::frame_contribution::FrameContribution>>]>,
+) -> Vec<Result<PreparedMetadata, CompositionError>> {
+    let prepare = |index: usize, slot: &Slot<UnitIdentity>| {
+        if let Some(hit) = admitted
+            .and_then(|rows| rows.get(index))
+            .and_then(Option::as_ref)
+        {
+            return Ok(PreparedMetadata::Retained(std::sync::Arc::clone(hit)));
+        }
+        prepare_metadata_row(slot, batch, projection, symbols, references, retain_frames)
+    };
+    let Some(executor) = executor.filter(|executor| executor.workers() > 1 && slots.len() > 1)
+    else {
+        return slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| prepare(index, slot))
+            .collect();
+    };
+    let chunk = slots.len().div_ceil(executor.workers().min(slots.len()));
+    let chunk_size = chunk;
+    let chunks: Vec<_> = slots.chunks(chunk_size).collect();
+    let outputs: Vec<_> = chunks.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    executor.scope(|scope| {
+        for (index, chunk) in chunks.into_iter().enumerate() {
+            let output = &outputs[index];
+            let prepare = &prepare;
+            scope.spawn(move |_| {
+                let _profile = dm_profile::stage("composition.procedure_metadata");
+                let rows = chunk
+                    .iter()
+                    .enumerate()
+                    .map(|(local, slot)| {
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            prepare(index * chunk_size + local, slot)
+                        }))
+                        .unwrap_or_else(|_| Err(unsupported("procedure metadata worker panicked")))
+                    })
+                    .collect::<Vec<_>>();
+                *output.lock().unwrap_or_else(|error| error.into_inner()) = Some(rows);
+            });
+        }
+    });
+    outputs
+        .into_iter()
+        .flat_map(|output| {
+            output
+                .into_inner()
+                .unwrap_or_else(|error| error.into_inner())
+                .expect("metadata worker completed")
+        })
+        .collect()
+}
+
+fn prepare_metadata_row(
+    slot: &Slot<UnitIdentity>,
+    batch: &FrozenBatch,
+    projection: Option<&crate::class_projection::ClassProjection>,
+    symbols: &SymbolTable,
+    references: &dm_link::ArgumentSourceReferences,
+    retain_frames: bool,
+) -> Result<PreparedMetadata, CompositionError> {
+    match slot.artifact {
         Some(index) => {
             let unit = &batch.units[index];
             if retain_frames {
@@ -369,42 +470,7 @@ pub(super) fn prepare_metadata(
             metadata(unit, projection, symbols, references).map(PreparedMetadata::Fresh)
         }
         None => Err(unsupported("missing global procedure artifact")),
-    };
-    let Some(executor) = executor.filter(|executor| executor.workers() > 1 && slots.len() > 1)
-    else {
-        return slots.iter().map(prepare).collect();
-    };
-    let chunk = slots.len().div_ceil(executor.workers().min(slots.len()));
-    let chunks: Vec<_> = slots.chunks(chunk).collect();
-    let outputs: Vec<_> = chunks.iter().map(|_| std::sync::Mutex::new(None)).collect();
-    executor.scope(|scope| {
-        for (index, chunk) in chunks.into_iter().enumerate() {
-            let output = &outputs[index];
-            let prepare = &prepare;
-            scope.spawn(move |_| {
-                let _profile = dm_profile::stage("composition.procedure_metadata");
-                let rows = chunk
-                    .iter()
-                    .map(|slot| {
-                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| prepare(slot)))
-                            .unwrap_or_else(|_| {
-                                Err(unsupported("procedure metadata worker panicked"))
-                            })
-                    })
-                    .collect::<Vec<_>>();
-                *output.lock().unwrap_or_else(|error| error.into_inner()) = Some(rows);
-            });
-        }
-    });
-    outputs
-        .into_iter()
-        .flat_map(|output| {
-            output
-                .into_inner()
-                .unwrap_or_else(|error| error.into_inner())
-                .expect("metadata worker completed")
-        })
-        .collect()
+    }
 }
 
 #[cfg(test)]

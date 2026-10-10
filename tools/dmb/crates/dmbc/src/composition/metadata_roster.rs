@@ -13,7 +13,7 @@ struct Row {
 pub(super) struct MetadataRoster {
     references: Arc<dm_link::ArgumentSourceReferences>,
     declarations: Option<Arc<std::collections::BTreeMap<Key, bool>>>,
-    rows: Vec<Row>,
+    rows: Vec<Option<Row>>,
 }
 impl MetadataRoster {
     pub(super) fn capture(
@@ -45,7 +45,10 @@ impl MetadataRoster {
                     prepared: Arc::clone(prepared),
                 })
             })
-            .collect::<Option<Vec<_>>>()?;
+            .collect::<Vec<_>>();
+        if !rows.iter().any(Option::is_some) {
+            return None;
+        }
         Some(Self {
             references: Arc::clone(references),
             declarations: projection.map(|p| Arc::clone(&p.procedure_declarations)),
@@ -59,10 +62,10 @@ impl MetadataRoster {
         projection: Option<&crate::class_projection::ClassProjection>,
         symbols: &SymbolTable,
         references: &Arc<dm_link::ArgumentSourceReferences>,
-    ) -> Option<Vec<Result<PreparedMetadata, CompositionError>>> {
+    ) -> Option<Vec<Option<Arc<super::super::frame_contribution::FrameContribution>>>> {
         // A references owner is admitted only under the enclosing plan's current
         // binding owner. A numerically equal independently minted owner declines.
-        if !Arc::ptr_eq(&self.references, references) || self.rows.len() != slots.len() {
+        if !Arc::ptr_eq(&self.references, references) {
             return None;
         }
         match (&self.declarations, projection) {
@@ -72,29 +75,36 @@ impl MetadataRoster {
                     || old.as_ref() == current.procedure_declarations.as_ref() => {}
             _ => return None,
         }
-        for (row, slot) in self.rows.iter().zip(slots) {
-            let unit = batch.units.get(slot.artifact?)?;
-            if row.table_index != slot.table_index
-                || Some(row.artifact) != slot.artifact
-                || row.identity != slot.identity
-                || unit.lowered.identity != row.identity
-                || !Arc::ptr_eq(&row.frame, &unit.lowered.frame)
-                || !Arc::ptr_eq(&row.abi, unit.lowered.abi.as_ref()?)
-                || !Arc::ptr_eq(&row.recipe, &unit.metadata_recipe)
-                || symbols.text(row.identity.owner).is_none()
-                || symbols.text(row.identity.name).is_none()
-            {
-                return None;
-            }
-        }
-        // Only successful previously admitted metadata is shared. Current source
-        // images and output frontier/string admission remain outside this proof.
+        // Each current slot retains its own exact proof. Missing, shifted, or
+        // changed rows decline independently; the common preparation path handles
+        // them in current order. No errors or fresh metadata are retained.
         Some(
-            self.rows
+            slots
                 .iter()
-                .map(|r| Ok(PreparedMetadata::Retained(Arc::clone(&r.prepared))))
+                .enumerate()
+                .map(|(index, slot)| {
+                    let row = self.rows.get(index)?.as_ref()?;
+                    let unit = batch.units.get(slot.artifact?)?;
+                    if row.table_index != slot.table_index
+                        || Some(row.artifact) != slot.artifact
+                        || row.identity != slot.identity
+                        || unit.lowered.identity != row.identity
+                        || !Arc::ptr_eq(&row.frame, &unit.lowered.frame)
+                        || !Arc::ptr_eq(&row.abi, unit.lowered.abi.as_ref()?)
+                        || !Arc::ptr_eq(&row.recipe, &unit.metadata_recipe)
+                        || symbols.text(row.identity.owner).is_none()
+                        || symbols.text(row.identity.name).is_none()
+                    {
+                        return None;
+                    }
+                    Some(Arc::clone(&row.prepared))
+                })
                 .collect(),
         )
+    }
+    pub(super) fn retain_current_prefix(&mut self, len: usize) {
+        // Used only after every current position passed exact admission.
+        self.rows.truncate(len);
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         let label = "composition.metadata_roster";
@@ -107,7 +117,7 @@ impl MetadataRoster {
         if let Some(owner) = &self.declarations {
             census.arc_object(label, owner);
         }
-        for row in &self.rows {
+        for row in self.rows.iter().flatten() {
             census.frozen_frame(label, &row.frame);
             census.abi(&row.abi);
             crate::composition::ProcedureMetadataRecipe::census(&row.recipe, census);

@@ -129,6 +129,15 @@ pub fn contribute(
         );
     }
     variable_order = projected;
+    // Procedure IDs are observable through typesof(/type/proc), independently
+    // of the class's method footer. Carry the issued encounter roster into
+    // the existing linker; its finalizer appends generated executable domains.
+    let procedure_order = plan
+        .procedure_membership
+        .iter()
+        .copied()
+        .filter(|key| !retained.contains(key))
+        .collect::<Vec<_>>();
     for (table, fresh) in [
         (
             Table::Type,
@@ -139,6 +148,7 @@ pub fn contribute(
                 .collect::<Vec<_>>(),
         ),
         (Table::Variable, variable_order),
+        (Table::Procedure, procedure_order),
     ] {
         if inventory.orders.contains_key(&table) {
             return Err("fresh append order conflicts with complete table order".into());
