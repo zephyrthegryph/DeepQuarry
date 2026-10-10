@@ -15,7 +15,7 @@ import time
 import uuid
 import zipfile
 
-from watchdog import terminate_owned
+from upgrade_owned_job import OwnedJob
 
 
 def safe(path, root):
@@ -27,11 +27,49 @@ def safe(path, root):
     return path
 
 
+
+def execute_owned_build(command, cwd, env, log, seconds, memory_bytes,
+                        job_factory=OwnedJob, popen=subprocess.Popen):
+    """Suspend Cargo before assigning the bounded Job; reap every descendant."""
+    try:
+        job = job_factory(memory_bytes)
+    except Exception as error:
+        return 70, {"reaped": True, "child_spawned": False,
+                    "job_creation_error": str(error)}, str(error)
+    child = None
+    code, failure, cleanup = 70, None, None
+    try:
+        child = popen(command, cwd=cwd, env=env, stdout=log,
+                      stderr=subprocess.STDOUT, creationflags=0x08000000 | 0x4)
+        job.add(child)
+        job.resume(child)
+        try:
+            code = child.wait(timeout=seconds)
+        except subprocess.TimeoutExpired:
+            code = 124
+            failure = "owned Cargo build exceeded its fixed watchdog"
+    except Exception as error:
+        failure = str(error)
+    finally:
+        cleanup = job.close()
+        if child is not None:
+            try:
+                child.wait(timeout=5)
+            except Exception as error:
+                cleanup = dict(cleanup, reaped=False, child_wait_error=str(error))
+        if not cleanup.get("reaped") and code == 0:
+            code = 70
+            failure = "build exited successfully but owned descendants were not reaped"
+    return code, cleanup, failure
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
     parser.add_argument("--seconds", type=int, default=300)
+    parser.add_argument("--memory-bytes", type=int, default=4_000_000_000,
+                        help="Windows owned Job commit limit; not a private-memory ceiling")
     parser.add_argument("--allocation-counting", action="store_true",
                         help="diagnostic-only requested-byte counters; never acceptance timing")
     parser.add_argument("--dmbc-codegen-units", type=int, choices=(16, 64, 256), default=16,
@@ -45,6 +83,10 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.seconds <= 300:
         raise ValueError("build watchdog must be between 1 and 300 seconds")
+    if not 1 <= args.memory_bytes <= 32768 * 1024 * 1024:
+        raise ValueError("owned Job memory limit must be positive and at most 32 GiB")
+    if os.name != "nt":
+        raise ValueError("frozen Cargo builds require Windows owned Job containment")
     cache = Path(os.path.abspath(args.cache))
     allowed = Path("E:/dq-cache").resolve()
     safe(cache, allowed)
@@ -128,15 +170,9 @@ def main():
         if args.dmbc_debug_level is not None:
             command.extend(["--config", f"profile.release.package.dmbc.debug={args.dmbc_debug_level}"])
         started = time.monotonic()
-        cleanup = None
         with receipt_path.with_suffix(".log").open("wb") as log:
-            child = subprocess.Popen(command, cwd=source / "tools/dmb", env=env,
-                                     stdout=log, stderr=subprocess.STDOUT)
-            try:
-                code = child.wait(timeout=args.seconds)
-            except subprocess.TimeoutExpired:
-                cleanup = terminate_owned(child)
-                code = 124
+            code, cleanup, launch_failure = execute_owned_build(
+                command, source / "tools/dmb", env, log, args.seconds, args.memory_bytes)
         receipt = dict(commit=commit, archive_sha256=hashlib.sha256(archive).hexdigest(),
                        changed_files=changed, removed_files=removed, exit_code=code,
                        build_seconds=time.monotonic() - started, watchdog_seconds=args.seconds,
@@ -146,7 +182,9 @@ def main():
                        dm_tree_opt_level=args.tree_opt_level,
                        dmbc_debug_level_override=args.dmbc_debug_level,
                        allocation_counting=args.allocation_counting,
-                       owned_child_cleanup=cleanup)
+                       owned_child_cleanup=cleanup, build_failure=launch_failure,
+                       memory_limit_bytes=args.memory_bytes,
+                       memory_limit_scope="Windows owned Job aggregate commit; not private bytes or working set")
         if code == 0:
             binary = Path(env["CARGO_TARGET_DIR"]) / "release/dmbc.exe"
             data = binary.read_bytes()
