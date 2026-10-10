@@ -40,6 +40,8 @@ def main():
                         help="prototype-only dmbc optimization level; default 3 preserves release settings")
     parser.add_argument("--tree-opt-level", type=int, choices=(0, 1, 2, 3), default=3,
                         help="prototype-only dm-tree optimization level; included in the receipt")
+    parser.add_argument("--dmbc-debug-level", type=int, choices=(0, 1, 2), default=None,
+                        help="prototype-only dmbc debug information override; default preserves workspace settings")
     args = parser.parse_args()
     if not 1 <= args.seconds <= 300:
         raise ValueError("build watchdog must be between 1 and 300 seconds")
@@ -123,6 +125,8 @@ def main():
             command.extend(["--config", f"profile.release.package.dmbc.opt-level={args.dmbc_opt_level}"])
         if args.tree_opt_level != 3:
             command.extend(["--config", f"profile.release.package.dm-tree.opt-level={args.tree_opt_level}"])
+        if args.dmbc_debug_level is not None:
+            command.extend(["--config", f"profile.release.package.dmbc.debug={args.dmbc_debug_level}"])
         started = time.monotonic()
         cleanup = None
         with receipt_path.with_suffix(".log").open("wb") as log:
@@ -140,6 +144,7 @@ def main():
                        dmbc_codegen_units=args.dmbc_codegen_units,
                        dmbc_opt_level=args.dmbc_opt_level,
                        dm_tree_opt_level=args.tree_opt_level,
+                       dmbc_debug_level_override=args.dmbc_debug_level,
                        allocation_counting=args.allocation_counting,
                        owned_child_cleanup=cleanup)
         if code == 0:
