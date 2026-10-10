@@ -65,7 +65,7 @@
 /obj/structure/table/proc/place_held(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(isrobot(user))
+	if(!user.lets_go_of_held())
 		if(istype(W, /obj/item/gripper))
 			var/obj/item/gripper/robot_gripper = W
 			var/obj/item/item_to_drop = robot_gripper.get_wrapped_item()
@@ -116,7 +116,7 @@
 	if(ismob(O.loc)) //If placing an item
 		if(!isitem(O) || user.get_active_hand() != O)
 			return OP_OK
-		if(isrobot(user))
+		if(!user.lets_go_of_held())
 			return OP_OK
 		user.drop_item()
 		if(O.loc != src.loc)

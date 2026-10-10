@@ -277,7 +277,7 @@ TRACKED(/obj/item/flash, broken)
 
 	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
-	if(user && isrobot(user))
+	if(istype(user, /mob/living/silicon/robot))
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
 		animation.icon_state = "blank"

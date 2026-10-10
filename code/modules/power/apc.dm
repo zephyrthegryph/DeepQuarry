@@ -382,7 +382,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/datum/notice/attacked_by/N = A
 	var/mob/user = N.user
 	var/obj/item/held = N.item
-	if(!istype(held) || !user || issilicon(user))
+	if(!istype(held) || !user || istype(user, /mob/living/silicon))
 		return
 	if(broken_now() && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
 		act_message(user, src, self = span_danger("You hit %T% with %I%!"), others = span_danger("%T% has been hit with %I% by %U%!"), blind = "You hear a bang!", item = held)

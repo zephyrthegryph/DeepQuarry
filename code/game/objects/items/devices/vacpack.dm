@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 	var/mob/user = A.request.answerer
 	switch(A.answer.value)
 		if("Borg Belly")
-			if(isrobot(user))
+			if(istype(user, /mob/living/silicon/robot))
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/dogborg/sleeper/S in M.modules)
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 						return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
-			if(isrobot(user))
+			if(istype(user, /mob/living/silicon/robot))
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/storage/bag/trash/T in M.modules)
