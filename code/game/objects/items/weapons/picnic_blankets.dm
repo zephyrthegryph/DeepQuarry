@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/picnic_blankets_carried)
 
 /obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(datum/act/op/A)
 	var/mob/user = A.actor
-	if(unfold_refusal(A) || !loc.release_to(src, user.loc, null, user))
+	if(can_unfold(A) || !loc.release_to(src, user.loc, null, user))
 		return OP_OK
 	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(user.loc)
 	P.name = name

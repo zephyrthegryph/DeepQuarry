@@ -20,7 +20,7 @@
 CAPABILITIES(/obj/structure/window/maintenance_panel)
 	op("maintenance_panel_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(maintenance_panel_interaction_item)))
 	op("weld_toggle", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Weld or cut"), priority(OP_PRIORITY_PART + 10), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
-	op("weld_toggle_help", tool(TOOL_WELDER), stance(I_HELP), when(cond_not(PROC_REF(is_damaged))), label("Weld or cut"), priority(OP_PRIORITY_TAKE_OUT), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
+	op("weld_toggle_help", tool(TOOL_WELDER), stance(I_HELP), when(cond_not(req(PROC_REF(is_damaged)))), label("Weld or cut"), priority(OP_PRIORITY_TAKE_OUT), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
 	op("swallow", observer(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /// Old attackby.

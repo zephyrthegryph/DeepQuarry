@@ -157,7 +157,7 @@ CAPABILITIES(/obj/structure/bed)
 		return null
 	if(!can_pad)
 		return /datum/msg/bed/cant_pad
-	if(padding_material)
+	if(read_once(padding_material))
 		return /datum/msg/bed/already_padded
 	return /datum/msg/bed/not_padding
 
