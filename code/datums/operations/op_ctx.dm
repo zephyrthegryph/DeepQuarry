@@ -188,10 +188,6 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 		var/list/mine = R.reads(src)
 		if(mine)
 			. += mine
-	for(var/datum/req/R as anything in op.gating)
-		var/list/mine = R.reads(src)
-		if(mine)
-			. += mine
 	if(isatom(target))
 		for(var/datum/capability/require/C as anything in caps_all_of_type(target, /datum/capability/require))
 			if(!C.covers(op))
@@ -363,8 +359,6 @@ GLOBAL_LIST_EMPTY(op_cancelled_log)
 	var/list/needs
 	/// What makes the op meant at all: while one fails the input falls through, as if the op were not there.
 	var/list/offered
-	/// Gating requirements (behind, blocked_by, locked_by): reads for early cancel.
-	var/list/gating
 	/// Item types (a list) that a plain click must hold to reach this op. Null: no such rule.
 	var/list/click_with
 

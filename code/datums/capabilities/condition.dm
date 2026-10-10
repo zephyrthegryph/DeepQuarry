@@ -39,15 +39,8 @@ CAPABILITY_DEF(held_condition, CAP_HELD_CONDITION, key = condition_type, conditi
 		instances[path] = C
 	return C
 
-/// A capability held for a time: refuses the holder's other entries, draws, may hide verbs.
+/// A capability held for a time: draws, may hide verbs.
 /datum/capability/condition
-	/// ALL_ENTRIES, or a list of capability types whose entries this condition refuses.
-	var/blocks = ALL_ENTRIES
-	/// Capability types whose entries still work (the way a jammed machine still lets an engineer open its
-	/// panel). Entries of the condition's own type are never refused.
-	var/list/exempt
-	/// Shown to the user when an entry is refused (plain text; the refusal is prefixed by the entry's name).
-	else_say = "it isn't responding"
 	/// Verbs hidden while the condition holds (a list of verb paths), or null.
 	var/list/hides_verbs
 

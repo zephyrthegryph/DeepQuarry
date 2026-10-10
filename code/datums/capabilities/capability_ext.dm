@@ -1,8 +1,6 @@
 // Ordering, replace(), per-instance extras and system membership (doc/rewrite/dx_conventions.md §2).
 
 /datum/capability
-	/// CAP_* bits that must be CLEAR for this capability's entries (merged onto them).
-	var/blocked_by = NONE
 	/// The layer name this capability draws (cover_open, panel_open...), overridable per type; CAP_NO_LAYER
 	/// draws nothing (a DMI without that state).
 	var/layer_name

@@ -333,18 +333,6 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	R.parts = req_list(args)
 	return req_intern(R)
 
-/// The requirements the old gating arguments mean (behind / blocked_by / locked_by): what a
-/// preset's reads are built from. Null when there are none.
-/proc/req_from_gating(behind = NONE, blocked_by = NONE, locked_by = NONE)
-	var/list/out = list()
-	if(behind)
-		out += req_set(behind)
-	if(blocked_by)
-		out += req_clear(blocked_by)
-	if(locked_by)
-		out += req_clear(locked_by)
-	return length(out) ? out : null
-
 // ---- shared machine contracts ----
 
 MSG_DEF_SELF(req_not_working, "It isn't working.")
