@@ -109,8 +109,8 @@ CAPABILITIES(/mob/living/silicon/pai)
 	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
 	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
 	owns_one(nameof(pda), starts = /obj/item/pda/ai/pai)
-	op("pai_access", item(/obj/item), label("Use"), when(req_bool(PROC_REF(swipe_modifies_access))), asks(/datum/prompt/choice, fields = list("title" = "Access Modify", "question" = computed(PROC_REF(access_question)), "choices" = list("Add Access", "Remove Access", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "access"), then(PROC_REF(access_modify_chosen)))
-	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req_bool(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
+	op("pai_access", item(/obj/item), label("Use"), when(req(PROC_REF(swipe_modifies_access))), asks(/datum/prompt/choice, fields = list("title" = "Access Modify", "question" = computed(PROC_REF(access_question)), "choices" = list("Add Access", "Remove Access", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "access"), then(PROC_REF(access_modify_chosen)))
+	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
 	op("pai_hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(pai_item_hit)))
 	interface("pAIInterface", title = "pAI Software Interface", state = nameof(GLOB.tgui_self_state))
 	op("software", ui_act("software", arg("software", schema_text(4096))), then(PROC_REF(ui_act_software)))
@@ -317,12 +317,12 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 /// The held item is, or holds, an ID and this pAI accepts access changes.
 /mob/living/silicon/pai/proc/swipe_modifies_access(datum/act/op/A)
 	var/obj/item/W = A.held
-	return W?.GetID() && idaccessible == 1
+	return (W?.GetID() && idaccessible == 1) ? null : /datum/msg/req_failed
 
 /// An ID card swiped over a pAI that does not accept access changes.
 /mob/living/silicon/pai/proc/swipe_refused(datum/act/op/A)
 	var/obj/item/W = A.held
-	return W?.GetID() && idaccessible == 0
+	return (W?.GetID() && idaccessible == 0) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/pai/proc/access_question(datum/act/A)
 	return "Do you wish to add access to [src] or remove access from [src]?"

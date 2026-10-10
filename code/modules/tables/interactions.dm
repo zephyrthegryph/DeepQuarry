@@ -59,7 +59,7 @@
 
 /// The held item is in the actor's hands (or a cyborg's module): not something mounted elsewhere.
 /obj/structure/table/proc/held_is_carried(datum/act/op/A)
-	return A.held.loc == A.actor // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.held.loc == A.actor) ? null : MSG(table/not_in_hand) // ALLOW(reads): where the held item is read when it is put down; the click asks again
 
 /// A held item goes onto the table (a click): a cyborg's gripper sets down what it carries; anything else the actor lets go of, aligned to where they clicked.
 /obj/structure/table/proc/place_held(datum/act/op/A)
@@ -92,9 +92,6 @@
 
 /// A drag onto the table is the reinforcing of a plated one with a steel stack held in hand: the build ladder's edge takes that drag when it can, and
 /// otherwise, with the stack held in hand, the table says why it cannot be reinforced and nothing is put down.
-/obj/structure/table/proc/not_a_reinforcing_drag(datum/act/op/A)
-	return isnull(reinforce_refusal(A))
-
 /obj/structure/table/proc/reinforce_refusal(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(!(can_reinforce && isliving(user) && istype(A.held, /obj/item/stack/material) && A.held.loc == user)) // ALLOW(reads): where the dragged stack is read when it is dropped on the table; the drop asks again
@@ -138,14 +135,11 @@
 /// The held thing is a grab on somebody, with the grabber at the table.
 /obj/structure/table/proc/person_grabbed(datum/act/op/A)
 	var/obj/item/grab/G = A.held
-	return get_dist(src, A.actor) < 2 && isliving(G?.grab_target())
+	return (get_dist(src, A.actor) < 2 && isliving(G?.grab_target())) ? null : /datum/msg/req_failed
 
 /// A grab that can put its person on the table: nothing in the way (the person must also be at the grabber's side: the effect asks).
 /obj/structure/table/proc/person_can_go_on(datum/act/op/A)
-	return !can_climb_turf(src)
-
-/obj/structure/table/proc/person_refusal(datum/act/op/A)
-	return can_climb_turf(src) ? /datum/msg/table/in_the_way : /datum/msg/table/better_grip
+	return can_climb_turf(src) ? /datum/msg/table/in_the_way : null
 
 /// A firm grab sets the person on the table and knocks them down; a loose one lets go of them (the grab is used up either way).
 /obj/structure/table/proc/put_person_on(datum/act/op/A)
@@ -167,8 +161,8 @@
 	var/obj/item/grab/G = A.held
 	var/mob/living/M = G?.grab_target()
 	if(get_dist(src, A.actor) >= 2 || G.state >= 2) // ALLOW(reads): how firm a grab is is read when it is used; the click asks again
-		return FALSE
-	return isliving(M) && !can_climb_turf(src)
+		return /datum/msg/req_failed
+	return (isliving(M) && !can_climb_turf(src)) ? null : /datum/msg/req_failed
 
 /// A loosely grabbed person's face is slammed against the table (combat mode only).
 /obj/structure/table/proc/slam_face(datum/act/op/A)

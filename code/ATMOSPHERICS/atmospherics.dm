@@ -164,7 +164,7 @@ MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shel
 	return supports_engineered_material()
 
 /obj/machinery/atmospherics/proc/no_shell(datum/act/A)
-	return !engineered_material_id // ALLOW(reads): asked when the sheets are used, never from a cached menu
+	return (!engineered_material_id) ? null : MSG(atmospherics/has_shell) // ALLOW(reads): asked when the sheets are used, never from a cached menu
 
 /obj/machinery/atmospherics/proc/painter_swallowed(datum/act/op/A)
 	return OP_OK

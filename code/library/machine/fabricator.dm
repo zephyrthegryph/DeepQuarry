@@ -47,7 +47,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /datum/capability/lib/fabricator/entries()
 	. = list(
 		op("drop_here", at_target(), gesture(GESTURE_DRAG), reach(REACH_RANGE(2)), label("Drop printed things here"),
-			needs(req_bool(CAP_PROC(beside), because = MSG(fabricator/too_far)), req_bool(CAP_PROC(idle), because = MSG(fabricator/printing))),
+			needs(req(CAP_PROC(beside)), req(CAP_PROC(idle))),
 			then(CAP_PROC(drop_pointed))),
 		// an item used on it goes to its store (sheets, a sheet snatcher, a multitool linking an ore silo), through the store's own use gate
 		op("store", item(/obj/item), label("Put it in"), priority(OP_PRIORITY_DEFAULT + 1), when(CAP_PROC(store_reachable)), then(CAP_PROC(store_used))),
@@ -55,27 +55,27 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 		examine_line(CAP_PROC(drop_text)))
 	if(resets)
 		. += op("reset_drop", hand(), gesture(GESTURE_ALT), label("Reset drop direction"), when(drop),
-			needs(req_bool(CAP_PROC(idle), because = MSG(fabricator/printing))), then(CAP_PROC(drop_forgotten)))
+			needs(req(CAP_PROC(idle))), then(CAP_PROC(drop_forgotten)))
 	if(print)
 		. += op("print", ui_act(action, arg(design_arg, schema_text(256)), arg(count_arg, num(1, FABRICATOR_MAX_RUN)), arg("materialSlots")),
 			needs(
-				req_bool(CAP_PROC(idle), because = MSG(fabricator/busy)),
-				req_bool(CAP_PROC(design_known), because = MSG(fabricator/unknown_design)),
-				req_bool(CAP_PROC(design_fits), because = MSG(fabricator/no_keys)),
-				req_bool(CAP_PROC(choice_valid), because = MSG(fabricator/choose_materials)),
-				req_bool(CAP_PROC(store_open), because = MSG(fabricator/on_hold)),
-				req_bool(CAP_PROC(run_affordable), because = MSG(fabricator/no_materials))),
+				req(CAP_PROC(idle), because = MSG(fabricator/busy)),
+				req(CAP_PROC(design_known)),
+				req(CAP_PROC(design_fits)),
+				req(CAP_PROC(choice_valid)),
+				req(CAP_PROC(store_open)),
+				req(CAP_PROC(run_affordable))),
 			then(CAP_PROC(run_started)), logs(LOG_GAME))
 	if(eject)
 		. += op("remove_mat", ui_act(arg("id", schema_text(64)), arg("amount", num(1, MAX_STACK_SIZE))),
-			needs(req_bool(CAP_PROC(material_held), because = MSG(fabricator/no_such_material))),
+			needs(req(CAP_PROC(material_held))),
 			then(CAP_PROC(sheets_ejected)))
 
 // ---- the print run ----
 
 /// The machine is free: no run is under way.
-/datum/capability/lib/fabricator/proc/idle(datum/act/A)
-	return !fabricator_printing(A.holder)
+/datum/capability/lib/fabricator/proc/idle(datum/act/op/A)
+	return !fabricator_printing(A.holder) ? null : /datum/msg/fabricator/printing
 
 /// The design the button names, or null.
 /datum/capability/lib/fabricator/proc/asked_design(datum/act/op/A) as /datum/design_techweb
@@ -85,12 +85,12 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /// The machine knows the design (its holder proc says so).
 /datum/capability/lib/fabricator/proc/design_known(datum/act/op/A)
 	var/datum/design_techweb/D = asked_design(A)
-	return D && (!knows || call(A.holder, knows)(D))
+	return (D && (!knows || call(A.holder, knows)(D))) ? null : /datum/msg/fabricator/unknown_design
 
 /// It has the manipulators for it: a design of a build type the machine has (one that names none fits anything).
 /datum/capability/lib/fabricator/proc/design_fits(datum/act/op/A)
 	var/datum/design_techweb/D = asked_design(A)
-	return D && (!D.build_type || (D.build_type & fabricator_buildtypes(A.holder, buildtypes)))
+	return (D && (!D.build_type || (D.build_type & fabricator_buildtypes(A.holder, buildtypes)))) ? null : /datum/msg/fabricator/no_keys
 
 /// The build types a fabricator makes: `buildtypes` is the flags, or the holder var holding them (a subtype sets its own).
 /proc/fabricator_buildtypes(datum/holder, buildtypes)
@@ -99,21 +99,21 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /// The materials chosen fill every slot of a design that lets the maker choose.
 /datum/capability/lib/fabricator/proc/choice_valid(datum/act/op/A)
 	var/datum/design_techweb/D = asked_design(A)
-	return D && (!D.material_template || D.material_choice_valid(chosen_of(A)))
+	return (D && (!D.material_template || D.material_choice_valid(chosen_of(A)))) ? null : /datum/msg/fabricator/choose_materials
 
 /// The store is not on hold (an ore silo can hold a linked machine's access).
 /datum/capability/lib/fabricator/proc/store_open(datum/act/op/A)
 	var/datum/remote_materials/R = A.holder.vars[materials]
-	return !istype(R) || R.can_use_resource()
+	return (!istype(R) || R.can_use_resource()) ? null : /datum/msg/fabricator/on_hold
 
 /// The store holds the materials for the whole run.
 /datum/capability/lib/fabricator/proc/run_affordable(datum/act/op/A)
 	var/datum/design_techweb/D = asked_design(A)
 	var/datum/material_container/C = fabricator_store(A.holder, materials)
 	if(!D || !C)
-		return FALSE
+		return /datum/msg/fabricator/no_materials
 	var/count = A.args ? A.args[count_arg] : null
-	return C.has_materials(needed_of(D, chosen_of(A)), coefficient_of(A.holder, D), isnum(count) ? count : 1)
+	return (C.has_materials(needed_of(D, chosen_of(A)), coefficient_of(A.holder, D), isnum(count) ? count : 1)) ? null : /datum/msg/fabricator/no_materials
 
 /// The material choice the button sent (a list of slot -> material name), or an empty one.
 /datum/capability/lib/fabricator/proc/chosen_of(datum/act/op/A)
@@ -280,7 +280,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /// The actor stands next to the machine it drags (the tile it points at may be a step further).
 /datum/capability/lib/fabricator/proc/beside(datum/act/op/A)
 	var/atom/movable/M = A.holder
-	return A.actor && M.Adjacent(A.actor)
+	return (A.actor && M.Adjacent(A.actor)) ? null : /datum/msg/fabricator/too_far
 
 /// Dragged onto a tile, the machine drops printed things toward it.
 /datum/capability/lib/fabricator/proc/drop_pointed(datum/act/op/A)
@@ -322,7 +322,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /datum/capability/lib/fabricator/proc/material_held(datum/act/op/A)
 	var/datum/material/M = fabricator_material(A.args ? A.args["id"] : null)
 	var/datum/material_container/C = fabricator_store(A.holder, materials)
-	return istype(M) && C && C.get_material_amount(M) > 0
+	return (istype(M) && C && C.get_material_amount(M) > 0) ? null : /datum/msg/fabricator/no_such_material
 
 /// Sheets of the material come out onto the machine's tile.
 /datum/capability/lib/fabricator/proc/sheets_ejected(datum/act/op/A, id, amount)

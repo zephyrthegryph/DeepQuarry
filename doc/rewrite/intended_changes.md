@@ -4301,6 +4301,10 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
   `dx_cap_library_api_tests`, the construction primitive tests of `dq_foundation_look_tests`, `dx_condition_blocks`, `dx_core_form`,
   `dx_core_entry_ids_per_type`, `dx_review_menu_ids_and_applies`, `dq_forms_library_requirements` and `dq_sys_messages_interaction_feedback`.
   The "Why Refused" admin verb walked resolver entries and is deleted too.
+### Requirements burn-down merge: oxygen-pump silicon menu pin (2026-10-10)
+
+* **/obj/machinery/oxygen_pump:** master's native-only interaction routing (86a5998d5b) exposes the already-declared silicon_ui operation in the robot and AI menus as Use. The timed pin adds those two menu rows and silicon_ui to the keys, replacing the old key row (four differing rows total). Human, robot and AI plain-click choices remain unchanged. This refresh records the resolver retirement on master, not a Boolean-requirement behavior change.
+
 ### ratchet-fw lane (2026-10-10)
 
 - **Silicon plain clicks are ops** (`silicon_hand()` / `silicon_ui()`, `code/library/mob/silicon.dm`): the 27 types that set `silicon_use` declare a `remote()` op instead. The interaction pins now list `Use` for the AI and cyborg rows (and `ai|none click: Click: Use`) where the old fallback lived outside the op system and the snapshots said `nothing`. A cyborg whose link is down (bolted, remote viewing) no longer reaches them.
@@ -4335,3 +4339,7 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **after_init() timers** replace `after(src, ...)` in `Initialize()` for foam hardening, an always-on shield projector and the integrated signaler's retune: a map-loaded instance counts the delay from the close of its map-load frame instead of from its own `Initialize()`.
 - **Declared destroy messages** (`DESTROY_EFFECTS`): the crystal, micro tunnel and artifact blade show their destruction message in phase 6, after `on_destroy()` (the blade's message now follows its lightning strike instead of preceding it).
 - The frost grenade's beakers are typed fills (`grenade_fill_frost_a/b`) made by `owns_many(starts =)`, like every other premade chem grenade.
+### Requirement protocol pin follows master's rotation migration (2026-10-10)
+
+* **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
+* **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.

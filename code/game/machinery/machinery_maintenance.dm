@@ -66,7 +66,7 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 
 /// Requirement of the repair: the machine is damaged.
 /obj/machinery/proc/maintenance_is_damaged(datum/act/op/A)
-	return uses_integrity && get_integrity_damage() > 0
+	return (uses_integrity && get_integrity_damage() > 0) ? null : MSG(interaction/machine_repair/intact)
 
 /obj/machinery/proc/maintenance_repair(datum/act/op/A)
 	repair_damage(max_integrity)

@@ -22,10 +22,10 @@ CAPABILITIES(/obj/structure/AIcore)
 	op("anchor", tool(TOOL_WRENCH), label("Anchor frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
 	op("unanchor", tool(TOOL_WRENCH), label("Unfasten frame"), starts(PROC_REF(construction_tool_started)), when(req_is(nameof(state), 1)), wait(PROC_REF(frame_wrench_duration)), then(PROC_REF(wrench_act_tool_done2)))
 	op("dismantle", lit_welder(fuel = 0), label("Dismantle frame"), starts(PROC_REF(construction_welder_started)), when(req_is(nameof(state), 0)), wait(PROC_REF(frame_weld_duration)), then(PROC_REF(welder_act_tool_done)))
-	op("wrench_wrong_stage", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(any_of(req_is(nameof(state), 0), req_is(nameof(state), 1)))), needs(req_bool(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
-	op("welder_wrong_stage", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(req_is(nameof(state), 0))), needs(req_bool(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
+	op("wrench_wrong_stage", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(any_of(req_is(nameof(state), 0), req_is(nameof(state), 1)))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
+	op("welder_wrong_stage", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), when(req_not(req_is(nameof(state), 0))), needs(req(PROC_REF(construction_tool_blocked), silent = TRUE)), wait(0))
 	op("add_cables", stack(/obj/item/stack/cable_coil, 5), when(req_is(nameof(state), 2)), needs(req_is(nameof(state), 2, because = MSG(ai_core/board_unfastened))), begins(MSG(ai_core/wiring_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done)))
-	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(PROC_REF(reinforced_panel)), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req_bool(PROC_REF(reinforced_panel), because = MSG(ai_core/reinforced_glass))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
+	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(req(PROC_REF(reinforced_panel))), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req(PROC_REF(reinforced_panel))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	owns_one(nameof(laws), /datum/ai_laws)
 
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/AIcore)
 	return OP_PASS
 
 /obj/structure/AIcore/proc/reinforced_panel(datum/act/op/A)
-	return read_once(A.held.get_material_name()) == MAT_RGLASS
+	return (read_once(A.held.get_material_name()) == MAT_RGLASS) ? null : MSG(ai_core/reinforced_glass)
 
 /obj/structure/AIcore/proc/attackby_timed_done(datum/act/op/A)
 	set_state(3)
@@ -132,7 +132,7 @@ CAPABILITIES(/obj/structure/AIcore)
 	if(tool.usesound)
 		play_sfx(src, tool.usesound, volume = 50, vary = TRUE)
 /obj/structure/AIcore/proc/construction_tool_blocked(datum/act/op/A)
-	return FALSE
+	return MSG(req_failed)
 
 /obj/structure/AIcore/proc/wrench_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor

@@ -435,11 +435,11 @@ CAPABILITIES(/datum/cap_data/wires)
 	owns_many(nameof(assemblies))
 	interface("Wires", state = nameof(GLOB.tgui_physical_state))
 	op("cut", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req_bool(PROC_REF(holds_cutters), because = MSG(wires/need_cutters))), then(PROC_REF(cut_pressed)))
+		req(PROC_REF(holds_cutters))), then(PROC_REF(cut_pressed)))
 	op("pulse", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req_bool(PROC_REF(holds_multitool), because = MSG(wires/need_multitool))), then(PROC_REF(pulse_pressed)))
+		req(PROC_REF(holds_multitool))), then(PROC_REF(pulse_pressed)))
 	op("attach", ui_act(arg("wire", schema_text(32))), needs(req_wires_in_reach(),
-		req_bool(PROC_REF(can_attach), because = MSG(wires/need_signaler))), then(PROC_REF(attach_pressed)))
+		req(PROC_REF(can_attach))), then(PROC_REF(attach_pressed)))
 
 /datum/cap_data/wires/proc/all_wires()
 	. = list()
@@ -601,16 +601,16 @@ CAPABILITIES(/datum/cap_data/wires)
 
 /datum/cap_data/wires/proc/holds_cutters(datum/act/op/A)
 	var/obj/item/I = tool_of(A.actor)
-	return istype(I) && I.has_tool_quality(TOOL_WIRECUTTER)
+	return (istype(I) && I.has_tool_quality(TOOL_WIRECUTTER)) ? null : /datum/msg/wires/need_cutters
 
 /datum/cap_data/wires/proc/holds_multitool(datum/act/op/A)
 	var/obj/item/I = tool_of(A.actor)
-	return istype(I) && I.has_tool_quality(TOOL_MULTITOOL)
+	return (istype(I) && I.has_tool_quality(TOOL_MULTITOOL)) ? null : /datum/msg/wires/need_multitool
 
 /// A signaler in hand for a free wire, or a wire with one to take off.
 /datum/cap_data/wires/proc/can_attach(datum/act/op/A)
 	var/color = lowertext(A.args?["wire"])
-	return !!LAZYACCESS(assemblies, color) || istype(tool_of(A.actor), /obj/item/assembly/signaler)
+	return (!!LAZYACCESS(assemblies, color) || istype(tool_of(A.actor), /obj/item/assembly/signaler)) ? null : /datum/msg/wires/need_signaler
 
 /// The cut button: cuts an intact wire, mends a cut one.
 /datum/cap_data/wires/proc/cut_pressed(datum/act/op/A, wire)

@@ -21,10 +21,10 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 /datum/capability/lib/mob_attacks/entries()
 	return list(
 		op("melee", inputs(ai()), reach(REACH_ADJACENT), label("Attack"),
-			needs(req_capable(), req_conscious(), req_adjacent(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling))),
+			needs(req_capable(), req_conscious(), req_adjacent(), req(CAP_PROC(ready))),
 			then(CAP_PROC(melee))),
 		op("shoot", inputs(ai()), reach(REACH_VIEW), label("Shoot"),
-			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_shot), because = MSG(mob_attacks/no_shot))),
+			needs(req_capable(), req_conscious(), req(CAP_PROC(ready)), req(CAP_PROC(has_shot))),
 			then(CAP_PROC(shoot))),
 		// One step to a turf (or toward an atom): every tactic that repositions the mob (approach, flee, kite, juke, wander, follow, home) uses it.
 		op("step", inputs(ai()), reach(REACH_ANY), label("Step"),
@@ -35,14 +35,14 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 			then(CAP_PROC(special))),
 		// A held gun fired at the target (held = the gun).
 		op("fire", inputs(ai()), reach(REACH_VIEW), label("Fire"),
-			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_gun), because = MSG(mob_attacks/no_item))),
+			needs(req_capable(), req_conscious(), req(CAP_PROC(ready)), req(CAP_PROC(has_gun))),
 			then(CAP_PROC(fire))),
 		// A held grenade primed and thrown at a turf (held = the grenade).
 		op("throw", inputs(ai()), reach(REACH_ANY), label("Throw"),
-			needs(req_capable(), req_conscious(), req_bool(CAP_PROC(ready), because = MSG(mob_attacks/cooling)), req_bool(CAP_PROC(has_grenade), because = MSG(mob_attacks/no_item))),
+			needs(req_capable(), req_conscious(), req(CAP_PROC(ready)), req(CAP_PROC(has_grenade))),
 			then(CAP_PROC(throw_it))),
 		op("pickup", inputs(ai()), reach(REACH_ADJACENT), label("Pick up"),
-			needs(req_capable(), req_conscious(), req_adjacent(), req_bool(CAP_PROC(can_pick_up), because = MSG(mob_attacks/no_hands))),
+			needs(req_capable(), req_conscious(), req_adjacent(), req(CAP_PROC(can_pick_up))),
 			then(CAP_PROC(pick_up))),
 		// The mob's warning cry: the shout is the action (who hears it reacts through their own brain).
 		op("alarm", inputs(ai()), reach(REACH_ANY), label("Sound the alarm"),
@@ -61,12 +61,12 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 /// Off the attack cooldown (the one a click sets: checkClickCooldown()).
 /datum/capability/lib/mob_attacks/proc/ready(datum/act/op/A)
 	var/mob/living/L = A.actor
-	return istype(L) && L.checkClickCooldown()
+	return (istype(L) && L.checkClickCooldown()) ? null : /datum/msg/mob_attacks/cooling
 
 /// The mob has an innate projectile.
 /datum/capability/lib/mob_attacks/proc/has_shot(datum/act/op/A)
 	var/mob/living/simple_mob/SM = A.actor
-	return istype(SM) && !isnull(SM.projectiletype)
+	return (istype(SM) && !isnull(SM.projectiletype)) ? null : /datum/msg/mob_attacks/no_shot
 
 /// The swing: the mob's attack in the brain's stance. A target that is gone is a failed op, a miss is still an attack.
 /datum/capability/lib/mob_attacks/proc/melee(datum/act/op/A)
@@ -110,10 +110,10 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 	return OP_OK
 
 /datum/capability/lib/mob_attacks/proc/has_gun(datum/act/op/A)
-	return istype(A.held, /obj/item/gun)
+	return (istype(A.held, /obj/item/gun)) ? null : /datum/msg/mob_attacks/no_item
 
 /datum/capability/lib/mob_attacks/proc/has_grenade(datum/act/op/A)
-	return istype(A.held, /obj/item/grenade)
+	return (istype(A.held, /obj/item/grenade)) ? null : /datum/msg/mob_attacks/no_item
 
 /datum/capability/lib/mob_attacks/proc/fire(datum/act/op/A)
 	var/mob/living/L = A.actor
@@ -140,7 +140,7 @@ MSG_DEF_SELF(mob_attacks/no_hands, "You can't pick things up.")
 
 /datum/capability/lib/mob_attacks/proc/can_pick_up(datum/act/op/A)
 	var/mob/living/simple_mob/SM = A.actor
-	return istype(SM) && SM.has_hands
+	return (istype(SM) && SM.has_hands) ? null : /datum/msg/mob_attacks/no_hands
 
 /datum/capability/lib/mob_attacks/proc/pick_up(datum/act/op/A)
 	var/mob/living/L = A.actor

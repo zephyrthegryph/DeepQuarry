@@ -134,6 +134,10 @@
 
 /// What a sleeper does not take: a mouse, a second person, anyone while it has no power.
 /datum/unit_test/dq_medpod/sleeper_refusals
+/datum/unit_test/dq_medpod/sleeper_refusals/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	..()
+
 /datum/unit_test/dq_medpod/sleeper_refusals/run_pods()
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, floor_at(1, 1))
 	var/mob/living/carbon/human/H = person(floor_at(0, 1))

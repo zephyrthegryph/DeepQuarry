@@ -327,10 +327,10 @@ MSG_DEF_SELF(flesh_printer/container_loaded, "the printer already has a containe
 	return OP_OK
 
 /obj/machinery/organ_printer/proc/container_available(datum/act/op/A)
-	return !read_once(container)
+	return (!read_once(container)) ? null : MSG(flesh_printer/container_loaded)
 
 CAPABILITIES(/obj/machinery/organ_printer/flesh)
-	op("load_container", item(/obj/item/reagent_containers/glass), needs(req_bool(PROC_REF(container_available), because = MSG(flesh_printer/container_loaded))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_available))), wait(1 SECOND), then(PROC_REF(load_container_done)))
 	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
 
 /// Old attackby; anything else falls through to the base printer's.

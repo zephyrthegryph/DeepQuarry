@@ -1,0 +1,111 @@
+human|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+robot|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
+robot|none menu: Ui open
+robot|none click: Click: Ui open
+ai|none menu: Ui open (refused: You can't do that that way.)
+ai|none click: Click: Ui open
+ghost|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+ghost|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+ghost|none menu: Turn Around (refused: It is fastened to the floor!)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/multitool click: Click: Pulse wires
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Open with item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id click: Click: Open with item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item click: nothing
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/emag menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/coin menu: Move To Top
+human|/obj/item/coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/coin menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/coin menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/coin click: nothing
+human|/obj/item/fake_coin menu: Move To Top
+human|/obj/item/fake_coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/fake_coin menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin click: nothing
+human|/obj/item/refill_cartridge menu: Move To Top
+human|/obj/item/refill_cartridge menu: Refill (refused: That cartridge does not fit it.)
+human|/obj/item/refill_cartridge menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/refill_cartridge menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge click: Click: Refill
+wires: Contraband, Electrification, ID Scan, Item Throw
+keys: anchor.toggle, check_logs, drag_buckle, emag.subvert, emag.use, insert_coin, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_with_item, panel.open, refill, reject_fake_coin, remove_coin, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, stock, toggle_voice, ui_open, vend, wires.cut, wires.pulse
+

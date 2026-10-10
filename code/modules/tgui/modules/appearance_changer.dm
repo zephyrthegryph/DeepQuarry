@@ -56,7 +56,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	owns_one(nameof(mannequin), /mob/living/carbon/human)
 	owns_many(nameof(cam_plane_masters))
 	interface("AppearanceChanger")
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_cooled), because = MSG(appearance_changer/too_fast))))
+	extend(TAG_UI, needs(req(PROC_REF(ui_cooled))))
 	extend(TAG_UI, then(PROC_REF(ui_start_cooldown), early = TRUE))
 	ref_one(nameof(owner), /mob/living/carbon/human)
 
@@ -96,8 +96,8 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 
 	section(profile, "The view and the character profile of the appearance changer: names, base icon, blood, size, sounds, flavour text")
 	op("rotate_view", ui_act("rotate_view"), then(PROC_REF(ui_act_rotate_view)))
-	op("rename", ui_act("rename"), needs(req_bool(PROC_REF(has_owner), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Sleeve Name", "question" = "Choose the a name:", "encode" = FALSE)), then(PROC_REF(ui_act_rename)))
-	op("char_name", ui_act("char_name"), needs(req_bool(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Input character's name:", "default" = computed(PROC_REF(char_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE)), then(PROC_REF(ui_act_char_name)))
+	op("rename", ui_act("rename"), needs(req(PROC_REF(has_owner), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Sleeve Name", "question" = "Choose the a name:", "encode" = FALSE)), then(PROC_REF(ui_act_rename)))
+	op("char_name", ui_act("char_name"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Input character's name:", "default" = computed(PROC_REF(char_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE)), then(PROC_REF(ui_act_char_name)))
 	op("race_name", ui_act("race_name"), then(PROC_REF(ui_act_race_name)))
 	op("base_icon", ui_act("base_icon"), needs(req_bool(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Body Shape", "question" = "Please select basic shape.", "choices" = computed(PROC_REF(custom_species_bases)))), then(PROC_REF(ui_act_base_icon)))
 	op("blood_reagent", ui_act("blood_reagent"), needs(req_bool(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Character Preference", "question" = "Please select blood restoration reagent:", "choices" = computed(PROC_REF(valid_blood_reagents)))), then(PROC_REF(ui_act_blood_reagent)))
@@ -180,7 +180,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 
 /// Buttons are answered at most twice a second: spamming them is laggy.
 /datum/tgui_module/appearance_changer/proc/ui_cooled(datum/act/op/A)
-	return COOLDOWN_FINISHED(src, cooldown)
+	return COOLDOWN_FINISHED(src, cooldown) ? null : MSG(appearance_changer/too_fast)
 
 MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!")
 
@@ -195,7 +195,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return can_change(owner(), APPEARANCE_RACE)
 
 /datum/tgui_module/appearance_changer/proc/has_owner(datum/act/op/A)
-	return !!owner()
+	return (!!owner()) ? null : /datum/msg/req_failed
 
 /datum/tgui_module/appearance_changer/proc/can_tone(datum/act/op/A)
 	return can_change_skin_tone(owner())
@@ -206,7 +206,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return istype(BD) ? BD.linked_body_design_console : null
 
 /datum/tgui_module/appearance_changer/proc/has_designer_console(datum/act/op/A)
-	return !!designer_console()
+	return (!!designer_console()) ? null : /datum/msg/req_failed
 
 
 /datum/tgui_module/appearance_changer/proc/ui_act_race(datum/act/op/A, race)

@@ -28,13 +28,13 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 /datum/capability/lib/injector/entries()
 	return list(
 		op("inject", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(goes_slowly))), priority(OP_PRIORITY_PART), label("Inject"),
-			needs(req_reagents(1, because = MSG(injector/empty)), req_bool(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
-				req_bool(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
+			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free)),
+				req(CAP_PROC(limb_there))),
 			then(CAP_PROC(skin_holds_up))),
 		op("inject_slowly", at_target(/mob/living/carbon/human), when(CAP_PROC(goes_slowly)), priority(OP_PRIORITY_PART), label("Inject"),
 			begins(CAP_PROC(begin_message)), wait(CAP_PROC(slow_wait)),
-			needs(req_reagents(1, because = MSG(injector/empty)), req_bool(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
-				req_bool(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
+			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free)),
+				req(CAP_PROC(limb_there))),
 			then(CAP_PROC(skin_holds_up))),
 		vial ? op("unload", hand(), when(CAP_PROC(unloadable)), priority(OP_PRIORITY_NORMAL + 5), label("Remove the vial")) : null)
 
@@ -59,13 +59,13 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 
 /datum/capability/lib/injector/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return target.consume_liquid_belly || !reagents_from_belly(A.holder)
+	return (target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/injector/from_belly
 
 /// The limb the one who injects aims at is on the person.
 /datum/capability/lib/injector/proc/limb_there(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	return !user?.zone_sel || !!target.get_organ(user.zone_sel.selecting)
+	return (!user?.zone_sel || !!target.get_organ(user.zone_sel.selecting)) ? null : /datum/msg/injector/limb_missing
 
 /// The roll of a thick hide: TRUE (the injection goes on) unless it turns the needle away.
 /datum/capability/lib/injector/proc/skin_holds_up(datum/act/op/A)

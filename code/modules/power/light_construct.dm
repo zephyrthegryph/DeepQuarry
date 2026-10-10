@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 	owns_one(nameof(cell), /obj/item/cell/emergency_light)
 	cell_bay(nameof(cell), accepts = /obj/item/cell/emergency_light)
 	extend("cell_bay.cell.take", when(req_empty_hand()))
-	extend("cell_bay.cell.insert", needs(req_bool(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
+	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
 	examine_line(PROC_REF(examine_cell))
 	param(nameof(dir), pos = 1)
 	param(nameof(fixture_at_make), pos = 4, keep = FALSE)
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 	icon_state = built(src, STAGE_LIGHT_FRAME_WIRED) ? "[construct_state]-construct-stage2" : "[construct_state]-construct-stage1"
 
 /obj/machinery/light_construct/proc/takes_cells(datum/act/A)
-	return cell_connectors
+	return (cell_connectors) ? null : MSG(light_frame/no_cells)
 
 /// Within two tiles it says what the casing can hold.
 /obj/machinery/light_construct/proc/examine_cell(datum/act/op/A)

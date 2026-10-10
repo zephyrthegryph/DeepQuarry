@@ -28,18 +28,18 @@ CAPABILITY_TYPE(floor_weld, CAP_FLOOR_WELD, /datum/capability/lib/floor_weld, ke
 	var/list/idle = busy ? needs(req_is(busy, FALSE, because = MSG(floor_weld/busy))) : null
 	return list(
 		op("bolt", tool(TOOL_WRENCH), label("Bolt to the floor"), wait(0), idle,
-			needs(req_bool(CAP_PROC(not_welded), because = MSG(floor_weld/needs_unwelding))), then(CAP_PROC(bolt_toggled)), says(CAP_PROC(bolt_message))),
+			needs(req(CAP_PROC(not_welded))), then(CAP_PROC(bolt_toggled)), says(CAP_PROC(bolt_message))),
 		op("weld", lit_welder(), label("Weld to the floor"), wait(weld_time), idle,
-			needs(req_bool(CAP_PROC(not_loose), because = MSG(floor_weld/needs_bolting))), then(CAP_PROC(weld_toggled)), says(CAP_PROC(weld_message))),
+			needs(req(CAP_PROC(not_loose))), then(CAP_PROC(weld_toggled)), says(CAP_PROC(weld_message))),
 		examine_line(CAP_PROC(examine_rung)))
 
 /datum/capability/lib/floor_weld/proc/not_welded(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return M.floor_weld_state() != FLOOR_WELD_WELDED
+	return (M.floor_weld_state() != FLOOR_WELD_WELDED) ? null : MSG(floor_weld/needs_unwelding)
 
 /datum/capability/lib/floor_weld/proc/not_loose(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return M.floor_weld_state() != FLOOR_WELD_LOOSE
+	return (M.floor_weld_state() != FLOOR_WELD_LOOSE) ? null : MSG(floor_weld/needs_bolting)
 
 /// The wrench: a loose machine is bolted down, a bolted one comes loose.
 /datum/capability/lib/floor_weld/proc/bolt_toggled(datum/act/op/A)
