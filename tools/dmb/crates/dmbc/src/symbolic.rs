@@ -68,7 +68,7 @@ pub struct FrozenHelper {
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     pub debug_origins: crate::debug_sources::FrozenDebugOrigins,
-    pub local_names: Vec<String>,
+    pub local_names: Arc<Vec<String>>,
 }
 impl FrozenHelper {
     pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {

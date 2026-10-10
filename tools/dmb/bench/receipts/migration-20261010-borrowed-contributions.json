@@ -1,0 +1,27 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "c977f08981511a573ef4ac12e16b2cbe7f7a6c9e9bca0b58889e716c16cadbe6",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "symbolic::helper_reuse_tests::",
+      "selected": [
+        "symbolic::helper_reuse_tests::frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_frame"
+      ],
+      "exit": 0,
+      "seconds": 0.03759979997994378,
+      "stdout": "\nrunning 1 test\ntest symbolic::helper_reuse_tests::frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_frame ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 674 filtered out; finished in 0.01s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "symbolic::parallel::inventory_tests::",
+      "selected": [
+        "symbolic::parallel::inventory_tests::compact_inventory_preserves_slots_and_exact_entry_content"
+      ],
+      "exit": 0,
+      "seconds": 0.023142400023061782,
+      "stdout": "\nrunning 1 test\ntest symbolic::parallel::inventory_tests::compact_inventory_preserves_slots_and_exact_entry_content ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 674 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

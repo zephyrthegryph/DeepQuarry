@@ -18,9 +18,10 @@ impl HeapCensus {
     pub(crate) fn retained_symbolic_helper(
         &mut self,
         frozen: &Arc<dm_codegen_byond::FrozenProc>,
-        names: &Vec<String>,
+        names: &Arc<Vec<String>>,
     ) {
         self.frozen_code(frozen);
+        self.arc_object("helper.local_names", names);
         self.strings("session_symbolic.helpers", names);
     }
     pub(crate) fn retained_symbolic_ledger(

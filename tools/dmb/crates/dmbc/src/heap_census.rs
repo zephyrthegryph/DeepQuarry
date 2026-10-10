@@ -883,7 +883,7 @@ impl HeapCensus {
             self.frozen_code(&helper.frozen);
             self.slice("frozen_units.warnings", &helper.warnings, true);
             self.frozen_debug("frozen_units", &helper.debug_origins);
-            self.strings("frozen_units", &helper.local_names);
+            self.arc_object("helper.local_names", &helper.local_names); self.strings("frozen_units", &helper.local_names);
         }
         for initializer in &batch.initializers {
             self.latest_image(initializer.latest_image());

@@ -100,6 +100,23 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
     )
     .unwrap();
     assert!(Arc::ptr_eq(&artifact, &rebound.shared_artifact()));
+    let second_rebound = PreparedContribution::rebind(
+        &artifact,
+        &moved,
+        &moved.bodies[0],
+        &prepared,
+        current.debug_origins.clone(),
+        frozen.required_types(),
+    )
+    .unwrap();
+    let second = link_prepared_artifact_tables(
+        vec![second_rebound],
+        moved.snapshot.tree.symbols(),
+        &ReferenceBindings::default(),
+        LinkInventory::default(),
+        Vec::new(),
+    )
+    .unwrap();
     let mut early = link_prepared_artifact_tables(
         vec![rebound],
         moved.snapshot.tree.symbols(),
@@ -109,6 +126,18 @@ fn frozen_helpers_share_code_but_rebind_current_header_origins_and_reject_wrong_
     )
     .unwrap();
     assert_eq!(early.helpers.len(), 1);
+    assert!(Arc::ptr_eq(
+        &early.helpers[0].local_names,
+        &second.helpers[0].local_names
+    ));
+    assert!(Arc::ptr_eq(
+        &early.helpers[0].frozen,
+        &second.helpers[0].frozen
+    ));
+    assert_eq!(
+        early.helpers[0].debug_origins.to_owned_origins(),
+        second.helpers[0].debug_origins.to_owned_origins()
+    );
     assert_eq!(
         early.helpers.remove(0).debug_origins.to_owned_origins(),
         current.source_helpers[0].debug_origins

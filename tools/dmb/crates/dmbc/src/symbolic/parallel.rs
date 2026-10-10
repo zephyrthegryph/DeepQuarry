@@ -1,6 +1,7 @@
 //! Bounded immutable unit freezing with deterministic ordered inventory replay.
 use super::procedure_artifact::Contribution;
 use super::*;
+use dm_link::EntryContent;
 
 #[derive(Default, Clone)]
 pub(super) struct Slots(pub(super) Vec<SlotAlias>);
@@ -19,7 +20,7 @@ impl OwnedStrings {
     fn take(procedure: &mut dm_codegen_byond::SimpleProc) -> Self {
         Self(std::mem::take(&mut procedure.strings))
     }
-    fn replay(&self, inventory: &mut LinkInventory, strings: &mut StringInventory) {
+    pub(super) fn replay(&self, inventory: &mut LinkInventory, strings: &mut StringInventory) {
         for payload in &self.0 {
             strings.append(inventory, payload.id, &payload.bytes);
         }
@@ -65,7 +66,7 @@ impl BoundContribution {
         compact_vec(&mut self.slots.0);
         for helper in &mut self.helpers {
             compact_vec(&mut helper.instances);
-            compact_names(&mut helper.helper.local_names);
+            compact_names(Arc::make_mut(&mut helper.helper.local_names));
             compact_vec(&mut helper.strings.0);
             compact_vec(&mut helper.slots.0);
         }
@@ -80,48 +81,76 @@ impl BoundContribution {
         units: &mut Vec<FrozenUnit>,
         helpers: &mut Vec<FrozenHelper>,
     ) {
-        self.strings.replay(inventory, strings);
-        for id in [
-            self.unit.lowered.identity.owner,
-            self.unit.lowered.identity.name,
-        ] {
-            strings.append_spelling(
-                inventory,
-                id,
-                symbols
-                    .text(id)
-                    .expect("spelling checked before contribution publication")
-                    .as_bytes(),
-            );
-        }
-        append_debug_inventory(&self.unit.lowered.debug_origins, inventory, strings);
-        replay_inventory(
-            self.slots,
-            unit_key(self.unit.lowered.identity),
+        replay_unit(
+            &self.unit,
+            &self.strings,
+            self.slots.0,
             self.content,
             inventory,
+            strings,
+            symbols,
         );
         units.push(self.unit);
         for contribution in self.helpers {
-            contribution.strings.replay(inventory, strings);
-            append_debug_inventory(&contribution.helper.debug_origins, inventory, strings);
-            replay_inventory(
-                contribution.slots,
-                helper_key(contribution.helper.owner, contribution.helper.argument),
+            replay_helper(
+                &contribution.helper,
+                &contribution.strings,
+                contribution.slots.0,
                 contribution.content,
                 inventory,
+                strings,
             );
             helpers.push(contribution.helper);
         }
     }
 }
+pub(super) fn replay_unit(
+    unit: &FrozenUnit,
+    payloads: &OwnedStrings,
+    slots: impl IntoIterator<Item = SlotAlias>,
+    content: EntryContent,
+    inventory: &mut LinkInventory,
+    strings: &mut StringInventory,
+    symbols: &SymbolTable,
+) {
+    payloads.replay(inventory, strings);
+    for id in [unit.lowered.identity.owner, unit.lowered.identity.name] {
+        strings.append_spelling(
+            inventory,
+            id,
+            symbols
+                .text(id)
+                .expect("spelling checked before contribution publication")
+                .as_bytes(),
+        );
+    }
+    append_debug_inventory(&unit.lowered.debug_origins, inventory, strings);
+    replay_inventory(slots, unit_key(unit.lowered.identity), content, inventory);
+}
+pub(super) fn replay_helper(
+    helper: &FrozenHelper,
+    payloads: &OwnedStrings,
+    slots: impl IntoIterator<Item = SlotAlias>,
+    content: EntryContent,
+    inventory: &mut LinkInventory,
+    strings: &mut StringInventory,
+) {
+    payloads.replay(inventory, strings);
+    append_debug_inventory(&helper.debug_origins, inventory, strings);
+    replay_inventory(
+        slots,
+        helper_key(helper.owner, helper.argument),
+        content,
+        inventory,
+    );
+}
 fn replay_inventory(
-    slots: Slots,
+    slots: impl IntoIterator<Item = SlotAlias>,
     key: Key,
-    content: dm_link::EntryContent,
+    content: EntryContent,
     inventory: &mut LinkInventory,
 ) {
-    inventory.slots.extend(slots.0);
+    inventory.slots.extend(slots);
     inventory.entries.push(Entry { key, content });
 }
 pub(super) fn freeze_unit(
@@ -215,7 +244,7 @@ pub(super) fn freeze_unit(
                 image_owner: Arc::new(Default::default()),
                 features: BytecodeFeatures::of(&helper.code.procedure.code),
                 debug_origins: helper.debug_origins.into(),
-                local_names: helper.code.procedure.local_names,
+                local_names: Arc::new(helper.code.procedure.local_names),
             },
         });
     }
@@ -414,12 +443,7 @@ mod inventory_tests {
         let content: Arc<[u8]> = Arc::from(&b"exact retained content"[..]);
         let original = Arc::clone(&content);
         let mut inventory = LinkInventory::default();
-        replay_inventory(
-            Slots(vec![first, second]),
-            key,
-            content.into(),
-            &mut inventory,
-        );
+        replay_inventory(vec![first, second], key, content.into(), &mut inventory);
         assert_eq!(inventory.slots, vec![first, second]);
         assert_eq!(inventory.entries.len(), 1);
         assert_eq!(inventory.entries[0].key, key);

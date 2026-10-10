@@ -535,7 +535,7 @@ impl ReusableProcedureArtifact {
                 frozen: code.frozen,
                 image_owner: code.image_owner,
                 features: code.features,
-                local_names: Arc::try_unwrap(code.frame).ok()?.local_names,
+                local_names: Arc::new(Arc::try_unwrap(code.frame).ok()?.local_names),
                 strings: code.strings,
                 slots: code.slots,
                 instances: code.instances,

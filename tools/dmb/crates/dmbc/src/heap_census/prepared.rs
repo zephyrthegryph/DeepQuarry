@@ -45,11 +45,12 @@ impl HeapCensus {
     pub(crate) fn prepared_helper_parts(
         &mut self,
         frozen: &std::sync::Arc<dm_codegen_byond::FrozenProc>,
-        names: &Vec<String>,
+        names: &Arc<Vec<String>>,
         debug: &crate::debug_sources::FrozenDebugOrigins,
     ) {
         self.frozen_code(frozen);
         self.frozen_debug("prepared_contributions", debug);
+        self.arc_object("helper.local_names", names);
         self.strings("prepared_contributions", names);
     }
     pub(crate) fn prepared_strings(&mut self, strings: &Vec<dm_ir::StringPayload>) {

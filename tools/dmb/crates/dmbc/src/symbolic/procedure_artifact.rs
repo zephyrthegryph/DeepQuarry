@@ -29,7 +29,7 @@ struct HelperArtifact {
     frozen: Arc<FrozenProc>,
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
-    local_names: Vec<String>,
+    local_names: Arc<Vec<String>>,
     strings: OwnedStrings,
     slots: Slots,
     instances: Vec<(SymbolId, SymbolId)>,
@@ -284,18 +284,20 @@ impl Contribution {
     pub(super) fn shared_artifact(&self) -> Arc<ReusableProcedureArtifact> {
         self.artifact.clone()
     }
-    fn into_bound(self) -> BoundContribution {
+    fn bind_owned(
+        artifact: ReusableProcedureArtifact,
+        binding: ProcedureRevisionBinding,
+    ) -> BoundContribution {
         // Ordinary CLI emission moves all payloads. Retained consumers share
         // immutable code/content/string bytes and copy only output descriptors.
-        let artifact = Arc::unwrap_or_clone(self.artifact);
         let identity = artifact.identity;
         let unit = FrozenUnit {
             lowered: FrozenUnitMetadata {
                 warnings: artifact.warnings,
                 identity,
-                origin: self.binding.origin,
-                abi: self.binding.abi,
-                debug_origins: self.binding.debug,
+                origin: binding.origin,
+                abi: binding.abi,
+                debug_origins: binding.debug,
                 frame: artifact.frame,
             },
             frozen: artifact.frozen,
@@ -307,7 +309,7 @@ impl Contribution {
         let helpers = artifact
             .helpers
             .into_iter()
-            .zip(self.binding.helpers)
+            .zip(binding.helpers)
             .map(|(helper, debug_origins)| HelperContribution {
                 helper: FrozenHelper {
                     warnings: helper.warnings,
@@ -343,8 +345,60 @@ impl Contribution {
         units: &mut Vec<FrozenUnit>,
         helpers: &mut Vec<FrozenHelper>,
     ) {
-        self.into_bound()
-            .replay(inventory, strings, symbols, units, helpers);
+        let Self { artifact, binding } = self;
+        match Arc::try_unwrap(artifact) {
+            Ok(artifact) => Self::bind_owned(artifact, binding)
+                .replay(inventory, strings, symbols, units, helpers),
+            Err(artifact) => {
+                let unit = FrozenUnit {
+                    lowered: FrozenUnitMetadata {
+                        warnings: artifact.warnings.clone(),
+                        identity: artifact.identity,
+                        origin: binding.origin,
+                        abi: binding.abi,
+                        debug_origins: binding.debug,
+                        frame: artifact.frame.clone(),
+                    },
+                    frozen: artifact.frozen.clone(),
+                    metadata_recipe: artifact.metadata_recipe.clone(),
+                    image_owner: artifact.image_owner.clone(),
+                    features: artifact.features,
+                    current_image: None,
+                };
+                super::parallel::replay_unit(
+                    &unit,
+                    &artifact.strings,
+                    artifact.slots.0.iter().cloned(),
+                    artifact.content.clone(),
+                    inventory,
+                    strings,
+                    symbols,
+                );
+                units.push(unit);
+                for (retained, debug_origins) in artifact.helpers.iter().zip(binding.helpers) {
+                    let helper = FrozenHelper {
+                        warnings: retained.warnings.clone(),
+                        owner: artifact.identity,
+                        argument: retained.argument,
+                        frozen: retained.frozen.clone(),
+                        image_owner: retained.image_owner.clone(),
+                        features: retained.features,
+                        current_image: None,
+                        debug_origins,
+                        local_names: retained.local_names.clone(),
+                    };
+                    super::parallel::replay_helper(
+                        &helper,
+                        &retained.strings,
+                        retained.slots.0.iter().cloned(),
+                        retained.content.clone(),
+                        inventory,
+                        strings,
+                    );
+                    helpers.push(helper);
+                }
+            }
+        }
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         crate::composition::ProcedureMetadataRecipe::census(&self.artifact.metadata_recipe, census);
