@@ -13,6 +13,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
+	membership(joins = REGISTRY_LANDMARKS)
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
 
 /// The map resolver of landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
@@ -101,7 +102,6 @@ TYPE_TABLE_DECLARE(/obj/effect/landmark, landmark_tag_setup, null)
 			GLOB.tdomeadmin += loc
 		if("tdomeobserve")
 			GLOB.tdomeobserve += loc
-	registry_join(REGISTRY_LANDMARKS, src)
 	switch(TYPE_TABLE_GET(src, landmark_tag_setup))
 		if(/obj/effect/landmark/start)
 			tag = "start*[name]"
