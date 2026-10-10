@@ -22,7 +22,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	. = ..()
 	if(!material)
 		return INITIALIZE_HINT_QDEL
-	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by update_icon()
+	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by its look
 	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
 	color = null
 	randpixel_xy()

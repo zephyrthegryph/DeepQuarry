@@ -129,13 +129,7 @@ TRACKED(/obj/structure, other_connections)
 			dirs += get_dir(src, T)
 			other_dirs += get_dir(src, T)
 
-	refresh_neighbors()
-
 	// Interned: structures with the same shape share one read-only list.
 	set_connections(string_list(dirs_to_corner_states(dirs)))
 	set_other_connections(string_list(dirs_to_corner_states(other_dirs)))
 	return TRUE
-
-/obj/structure/proc/refresh_neighbors()
-	for(var/turf/T as anything in RANGE_TURFS(1, src))
-		T.update_icon()

@@ -249,7 +249,6 @@ CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
 		return
 	removed.forceMove(get_turf(target))
 	removed.add_blood(target)
-	removed.update_icon()
 	to_chat(user, span_notice("You pull \the [removed] out of [target]'s [part.name]."))
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed

@@ -245,8 +245,6 @@ CAPABILITIES(/mob/living/bot/farmbot)
 /mob/living/bot/farmbot/proc/farm_job_end(datum/act/op/A)
 	action = ""
 	update_icons()
-	var/atom/tray = A.target
-	tray?.update_icon()
 
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
