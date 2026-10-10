@@ -70,18 +70,13 @@ CAPABILITIES(/obj/structure/lift)
 	var/datum/turbolift_floor/floor
 TRACKED(/obj/structure/lift/button, light_up)
 
-/obj/structure/lift/button/relations()
-	. = ..()
-	. += rel_one(nameof(floor), back = nameof(/datum/turbolift_floor::ext_panel))
-/datum/turbolift_floor/relations()
-	. = ..()
-	. += rel_one(nameof(ext_panel), back = nameof(/obj/structure/lift/button::floor))
 
 /obj/structure/lift/button/proc/reset()
 	set_light_up(FALSE)
 
 // Hit it with a PDA or ID to enable priority call mode
 CAPABILITIES(/obj/structure/lift/button)
+	links(/obj/structure/lift/button::floor, /datum/turbolift_floor::ext_panel)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

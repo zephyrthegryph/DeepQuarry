@@ -2,20 +2,20 @@
 //
 // A "system" is a named owner of work. There are three kinds:
 //  - KM_KIND_OM: an object-model behaviour family (life, machines, ai_brain, lighting, ...). Every
-//    /datum/om/behaviour and /datum/om/pipeline maps to one, bound once at boot by km_bind_behaviours().
+//    /datum/scheduled_behaviour and /datum/work_pipeline maps to one, bound once at boot by km_bind_behaviours().
 //  - KM_KIND_MC: a firing MC subsystem ("mc_air", "mc_lighting"), bound when it first fires. SSbehaviours is
 //    not one: its cost is decomposed into the OM systems it runs (its remainder is "om_core").
 //  - KM_KIND_PSEUDO: work no behaviour or subsystem owns (om_core, om_native, input, other).
 //
 // HOW A BEHAVIOUR GETS ITS SYSTEM (the whole rule; nothing else decides):
 //  1. `system_key` on the behaviour type, when set. Inline behaviours (rows of a bundle's reacts / ticks /
-//     events tables) get the bundle's name, e.g. `/datum/om/bundle/powered_machine` -> "powered_machine".
+//     events tables) get the bundle's name, e.g. `/datum/definition_bundle/powered_machine` -> "powered_machine".
 //  2. The first row of KM_SYSTEM_ROWS whose type-path prefix matches "[type]". This is where a code folder's
 //     ownership is written down: the row for a folder lists that folder's behaviour types, so a new behaviour
 //     joins its folder's system by adding its type to the row (or by setting `system_key`).
-//  3. Otherwise the family rule: `/datum/om/behaviour/world/<x>` and `/datum/om/behaviour/sleeper/<x>` -> "<x>",
-//     `/datum/om/behaviour/internal/<x>` -> "om_core", any other `/datum/om/behaviour/<x>[/...]` or
-//     `/datum/om/pipeline/<x>[/...]` -> "<x>". A behaviour therefore always has a system, and a system nobody
+//  3. Otherwise the family rule: `/datum/scheduled_behaviour/world/<x>` and `/datum/scheduled_behaviour/sleeper/<x>` -> "<x>",
+//     `/datum/scheduled_behaviour/internal/<x>` -> "om_core", any other `/datum/scheduled_behaviour/<x>[/...]` or
+//     `/datum/work_pipeline/<x>[/...]` -> "<x>". A behaviour therefore always has a system, and a system nobody
 //     named shows up under the behaviour's own name, which is what an overrun report needs to point at.
 // A unit test (dq_km_*) checks every registered behaviour resolves and that the folder rows name real types.
 //
@@ -130,7 +130,7 @@
 	)
 	return rows
 
-/// The prefix -> key list km_system_rows() flattens to: "/datum/om/behaviour/observer_upkeep" = "life", ... in row order.
+/// The prefix -> key list km_system_rows() flattens to: "/datum/scheduled_behaviour/observer_upkeep" = "life", ... in row order.
 /proc/km_system_prefixes()
 	var/datum/km_holder/holder = km_holder()
 	if(!length(holder.prefixes))
@@ -143,7 +143,7 @@
 	return holder.prefixes
 
 /// The system key of a behaviour type path (rules 2 and 3 above). Matching is by path prefix at a "/" boundary,
-/// so a `life` row owns `life_derive` too (life*) but not `/datum/om/pipeline/lifeboat/x`.
+/// so a `life` row owns `life_derive` too (life*) but not `/datum/work_pipeline/lifeboat/x`.
 /proc/km_system_key_for_path(path)
 	var/text = "[path]"
 	var/list/prefixes = km_system_prefixes()
@@ -159,12 +159,10 @@
 /// Rule 3: the family fallback.
 /proc/km_family_key(text)
 	var/rest = text
-	if(findtext(text, "/datum/om/behaviour/") == 1)
-		rest = copytext(text, length("/datum/om/behaviour/") + 1)
-	else if(findtext(text, "/datum/scheduled_behaviour/") == 1)
+	if(findtext(text, "/datum/scheduled_behaviour/") == 1)
 		rest = copytext(text, length("/datum/scheduled_behaviour/") + 1)
-	else if(findtext(text, "/datum/om/pipeline/") == 1)
-		rest = copytext(text, length("/datum/om/pipeline/") + 1)
+	else if(findtext(text, "/datum/work_pipeline/") == 1)
+		rest = copytext(text, length("/datum/work_pipeline/") + 1)
 	var/list/segments = splittext(rest, "/")
 	if(!length(segments) || !length(segments[1]))
 		return KM_KEY_OTHER
@@ -176,13 +174,13 @@
 	return first
 
 /// The system key of the inline behaviours a bundle or decl declares: the bundle's own name
-/// (`/datum/om/bundle/powered_machine` -> "powered_machine").
-/proc/km_bundle_key(datum/om/bundle/bundle)
+/// (`/datum/definition_bundle/powered_machine` -> "powered_machine").
+/proc/km_bundle_key(datum/definition_bundle/bundle)
 	var/list/segments = splittext("[bundle.type]", "/")
 	return segments[length(segments)]
 
 /// Binds every behaviour of a freshly built OM registry to its system (called at the end of build_behaviours()).
 /proc/km_bind_behaviours(list/behaviours)
 	var/datum/km_systems/systems = km_systems()
-	for(var/datum/om/behaviour/B as anything in behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in behaviours)
 		B.system_idx = systems.index_for(B.system_key || km_system_key_for_path(B.type), KM_KIND_OM, B.lane)

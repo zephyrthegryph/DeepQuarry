@@ -298,7 +298,7 @@
 	. = ..()
 	. += legacy_compartment(BAY_INTERIOR, heat = 0.25, radiation = 0.5, gas = FALSE)
 
-/datum/om/relation/slot/dx_bay_holder_slot
+/datum/relation_definition/slot/dx_bay_holder_slot
 	holder = /obj/item/dx_bay_holder
 	slot_id = "bay"
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -309,7 +309,7 @@
 	w_class = ITEMSIZE_NORMAL
 	max_integrity = 10000
 
-/datum/om/relation/slot/dx_bay_holder_plain_slot
+/datum/relation_definition/slot/dx_bay_holder_plain_slot
 	holder = /obj/item/dx_plain_holder
 	slot_id = "bay"
 	exposure = SLOT_EXPOSURE_INTERNAL

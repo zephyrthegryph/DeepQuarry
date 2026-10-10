@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/locator)
 
 CAPABILITIES(/obj/item/hand_tele)
 	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
-	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal), because = MSG(hand_tele/malfunctioning))),
+	op("lock_in", in_hand(), needs(req_bool(PROC_REF(can_open_portal), because = MSG(hand_tele/malfunctioning))),
 		asks(/datum/prompt/choice, fields = list("title" = "Hand Teleporter", "question" = "Please select a teleporter to lock in on.", "choices" = computed(PROC_REF(teleporter_choices)), "timeout" = 0)),
 		then(PROC_REF(teleporter_chosen)))
 

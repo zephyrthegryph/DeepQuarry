@@ -2,6 +2,14 @@
 /obj/machinery/power/quantumpad state: qpad-o
 /obj/machinery/power/quantumpad dir: 2
 /obj/machinery/power/quantumpad overlay: icons/obj/telescience.dmi:qpad-o:8:#000000
+/obj/machinery/power/quantumpad/dq_small_pad_a icon: icons/obj/telescience.dmi
+/obj/machinery/power/quantumpad/dq_small_pad_a state: qpad-o
+/obj/machinery/power/quantumpad/dq_small_pad_a dir: 2
+/obj/machinery/power/quantumpad/dq_small_pad_a overlay: icons/obj/telescience.dmi:qpad-o:8:#000000
+/obj/machinery/power/quantumpad/dq_small_pad_b icon: icons/obj/telescience.dmi
+/obj/machinery/power/quantumpad/dq_small_pad_b state: qpad-o
+/obj/machinery/power/quantumpad/dq_small_pad_b dir: 2
+/obj/machinery/power/quantumpad/dq_small_pad_b overlay: icons/obj/telescience.dmi:qpad-o:8:#000000
 /obj/machinery/power/quantumpad/scioutpost icon: icons/obj/telescience.dmi
 /obj/machinery/power/quantumpad/scioutpost state: qpad-o
 /obj/machinery/power/quantumpad/scioutpost dir: 2

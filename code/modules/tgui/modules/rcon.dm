@@ -35,7 +35,7 @@ CAPABILITIES(/datum/tgui_module/rcon)
 	op("smes_out_toggle", ui_act("smes_out_toggle", arg("smes")), then(PROC_REF(ui_act_smes_out_toggle)))
 	op("smes_in_set", ui_act("smes_in_set", arg("adjust", num()), arg("smes"), arg("target")), then(PROC_REF(ui_act_smes_in_set)))
 	op("smes_out_set", ui_act("smes_out_set", arg("adjust", num()), arg("smes"), arg("target")), then(PROC_REF(ui_act_smes_out_set)))
-	op("toggle_breaker", ui_act("toggle_breaker", arg("breaker", schema_text(4096))), needs(req(PROC_REF(breaker_ready), because = MSG(rcon/breaker_locked))), then(PROC_REF(ui_act_toggle_breaker)))
+	op("toggle_breaker", ui_act("toggle_breaker", arg("breaker", schema_text(4096))), needs(req_bool(PROC_REF(breaker_ready), because = MSG(rcon/breaker_locked))), then(PROC_REF(ui_act_toggle_breaker)))
 
 /// What the console shows: one page of units (their window data and tag) and every breaker box. Reads only.
 /datum/tgui_module/rcon/ui_data(datum/act/eval/A)

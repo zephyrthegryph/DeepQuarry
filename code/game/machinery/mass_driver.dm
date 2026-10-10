@@ -58,7 +58,7 @@
 CAPABILITIES(/obj/machinery/mass_driver)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
 	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req_bool(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(id_title)), "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_value" = 9999, "timeout" = 0)),
 		then(PROC_REF(driver_id_entered)))
 	default_parts()

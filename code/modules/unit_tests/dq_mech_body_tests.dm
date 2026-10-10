@@ -144,7 +144,7 @@
 	use(H, mech, paste)
 	TEST_ASSERT_EQUAL(paste.get_amount(), paste_before, "nanopaste does nothing with the bolts done up")
 	mech.state = MECHA_PANEL_LOOSE
-	TEST_ASSERT(mech.maintenance_panel_loose(null), "the panel is loose")
+	TEST_ASSERT(isnull(mech.maintenance_panel_loose(null)), "the panel is loose")
 
 	// Recalibration is the pilot's, from the cockpit: the op needs the pilot and control damage.
 	mech.state = MECHA_OPERATING

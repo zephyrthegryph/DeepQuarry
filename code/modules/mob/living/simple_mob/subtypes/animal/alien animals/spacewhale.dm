@@ -65,8 +65,7 @@
 	B.digest_burn = 50
 	B.escapechance = 0
 
-/mob/living/simple_mob/vore/overmap/spacewhale/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/vore/overmap/spacewhale/proc/spacewhale_restless_ready(datum/act/timer/A)
 	handle_restless()
 
 /mob/living/simple_mob/vore/overmap/spacewhale/Moved()
@@ -124,6 +123,7 @@
 TRACKED(/mob/living/simple_mob/vore/overmap/spacewhale, restless)
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	after_init(0, then(PROC_REF(spacewhale_restless_ready)))
 	on_change(nameof(restless), ANY, then(PROC_REF(restless_changed)))
 
 /// Its overmap marker shows whether it is restless (once the marker is known).

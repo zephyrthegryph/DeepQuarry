@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 
 /// The bolt is nocked and the string is drawn at all (the crossbow is the op's held item: leaving the hands that drew it stops the draw).
 /obj/item/gun/launcher/crossbow/proc/draw_holds(datum/act/op/A)
-	return bolt && tension
+	return bolt && tension ? null : MSG(req_silent)
 
 /// Another notch follows while the string is short of its maximum tension.
 /obj/item/gun/launcher/crossbow/proc/draw_more(datum/act/op/A)

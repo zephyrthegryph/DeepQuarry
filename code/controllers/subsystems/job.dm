@@ -398,7 +398,7 @@ SYSTEM_DEF(job)
 
 			// Loop through all jobs
 			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-				if(!job || LAZYFIND(round_mode().disabled_jobs, job.title) )
+				if(!job || LAZYFIND(ticker_mode().disabled_jobs, job.title) )
 					continue
 
 				if(jobban_isbanned(player, job.title))

@@ -95,7 +95,7 @@ CAPABILITIES(/datum/shuttle)
 		log_shuttle("Shuttle '[name]' could not find its starting location landmark; skipping registration.")
 		return
 
-	if(src.name in SSshuttles.shuttles)
+	if(src.name in shuttles_shuttles())
 		CRASH("A shuttle with the name '[name]' is already defined.")
 	SSshuttles.shuttles[src.name] = src
 	registered = TRUE
@@ -455,7 +455,7 @@ SETTER(/datum/shuttle, process_state)
 			I.update_broadcast_tiles()
 	// Adjust areas of mothershuttle so it doesn't try and bring us with it if it jumps while we aren't on it.
 	if(mothershuttle)
-		var/datum/shuttle/MS = SSshuttles.shuttles[mothershuttle]
+		var/datum/shuttle/MS = shuttles_shuttles()[mothershuttle]
 		if(MS)
 			if(current_location().landmark_tag == motherdock)
 				MS.shuttle_area |= shuttle_area // We are now on mothershuttle! Bring us along!
@@ -488,8 +488,8 @@ SETTER(/datum/shuttle, process_state)
 
 /datum/shuttle/proc/find_children()
 	. = list()
-	for(var/shuttle_name in SSshuttles.shuttles)
-		var/datum/shuttle/shuttle = SSshuttles.shuttles[shuttle_name]
+	for(var/shuttle_name in shuttles_shuttles())
+		var/datum/shuttle/shuttle = shuttles_shuttles()[shuttle_name]
 		if(shuttle.mothershuttle == name)
 			. += shuttle
 

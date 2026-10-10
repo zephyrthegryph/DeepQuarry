@@ -45,7 +45,7 @@ MSG_DEF_SELF(firedoor_assembly/glazed, "Take the glass out first.")
 CAPABILITIES(/obj/structure/firedoor_assembly)
 	construction(start(STAGE_FIREDOOR_ASSEMBLY_FRAME),
 		stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),
-		stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, item(/obj/item/circuitboard/airalarm), wait(0), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first)), req(PROC_REF(board_releasable), because = PROC_REF(board_release_refusal))), then(PROC_REF(finish_firedoor)), undo = NO_UNDO),
+		stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, item(/obj/item/circuitboard/airalarm), wait(0), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first)), req(PROC_REF(board_releasable))), then(PROC_REF(finish_firedoor)), undo = NO_UNDO),
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	op("anchor", tool(TOOL_WRENCH), label("Bolt or unbolt"), wait(0), then(PROC_REF(anchor_toggled)))
 	op("plate_glass", item(/obj/item/stack/material/glass/reinforced), label("Install windows"), when(PROC_REF(unglazed)), wait(4 SECONDS), then(PROC_REF(glass_in)))
@@ -74,9 +74,6 @@ CAPABILITIES(/obj/structure/firedoor_assembly)
 
 /// A board must leave its actual holder before finishing can consume it.
 /obj/structure/firedoor_assembly/proc/board_releasable(datum/act/op/A)
-	return isnull(board_release_refusal(A))
-
-/obj/structure/firedoor_assembly/proc/board_release_refusal(datum/act/op/A)
 	if(!A.actor || A.actor.get_active_hand() != A.held)
 		return /datum/msg/req_wrong_item
 	return A.actor.release_refusal(A.held, A.actor)

@@ -125,7 +125,7 @@ CAPABILITIES(/datum/secrets_menu)
 /datum/secrets_menu/proc/ui_act_show_game_mode(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	if (round_mode()) tgui_alert_async(holder(), "The game mode is [round_mode().name]")
+	if (ticker_mode()) tgui_alert_async(holder(), "The game mode is [ticker_mode().name]")
 	else tgui_alert_async(holder(), "For some reason there's a ticker, but not a game mode")
 
 //Buttons for debug.
@@ -271,7 +271,7 @@ CAPABILITIES(/datum/secrets_menu)
 		log_admin("[key_name(holder())] used secret: [action].")
 
 /datum/secrets_menu/proc/ui_act_jump_shuttle_a2_choices(datum/act/op/A)
-	return SSshuttles.shuttles
+	return shuttles_shuttles()
 
 /datum/secrets_menu/proc/ui_act_jump_shuttle(datum/act/op/A)
 	var/action = A.window_action()
@@ -280,7 +280,7 @@ CAPABILITIES(/datum/secrets_menu)
 	var/shuttle_tag = A.step_value("a2")
 	if (!shuttle_tag) return
 
-	var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/S = shuttles_shuttles()[shuttle_tag]
 
 	var/list/area_choices = return_areas()
 	var/origin_area = A.step_value("a3")
@@ -324,8 +324,8 @@ CAPABILITIES(/datum/secrets_menu)
 	if(!ui_gate(A))
 		return FALSE
 	var/list/valid_shuttles = list()
-	for (var/shuttle_tag in SSshuttles.shuttles)
-		if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
+	for (var/shuttle_tag in shuttles_shuttles())
+		if (istype(shuttles_shuttles()[shuttle_tag], /datum/shuttle/autodock))
 			valid_shuttles += shuttle_tag
 
 	var/shuttle_tag = A.step_value("a8")
@@ -334,7 +334,7 @@ CAPABILITIES(/datum/secrets_menu)
 	if (!shuttle_tag)
 		return
 
-	var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/S = shuttles_shuttles()[shuttle_tag]
 	if (S.can_force())
 		S.force_launch(holder(), user)
 		log_and_message_admins("forced the [shuttle_tag] shuttle", holder())
@@ -349,8 +349,8 @@ CAPABILITIES(/datum/secrets_menu)
 	if(!ui_gate(A))
 		return FALSE
 	var/list/valid_shuttles = list()
-	for (var/shuttle_tag in SSshuttles.shuttles)
-		if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
+	for (var/shuttle_tag in shuttles_shuttles())
+		if (istype(shuttles_shuttles()[shuttle_tag], /datum/shuttle/autodock))
 			valid_shuttles += shuttle_tag
 
 	var/shuttle_tag = A.step_value("a9")
@@ -359,7 +359,7 @@ CAPABILITIES(/datum/secrets_menu)
 	if (!shuttle_tag)
 		return
 
-	var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/S = shuttles_shuttles()[shuttle_tag]
 	if (S.can_launch())
 		S.launch(holder(), user)
 		log_and_message_admins("launched the [shuttle_tag] shuttle", holder())
@@ -381,7 +381,7 @@ CAPABILITIES(/datum/secrets_menu)
 		return
 	if (!shuttle_tag) return
 
-	var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/S = shuttles_shuttles()[shuttle_tag]
 
 	var/destination_tag = A.step_value("a12")
 	if(isnull(destination_tag))

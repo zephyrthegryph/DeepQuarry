@@ -24,7 +24,11 @@
 	TEST_ASSERT(user.put_in_active_hand(kit), "the actual floor light kit is held")
 	add_trait(kit, TRAIT_NODROP, "interim_floor_light_install")
 	TEST_ASSERT(kit.loc.release_refusal(kit, user), "the actual sticky kit refuses release")
-	TEST_ASSERT(kit.can_install(user, kit, kit) != TRUE, "the installation requirement rejects the actual sticky kit")
+	var/datum/act/op/A = allocate(/datum/act/op)
+	A.actor = user
+	A.held = kit
+	A.holder = kit
+	TEST_ASSERT_NOTNULL(kit.can_install(A), "the installation requirement returns a reason for the actual sticky kit")
 	test_click(user, kit, kit, GESTURE_SELF)
 	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(kit), "refusal preserves the actual kit")

@@ -36,6 +36,8 @@
 	parent_organ = BP_HEAD
 	spleen_efficiency = 0.5
 
-/obj/item/organ/internal/spleen/skrell/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/organ/internal/spleen/skrell)
+	after_init(0, then(PROC_REF(skrell_spleen_scale)))
+
+/obj/item/organ/internal/spleen/skrell/proc/skrell_spleen_scale(datum/act/timer/A)
 	adjust_scale(0.8,0.7)

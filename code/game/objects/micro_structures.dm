@@ -34,7 +34,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		asks(/datum/prompt/choice, fields = list("title" = "Pick a tunnel", "question" = "Where would you like to go?", "choices" = computed(PROC_REF(move_choices)), "timeout" = 0), step = "move_to", keeps = TARGET_PRESENT, when = PROC_REF(picks_destination)),
 		asks(/datum/prompt/choice, fields = list("title" = "Pick a target to eat", "question" = "Who would you like to eat?", "choices" = computed(PROC_REF(eat_choices)), "timeout" = 0), step = "eat", keeps = TARGET_PRESENT, when = PROC_REF(picks_meal)),
 		then(PROC_REF(tunnel_action_chosen)))
-	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req(PROC_REF(self_drag), silent = TRUE)),
+	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req_bool(PROC_REF(self_drag), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
 		then(PROC_REF(interaction_drag)))
 	// The waits the choices above end in: reaching in, climbing in (by hand or by dragging oneself onto the hole), and moving to another tunnel.
@@ -88,7 +88,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	var/list/destinations = list()
 	var/turf/myturf = get_turf(src.loc)
 	var/datum/planet/planet
-	for(var/datum/planet/P in SSplanets.planets)
+	for(var/datum/planet/P in planets_planets())
 		if(myturf.z in P.expected_z_levels)
 			planet = P
 	for(var/obj/structure/micro_tunnel/t in REGISTRY_MEMBERS(REGISTRY_MICRO_TUNNELS))

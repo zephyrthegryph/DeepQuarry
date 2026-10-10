@@ -739,7 +739,7 @@ TRACKED(/obj/effect/rune, manifesting)
 			if(lamb.species.rarity_value > 3)
 				worth = 1
 
-		if (round_mode().name == "cult")
+		if (ticker_mode().name == "cult")
 			if(H.mind == GLOB.cult.sacrifice_target())
 				if(cultsinrange.len >= 3)
 					registry_join(REGISTRY_SACRIFICED, H.mind)
@@ -1113,7 +1113,7 @@ TRACKED(/obj/effect/rune, manifesting)
 /obj/effect/rune/proc/bloodboil(mob/living/user) //cultists need at least one DANGEROUS rune. Even if they're all stealthy.
 /*
 	var/list/mob/living/carbon/cultists = new
-	for(var/datum/mind/H in round_mode().cult)
+	for(var/datum/mind/H in ticker_mode().cult)
 		if (istype(H.current,/mob/living/carbon))
 			cultists+=H.current
 */

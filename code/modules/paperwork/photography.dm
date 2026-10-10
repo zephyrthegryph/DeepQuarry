@@ -41,8 +41,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 
 TRACKED(/obj/item/photo, tiny)
 
-/obj/item/photo/Initialize(mapload)
-	. = ..()
+/obj/item/photo/proc/assign_photo_id(datum/act/timer/A)
 	id = GLOB.photo_count++
 
 /// Old attack_self.
@@ -88,6 +87,7 @@ TRACKED(/obj/item/photo, tiny)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
+	after_init(0, then(PROC_REF(assign_photo_id)))
 	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("photo_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("photo_rename", menu(), label("Rename photo"), needs(carried()), then(PROC_REF(photo_rename_op)))

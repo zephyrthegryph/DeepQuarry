@@ -1,4 +1,4 @@
-// Rust world subscriptions on the OM scheduler (code/datums/om/world_watch.dm,
+// Rust world subscriptions on the OM scheduler (code/engine/time/world_watches.dm,
 // doc/rewrite/object_model_core.md §4.8). The numeric registry (WORLD_REASON_*,
 // WORLD_WAKE_STRIDE) is generated from the Rust sources into verdigris/_bindings.dm.
 
@@ -29,7 +29,7 @@
 
 // --- DM-owned facts are not published into Rust. Game facts (areas, doors, powernets, chunks, ...) are OM change channels: CHANGE_* in om.dm.
 
-// --- Conditions for om_world_when(). Transient lists, consumed at registration; nothing is kept.
+// --- Conditions for world_watch_when(). Transient lists, consumed at registration; nothing is kept.
 #define WORLD_COND_THRESHOLD 1
 #define WORLD_COND_BAND 2
 #define WORLD_COND_DIFFERENCE 3

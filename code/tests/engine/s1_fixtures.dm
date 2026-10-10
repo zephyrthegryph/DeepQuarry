@@ -27,20 +27,20 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 	/// Welded: a needs() on the remove action refuses a transfer out.
 	var/welded = FALSE
 
-/datum/om/relation/slot/s1_main
+/datum/relation_definition/slot/s1_main
 	holder = /obj/s1_fixture/rack
 	slot_id = "s1_main"
 	name = "main"
 	is_default = TRUE
 
-/datum/om/relation/slot/s1_side
+/datum/relation_definition/slot/s1_side
 	holder = /obj/s1_fixture/rack
 	slot_id = "s1_side"
 	name = "side"
 
 CAPABILITIES(/obj/s1_fixture/rack)
 	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 4)), on = ON_CONTENTS)
-	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded))))
+	extend(/datum/act/remove, needs(req_bool(PROC_REF(not_welded), because = MSG(s1/welded))))
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
@@ -63,7 +63,7 @@ TRACKED(/obj/s1_fixture/rack, welded)
 	var/inserted_heard = 0
 	var/welded = FALSE
 
-/datum/om/relation/slot/s1_picky
+/datum/relation_definition/slot/s1_picky
 	holder = /obj/s1_fixture/picky
 	slot_id = "s1_picky"
 	name = "picky"
@@ -73,8 +73,8 @@ TRACKED(/obj/s1_fixture/rack, welded)
 
 CAPABILITIES(/obj/s1_fixture/picky)
 	ref_one(nameof(steward), /mob)
-	extend(/datum/act/insert, needs(req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets))), needs(req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward))))
-	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded))))
+	extend(/datum/act/insert, needs(req_bool(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets))), needs(req_bool(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward))))
+	extend(/datum/act/remove, needs(req_bool(PROC_REF(not_welded), because = MSG(s1/welded))))
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 

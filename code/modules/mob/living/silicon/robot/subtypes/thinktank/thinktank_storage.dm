@@ -119,10 +119,10 @@ CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 			then(TYPE_PROC_REF(/mob/living/silicon/robot/platform, ability_eject_cargo))))
 
 /mob/living/silicon/robot/platform/proc/can_act_to_eject(datum/act/op/A)
-	return !incapacitated()
+	return (!incapacitated()) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/platform/proc/has_stored_atoms(datum/act/op/A)
-	return length(stored_atoms) > 0
+	return (length(stored_atoms) > 0) ? null : /datum/msg/req_failed
 
 /// Drop something from your internal storage.
 /mob/living/silicon/robot/platform/proc/ability_eject_cargo(datum/act/op/A)

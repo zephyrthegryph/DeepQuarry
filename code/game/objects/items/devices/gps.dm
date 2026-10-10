@@ -80,7 +80,7 @@ TRACKED(/obj/item/gps, tracking)
 /obj/item/gps/proc/gps_step(datum/act/timer/A)
 	update_holder()
 	if(holder_ref())
-		update_compass(src, TRUE)
+		update_compass(src)
 
 /// A GPS works unless a pulse knocked it out (emp_disable() holds it down).
 STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/gps)
 	var/atom/movable/source = A.target
 	update_compass(source)
 
-/obj/item/gps/proc/update_compass(atom/movable/source, update_compass_icon)
+/obj/item/gps/proc/update_compass(atom/movable/source)
 	SHOULD_NOT_SLEEP(TRUE)
 	compass.hide_waypoints(FALSE)
 	var/turf/my_turf = get_turf(src)
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/gps)
 			compass.set_waypoint("\ref[gps]", gps_tag, 0, 0, 0, LAZYACCESS(tracking_devices, "\ref[gps]"))
 		if(can_track(gps) && gps_turf && my_turf && gps_turf.z == my_turf.z)
 			compass.show_waypoint("\ref[gps]")
-	compass.rebuild_overlay_lists(update_compass_icon)
+	compass.rebuild_overlay_lists()
 
 /obj/item/gps/proc/tracking_toggled(datum/act/op/A)
 	toggletracking(A.actor)
@@ -170,7 +170,7 @@ CAPABILITIES(/obj/item/gps)
 /obj/item/gps/proc/toggle_tracking()
 	set_tracking(!tracking)
 	if(tracking)
-		update_compass(src, TRUE)
+		update_compass(src)
 	else
 		update_compass(src)
 	update_holder()
@@ -309,7 +309,7 @@ CAPABILITIES(/obj/item/gps)
 	compass.clear_waypoint(gps_ref)
 	LAZYREMOVE(tracking_devices, gps_ref)
 	LAZYREMOVE(showing_tracked_names, gps_ref)
-	update_compass(src, TRUE)
+	update_compass(src)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_starttrack(datum/act/op/A, ref)
@@ -319,7 +319,7 @@ CAPABILITIES(/obj/item/gps)
 	var/gps_ref = REF(gps)
 	LAZYSET(tracking_devices, gps_ref, "#00ffff")
 	LAZYSET(showing_tracked_names, gps_ref, TRUE)
-	update_compass(src, TRUE)
+	update_compass(src)
 	return TRUE
 
 /obj/item/gps/proc/ui_act_trackcolor(datum/act/op/A, color, ref)
@@ -331,7 +331,7 @@ CAPABILITIES(/obj/item/gps)
 	if(!new_colour)
 		return FALSE
 	LAZYSET(tracking_devices, gps_ref, new_colour)
-	update_compass(src, TRUE)
+	update_compass(src)
 	return TRUE
 
 /obj/item/gps/on // Defaults to off to avoid polluting the signal list with a bunch of GPSes without owners. If you need to spawn active ones, use these.

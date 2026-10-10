@@ -18,9 +18,8 @@ SYSTEM_DEF(pois)
 	. = ..()
 	. += every(1 SECOND, PROC_REF(place_pois), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/system/pois/relations()
-	. = ..()
-	. += rel_many(nameof(allocated_gamma_items))
+CAPABILITIES(/datum/system/pois)
+	ref_many(nameof(allocated_gamma_items))
 
 /// Queued loader landmarks: each qdels itself once placed.
 /datum/system/pois/declared_cache_vars()
@@ -113,8 +112,8 @@ SYSTEM_DEF(pois)
 	if(!(length(GLOB.global_used_pois)) || !(GLOB.global_used_pois[poi_to_load.poi_type]))
 		GLOB.global_used_pois[poi_to_load.poi_type] = list()
 		var/list/poi_list = GLOB.global_used_pois[poi_to_load.poi_type]
-		for(var/map in SSmapping.map_templates)
-			var/template = SSmapping.map_templates[map]
+		for(var/map in mapping_map_templates())
+			var/template = mapping_map_templates()[map]
 			if(istype(template, poi_to_load.poi_type))
 				poi_list += template
 

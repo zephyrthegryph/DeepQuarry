@@ -1,0 +1,92 @@
+# Requirement protocol handoff (2026-10-08)
+
+Branch: `codex/requirements-protocol-1008`, fresh from `origin/master` at `6daab63fe8`, followed by `tools/dq_merge_master.sh`. Push this branch only; no master merge or push.
+
+## Scope and behavior
+
+`req(PROC_REF(x))` now allows only null and refuses with the callback's text or message path/instance. `because` overrides the wording, including an explicitly empty silent reason. Invalid boolean/numeric callback answers fail closed. Type/list requirements retain their existing behavior. `holds()` and the engine's stage `require()` remain boolean views for dispatch; `check()` exposes null-or-reason on native and compatibility requirements. The click resolver is unchanged.
+
+Existing boolean callbacks use the explicit `req_bool` constructor and a separate boolean requirement subtype. Their bodies are unchanged outside the machinery conversion scope. This compatibility transition is necessary to keep existing TRUE/FALSE callers working after `req` changes meaning, and is counted rather than hidden: the new `requirement_bool` fingerprint ratchet starts with 871 existing production rows. Only its new baseline was seeded; existing baselines were updated shrink-only. Analyzer callback roles, return checks, purity/read discovery and condition normalization recognize both protocols, including boolean window `remote` hooks and their separate reasons.
+
+Current master had four adapters absent from the earlier branch, so the complete comparable inventory was **43**, not 39. All 43 native delegates are converted: 39 merged null-or-reason callbacks and four declarative requirements, across 27 machinery/power files. The historical comment-tagged subset fell from 24 to zero. Selection-only checks still fall through; refusal wording, silent effect-decline cases, operation keys and priorities are preserved.
+
+`dq_actor_can_act` is not equivalent to `req_capable`: it requires a living actor and uses `INCAPACITATION_DEFAULT` (restraint/full buckling), whereas `req_capable` checks the action stat and accepts nonliving providers. Converted callbacks preserve the former checks instead of substituting a different policy. Nuclear `extended` is tracked and its runtime write uses its setter; prison-shuttle policy flags are tracked as well. Volatile map/material/custody reads use the existing `read_once` form. No new ALLOW annotation was added. Two now-unused material-read annotations were removed.
+
+## Remaining legacy
+
+Two old frame helpers, `accepts_board` and `has_all_components`, remain solely because `code/datums/capabilities/frame_ladder.dm` and existing old-helper tests still call them. Native frame requirements no longer delegate to them and have real board/component regressions. The construction-retirement lane can remove the shared helpers with its last callers. No compatibility alias or synthetic action wrapper was added, and `code/datums/interactions` was left untouched.
+
+Other direct boolean callbacks outside the 43-delegate inventory remain explicit `req_bool` debt. They are covered by the new ratchet rather than claimed converted.
+
+The plain-click window/loading defect is proposal-only in `machinery_plain_click_ranking_proposal_1008.md`, with supported, unsupported, refused, selection-fallthrough, empty-hand and harm cases. No ranking or priority change was made.
+
+## Pins and verification
+
+Old behavior was recorded green before source conversion: 29 types, 2,603 rows, focused result `data/test-runs/20261009T020113_ebfc16d7e9.json`; captures committed in `732159d6df`. These scoped captures are compared after conversion. No pin rows have been re-blessed.
+
+The preceding branch's approved repair batch passed all eight tests, result `data/test-runs/20261009T015422_e4eb0ec495.json`, and its updated handoff was pushed in `893e715442`.
+
+Final verification on clean source commit `c742a87ac6`: DM compile 0 errors and 50 existing warnings; DreamChecker 0 diagnostics; full lint and ratchets pass; focused result `data/test-runs/20261009T022526_c742a87ac6.json` reports 21 passed, 0 failed, 0 skipped, zero runtimes and a clean boot gate. The 29-type, 2,603-row pin comparison passed unchanged. Three new engine protocol groups and two new frame regressions passed, along with the existing computer, occupant-slot, sticky floor-light, frame round-trip, fabricator/stale and refusal/asks compatibility tests. The selection contained 22 names, but `round2_menu_refusal_restore/pandemic` is an abstract base and did not execute; its beaker/syringe behavior cases were not run. Pandemic admission remains covered by the scoped conversion pin.
+
+Four targeted analyzer tests passed (three library tests and one semantic integration test), including distinct callback return protocols, purity/reads, remote hook classification and the new ratchet. Cargo stayed scoped to dq-analyze, one command at a time with two jobs and the shared target/cache.
+
+The first final-run attempt stopped in generation before DM compilation because the message-instance fixture called an unannotated global; it now samples a preexisting message instance. Static checks also found remote-hook classification, volatile reads and test include placement issues; these were fixed together in the permitted repair pass. There was one actual final DM compile and one actual focused test world after the old-code pin capture.
+
+No full suite, shards, workspace Rust suite or `dq_look_state_pin` was run. Logs and the explicit focus list are under `data/codex-machinery/requirements-protocol-1008/`.
+
+## Batch-20 merge repair (2026-10-08)
+
+The branch now contains both `origin/master` at `df1683f171` and `codex/machinery-prompts-reqs-1008` at `893e715442` by ancestry. Merge conflicts preserve master's draw work, the prompts branch's kiosk claims/passenger consent/cycler starts shock and approved reentrant cancellation guard, and the new requirement protocol. Only this combined branch needs integration.
+
+Master's CableLayer adapter returned a boolean, which the new protocol reads as a refusal; the bomb-tester selection had the same protocol mismatch. Both now use direct null-or-reason callbacks preserving the original `cable || on` and `!tank1 || !tank2` predicates. Real-object regressions cover loaded/empty/running CableLayer states and tank-slot transitions. The prompt merge also converted kiosk patient/panel and cryopod passenger/adjacency/self-entry checks to null-or-reason. The full callback audit found 44 production constructor lines, including repeated/inherited callbacks, with no remaining boolean `req(PROC_REF(...))` callback. Boolean `remote` hooks are a separate deliberate protocol.
+
+Correct rebuilt-analyzer checks reported no new `requirement_bool` sites from either master merge. The baseline shrank **871 -> 870**, never increased. No new ALLOW or ceiling change. The first cached analyzer did not contain the requirement lint; its pass was discarded, the branch analyzer rebuilt with two jobs in the shared target, and all checks repeated with the correct binary.
+
+CableLayer and bomb-tester pin files are unchanged and `dq_requirement_protocol_pin` passes. The only requirement pin reconciliation is the cryopod's thirteen already-reviewed `Put grabbed victim in` menu rows, copied byte-for-byte from the prompts branch's existing `last_timed_1008` capture, with the cause recorded in `intended_changes.md`. No new capture/bless run was used.
+
+Final verification on `9e5917c902`: compile **0 errors / 50 warnings**, lint and DreamChecker **0 diagnostics**, ratchets pass; focused result **43 passed / 0 failed / 0 skipped**, clean boot, in `data/test-runs/20261009T044323_9e5917c902.json`. This includes both scoped pins, protocol/composition/menu tests, the two new real-machine regressions, concrete pandemic cases, and kiosk/passenger/shock/self-entry tests from the merged prompts branch. No full suite, shards or `dq_look_state_pin` ran.
+
+Before the final `df1683f171` instruction, the earlier merged-tree compile also passed but its focused world exited during boot without any test results. Its logs are preserved in `data/codex-machinery/requirements-protocol-1008/boot-exit-before-df168/`; no cause was established and that attempt is not counted as a pass. The final updated-master run above completed cleanly, so no failure-only rerun was necessary. Final logs: `df168-{ratchets,lint,focused}.log` in that same data folder.
+
+## Current-master re-land (2026-10-09)
+
+Merged master `60beadfe53`; the prompts branch remains included by ancestry. Conflict resolutions preserve master's timed plant/sink/gibber/toilet actions, reflector periodic and removed lock redraw hooks, together with the null-or-reason protocol. The merged machinery and power raw callbacks, including CableLayer, bomb tester and cryopod loading, already follow that protocol. The tree-wide follow-up converted 31 boolean callbacks in 21 other production files, consolidating separate refusal adapters where present and preserving their reasons. Reflector selection uses `when(req(...))` after its predicate conversion; unrelated bare boolean conditions are unchanged. No new `req_bool` call was added. The requirement_bool baseline shrank **870 -> 857** (13 rows removed). Fulton admission reads and the control-pod occupant text use explicit `read_once` snapshots, preserving their pre-transition admission semantics.
+
+The focused list also includes `dq_medical_capability_pin`, a scoped check of the existing medical computer pin before the separate capability-bridge retirement task. Verification results and final commit follow after the lane-ready gate.
+
+Lane-ready on `0c029a9704`: **85 passed / 0 failed / 0 skipped**, clean boot; production compile **0 errors / 36 warnings**, test compile **0 errors / 50 warnings**, DreamChecker **0 diagnostics**, ratchets and analyze clean. Combined result: `data/test-runs/20261009T144652_0c029a9704_focused.json`. Both requirement pins and the pre-conversion medical pin passed unchanged. The automatic appearance checks passed and changed only `look_keys.txt` metadata (21,008 keys); no appearance snapshot rows were blessed. Smoke tests logged existing global leaks of `derive_side_base_reached` and `coalesce_runs`, without assertions failing.
+
+**Stamping blocker:** `dq_merge_gates.sh` rejects the expected look-key output as a dirty tree before `dq_lane_ready.sh` can perform its documented snapshot-output commit. Every gate returned zero, but no lane-ready note was written. A minimal, opt-in snapshot-output fix is prepared in `data/codex-machinery/lane-ready-snapshot-output.patch`; another gate run requires clarification under the one-run policy. No branch push has been performed for this re-land yet.
+
+The user approved the opt-in snapshot-output workflow fix and one lane-ready retry. The default direct merge gate remains strict; only lane-ready requests permission for its own successful snapshot output. Staged edits, changed HEAD and non-snapshot edits still prevent stamping.
+
+
+Approved retry on `a992c9588c02` completed: **85 passed, 0 failed**, all gates passed, and lane-ready wrote and pushed its note. Production compile and DreamChecker remained clean. The snapshot-output stamping blocker is resolved. No appearance rows were blessed by this retry.
+
+A separate workflow performance defect remains: a mixed main/look batch with zero stale look keys launches an unfiltered appearance world instead of skipping it. This retry reported zero of 21,008 keys changed, then swept 8,396 types; it passed but took 2,848 seconds. The minimal runner fix is saved for its owner in `data/codex-machinery/zero-stale-look-runner.patch`, not applied. The broad sweep reported existing global state leaks; no assertions failed.
+
+
+## Re-land against master 1e8a10cbe2 (2026-10-09)
+
+Merged current master and retained the prompts branch by ancestry. Resolutions preserve master's construction undo declarations, bell actions, thinktank priorities and draw work, plus the null-or-reason protocol and prompt claims/consent/starts behavior. Generated look-key metadata was taken from master for regeneration.
+
+The full raw requirement audit now covers same-file, inherited and fully qualified callback references across production. Newly merged Boolean callbacks were converted to null-or-reason without adding transitional fallbacks. This includes object construction, mecha maintenance/pilot checks, robot tools/abilities, shadekin abilities, economy, hydroponics and modular-computer checks. Boolean selectors remain Boolean; the sink's already-converted requirement remains wrapped in req inside when. Direct requirement assertions in tests now inspect null for admission and a reason for refusal.
+
+The requirement_bool baseline shrank **857 -> 836** (21 removed), with no added rows, ceilings or ALLOWs. CableLayer, bomb-tester and cryopod callbacks remain null-or-reason. The requirement protocol snapshots are unchanged; no re-bless is planned. Verification results will be appended after lane-ready.
+
+
+Initial lane-ready on `f22c094355`: production compile 0 errors / 36 warnings, test compile 0 errors / 50 warnings, DreamChecker 0 diagnostics, ratchets pass. The main world passed 148 of 149 tests; its only failure was four floor-light rows caused by master's generic silicon module Equip conversion (changed key and hidden disabled rows). The old medical capability pin, CableLayer/bomb-tester protocol pin portions, prompt tests, construction and ability tests passed. No requirement pin was re-blessed.
+
+Two automatic appearance slices completed without failures; two could not start because copying their resource file encountered ENOSPC. The gate failed and wrote no stamp. E: subsequently had about 40 GB free. The repair restores the native Equip op's stable key, silicon eligibility, visible module-containment refusal and AI no-op behavior. The repair selection is the failed protocol pin, two targeted regressions and the changed resolver explanation. The required lane-ready incremental appearance gate accompanies that repair; final results follow.
+
+The repair lane-ready first fetched master `1e10a8130e` and stopped before compilation at a table conflict. Merge `8b9bf9f081` preserves master's placement answer intents and the existing transitional Boolean table requirements. The newly merged diff adds no raw callback requirements.
+
+The newer master merge helper encountered a shell/native Windows temporary-path mismatch; verification uses a native E: TMPDIR so both programs observe the same plan. The reviewed zero-stale runner fallback is fixed: an already-prepared incremental plan with zero stale types skips its appearance world, while unprepared/full look runs retain their existing behavior. This avoids an unintended exhaustive appearance run in a mixed focused batch.
+
+The next gate on `4513adb472` compiled production with zero errors and zero DreamChecker diagnostics, but `silicon_entry` rejected an actor check in the Equip effect. Its tests were still waiting for the shared look slot; that owned run was cancelled before its test compile or world started. The effect now dispatches through a typed silicon method: the base silicon keeps the successful no-op, and the robot override activates the module and updates its HUD. The declared operation still controls silicon admission. No annotation or baseline increase was used. The same four-test repair selection remains necessary because that cancelled gate produced no runtime result.
+
+On `b51b970f39`, production compile, DreamChecker, ratchets and analyzer passed. The test command again waited for the look slot before computing whether it needed any appearance probes. That owned run was cancelled before its test compile/world. The runner now prepares its incremental plan first and acquires the look slot only when it will probe appearances; full, unprepared, repeat and bless runs still take the slot. This complements the zero-stale world fix and avoids occupying or waiting for a scarce slot for no work. Shell syntax validation passed; the pending runtime repair selection is unchanged.
+
+Gate `62bf915692` passed production/test compilation (0 errors, existing 36/50 warnings), DreamChecker (0 diagnostics), ratchets and analyzer. Its focused world passed 28/29; the only failure was the unchanged protocol pin's two AI plain-click rows for the floor item. The native Equip menu/AI no-op regressions and explanation golden passed. A declared origin-specific selector now restricts click-origin Equip to robots while retaining silicon menu admission. This restores the old AI plain-click absence without hiding the disabled menu row or adding actor branching in an effect. Only the failed protocol pin and mandatory handoff checks are selected for the next repair.
+
+Final lane-ready stamped `6bf9d522f4` against master `1e10a8130e`: **26 passed, 0 failed**, clean boot, production/test compile 0 errors (existing 36/50 warnings), DreamChecker 0 diagnostics, ratchets and analyzer clean. Result: `data/test-runs/20261010T005214_6bf9d522f4_focused.json`. The unchanged `dq_requirement_protocol_pin` passes, including CableLayer and bomb tester. The earlier broad batch covered the other changed requirements and the old medical table pin; the focused Equip menu/AI no-op regressions passed in the preceding repair. The runner confirmed zero stale appearance types and launched only the main world. No protocol or appearance snapshot rows were re-blessed. Existing smoke state-leak diagnostics remain in the logs. The requirement_bool baseline is 836, down from 857 at this re-land's start.

@@ -11,7 +11,7 @@
 	equip_type = EQUIP_HULL
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/mecha_passenger
+/datum/relation_definition/slot/occupant/mecha_passenger
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/passenger
 	slot_id = OCCUPANT_SLOT_MECHA_PASSENGER
 	name = "passenger compartment"

@@ -94,6 +94,7 @@
 	var/datum/hot_group/our_hot_group
 
 CAPABILITIES(/obj/effect/hotspot)
+	links(/obj/effect/hotspot::our_hot_group, /datum/hot_group::spot_list, b_many = TRUE)
 	param(nameof(starting_volume), pos = 1)
 	param(nameof(starting_temperature), pos = 2)
 
@@ -418,6 +419,7 @@ CAPABILITIES(/obj/effect/hotspot)
 	COOLDOWN_DECLARE(update_sound_center)
 
 CAPABILITIES(/datum/hot_group)
+	ref_one(nameof(current_sound_loc))
 	owns_one(nameof(sound), /datum/looping_sound/fire)
 
 
@@ -493,14 +495,6 @@ CAPABILITIES(/datum/hot_group)
 
 #undef MIN_SIZE_SOUND
 #undef INSUFFICIENT
-
-/obj/effect/hotspot/relations()
-	. = ..()
-	. += rel_one(nameof(our_hot_group), back = nameof(/datum/hot_group::spot_list))
-/datum/hot_group/relations()
-	. = ..()
-	. += rel_many(nameof(spot_list), back = nameof(/obj/effect/hotspot::our_hot_group))
-	. += rel_one(nameof(current_sound_loc))
 
 // ---------------------------------------------------------------- the hotspot pipeline
 

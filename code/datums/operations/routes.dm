@@ -97,7 +97,7 @@
 
 /// The share of `effect` a slot of `holder` that sits in a bay lets through that bay's boundary.
 /// 1 for a slot with no bay, or a bay the holder never declared (transmission fails open; ops fail closed).
-/proc/dq_bay_share(atom/holder, datum/om/relation/slot/def, effect)
+/proc/dq_bay_share(atom/holder, datum/relation_definition/slot/def, effect)
 	if(!def.at)
 		return 1
 	var/datum/capability/compartment/C = compartment_of(holder, def.at)

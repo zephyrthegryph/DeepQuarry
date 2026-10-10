@@ -152,10 +152,6 @@
 		heal_amount -= mend(treat_tag, heal_amount)
 	return OP_OK
 
-/mob/living/simple_mob/relations()
-	. = ..()
-	. += rel_many(nameof(prey_excludes))
-
 /// Both cached branch answers survive a mode change while a digestion question is pending.
 /datum/prompt/choice/animal_digestion
 	timeout = 0

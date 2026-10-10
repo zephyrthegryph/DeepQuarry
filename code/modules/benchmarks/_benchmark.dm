@@ -74,7 +74,7 @@
 /// Waits for deferred asset generation so it isn't measured as scenario work.
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
 	var/waited = 0
-	while((length(SSasset_loading.generate_queue) || SSasset_loading.assets_generating || SSasset_loading.last_queue_len) && waited++ < world.fps * timeout_seconds)
+	while((length(asset_loading_generate_queue()) || asset_loading_assets_generating() || asset_loading_last_queue_len()) && waited++ < world.fps * timeout_seconds)
 		stoplag()
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
@@ -159,7 +159,7 @@
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.
 	// Wake count is load-independent (it's driven by game events, not wall clock).
-	var/list/world_step = om_world_diagnostics()
+	var/list/world_step = world_diagnostics()
 	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
 	count_metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
 	// OM deadline wheel entries (timers, task steps, throttles) at the window's ends: a boot
@@ -177,7 +177,7 @@
 /// Entries on the OM scheduler's deadline wheel right now.
 /proc/benchmark_om_deadline_count()
 	. = 0
-	var/datum/om/scheduler/sched = time_scheduler()
+	var/datum/time_scheduler/sched = time_scheduler()
 	for(var/list/L as anything in sched?.buckets)
 		. += length(L) / 4
 

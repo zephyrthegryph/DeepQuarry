@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 
 //Cryopods themselves.
 /// Derived field: the pod holds someone. The occupant slot's link/unlink raises
-/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
+/// CHANGE_RELATION_ADDED/REMOVED on the pod (the occupant slot link).
 /obj/machinery/cryopod/proc/cryopod_occupied()
 	return slot_item(OCCUPANT_SLOT_CRYOPOD) ? TRUE : FALSE
 
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).
-/datum/om/relation/slot/occupant/cryopod
+/datum/relation_definition/slot/occupant/cryopod
 	holder = /obj/machinery/cryopod
 	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"
@@ -302,12 +302,10 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/cryopod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
-	op("cryopod_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant_holds), because = PROC_REF(can_take_occupant_refusal))), then(PROC_REF(interaction_insert_grab)))
+	op("cryopod_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), needs(req(PROC_REF(loading_passenger_allowed), silent = TRUE)), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
-	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter_holds), because = PROC_REF(can_enter_refusal))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
-	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), then(PROC_REF(interaction_drag_in)))
-	// The loader's two seconds with somebody, started once the passenger has consented (finish_go_in).
-	op("cryopod_load", ai(), takes("passenger"), wait(2 SECONDS), then(PROC_REF(loaded)))
+	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
+	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(loading_drag_adjacent), silent = TRUE), req(PROC_REF(loading_passenger_allowed), silent = TRUE), req(PROC_REF(can_take_occupant))), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
 
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -527,51 +525,24 @@ CAPABILITIES(/obj/machinery/cryopod)
 	spent(to_despawn)
 	set_occupant(null)
 
-/// Requirement (was REQ_* can_take_occupant): the legacy check answers TRUE to pass.
-/obj/machinery/cryopod/proc/can_take_occupant_holds(datum/act/op/A)
-	var/answer = can_take_occupant(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_take_occupant_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/cryopod/proc/can_take_occupant_refusal(datum/act/op/A)
-	var/answer = can_take_occupant(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
-/// Requirement (was REQ_* can_enter): the legacy check answers TRUE to pass.
-/obj/machinery/cryopod/proc/can_enter_holds(datum/act/op/A)
-	var/answer = can_enter(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_enter_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/cryopod/proc/can_enter_refusal(datum/act/op/A)
-	var/answer = can_enter(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: the pod must be empty.
-/obj/machinery/cryopod/proc/can_take_occupant(mob/user, atom/target, obj/item/held)
+/obj/machinery/cryopod/proc/can_take_occupant(datum/act/op/A)
 	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
-	return TRUE
+	return null
 
-/// Requirement for climbing in: TRUE, or why the user can't.
-/obj/machinery/cryopod/proc/can_enter(mob/user, atom/target, obj/item/held)
+/// Requirement for climbing in: null, or why the user can't.
+/obj/machinery/cryopod/proc/can_enter(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_occupant_allowed(user))
-		return TRUE // the effect declines silently
+		return null // the effect declines silently
 	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
 	if(isliving(user))
 		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			return "you have other entities attached to yourself, remove them first"
-	return TRUE
-
-/obj/machinery/cryopod/proc/interaction_insert_grab(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/grab/grab = A.held
-	if(!ismob(grab?.grab_target()))
-		return OP_OK
-	go_in(grab?.grab_target(), user)
-	return OP_OK
+	return null
 
 /obj/machinery/cryopod/proc/interaction_eject(datum/act/op/A)
 	var/mob/user = A.actor
@@ -596,13 +567,16 @@ CAPABILITIES(/obj/machinery/cryopod)
 	return TRUE
 
 /obj/machinery/cryopod/proc/self_entry_allowed(datum/act/op/A)
-	return read_once(check_occupant_allowed(A.actor))
+	return read_once(check_occupant_allowed(A.actor)) ? null : MSG(req_silent)
 
 /obj/machinery/cryopod/proc/self_entry_started(datum/act/op/A)
 	act_message(A.actor, src, others = "%U% [on_enter_visible_message] %T%.")
 
 /obj/machinery/cryopod/proc/interaction_enter(datum/act/op/A)
-	var/mob/user = A.actor
+	interaction_enter_timed_done(A.actor)
+	return TRUE
+
+/obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(!user || !user.client)
 		return TRUE
@@ -630,15 +604,6 @@ CAPABILITIES(/obj/machinery/cryopod)
 	EXPIRY_STAMP(src, time_entered, CLOCK_WORLD)
 
 	add_fingerprint(user)
-	return TRUE
-
-/obj/machinery/cryopod/proc/interaction_drag_in(datum/act/op/A)
-	var/mob/user = A.actor
-	var/mob/target = A.held
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return OP_OK
-	go_in(target, user)
-	return OP_OK
 
 /obj/machinery/cryopod/robot/door/gateway/self_entry_started(datum/act/op/A)
 	. = ..()
@@ -674,44 +639,30 @@ CAPABILITIES(/obj/machinery/cryopod)
 	if(occupant)
 		name = "[name] ([occupant])"
 
-/obj/machinery/cryopod/proc/go_in(mob/M, mob/user)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	if(!check_occupant_allowed(M))
-		return
-	if(!M)
-		return
-	if(occupant)
-		to_chat(user, span_warning("\The [src] is already occupied."))
-		return
+/// The loader remains the actor; a live passenger answers the consent step.
+/obj/machinery/cryopod/proc/loading_passenger(datum/act/op/A)
+	if(istype(A.held, /obj/item/grab))
+		var/obj/item/grab/G = A.held
+		return G.grab_target()
+	return ismob(A.held) ? A.held : null
 
-	if(M.client)
-		open_request(src, /datum/prompt/yes_no/cryo_consent, PROC_REF(storage_consent_answered), answerer = M, title = "Cryopod", question = "Would you like to enter long-term storage?", loader = user, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-		return
-	finish_go_in(M, user, 1)
+/obj/machinery/cryopod/proc/loading_passenger_allowed(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && !QDELETED(M) && read_once(check_occupant_allowed(M)) ? null : MSG(req_silent)
 
-/// Consent to long-term storage: whoever loaded the pod is kept on the question.
-/datum/prompt/yes_no/cryo_consent
-	var/mob/loader
+/obj/machinery/cryopod/proc/loading_drag_adjacent(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && M.Adjacent(A.actor) ? null : MSG(req_silent)
 
-CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
-	ref_one(nameof(loader), /mob)
+/obj/machinery/cryopod/proc/loading_needs_consent(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && read_once(M.client)
 
-/obj/machinery/cryopod/proc/storage_consent_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/yes_no/cryo_consent/R = A.request
-	finish_go_in(R.answerer, R.loader, TRUE)
-
-/obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
-
-	if(willing)
-		if(M == user)
-			act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
-		else
-			act_message(user, M, others = "%U% starts putting %T% into \the [src].")
-
-		perform_op(user, src, "cryopod_load", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("passenger" = M))
-
+/obj/machinery/cryopod/proc/loading_message(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	if(M == A.actor)
+		return msg_text(null, "%U% [on_enter_visible_message] %T%.")
+	return msg_text(null, "%U% starts putting [M] into %T%.")
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
 	icon_state = occupied_icon_state
 
@@ -734,20 +685,17 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 	//Despawning occurs when process() is called with an occupant without a client.
 	add_fingerprint(M)
 
-/obj/machinery/cryopod/proc/loaded(datum/act/op/A)
-	var/mob/M = A.arg("passenger")
+/obj/machinery/cryopod/proc/loading_done(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
 	var/mob/user = A.actor
-	if(QDELETED(M))
-		return OP_FAILED
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
-		return OP_FAILED
+		return
 	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]."))
-		return OP_FAILED
+		return
 	go_in_finish(M, user)
-	return OP_OK
 
 //Overrides!
 

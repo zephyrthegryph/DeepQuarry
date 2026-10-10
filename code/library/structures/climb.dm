@@ -1,5 +1,5 @@
 // climb(delay, vaulting, landing, delay_by, gate, climbed) (doc/rewrite/final_api.html, section 11 "The library", Structures; section 16): a structure a mob
-// climbs onto, a table, a railing, a crate, a machine. It replaced make_climbable() and /datum/om/behaviour/climbable. One op, "climb.climb", reached by
+// climbs onto, a table, a railing, a crate, a machine. It replaced make_climbable() and /datum/scheduled_behaviour/climbable. One op, "climb.climb", reached by
 // a mob dragging itself onto the structure (by(0): a mouse has no hands) or by the context menu's "Climb" ("climb.climb_menu", the same effect):
 //
 //   CAPABILITIES(/obj/structure/table)
@@ -44,10 +44,10 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 	return list(
 		examine_line(MSG(climb/examine)),
 		op("climb", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(is_self_drag)), label("Climb"), \
-			needs(req(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
+			needs(req_bool(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)),
 		op("climb_menu", menu(), label("Climb"), \
-			needs(req(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
+			needs(req_bool(CAP_PROC(can_climb), because = CAP_PROC(why_not))), \
 			begins(MSG(climb/start)), wait(CAP_PROC(climb_time)), on_interrupt(CAP_PROC(climb_interrupted)), then(CAP_PROC(climb_over)), says(CAP_PROC(done_message)), logs(LOG_GAME)))
 
 /// The holder is climbable while it has the capability: the trait the old behaviour added.

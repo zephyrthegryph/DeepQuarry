@@ -45,7 +45,7 @@ CAPABILITIES(/datum/event_manager_panel)
 /datum/event_manager_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
-	data["report_at_round_end"] = !!SSevents.report_at_round_end
+	data["report_at_round_end"] = !!events_report_at_round_end()
 
 	if(SSevents.selected_event_container())
 		var/datum/event_container/EC = SSevents.selected_event_container()
@@ -66,7 +66,7 @@ CAPABILITIES(/datum/event_manager_panel)
 				"current_weight" = EC.get_weight(EM, active_with_role),
 			))
 		data["available_events"] = avail
-		var/datum/event_meta/NE = SSevents.new_event
+		var/datum/event_meta/NE = events_new_event()
 		data["new_event"] = list(
 			"ref" = "\ref[NE]",
 			"name" = NE.name,
@@ -80,7 +80,7 @@ CAPABILITIES(/datum/event_manager_panel)
 		var/list/severities = list()
 		var/list/next_events = list()
 		for(var/severity = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-			var/datum/event_container/EC = SSevents.event_containers[severity]
+			var/datum/event_container/EC = events_event_containers()[severity]
 			var/next_event_at = max(0, EC.next_event_time - world.time)
 			severities += list(list(
 				"ref" = "\ref[EC]",
@@ -116,13 +116,13 @@ CAPABILITIES(/datum/event_manager_panel)
 
 /// The event containers (the service's severity containers), for the UI's container refs.
 /datum/event_manager_panel/proc/event_containers()
-	return SSevents.event_containers
+	return events_event_containers()
 
 /// The editable event metas, for the UI's meta refs: the selected container's events and the
 /// draft new event.
 /datum/event_manager_panel/proc/editable_metas()
 	. = list()
-	var/datum/event_meta/NE = SSevents.new_event
+	var/datum/event_meta/NE = events_new_event()
 	if(NE)
 		. += NE
 	var/datum/event_container/EC = SSevents.selected_event_container()
@@ -132,7 +132,7 @@ CAPABILITIES(/datum/event_manager_panel)
 /// Every container's events, for remove_event (checked against the named container).
 /datum/event_manager_panel/proc/all_available_events()
 	. = list()
-	for(var/datum/event_container/EC as anything in SSevents.event_containers)
+	for(var/datum/event_container/EC as anything in events_event_containers())
 		. += EC.available_events
 
 /// The running events, for the UI's stop_event refs.

@@ -20,11 +20,11 @@
 /// are KM_ROLL_* rows (null for a system with no behaviours). Counters are cumulative since the scheduler's stats
 /// were last cleared; a stats set subtracts the roll-up it opened with. Behaviours past OM_MAX_STAT_TYPES share one
 /// counter bucket in the scheduler, so they cannot be attributed and are left out (km_unrolled_behaviours()).
-/proc/km_rollup(datum/om/scheduler/sched)
+/proc/km_rollup(datum/time_scheduler/sched)
 	var/list/rows = new /list(KM_MAX_SYSTEMS)
-	var/datum/om/registry/reg = definition_registry()
+	var/datum/definition_registry/reg = definition_registry()
 	var/list/stats = sched.stats
-	for(var/datum/om/behaviour/B as anything in reg.behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 		if(!B || B.id >= OM_MAX_STAT_TYPES)
 			continue
 		var/idx = B.system_idx || KM_SYS_OTHER
@@ -51,7 +51,7 @@
 /// How many registered behaviours km_rollup() cannot attribute (ids past the scheduler's stat table).
 /proc/km_unrolled_behaviours()
 	. = 0
-	for(var/datum/om/behaviour/B as anything in definition_registry().behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in definition_registry().behaviours)
 		if(B && B.id >= OM_MAX_STAT_TYPES)
 			.++
 
@@ -64,7 +64,7 @@
 
 /// One row per system charged in `stats_set` (ordered by overrun share, then ms). With `sched`, the OM counters
 /// (runs, breaches, deferrals, ...) come from the behaviours rolled up since the set opened.
-/proc/km_report_systems(datum/km_stats_set/stats_set, datum/om/scheduler/sched)
+/proc/km_report_systems(datum/km_stats_set/stats_set, datum/time_scheduler/sched)
 	var/datum/km_systems/registry = km_systems()
 	var/elapsed = stats_set.elapsed_seconds()
 	var/list/roll = sched ? km_rollup(sched) : null
@@ -155,7 +155,7 @@
 	)
 
 /// Everything the live set knows, as data (scheduler_diagnostics(), tests): all systems, the input record and the meter.
-/proc/km_diagnostics(datum/om/scheduler/sched)
+/proc/km_diagnostics(datum/time_scheduler/sched)
 	var/datum/tick_meter/meter = sched?.meter || km_meter()
 	var/datum/km_stats_set/stats_set = meter.live
 	return list(

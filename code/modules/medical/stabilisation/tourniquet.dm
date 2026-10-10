@@ -43,11 +43,11 @@ MSG_BALLOON(tourniquet/no_flow, "there's no blood flow to stop in that!")
 MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
 
 /obj/item/tourniquet/proc/target_is_human(datum/act/op/A)
-	return ishuman(A.target)
+	return ishuman(A.target) ? null : MSG(tourniquet/wont_fit)
 
 /obj/item/tourniquet/proc/user_is_dexterous(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return user.IsAdvancedToolUser()
+	return user.IsAdvancedToolUser() ? null : MSG(tourniquet/clumsy)
 
 /// The limb being cinched: the one the user was aiming at when the cinch began, else the one they aim at now.
 /obj/item/tourniquet/proc/cinch_limb(datum/act/op/A)

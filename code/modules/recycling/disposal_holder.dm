@@ -24,7 +24,7 @@ CAPABILITIES(/obj/structure/disposalholder)
 // the disposal machine's flush, pipe transit) are still accounted for by
 // doMove()'s bookkeeping, so slot_contents() stays correct. Whatever is still
 // riding when the holder is destroyed spills onto its turf.
-/datum/om/relation/slot/disposal_holder
+/datum/relation_definition/slot/disposal_holder
 	holder = /obj/structure/disposalholder
 	slot_id = CONTAINER_SLOT_DISPOSAL
 	name = "contents"

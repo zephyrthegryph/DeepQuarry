@@ -80,7 +80,7 @@ CAPABILITIES(/datum/map_template)
 	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
 		return null
 
-	var/prev_shuttle_queue_state = SSshuttles.block_init_queue
+	var/prev_shuttle_queue_state = shuttles_block_init_queue()
 	SSshuttles.block_init_queue = TRUE
 
 	var/list/atom/atoms = list()
@@ -238,8 +238,8 @@ CAPABILITIES(/datum/map_template)
 	var/list/priority_submaps = list() // Submaps that will always be placed.
 
 	// Lets go find some submaps to make.
-	for(var/map in SSmapping.map_templates)
-		var/datum/map_template/MT = SSmapping.map_templates[map]
+	for(var/map in mapping_map_templates())
+		var/datum/map_template/MT = mapping_map_templates()[map]
 		if(!MT.allow_duplicates && MT.loaded > 0) // This probably won't be an issue but we might as well.
 			continue
 		if(!istype(MT, desired_map_template_type)) // Not the type wanted.

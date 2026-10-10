@@ -50,9 +50,6 @@ base_var	code/datums/behaviours/swarming.dm	var/swarm_offset_y = 0
 base_var	code/datums/behaviours/swarming.dm	var/is_swarming = FALSE
 base_var	code/datums/behaviours/swarming.dm	var/list/atom/movable/swarm_members
 base_var	code/datums/behaviours/tethered_item.dm	var/tether_path
-base_var	code/datums/capabilities/library/assembly.dm	var/obj/item/assembly/attached_assembly
-base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_frequency
-base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_code
 base_var	code/datums/character_identity.dm	var/datum/character_identity/own_identity = new
 base_var	code/datums/character_identity.dm	var/datum/character_identity/identity
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0
@@ -328,7 +325,6 @@ base_var	code/modules/crafting/crafting.dm	/mob/living/carbon/human/var/datum/pe
 base_var	code/modules/detectivework/tools/rag.dm	var/bloody_hands = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/track_blood = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/list/feet_blood_DNA
-base_var	code/modules/detectivework/tools/rag.dm	var/track_blood_type
 base_var	code/modules/detectivework/tools/rag.dm	var/feet_blood_color
 base_var	code/modules/economy/price_list.dm	/atom/movable/var/price_tag = null
 base_var	code/modules/economy/service_invoices.dm	/obj/item/var/datum/economic_adoption/economic_adoption

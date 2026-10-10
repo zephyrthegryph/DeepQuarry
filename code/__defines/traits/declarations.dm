@@ -69,7 +69,7 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 #define TRAIT_IRRADIATED "irradiated"
 /// Whether or not this item will allow the radiation SS to go through standard
 /// radiation processing as if this wasn't already irradiated.
-/// Basically, without this, /datum/om/event/before/in_range_of_irradiation won't fire once the object is irradiated.
+/// Basically, without this, /datum/definition_event/before/in_range_of_irradiation won't fire once the object is irradiated.
 #define TRAIT_BYPASS_EARLY_IRRADIATED_CHECK "radiation_bypass_early_irradiated_check"
 /// Immune to being irradiated
 #define TRAIT_RADIMMUNE "rad_immunity"

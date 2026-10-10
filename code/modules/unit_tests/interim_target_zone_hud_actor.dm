@@ -17,8 +17,8 @@
 	rel_set(actor, nameof(actor.zone_sel), button)
 	TEST_ASSERT_EQUAL(actor.zone_sel, button, "the actual target selector belongs to the initiating mob")
 	TEST_ASSERT_EQUAL(button.selecting, BP_TORSO, "the actual target selector starts on the torso")
-	var/datum/om/rec/actor_rec = scheduler_record_of(actor)
-	var/datum/om/rec/bystander_rec = scheduler_record_of(bystander)
+	var/datum/scheduler_record/actor_rec = scheduler_record_of(actor)
+	var/datum/scheduler_record/bystander_rec = scheduler_record_of(bystander)
 	TEST_ASSERT_EQUAL(actor_rec.sched, sched, "the real actor uses the actual test scheduler notification instrumentation")
 	TEST_ASSERT_EQUAL(bystander_rec.sched, sched, "the real bystander uses the same actual notification instrumentation")
 	// The existing native synthetic helper supplies empty params: it proves actor capture only.

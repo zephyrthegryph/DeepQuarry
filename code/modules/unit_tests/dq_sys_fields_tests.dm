@@ -3,7 +3,7 @@
 // the core fields and hand-written setters are registered with their family channels.
 
 /// Counts raises of `mask` on `E` recorded since `sched.test_raises` was armed, and disarms it.
-/datum/unit_test/proc/dq_sys_fields_count_raises(datum/om/scheduler/sched, datum/E, mask)
+/datum/unit_test/proc/dq_sys_fields_count_raises(datum/time_scheduler/sched, datum/E, mask)
 	. = 0
 	for(var/list/raise as anything in sched.test_raises)
 		if(raise[1] == E && (raise[2] & mask))
@@ -14,7 +14,7 @@
 /datum/unit_test/dq_sys_fields_registered
 
 /datum/unit_test/dq_sys_fields_registered/Run()
-	var/datum/om/registry/reg = definition_registry()
+	var/datum/definition_registry/reg = definition_registry()
 	var/list/F = reg.fields_of(/obj/machinery/recharger)
 	TEST_ASSERT_EQUAL(F["on"], CHANGE_MACHINE_SETTINGS, "on channel")
 	TEST_ASSERT_EQUAL(F["locked"], CHANGE_MACHINE_MODE, "locked channel")
@@ -37,8 +37,8 @@
 
 /datum/unit_test/dq_sys_fields_custom_setters_raise/Run()
 	var/obj/machinery/M = allocate(/obj/machinery)
-	var/datum/om/rec/rec = scheduler_record_of(M)
-	var/datum/om/scheduler/sched = rec.sched
+	var/datum/scheduler_record/rec = scheduler_record_of(M)
+	var/datum/time_scheduler/sched = rec.sched
 	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
 	M.set_anchored(FALSE)
 	M.set_density(FALSE)

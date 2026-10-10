@@ -1,3 +1,10 @@
+// Standard-part validation uses test-owned capabilities; gameplay panel/breakage behavior is tested separately.
+/datum/capability/dq_standard_parts_fixture/look_parts()
+	return list(LOOK_PANEL_OPEN, LOOK_BROKEN)
+
+/proc/dq_standard_parts_fixture()
+	return new /datum/capability/dq_standard_parts_fixture
+
 // The look naming convention (variants, parts, glows), the missing-parts check, the construction
 // primitives / joints / presets and their round-trip conservation, and the pooled base
 // (code/datums/capabilities/look.dm, construction_primitives.dm, code/datums/lifecycle/pool.dm).
@@ -19,8 +26,7 @@
 
 /obj/cap_fixture/look_probe/capabilities()
 	. = ..()
-	. += cap_panel()
-	. += cap_breakable()
+	. += dq_standard_parts_fixture()
 
 /datum/unit_test/dq_look_convention
 
@@ -94,8 +100,7 @@
 
 /obj/cap_fixture/look_lacking/capabilities()
 	. = ..()
-	. += cap_panel()
-	. += cap_breakable()
+	. += dq_standard_parts_fixture()
 
 /obj/cap_fixture/look_lacking/look_lacks()
 	return list(LOOK_BROKEN)

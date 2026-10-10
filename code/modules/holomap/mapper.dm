@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/mapping_unit/deathsquad
@@ -279,13 +279,13 @@ TRACKED(/obj/item/mapping_unit, updating)
 		map_app.layer = HUD_LAYER
 		map_app.color = map_color
 
-		if(!SSholomaps.holoMiniMaps[T_z])
+		if(!holomaps_holoMiniMaps()[T_z])
 			var/atom/movable/screen/mapper/map/baddo = LAZYACCESS(map_image_cache, "bad")
 			map_app.icon = icon(baddo.icon)
 			badmap = TRUE
 		// SSholomaps did map it and we're allowed to see it
 		else
-			map_app.icon = icon(SSholomaps.holoMiniMaps[T.z])
+			map_app.icon = icon(holomaps_holoMiniMaps()[T.z])
 
 			// Apply markers
 			for(var/marker in GLOB.holomap_markers)
@@ -435,14 +435,14 @@ TRACKED(/obj/item/mapping_unit, updating)
 
 REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 
-/obj/item/holomap_beacon/Initialize(mapload)
-	. = ..()
+/obj/item/holomap_beacon/proc/join_mapped_beacon(datum/act/timer/A)
 	if(in_list) // mapped in turned on
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
 		icon_state = initial(icon_state) + (in_list ? "_on" : "")
 
 CAPABILITIES(/obj/item/holomap_beacon)
+	after_init(0, then(PROC_REF(join_mapped_beacon)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

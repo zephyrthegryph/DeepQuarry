@@ -27,7 +27,7 @@ CAPABILITIES(/obj/structure/grille)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
 	op("place_window", stack(/obj/item/stack/material, 1), label("Place a window"), priority(OP_PRIORITY_PART),
-		needs(req(PROC_REF(window_sheet_held), silent = TRUE), req(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
+		needs(req_bool(PROC_REF(window_sheet_held), silent = TRUE), req_bool(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req_bool(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
 		begins(MSG(grille/placing_window)), wait(2 SECONDS), then(PROC_REF(window_placed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

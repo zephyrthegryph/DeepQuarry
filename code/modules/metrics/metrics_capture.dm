@@ -77,7 +77,7 @@
 	profile_capture = list("reason" = reason, "from_t" = now_t(), "spike" = spike)
 	world.Profile(PROFILE_CLEAR)
 	world.Profile(PROFILE_START)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.type_costs = list()
 	after(null, duration, GLOBAL_PROC_REF(metrics_finish_profile_capture))
@@ -95,7 +95,7 @@
 	if(!CONFIG_GET(flag/auto_profile))
 		world.Profile(PROFILE_STOP)
 	var/list/top = metrics_profile_top(rows, METRICS_PROFILE_TOP)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	var/list/type_costs = sched?.type_costs
 	if(sched)
 		sched.type_costs = null

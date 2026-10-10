@@ -123,7 +123,7 @@ CAPABILITIES(/datum/player_panel)
 	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
-	if(!SSticker || !round_mode())
+	if(!SSticker || !ticker_mode())
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return TRUE
 	if(user?.client)

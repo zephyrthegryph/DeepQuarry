@@ -16,8 +16,7 @@
 	var/blast_light = 2
 	var/blast_flash = 3
 
-/obj/item/plastique/Initialize(mapload)
-	. = ..()
+/obj/item/plastique/proc/plastique_after_init(datum/act/timer/A)
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
 /// Old attackby.
@@ -59,6 +58,7 @@ TRACKED(/obj/item/plastique, timer)
 MSG_DEF_SELF(plastique/planting, "Planting explosives...")
 
 CAPABILITIES(/obj/item/plastique)
+	after_init(0, then(PROC_REF(plastique_after_init)))
 	space(SPACE_PANEL, door = nameof(open_panel))
 	wires(name = "Explosive wires", count = 1, tools = FALSE)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/plastique)
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
 	var/mob/living/actor = A.actor
 	if(!istype(actor))
-		return FALSE
-	return actor.item_is_in_hands(src)
+		return /datum/msg/op/not_available
+	return actor.item_is_in_hands(src) ? null : /datum/msg/op/not_available
 
 /obj/item/plastique/proc/timer_set(datum/act/op/A)
 	var/datum/prompt/number/R = A.answer

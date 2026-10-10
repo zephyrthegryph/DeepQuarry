@@ -23,7 +23,7 @@
 	event_type = /datum/event2/event/ghost_pod_spawner/stowaway/infiltrator
 
 /datum/event2/meta/stowaway/get_weight()
-	if(istype(round_mode(), /datum/game_mode/extended) && !safe_for_extended)
+	if(istype(ticker_mode(), /datum/game_mode/extended) && !safe_for_extended)
 		return 0
 
 	var/security = GLOB.metric.count_people_in_department(DEPARTMENT_SECURITY)

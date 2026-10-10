@@ -33,7 +33,7 @@ CAPABILITIES(/obj/structure/closet/walllocker/emerglocker)
 	without("stuff_grab")
 	without("set_down")
 	without("empty_basket")
-	op("take_supplies", hand(), label("Take supplies"), when(req(PROC_REF(actor_is_no_ai))), needs(req(PROC_REF(has_supplies), because = MSG(emerglocker/empty))),
+	op("take_supplies", hand(), label("Take supplies"), when(req_bool(PROC_REF(actor_is_no_ai))), needs(req_bool(PROC_REF(has_supplies), because = MSG(emerglocker/empty))),
 		then(PROC_REF(supplies_taken)), says(MSG(emerglocker/taken)))
 
 /// The AI cannot reach in.

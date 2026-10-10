@@ -86,7 +86,7 @@ CAPABILITIES(/obj/structure/ghost_pod/manual)
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = computed(PROC_REF(touch_question)), "timeout" = 0), when = nameof(confirm_before_open)),
 		then(PROC_REF(interaction_open)))
 	// the old attack_ghost: a ghost takes over an activated pod that stays open to ghosts
-	op("inhabit", observer(), label("Inhabit"), needs(req(PROC_REF(may_inhabit), because = PROC_REF(inhabit_refusal))),
+	op("inhabit", observer(), label("Inhabit"), needs(req_bool(PROC_REF(may_inhabit), because = PROC_REF(inhabit_refusal))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Control Pod", "question" = "Are you certain you wish to activate this pod?", "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(inhabit_confirmed)))
 
@@ -289,7 +289,7 @@ MSG_DEF_SELF(ghost_pod/taken, "Another spirit appears to have gotten to it befor
 CAPABILITIES(/obj/structure/ghost_pod/ghost_activated)
 	after_init(0, then(PROC_REF(start_up_spawned)))
 	// the old attack_ghost: a ghost takes the pod after a yes
-	op("inhabit", observer(), label("Inhabit"), needs(req(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
+	op("inhabit", observer(), label("Inhabit"), needs(req_bool(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
 		asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(inhabit_title)), "question" = computed(PROC_REF(inhabit_question)), "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(ghost_pod_observer_use)))
 

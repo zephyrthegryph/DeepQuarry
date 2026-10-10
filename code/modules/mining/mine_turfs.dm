@@ -88,7 +88,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
 	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
-	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
+	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req_bool(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
 	// The timed parts mineral_item() starts with the held tool: the user stays, keeps the tool and the rock stays in reach.
 	op("mineral_dig_hole", ai(), wait(PROC_REF(dig_hole_time)), then(PROC_REF(dig_hole_done)))
 	op("mineral_measure", ai(), wait(1.5 SECONDS), then(PROC_REF(measure_done)))

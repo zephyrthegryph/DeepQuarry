@@ -99,14 +99,14 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
-	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)),
+	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req_bool(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)),
 		asks(/datum/prompt/text/drill_label), then(PROC_REF(label_entered)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_unload)))
+	op("unload", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload Drill"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_unload)))
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -499,7 +499,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(can_work_on_holds), because = PROC_REF(can_work_on_refusal))), then(PROC_REF(interaction_attackby)))
 	default_parts()
 	rotatable()
 

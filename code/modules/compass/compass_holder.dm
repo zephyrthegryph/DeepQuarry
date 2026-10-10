@@ -63,7 +63,7 @@ CAPABILITIES(/obj/compass_holder)
 		I.plane = PLANE_PLAYER_HUD
 		LAZYADD(compass_static_labels, I)
 
-	rebuild_overlay_lists(TRUE)
+	rebuild_overlay_lists()
 
 
 /obj/compass_holder/proc/get_heading()
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/compass_holder)
 
 /obj/compass_holder/proc/clear_waypoint(id)
 	rel_add(src, nameof(compass_waypoints), null, id) // removes and disposes of it
-	rebuild_overlay_lists(TRUE)
+	rebuild_overlay_lists()
 
 /obj/compass_holder/proc/set_waypoint(id, label, heading_x, heading_y, heading_z, label_color)
 	var/datum/compass_waypoint/wp = LAZYACCESS(compass_waypoints, id)
@@ -90,16 +90,18 @@ CAPABILITIES(/obj/compass_holder)
 		wp = new /datum/compass_waypoint()
 	wp.set_values(label, heading_x, heading_y, heading_z, label_color)
 	rel_add(src, nameof(compass_waypoints), wp, id)
-	rebuild_overlay_lists(TRUE)
+	rebuild_overlay_lists()
 
-/obj/compass_holder/proc/recalculate_heading(rebuild_icon = TRUE)
+/// Turns the heading marker to the holder's facing. The marker is a fresh copy each time, so the tracked setter sees a new value and the
+/// look (whose key names the marker's transform and maptext) redraws.
+/obj/compass_holder/proc/recalculate_heading()
 	if(show_heading)
 		var/matrix/M = matrix()
 		M.Translate(0, round(COMPASS_LABEL_OFFSET - 35))
 		M.Turn(get_heading())
-		compass_heading_marker.transform = M
-		if(rebuild_icon)
-			changed(src)
+		var/image/turned = image(compass_heading_marker)
+		turned.transform = M
+		set_compass_heading_marker(turned)
 
 /obj/compass_holder/proc/show_waypoint(id)
 	var/datum/compass_waypoint/wp = compass_waypoints[id]
@@ -113,19 +115,19 @@ CAPABILITIES(/obj/compass_holder)
 	for(var/id in compass_waypoints)
 		hide_waypoint(id)
 	if(rebuild_overlays)
-		rebuild_overlay_lists(TRUE)
+		rebuild_overlay_lists()
 
-/obj/compass_holder/proc/rebuild_overlay_lists(update_icon = FALSE)
-	set_compass_waypoint_markers(null)
+/// Recomputes where every shown waypoint points and the heading, and publishes the new marker list through its tracked setter (a fresh list each
+/// time, so the draw runs); the look key names each marker's transform and maptext, so only a marker that changed is applied again.
+/obj/compass_holder/proc/rebuild_overlay_lists()
+	var/list/markers
 	var/turf/T = get_turf(src)
 	if(istype(T))
 		for(var/id in compass_waypoints)
 			var/datum/compass_waypoint/wp = compass_waypoints[id]
 			if(!wp.hidden)
 				wp.recalculate_heading(T.x, T.y)
-				LAZYADD(compass_waypoint_markers, wp.compass_overlay)
-	if(show_heading)
-		recalculate_heading(FALSE)
-	if(update_icon)
-		changed(src)
+				LAZYADD(markers, wp.compass_overlay)
+	set_compass_waypoint_markers(markers)
+	recalculate_heading()
 

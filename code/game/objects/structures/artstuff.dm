@@ -96,7 +96,7 @@ CAPABILITIES(/obj/item/canvas)
 	interface("Canvas")
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
-	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(canvas_open), because = MSG(canvas/finished))))
 	op("view", in_hand(), then(PROC_REF(interaction_self)))
 	op("base_color", item(/obj/item/paint_palette), label("Fill"),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Color Fill", "question" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "timeout" = 0), step = "sure"),
@@ -531,7 +531,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 
 	var/list/painting_category = list()
-	for (var/list/P in SSpersistence.unpicked_paintings)
+	for (var/list/P in persistence_unpicked_paintings())
 		if(P["persistence_id"] == persistence_id)
 			painting_category[++painting_category.len] = P
 
@@ -591,7 +591,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	if(!check_rights_for(admin.client, R_HOLDER))
 		return 0
 	if(spawn_specific && isnum(which_painting))
-		var/list/painting = SSpersistence.all_paintings[which_painting]
+		var/list/painting = persistence_all_paintings()[which_painting]
 		var/title = painting["title"]
 		var/author_name = painting["author"]
 		var/author_ckey = painting["ckey"]
@@ -613,7 +613,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 /obj/structure/sign/painting/proc/lateload_choices()
 	var/list/paintings = list()
 	var/current = 1
-	for(var/entry in SSpersistence.all_paintings)
+	for(var/entry in persistence_all_paintings())
 		var/key = "[entry["title"]] by [entry["author"]]"
 		paintings[key] = current
 		current += 1
@@ -634,7 +634,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 	var/datum/prompt/yes_no/painting_lateload/R = A.request
 	var/which_painting = R.which
-	var/list/painting = SSpersistence.all_paintings[which_painting]
+	var/list/painting = persistence_all_paintings()[which_painting]
 	var/title = painting["title"]
 	var/author_name = painting["author"]
 	var/author_ckey = painting["ckey"]
@@ -684,7 +684,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 
 	var/data = current_canvas.get_data_string()
 	var/md5 = md5(lowertext(data))
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5 && entry["persistence_id"] == persistence_id)
 			return
 	var/png_directory = "data/persistent/paintings/[persistence_id]/"
@@ -709,7 +709,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 		return
 	var/data = current_canvas.get_data_string()
 	var/md5 = md5(lowertext(data))
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5 && entry["persistence_id"] == persistence_id)
 			SSpersistence.all_paintings.Remove(list(entry))
 			SSpersistence.all_paintings.Add(list(entry))
@@ -729,14 +729,14 @@ CAPABILITIES(/obj/structure/sign/painting)
 	var/md5 = md5(lowertext(current_canvas.get_data_string()))
 	var/author = current_canvas.author_ckey
 	var/list/filenames_found = list()
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5)
 			filenames_found += "data/persistent/paintings/[entry["persistence_id"]]/[entry["md5"]].png"
 			SSpersistence.all_paintings -= list(entry)
 	for(var/png in filenames_found)
 		if(fexists(png))
 			fdel(png)
-	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
+	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
 			rel_clear(P, nameof(P.current_canvas), OWN_DELETE)
 			P.update_appearance()

@@ -101,7 +101,7 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 
 	#ifdef UNIT_TESTS
 	// Dress the shared per-species test humans with this item and check they get worn art.
-	// An entire signal just for unittests had to be made for this (/datum/om/event/unittest_data, emitted from
+	// An entire signal just for unittests had to be made for this (/datum/definition_event/unittest_data, emitted from
 	// /obj/item/proc/get_worn_icon_state in code/game/objects/items.dm under #ifdef UNIT_TESTS).
 	//
 	// This exercises set_species (done once, up-front in Run) + equip-to-slot + the worn-icon signal

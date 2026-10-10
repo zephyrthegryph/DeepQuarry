@@ -54,7 +54,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 		"},
 		thing_to_find
 		)
-	query.Execute(SSsqlite.sqlite_db)
+	query.Execute(sqlite_sqlite_db())
 	SSsqlite.sqlite_check_for_errors(query, "Admin Feedback Viewer - Filter by [row_name] to find [thing_to_find]")
 	return query
 
@@ -69,7 +69,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 			DESC LIMIT 50;
 			"}
 			)
-		query.Execute(SSsqlite.sqlite_db)
+		query.Execute(sqlite_sqlite_db())
 		SSsqlite.sqlite_check_for_errors(query, "Admin Feedback Viewer")
 		last_query = query
 

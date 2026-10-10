@@ -210,6 +210,7 @@ CAPABILITIES(/obj/h4_kiosk)
 /datum/unit_test/dq_h4/a_starts_refusal_ends_the_op_before_the_wait
 
 /datum/unit_test/dq_h4/a_starts_refusal_ends_the_op_before_the_wait/run_h4()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/obj/h4_kiosk/K = allocate(/obj/h4_kiosk)
 	var/pending_before = length(GLOB.op_pending_all)

@@ -168,7 +168,7 @@ CAPABILITIES(/turf/space)
 /turf/space/Entered(atom/movable/A)
 	. = ..()
 
-	if(edge && round_mode() && !density) // !density so 'fake' space turfs don't fling ghosts everywhere
+	if(edge && ticker_mode() && !density) // !density so 'fake' space turfs don't fling ghosts everywhere
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L?.pulling_target())

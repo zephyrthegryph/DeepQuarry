@@ -402,12 +402,6 @@ CAPABILITIES(/turf/simulated)
 	else
 		return FALSE
 
-// A simulated turf owns its sunlight handler (turf.shandler, OWN); holder is the one-sided back
-// view. The handler moves to the replacement turf through ChangeTurf (turf_changing.dm).
-/datum/planet_sunlight_handler/relations()
-	. = ..()
-	. += rel_many(nameof(shandlers))
-
 /// The sun (a relation view).
 /datum/sunlight_handler/proc/sun() as /datum/simple_sun
 	return sun

@@ -65,6 +65,7 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
 	silicon_hand(adjacent = TRUE)
+	ref_many(nameof(bluespace_exit_points))
 	blast_contents(shield = 1) // a closet shields its contents a step
 	after_init(0, then(PROC_REF(closet_after_init)))
 	space(SPACE_INTERIOR, door = nameof(opened))
@@ -73,22 +74,22 @@ CAPABILITIES(/obj/structure/closet)
 	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), because = MSG(closet/bolts_unreachable))))
 	weld_shut(offered = PROC_REF(can_seal))
 	extend("weld_shut.toggle", wait(2 SECONDS), needs(req_is(nameof(opened), FALSE, because = MSG(closet/wont_budge))))
-	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req(PROC_REF(bare_hand_or_menu))),
-		needs(req(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
+	op("door", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(req_bool(PROC_REF(bare_hand_or_menu))),
+		needs(req_bool(PROC_REF(door_ready), because = MSG(closet/wont_budge))), then(PROC_REF(door_toggled)))
 	op("cut_apart", tool(TOOL_WELDER), label("Cut apart"), at(SPACE_INTERIOR), priority(above("weld_shut.toggle")), wait(0), costs(RES_FUEL, 0),
-		needs(req(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
+		needs(req_bool(PROC_REF(welder_lit), because = MSG(weld/needs_lit))), then(PROC_REF(cut_apart)), says(MSG(closet/cut_apart)))
 	op("empty_basket", item(/obj/item/storage/laundry_basket), label("Empty into"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
 		then(PROC_REF(basket_emptied)), says(MSG(closet/emptied_basket)))
 	op("stuff_grab", item(/obj/item/grab), label("Stuff inside"), at(SPACE_INTERIOR), priority(OP_PRIORITY_PART),
-		needs(req(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), then(PROC_REF(stuff_grabbed)))
+		needs(req_bool(PROC_REF(grab_fits), because = PROC_REF(grab_refusal))), then(PROC_REF(stuff_grabbed)))
 	op("set_down", item(/obj/item), label("Put down"), at(SPACE_INTERIOR), priority(OP_PRIORITY_DEFAULT),
-		needs(req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), then(PROC_REF(set_down)))
+		needs(req_bool(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), then(PROC_REF(set_down)))
 	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), at(SPACE_INTERIOR), then(PROC_REF(stuff_dragged)))
 	op("break_out", ai(), label("Break out"), wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE),
-		needs(req_capable(), req(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),
+		needs(req_capable(), req_bool(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),
 		begins(MSG(closet/break_begin)), then(PROC_REF(broke_out)), logs(LOG_GAME))
-	op("devour", menu(), label("Devour Occupants"), when(req(PROC_REF(actor_shut_in))),
-		needs(req(PROC_REF(has_prey), because = MSG(closet/no_targets))),
+	op("devour", menu(), label("Devour Occupants"), when(req_bool(PROC_REF(actor_shut_in))),
+		needs(req_bool(PROC_REF(has_prey), because = MSG(closet/no_targets))),
 		asks(/datum/prompt/choice/prey),
 		then(PROC_REF(devoured)))
 
@@ -128,7 +129,7 @@ CAPABILITIES(/obj/structure/closet)
 // heat reaches it through the closet's insulation, and only rounds and stabs
 // that get through the sheet metal, and seeping acid, reach its contents. ----
 
-/datum/om/relation/slot/closet_interior
+/datum/relation_definition/slot/closet_interior
 	holder = /obj/structure/closet
 	slot_id = CONTAINER_SLOT_INTERIOR
 	name = "interior"
@@ -138,10 +139,10 @@ CAPABILITIES(/obj/structure/closet)
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
 
-/datum/om/relation/slot/closet_interior/capacity_for(obj/structure/closet/holder)
+/datum/relation_definition/slot/closet_interior/capacity_for(obj/structure/closet/holder)
 	return holder.storage_capacity
 
-/datum/om/relation/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
+/datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
 	return holder.storage_cost_of(thing)
 
 /datum/predicate/slot_closet_interior
@@ -154,7 +155,7 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/latent_generator_clear()
 	starts_with = null
 
-/datum/om/relation/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
+/datum/relation_definition/slot/closet_interior/entry_cost(obj/structure/closet/holder, path)
 	return holder.storage_cost_of_type(path)
 
 /// What a thing of `path` would take up, from type data (latent entries).
@@ -615,9 +616,12 @@ CAPABILITIES(/obj/structure/closet)
 	user.begin_instant_nom(user, target, user, user.vore_selected)
 	return OP_OK
 
-/obj/structure/closet/bluespace/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/closet/bluespace)
+	after_init(0, then(PROC_REF(init_join_network)))
+
+/obj/structure/closet/bluespace/proc/init_join_network(datum/act/timer/A)
 	join_bluespace_network()
+
 
 /// The icon is derived from closet_appearance by the look (C5 parity).
 /obj/structure/closet/state_exclude()

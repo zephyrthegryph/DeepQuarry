@@ -67,7 +67,7 @@ if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving th
 
 tested="$(git rev-parse HEAD)"
 echo "== lane-ready: gates on ${tested:0:10} (master ${master:0:10}): ${list[*]:-the smoke set}"
-gate_args=()
+gate_args=(--snapshot-output)
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
 bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
 

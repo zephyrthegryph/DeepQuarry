@@ -62,13 +62,12 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return PROCESS_KILL
 
-/obj/machinery/nuclearbomb/proc/is_extended(mob/actor, atom/target, obj/item/held)
-	return extended // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+TRACKED(/obj/machinery/nuclearbomb, extended)
 
-/// Requirement (was REQ_* is_extended): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/is_extended_holds(datum/act/op/A)
-	var/answer = is_extended(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+/obj/machinery/nuclearbomb/proc/is_extended(datum/act/op/A)
+	if(extended)
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(datum/act/op/A)
 	var/mob/user = A.actor
@@ -210,7 +209,7 @@ GLOBAL_VAR(bomb_set)
 		if(!lighthack)
 			flick("nuclearbombc", src)
 			icon_state = "nuclearbomb1"
-		extended = 1
+		set_extended(1)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
@@ -224,15 +223,15 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("anchor", ui_act("anchor"), then(PROC_REF(ui_act_anchor)))
 	op("wire", ui_act("wire", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_wire)))
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
-	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended_holds))), then(PROC_REF(interaction_insert_disk)))
+	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended))), then(PROC_REF(interaction_insert_disk)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
-	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal)), req(PROC_REF(can_make_deployable_holds), because = PROC_REF(can_make_deployable_refusal))), then(PROC_REF(interaction_make_deployable)))
+	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act)), req(PROC_REF(can_make_deployable))), then(PROC_REF(interaction_make_deployable)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
@@ -433,32 +432,13 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	tgui_interact(user)
 
 /// Requirement: only something with hands can adjust the panels.
-/obj/machinery/nuclearbomb/proc/can_make_deployable(mob/user, atom/target, obj/item/held)
-	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
-		return TRUE // the effect declines silently
+/obj/machinery/nuclearbomb/proc/can_make_deployable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!read_once(user.canmove) || user.stat || user.restrained())
+		return null // the effect declines silently
 	if(!ishuman(user))
 		return "you don't have the dexterity to do this"
-	return TRUE
-
-/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/dq_actor_can_act_holds(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/nuclearbomb/proc/dq_actor_can_act_refusal(datum/act/op/A)
-	var/answer = dq_actor_can_act(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that right now"
-
-/// Requirement (was REQ_* can_make_deployable): the legacy check answers TRUE to pass.
-/obj/machinery/nuclearbomb/proc/can_make_deployable_holds(datum/act/op/A)
-	var/answer = can_make_deployable(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_make_deployable_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/nuclearbomb/proc/can_make_deployable_refusal(datum/act/op/A)
-	var/answer = can_make_deployable(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return null
 
 /obj/machinery/nuclearbomb/proc/interaction_make_deployable(datum/act/op/A)
 	var/mob/user = A.actor
@@ -483,8 +463,8 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 	if(!lighthack)
 		icon_state = "nuclearbomb3"
 	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
-	if(SSticker && round_mode())
-		round_mode().explosion_in_progress = 1
+	if(SSticker && ticker_mode())
+		ticker_mode().explosion_in_progress = 1
 	after(src, 10 SECONDS, PROC_REF(detonate))
 
 /// Ten seconds after the alarm: the blast, the cinematic and the round outcome.
@@ -499,23 +479,23 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 		off_station = 2
 
 	if(SSticker)
-		if(round_mode() && round_mode().name == "Mercenary")
+		if(ticker_mode() && ticker_mode().name == "Mercenary")
 			var/obj/machinery/computer/shuttle_control/multi/syndicate/syndie_location = locate(/obj/machinery/computer/shuttle_control/multi/syndicate)
 			if(syndie_location)
-				round_mode():syndies_didnt_escape = (syndie_location.z > 1 ? 0 : 1)	//muskets will make me change this, but it will do for now
-			round_mode():nuke_off_station = off_station
+				ticker_mode():syndies_didnt_escape = (syndie_location.z > 1 ? 0 : 1)	//muskets will make me change this, but it will do for now
+			ticker_mode():nuke_off_station = off_station
 
 		var/datum/cinematic/cinematic_type
 		switch(off_station)
 			if(0)
-				cinematic_type = round_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_victory : /datum/cinematic/nuke/self_destruct
+				cinematic_type = ticker_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_victory : /datum/cinematic/nuke/self_destruct
 			if(1)
-				cinematic_type = round_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
+				cinematic_type = ticker_mode().name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
 			if(2)
 				cinematic_type = /datum/cinematic/nuke/far_explosion
 		play_cinematic(cinematic_type)
 		// The rest happens at the blast, once the intro has played (it slept through it before S10b).
-		after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), with = list(off_station, round_mode().name == "mercenary"))
+		after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), with = list(off_station, ticker_mode().name == "mercenary"))
 
 /// A nuke's blast, after its cinematic's intro: kills the station for a self-destruct hit,
 /// then settles the round.
@@ -531,14 +511,14 @@ MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 				if(1)	//on a z-level 1 turf.
 					M.set_stat(DEAD)
 
-	if(round_mode())
-		round_mode().explosion_in_progress = 0
+	if(ticker_mode())
+		ticker_mode().explosion_in_progress = 0
 		to_chat(world, span_boldannounce("The station was destoyed by the nuclear blast!"))
 
-		round_mode().station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
+		ticker_mode().station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
 														//kinda shit but I couldn't  get permission to do what I wanted to do.
 
-		if(!round_mode().check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
+		if(!ticker_mode().check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
 			to_chat(world, span_boldannounce("Resetting in 30 seconds!"))
 
 			feedback_set_details("end_error","nuke - unhandled ending")
@@ -579,3 +559,10 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /// auth (a relation view: it reads null once the target is deleted).
 /obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear
 	return auth
+
+/obj/machinery/nuclearbomb/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

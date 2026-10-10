@@ -2,7 +2,7 @@
 // (tools/dx/gen_om_notices.py) went with the events. Each is published with PUBLISH_LEGACY(E, /datum/notice/x, fields...)
 // in fill() order until its own ACTION() declaration replaces it.
 
-/// From /datum/om/event/affliction_severity_changed.
+/// From /datum/definition_event/affliction_severity_changed.
 /datum/notice/affliction_severity_changed
 	var/affliction
 	var/old_severity
@@ -11,14 +11,14 @@
 	src.affliction = affliction
 	src.old_severity = old_severity
 
-/// From /datum/om/event/arcade_prizevend.
+/// From /datum/definition_event/arcade_prizevend.
 /datum/notice/arcade_prizevend
 	var/user
 
 /datum/notice/arcade_prizevend/fill(user)
 	src.user = user
 
-/// From /datum/om/event/atom_after_successful_initialized_on.
+/// From /datum/definition_event/atom_after_successful_initialized_on.
 /datum/notice/atom_after_successful_initialized_on
 	var/created
 	var/mapload
@@ -27,14 +27,14 @@
 	src.created = created
 	src.mapload = mapload
 
-/// From /datum/om/event/atom_bumped.
+/// From /datum/definition_event/atom_bumped.
 /datum/notice/atom_bumped
 	var/bumped
 
 /datum/notice/atom_bumped/fill(bumped)
 	src.bumped = bumped
 
-/// From /datum/om/event/atom_dir_change.
+/// From /datum/definition_event/atom_dir_change.
 /datum/notice/atom_dir_change
 	var/old_dir
 	var/new_dir
@@ -43,7 +43,7 @@
 	src.old_dir = old_dir
 	src.new_dir = new_dir
 
-/// From /datum/om/event/atom_emp_act.
+/// From /datum/definition_event/atom_emp_act.
 /datum/notice/atom_emp_act
 	var/severity
 	var/protection
@@ -52,7 +52,7 @@
 	src.severity = severity
 	src.protection = protection
 
-/// From /datum/om/event/atom_entered.
+/// From /datum/definition_event/atom_entered.
 /datum/notice/atom_entered
 	var/arrived
 	var/old_loc
@@ -61,7 +61,7 @@
 	src.arrived = arrived
 	src.old_loc = old_loc
 
-/// From /datum/om/event/atom_entering.
+/// From /datum/definition_event/atom_entering.
 /datum/notice/atom_entering
 	var/destination
 	var/old_loc
@@ -70,7 +70,7 @@
 	src.destination = destination
 	src.old_loc = old_loc
 
-/// From /datum/om/event/atom_exited.
+/// From /datum/definition_event/atom_exited.
 /datum/notice/atom_exited
 	var/gone
 	var/new_loc
@@ -79,7 +79,7 @@
 	src.gone = gone
 	src.new_loc = new_loc
 
-/// From /datum/om/event/atom_fire_act.
+/// From /datum/definition_event/atom_fire_act.
 /datum/notice/atom_fire_act
 	var/exposed_temperature
 	var/exposed_volume
@@ -88,59 +88,59 @@
 	src.exposed_temperature = exposed_temperature
 	src.exposed_volume = exposed_volume
 
-/// From /datum/om/event/atom_propagate_rad_pulse.
+/// From /datum/definition_event/atom_propagate_rad_pulse.
 /datum/notice/atom_propagate_rad_pulse
 	var/pulse_source
 
 /datum/notice/atom_propagate_rad_pulse/fill(pulse_source)
 	src.pulse_source = pulse_source
 
-/// From /datum/om/event/atom_update_light_color.
+/// From /datum/definition_event/atom_update_light_color.
 /datum/notice/atom_update_light_color
 	var/old_color
 
 /datum/notice/atom_update_light_color/fill(old_color)
 	src.old_color = old_color
 
-/// From /datum/om/event/atom_update_light_flags.
+/// From /datum/definition_event/atom_update_light_flags.
 /datum/notice/atom_update_light_flags
 	var/old_flags
 
 /datum/notice/atom_update_light_flags/fill(old_flags)
 	src.old_flags = old_flags
 
-/// From /datum/om/event/atom_update_light_on.
+/// From /datum/definition_event/atom_update_light_on.
 /datum/notice/atom_update_light_on
 	var/old_value
 
 /datum/notice/atom_update_light_on/fill(old_value)
 	src.old_value = old_value
 
-/// From /datum/om/event/atom_update_light_power.
+/// From /datum/definition_event/atom_update_light_power.
 /datum/notice/atom_update_light_power
 	var/old_power
 
 /datum/notice/atom_update_light_power/fill(old_power)
 	src.old_power = old_power
 
-/// From /datum/om/event/atom_update_light_range.
+/// From /datum/definition_event/atom_update_light_range.
 /datum/notice/atom_update_light_range
 	var/old_range
 
 /datum/notice/atom_update_light_range/fill(old_range)
 	src.old_range = old_range
 
-/// From /datum/om/event/atom_used_in_craft.
+/// From /datum/definition_event/atom_used_in_craft.
 /datum/notice/atom_used_in_craft
 	var/result_
 
 /datum/notice/atom_used_in_craft/fill(result_)
 	src.result_ = result_
 
-/// From /datum/om/event/before/atom_extinguish.
+/// From /datum/definition_event/before/atom_extinguish.
 /datum/notice/atom_extinguish
 
-/// From /datum/om/event/before/atom_take_damage.
+/// From /datum/definition_event/before/atom_take_damage.
 /datum/notice/atom_take_damage
 	var/damage_amount
 	var/damage_type
@@ -157,21 +157,21 @@
 	src.attack_dir = attack_dir
 	src.aurmor_penetration = aurmor_penetration
 
-/// From /datum/om/event/before/attack_hand.
+/// From /datum/definition_event/before/attack_hand.
 /datum/notice/attack_hand
 	var/user
 
 /datum/notice/attack_hand/fill(user)
 	src.user = user
 
-/// From /datum/om/event/before/attack_self.
+/// From /datum/definition_event/before/attack_self.
 /datum/notice/attack_self
 	var/user
 
 /datum/notice/attack_self/fill(user)
 	src.user = user
 
-/// From /datum/om/event/before/attackby.
+/// From /datum/definition_event/before/attackby.
 /datum/notice/attackby
 	var/item
 	var/user
@@ -182,21 +182,21 @@
 	src.user = user
 	src.params = params
 
-/// From /datum/om/event/before/belly_update_vore_fx.
+/// From /datum/definition_event/before/belly_update_vore_fx.
 /datum/notice/belly_update_vore_fx
 	var/volume
 
 /datum/notice/belly_update_vore_fx/fill(volume)
 	src.volume = volume
 
-/// From /datum/om/event/before/click_alt.
+/// From /datum/definition_event/before/click_alt.
 /datum/notice/click_alt
 	var/mob
 
 /datum/notice/click_alt/fill(mob)
 	src.mob = mob
 
-/// From /datum/om/event/before/in_range_of_irradiation.
+/// From /datum/definition_event/before/in_range_of_irradiation.
 /datum/notice/in_range_of_irradiation
 	var/pulse_information
 	var/insulation_to_target
@@ -205,7 +205,7 @@
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
 
-/// From /datum/om/event/before/living_turf_collision.
+/// From /datum/definition_event/before/living_turf_collision.
 /datum/notice/living_turf_collision
 	var/t
 	var/speed
@@ -214,14 +214,14 @@
 	src.t = t
 	src.speed = speed
 
-/// From /datum/om/event/before/movable_bump.
+/// From /datum/definition_event/before/movable_bump.
 /datum/notice/movable_bump
 	var/atom
 
 /datum/notice/movable_bump/fill(atom)
 	src.atom = atom
 
-/// From /datum/om/event/before/movable_z_changed.
+/// From /datum/definition_event/before/movable_z_changed.
 /datum/notice/movable_z_changed
 	var/old_z
 	var/new_z
@@ -230,7 +230,7 @@
 	src.old_z = old_z
 	src.new_z = new_z
 
-/// From /datum/om/event/before/robot_item_attack.
+/// From /datum/definition_event/before/robot_item_attack.
 /datum/notice/robot_item_attack
 	var/item
 	var/user
@@ -241,7 +241,7 @@
 	src.user = user
 	src.params = params
 
-/// From /datum/om/event/body_afflictions_changed.
+/// From /datum/definition_event/body_afflictions_changed.
 /datum/notice/body_afflictions_changed
 	var/affliction
 	var/added
@@ -250,21 +250,21 @@
 	src.affliction = affliction
 	src.added = added
 
-/// From /datum/om/event/body_part_attached.
+/// From /datum/definition_event/body_part_attached.
 /datum/notice/body_part_attached
 	var/part
 
 /datum/notice/body_part_attached/fill(part)
 	src.part = part
 
-/// From /datum/om/event/body_part_detached.
+/// From /datum/definition_event/body_part_detached.
 /datum/notice/body_part_detached
 	var/part
 
 /datum/notice/body_part_detached/fill(part)
 	src.part = part
 
-/// From /datum/om/event/carbon_slip.
+/// From /datum/definition_event/carbon_slip.
 /datum/notice/carbon_slip
 	var/slipped_on
 	var/stun_duration
@@ -273,7 +273,7 @@
 	src.slipped_on = slipped_on
 	src.stun_duration = stun_duration
 
-/// From /datum/om/event/click.
+/// From /datum/definition_event/click.
 /datum/notice/click
 	var/location
 	var/control
@@ -286,7 +286,7 @@
 	src.params = params
 	src.user = user
 
-/// From /datum/om/event/client_click.
+/// From /datum/definition_event/client_click.
 /datum/notice/client_click
 	var/target_
 	var/location
@@ -301,17 +301,17 @@
 	src.params = params
 	src.user = user
 
-/// From /datum/om/event/closet_closed.
+/// From /datum/definition_event/closet_closed.
 /datum/notice/closet_closed
 
-/// From /datum/om/event/disposal_link.
+/// From /datum/definition_event/disposal_link.
 /datum/notice/disposal_link
 	var/trunk
 
 /datum/notice/disposal_link/fill(trunk)
 	src.trunk = trunk
 
-/// From /datum/om/event/disposal_receive.
+/// From /datum/definition_event/disposal_receive.
 /datum/notice/disposal_receive
 	var/items
 	var/gas
@@ -320,14 +320,14 @@
 	src.items = items
 	src.gas = gas
 
-/// From /datum/om/event/disposal_unlink.
+/// From /datum/definition_event/disposal_unlink.
 /datum/notice/disposal_unlink
 
-/// From /datum/om/event/do_after_began.
+/// From /datum/definition_event/do_after_began.
 /datum/notice/do_after_began
 
-/// From /datum/om/event/do_after_ended.
-/// From /datum/om/event/dqai_damage_taken.
+/// From /datum/definition_event/do_after_ended.
+/// From /datum/definition_event/dqai_damage_taken.
 /datum/notice/dqai_damage_taken
 	var/amount
 	var/injury_kind
@@ -338,7 +338,7 @@
 	src.injury_kind = injury_kind
 	src.attacker = attacker
 
-/// From /datum/om/event/examine.
+/// From /datum/definition_event/examine.
 /datum/notice/examine
 	var/user
 	var/texts
@@ -347,10 +347,10 @@
 	src.user = user
 	src.texts = texts
 
-/// From /datum/om/event/ghost_query_complete.
+/// From /datum/definition_event/ghost_query_complete.
 /datum/notice/ghost_query_complete
 
-/// From /datum/om/event/hitby.
+/// From /datum/definition_event/hitby.
 /datum/notice/hitby
 	var/source_
 	var/throwingdatum
@@ -359,20 +359,20 @@
 	src.source_ = source_
 	src.throwingdatum = throwingdatum
 
-/// From /datum/om/event/hose_forcepump.
+/// From /datum/definition_event/hose_forcepump.
 /datum/notice/hose_forcepump
 
-/// From /datum/om/event/human_dna_finalized.
+/// From /datum/definition_event/human_dna_finalized.
 /datum/notice/human_dna_finalized
 
-/// From /datum/om/event/instrument_end.
+/// From /datum/definition_event/instrument_end.
 /datum/notice/instrument_end
 	var/finished
 
 /datum/notice/instrument_end/fill(finished)
 	src.finished = finished
 
-/// From /datum/om/event/instrument_start.
+/// From /datum/definition_event/instrument_start.
 /datum/notice/instrument_start
 	var/starting_song
 	var/player
@@ -381,7 +381,7 @@
 	src.starting_song = starting_song
 	src.player = player
 
-/// From /datum/om/event/item_attack.
+/// From /datum/definition_event/item_attack.
 /datum/notice/item_attack
 	var/target_
 	var/user
@@ -392,14 +392,14 @@
 	src.user = user
 	src.target_zone = target_zone
 
-/// From /datum/om/event/item_dropped.
+/// From /datum/definition_event/item_dropped.
 /datum/notice/item_dropped
 	var/user
 
 /datum/notice/item_dropped/fill(user)
 	src.user = user
 
-/// From /datum/om/event/item_equipped.
+/// From /datum/definition_event/item_equipped.
 /datum/notice/item_equipped
 	var/equipper
 	var/slot
@@ -408,14 +408,14 @@
 	src.equipper = equipper
 	src.slot = slot
 
-/// From /datum/om/event/item_pickup.
+/// From /datum/definition_event/item_pickup.
 /datum/notice/item_pickup
 	var/taker
 
 /datum/notice/item_pickup/fill(taker)
 	src.taker = taker
 
-/// From /datum/om/event/item_tool_acted.
+/// From /datum/definition_event/item_tool_acted.
 /datum/notice/item_tool_acted
 	var/target_
 	var/user
@@ -428,17 +428,17 @@
 	src.tool_quality = tool_quality
 	src.modifiers = modifiers
 
-/// From /datum/om/event/living_aheal.
+/// From /datum/definition_event/living_aheal.
 /datum/notice/living_aheal
 
-/// From /datum/om/event/living_death_final.
+/// From /datum/definition_event/living_death_final.
 /datum/notice/living_death_final
 	var/gibbed
 
 /datum/notice/living_death_final/fill(gibbed)
 	src.gibbed = gibbed
 
-/// From /datum/om/event/living_injured.
+/// From /datum/definition_event/living_injured.
 /datum/notice/living_injured
 	var/kind
 	var/applied
@@ -453,7 +453,7 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/om/event/living_injury_explained.
+/// From /datum/definition_event/living_injury_explained.
 /datum/notice/living_injury_explained
 	var/incoming_kind
 	var/landed_kind
@@ -470,7 +470,7 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/om/event/living_revived.
+/// From /datum/definition_event/living_revived.
 /datum/notice/living_revived
 	var/source_
 	var/reason
@@ -479,7 +479,7 @@
 	src.source_ = source_
 	src.reason = reason
 
-/// From /datum/om/event/living_shield_injury.
+/// From /datum/definition_event/living_shield_injury.
 /datum/notice/living_shield_injury
 	var/kind
 	var/amount_ref
@@ -494,21 +494,21 @@
 	src.source_ = source_
 	src.flags = flags
 
-/// From /datum/om/event/machinery_broken.
+/// From /datum/definition_event/machinery_broken.
 /datum/notice/machinery_broken
 	var/damage_flag
 
 /datum/notice/machinery_broken/fill(damage_flag)
 	src.damage_flag = damage_flag
 
-/// From /datum/om/event/machinery_destructive_scan.
+/// From /datum/definition_event/machinery_destructive_scan.
 /datum/notice/machinery_destructive_scan
 	var/scanned_atoms
 
 /datum/notice/machinery_destructive_scan/fill(scanned_atoms)
 	src.scanned_atoms = scanned_atoms
 
-/// From /datum/om/event/machinery_explosion_detected.
+/// From /datum/definition_event/machinery_explosion_detected.
 /datum/notice/machinery_explosion_detected
 	var/epicenter
 	var/devastation_range
@@ -523,13 +523,13 @@
 	src.light_impact_range = light_impact_range
 	src.seconds_taken = seconds_taken
 
-/// From /datum/om/event/machinery_power_lost.
+/// From /datum/definition_event/machinery_power_lost.
 /datum/notice/machinery_power_lost
 
-/// From /datum/om/event/machinery_power_restored.
+/// From /datum/definition_event/machinery_power_restored.
 /datum/notice/machinery_power_restored
 
-/// From /datum/om/event/matcontainer_item_consumed.
+/// From /datum/definition_event/matcontainer_item_consumed.
 /datum/notice/matcontainer_item_consumed
 	var/item
 	var/primary_mat
@@ -544,7 +544,7 @@
 	src.material_amount = material_amount
 	src.context = context
 
-/// From /datum/om/event/matcontainer_stack_retrieved.
+/// From /datum/definition_event/matcontainer_stack_retrieved.
 /datum/notice/matcontainer_stack_retrieved
 	var/new_stack
 	var/context
@@ -553,10 +553,10 @@
 	src.new_stack = new_stack
 	src.context = context
 
-/// From /datum/om/event/material_facts_changed.
+/// From /datum/definition_event/material_facts_changed.
 /datum/notice/material_facts_changed
 
-/// From /datum/om/event/material_surgery.
+/// From /datum/definition_event/material_surgery.
 /datum/notice/material_surgery
 	var/patient
 	var/zone
@@ -567,7 +567,7 @@
 	src.zone = zone
 	src.success = success
 
-/// From /datum/om/event/mob_apply_damage.
+/// From /datum/definition_event/mob_apply_damage.
 /datum/notice/mob_apply_damage
 	var/damage
 	var/damagetype
@@ -590,24 +590,24 @@
 	src.attack_direction = attack_direction
 	src.attacking_item = attacking_item
 
-/// From /datum/om/event/mob_client_login.
+/// From /datum/definition_event/mob_client_login.
 /datum/notice/mob_client_login
 	var/client
 
 /datum/notice/mob_client_login/fill(client)
 	src.client = client
 
-/// From /datum/om/event/mob_death.
+/// From /datum/definition_event/mob_death.
 /datum/notice/mob_death
 	var/gibbed
 
 /datum/notice/mob_death/fill(gibbed)
 	src.gibbed = gibbed
 
-/// From /datum/om/event/mob_dna_mutation.
+/// From /datum/definition_event/mob_dna_mutation.
 /datum/notice/mob_dna_mutation
 
-/// From /datum/om/event/mob_equipped_item.
+/// From /datum/definition_event/mob_equipped_item.
 /datum/notice/mob_equipped_item
 	var/equipped_item
 	var/slot
@@ -616,47 +616,47 @@
 	src.equipped_item = equipped_item
 	src.slot = slot
 
-/// From /datum/om/event/mob_granted_action.
+/// From /datum/definition_event/mob_granted_action.
 /datum/notice/mob_granted_action
 	var/action
 
 /datum/notice/mob_granted_action/fill(action)
 	src.action = action
 
-/// From /datum/om/event/mob_login.
+/// From /datum/definition_event/mob_login.
 /datum/notice/mob_login
 
-/// From /datum/om/event/mob_logout.
+/// From /datum/definition_event/mob_logout.
 /datum/notice/mob_logout
 
-/// From /datum/om/event/mob_medical_issues_changed.
+/// From /datum/definition_event/mob_medical_issues_changed.
 /datum/notice/mob_medical_issues_changed
 
-/// From /datum/om/event/mob_mind_transferred_into.
+/// From /datum/definition_event/mob_mind_transferred_into.
 /datum/notice/mob_mind_transferred_into
 	var/old_character
 
 /datum/notice/mob_mind_transferred_into/fill(old_character)
 	src.old_character = old_character
 
-/// From /datum/om/event/mob_mind_transferred_out_of.
+/// From /datum/definition_event/mob_mind_transferred_out_of.
 /datum/notice/mob_mind_transferred_out_of
 	var/new_character
 
 /datum/notice/mob_mind_transferred_out_of/fill(new_character)
 	src.new_character = new_character
 
-/// From /datum/om/event/mob_removed_action.
+/// From /datum/definition_event/mob_removed_action.
 /datum/notice/mob_removed_action
 	var/action
 
 /datum/notice/mob_removed_action/fill(action)
 	src.action = action
 
-/// From /datum/om/event/mob_reset_perspective.
+/// From /datum/definition_event/mob_reset_perspective.
 /datum/notice/mob_reset_perspective
 
-/// From /datum/om/event/mob_statchange.
+/// From /datum/definition_event/mob_statchange.
 /datum/notice/mob_statchange
 	var/new_stat
 	var/old_stat
@@ -665,7 +665,7 @@
 	src.new_stat = new_stat
 	src.old_stat = old_stat
 
-/// From /datum/om/event/mob_unequipped_item.
+/// From /datum/definition_event/mob_unequipped_item.
 /datum/notice/mob_unequipped_item
 	var/item
 	var/target_
@@ -674,7 +674,7 @@
 	src.item = item
 	src.target_ = target_
 
-/// From /datum/om/event/movable_attempted_move.
+/// From /datum/definition_event/movable_attempted_move.
 /datum/notice/movable_attempted_move
 	var/old_loc
 	var/new_loc
@@ -683,7 +683,7 @@
 	src.old_loc = old_loc
 	src.new_loc = new_loc
 
-/// From /datum/om/event/movable_impact.
+/// From /datum/definition_event/movable_impact.
 /datum/notice/movable_impact
 	var/hit_atom
 	var/throwingdatum
@@ -692,7 +692,7 @@
 	src.hit_atom = hit_atom
 	src.throwingdatum = throwingdatum
 
-/// From /datum/om/event/movable_motiontracker.
+/// From /datum/definition_event/movable_motiontracker.
 /datum/notice/movable_motiontracker
 	var/source_
 	var/echo_turf_location
@@ -701,7 +701,7 @@
 	src.source_ = source_
 	src.echo_turf_location = echo_turf_location
 
-/// From /datum/om/event/moved.
+/// From /datum/definition_event/moved.
 /datum/notice/moved
 	var/old_loc
 	var/direction
@@ -712,34 +712,34 @@
 	src.direction = direction
 	src.forced = forced
 
-/// From /datum/om/event/moved_down_stairs.
+/// From /datum/definition_event/moved_down_stairs.
 /datum/notice/moved_down_stairs
 	var/old_loc
 
 /datum/notice/moved_down_stairs/fill(old_loc)
 	src.old_loc = old_loc
 
-/// From /datum/om/event/obj_deconstruct.
+/// From /datum/definition_event/obj_deconstruct.
 /datum/notice/obj_deconstruct
 	var/disassembled
 
 /datum/notice/obj_deconstruct/fill(disassembled)
 	src.disassembled = disassembled
 
-/// From /datum/om/event/observer_apc.
+/// From /datum/definition_event/observer_apc.
 /datum/notice/observer_apc
 
-/// From /datum/om/event/observer_globalmoved.
+/// From /datum/definition_event/observer_globalmoved.
 /datum/notice/observer_globalmoved
 
-/// From /datum/om/event/observer_shuttle_added.
+/// From /datum/definition_event/observer_shuttle_added.
 /datum/notice/observer_shuttle_added
 	var/shuttle
 
 /datum/notice/observer_shuttle_added/fill(shuttle)
 	src.shuttle = shuttle
 
-/// From /datum/om/event/observer_shuttle_moved.
+/// From /datum/definition_event/observer_shuttle_moved.
 /datum/notice/observer_shuttle_moved
 	var/old_location
 	var/destination
@@ -748,7 +748,7 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// From /datum/om/event/observer_shuttle_pre_move.
+/// From /datum/definition_event/observer_shuttle_pre_move.
 /datum/notice/observer_shuttle_pre_move
 	var/old_location
 	var/destination
@@ -757,7 +757,7 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// From /datum/om/event/observer_turf_entered.
+/// From /datum/definition_event/observer_turf_entered.
 /datum/notice/observer_turf_entered
 	var/arrived
 	var/old_loc
@@ -766,22 +766,22 @@
 	src.arrived = arrived
 	src.old_loc = old_loc
 
-/// From /datum/om/event/picked_up_item.
+/// From /datum/definition_event/picked_up_item.
 /datum/notice/picked_up_item
 	var/item
 
 /datum/notice/picked_up_item/fill(item)
 	src.item = item
 
-/// From /datum/om/event/popup_cleared.
+/// From /datum/definition_event/popup_cleared.
 /datum/notice/popup_cleared
 	var/window_id
 
 /datum/notice/popup_cleared/fill(window_id)
 	src.window_id = window_id
 
-/// From /datum/om/event/qdeleting.
-/// From /datum/om/event/reagent_expose_obj.
+/// From /datum/definition_event/qdeleting.
+/// From /datum/definition_event/reagent_expose_obj.
 /datum/notice/reagent_expose_obj
 	var/reagent
 	var/amount
@@ -790,17 +790,17 @@
 	src.reagent = reagent
 	src.amount = amount
 
-/// From /datum/om/event/reagents_holder_reacted.
+/// From /datum/definition_event/reagents_holder_reacted.
 /datum/notice/reagents_holder_reacted
 	var/chemical_reaction
 
 /datum/notice/reagents_holder_reacted/fill(chemical_reaction)
 	src.chemical_reaction = chemical_reaction
 
-/// From /datum/om/event/remote_view_clear.
+/// From /datum/definition_event/remote_view_clear.
 /datum/notice/remote_view_clear
 
-/// From /datum/om/event/robot_belly_fullness.
+/// From /datum/definition_event/robot_belly_fullness.
 /datum/notice/robot_belly_fullness
 	var/belly_class
 	var/fullness_ref
@@ -809,17 +809,17 @@
 	src.belly_class = belly_class
 	src.fullness_ref = fullness_ref
 
-/// From /datum/om/event/robot_equipment_changed.
+/// From /datum/definition_event/robot_equipment_changed.
 /datum/notice/robot_equipment_changed
 	var/item
 
 /datum/notice/robot_equipment_changed/fill(item)
 	src.item = item
 
-/// From /datum/om/event/silicon_laws_changed.
+/// From /datum/definition_event/silicon_laws_changed.
 /datum/notice/silicon_laws_changed
 
-/// From /datum/om/event/stun_effect.
+/// From /datum/definition_event/stun_effect.
 /datum/notice/stun_effect
 	var/stun_amount
 	var/agony_amount
@@ -834,7 +834,7 @@
 	src.used_weapon = used_weapon
 	src.electric = electric
 
-/// From /datum/om/event/techweb_add_design.
+/// From /datum/definition_event/techweb_add_design.
 /datum/notice/techweb_add_design
 	var/researched_design
 	var/custom
@@ -843,7 +843,7 @@
 	src.researched_design = researched_design
 	src.custom = custom
 
-/// From /datum/om/event/techweb_remove_design.
+/// From /datum/definition_event/techweb_remove_design.
 /datum/notice/techweb_remove_design
 	var/removed_design
 	var/custom
@@ -852,7 +852,7 @@
 	src.removed_design = removed_design
 	src.custom = custom
 
-/// From /datum/om/event/telesci_teleport.
+/// From /datum/definition_event/telesci_teleport.
 /datum/notice/telesci_teleport
 	var/teleported_things
 	var/target_turf
@@ -863,14 +863,14 @@
 	src.target_turf = target_turf
 	src.sending = sending
 
-/// From /datum/om/event/tgui_window_visible.
+/// From /datum/definition_event/tgui_window_visible.
 /datum/notice/tgui_window_visible
 	var/client
 
 /datum/notice/tgui_window_visible/fill(client)
 	src.client = client
 
-/// From /datum/om/event/tool_atom_acted.
+/// From /datum/definition_event/tool_atom_acted.
 /datum/notice/tool_atom_acted
 	var/tool_quality
 	var/secondary
@@ -885,21 +885,21 @@
 	src.user = user
 	src.modifiers = modifiers
 
-/// From /datum/om/event/trait_gained.
+/// From /datum/definition_event/trait_gained.
 /datum/notice/trait_gained
 	var/trait
 
 /datum/notice/trait_gained/fill(trait)
 	src.trait = trait
 
-/// From /datum/om/event/trait_lost.
+/// From /datum/definition_event/trait_lost.
 /datum/notice/trait_lost
 	var/trait
 
 /datum/notice/trait_lost/fill(trait)
 	src.trait = trait
 
-/// From /datum/om/event/turf_change.
+/// From /datum/definition_event/turf_change.
 /datum/notice/turf_change
 	var/path
 	var/new_baseturfs
@@ -912,7 +912,7 @@
 	src.flags = flags
 	src.post_change_callbacks = post_change_callbacks
 
-/// From /datum/om/event/ui_act.
+/// From /datum/definition_event/ui_act.
 /datum/notice/ui_act
 	var/usr_
 	var/action
@@ -921,14 +921,14 @@
 	src.usr_ = usr_
 	src.action = action
 
-/// From /datum/om/event/unittest_data.
+/// From /datum/definition_event/unittest_data.
 /datum/notice/unittest_data
 	var/data_
 
 /datum/notice/unittest_data/fill(data_)
 	src.data_ = data_
 
-/// From /datum/om/event/world_explosion.
+/// From /datum/definition_event/world_explosion.
 /datum/notice/world_explosion
 	var/epicenter
 	var/devastation_range
@@ -943,21 +943,21 @@
 	src.light_impact_range = light_impact_range
 	src.took = took
 
-/// From /datum/om/event/world_ghost_captured.
+/// From /datum/definition_event/world_ghost_captured.
 /datum/notice/world_ghost_captured
 	var/passing_entity
 
 /datum/notice/world_ghost_captured/fill(passing_entity)
 	src.passing_entity = passing_entity
 
-/// From /datum/om/event/world_mob_created.
+/// From /datum/definition_event/world_mob_created.
 /datum/notice/world_mob_created
 	var/mob
 
 /datum/notice/world_mob_created/fill(mob)
 	src.mob = mob
 
-/// From /datum/om/event/world_mob_death.
+/// From /datum/definition_event/world_mob_death.
 /datum/notice/world_mob_death
 	var/living
 	var/gibbed
@@ -966,21 +966,21 @@
 	src.living = living
 	src.gibbed = gibbed
 
-/// From /datum/om/event/world_payment_account_status.
+/// From /datum/definition_event/world_payment_account_status.
 /datum/notice/world_payment_account_status
 	var/account
 
 /datum/notice/world_payment_account_status/fill(account)
 	src.account = account
 
-/// From /datum/om/event/world_supply_shuttle_depart.
+/// From /datum/definition_event/world_supply_shuttle_depart.
 /datum/notice/world_supply_shuttle_depart
 	var/supply_shuttle_areas
 
 /datum/notice/world_supply_shuttle_depart/fill(supply_shuttle_areas)
 	src.supply_shuttle_areas = supply_shuttle_areas
 
-/// From /datum/om/event/world_wight_captured.
+/// From /datum/definition_event/world_wight_captured.
 /datum/notice/world_wight_captured
 	var/shadow_wight
 

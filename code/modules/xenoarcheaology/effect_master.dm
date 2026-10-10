@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	ref_many(nameof(light_sources))
 	owns_one(nameof(artifact_master), /datum/artifact_master)
 	owns_one(nameof(forensic_data), /datum/forensics_crime)
 	owns_one(nameof(light), /datum/light_source)

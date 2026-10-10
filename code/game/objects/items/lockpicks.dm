@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/lockpick)
 /// No lockpicking for monkeys.
 /obj/item/lockpick/proc/handy_user(datum/act/op/A)
 	var/mob/user = A.actor
-	return !!user?.IsAdvancedToolUser()
+	return user?.IsAdvancedToolUser() ? null : /datum/msg/req_silent
 
 /// A door that is not locked, of another lock type or not pickable at all ends the click before anything starts.
 /obj/item/lockpick/proc/pick_started(datum/act/op/A)

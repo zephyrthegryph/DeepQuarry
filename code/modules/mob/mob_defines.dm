@@ -261,6 +261,16 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
+	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
+	ref_one(nameof(control_object)) // the object an admin possesses
+	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
+	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
+	ref_one(nameof(autowhisper_display))
+	ref_one(nameof(pullin))
+	ref_one(nameof(throw_icon))
+	ref_many(nameof(spell_list))
+	ref_many(nameof(actions))
+	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
@@ -355,7 +365,7 @@ CAPABILITIES(/mob)
 	op("vv_buildmode", topic_in(VV_TOPIC, VV_HK_BUILDMODE), needs(req_rights(R_BUILDMODE)), then(PROC_REF(vv_topic_buildmode)))
 	op("vv_dropall", topic_in(VV_TOPIC, VV_HK_DROP_ALL), then(PROC_REF(vv_topic_drop_all)))
 	op("vv_direct_control", topic_in(VV_TOPIC, VV_HK_DIRECT_CONTROL), then(PROC_REF(vv_topic_direct_control)))
-	op("vv_give_ai", topic_in(VV_TOPIC, VV_HK_GIVE_AI), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_rights(R_HOLDER), req_is(MOB_STATE_PLAYED, FALSE, because = MSG(vv/player_mob)), req(PROC_REF(vv_not_remote_driven), because = MSG(vv/player_mob))), asks(/datum/prompt/text/vv_ai_faction, step = "faction"), asks(/datum/prompt/choice/vv_ai_stance, step = "stance"), asks(/datum/prompt/choice/vv_ai_wake, step = "wake"), then(TYPE_PROC_REF(/mob/living, vv_topic_give_ai)))
+	op("vv_give_ai", topic_in(VV_TOPIC, VV_HK_GIVE_AI), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_rights(R_HOLDER), req_is(MOB_STATE_PLAYED, FALSE, because = MSG(vv/player_mob)), req_bool(PROC_REF(vv_not_remote_driven), because = MSG(vv/player_mob))), asks(/datum/prompt/text/vv_ai_faction, step = "faction"), asks(/datum/prompt/choice/vv_ai_stance, step = "stance"), asks(/datum/prompt/choice/vv_ai_wake, step = "wake"), then(TYPE_PROC_REF(/mob/living, vv_topic_give_ai)))
 
 
 /mob
@@ -372,20 +382,6 @@ CAPABILITIES(/mob)
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(control_object)) // the object an admin possesses
-	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
-	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
-	. += rel_one(nameof(autowhisper_display))
-	. += rel_one(nameof(pullin))
-	. += rel_one(nameof(throw_icon))
-	. += rel_many(nameof(spell_list))
-	. += rel_many(nameof(actions))
-	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))
-/obj/item/relations()
-	. = ..()
-	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob, blinded)

@@ -187,7 +187,8 @@ CAPABILITIES(/obj/machinery/replicator)
 
 /// can_insert() reads TRUE to allow, or a reason text.
 /obj/machinery/replicator/proc/can_insert_holds(datum/act/op/A)
-	return read_once(can_insert(A.actor, src, A.held) == TRUE)
+	var/answer = read_once(can_insert(A.actor, src, A.held))
+	return answer == TRUE ? null : (istext(answer) ? answer : /datum/msg/req_failed)
 
 /obj/machinery/replicator/proc/can_insert_refusal(datum/act/op/A)
 	var/why = read_once(can_insert(A.actor, src, A.held))

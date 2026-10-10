@@ -791,7 +791,7 @@
 	var/mob/living/carbon/human/departing = subjects[1]
 	PUBLISH_LEGACY(departing, /datum/notice/mob_logout)
 	registry_leave(REGISTRY_PLAYERS, departing)
-	// Reconciliation is deferred to an om_after(0) timer, which fires on the next scheduler slot
+	// Reconciliation is deferred to an after(0) timer, which fires on the next scheduler slot
 	// (OM_SLOT_DS) and pass: not always inside one decisecond on a busy test world.
 	for(var/i in 1 to 40)
 		if(!length(SScontracts.pending_subject_reconciliations))
@@ -1213,7 +1213,7 @@
 		sleep(2)
 		// The stage timer is due now; under a busy MC the Behaviours subsystem may not have
 		// fired this tick yet, so run the scheduler's pass here instead of waiting on the MC.
-		var/datum/om/scheduler/sched = engineering.performance_requirement.om_rec?.sched || GLOB.om_live_sched || time_scheduler()
+		var/datum/time_scheduler/sched = engineering.performance_requirement.om_rec?.sched || GLOB.om_live_sched || time_scheduler()
 		sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_COMPLETED, "qualifying sustained supermatter telemetry did not complete Engineering's contract")
 	qdel(engineering)

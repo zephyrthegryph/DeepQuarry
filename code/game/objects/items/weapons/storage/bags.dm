@@ -144,11 +144,11 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 	configure(storage(accepts = list(/obj/item/stack/material), max_size = null))
 
 /// Sheets only, counted by the sheet rather than by size or slot.
-/datum/om/relation/slot/storage/sheets
+/datum/relation_definition/slot/storage/sheets
 	holder = /obj/item/storage/bag/sheetsnatcher
 	capacity_model = SLOT_CAPACITY_NONE
 
-/datum/om/relation/slot/storage/sheets/refusal(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/storage/sheets/refusal(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
 	if(!istype(thing, /obj/item/stack/material))
 		return "it only takes sheets"
 	. = dq_constraint_refusal(holder, CONSTRAINT_HOLD, thing, actor)

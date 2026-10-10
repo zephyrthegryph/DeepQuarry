@@ -24,6 +24,12 @@ why aren't these accessories?
 	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
 	var/tmp/mob/worn_mob
+	/// The wearer of the partner tool, kept for the look: set when either end moves, logs in or out (linked_updated()). A reference, cleared when that mob is deleted.
+	var/tmp/mob/partner_wearer
+	/// The partner wearer's name when it was last looked at (linked_updated()): the doll is named after it.
+	var/partner_name
+	/// Whether the partner is a live one (sanity_check()): the tool shows its lit state while it is.
+	var/partner_live = FALSE
 	var/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE
@@ -37,6 +43,8 @@ why aren't these accessories?
 
 	rel_set(src, nameof(linked), to_link)
 	// rel_one(back =): the partner now names us back.
+	linked_updated()
+	to_link?.linked_updated()
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -127,16 +135,21 @@ why aren't these accessories?
 		if(worn_mob())
 			unregister_from_mob(worn_mob()) //unregister from the mob if we aren't on it anymore
 
+/// The partner or its wearer changed (moved, logged in or out, linked): the state the look shows is written through its setters, and the draw follows.
 /obj/item/remote_scene_tool/proc/linked_updated()
-	update_icon()
+	set_partner_live(sanity_check() ? TRUE : FALSE)
+	var/obj/item/remote_scene_tool/partner = linked()
+	var/mob/wearer = partner?.getWearer()
+	if(wearer != partner_wearer)
+		rel_set(src, nameof(partner_wearer), wearer)
+	set_partner_name(wearer?.name)
 
-DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/remote_scene_tool/appearance_overlays()
-	. = list()
-	if(sanity_check())
-		icon_state = icon_root
-	else
-		icon_state = icon_root + "_inactive"
+TRACKED(/obj/item/remote_scene_tool, partner_live)
+TRACKED(/obj/item/remote_scene_tool, partner_name)
+
+/obj/item/remote_scene_tool/draw(datum/look/look)
+	..()
+	look.state(partner_live ? icon_root : "[icon_root]_inactive")
 
 // its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/on_destroy(force)
@@ -188,6 +201,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appear
 
 CAPABILITIES(/obj/item/remote_scene_tool)
 	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
+	ref_one(nameof(worn_mob), /mob)
+	ref_one(nameof(partner_wearer), /mob)
 	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 
 /// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.

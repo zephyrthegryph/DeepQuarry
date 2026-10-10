@@ -55,11 +55,6 @@
 		/obj/machinery/power/supermatter
 	)
 
-/mob/living/silicon/robot/platform/relations()
-	. = ..()
-	. += rel_one(nameof(recharging))
-	. += rel_many(nameof(stored_atoms))
-
 /mob/living/silicon/robot/platform/Login()
 	. = ..()
 	has_had_player = TRUE

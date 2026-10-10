@@ -11,8 +11,11 @@
 	w_class = ITEMSIZE_NORMAL
 	var/worth = 100
 
-/obj/item/salvage/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/salvage)
+	after_init(0, then(PROC_REF(become_sellable)))
+
+/// Salvage with a worth can be sold.
+/obj/item/salvage/proc/become_sellable(datum/act/timer/A)
 	if(worth)
 		make_sellable(/datum/sellable/salvage)
 
@@ -49,8 +52,11 @@
 	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	drop_sound = SFX_ITEMS_DROP_PAPER
 
-/obj/item/salvage/ruin/nanotrasen/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/salvage/ruin/nanotrasen)
+	after_init(0, then(PROC_REF(turn_anomalous)))
+
+/// The notes carry an anomalous effect from the start.
+/obj/item/salvage/ruin/nanotrasen/proc/turn_anomalous(datum/act/timer/A)
 	become_anomalous()
 
 /obj/item/salvage/ruin/carp

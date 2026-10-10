@@ -12,7 +12,7 @@ dizzy_shaking, and the shake runs as an every() on /mob while it holds.
 	var/dizzy_was_resting
 
 /// Set while STAT_DIZZY is in effect: dizzy_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
-/mob/var/tmp/dizzy_shaking = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+/mob/var/tmp/dizzy_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
 TRACKED(/mob, dizzy_shaking)
 
 /mob/proc/dizzy_shake_tick(datum/act/A)

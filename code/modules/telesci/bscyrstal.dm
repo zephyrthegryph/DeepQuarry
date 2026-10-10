@@ -9,7 +9,7 @@
 	var/blink_range = 8 // The teleport range when crushed/thrown at someone.
 
 CAPABILITIES(/obj/item/bluespace_crystal)
-	op("self", in_hand(), needs(req(PROC_REF(crystal_releasable), because = PROC_REF(crystal_release_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), needs(req_bool(PROC_REF(crystal_releasable), because = PROC_REF(crystal_release_refusal))), then(PROC_REF(interaction_self)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
 /// A crystal must be removable before crushing can teleport its holder.

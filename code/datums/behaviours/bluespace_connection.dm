@@ -119,6 +119,3 @@ CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capabilit
 #undef BLUESPACE_THROW_RANGE_X
 #undef BLUESPACE_THROW_RANGE_Y
 
-/obj/structure/closet/relations()
-	. = ..()
-	. += rel_many(nameof(bluespace_exit_points))

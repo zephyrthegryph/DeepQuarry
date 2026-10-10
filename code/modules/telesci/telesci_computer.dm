@@ -31,6 +31,7 @@
 	var/overmap_range = 3
 
 CAPABILITIES(/obj/machinery/computer/telescience)
+	after_init(0, then(PROC_REF(calibrate_and_stock)))
 	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(last_tele_data), /datum/projectile_data)
 	interface("TelesciConsole")
@@ -45,7 +46,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
-	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds), because = PROC_REF(has_crystal_slot_refusal))), then(PROC_REF(interaction_insert_crystal)))
+	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req_bool(PROC_REF(has_crystal_slot_holds), because = PROC_REF(has_crystal_slot_refusal))), then(PROC_REF(interaction_insert_crystal)))
 	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
 
 /obj/machinery/computer/telescience/ownership()
@@ -62,8 +63,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	if(Adjacent(user))
 		. += "There are [length(crystals) ? length(crystals) : "no"] bluespace crystal\s in the crystal slots."
 
-/obj/machinery/computer/telescience/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/telescience/proc/calibrate_and_stock(datum/act/timer/A)
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
 		rel_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals

@@ -35,7 +35,7 @@
 		offer_linked_personal_contract(side_definition_id, accepting_user)
 
 /datum/contract/outcome/proc/offer_linked_personal_contract(side_definition_id, mob/living/accepting_user, excluded_account = 0)
-	var/datum/contract_definition/personal_outcome/definition = SScontracts.definitions[side_definition_id]
+	var/datum/contract_definition/personal_outcome/definition = contracts_definitions()[side_definition_id]
 	if(!istype(definition) || !(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
 	var/list/eligible_players = list()
@@ -71,7 +71,7 @@
 
 /proc/contract_personal_live_count(account_number)
 	var/count = 0
-	for(var/datum/contract/contract in SScontracts.offered_contracts + SScontracts.active_contracts + SScontracts.grace_contracts)
+	for(var/datum/contract/contract in contracts_offered_contracts() + contracts_active_contracts() + contracts_grace_contracts())
 		if(contract.scope == CONTRACT_SCOPE_PERSONAL && contract.owner_account_number == account_number)
 			count++
 	return count
@@ -463,7 +463,7 @@
 
 /datum/contract_definition/personal_outcome/is_available(list/context)
 	var/owner_account = context?["owner_account"]
-	var/datum/contract/parent = SScontracts.contracts_by_id[context?["parent_contract_id"]]
+	var/datum/contract/parent = contracts_contracts_by_id()[context?["parent_contract_id"]]
 	if(!owner_account || !get_account(owner_account) || !istype(parent) || parent.state != CONTRACT_ACTIVE)
 		return FALSE
 	var/mob/living/owner = contract_mob_for_account(owner_account)
@@ -474,7 +474,7 @@
 
 /datum/contract_definition/personal_outcome/active_remains_possible(datum/contract/contract)
 	var/datum/contract/personal_outcome/personal = contract
-	var/datum/contract/parent = SScontracts.contracts_by_id[personal.linked_parent_id]
+	var/datum/contract/parent = contracts_contracts_by_id()[personal.linked_parent_id]
 	if(!istype(parent))
 		return FALSE
 	// An accepted private bargain survives successful settlement of its public

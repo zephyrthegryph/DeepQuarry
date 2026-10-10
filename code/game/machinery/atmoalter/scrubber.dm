@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
 // process() roster. The body below is unchanged, just relocated to
-// /datum/om/stage/machine/power/portable_scrubber/perform(); it never hibernates on its own (it
+// /datum/work_stage/machine/power/portable_scrubber/perform(); it never hibernates on its own (it
 // runs every tick while `on`, exactly as process() did), so idle() there is simply `!on`.
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_step(datum/act/A)
 	react_or_update()
@@ -214,4 +214,4 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 	desc += "This one seems to be tightly secured with large bolts."
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary)
-	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
+	extend("anchor", needs(req_bool(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))

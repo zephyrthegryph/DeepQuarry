@@ -48,11 +48,11 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
-	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred_holds)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred_holds), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
+	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
-	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(PROC_REF(paper_show_meant_holds)), then(PROC_REF(interaction_show_paper)))
-	op("camera_bug_toggle", inputs(item(/obj/item/camera_bug), menu()), priority(OP_PRIORITY_DEFAULT - 3), label("Bug camera"), needs(req(/obj/item/camera_bug, because = MSG(camera/needs_bug)), req_adjacent(), req_capable(), req(PROC_REF(camera_can_use_holds), because = MSG(camera/nonfunctional))), then(PROC_REF(interaction_toggle_bug)))
-	op("camera_bash", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(held_is_bashing_holds)))), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable(), req_on_origin(ORIGIN_MENU, req(PROC_REF(held_is_bashing_holds), because = MSG(camera/not_possible)))), then(PROC_REF(interaction_bash)))
+	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(req(PROC_REF(paper_show_meant))), then(PROC_REF(interaction_show_paper)))
+	op("camera_bug_toggle", inputs(item(/obj/item/camera_bug), menu()), priority(OP_PRIORITY_DEFAULT - 3), label("Bug camera"), needs(req(/obj/item/camera_bug, because = MSG(camera/needs_bug)), req_adjacent(), req_capable(), req(PROC_REF(camera_can_use), because = MSG(camera/nonfunctional))), then(PROC_REF(interaction_toggle_bug)))
+	op("camera_bash", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(held_is_bashing)))), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable(), req_on_origin(ORIGIN_MENU, req(PROC_REF(held_is_bashing), because = MSG(camera/not_possible)))), then(PROC_REF(interaction_bash)))
 	op("camera_silicon_look", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Look through"), then(PROC_REF(camera_silicon_look)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
@@ -218,16 +218,21 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /// Old attackby: hold a paper or PDA up to the camera.
 /// Old attackby: bug or unbug the camera.
-/obj/machinery/camera/proc/camera_can_use(mob/actor, atom/target, obj/item/held)
-	return can_use()
+/obj/machinery/camera/proc/camera_can_use(datum/act/op/A)
+	if(can_use())
+		return null
+	return /datum/msg/req_failed
 
 /// Old attackby: bashing the camera with a damaging item.
 /// Old attack_hand (never called ..()): a human who can shred slashes the camera.
-/obj/machinery/camera/proc/actor_can_shred(mob/actor, atom/target, obj/item/held)
+/obj/machinery/camera/proc/actor_can_shred(datum/act/op/A)
+	var/mob/actor = A.actor
 	if(!ishuman(actor))
-		return FALSE
+		return /datum/msg/req_failed
 	var/mob/living/carbon/human/human_actor = actor
-	return human_actor.species.can_shred(human_actor, FALSE, 11)
+	if(read_once(human_actor.species.can_shred(human_actor, FALSE, 11)))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/camera/proc/interaction_shred(datum/act/op/A)
 	var/mob/user = A.actor
@@ -347,8 +352,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
 	return OP_OK
 
-/obj/machinery/camera/proc/paper_show_meant(mob/actor, atom/target, obj/item/held)
-	return can_use() && isliving(actor)
+/obj/machinery/camera/proc/paper_show_meant(datum/act/op/A)
+	if(can_use() && isliving(A.actor))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/camera/proc/interaction_toggle_bug(datum/act/op/A)
 	var/mob/user = A.actor
@@ -374,8 +381,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	receive_weapon_hit(W, user, silent = FALSE)
 	return OP_OK
 
-/obj/machinery/camera/proc/held_is_bashing(mob/actor, atom/target, obj/item/held)
-	return held?.obj_damage_type()
+/obj/machinery/camera/proc/held_is_bashing(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(read_once(held?.obj_damage_type()))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/camera/proc/deactivate(user as mob, choice = 1)
 	// The only way for AI to reactivate cameras are malf abilities, this gives them different messages.
@@ -636,17 +646,3 @@ SETTER(/obj/machinery/camera, status)
 
 /obj/machinery/camera/proc/alarm_wire_pulsed(datum/act/A)
 	visible_message("[icon2html(src, viewers(src))] *beep*", "[icon2html(src, viewers(src))] *beep*")
-
-/obj/machinery/camera/proc/actor_can_shred_holds(datum/act/op/A)
-	// This attack has no wait: sample the actor's current anatomy at admission.
-	return read_once(actor_can_shred(A.actor, src, A.held))
-
-/obj/machinery/camera/proc/paper_show_meant_holds(datum/act/op/A)
-	return paper_show_meant(A.actor, src, A.held)
-
-/obj/machinery/camera/proc/camera_can_use_holds(datum/act/op/A)
-	return camera_can_use(A.actor, src, A.held)
-
-/obj/machinery/camera/proc/held_is_bashing_holds(datum/act/op/A)
-	// The current tool damage kind selects this immediate attack, not a wake.
-	return read_once(held_is_bashing(A.actor, src, A.held))

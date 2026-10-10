@@ -54,6 +54,7 @@ SYSTEM_DEF(supply)
 	var/datum/shuttle/autodock/ferry/supply/shuttle
 
 CAPABILITIES(/datum/system/supply)
+	ref_one(nameof(shuttle))
 	owns_many(nameof(adm_export_history))
 	owns_many(nameof(adm_order_history))
 	owns_many(nameof(exported_crates))
@@ -1069,8 +1070,3 @@ CAPABILITIES(/datum/system/supply)
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
 
-/// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
-/// clears by itself when that shuttle is deleted).
-/datum/system/supply/relations()
-	. = ..()
-	. += rel_one(nameof(shuttle))

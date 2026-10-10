@@ -27,7 +27,7 @@
 // exclusion is correct either way, just not unified.
 
 /// Machine internals: legacy contents the machine's Destroy handles.
-/datum/om/relation/slot/machine_internals
+/datum/relation_definition/slot/machine_internals
 	// Every concrete machine (or mech) that also declares its own extra slot
 	// (an occupant, or stock) is named here too, since it registers its own
 	// holder group -- which must still carry internals (containment.md §3).
@@ -53,7 +53,7 @@
 	is_default = TRUE
 
 /// Stock: latent records plus real items with unique state. Spilled on destroy.
-/datum/om/relation/slot/stock
+/datum/relation_definition/slot/stock
 	holder = /obj/machinery/smartfridge
 	slot_id = CONTAINER_SLOT_STOCK
 	name = "stock"
@@ -62,22 +62,22 @@
 
 /// Vending stock is deleted with the machine, as it always was: a wrecked
 /// vendor does not shower its whole inventory.
-/datum/om/relation/slot/stock/vending
+/datum/relation_definition/slot/stock/vending
 	holder = /obj/machinery/vending
 	drop_policy = SLOT_DROP_DELETE
 
-/datum/om/relation/slot/stock/capacity_for(atom/holder)
+/datum/relation_definition/slot/stock/capacity_for(atom/holder)
 	return INFINITY
 
-/datum/om/relation/slot/stock/cost(atom/holder, atom/movable/thing)
+/datum/relation_definition/slot/stock/cost(atom/holder, atom/movable/thing)
 	return dq_stock_units(thing)
 
-/datum/om/relation/slot/stock/latent_used(atom/holder)
+/datum/relation_definition/slot/stock/latent_used(atom/holder)
 	. = 0
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		. += I.amount
 
-/datum/om/relation/slot/stock/drop_latent(atom/holder, atom/drop)
+/datum/relation_definition/slot/stock/drop_latent(atom/holder, atom/drop)
 	for(var/datum/stored_item/I as anything in holder.stock_records())
 		// The ledger applies the policy to the real ones; the record lets go.
 		LAZYCLEARLIST(I.instances)

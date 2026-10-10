@@ -262,7 +262,7 @@ CAPABILITIES(/obj/mecha)
 	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
 	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
 	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers), because = MSG(mecha_passenger/none))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
@@ -377,7 +377,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// the slot already empty and silently skip all of that cleanup. Turning
 /// this into a proper TRANSFER(eject_to_turf) belongs with migrating that
 /// cleanup into an on_unslotted() hook (J6) -- domain work, not this pass.
-/datum/om/relation/slot/occupant/mecha_pilot
+/datum/relation_definition/slot/occupant/mecha_pilot
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_PILOT
 	name = "pilot"
@@ -394,7 +394,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// forceMoves unconditionally), so resolving this slot's own move first, in
 /// phase 3, is a safe no-op from that loop's point of view -- same
 /// destination either way, so the second move it makes is idempotent.
-/datum/om/relation/slot/mecha_equipment_hardpoint
+/datum/relation_definition/slot/mecha_equipment_hardpoint
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_EQUIPMENT
 	name = "hardpoint"
@@ -402,7 +402,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 /// Internal: the cargo compartment. Capacity stays with cargo_capacity.
@@ -410,7 +410,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /// Destroy()'s own cargo loop forceMoves to get_turf(src) unconditionally,
 /// so this slot resolving to the same turf first is a harmless no-op second
 /// move from that loop's point of view.
-/datum/om/relation/slot/mecha_cargo
+/datum/relation_definition/slot/mecha_cargo
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_CARGO
 	name = "cargo"
@@ -418,7 +418,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 
@@ -491,7 +491,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 TRACKED(/obj/mecha, current_processes)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
-/// relation channels (the pilot slot's om_link/om_unlink).
+/// relation channels (the pilot slot's link).
 /// The every() gate: the cabin simulation has something to advance.
 /obj/mecha/proc/cabin_gate(datum/act/A)
 	return pilot_of() || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
@@ -1106,7 +1106,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
 /obj/mecha/proc/pilot_only(datum/act/op/A)
-	return A.actor && A.actor == pilot_of()
+	return A.actor && A.actor == pilot_of() ? null : MSG(mecha/not_pilot)
 
 /// A paint kit customises the mech (the handler is declared with the kit's code, paintkit.dm).
 /obj/mecha/proc/mecha_paint_kit_op(datum/act/op/A)
@@ -2638,11 +2638,11 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 /// Requirement: the maintenance protocols are on and the securing bolts are exposed.
 /obj/mecha/proc/bolts_exposed(datum/act/op/A)
-	return state >= MECHA_BOLTS_SECURED
+	return state >= MECHA_BOLTS_SECURED ? null : MSG(req_silent)
 
 /// Requirement: somebody sits in a passenger compartment (the tracked passenger_count).
 /obj/mecha/proc/has_passengers(datum/act/op/A)
-	return passenger_count > 0
+	return passenger_count > 0 ? null : MSG(mecha_passenger/none)
 
 /// A compartment's occupancy changed: recount the passengers into the tracked mirror.
 /obj/mecha/proc/mecha_passenger_changed()

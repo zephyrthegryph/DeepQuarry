@@ -49,39 +49,39 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 /// TRUE if the actor is standing on a real turf.
 /mob/living/proc/ability_on_turf(datum/act/op/A)
-	return !!get_turf(src)
+	return (!!get_turf(src)) ? null : /datum/msg/req_failed
 
 /// TRUE unless the actor is in a VR simulation. VR can't run most shadekin abilities (comp_helpers.dm's special_considerations()).
 /mob/living/proc/ability_not_in_vr(datum/act/op/A)
-	return !istype(get_area(src), /area/vr)
+	return (!istype(get_area(src), /area/vr)) ? null : /datum/msg/req_failed
 
 /// TRUE if the actor has shadekin state.
 /mob/living/proc/ability_is_shadekin(datum/act/op/A)
-	return !!get_shadekin_state()
+	return (!!get_shadekin_state()) ? null : /datum/msg/req_failed
 
 /// TRUE if the actor is a shadekin and is not phased out.
 /mob/living/proc/ability_not_shifted(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && !SK.in_phase
+	return (!!SK && !SK.in_phase) ? null : /datum/msg/req_failed
 
 /// TRUE if the actor isn't already mid-phase.
 /mob/living/proc/ability_not_phasing(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && !SK.doing_phase
+	return (!!SK && !SK.doing_phase) ? null : /datum/msg/req_failed
 
 /// TRUE unless the current area blocks phase shift (admins bypass).
 /mob/living/proc/ability_phase_area_allows(datum/act/op/A)
 	var/area/area_here = get_area(src)
 	if(check_rights_for(client, R_HOLDER))
-		return TRUE
-	return !area_here?.flag_check(AREA_BLOCK_PHASE_SHIFT)
+		return null
+	return (!area_here?.flag_check(AREA_BLOCK_PHASE_SHIFT)) ? null : /datum/msg/req_failed
 
 /// TRUE if the actor's current turf will let them through.
 /mob/living/proc/ability_phase_turf_passable(datum/act/op/A)
 	var/turf/T = get_turf(src)
 	if(!T)
-		return FALSE
-	return T.CanPass(src, T) && loc == T
+		return /datum/msg/req_failed
+	return (T.CanPass(src, T) && loc == T) ? null : /datum/msg/req_failed
 
 /**
  * What a phase shift costs the actor now: cheaper in darkness, +15 energy per watcher within 7 tiles. Phasing back IN (out of
@@ -118,8 +118,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 /mob/living/proc/ability_phase_shift_affordable(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
-		return FALSE
-	return SK.shadekin_get_energy() >= phase_shift_cost(SK)
+		return /datum/msg/req_failed
+	return (SK.shadekin_get_energy() >= phase_shift_cost(SK)) ? null : /datum/msg/req_failed
 
 // ---- Effect: phase in or out. Runs only once every requirement passed. ----
 

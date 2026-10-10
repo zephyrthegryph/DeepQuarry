@@ -55,20 +55,23 @@ CAPABILITIES(/obj/item/soap)
 /obj/item/soap/proc/mouth_aimed(datum/act/op/A)
 	return ishuman(A.target) && read_once(A.actor.zone_sel?.selecting) == O_MOUTH
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/soap/proc/bites_own_mouth(datum/act/op/A)
-	return mouth_aimed(A) && A.target == A.actor
+	return (mouth_aimed(A) && A.target == A.actor) ? null : MSG(req_failed)
 
 /// A click that is neither the mouth nor something worn (what afterattack() says about those it answers itself).
 /obj/item/soap/proc/plain_click(datum/act/op/A)
 	if(mouth_aimed(A))
-		return FALSE
-	return !read_once(A.actor.client && (A.target in A.actor.client.screen))
+		return MSG(req_failed)
+	return (!read_once(A.actor.client && (A.target in A.actor.client.screen))) ? null : MSG(req_failed)
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/soap/proc/floor_is_dry(datum/act/op/A)
-	return !read_once(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1))
+	return (!read_once(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1))) ? null : MSG(req_failed)
 
+/// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/soap/proc/not_decal_or_turf(datum/act/op/A)
-	return !istype(A.target, /obj/effect/decal/cleanable) && !isturf(A.target)
+	return (!istype(A.target, /obj/effect/decal/cleanable) && !isturf(A.target)) ? null : MSG(req_failed)
 
 /obj/item/soap/proc/clean_time(datum/act/op/A)
 	return cleanspeed

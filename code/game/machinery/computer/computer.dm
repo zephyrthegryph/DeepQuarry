@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/computer)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(computer_blob))))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(screen_sound)))
 	op("disconnect", tool(TOOL_SCREWDRIVER), when(nameof(circuit)), wait(2 SECONDS), then(PROC_REF(disconnected)))
-	op("use_gripper", item(/obj/item/gripper), needs(req(PROC_REF(gripper_holds), because = MSG(computer/gripper_empty))), says(MSG(computer/gripper_use)), then(PROC_REF(gripper_used)))
+	op("use_gripper", item(/obj/item/gripper), needs(req_bool(PROC_REF(gripper_holds), because = MSG(computer/gripper_empty))), says(MSG(computer/gripper_use)), then(PROC_REF(gripper_used)))
 	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(used_as_hand)))
 
 /// The consoles standing in area `A` (an APC's overload): the registry's members there.

@@ -135,14 +135,14 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	pipe_device_window("OmniMixer")
 	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))
 	op("configure", ui_act("configure"), then(PROC_REF(ui_configure)))
-	op("set_flow_rate", ui_act("set_flow_rate"), needs(req(PROC_REF(configurable), silent = TRUE)),
+	op("set_flow_rate", ui_act("set_flow_rate"), needs(req_bool(PROC_REF(configurable), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_flow_rate_question)), "title" = "Flow Rate Control", "default" = nameof(set_flow_rate), "max_value" = nameof(max_flow_rate), "timeout" = 0), step = "rate"),
 		then(PROC_REF(ui_set_flow_rate)))
-	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(16))), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_mode)))
-	op("switch_con", ui_act("switch_con", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE), req(PROC_REF(share_free), silent = TRUE)),
+	op("switch_mode", ui_act("switch_mode", arg("dir"), arg("mode", schema_text(16))), needs(req_bool(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_mode)))
+	op("switch_con", ui_act("switch_con", arg("dir")), needs(req_bool(PROC_REF(configurable), silent = TRUE), req_bool(PROC_REF(share_free), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(share_question)), "title" = "Concentration control", "default" = computed(PROC_REF(share_default)), "max_value" = computed(PROC_REF(share_most)), "timeout" = 0), step = "share"),
 		then(PROC_REF(ui_switch_con)))
-	op("switch_conlock", ui_act("switch_conlock", arg("dir")), needs(req(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_conlock)))
+	op("switch_conlock", ui_act("switch_conlock", arg("dir")), needs(req_bool(PROC_REF(configurable), silent = TRUE)), then(PROC_REF(ui_switch_conlock)))
 
 /// The window's data.
 /obj/machinery/atmospherics/omni/mixer/ui_data(datum/act/eval/A)

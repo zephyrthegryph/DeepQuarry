@@ -4579,7 +4579,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.receive_signal(S)
 	var/waited = 0
 	while((A.cur_command || A.operating) && waited < 5 SECONDS)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		waited += world.tick_lag
 	TEST_ASSERT(!A.density, "secure_open left the door closed")
 	TEST_ASSERT(is_bolted(A), "secure_open left the door unbolted (it would autoclose and retry forever)")
@@ -4589,7 +4589,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.receive_signal(S)
 	waited = 0
 	while((A.cur_command || A.operating) && waited < 5 SECONDS)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		waited += world.tick_lag
 	TEST_ASSERT(!A.density && is_bolted(A), "secure_open on an open door left it [A.density ? "closed" : "open"] and [is_bolted(A) ? "bolted" : "unbolted"]")
 	TEST_ASSERT_NULL(A.cur_command, "secure_open on an open door never completed")
@@ -4605,7 +4605,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/i in 1 to 200)
 		if(!A.autoclose_pending())
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT(!A.autoclose_pending(), "closed airlock kept its stale autoclose deadline")
 	A.set_density(FALSE)
 	A.operating = FALSE
@@ -4614,7 +4614,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/i in 1 to 200)
 		if(!A.autoclose_pending())
 			break
-		om_test_ticks(1)
+		dq_test_ticks(1)
 	TEST_ASSERT(!A.autoclose_pending(), "locked open airlock kept its impossible autoclose deadline")
 	set_bolted(A, FALSE, TRUE)
 	TEST_ASSERT(A.autoclose_pending(), "unlocking an open airlock did not restore autoclose scheduling")

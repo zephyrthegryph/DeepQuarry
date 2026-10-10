@@ -5,8 +5,8 @@
 //! `name()` returns `var` of the system's singleton, so a call is a plain typed read, and the
 //! reads engine follows a call of it to that var (`ReadKind::System`), which is how a stat that
 //! calls `night_shift_active()` is marked when `night` changes. A fourth argument, a type path, makes the accessor typed:
-//! `SYSTEM_ACCESSOR(ticker, round_mode, nameof(mode), /datum/game_mode)` emits `/proc/round_mode() as /datum/game_mode`, so a
-//! caller reads a field through it (`round_mode().name`) where the system's var held an object.
+//! `SYSTEM_ACCESSOR(ticker, ticker_mode, nameof(mode), /datum/game_mode)` emits `/proc/ticker_mode() as /datum/game_mode`, so a
+//! caller reads a field through it (`ticker_mode().name`) where the system's var held an object.
 
 use std::collections::HashSet;
 

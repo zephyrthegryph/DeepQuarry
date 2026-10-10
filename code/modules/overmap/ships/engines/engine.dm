@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(ship_engine_nominal_status, list("All systems nominal"))
 
 // ships drop the engine.
 /datum/ship_engine/lifecycle_dematerialize()
-	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
+	for(var/obj/effect/overmap/visitable/ship/S in shuttles_ships())
 		rel_remove(S, nameof(S.engines), src)
 	return ..()
 

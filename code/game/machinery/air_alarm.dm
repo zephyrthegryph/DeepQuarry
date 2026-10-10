@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	power_wires(stat = STAT_SHORTED, pulse_lasts = 20 MINUTES, shock = 50)
 	ai_control(stat = STAT_AIDISABLED, pulse_lasts = 10 SECONDS)
 	lock(starts_locked = nameof(lock_at_start), powered = FALSE, guarded = FALSE, wire = WIRE_IDSCAN)
-	extend(CAP_LOCK, needs(req(PROC_REF(alarm_works), because = MSG(machine/inoperable))))
+	extend(CAP_LOCK, needs(req_bool(PROC_REF(alarm_works), because = MSG(machine/inoperable))))
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_was_cut)))
 	on_wire(WIRE_SYPHON, cut = PROC_REF(syphon_wire_cut), pulse = PROC_REF(syphon_wire_pulsed))
 	on_wire(WIRE_AALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
@@ -172,13 +172,13 @@ CAPABILITIES(/obj/machinery/alarm)
 			"min_value" = computed(PROC_REF(thermostat_min)),
 			"max_value" = computed(PROC_REF(thermostat_max)))),
 		then(PROC_REF(thermostat_answered)))
-	op("lock", ui_act("lock"), needs(req(PROC_REF(works_lock_by_window), because = MSG(alarm/silicons_only)), req_wire(WIRE_IDSCAN)), toggles(LOCK_LOCKED))
+	op("lock", ui_act("lock"), needs(req_bool(PROC_REF(works_lock_by_window), because = MSG(alarm/silicons_only)), req_wire(WIRE_IDSCAN)), toggles(LOCK_LOCKED))
 	alarm_device_setting_ops()
 	op("set_external_pressure", ui_act("set_external_pressure", arg("id_tag", schema_text(64)), arg("value", num())), then(PROC_REF(ui_set_pressure)))
 	op("set_internal_pressure", ui_act("set_internal_pressure", arg("id_tag", schema_text(64)), arg("value", num())), then(PROC_REF(ui_set_pressure)))
 	op("reset_external_pressure", ui_act("reset_external_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
 	op("reset_internal_pressure", ui_act("reset_internal_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
-	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req(PROC_REF(threshold_known), because = MSG(alarm/no_such_threshold))),
+	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req_bool(PROC_REF(threshold_known), because = MSG(alarm/no_such_threshold))),
 		asks(/datum/prompt/number, fields = list(
 			"title" = computed(PROC_REF(threshold_title)),
 			"question" = computed(PROC_REF(threshold_question)),
@@ -188,8 +188,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	op("mode", ui_act("mode", arg("mode", int(AALARM_MODE_SCRUBBING, AALARM_MODE_OFF))), then(PROC_REF(ui_set_mode)))
 	op("alarm", ui_act("alarm"), then(PROC_REF(ui_raise_alarm)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_reset_alarm)))
-	extend(TAG_UI, needs(req(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
-	extend("ui_open", needs(req(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
+	extend(TAG_UI, needs(req_bool(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
+	extend("ui_open", needs(req_bool(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
 	extend("rcon", drop = "lock")
 	extend("temperature", drop = "lock")
 

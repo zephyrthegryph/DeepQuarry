@@ -189,7 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 //Helper for init.
 /obj/effect/overmap/visitable/proc/check_ownership(obj/object)
 	var/area/A = get_area(object)
-	if(A in SSshuttles.shuttle_areas)
+	if(A in shuttles_shuttle_areas())
 		return 0
 	if(is_type_in_list(A, unowned_areas))
 		return 0

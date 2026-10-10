@@ -257,7 +257,7 @@
 //   1. update_preview_icon() — dresses the mannequin and queues an async
 //      iconforge render of character_preview_b64 (see preview_async.dm).
 //      Stays inside update_preference's call stack, but isn't itself recursive.
-//   2. After the rebuild, mark "push pending" and om_after the actual
+//   2. After the rebuild, mark "push pending" and after() the actual
 //      send_full_update fan-out. The push runs on a fresh stack one tick later.
 //
 // Multiple rapid pref changes coalesce because the dq_push_pending guard

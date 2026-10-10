@@ -75,9 +75,9 @@ CAPABILITIES(/obj/machinery/chem_master)
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(loaded_pill_bottle), /obj/item/storage/pill_bottle)
 	op("load_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Load beaker"),
-		needs(req(PROC_REF(chem_master_no_beaker), because = MSG(chem_master/beaker_loaded))), then(PROC_REF(beaker_loaded)))
+		needs(req_bool(PROC_REF(chem_master_no_beaker), because = MSG(chem_master/beaker_loaded))), then(PROC_REF(beaker_loaded)))
 	op("load_pill_bottle", item(/obj/item/storage/pill_bottle), label("Load pill bottle"),
-		needs(req(PROC_REF(chem_master_no_pill_bottle), because = MSG(chem_master/pill_bottle_loaded))), then(PROC_REF(pill_bottle_loaded)))
+		needs(req_bool(PROC_REF(chem_master_no_pill_bottle), because = MSG(chem_master/pill_bottle_loaded))), then(PROC_REF(pill_bottle_loaded)))
 	interface("ChemMaster")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("ejectp", ui_act("ejectp"), then(PROC_REF(ui_act_ejectp)))
@@ -87,42 +87,42 @@ CAPABILITIES(/obj/machinery/chem_master)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("create_condi_bottle", ui_act("create_condi_bottle"), then(PROC_REF(ui_act_create_condi_bottle)))
 	op("analyze", ui_act("modal:analyze", arg("arguments")), then(PROC_REF(modal_analyze)))
-	op("change_pill_bottle_style", ui_act("modal:change_pill_bottle_style", arg("arguments")), needs(req(PROC_REF(has_pill_bottle), silent = TRUE)),
+	op("change_pill_bottle_style", ui_act("modal:change_pill_bottle_style", arg("arguments")), needs(req_bool(PROC_REF(has_pill_bottle), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select a pill bottle wrapper:", "choices" = computed(PROC_REF(wrapper_names)), "default" = computed(PROC_REF(current_wrapper_name)), "inline" = TRUE, "timeout" = 0), step = "wrapper"),
 		then(PROC_REF(modal_pill_bottle_style)))
-	op("addcustom", ui_act("modal:addcustom", arg("arguments")), needs(req(PROC_REF(beaker_has_reagents), silent = TRUE)),
+	op("addcustom", ui_act("modal:addcustom", arg("arguments")), needs(req_bool(PROC_REF(beaker_has_reagents), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Please enter the amount to transfer to buffer:", "default" = nameof(useramount), "inline" = TRUE, "timeout" = 0), step = "amount"),
 		then(PROC_REF(modal_addcustom)))
-	op("removecustom", ui_act("modal:removecustom", arg("arguments")), needs(req(PROC_REF(buffer_has_reagents), silent = TRUE)),
+	op("removecustom", ui_act("modal:removecustom", arg("arguments")), needs(req_bool(PROC_REF(buffer_has_reagents), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(removecustom_question)), "default" = nameof(useramount), "inline" = TRUE, "timeout" = 0), step = "amount"),
 		then(PROC_REF(modal_removecustom)))
-	op("create_condi_pack", ui_act("modal:create_condi_pack", arg("arguments")), needs(req(PROC_REF(makes_condiments), silent = TRUE)),
+	op("create_condi_pack", ui_act("modal:create_condi_pack", arg("arguments")), needs(req_bool(PROC_REF(makes_condiments), silent = TRUE)),
 		asks(/datum/prompt/text, fields = list("question" = "Please name your new condiment pack:", "default" = computed(PROC_REF(master_reagent_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_condi_pack)))
-	op("create_pill", ui_act("modal:create_pill", arg("arguments")), needs(req(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
+	op("create_pill", ui_act("modal:create_pill", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(pill_name_question)), "default" = computed(PROC_REF(pill_default_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_pill)))
-	op("create_pill_multiple", ui_act("modal:create_pill_multiple", arg("arguments")), needs(req(PROC_REF(makes_drugs), silent = TRUE)),
+	op("create_pill_multiple", ui_act("modal:create_pill_multiple", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Please enter the amount of pills to make (max [MAX_MULTI_AMOUNT] at a time):", "default" = nameof(pillamount), "min_value" = 1, "inline" = TRUE, "timeout" = 0), step = "count"),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(pill_name_question)), "default" = computed(PROC_REF(pill_default_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "modal_id" = "create_pill", "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_pill)))
 	op("change_pill_style", ui_act("modal:change_pill_style", arg("arguments")),
 		asks(/datum/prompt/choice, fields = list("question" = "Please select the new style for pills:", "choices" = computed(PROC_REF(pill_style_choices)), "default" = computed(PROC_REF(pill_style_current)), "bento" = "spritesheet", "inline" = TRUE, "timeout" = 0), step = "style"),
 		then(PROC_REF(modal_change_pill_style)))
-	op("create_patch", ui_act("modal:create_patch", arg("arguments")), needs(req(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
+	op("create_patch", ui_act("modal:create_patch", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(patch_name_question)), "default" = computed(PROC_REF(patch_default_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_patch)))
-	op("create_patch_multiple", ui_act("modal:create_patch_multiple", arg("arguments")), needs(req(PROC_REF(makes_drugs), silent = TRUE)),
+	op("create_patch_multiple", ui_act("modal:create_patch_multiple", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Please enter the amount of patches to make (max [MAX_MULTI_AMOUNT] at a time):", "default" = nameof(pillamount), "min_value" = 1, "inline" = TRUE, "timeout" = 0), step = "count"),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(patch_name_question)), "default" = computed(PROC_REF(patch_default_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "modal_id" = "create_patch", "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_patch)))
-	op("create_bottle", ui_act("modal:create_bottle", arg("arguments")), needs(req(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
+	op("create_bottle", ui_act("modal:create_bottle", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs_of_passed_count), silent = TRUE)),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(bottle_name_question)), "default" = computed(PROC_REF(master_reagent_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_bottle)))
-	op("create_bottle_two", ui_act("modal:create_bottle_two", arg("arguments")), needs(req(PROC_REF(makes_drugs), silent = TRUE)),
+	op("create_bottle_two", ui_act("modal:create_bottle_two", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs), silent = TRUE)),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(bottle_name_question)), "default" = computed(PROC_REF(master_reagent_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_bottle)))
-	op("create_bottle_multiple", ui_act("modal:create_bottle_multiple", arg("arguments")), needs(req(PROC_REF(makes_drugs), silent = TRUE)),
+	op("create_bottle_multiple", ui_act("modal:create_bottle_multiple", arg("arguments")), needs(req_bool(PROC_REF(makes_drugs), silent = TRUE)),
 		asks(/datum/prompt/number, fields = list("question" = "Please enter the amount of bottles to make (max [MAX_MULTI_AMOUNT] at a time):", "default" = computed(PROC_REF(bottle_default_count)), "min_value" = 1, "inline" = TRUE, "timeout" = 0), step = "count"),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(bottle_name_question)), "default" = computed(PROC_REF(master_reagent_name)), "max_len" = MAX_CUSTOM_NAME_LEN, "modal_id" = "create_bottle", "inline" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(modal_create_bottle)))

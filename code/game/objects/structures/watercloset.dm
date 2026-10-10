@@ -48,7 +48,7 @@ CAPABILITIES(/obj/structure/toilet)
 	owns_one(nameof(teleplumb_crystal), /obj/item)
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
-	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req(PROC_REF(cistern_open), silent = TRUE), req(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req_bool(PROC_REF(cistern_open), silent = TRUE), req_bool(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(3 SECONDS), begins(PROC_REF(crowbar_begins)), plays(SFX_EFFECTS_STONEDOOR_OPENCLOSE, at_start = TRUE), then(PROC_REF(crowbar_act_done)))
 	rolls(nameof(open), range_of(0, 1))   // the lid starts up or down
 	// the old attack_hand: slam the swirlie victim, loot the cistern (a person may take the teleplumbing crystal from an empty one, after a yes), or the lid
@@ -136,7 +136,7 @@ READS_AS(/obj/structure/toilet/proc/cistern_loot_count, TOILET_CISTERN_KEY)
 
 /// A silicon's hand is its own: a cyborg uses the toilet only from its body, with a player in it.
 /obj/structure/toilet/proc/silicon_at_hand(datum/act/op/A)
-	return read_once(silicon_in_body(A.actor)) // a player's presence is asked when the click is made
+	return (read_once(silicon_in_body(A.actor))) ? null : /datum/msg/req_silent // a player's presence is asked when the click is made
 
 /// Is `user` a silicon acting from its own body (not a cyborg remote viewing, or one with no player)?
 /obj/structure/toilet/proc/silicon_in_body(mob/user)
@@ -1078,7 +1078,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 CAPABILITIES(/obj/structure/sink)
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
 	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
-		needs(req(PROC_REF(hand_usable), because = PROC_REF(hand_refusal))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
+		needs(req(PROC_REF(hand_usable))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
 	op("item", item(/obj/item), label("Use"), claims(), begins(PROC_REF(wash_item_begins)), wait(PROC_REF(wash_item_time)), on_interrupt(PROC_REF(wash_item_stopped)), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))
 	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
@@ -1088,10 +1088,8 @@ MSG_DEF_SELF(sink/washing_hands, span_notice("You start washing your hands."))
 
 /// Requirement for washing: the hand the actor would wash with works.
 /obj/structure/sink/proc/hand_usable(datum/act/op/A)
-	return read_once(isnull(unusable_hand_name(A.actor))) // the limbs answer when asked
-
-/obj/structure/sink/proc/hand_refusal(datum/act/op/A)
-	return "You try to move your [unusable_hand_name(A.actor)], but cannot."
+	var/hand_name = read_once(unusable_hand_name(A.actor)) // the limbs answer when asked
+	return isnull(hand_name) ? null : "You try to move your [hand_name], but cannot."
 
 /// The name of `user`'s active hand when it cannot be used, or null.
 /obj/structure/sink/proc/unusable_hand_name(mob/user)

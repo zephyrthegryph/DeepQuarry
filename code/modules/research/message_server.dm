@@ -79,7 +79,7 @@ CAPABILITIES(/obj/machinery/message_server)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
-	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
+	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req_bool(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle PDA relay"), then(PROC_REF(interaction_toggle)))
 
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)

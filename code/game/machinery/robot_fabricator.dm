@@ -13,15 +13,13 @@
 	var/inserting = FALSE
 
 /// No side effects: whether this stack is steel and we're not already mid-insertion.
-/obj/machinery/robotic_fabricator/proc/wants_steel(mob/actor, atom/target, obj/item/stack/material/held)
+/obj/machinery/robotic_fabricator/proc/wants_steel(datum/act/op/A)
 	if(inserting)
-		return FALSE
-	return istype(held) && held.get_material_name() == MAT_STEEL
-
-/// Requirement (was REQ_* wants_steel): the legacy check answers TRUE to pass.
-/obj/machinery/robotic_fabricator/proc/wants_steel_holds(datum/act/op/A)
-	var/answer = wants_steel(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+		return /datum/msg/req_failed
+	var/obj/item/stack/material/held = A.held
+	if(istype(held) && read_once(held.get_material_name()) == MAT_STEEL)
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/robotic_fabricator/proc/interaction_insert_steel(datum/act/op/A)
 	var/mob/user = A.actor
@@ -69,7 +67,7 @@ CAPABILITIES(/obj/machinery/robotic_fabricator)
 	op("build_chest", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_chest)))
 	op("build_head", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 50000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_head)))
 	op("build_frame", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 75000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_frame)))
-	op("insert_steel", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT + 1), label("Insert metal"), when(req(PROC_REF(wants_steel_holds))), then(PROC_REF(interaction_insert_steel)))
+	op("insert_steel", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT + 1), label("Insert metal"), when(req(PROC_REF(wants_steel))), then(PROC_REF(interaction_insert_steel)))
 	op("reject", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_reject)))
 
 /obj/machinery/robotic_fabricator/ui_data(datum/act/eval/A)

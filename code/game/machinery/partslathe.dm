@@ -80,25 +80,16 @@
 			look.play_flick("partslathe-lidopen")
 		drawn_state = look.state("partslathe-idle")
 
-/// Requirement: TRUE, or why an item can't be used on the lathe right now.
-/obj/machinery/partslathe/proc/can_load_item(mob/user, atom/target, obj/item/O)
-	if(busy) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+/// Requirement: null, or why an item can't be used on the lathe right now.
+/obj/machinery/partslathe/proc/can_load_item(datum/act/op/A)
+	var/obj/item/O = A.held
+	if(read_once(busy))
 		return "it's busy, wait for the previous operation to complete"
 	if(istype(O, /obj/item/storage/part_replacer) || !operable())
-		return TRUE // part replacement, or swallowed silently
+		return null // part replacement, or swallowed silently
 	if(panel_open)
 		return "you can't load it while it's opened"
-	return TRUE
-
-/// Requirement (was REQ_* can_load_item): the legacy check answers TRUE to pass.
-/obj/machinery/partslathe/proc/can_load_item_holds(datum/act/op/A)
-	var/answer = can_load_item(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_load_item_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/partslathe/proc/can_load_item_refusal(datum/act/op/A)
-	var/answer = can_load_item(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return null
 
 /obj/machinery/partslathe/proc/interaction_attackby(datum/act/op/A)
 	var/mob/user = A.actor
@@ -238,7 +229,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 	op("ejectBoard", ui_act("ejectBoard"), then(PROC_REF(ui_act_ejectboard)))
 	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
-	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), needs(req(PROC_REF(can_load_item_holds), because = PROC_REF(can_load_item_refusal))), then(PROC_REF(interaction_attackby)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), needs(req(PROC_REF(can_load_item))), then(PROC_REF(interaction_attackby)))
 
 /// Whoever presses a button leaves their prints on the lathe.
 /obj/machinery/partslathe/proc/ui_fingerprint(datum/act/op/A)
@@ -397,4 +388,3 @@ CAPABILITIES(/obj/machinery/partslathe)
 /obj/machinery/partslathe/ownership()
 	. = ..()
 	. += owns(nameof(copy_board), policy = OWN_CONTAINED)
-

@@ -30,7 +30,7 @@ TRACKED(/datum/game_mode, mode_running)
 
 /datum/game_mode/proc/try_latespawn(datum/mind/player, latejoin_only)
 
-	if(SSemergency_shuttle.departed || !round_autoantag)
+	if(emergency_shuttle_departed() || !round_autoantag)
 		return
 
 	if(SSemergency_shuttle.shuttle && (SSemergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP || SSemergency_shuttle.shuttle.moving_status == SHUTTLE_INTRANSIT))

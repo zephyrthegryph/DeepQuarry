@@ -2,11 +2,11 @@
 // The engine owns path walking and extraction; these hooks supply the concrete inventory protocol.
 
 /atom/space_ledger_location(atom/movable/inside)
-	var/datum/om/relation/slot/def = dq_path_slot_of(src, inside)
+	var/datum/relation_definition/slot/def = dq_path_slot_of(src, inside)
 	return def?.at
 
 /atom/space_ledger_slot(slot_id)
-	for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(src))
+	for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(src))
 		if(def.slot_id == slot_id)
 			return TRUE
 	return FALSE

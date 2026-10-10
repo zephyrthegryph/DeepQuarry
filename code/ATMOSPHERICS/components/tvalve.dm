@@ -186,7 +186,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 /// A digital three-way valve turns for someone its access lets in, while it has power.
 CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 	silicon_hand()
-	extend("toggle", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied)), req(PROC_REF(has_power), because = MSG(valve/unpowered))))
+	extend("toggle", needs(req_bool(PROC_REF(actor_allowed), because = MSG(lock/denied)), req_bool(PROC_REF(has_power), because = MSG(valve/unpowered))))
 
 /obj/machinery/atmospherics/tvalve/digital/proc/has_power(datum/act/A)
 	return !power_lost()

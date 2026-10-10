@@ -4,8 +4,10 @@
 	icon_state = "synth"
 	allowed_instrument_ids = "piano"
 
-/obj/item/instrument/piano_synth/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/instrument/piano_synth)
+	after_init(0, then(PROC_REF(allow_synth_instruments)))
+
+/obj/item/instrument/piano_synth/proc/allow_synth_instruments(datum/act/timer/A)
 	song.allowed_instrument_ids = SSinstruments.ready().synthesizer_instrument_ids
 
 /obj/item/instrument/piano_synth/headphones

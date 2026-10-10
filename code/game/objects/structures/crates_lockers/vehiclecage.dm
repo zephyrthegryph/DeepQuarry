@@ -15,7 +15,7 @@ TRACKED(/obj/structure/vehiclecage, paint_color)
 // is correct here: disassemble() already moves the vehicle out before
 // qdel(src), so the slot is empty by then, but any other qdel path needs the
 // generic drop-policy pass to actually place the vehicle instead of losing it.
-/datum/om/relation/slot/vehicle_cage
+/datum/relation_definition/slot/vehicle_cage
 	holder = /obj/structure/vehiclecage
 	slot_id = CONTAINER_SLOT_VEHICLE_CAGE
 	name = "vehicle"

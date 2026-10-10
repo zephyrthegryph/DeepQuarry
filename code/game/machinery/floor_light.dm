@@ -15,16 +15,19 @@ MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 	icon_state = "item"
 
 CAPABILITIES(/obj/item/floor_light)
-	op("install", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_install_holds), because = PROC_REF(can_install_refusal))), then(PROC_REF(interaction_self)))
+	op("install", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_install))), then(PROC_REF(interaction_self)))
 
 /// Installation must be able to consume the kit from its current holder.
-/obj/item/floor_light/proc/can_install(mob/user, atom/target, obj/item/held)
+/obj/item/floor_light/proc/can_install(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(user && (user in turf_contents_of_type(get_turf(user), /mob))))
+		return "you can't use that here"
 	// Sample the real custodian's policy; the atomic consume rechecks it too.
 	var/obj/item/floor_light/kit = read_once(src)
 	var/reason = read_once(kit.loc?.release_refusal(kit, user))
 	if(reason)
 		return reason
-	return TRUE
+	return null
 
 /// Old attack_self.
 /obj/item/floor_light/proc/interaction_self(datum/act/op/A)
@@ -80,16 +83,6 @@ CAPABILITIES(/obj/item/floor_light)
 
 MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 
-/// Requirement (was REQ_* can_switch): the legacy check answers TRUE to pass.
-/obj/machinery/floor_light/proc/can_switch_holds(datum/act/op/A)
-	var/answer = can_switch(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_switch_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/floor_light/proc/can_switch_refusal(datum/act/op/A)
-	var/answer = can_switch(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/floor_light/proc/interaction_harm(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/held = A.held
@@ -112,13 +105,13 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 	update_brightness()
 	return OP_OK
 
-/// Requirement: TRUE, or why the light can't be switched.
-/obj/machinery/floor_light/proc/can_switch(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why the light can't be switched.
+/obj/machinery/floor_light/proc/can_switch(datum/act/op/A)
 	if(broken_now())
 		return "it's too damaged to be functional"
 	if(power_lost())
 		return "it's unpowered"
-	return TRUE
+	return null
 
 /obj/machinery/floor_light/proc/interaction_use(datum/act/op/A)
 	set_on(!on)
@@ -173,7 +166,7 @@ CAPABILITIES(/obj/machinery/floor_light)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("floor_light_harm", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), passes(), then(PROC_REF(interaction_harm)))
 	op("floor_light_smash", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(interaction_smash)))
-	op("floor_light_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_is(nameof(anchored), TRUE, because = MSG(floor_light/unanchored)), req(PROC_REF(can_switch_holds), because = PROC_REF(can_switch_refusal))), then(PROC_REF(interaction_use)))
+	op("floor_light_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_is(nameof(anchored), TRUE, because = MSG(floor_light/unanchored)), req(PROC_REF(can_switch))), then(PROC_REF(interaction_use)))
 
 /// A lighter blast marks the light as (lightly) damaged.
 /obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)
@@ -185,12 +178,3 @@ CAPABILITIES(/obj/machinery/floor_light)
 /obj/machinery/floor_light/cultify()
 	default_light_colour = "#FF0000"
 	update_brightness()
-
-/obj/item/floor_light/proc/can_install_holds(datum/act/op/A)
-	return (A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))) && can_install(A.actor, src, A.held) == TRUE
-
-/obj/item/floor_light/proc/can_install_refusal(datum/act/op/A)
-	if(!(A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))))
-		return "you can't use that here"
-	var/result = can_install(A.actor, src, A.held)
-	return istext(result) ? result : "the kit cannot be installed"

@@ -45,11 +45,12 @@
 	var/generated_thrust = 2.5
 
 CAPABILITIES(/obj/machinery/ion_engine)
+	after_init(0, then(PROC_REF(init_glow)))
 	owns_one(nameof(controller), starts = /datum/ship_engine/ion)
 
-/obj/machinery/ion_engine/Initialize(mapload)
-	. = ..()
+/obj/machinery/ion_engine/proc/init_glow(datum/act/timer/A)
 	add_glow()
+
 
 
 /obj/machinery/ion_engine/proc/add_glow()

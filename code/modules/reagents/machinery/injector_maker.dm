@@ -46,10 +46,10 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),
 		label("Add container"), then(PROC_REF(beaker_added)))
 	op("add_small_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/empty), label("Add injector"),
-		needs(req(PROC_REF(small_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		needs(req_bool(PROC_REF(small_rack_free), because = MSG(injector_maker/rack_full)), req_bool(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
 		then(PROC_REF(small_injector_added)))
 	op("add_large_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty), label("Add injector"),
-		needs(req(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		needs(req_bool(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req_bool(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
 		then(PROC_REF(large_injector_added)))
 	op("add_plastic", item(/obj/item/stack/material), label("Add plastic"), then(PROC_REF(plastic_added)))
 	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))

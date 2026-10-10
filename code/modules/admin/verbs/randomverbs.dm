@@ -1025,7 +1025,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_delete, R_FUN|R_ADMIN, "Delete", "Delete t
 
 ADMIN_VERB(cmd_admin_list_open_jobs, R_HOLDER, "List free slots", "Show available job slots.", ADMIN_CATEGORY_INVESTIGATE)
 	if(SSjob)
-		for(var/datum/job/job in SSjob.occupations)
+		for(var/datum/job/job in job_occupations())
 			to_chat(user, "[job.title]: [job.total_positions]")
 	feedback_add_details("admin_verb","LFS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -1083,7 +1083,7 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
 	if(ask.value != "Yes")
 		return
-	if(round_mode().auto_recall_shuttle)
+	if(ticker_mode().auto_recall_shuttle)
 		open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_recall_confirmed), answerer = src, rights = ask.rights, buttons = TRUE, choices = list("Confirm", "Cancel"), title = "Shuttle Call", question = "The shuttle will just return if you call it. Call anyway?")
 		return
 	ask_admin_shuttle_kind(ask.rights, FALSE)
@@ -1138,13 +1138,13 @@ ADMIN_VERB(admin_deny_shuttle, R_ADMIN, "Toggle Deny Shuttle", "Prevents the shu
 	if (!SSticker)
 		return
 
-	SSemergency_shuttle.deny_shuttle = !SSemergency_shuttle.deny_shuttle
+	SSemergency_shuttle.deny_shuttle = !emergency_shuttle_deny_shuttle()
 
-	log_admin("[key_name(user)] has [SSemergency_shuttle.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
-	message_admins("[key_name_admin(user)] has [SSemergency_shuttle.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
+	log_admin("[key_name(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
+	message_admins("[key_name_admin(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
 
 ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a random appearance. You can only use this before rounds!", ADMIN_CATEGORY_FUN_DO_NOT)
-	if (SSticker && round_mode())
+	if (SSticker && ticker_mode())
 		to_chat(user, "Nope you can't do this, the game's already started. This only works before rounds!")
 		return
 
@@ -1164,7 +1164,7 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 		return
 	var/client/user = A.request.answerer.client
 	var/notifyplayers = A.answer.value
-	if(notifyplayers == "Cancel" || (SSticker && round_mode()))
+	if(notifyplayers == "Cancel" || (SSticker && ticker_mode()))
 		return
 
 	log_admin("Admin [key_name(user)] has forced the players to have random appearances.")

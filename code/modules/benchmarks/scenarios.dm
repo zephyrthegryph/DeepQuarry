@@ -321,7 +321,7 @@
 		SSexpedition.release_site(generated_site(), "generation benchmark")
 		rel_clear(src, nameof(generated_site))
 		var/waited = 0
-		while((length(SSexpedition.teardown_z) || !length(SSexpedition.free_z)) && waited++ < world.fps * 180)
+		while((length(expedition_teardown_z()) || !length(expedition_free_z())) && waited++ < world.fps * 180)
 			stoplag()
 		if(waited >= world.fps * 180)
 			fail("expedition teardown did not return its z-level to the pool")
@@ -609,23 +609,23 @@
 	var/rounds = param("rounds", 30)
 	stoplag()
 	var/cost_before = 0
-	for(var/key in SSradiation.profile_source_cost_ms)
-		cost_before += SSradiation.profile_source_cost_ms[key]
-	var/pulses_before = SSradiation.profile_pulses_completed
+	for(var/key in radiation_profile_source_cost_ms())
+		cost_before += radiation_profile_source_cost_ms()[key]
+	var/pulses_before = radiation_profile_pulses_completed()
 	begin_window()
 	for(var/round in 1 to rounds)
 		for(var/atom/source as anything in sources)
 			radiation_pulse(source, 14, 0.05, 10, 0, 1)
 		var/deadline = REALTIMEOFDAY + 600
-		while(length(SSradiation.processing))
+		while(length(radiation_processing()))
 			if(REALTIMEOFDAY > deadline)
 				fail("radiation pulses did not drain within 60s")
 			stoplag()
 	end_window("radiation")
 	var/cost_after = 0
-	for(var/key in SSradiation.profile_source_cost_ms)
-		cost_after += SSradiation.profile_source_cost_ms[key]
-	var/pulses = SSradiation.profile_pulses_completed - pulses_before
+	for(var/key in radiation_profile_source_cost_ms())
+		cost_after += radiation_profile_source_cost_ms()[key]
+	var/pulses = radiation_profile_pulses_completed() - pulses_before
 	count_metric("radiation_pulses", pulses, "pulses", "none")
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")

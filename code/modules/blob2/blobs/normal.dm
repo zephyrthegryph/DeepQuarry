@@ -6,8 +6,10 @@
 	max_integrity = 25
 	health_regen = 1
 
-/obj/structure/blob/normal/Initialize(mapload, new_overmind)
-	. = ..()
+CAPABILITIES(/obj/structure/blob/normal)
+	after_init(0, then(PROC_REF(blob_normal_integrity)))
+
+/obj/structure/blob/normal/proc/blob_normal_integrity(datum/act/timer/A)
 	update_integrity(21) // Doesn't start at full health.
 
 /obj/structure/blob/normal/look_parts(datum/look/look)

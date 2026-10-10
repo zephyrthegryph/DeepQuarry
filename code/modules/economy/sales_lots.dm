@@ -211,8 +211,7 @@
 
 TRACKED(/obj/machinery/department_storefront, department_id)
 
-/obj/machinery/department_storefront/Initialize(mapload)
-	. = ..()
+/obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
 	stock_prices = list()
 	stock_suggested_prices = list()
@@ -269,6 +268,7 @@ TRACKED(/obj/machinery/department_storefront, department_id)
 	return max(5, round(item.w_class * 5))
 
 CAPABILITIES(/obj/machinery/department_storefront)
+	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
 	without("ui_open")
 	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))
@@ -276,7 +276,7 @@ CAPABILITIES(/obj/machinery/department_storefront)
 	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
 	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
 	op("storefront_id_fallthrough", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_id_fallthrough)))
-	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req(PROC_REF(can_stock_holds), because = PROC_REF(can_stock_refusal))), then(PROC_REF(interaction_stock)))
+	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req_bool(PROC_REF(can_stock_holds), because = PROC_REF(can_stock_refusal))), then(PROC_REF(interaction_stock)))
 
 /// /obj/machinery/department_storefront's window data.
 /obj/machinery/department_storefront/ui_data(datum/act/eval/A)

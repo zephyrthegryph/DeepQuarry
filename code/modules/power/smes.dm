@@ -142,12 +142,12 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 	section(hatch, "What the tools do behind the open hatch")
 	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
-		needs(req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),
+		needs(req_bool(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built)))
 	op("cut_terminal", tool(TOOL_WIRECUTTER), at(SPACE_PANEL),
-		needs(req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))),
+		needs(req_bool(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
-	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req(PROC_REF(casing_damaged), because = MSG(smes/whole))),
+	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req_bool(PROC_REF(casing_damaged), because = MSG(smes/whole))),
 		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit

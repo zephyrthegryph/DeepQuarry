@@ -322,11 +322,11 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 /// Requirement: enough biomass to regrow with.
 /mob/living/carbon/human/proc/regenerate_fed(datum/act/op/A)
-	return nutrition >= 250
+	return (nutrition >= 250) ? null : /datum/msg/req_failed
 
 /// Requirement: no regeneration already runs.
 /mob/living/carbon/human/proc/regenerate_idle(datum/act/op/A)
-	return !read_once(active_regen)
+	return (!read_once(active_regen)) ? null : /datum/msg/req_failed
 
 /mob/living/carbon/human/proc/regenerate_started(datum/act/op/A)
 	active_regen = TRUE

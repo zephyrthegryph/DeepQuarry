@@ -167,7 +167,7 @@
 /obj/item/survivalcapsule/superpose/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[template_id]
+	template_static = mapping_shelter_templates()[template_id]
 	if(!template())
 		template_static = null
 
@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/survivalcapsule/proc/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[get_template_id()]
+	template_static = mapping_shelter_templates()[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
 
@@ -659,7 +659,7 @@ CAPABILITIES(/obj/item/survivalcapsule)
 // A hand on it works the glass of the pod's door (it does not press the remote button: the airlocks it names are a placeholder).
 CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 	without("press_hand")
-	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(pod_used)))
+	op("pod_use", hand(), label("Use"), wait(0), needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(pod_used)))
 
 /obj/machinery/button/remote/airlock/survival_pod/proc/pod_used(datum/act/op/A)
 	pod_glass()

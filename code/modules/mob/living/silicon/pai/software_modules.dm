@@ -20,7 +20,7 @@
 
 CAPABILITIES(/datum/pai_software)
 	// Only a pAI works a program's buttons (silently: anyone else is not answered).
-	extend(TAG_UI, needs(req(PROC_REF(ui_pai), silent = TRUE)))
+	extend(TAG_UI, needs(req_bool(PROC_REF(ui_pai), silent = TRUE)))
 
 /datum/pai_software/proc/ui_pai(datum/act/op/A)
 	return ispAI(A.actor)

@@ -361,7 +361,7 @@ pub fn context_escape(code: &Block, acts: &BTreeSet<String>, locals: &BTreeSet<S
 
 // ---- requirement and condition returns ------------------------------------------------------------
 
-/// A requirement or condition answers TRUE or FALSE. A string, a type or a non-boolean number
+/// A condition or transitional req_bool callback answers TRUE or FALSE. A string, a type or a non-boolean number
 /// would read as TRUE and silently allow the op, so a definite non-boolean return is an error.
 pub fn boolean_returns(code: &Block, out: &mut Vec<Found>) {
     fn visit(b: &Block, out: &mut Vec<Found>) {
@@ -369,10 +369,10 @@ pub fn boolean_returns(code: &Block, out: &mut Vec<Found>) {
             if let Statement::Return(e) = &st.elem {
                 let line = st.location.line;
                 match e {
-                    None => out.push(Found { rule: "requirement_return", line, msg: "a bare `return` answers null, which reads as TRUE and allows the op".to_string() }),
+                    None => out.push(Found { rule: "requirement_return", line, msg: "a bare `return` answers null; a condition or req_bool callback must answer TRUE or FALSE".to_string() }),
                     Some(e) => {
                         if let Some(why) = non_boolean(e) {
-                            out.push(Found { rule: "requirement_return", line, msg: format!("returns {}: a requirement answers TRUE or FALSE (the reason is declared beside it)", why) });
+                            out.push(Found { rule: "requirement_return", line, msg: format!("returns {}: a condition or req_bool callback answers TRUE or FALSE", why) });
                         }
                     }
                 }
@@ -383,6 +383,50 @@ pub fn boolean_returns(code: &Block, out: &mut Vec<Found>) {
         }
     }
     visit(code, out);
+}
+
+/// Final requirements return null (allow) or a refusal. Unknown callback return types are
+/// checked by the engine; reject only expressions whose invalid shape is definite here.
+pub fn requirement_returns(code: &Block, out: &mut Vec<Found>) {
+    fn visit(block: &Block, out: &mut Vec<Found>) {
+        for statement in block.iter() {
+            if let Statement::Return(Some(expression)) = &statement.elem {
+                if let Some(why) = non_reason(expression) {
+                    out.push(Found {
+                        rule: "requirement_return",
+                        line: statement.location.line,
+                        msg: format!("returns {}: req callbacks return null to allow, or text/a refusal datum to refuse; use req_bool only for transitional boolean callbacks", why),
+                    });
+                }
+            }
+            for nested in stmt_blocks(&statement.elem) {
+                visit(nested, out);
+            }
+        }
+    }
+    visit(code, out);
+}
+
+fn non_reason(expression: &Expression) -> Option<&'static str> {
+    match strip_parens(expression) {
+        Expression::Base { term, follow } => {
+            if follow.iter().any(|item| matches!(item.elem, Follow::Unary(UnaryOp::Not))) {
+                return Some("a boolean");
+            }
+            match &term.elem {
+                Term::Int(_) | Term::Float(_) => Some("a number/boolean"),
+                Term::List(_) => Some("a list"),
+                Term::Prefab(prefab) => {
+                    let path = prefab.path.iter().map(|(_, name)| name.as_str()).collect::<Vec<_>>().join("/");
+                    if path == "datum/msg" || path.starts_with("datum/msg/") { None } else { Some("a non-refusal type path") }
+                }
+                _ => None,
+            }
+        }
+        Expression::BinaryOp { op: BinaryOp::Eq | BinaryOp::NotEq, .. } => Some("a boolean comparison"),
+        Expression::TernaryOp { if_, else_, .. } => non_reason(if_).or_else(|| non_reason(else_)),
+        _ => None,
+    }
 }
 
 fn non_boolean(e: &Expression) -> Option<&'static str> {

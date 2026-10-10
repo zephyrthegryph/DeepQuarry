@@ -30,7 +30,7 @@ CAPABILITIES(/obj/structure/bonfire)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("dismantle", hand(), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(req_empty_hand()), when(req(PROC_REF(ready_to_dismantle))),
-		needs(req(PROC_REF(not_burning), because = MSG(bonfire/still_burning))), begins(MSG(bonfire/dismantling)), wait(5 SECONDS), then(PROC_REF(dismantle_done)))
+		needs(req_bool(PROC_REF(not_burning), because = MSG(bonfire/still_burning))), begins(MSG(bonfire/dismantling)), wait(5 SECONDS), then(PROC_REF(dismantle_done)))
 
 MSG_DEF(bonfire/dismantling, "You start dismantling %T%.", "%U% starts dismantling %T%.")
 MSG_DEF_SELF(bonfire/still_burning, span_warning("%T% is still burning. Extinguish it first if you want to dismantle it."))
@@ -55,9 +55,12 @@ TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 // Blue wood.
 TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
-/obj/structure/bonfire/permanent/Initialize(mapload, material_name)
-	. = ..()
+CAPABILITIES(/obj/structure/bonfire/permanent)
+	after_init(0, then(PROC_REF(init_ignite)))
+
+/obj/structure/bonfire/permanent/proc/init_ignite(datum/act/timer/A)
 	ignite()
+
 
 TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
@@ -115,10 +118,10 @@ TRACKED(/obj/structure/bonfire, grill)
 
 /// An empty bonfire can be taken apart (what lies in it is fixed while the click is decided).
 /obj/structure/bonfire/proc/ready_to_dismantle(datum/act/op/A)
-	return !read_once(get_fuel_amount())
+	return read_once(get_fuel_amount()) ? MSG(req_failed) : null
 
 /obj/structure/bonfire/permanent/ready_to_dismantle(datum/act/op/A)
-	return TRUE
+	return null
 
 /obj/structure/bonfire/proc/not_burning(datum/act/op/A)
 	return !burning

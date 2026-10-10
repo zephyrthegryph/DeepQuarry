@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/vehicle_assembly/quadtrailer)
 
 /// A spare quadbike frame helps only until its control system is in.
 /obj/item/vehicle_assembly/quadtrailer/proc/spare_frame_fits(datum/act/op/A)
-	return !built(A.held, STAGE_QUADBIKE_CONTROLLED)
+	return !built(A.held, STAGE_QUADBIKE_CONTROLLED) ? null : MSG(quadtrailer/too_advanced)
 
 /obj/item/vehicle_assembly/quadtrailer/proc/framed(datum/act/op/A)
 	return step_done(A, 1, "framed [initial(name)]", null)

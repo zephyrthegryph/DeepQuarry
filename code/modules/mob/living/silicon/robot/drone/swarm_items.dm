@@ -133,6 +133,8 @@ CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
 		list(mode_name="deter", projectile_type=/obj/item/projectile/beam/shock, charge_cost = 175),
 		)
 
-/obj/item/gun/energy/xray/swarm/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/gun/energy/xray/swarm)
+	after_init(0, then(PROC_REF(swarm_xray_flip)))
+
+/obj/item/gun/energy/xray/swarm/proc/swarm_xray_flip(datum/act/timer/A)
 	adjust_scale(-1, 1)

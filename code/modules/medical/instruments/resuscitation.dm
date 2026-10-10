@@ -24,7 +24,7 @@ MSG_DEF_SELF(bvm/no_seal, span_warning("You can't get a seal over %T%'s face."))
 
 CAPABILITIES(/obj/item/bag_valve_mask)
 	op("squeeze", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Ventilate"),
-		needs(req_adjacent(), req(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
+		needs(req_adjacent(), req_bool(PROC_REF(sealable), because = MSG(bvm/no_seal))), begins(MSG(bvm/sealing)), wait(2 SECONDS), then(PROC_REF(squeeze_done)))
 
 /// Requirement: the patient has a mouth and nothing worn covers the face (what is worn is fixed while the click is decided).
 /obj/item/bag_valve_mask/proc/sealable(datum/act/op/A)
@@ -68,7 +68,7 @@ MSG_DEF_SELF(airway_kit/no_mouth, span_warning("You can't get into %T%'s mouth."
 
 CAPABILITIES(/obj/item/airway_kit)
 	op("clear_airway", at_target(/mob/living/carbon/human), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clear the airway"),
-		needs(req_adjacent(), req(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
+		needs(req_adjacent(), req_bool(PROC_REF(aimed_at_mouth), because = MSG(airway_kit/aim)), req_bool(PROC_REF(mouth_open), because = MSG(airway_kit/no_mouth))),
 		begins(MSG(airway_kit/working)), wait(4 SECONDS), then(PROC_REF(airway_done)))
 
 /// Requirement: the user aims at the mouth or the head (what is aimed at is fixed while the click is decided).
@@ -111,7 +111,7 @@ MSG_DEF(decompression_needle/lining_up, span_notice("You line %I% up between %T%
 
 CAPABILITIES(/obj/item/decompression_needle)
 	op("decompress", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE),
-		needs(req(PROC_REF(unused), because = PROC_REF(used_text)), req(PROC_REF(aimed_at_chest), because = PROC_REF(aim_text))),
+		needs(req_bool(PROC_REF(unused), because = PROC_REF(used_text)), req_bool(PROC_REF(aimed_at_chest), because = PROC_REF(aim_text))),
 		begins(MSG(decompression_needle/lining_up)), wait(3 SECONDS), then(PROC_REF(needle_done)))
 
 TRACKED(/obj/item/decompression_needle, used)

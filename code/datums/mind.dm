@@ -141,7 +141,7 @@ CAPABILITIES(/datum/mind)
 	return  // body provided by modular override
 
 /datum/mind/proc/edit_memory(mob/user)
-	if(!SSticker || !round_mode())
+	if(!SSticker || !ticker_mode())
 		tgui_alert_async(user, "Not before round-start!", "Alert")
 		return
 	// fully structured TGUI panel; see
@@ -201,7 +201,7 @@ CAPABILITIES(/datum/mind)
 	switch(obj_type)
 		if("assassinate","protect","debrain", "harm", "brig")
 			var/list/possible_targets = list("Free objective")
-			for(var/datum/mind/possible_target in SSticker.minds)
+			for(var/datum/mind/possible_target in ticker_minds())
 				if ((possible_target != src) && ishuman(possible_target.current))
 					possible_targets += possible_target.current
 			open_request(src, /datum/prompt/choice/mind_objective_edit, PROC_REF(objective_detail_chosen), answerer = user, title = "Objective target", question = "Select target:", choices = possible_targets, obj_type = obj_type)

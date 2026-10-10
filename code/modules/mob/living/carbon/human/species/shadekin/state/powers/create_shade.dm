@@ -5,7 +5,7 @@
 
 /mob/living/proc/ability_can_afford_25(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()
-	return !!SK && SK.shadekin_get_energy() >= 25
+	return (!!SK && SK.shadekin_get_energy() >= 25) ? null : /datum/msg/req_failed
 
 /mob/living/proc/ability_create_shade(datum/act/op/A)
 	var/datum/shadekin/SK = get_shadekin_state()

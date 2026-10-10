@@ -1,4 +1,4 @@
-// Object-model core S6 (doc/rewrite/object_model_core.md Â§4.11): om_after timers, task
+// Object-model core S6 (doc/rewrite/object_model_core.md Â§4.11): after() timers, task
 // steps, typed prompt re-checks, the global owner and OM handles.
 
 /datum/om_test_entity/bio
@@ -12,7 +12,7 @@
 	if(other)
 		LAZYADD(other.log, "[tag] via")
 
-/proc/om_test_global_hit(datum/om_test_entity/L, tag)
+/proc/dq_test_global_hit(datum/om_test_entity/L, tag)
 	LAZYADD(L.log, tag)
 
 /datum/om_test_entity/var/step_calls = 0
@@ -59,7 +59,7 @@
 	complete_proc = /datum/om_test_entity/proc/task_completed
 	cancel_proc = /datum/om_test_entity/proc/task_cancelled
 
-// ---------------------------------------------------------------- om_after
+// ---------------------------------------------------------------- after()
 
 /datum/unit_test/om/timer_cancel_on_delete
 
@@ -68,10 +68,10 @@
 	var/datum/om_test_entity/witness = entity(made)
 	var/datum/om_test_entity/live = entity(made)
 	var/id = after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("gone", witness))
-	TEST_ASSERT(id, "om_after with a proc returns a timer id")
+	TEST_ASSERT(id, "after() with a proc returns a timer id")
 	TEST_ASSERT(timer_pending(E, id), "the timer is pending")
 	after(live, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("live", witness))
-	after(null, 1 SECONDS, /proc/om_test_global_hit, with = list(witness, "global"))
+	after(null, 1 SECONDS, /proc/dq_test_global_hit, with = list(witness, "global"))
 	qdel(E)
 	scheduler_advance(2)
 	TEST_ASSERT(!("gone via" in witness.log), "a deleted owner's timer never runs")
@@ -82,7 +82,7 @@
 	scheduler_advance(2)
 	TEST_ASSERT(!("cancelled" in live.log), "a cancelled timer never runs")
 
-/// TIMER_UNIQUE and TIMER_OVERRIDE as keyed om_after: the key is (owner, proc, arguments).
+/// TIMER_UNIQUE and TIMER_OVERRIDE as keyed after(): the key is (owner, proc, arguments).
 /datum/unit_test/om/timer_keyed
 
 /datum/unit_test/om/timer_keyed/run_om(list/made)
@@ -309,7 +309,7 @@
 /datum/unit_test/om/sleeping_callee_is_caught
 
 /datum/unit_test/om/sleeping_callee_is_caught/run_om(list/made)
-	var/datum/om/scheduler/sched = time_scheduler()
+	var/datum/time_scheduler/sched = time_scheduler()
 	var/datum/om_test_entity/E = entity(made)
 	set_global("om_expect_sleep", TRUE)
 	var/before = sched.callees_slept

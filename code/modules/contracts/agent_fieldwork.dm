@@ -206,7 +206,7 @@
 /datum/contract_document/proc/register_agent_contact_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || field_id < 1 || field_id > 4)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	if(field_id == 4)
@@ -255,7 +255,7 @@
 /datum/contract_document/proc/register_agent_endorsement(obj/item/paper/paper, mob/living/user)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_ENDORSEMENT)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	var/list/signers = payload["signers"]
 	var/list/signer_departments = payload["signer_departments"]
 	if(!istype(contract) || !islist(signers) || !islist(signer_departments) || !contract.register_endorsement(paper, user, evidence_id, signers, signer_departments))
@@ -267,7 +267,7 @@
 /datum/contract_document/proc/register_agent_approach_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CHARTER || payload["signed"] || field_id < 1 || field_id > 3)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	var/selected_approach = field_id == 1 ? AGENT_APPROACH_REGISTERED : (field_id == 2 ? AGENT_APPROACH_DISCREET : AGENT_APPROACH_HOSTILE)
@@ -292,7 +292,7 @@
 		var/datum/contract_document/document = paper.contract_document
 		if(document?.document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || !document.payload["signed"] || document.payload["cooperated"])
 			continue
-		var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]
+		var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[document.payload["agent_contract_id"]]
 		if(!istype(contract) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || contract.contact_account_number != document.payload["contact_account"])
 			continue
 		for(var/market_id in contract.market_reservation_ids)
@@ -320,7 +320,7 @@
 	var/datum/contract_document/document = paper.contract_document
 	if(!(document?.document_kind in list(CONTRACT_DOCUMENT_AGENT_CONTACT, CONTRACT_DOCUMENT_AGENT_ENDORSEMENT, CONTRACT_DOCUMENT_AGENT_CHARTER)))
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[document.payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	var/suspicious = contract.red_contract || (contract.approach in list(AGENT_APPROACH_DISCREET, AGENT_APPROACH_HOSTILE)) || contract.agent_faction == REPUTATION_FACTION_SYNDICATE || agent_contact_risk_rank(contract.contact_mode) >= 2

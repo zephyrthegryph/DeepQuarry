@@ -3,11 +3,13 @@ human|none menu: Pick up
 human|none menu: Take off
 human|none menu: Toggle Digestable (refused: You can't do that.)
 human|none click: Click: Take off
+robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Take off
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Take off
+ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
@@ -67,5 +69,5 @@ human|/obj/item/clothing/head/helmet menu: Take off
 human|/obj/item/clothing/head/helmet menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/clothing/head/helmet click: Click: Make a shock kit
 wires: Receiver, Signal, Transmitter
-keys: broadcast, channel, code, collect_item, controls, drag_buckle, equip_module, freq, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, power, setFrequency, shock_kit, specFreq, strapped, subspace, toggleLoudspeaker, toggle_digestable, use_screwdriver
+keys: broadcast, channel, code, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, power, setFrequency, shock_kit, specFreq, strapped, subspace, toggleLoudspeaker, toggle_digestable, use_screwdriver
 

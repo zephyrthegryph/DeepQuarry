@@ -193,6 +193,6 @@ TRACKED(/datum/rx_fx, level)
 	TEST_ASSERT_EQUAL(ref.entry[OWNE_ARG], RELS_PLAIN, "a plain one")
 	TEST_ASSERT_EQUAL(paired.entry[OWNE_ARG], RELS_PAIR, "PAIRED with a back is a pair")
 	TEST_ASSERT_EQUAL(owned.entry[OWNE_KIND], OWNK_OWN, "OWNED is an ownership entry")
-	var/datum/om/event/E = new
+	var/datum/definition_event/E = new
 	TEST_ASSERT(!E.coalesce, "an event is an occurrence: not coalesced by default")
 	TEST_ASSERT(!E.skip_in_bulk, "and not dropped in bulk by default")

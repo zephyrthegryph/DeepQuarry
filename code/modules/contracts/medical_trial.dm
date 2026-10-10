@@ -429,7 +429,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 	baseline_metrics = _baseline.Copy()
 	healthy_volunteer = _healthy_volunteer
 	clinician_account = _clinician_account
-	var/datum/contract_subject_identity/identity = SScontracts.subject_identities[subject_id]
+	var/datum/contract_subject_identity/identity = contracts_subject_identities()[subject_id]
 	subject_account = identity?.account_number
 
 /datum/medical_trial_participant/proc/current_subject() as /mob/living/carbon/human
@@ -773,7 +773,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 	var/list/contracts = medical_trial_contract_fractions(data)
 	for(var/contract_id in contracts)
 		var/effective_amount = removed * contracts[contract_id]
-		var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
+		var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[contract_id]
 		if(!istype(trial) || trial.state != CONTRACT_ACTIVE || effective_amount <= 0)
 			continue
 		trial.record_exposure(human_subject, effective_amount)
@@ -821,7 +821,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 		return
 	var/list/contracts = medical_trial_contract_fractions(data)
 	for(var/contract_id in contracts)
-		var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
+		var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[contract_id]
 		var/effective_amount = removed * contracts[contract_id]
 		if(!istype(trial) || trial.state != CONTRACT_ACTIVE || trial.profile.cohort != MEDICAL_TRIAL_COHORT_PREVENTATIVE)
 			continue

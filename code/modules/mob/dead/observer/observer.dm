@@ -710,7 +710,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return 0 //something is terribly wrong
 
 	var/ghosts_can_write
-	if(round_mode().name == "cult")
+	if(ticker_mode().name == "cult")
 		if(length(GLOB.cult.current_antagonists) > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 

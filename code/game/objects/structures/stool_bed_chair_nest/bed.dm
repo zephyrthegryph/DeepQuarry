@@ -124,14 +124,14 @@ MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the paddi
 CAPABILITIES(/obj/structure/bed)
 	buckle()
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
-		needs(req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+		needs(req_bool(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
 	op("tuck_disk", item(/obj/item/disk), then(PROC_REF(tucked_in)))
 	op("tuck_plushie", item(/obj/item/toy/plushie), then(PROC_REF(tucked_in)))
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
-		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding)), req(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))),
+		needs(req_bool(PROC_REF(has_padding), because = MSG(bed/no_padding)), req_bool(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))),
 		then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"),
-		needs(req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
+		needs(req_bool(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
 	param(nameof(material_key), pos = 1)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
 
@@ -310,7 +310,7 @@ CAPABILITIES(/obj/structure/bed/roller)
 
 CAPABILITIES(/obj/item/roller)
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
-	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
+	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req_bool(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
 
 /// The folded bed is set up where its carrier stands, and is used up.
 /obj/item/roller/proc/unfolded(datum/act/op/A)
@@ -444,7 +444,7 @@ CAPABILITIES(/obj/structure/dirtybed)
 	buckle()
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS))
-	op("loose", item(/obj/item), label("Use"), when(req(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
+	op("loose", item(/obj/item), label("Use"), when(req_bool(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
 
 /// The mattress is not bolted down.
 /obj/structure/dirtybed/proc/is_loose(datum/act/A)

@@ -137,7 +137,7 @@ CAPABILITIES(/datum/managed_browser/feedback_form)
 	if(can_be_private() && feedback_hide_author)
 		author_text = md5(my_client().ckey + SSsqlite.get_feedback_pepper())
 
-	var/success = SSsqlite.insert_feedback(author = author_text, topic = feedback_topic, content = feedback_body, sqlite_object = SSsqlite.sqlite_db)
+	var/success = SSsqlite.insert_feedback(author = author_text, topic = feedback_topic, content = feedback_body, sqlite_object = sqlite_sqlite_db())
 	if(!success)
 		to_chat(my_client(), span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
 		If this happens again, you should contact a developer."))

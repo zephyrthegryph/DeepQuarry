@@ -26,28 +26,28 @@ MSG_DEF_SELF(pipe_device/maxed, "You set it to its highest output.")
 /// The wrench that takes a pipe device off its pipes into its fitting.
 /proc/pipe_device_unwrench()
 	return list(op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS),
-		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_device_idle), because = MSG(pipe_device/running)),
-			req(TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_safe), because = MSG(pipe_device/exerted))),
+		needs(req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_device_idle), because = MSG(pipe_device/running)),
+			req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_safe), because = MSG(pipe_device/exerted))),
 		says(MSG(pipe_device/unfastened)),
 		then(TYPE_PROC_REF(/obj/machinery/atmospherics, unfastened))))
 
 /// The device's window: a hand opens it for someone its access lets in, while it works.
 /proc/pipe_device_window(window)
 	return list(interface(window),
-		extend("ui_open", needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, device_works), because = MSG(machine/inoperable)),
-			req(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied)))))
+		extend("ui_open", needs(req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, device_works), because = MSG(machine/inoperable)),
+			req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied)))))
 
 /// The ctrl-click power switch.
 /proc/pipe_device_switch()
 	return list(op("power_toggle", hand(), gesture(GESTURE_CTRL), label("Toggle power"), wait(0),
-		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied))),
+		needs(req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied))),
 		says(TYPE_PROC_REF(/obj/machinery/atmospherics, toggled_message)),
 		then(TYPE_PROC_REF(/obj/machinery/atmospherics, ctrl_power_toggled))))
 
 /// The alt-click that sets the device to its highest output (`max_proc`, a holder proc: x(datum/act/op/A)).
 /proc/pipe_device_max(max_proc)
 	return list(op("max_output", hand(), gesture(GESTURE_ALT), label("Set to max output"), wait(0),
-		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied))),
+		needs(req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, actor_allowed), because = MSG(lock/denied))),
 		says(MSG(pipe_device/maxed)), then(max_proc)))
 
 // ---- what the controls ask of the device ----

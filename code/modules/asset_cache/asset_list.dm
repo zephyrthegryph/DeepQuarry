@@ -496,7 +496,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset/spritesheet/proc/write_to_cache()
 	for (var/size_id in sizes)
-		var/datum/asset_cache_item/temp = SSassets.cache["[name]_[size_id].png"]
+		var/datum/asset_cache_item/temp = assets_cache()["[name]_[size_id].png"]
 		fcopy(temp.resource, "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name]_[size_id].png")
 
 	generating_cache = TRUE

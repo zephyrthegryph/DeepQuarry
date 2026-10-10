@@ -50,7 +50,7 @@ MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice
 /// The held thing is soggy: the wash op takes it before the sink's other item ops.
 /obj/structure/sink/proc/holding_gurgled(datum/act/op/A)
 	var/obj/item/I = A.held
-	return istype(I) && I.gurgled
+	return istype(I) && I.gurgled ? null : /datum/msg/req_failed
 
 /obj/structure/sink/proc/wash_gurgled_done(datum/act/op/A)
 	var/obj/item/I = A.held

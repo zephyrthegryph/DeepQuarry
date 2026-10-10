@@ -98,7 +98,7 @@ CAPABILITIES(/datum/tgui_module/alarm_monitor/security/glasses)
 
 CAPABILITIES(/datum/tgui_module/alarm_monitor)
 	interface("StationAlertConsole")
-	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_switchto)))
+	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_switchto)))
 
 /datum/tgui_module/alarm_monitor/proc/ui_act_switchto(datum/act/op/A, camera)
 	var/mob/user = A.actor

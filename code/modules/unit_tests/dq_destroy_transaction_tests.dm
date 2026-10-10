@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	dq_destroy_transaction_log("destroy")
 	..()
 
-/datum/om/relation/slot/dq_destroy_transaction_probe_main
+/datum/relation_definition/slot/dq_destroy_transaction_probe_main
 	holder = /obj/item/dq_destroy_transaction_phase_probe
 	slot_id = "main"
 	is_default = TRUE
@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	name = "nesting outer"
 	w_class = ITEMSIZE_NORMAL
 
-/datum/om/relation/slot/dq_destroy_transaction_nest_outer_slot
+/datum/relation_definition/slot/dq_destroy_transaction_nest_outer_slot
 	holder = /obj/item/dq_destroy_transaction_nest_outer
 	slot_id = "child_holder"
 	is_default = TRUE
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	dq_destroy_transaction_log("inner-destroy")
 	..()
 
-/datum/om/relation/slot/dq_destroy_transaction_nest_inner_slot
+/datum/relation_definition/slot/dq_destroy_transaction_nest_inner_slot
 	holder = /obj/item/dq_destroy_transaction_nest_inner
 	slot_id = "grandchild"
 	is_default = TRUE
@@ -188,13 +188,13 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	w_class = ITEMSIZE_NORMAL
 	var/level_name
 
-/datum/om/relation/slot/dq_destroy_transaction_mind_slot
+/datum/relation_definition/slot/dq_destroy_transaction_mind_slot
 	holder = /obj/item/dq_destroy_transaction_mind_level
 	slot_id = "mind"
 	is_mind_slot = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/om/relation/slot/dq_destroy_transaction_mind_body_slot
+/datum/relation_definition/slot/dq_destroy_transaction_mind_body_slot
 	holder = /obj/item/dq_destroy_transaction_mind_level
 	slot_id = "body"
 	is_default = TRUE
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	name = "occupant holder"
 	anchored = TRUE
 
-/datum/om/relation/slot/dq_destroy_transaction_occupant
+/datum/relation_definition/slot/dq_destroy_transaction_occupant
 	holder = /obj/structure/dq_destroy_transaction_occupant_holder
 	slot_id = "occupant"
 	is_default = TRUE
@@ -258,7 +258,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	capacity = 1
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	// Occupant machines eject to a turf, not into whatever the holder itself
 	// happens to be sitting in (containment.md §10, lifecycle.md §3).
 	return get_turf(holder)
@@ -290,7 +290,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 
 	TEST_ASSERT_NULL(B.partner, "destroying A nulled B's side of the pair too (phase 4)")
 
-/// A destroyed inside B's own transaction (B's /datum/om/event/qdeleting handler
+/// A destroyed inside B's own transaction (B's /datum/definition_event/qdeleting handler
 /// qdels its partner) -- the relation teardown must not double-clear or crash when
 /// the reciprocal side is already gone by the time phase 4 reaches it.
 /datum/dq_destroy_transaction_reentrant_pair

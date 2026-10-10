@@ -390,9 +390,12 @@
 					// i.e. will be treated as an empty turf
 	desc = "A broken piece of disposal pipe."
 
-/obj/structure/disposalpipe/broken/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/disposalpipe/broken)
+	after_init(0, then(PROC_REF(init_update)))
+
+/obj/structure/disposalpipe/broken/proc/init_update(datum/act/timer/A)
 	update()
+
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()

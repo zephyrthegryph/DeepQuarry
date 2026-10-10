@@ -4,7 +4,7 @@
 	set category = VERB_CAT_OOC_GAME
 	set desc = "Enter intelligence storage. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
-	if(SSticker && round_mode() && round_mode().name == "AI malfunction")
+	if(SSticker && ticker_mode() && ticker_mode().name == "AI malfunction")
 		to_chat(src, span_danger("You cannot use this verb in malfunction. If you need to leave, please adminhelp."))
 		return
 

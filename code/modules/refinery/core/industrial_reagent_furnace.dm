@@ -21,16 +21,13 @@ TRACKED(/obj/machinery/reagent_refinery/furnace, filter_side)
 	icon_state = "furnace_r"
 
 CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	climb()
 	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/beaker/bluespace)
 	op("furnace_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_use)))
 	op("furnace_set_filter", menu(), label("Set Sintering Chemical"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_set_filter)))
 	op("furnace_flip", menu(), label("Flip Furnace Direction"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_flip)))
-
-/obj/machinery/reagent_refinery/furnace/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()

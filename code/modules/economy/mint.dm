@@ -18,7 +18,7 @@ MSG_DEF_SELF(mint/no_coins, "You can't make coins out of that.")
 
 /obj/machinery/mineral/mint/proc/sheet_makes_coins(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held
-	return istype(M) && M.coin_type
+	return (istype(M) && M.coin_type) ? null : MSG(mint/no_coins)
 
 /obj/machinery/mineral/mint/proc/press_started(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held

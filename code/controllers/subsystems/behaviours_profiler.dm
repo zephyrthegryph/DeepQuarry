@@ -14,8 +14,8 @@ CAPABILITIES(/datum/system/behaviours)
 /// /datum/system/behaviours's window data.
 /datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	var/datum/om/registry/reg = definition_registry()
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/definition_registry/reg = definition_registry()
 	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
 	data["elapsed_s"] = round(elapsed, 0.1)
@@ -32,7 +32,7 @@ CAPABILITIES(/datum/system/behaviours)
 		lane_count[i] = 0
 	var/shared_bucket = FALSE
 	if(sched && reg)
-		for(var/datum/om/behaviour/B as anything in reg.behaviours)
+		for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 			if(!B?.id)
 				continue
 			if(B.id >= OM_MAX_STAT_TYPES)
@@ -43,11 +43,11 @@ CAPABILITIES(/datum/system/behaviours)
 			var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
 			var/population = 0
 			if(B.id <= length(sched.rings))
-				for(var/datum/om/ring/R as anything in sched.rings[B.id])
+				for(var/datum/cadence_ring/R as anything in sched.rings[B.id])
 					population += R.population()
 			var/parked = 0
-			if(istype(B, /datum/om/pipeline))
-				var/datum/om/pipeline/P = B
+			if(istype(B, /datum/work_pipeline))
+				var/datum/work_pipeline/P = B
 				parked = length(P.parked_on(sched))
 			lane_ms[lane] += ms
 			lane_runs[lane] += runs
@@ -72,7 +72,7 @@ CAPABILITIES(/datum/system/behaviours)
 			))
 	data["behaviours"] = behaviours
 	data["shared_bucket"] = shared_bucket
-	var/list/world_diag = sched ? om_world_diagnostics(sched) : null
+	var/list/world_diag = sched ? world_diagnostics(sched) : null
 	var/list/world_queued = world_diag?["queued"]
 	var/list/lanes = list()
 	for(var/i in 1 to OM_LANE_COUNT)
@@ -121,7 +121,7 @@ CAPABILITIES(/datum/system/behaviours)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.stats = list()
 		sched.stage_cost = list()

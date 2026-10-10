@@ -121,7 +121,7 @@
 /// plus a hand-managed forceMove(). Keyed by implant type, so re-implanting
 /// the same kind refuses rather than stacking duplicates. Deleted with the
 /// organ, same as the raw contents this slot replaces.
-/datum/om/relation/slot/implant_site
+/datum/relation_definition/slot/implant_site
 	holder = /obj/item/organ/external
 	slot_id = ORGAN_SLOT_IMPLANTS
 	name = "implant site"
@@ -144,13 +144,13 @@
 /// including `imp_in`, which used to only get cleared by the organ's
 /// Destroy() -- so directly hard-deleting the host mob without going through
 /// organ removal left `imp_in` dangling.
-/datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+/datum/relation_definition/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/relation_edge/edge)
 	if(istype(source) && istype(target))
 		rel_set(source, nameof(source.part), target)
 		rel_add(target, nameof(target.implants), source)
 		rel_set(source, nameof(source.imp_in), target.owner)
 
-/datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
+/datum/relation_definition/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/relation_edge/edge)
 	if(istype(source) && source.part == target)
 		rel_clear(source, nameof(source.part))
 	if(istype(target))
@@ -196,16 +196,16 @@ CAPABILITIES(/obj/item/organ/external)
 	after_init(0, then(PROC_REF(icon_after_init)))
 	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
-	op("pull_embedded", in_hand(), label("Pull out"), priority(OP_PRIORITY_PART), when(req(PROC_REF(has_embedded))), then(PROC_REF(pull_embedded)))
-	op("bench_scalpel", item(/obj/item/surgical/scalpel), label("Cut"), when(req(PROC_REF(at_scalpel_stage))), then(PROC_REF(bench_scalpel)))
-	op("bench_retract", item(/obj/item/surgical/retractor), label("Crack open"), when(req(PROC_REF(at_stage_1))), then(PROC_REF(bench_retract)))
-	op("bench_cauterize", item(/obj/item/surgical/cautery), label("Close"), when(req(PROC_REF(at_stage_1))), then(PROC_REF(bench_cauterize)))
-	op("bench_extract", item(/obj/item/surgical/hemostat), label("Extract"), when(req(PROC_REF(at_stage_2))),
+	op("pull_embedded", in_hand(), label("Pull out"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(has_embedded))), then(PROC_REF(pull_embedded)))
+	op("bench_scalpel", item(/obj/item/surgical/scalpel), label("Cut"), when(req_bool(PROC_REF(at_scalpel_stage))), then(PROC_REF(bench_scalpel)))
+	op("bench_retract", item(/obj/item/surgical/retractor), label("Crack open"), when(req_bool(PROC_REF(at_stage_1))), then(PROC_REF(bench_retract)))
+	op("bench_cauterize", item(/obj/item/surgical/cautery), label("Close"), when(req_bool(PROC_REF(at_stage_1))), then(PROC_REF(bench_cauterize)))
+	op("bench_extract", item(/obj/item/surgical/hemostat), label("Extract"), when(req_bool(PROC_REF(at_stage_2))),
 		asks(/datum/prompt/choice, fields = list("question" = "What would you like to remove?", "title" = "Extraction", "choices" = computed(PROC_REF(extraction_names)), "timeout" = 20 SECONDS),
 			step = "extract", when = PROC_REF(has_contents)),
 		then(PROC_REF(bench_extract)))
-	op("bench_fixovein", item(/obj/item/surgical/FixOVein), label("Partially close"), when(req(PROC_REF(at_stage_2))), then(PROC_REF(bench_fixovein)))
-	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(req(PROC_REF(at_stage_3))), then(PROC_REF(bench_rejuvenate)))
+	op("bench_fixovein", item(/obj/item/surgical/FixOVein), label("Partially close"), when(req_bool(PROC_REF(at_stage_2))), then(PROC_REF(bench_fixovein)))
+	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(req_bool(PROC_REF(at_stage_3))), then(PROC_REF(bench_rejuvenate)))
 	// A patch on a robotic limb takes a second with the tool in hand; the welder or the cable says what it patches (robo_repair()).
 	op("robo_repair", ai(), wait(1 SECOND, keeps = HELD | ALIVE | STAY), on_interrupt(PROC_REF(robo_repair_failed)), then(PROC_REF(robo_repair_done)))
 

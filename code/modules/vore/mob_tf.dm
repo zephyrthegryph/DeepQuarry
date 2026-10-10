@@ -91,7 +91,7 @@
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
-	// when the mob's stat changes via its /datum/om/event/mob_statchange handler.
+	// when the mob's stat changes via its /datum/definition_event/mob_statchange handler.
 	return_player_to_tf_holder("reverted mob transform")
 	set_tf_mob_holder(null)
 	var/turf/get_dat_turf = get_turf(src)

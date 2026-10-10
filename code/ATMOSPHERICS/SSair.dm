@@ -422,7 +422,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/build_multiz_atmos_levels()
 	if(!SSmapping)
 		return
-	if(length(SSmapping.multiz_levels) < world.maxz)
+	if(length(mapping_multiz_levels()) < world.maxz)
 		SSmapping.multiz_levels.len = world.maxz
 	for(var/z in 1 to world.maxz)
 		// Z_LEVEL_UP / Z_LEVEL_DOWN are the numeric direction constants UP (16)
@@ -440,7 +440,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/update_dynamic_multiz_atmos_level(z)
 	if(!SSmapping || z < 1 || z > world.maxz)
 		return
-	if(length(SSmapping.multiz_levels) < world.maxz)
+	if(length(mapping_multiz_levels()) < world.maxz)
 		SSmapping.multiz_levels.len = world.maxz
 	for(var/level in max(1, z - 1) to min(world.maxz, z + 1))
 		var/list/traits = new /list(Z_LEVEL_DOWN)
@@ -455,7 +455,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/push_z_links()
 	var/list/links = new /list(world.maxz)
 	for(var/z in 1 to world.maxz)
-		var/list/traits = length(SSmapping.multiz_levels) >= z ? SSmapping.multiz_levels[z] : null
+		var/list/traits = length(mapping_multiz_levels()) >= z ? mapping_multiz_levels()[z] : null
 		if(!traits)
 			links[z] = NONE
 			continue
@@ -511,7 +511,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	for(var/sharp_color in GLOB.contrast_colors)
 		var/list/add_to = list()
 		GLOB.colored_turfs += list(add_to)
-		for(var/offset in 0 to SSmapping.max_plane_offset)
+		for(var/offset in 0 to mapping_max_plane_offset())
 			var/obj/effect/overlay/atmos_excited/suger_high = new()
 			SET_PLANE_W_SCALAR(suger_high, HIGH_GAME_PLANE, offset)
 			add_to += suger_high

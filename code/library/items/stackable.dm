@@ -19,7 +19,7 @@ MSG_DEF(stackable/split, "You split %I% into two stacks.", "%U% splits a stack."
 /datum/capability/lib/stackable/entries()
 	return list(
 		op("merge", at_target(/obj/item), when(CAP_PROC(same_kind)), label("Merge stacks"),
-			needs(req(CAP_PROC(target_has_room), because = MSG(stackable/full))),
+			needs(req_bool(CAP_PROC(target_has_room), because = MSG(stackable/full))),
 			costs(RES_STACK, CAP_PROC(merge_amount)), then(CAP_PROC(add_to_target)), says(MSG(stackable/merge))),
 		op("split", menu(), label("Split stack"),
 			asks(/datum/prompt/number, fields = list("question" = "How many to split off?")), then(CAP_PROC(do_split)), says(MSG(stackable/split))),

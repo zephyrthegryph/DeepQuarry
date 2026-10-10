@@ -17,7 +17,7 @@ MSG_DEF_SELF(privacy_switch/cooling_down, "the area can not be altered so soon a
 
 CAPABILITIES(/obj/structure/privacyswitch)
 	silicon_hand()
-	op("toggle_privacy", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(cooled_down_holds), because = MSG(privacy_switch/cooling_down))),
+	op("toggle_privacy", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(cooled_down_holds), because = MSG(privacy_switch/cooling_down))),
 		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(toggle_question)), "title" = "Toggle ghost vision?", "choices" = list("Yes", "No"), "buttons" = TRUE), when = PROC_REF(has_area)), then(PROC_REF(interaction_hand)))
 
 /// Requirement: the switch has a use cooldown.

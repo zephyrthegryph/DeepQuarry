@@ -35,7 +35,7 @@
 /obj/machinery/computer/shuttle_control/explore/console_gate(mob/user)
 	if(!..())
 		return FALSE
-	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return FALSE
@@ -45,7 +45,7 @@
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
 	plot_expedition(user, shuttle)
 	return TRUE
 
@@ -57,7 +57,7 @@
 	return explore_destination_stage(ui, FALSE)
 
 /obj/machinery/computer/shuttle_control/explore/proc/explore_destination_stage(datum/tgui/ui, answered, selected, datum/request/request)
-	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[shuttle_tag]
 	var/list/possible_d = shuttle.get_possible_destinations()
 	var/destination_key
 	if(possible_d.len)

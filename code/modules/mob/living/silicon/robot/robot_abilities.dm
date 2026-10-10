@@ -44,7 +44,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 
 /// TRUE unless the light is off and there's no power to turn it on.
 /mob/living/silicon/robot/proc/lights_have_power(datum/act/op/A)
-	return lights_on || has_power
+	return (lights_on || has_power) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/ability_toggle_lights(datum/act/op/A)
 	set_lights(!lights_on)
@@ -52,7 +52,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/sprite_customizable(datum/act/op/A)
-	return sprite_datum && sprite_datum.has_extra_customization
+	return (sprite_datum && sprite_datum.has_extra_customization) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/ability_customize_appearance(datum/act/op/A)
 	sprite_datum.handle_extra_customization(src)
@@ -79,7 +79,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/has_excess_nutrition(datum/act/op/A)
-	return nutrition > 1000
+	return (nutrition > 1000) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/ability_purge_nutrition(datum/act/op/A)
 	set_nutrition(1000)
@@ -87,7 +87,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/has_sprite_datum(datum/act/op/A)
-	return !!sprite_datum
+	return (!!sprite_datum) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/ability_toggle_decals(datum/act/op/A)
 	decal_control.tgui_interact(src)
@@ -98,7 +98,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 	return living_mobs_in_view(1) - src
 
 /mob/living/silicon/robot/proc/has_nom_candidates(datum/act/op/A)
-	return length(nom_candidates()) > 0
+	return (length(nom_candidates()) > 0) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/nom_candidate_choices(datum/act/op/A)
 	return nom_candidates()
@@ -141,7 +141,7 @@ CAPABILITY_DEF(robot_naming, CAP_ROBOT_NAMING, key = NONE)
 
 /// TRUE while no custom name has been picked yet.
 /mob/living/silicon/robot/proc/can_pick_custom_name(datum/act/op/A)
-	return !custom_name
+	return (!custom_name) ? null : /datum/msg/req_failed
 
 /// The answer is the name; a blank one (or a cancel, ability_name_cancelled()) is the default name.
 /mob/living/silicon/robot/proc/ability_pick_name(datum/act/op/A)
@@ -188,7 +188,7 @@ CAPABILITY_DEF(robot_live, CAP_ROBOT_LIVE, key = NONE)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/can_carry_riders(datum/act/op/A)
-	return can_buckle
+	return (can_buckle) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/has_no_riders(datum/act/op/A)
 	return !LAZYLEN(buckled_mob_list())
@@ -202,7 +202,7 @@ CAPABILITY_DEF(robot_live, CAP_ROBOT_LIVE, key = NONE)
 
 /// A rider to dismount, or somebody to pick.
 /mob/living/silicon/robot/proc/has_riders_or_mount_candidates(datum/act/op/A)
-	return LAZYLEN(buckled_mob_list()) || length(mount_candidates()) > 0
+	return (LAZYLEN(buckled_mob_list()) || length(mount_candidates()) > 0) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/mount_candidate_choices(datum/act/op/A)
 	return mount_candidates()
@@ -249,7 +249,7 @@ CAPABILITY_DEF(robot_recolour, CAP_ROBOT_RECOLOUR, key = NONE)
 			then(TYPE_PROC_REF(/mob/living/silicon/robot, ability_recolour))))
 
 /mob/living/silicon/robot/proc/not_recoloured(datum/act/op/A)
-	return !has_recoloured
+	return (!has_recoloured) ? null : /datum/msg/req_failed
 
 /// The window paints us in place (and sets has_recoloured); there is no answer to act on.
 /mob/living/silicon/robot/proc/ability_recolour(datum/act/op/A)

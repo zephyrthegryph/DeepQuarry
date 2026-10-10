@@ -81,16 +81,16 @@ TRACKED(/obj/machinery/clonepod, mess)
 /// resleever, this machine already tracked its occupant through an OM handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
-/datum/om/relation/slot/occupant/clonepod
+/datum/relation_definition/slot/occupant/clonepod
 	holder = /obj/machinery/clonepod
 	slot_id = OCCUPANT_SLOT_CLONEPOD
 	name = "cloning pod"
 
-/datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
 	..()
 	target.set_occupant(source)
 
-/datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
 	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
@@ -122,7 +122,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(growing_record), /datum/transhuman/body_record)
 	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
-	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_space), because = MSG(clonepod/container_full))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req_bool(PROC_REF(container_space), because = MSG(clonepod/container_full))), wait(1 SECOND), then(PROC_REF(load_container_done)))
 	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
 	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
 	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))

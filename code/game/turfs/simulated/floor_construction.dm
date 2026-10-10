@@ -56,11 +56,11 @@ MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before
 
 /// There is a base turf under the plating to expose.
 /turf/simulated/floor/proc/plating_has_base(datum/act/A)
-	return read_once(get_base_turf_by_area(src) && type != get_base_turf_by_area(src))
+	return read_once(get_base_turf_by_area(src) && type != get_base_turf_by_area(src)) ? null : MSG(floor/nothing_under)
 
 /// No structure stands on the plating.
 /turf/simulated/floor/proc/plating_clear(datum/act/A)
-	return !locate_within(src, /obj/structure)
+	return !locate_within(src, /obj/structure) ? null : MSG(floor/structures_on)
 
 /turf/simulated/floor/proc/plating_cut(datum/act/op/A)
 	var/obj/item/held = A.held

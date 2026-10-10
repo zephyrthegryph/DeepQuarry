@@ -30,12 +30,13 @@ CAPABILITIES(/obj/machinery/hyperpad)
 	var/max_item_teleport = 30
 
 CAPABILITIES(/obj/machinery/hyperpad/centre)
+	after_init(0, then(PROC_REF(detect_and_light)))
+	ref_one(nameof(linked_pad), /obj/machinery/hyperpad/centre, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
 	owns_many(nameof(linked))
 	op("hyperpad_centre_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(hyperpad_centre_ghost_travel)))
 	op("hyperpad_centre_teleport", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Activate"), then(PROC_REF(interaction_teleport)))
 
-/obj/machinery/hyperpad/centre/Initialize(mapload)
-	. = ..()
+/obj/machinery/hyperpad/centre/proc/detect_and_light(datum/act/timer/A)
 	if(map_pad_id)
 		detect()
 	set_light(3, 1, newcolor)
@@ -43,11 +44,6 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 // Its linked pads go with it.
 
 // Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
-/obj/machinery/hyperpad/centre/relations()
-	. = ..()
-	. += rel_one(nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/hyperpad/centre)
-	. += rel_key(nameof(map_pad_id))
-
 /// Always usable, powered or not.
 /obj/machinery/hyperpad/operable(additional_flags = 0)
 	return TRUE

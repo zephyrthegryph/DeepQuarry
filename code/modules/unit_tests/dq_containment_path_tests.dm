@@ -37,7 +37,7 @@
 	w_class = ITEMSIZE_NORMAL
 	max_integrity = 10000
 
-/datum/om/relation/slot/dq_path_bag_interior
+/datum/relation_definition/slot/dq_path_bag_interior
 	holder = list(/obj/item/dq_path_bag, /obj/item/dq_path_sealed)
 	slot_id = "interior"
 	exposure = SLOT_EXPOSURE_INTERNAL
@@ -50,7 +50,7 @@
 /obj/item/dq_path_sealed
 	name = "path test flask"
 
-/datum/om/relation/slot/dq_path_sealed_inner
+/datum/relation_definition/slot/dq_path_sealed_inner
 	holder = /obj/item/dq_path_sealed
 	slot_id = "sealed"
 	exposure = SLOT_EXPOSURE_SEALED
@@ -60,21 +60,21 @@
 	name = "path test mannequin"
 	max_integrity = 10000
 
-/datum/om/relation/slot/dq_path_layer
+/datum/relation_definition/slot/dq_path_layer
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	damage_transmission = list(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 
-/datum/om/relation/slot/dq_path_layer/undersuit
+/datum/relation_definition/slot/dq_path_layer/undersuit
 	holder = /obj/item/dq_path_mannequin
 	slot_id = "undersuit"
 	layer = SLOT_LAYER_UNDERSUIT
 
-/datum/om/relation/slot/dq_path_layer/uniform
+/datum/relation_definition/slot/dq_path_layer/uniform
 	holder = /obj/item/dq_path_mannequin
 	slot_id = "uniform"
 	layer = SLOT_LAYER_UNIFORM
 
-/datum/om/relation/slot/dq_path_layer/suit
+/datum/relation_definition/slot/dq_path_layer/suit
 	holder = /obj/item/dq_path_mannequin
 	slot_id = "suit"
 	layer = SLOT_LAYER_SUIT

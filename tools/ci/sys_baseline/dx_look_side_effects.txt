@@ -59,15 +59,6 @@ dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_on(TRUE)
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_color("#00ccff")
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light(3)
 dx_appearance_side_effect	code/game/machinery/spaceheater.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	overlays?.Cut()
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	underlays?.Cut()
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	filters = null
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	dir = SOUTH
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	name = initial(name)
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	desc = initial(desc)
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	name = "Voodoo doll of " + owner.name
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	desc = "A small, marketable doll that looks suspiciously like [owner]... "
-dx_appearance_side_effect	code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/voodoo.dm	tail_image.filters += filter(type="alpha", flags = MASK_INVERSE)
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_layer = image(icon, "[initial(icon_state)]-material")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow = image(icon, "[initial(icon_state)]-material-glow")
 dx_appearance_side_effect	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	material_glow.plane = PLANE_LIGHTING_ABOVE

@@ -36,10 +36,10 @@ CAPABILITIES(/obj/machinery/meter)
 	extend("read", inputs(remote()))
 	op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS), says(MSG(meter/unfastened)), then(PROC_REF(unfastened)))
 	op("panel", tool(TOOL_SCREWDRIVER), wait(0), toggles(nameof(open)), says(PROC_REF(panel_message)))
-	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req(PROC_REF(panel_open_now), because = MSG(meter/panel_shut))),
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req_bool(PROC_REF(panel_open_now), because = MSG(meter/panel_shut))),
 		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(id_entered)))
-	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
+	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req_bool(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()

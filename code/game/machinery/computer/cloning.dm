@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 	op("view_rec", ui_act("view_rec", arg("ref")), then(PROC_REF(ui_act_view_rec)))
 	// deleting a record asks first, in the window (the old boolean modal), and needs the ID in hand when answered
-	op("del_rec", ui_act("del_rec"), needs(req(PROC_REF(has_active_record), silent = TRUE)),
+	op("del_rec", ui_act("del_rec"), needs(req_bool(PROC_REF(has_active_record), silent = TRUE)),
 		asks(/datum/prompt/yes_no, fields = list("question" = "Please confirm that you want to delete the record by holding your ID and pressing Delete:", "yes_text" = "Delete", "no_text" = "Cancel", "inline" = TRUE, "timeout" = 0), step = "confirm"),
 		then(PROC_REF(ui_act_del_rec)))
 	op("disk", ui_act("disk", arg("option", schema_text(4096))), then(PROC_REF(ui_act_disk)))

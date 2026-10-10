@@ -5,7 +5,7 @@
 	vote_result_type = VOTE_RESULT_TYPE_SKEWED
 
 /datum/vote/crew_transfer/New()
-	if(round_game_state() < GAME_STATE_PLAYING)
+	if(ticker_current_state() < GAME_STATE_PLAYING)
 		CRASH("Attempted to call a shutle vote before the game starts!")
 	..()
 

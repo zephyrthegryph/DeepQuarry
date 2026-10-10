@@ -31,9 +31,9 @@ MSG_DEF_SELF(personal/unlock_first, "You need to unlock it first.")
 // The first ID swiped on a personal locker gains control of it: its name is the owner's, and only that card (or the master access) locks and unlocks it
 // from then on. The Reset Lock entry frees it for the next card.
 CAPABILITIES(/obj/structure/closet/secure_closet/personal)
-	op("swipe", item(/obj/item), label("Swipe ID"), when(cond_not(nameof(opened))), when(req(PROC_REF(carries_id))), priority(above("lock.toggle")),
-		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req(PROC_REF(card_has_name), because = MSG(personal/blank_card))), then(PROC_REF(card_swiped)))
-	op("reset_lock", menu(), label("Reset Lock"), needs(req_capable(), req(PROC_REF(can_reset), because = PROC_REF(reset_refusal))), then(PROC_REF(lock_reset)))
+	op("swipe", item(/obj/item), label("Swipe ID"), when(cond_not(nameof(opened))), when(req_bool(PROC_REF(carries_id))), priority(above("lock.toggle")),
+		needs(req_is(nameof(broken), FALSE, because = MSG(secure_closet/broken)), req_bool(PROC_REF(card_has_name), because = MSG(personal/blank_card))), then(PROC_REF(card_swiped)))
+	op("reset_lock", menu(), label("Reset Lock"), needs(req_capable(), req_bool(PROC_REF(can_reset), because = PROC_REF(reset_refusal))), then(PROC_REF(lock_reset)))
 
 /// The held item is, or carries, an ID card.
 /obj/structure/closet/secure_closet/personal/proc/carries_id(datum/act/op/A)

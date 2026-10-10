@@ -18,6 +18,7 @@ SYSTEM_DEF(pai)
 	VAR_PRIVATE/refresh_resuming = FALSE
 
 CAPABILITIES(/datum/system/pai)
+	ref_many(nameof(pai_ghosts))
 	owns_many(nameof(pai_chassis_sprites), /datum/pai_sprite)
 
 /datum/system/pai/initialize()
@@ -121,8 +122,5 @@ CAPABILITIES(/datum/prompt/choice/pai_invite)
 
 	to_chat(inquirer, span_warning("The pAI denied the request."))
 
-/datum/system/pai/relations()
-	. = ..()
-	. += rel_many(nameof(pai_ghosts))
 
 #undef PAI_DELAY_TIME

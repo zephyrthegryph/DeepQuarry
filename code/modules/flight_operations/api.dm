@@ -13,7 +13,7 @@
 		var/datum/flight_vessel/existing = vessels?[existing_id]
 		if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 			var/obj/effect/overmap/visitable/ship/landable/landable = ship
-			rel_set(existing, nameof(existing.shuttle), SSshuttles.shuttles[landable.shuttle])
+			rel_set(existing, nameof(existing.shuttle), shuttles_shuttles()[landable.shuttle])
 			if(existing.shuttle())
 				existing.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 		return existing
@@ -24,7 +24,7 @@
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC | FLIGHT_CAP_DOCK
 	if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 		var/obj/effect/overmap/visitable/ship/landable/landable = ship
-		rel_set(vessel, nameof(vessel.shuttle), SSshuttles.shuttles[landable.shuttle])
+		rel_set(vessel, nameof(vessel.shuttle), shuttles_shuttles()[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 	rel_add(src, nameof(vessels), vessel, vessel.id)
 	var/ship_ref = REF(ship) // lookup keyed by ref string: plain data

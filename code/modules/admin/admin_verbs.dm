@@ -593,7 +593,7 @@ ADMIN_VERB(free_slot, R_ADMIN|R_FUN|R_EVENT, "Free Job Slot", "Frees another job
 /datum/admin_verb/free_slot/proc/job_slot_stage(client/user, list/job_answers)
 	var/mob/actor = user?.mob
 	var/list/jobs = list()
-	for(var/datum/job/J in SSjob.occupations)
+	for(var/datum/job/J in job_occupations())
 		if (J.current_positions >= J.total_positions && J.total_positions != -1)
 			jobs += J.title
 	if(!jobs.len)
@@ -851,8 +851,8 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	GLOB.ghostnet.removeArea(target_area)
 
 ADMIN_VERB(hide_motion_tracker_feedback, R_ADMIN|R_EVENT, "Toggle Motion Echos", "Hides or reveals motion tracker echos globally.", ADMIN_CATEGORY_EVENTS)
-	SSmotiontracker.hide_all = !SSmotiontracker.hide_all
-	log_admin("[key_name(user)] changed the motion echo visibility to [SSmotiontracker.hide_all ? "hidden" : "visible"].")
+	SSmotiontracker.hide_all = !motiontracker_hide_all()
+	log_admin("[key_name(user)] changed the motion echo visibility to [motiontracker_hide_all() ? "hidden" : "visible"].")
 
 ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around something else.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/center

@@ -32,7 +32,7 @@ SYSTEM_DEF(behaviours)
 #endif
 
 /datum/system/behaviours/stat_entry(msg)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		msg = "[round(sched.last_run_ms, 0.01)]ms[last_done ? "" : " (behind)"] E:[length(sched.errors)]"
 	return msg
@@ -52,7 +52,7 @@ ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the m
 	return initialized && audit_enabled()
 
 /datum/system/behaviours/proc/audit_step(dt)
-	var/datum/om/scheduler/sched = Kernel?.sched
+	var/datum/time_scheduler/sched = Kernel?.sched
 	if(!sched)
 		return STEP_DONE
 	// The audit is kernel work, outside every behaviour's slot, so nothing charged it: its cost (about 0.18 ms per

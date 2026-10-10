@@ -22,9 +22,8 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 	C.images += src
 	rel_add(src, nameof(clients), C)
 
-/image/client_only/relations()
-	. = ..()
-	. += rel_many(nameof(clients))
+CAPABILITIES(/image/client_only)
+	ref_many(nameof(clients))
 
 // comes off every client it was shown to (clients aren't datums, so no pair can do it).
 /image/client_only/lifecycle_dematerialize()

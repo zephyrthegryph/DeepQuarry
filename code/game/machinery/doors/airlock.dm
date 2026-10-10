@@ -173,22 +173,22 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 	section(touch, "What a hand or a held thing does to the door")
 	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),
-		needs(req(PROC_REF(pry_free), because = PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
+		needs(req_bool(PROC_REF(pry_free), because = PROC_REF(pry_blocked))), then(PROC_REF(pry_forced)))
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
 	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
-	op("tear", hand(), label("Tear"), when(req(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
+		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
+	op("tear", hand(), label("Tear"), when(req_bool(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
+		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held)))
 	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
 	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin)))
-	op("pry_weapon", item(/obj/item), when(req(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
+	op("pry_weapon", item(/obj/item), when(req_bool(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
 	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done)))
 	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
 		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
-	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable), because = MSG(airlock/panel_broken))), then(PROC_REF(panel_toggled)))
+	extend("panel.open", wait(0), needs(req_bool(PROC_REF(panel_closable), because = MSG(airlock/panel_broken))), then(PROC_REF(panel_toggled)))
 	extend("weld_shut.toggle", priority(above("repair")), when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
@@ -212,24 +212,24 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
 	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 	op("disrupt_main", ui_act("disrupt-main"), needs(req_is(STAT_MAIN_POWER_OUT, FALSE, because = MSG(airlock/main_offline))), then(PROC_REF(lose_main_power)))
-	op("disrupt_backup", ui_act("disrupt-backup"), needs(req(PROC_REF(backup_carries), because = MSG(airlock/backup_offline))), then(PROC_REF(lose_backup_power)))
+	op("disrupt_backup", ui_act("disrupt-backup"), needs(req_bool(PROC_REF(backup_carries), because = MSG(airlock/backup_offline))), then(PROC_REF(lose_backup_power)))
 	op("shock_restore", ui_act("shock-restore"), releases(STAT_ELECTRIFIED, source = ON_ACTOR), says(MSG(airlock/unelectrified)))
-	op("shock_temp", ui_act("shock-temp"), needs(req(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
+	op("shock_temp", ui_act("shock-temp"), needs(req_bool(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
 		holds(STAT_ELECTRIFIED, TRUE, lasts = 30 SECONDS, source = ON_ACTOR), then(PROC_REF(electrified_by)), says(MSG(airlock/electrified)), logs(LOG_GAME))
-	op("shock_perm", ui_act("shock-perm"), needs(req(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
+	op("shock_perm", ui_act("shock-perm"), needs(req_bool(PROC_REF(power_systems_on), because = MSG(airlock/unpowered))),
 		holds(STAT_ELECTRIFIED, TRUE, source = ON_ACTOR), then(PROC_REF(electrified_by)), says(MSG(airlock/electrified)), logs(LOG_GAME))
 	op("idscan_toggle", ui_act("idscan-toggle"), needs(req_wire(WIRE_IDSCAN, because = MSG(airlock/idscan_wire_cut))),
 		toggles_hold(STAT_AIDISABLEDIDSCANNER, source = SRC_AI_CONTROL))
 	op("emergency_toggle", ui_act("emergency-toggle"), toggles(DOOR_EMERGENCY_ENGAGED), says(PROC_REF(emergency_message)), logs(LOG_GAME))
 	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
-		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req(PROC_REF(actor_may_move_bolts), because = MSG(airlock/no_power_to_raise))),
+		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req_bool(PROC_REF(actor_may_move_bolts), because = MSG(airlock/no_power_to_raise))),
 		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
 	op("light_toggle", ui_act("light-toggle"), needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	op("safe_toggle", ui_act("safe-toggle"), needs(req_wire(WIRE_SAFETY, because = MSG(airlock/safety_wire_cut))), then(PROC_REF(safeties_toggled)))
 	op("speed_toggle", ui_act("speed-toggle"), needs(req_wire(WIRE_SPEED, because = MSG(airlock/timing_wire_cut))), toggles(nameof(normalspeed)))
 	op("open_close", ui_act("open-close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
 		req_is(WELD_SHUT_WELDED, FALSE, because = MSG(airlock/welded)), req_is(STAT_BOLTED, FALSE, because = MSG(airlock/bolted)),
-		req(PROC_REF(not_held_by_another), because = MSG(airlock/held_open))), then(PROC_REF(ui_open_close)))
+		req_bool(PROC_REF(not_held_by_another), because = MSG(airlock/held_open))), then(PROC_REF(ui_open_close)))
 	// a silicon's gestures over its link: shift opens or closes it, ctrl bolts it, alt electrifies it, middle switches the bolt lights (the AI's: a
 	// cyborg's middle-click cycles its modules)
 	extend("open_close", binds(remote()), gesture(GESTURE_SHIFT))

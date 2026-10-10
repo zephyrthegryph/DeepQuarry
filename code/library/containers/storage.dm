@@ -47,7 +47,7 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 		op("gather", item(/obj/item/storage), when(CAP_PROC(gathers_here)), label("Gather"), \
 			then(CAP_PROC(gather_here)), passes()),
 		op("put_in", item(/obj/item), when(CAP_PROC(takes_it)), label("Put in"), \
-			needs(req(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \
+			needs(req_bool(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \
 			then(CAP_PROC(put_in_item))),
 		op("refuse", item(/obj/item), priority(OP_PRIORITY_DEFAULT), when(CAP_PROC(refuses_it)), label("Put in"), \
 			then(CAP_PROC(say_refusal)), passes()),
@@ -206,7 +206,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 
 /// The slot of a storage item: internal, measured in storage-cost units, and deleted with the storage (contents go with it, as before). Its refusal and
 /// capacity are the holder's storage() capability's.
-/datum/om/relation/slot/storage
+/datum/relation_definition/slot/storage
 	holder = /obj/item/storage
 	slot_id = CONTAINER_SLOT_STORAGE
 	name = "storage"
@@ -214,17 +214,17 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	capacity_model = SLOT_CAPACITY_UNITS
 	drop_policy = SLOT_DROP_DELETE
 
-/datum/om/relation/slot/storage/capacity_for(atom/holder)
+/datum/relation_definition/slot/storage/capacity_for(atom/holder)
 	var/datum/capability/lib/storage/C = cap_of(holder, CAP_STORAGE)
 	return C ? C.space_of(holder) : 0
 
-/datum/om/relation/slot/storage/cost(atom/holder, atom/movable/thing)
+/datum/relation_definition/slot/storage/cost(atom/holder, atom/movable/thing)
 	if(isitem(thing))
 		var/obj/item/I = thing
 		return I.get_storage_cost()
 	return ITEMSIZE_COST_NO_CONTAINER
 
-/datum/om/relation/slot/storage/refusal(atom/holder, atom/movable/thing, mob/actor)
+/datum/relation_definition/slot/storage/refusal(atom/holder, atom/movable/thing, mob/actor)
 	var/datum/capability/lib/storage/C = cap_of(holder, CAP_STORAGE)
 	if(!C)
 		return "\the [holder] can't hold anything"

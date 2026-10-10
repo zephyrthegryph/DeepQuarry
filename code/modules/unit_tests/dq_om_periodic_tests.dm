@@ -270,10 +270,10 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 /datum/unit_test/dq_om_audit_finds_no_missed_wakes
 
 /datum/unit_test/dq_om_audit_finds_no_missed_wakes/Run()
-	om_test_ticks(10)
+	dq_test_ticks(10)
 	var/list/missed = pipeline_pipeline_audit(null, 100000, 100000, TRUE)
 	var/list/names = list()
-	for(var/datum/om/stage/T as anything in missed)
+	for(var/datum/work_stage/T as anything in missed)
 		names |= "[T.type]"
 	TEST_ASSERT(!length(missed), "the pipeline audit found missed wakes: [jointext(names, ", ")]")
 	var/list/woken = sleep_audit(100000, FALSE)
@@ -305,7 +305,7 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	var/obj/item/holder/H = new(T, M)
 	TEST_ASSERT(!H.periodic_pipe, "a holder polls on a lane")
 	for(var/i in 1 to 40)
-		om_test_ticks(1)
+		dq_test_ticks(1)
 		if(QDELETED(H))
 			break
 	TEST_ASSERT(QDELETED(H), "a holder left on a turf was not cleaned up")

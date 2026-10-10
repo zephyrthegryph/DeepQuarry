@@ -7,9 +7,9 @@
 		return
 	if(!L.key || !L.mind)
 		return
-	if(!SSticker || !round_mode())
+	if(!SSticker || !ticker_mode())
 		return
-	round_mode().check_win()
+	ticker_mode().check_win()
 
 	// Don't bother with the rest if we've not got a DB to do anything with
 	if(!CONFIG_GET(flag/enable_stat_tracking) || !CONFIG_GET(flag/sql_enabled))

@@ -220,7 +220,7 @@ CAPABILITIES(/obj/e0_fixture/hopper)
 		says(MSG(fab/loaded)), logs(LOG_GAME))
 
 /// The containment ledger's slot of the hopper: one slot, sheets counted in units.
-/datum/om/relation/slot/e0_hopper
+/datum/relation_definition/slot/e0_hopper
 	holder = /obj/e0_fixture/hopper
 	slot_id = SLOT_HOPPER
 	name = "hopper"
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/e0_fixture/hopper)
 	capacity = E0_HOPPER_CAPACITY
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/om/relation/slot/e0_hopper/cost(atom/holder, atom/movable/thing)
+/datum/relation_definition/slot/e0_hopper/cost(atom/holder, atom/movable/thing)
 	var/units = thing.vars["amount"]
 	return isnum(units) ? units : 1
 

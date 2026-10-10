@@ -135,10 +135,9 @@ CAPABILITIES(/datum)
 	var/fired = 0
 	/// Flat [rule index, token, rule index, token, ...] for every live subscription.
 	var/list/tokens
-	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
-	/// Both null until a hold_for rule first holds.
-	var/list/hold_models
-	var/list/hold_tokens
+	/// Per rule, for a hold_for rule: the deciseconds of holding still to go while its count is paused (null before it first holds), or RULE_HOLD_SPENT once it
+	/// fired this spell. While the condition holds the wake at the hold time is the binding's keyed kernel timer "hold:N" (N the rule index) and this stays as it was.
+	var/list/hold_left
 	/// property -> heat node handle (the owner's heat body, while it has one).
 	var/list/nodes
 	/// DM-owned key kind (text) -> live subscriptions of this binding's rules to it, or null: dq_rx_on_key() and dq_rx_cancel() keep it.
@@ -253,10 +252,9 @@ CAPABILITIES(/datum)
 			tokens.Cut(pos, pos + 2)
 			dq_rx_cancel(src, token)
 		UNSETEMPTY(tokens)
-	if(hold_models && !isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
-		om_rate_remove(hold_models[i])
-		hold_models[i] = null
-		hold_tokens[i] = null
+	if(hold_left && hold_left[i] != RULE_HOLD_SPENT)
+		cancel_after(src, "hold:[i]")
+		hold_left[i] = null
 
 /datum/rule_binding/proc/check(datum/rule/rule)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
@@ -318,39 +316,40 @@ CAPABILITIES(/datum)
 		else if(!now && was && (fired & bit))
 			rule.exit(owner)
 
-/// hold_for: a rate model counts seconds held; a rate watch wakes us when it
-/// reaches the hold time. It pauses while the condition doesn't hold.
+/// hold_for: the condition has to hold for hold_for deciseconds before the rule fires. The time held is counted while the condition holds and
+/// kept while it does not (it pauses): a keyed kernel timer wakes the binding when the rest of the hold time has run, and pausing keeps what is left of it.
 /datum/rule_binding/proc/update_hold(i, datum/rule/rule, now)
-	if(!hold_models)
-		hold_models = new /list(table.count)
-		hold_tokens = new /list(table.count)
-	var/model = hold_models[i]
-	if(model == RULE_HOLD_SPENT)
+	if(!hold_left)
+		hold_left = new /list(table.count)
+	var/key = "hold:[i]"
+	var/left = hold_left[i]
+	if(left == RULE_HOLD_SPENT)
 		// Fired during this spell; re-arm once the condition stops holding.
 		if(!now)
-			hold_models[i] = null
+			hold_left[i] = null
 			rule.exit(owner)
 		return
-	if(isnull(model))
-		if(!now)
-			return
-		model = om_rate_linear(0, 1, 0, null)
-		hold_models[i] = model
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+	var/running = after_pending(src, key)
+	if(!now)
+		if(running)
+			hold_left[i] = after_left(src, key)
+			cancel_after(src, key)
 		return
-	// Within a tick of the hold time counts: the model reads at step ticks.
-	if(now && om_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
-		om_rate_remove(model)
-		hold_models[i] = RULE_HOLD_SPENT
-		hold_tokens[i] = null
-		fire(i)
+	if(running)
+		return // already counting: the timer is armed
+	if(isnull(left))
+		left = rule.hold_for
+	if(left <= 0)
+		hold_done(i)
 		return
-	om_rate_set_rate(model, now ? 1 : 0)
-	if(now)
-		// Re-arm the crossing watch from the resumed rate.
-		if(!isnull(hold_tokens[i]))
-			dq_rx_cancel(src, hold_tokens[i])
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+	after(src, left, PROC_REF(hold_done), key = key, with = list(i))
+
+/// The hold time of rule i has run with its condition holding: it fires.
+/datum/rule_binding/proc/hold_done(i)
+	if(!resolve())
+		return
+	hold_left[i] = RULE_HOLD_SPENT
+	fire(i)
 
 /datum/rule_binding/proc/fire(i)
 	var/list/rules = table.rules

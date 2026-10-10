@@ -22,7 +22,7 @@
 
 /datum/data/pda/app/nerdle/start()
 	. = ..()
-	target_word = SSnerdle.target_word
+	target_word = nerdle_target_word()
 
 /datum/data/pda/app/nerdle/proc/try_guess(guess)
 	if(completed)

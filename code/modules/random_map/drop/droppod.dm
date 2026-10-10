@@ -243,7 +243,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		if(DROP_POD_CKEY)
 			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select a player.", title = "Drop Pod Selection", choices = drop_pod_candidates())
 		if(DROP_POD_ANTAG)
-			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = SSantag.all_antag_types)
+			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = antag_all_antag_types())
 		if(DROP_POD_SURE)
 			open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(drop_pod_answered), answerer = user, captured = state.Copy(), step_name = step, question = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", title = "Danger!", choices = list("No","Yes"), buttons = TRUE)
 
@@ -296,7 +296,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		spawned_mob = new spawn_path()
 		spawned_mob.tag = "awaiting drop"
 		if(antag_type)
-			var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
+			var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 			A?.equip(spawned_mob)
 	else
 		for(var/i=0;i<spawn_count;i++)

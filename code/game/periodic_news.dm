@@ -102,7 +102,7 @@
 	round_time = 60 * 60
 
 /proc/process_newscaster()
-	check_for_newscaster_updates(round_mode().newscaster_announcements)
+	check_for_newscaster_updates(ticker_mode().newscaster_announcements)
 
 GLOBAL_LIST_EMPTY(announced_news_types)
 /proc/check_for_newscaster_updates(type)

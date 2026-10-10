@@ -29,7 +29,7 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	parent_type = /datum/operation_context
 	var/datum/op_def/op
 	var/datum/interaction/capability/entry
-	var/datum/om/relation/slot/provider
+	var/datum/relation_definition/slot/provider
 
 /// A pooled context for one attempt (a /datum/pooled: released fields return to their initial values).
 /proc/op_ctx_take(mob/actor, datum/target, obj/item/held, datum/op_def/op, route = ROUTE_PHYSICAL, datum/authority)
@@ -230,15 +230,15 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 /// The slot of `actor` that provides every bit of `affordance`: the active hand first, then the
 /// rest in slot order. Null when there is none (no hands, hands busy being absent).
 /proc/ops_provider(mob/actor, affordance)
-	RETURN_TYPE(/datum/om/relation/slot)
+	RETURN_TYPE(/datum/relation_definition/slot)
 	if(!affordance)
 		return null
 	var/list/defs = dq_slot_defs_for(actor)
 	if(!length(defs))
 		return null
 	var/active = actor.active_hand_slot_id()
-	var/datum/om/relation/slot/found
-	for(var/datum/om/relation/slot/def as anything in defs)
+	var/datum/relation_definition/slot/found
+	for(var/datum/relation_definition/slot/def as anything in defs)
 		if((def.provides & affordance) != affordance)
 			continue
 		if(!ops_slot_usable(actor, def))
@@ -249,9 +249,9 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	return found
 
 /// Whether `def` works for `actor` right now (a hand slot needs hands).
-/proc/ops_slot_usable(mob/actor, datum/om/relation/slot/def)
+/proc/ops_slot_usable(mob/actor, datum/relation_definition/slot/def)
 	var/mob/living/L = actor
-	if(istype(def, /datum/om/relation/slot/body) && istype(L))
+	if(istype(def, /datum/relation_definition/slot/body) && istype(L))
 		return !L.body_slot_refusal(def)
 	return TRUE
 

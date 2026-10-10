@@ -28,6 +28,7 @@
 	var/list/shandlers
 
 CAPABILITIES(/datum/planet_sunlight_handler)
+	ref_many(nameof(shandlers))
 	owns_one(nameof(owned_sun), /datum/simple_sun)
 	owns_one(nameof(vis_overhead), /atom/movable/sun_vis_simple)
 	owns_one(nameof(vis_shade), /atom/movable/sun_vis_simple)

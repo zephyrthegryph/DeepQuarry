@@ -67,7 +67,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	if(!L)
 		return
 	var/part_flag = dq_zone_body_part_flag(zone)
-	for(var/datum/om/relation/slot/body/def in dq_slot_defs_for(src))
+	for(var/datum/relation_definition/slot/body/def in dq_slot_defs_for(src))
 		var/list/things = L.slots[def.slot_id]
 		if(!length(things))
 			continue
@@ -161,7 +161,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 /// only updates this mob's own state (icons, HUD, caches) and must not sleep or
 /// move anything. Behaviour that moves other things is in slot_vacated().
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
+	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
 	if(istype(def) && def.redraw)
 		call(src, def.redraw)()
 
@@ -169,7 +169,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 /// does to the rest of the inventory (pockets fall out with the jumpsuit, and
 /// so on). Override and call the parent.
 /mob/proc/slot_vacated(slot_id, obj/item/I)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
+	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
 	if(!istype(def))
 		return
 	for(var/id in def.drops_with)
@@ -306,7 +306,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 /// Whether slot `slot` can be reached now to put on or take off `I`: the item
 /// in the slot's covered_by slot mustn't cover it (slot definitions, body/slots.dm).
 /mob/proc/slot_is_accessible(slot, obj/item/I, mob/user=null)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot)
+	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot)
 	if(!istype(def) || !def.covered_by)
 		return TRUE
 	var/obj/item/covering = get_equipped_item(def.covered_by)
@@ -487,6 +487,3 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(s_active)) // the storage being viewed, anywhere nearby

@@ -737,23 +737,23 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// The panel is open and the cell is out: a wrench can reach the restraining bolt.
 /mob/living/silicon/robot/proc/bolt_wrench_ready(datum/act/op/A)
-	return opened && !cell
+	return (opened && !cell) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/has_bolt(datum/act/op/A)
-	return !!bolt
+	return bolt ? null : MSG(robot_tool/no_bolt)
 
 /mob/living/silicon/robot/proc/bolt_wrench_started(datum/act/op/A)
 	to_chat(A.actor, span_filter_notice("You begin removing \the [bolt]."))
 
 /mob/living/silicon/robot/proc/panel_open_holds(datum/act/op/A)
-	return opened
+	return (opened) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/wiring_reachable(datum/act/op/A)
-	return wiresexposed
+	return (wiresexposed) ? null : /datum/msg/req_failed
 
 /// The welder is for another cyborg's dents, not your own.
 /mob/living/silicon/robot/proc/repairing_another(datum/act/op/A)
-	return A.actor != src
+	return A.actor != src ? null : MSG(robot_tool/self_repair)
 
 /// Whether the server lets AIs deploy into shells (config).
 /proc/ai_shells_allowed()
@@ -1024,7 +1024,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 /// TRUE when there is plating damage to weld.
 /mob/living/silicon/robot/proc/has_dents(datum/act/op/A)
-	return read_once(!!injury_load(INJURY_CATEGORY_PHYSICAL))
+	return (read_once(!!injury_load(INJURY_CATEGORY_PHYSICAL))) ? null : /datum/msg/req_failed
 
 /// Welder: fix the chassis's dents (not your own).
 /mob/living/silicon/robot/proc/interaction_weld_repair(datum/act/op/A)
@@ -1711,12 +1711,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
 	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-/mob/living/silicon/robot/relations()
-	. = ..()
-	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
-	. += rel_one(nameof(cell))
-
-// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living/silicon/robot, sight_mode)
 TRACKED(/mob/living/silicon/robot, emagged)
 TRACKED(/mob/living/silicon/robot, lockdown)

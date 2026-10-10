@@ -166,7 +166,7 @@
 /proc/dq_equip_refusal(obj/item/I, mob/M, slot, disable_warning, ignore_obstruction, go_over_slot)
 	if(!slot || !M)
 		return "there's nowhere to put it"
-	var/datum/om/relation/slot/def = dq_ledger(M)?.def_by_id(slot)
+	var/datum/relation_definition/slot/def = dq_ledger(M)?.def_by_id(slot)
 	if(!def && (slot == SLOT_ID_IN_BACKPACK || slot == SLOT_ID_TIE))
 		// Action slots (backpack, accessory): the slot rules are all there is.
 		if(ishuman(M))

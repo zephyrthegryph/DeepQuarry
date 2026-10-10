@@ -12,7 +12,7 @@
 //	dx_shelleo(E, command, on_done, context...)	// world.shelleo(): list(errorlevel, stdout, stderr)
 //	// on_done(result, context...) runs later, on E
 //
-// E and every datum context arg are held weakly (OM handles; a client by its ckey), as om_after
+// E and every datum context arg are held weakly (OM handles; a client by its ckey), as after()
 // holds them: the callback is dropped if any is gone when the answer arrives. E null means the
 // global owner. The call itself runs in dx_exec_run(), the only proc here that may be
 // suspended, so the only `set waitfor` for these built-ins in the codebase is in this file.

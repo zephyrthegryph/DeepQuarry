@@ -44,11 +44,7 @@
 		if(L.lockID == lockID)
 			rel_add(src, nameof(locks), L) // the pair adds us to L.linked_objects
 
-// many-to-many with locks: a dying door leaves each lock's door list and vice versa.
-/obj/machinery/door/blast/puzzle/relations()
-	. = ..()
-	. += rel_many(nameof(locks), back = nameof(/obj/structure/prop/lock::linked_objects))
-
+// many-to-many with locks (declared on the lock, projectile_lock.dm): a dying door leaves each lock's door list and vice versa.
 CAPABILITIES(/obj/machinery/door/blast/puzzle)
 	// the puzzle door answers to its locks: its own touch and its own item use replace the blast door's open, close, pry and swallow
 	without("doors.open")

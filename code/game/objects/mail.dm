@@ -101,14 +101,14 @@ CAPABILITIES(/obj/item/mail/blank)
 	// a blank envelope is sealed or opened in hand, not unwrapped
 	without("unwrap")
 	op("seal", in_hand(), label("Seal"), when(cond_not(nameof(sealed))), wait(1.5 SECONDS), then(PROC_REF(seal_done)))
-	op("open", in_hand(), label("Open"), when(nameof(sealed)), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(),
+	op("open", in_hand(), label("Open"), when(nameof(sealed)), priority(OP_PRIORITY_NORMAL + 1), needs(req_bool(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(),
 		wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a pen addresses a sealed envelope (to a player picked from the directory)
 	op("address", item(/obj/item/pen), label("Address"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/choice, fields = list("title" = "Recipients", "question" = "Choose recipient", "choices" = computed(PROC_REF(recipient_choices)), "timeout" = 0), when = PROC_REF(addressable)),
 		then(PROC_REF(recipient_chosen)))
 	// the old attackby: anything goes inside an open, empty envelope (a tagger tags it first, then goes on here)
-	op("put_in", item(/obj/item), label("Put inside"), when(req(PROC_REF(fillable))), wait(1.5 SECONDS), then(PROC_REF(placed_inside)))
+	op("put_in", item(/obj/item), label("Put inside"), when(req_bool(PROC_REF(fillable))), wait(1.5 SECONDS), then(PROC_REF(placed_inside)))
 	// alt-click takes the contents back out of an open envelope
 	op("take_out", hand(), ungated(), gesture(GESTURE_ALT), label("Take out"), then(PROC_REF(interaction_alt)))
 
@@ -199,7 +199,7 @@ TRACKED(/obj/item/mail, postmark_roll)
 
 CAPABILITIES(/obj/item/mail)
 	// the old attack_self: open the letter
-	op("unwrap", in_hand(), label("Unwrap"), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
+	op("unwrap", in_hand(), label("Unwrap"), needs(req_bool(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a destination tagger labels it
 	op("tag", item(/obj/item/destTagger), label("Tag"), priority(OP_PRIORITY_PART + 2), then(PROC_REF(interaction_tag)))
 

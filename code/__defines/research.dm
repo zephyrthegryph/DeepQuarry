@@ -91,7 +91,7 @@
 		server_var = selected_server.stored_research; \
 	}; \
 	else { \
-		var/datum/techweb/station_fallback_web = locate_in_list(SSresearch.techwebs, /datum/techweb/science); \
+		var/datum/techweb/station_fallback_web = locate_in_list(research_techwebs(), /datum/techweb/science); \
 		server_var = station_fallback_web; \
 	}; \
 } while (FALSE)

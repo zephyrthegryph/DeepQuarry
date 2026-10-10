@@ -3,9 +3,9 @@
 //
 // A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, cond_not()/cond_all()/cond_any(), a
 // PROC_REF(x) whose proc takes (datum/act/A) and returns TRUE or FALSE, or a library requirement read as a boolean. It is what when() takes.
-// A REQUIREMENT is a condition plus a reason: it is what needs() takes, and a requirement with no resolvable reason is a build error.
-// Library constructors carry a default reason; the generic ones (req_is, req_at_least, req) take because =, a /datum/msg type or a
-// PROC_REF(reason_proc) whose proc returns one.
+// A REQUIREMENT is a condition plus a reason: it is what needs() takes. req(PROC_REF(x)) calls a pure callback returning null to allow,
+// or text/a message to refuse. Library constructors carry defaults; because = overrides the returned/default reason. req_bool() is the
+// explicit transitional TRUE/FALSE callback form and must declare its refusal reason.
 //
 // Requirements and conditions never write, publish or message (purity); test builds guard that around every evaluation (op_pure_begin).
 
@@ -42,6 +42,9 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		return null
 	if(istext(reason))
 		return reason
+	if(istype(reason, /datum/msg))
+		var/datum/msg/message = reason
+		return message.self
 	if(!ispath(reason, /datum/msg))
 		return "[reason]"
 	var/datum/msg/def = msg_def(reason)
@@ -124,24 +127,42 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /datum/entry/part/req/proc/holds(datum/act/op/A)
 	return TRUE
 
+/// Stage hooks retain their boolean shape; check() is the null-or-reason view.
 /datum/entry/part/req/require(datum/act/op/A)
 	return holds(A)
+
+/datum/entry/part/req/proc/check(datum/act/op/A)
+	return holds(A) ? null : refusal(A)
 
 /datum/entry/part/req/reason(datum/act/op/A)
 	return refusal(A)
 
-/// The /datum/msg type shown when it fails: because = MSG(x), a dynamic because = PROC_REF(r), else the constructor's default.
+/// A declared override wins, including empty text, which means a silent refusal.
 /datum/entry/part/req/proc/refusal(datum/act/op/A)
 	var/because = src.args ? src.args["because"] : null
-	if(ispath(because, /datum/msg))
-		return because
-	if(istext(because))
-		var/answer = op_call(A, because)
-		if(ispath(answer, /datum/msg))
-			return answer
-		if(istext(answer))
-			return answer
+	if(!isnull(because))
+		return req_reason_value(A, because, default_reason)
 	return default_reason
+
+/// Resolve a literal refusal or a dynamic because callback without treating literal text as a proc name.
+/proc/req_reason_value(datum/act/op/A, value, fallback = /datum/msg/req_failed)
+	if(istext(value))
+		var/callback = FALSE
+		if(copytext(value, 1, 5) == "cap:")
+			callback = A.cap && hascall(A.cap, copytext(value, 5))
+		else
+			callback = A.holder && hascall(A.holder, value)
+		if(callback)
+			value = op_call(A, value)
+	return req_refusal_value(value, fallback)
+
+/// Empty text is a refusal, not a falsey successful evaluation. Invalid callback results fail closed.
+/proc/req_refusal_value(value, fallback = /datum/msg/req_failed)
+	if(istext(value))
+		return length(value) ? value : /datum/msg/req_silent
+	if(ispath(value, /datum/msg) || istype(value, /datum/msg))
+		return value
+	return fallback
 
 /// The (entity, key) reads of the requirement, as list(datum, key) rows: what a waiting op subscribes to. Default: none.
 /datum/entry/part/req/proc/read_keys(datum/act/op/A)
@@ -165,12 +186,18 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /proc/req_make(req_type, list/named)
 	return part_make(req_type, named)
 
-/// req(T, of = ON_HELD): the participant is of type T. req(PROC_REF(x), because = ...): x(datum/act/A) returns TRUE or FALSE.
+/// req(T, of = ON_HELD): the participant is of type T. A callback returns null to allow, or a refusal reason.
 /// silent = TRUE refuses without telling the actor anything (a guard the old code refused with a bare return FALSE): the reason is the empty message.
 /proc/req(what, of = ON_HELD, because = null, id = null, silent = FALSE)
 	if(silent && isnull(because))
 		because = /datum/msg/req_silent
 	return part_make(/datum/entry/part/req/generic, list("what" = what, "of" = of, "because" = because, "id" = id))
+
+/// Transitional boolean callbacks. Kept explicit so the analyzer can ratchet their retirement.
+/proc/req_bool(what, of = ON_HELD, because = null, id = null, silent = FALSE)
+	if(silent && isnull(because))
+		because = /datum/msg/req_silent
+	return part_make(/datum/entry/part/req/generic/boolean, list("what" = what, "of" = of, "because" = because, "id" = id))
 
 /datum/entry/part/req/generic
 	part_name = "req"
@@ -186,7 +213,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 			if(istype(D2, path))
 				return TRUE
 		return FALSE
-	return !!op_call(A, what)
+	return isnull(op_call(A, what))
 
 /datum/entry/part/req/generic/read_keys(datum/act/op/A)
 	. = list()
@@ -196,9 +223,21 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 			. += list(list(A.holder, key))
 
 /datum/entry/part/req/generic/refusal(datum/act/op/A)
-	if(src.args["because"])
+	if(!isnull(src.args["because"]))
 		return ..()
-	return ispath(src.args["what"]) || islist(src.args["what"]) ? /datum/msg/req_wrong_item : /datum/msg/req_failed
+	var/what = src.args["what"]
+	if(ispath(what) || islist(what))
+		return /datum/msg/req_wrong_item
+	return req_refusal_value(op_call(A, what), default_reason)
+
+/datum/entry/part/req/generic/boolean
+	part_name = "req_bool"
+
+/datum/entry/part/req/generic/boolean/holds(datum/act/op/A)
+	return !!op_call(A, src.args["what"])
+
+/datum/entry/part/req/generic/boolean/refusal(datum/act/op/A)
+	return isnull(src.args["because"]) ? default_reason : req_reason_value(A, src.args["because"], default_reason)
 
 /// A test of a key's value: a tracked var (nameof(v)), a stat id or a capability key id, read on the holder (of = ON_TARGET for the target).
 /datum/entry/part/req/is

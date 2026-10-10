@@ -20,6 +20,7 @@
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
 /obj/aiming_overlay/var/obj/item/aiming_with
 CAPABILITIES(/obj/aiming_overlay)
+	links(/obj/aiming_overlay::aiming_at, /mob/living::aimed, b_many = TRUE)
 	ref_one(nameof(aiming_with))
 	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
 
@@ -88,12 +89,6 @@ CAPABILITIES(/obj/aiming_overlay)
 		return
 	update_aiming()
 
-/obj/aiming_overlay/relations()
-	. = ..()
-	. += rel_one(nameof(aiming_at), back = nameof(/mob/living::aimed))
-/mob/living/relations()
-	. = ..()
-	. += rel_many(nameof(aimed), back = nameof(/obj/aiming_overlay::aiming_at))
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
 	after(src, 0, PROC_REF(update_aiming))

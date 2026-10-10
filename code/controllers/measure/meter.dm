@@ -206,7 +206,7 @@
 	..()
 
 /// Opens a stats set that records alongside the live one until close_set().
-/datum/tick_meter/proc/open_set(datum/om/scheduler/sched)
+/datum/tick_meter/proc/open_set(datum/time_scheduler/sched)
 	var/datum/km_stats_set/S = new
 	S.mark_start()
 	if(sched)

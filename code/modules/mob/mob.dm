@@ -363,7 +363,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	// Try to figure out what time to use
 
 	// Special cases, can never respawn
-	if(round_mode()?.deny_respawn)
+	if(ticker_mode()?.deny_respawn)
 		time = -1
 	else if(!CONFIG_GET(flag/abandon_allowed))
 		time = -1
@@ -540,7 +540,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
 	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
-	targets += observe_list_format(SSshuttles.ships)
+	targets += observe_list_format(shuttles_ships())
 
 	client.perspective = EYE_PERSPECTIVE
 

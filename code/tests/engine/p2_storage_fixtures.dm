@@ -48,7 +48,7 @@ MSG_DEF_SELF(p2s/never, "Never.")
 	var/second = 0
 
 CAPABILITIES(/obj/p2s_chain_refused)
-	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(never), because = MSG(p2s/never))), then(PROC_REF(ran_first)), passes())
+	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), needs(req_bool(PROC_REF(never), because = MSG(p2s/never))), then(PROC_REF(ran_first)), passes())
 	op("second", item(/obj/item), then(PROC_REF(ran_second)))
 
 /obj/p2s_chain_refused/proc/never(datum/act/op/A)

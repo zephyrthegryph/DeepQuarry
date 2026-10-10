@@ -47,7 +47,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 /datum/capability/lib/fabricator/entries()
 	. = list(
 		op("drop_here", at_target(), gesture(GESTURE_DRAG), reach(REACH_RANGE(2)), label("Drop printed things here"),
-			needs(req(CAP_PROC(beside), because = MSG(fabricator/too_far)), req(CAP_PROC(idle), because = MSG(fabricator/printing))),
+			needs(req_bool(CAP_PROC(beside), because = MSG(fabricator/too_far)), req_bool(CAP_PROC(idle), because = MSG(fabricator/printing))),
 			then(CAP_PROC(drop_pointed))),
 		// an item used on it goes to its store (sheets, a sheet snatcher, a multitool linking an ore silo), through the store's own use gate
 		op("store", item(/obj/item), label("Put it in"), priority(OP_PRIORITY_DEFAULT + 1), when(CAP_PROC(store_reachable)), then(CAP_PROC(store_used))),
@@ -55,20 +55,20 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 		examine_line(CAP_PROC(drop_text)))
 	if(resets)
 		. += op("reset_drop", hand(), gesture(GESTURE_ALT), label("Reset drop direction"), when(drop),
-			needs(req(CAP_PROC(idle), because = MSG(fabricator/printing))), then(CAP_PROC(drop_forgotten)))
+			needs(req_bool(CAP_PROC(idle), because = MSG(fabricator/printing))), then(CAP_PROC(drop_forgotten)))
 	if(print)
 		. += op("print", ui_act(action, arg(design_arg, schema_text(256)), arg(count_arg, num(1, FABRICATOR_MAX_RUN)), arg("materialSlots")),
 			needs(
-				req(CAP_PROC(idle), because = MSG(fabricator/busy)),
-				req(CAP_PROC(design_known), because = MSG(fabricator/unknown_design)),
-				req(CAP_PROC(design_fits), because = MSG(fabricator/no_keys)),
-				req(CAP_PROC(choice_valid), because = MSG(fabricator/choose_materials)),
-				req(CAP_PROC(store_open), because = MSG(fabricator/on_hold)),
-				req(CAP_PROC(run_affordable), because = MSG(fabricator/no_materials))),
+				req_bool(CAP_PROC(idle), because = MSG(fabricator/busy)),
+				req_bool(CAP_PROC(design_known), because = MSG(fabricator/unknown_design)),
+				req_bool(CAP_PROC(design_fits), because = MSG(fabricator/no_keys)),
+				req_bool(CAP_PROC(choice_valid), because = MSG(fabricator/choose_materials)),
+				req_bool(CAP_PROC(store_open), because = MSG(fabricator/on_hold)),
+				req_bool(CAP_PROC(run_affordable), because = MSG(fabricator/no_materials))),
 			then(CAP_PROC(run_started)), logs(LOG_GAME))
 	if(eject)
 		. += op("remove_mat", ui_act(arg("id", schema_text(64)), arg("amount", num(1, MAX_STACK_SIZE))),
-			needs(req(CAP_PROC(material_held), because = MSG(fabricator/no_such_material))),
+			needs(req_bool(CAP_PROC(material_held), because = MSG(fabricator/no_such_material))),
 			then(CAP_PROC(sheets_ejected)))
 
 // ---- the print run ----

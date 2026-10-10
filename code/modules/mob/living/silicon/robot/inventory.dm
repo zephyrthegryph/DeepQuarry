@@ -263,7 +263,7 @@
 	to_chat(src, span_notice("You need to disable a module first!"))
 
 /// Equipment changed: power demand is recomputed and modules/components react
-/// through /datum/om/event/robot_equipment_changed (the belly component handles its ore
+/// through /datum/definition_event/robot_equipment_changed (the belly component handles its ore
 /// bag and pounce there).
 /mob/living/silicon/robot/proc/after_equip(obj/item/O)
 	if(istype(O, /obj/item/gps))

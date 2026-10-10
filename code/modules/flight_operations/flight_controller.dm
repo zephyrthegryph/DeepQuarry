@@ -47,7 +47,7 @@ CAPABILITIES(/datum/system/flight)
 	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
 	normalize_celestial_hierarchy()
-	for(var/obj/effect/overmap/visitable/ship/ship as anything in SSshuttles.ships)
+	for(var/obj/effect/overmap/visitable/ship/ship as anything in shuttles_ships())
 		register_vessel(ship)
 	// Ports reference destination IDs, including destinations created while
 	// registering vessels. Resolve physical occupancy only after both registries exist.
@@ -58,7 +58,7 @@ CAPABILITIES(/datum/system/flight)
 	// initial overmap scan. Normalize after that final source of registry entries.
 	normalize_celestial_hierarchy()
 	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/site = SSexpedition.sites[key]
+		var/datum/expedition_site/site = expedition_sites()[key]
 		if(istype(site))
 			register_expedition(site)
 	seed_expedition_catalog()
@@ -192,11 +192,11 @@ CAPABILITIES(/datum/system/flight)
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]
-		if(!SSshuttles.registered_shuttle_landmarks["hangar_3_expedition"])
+		if(!shuttles_registered_shuttle_landmarks()["hangar_3_expedition"])
 			var/turf/general_berth = locate(161, 140, station_z)
 			if(istype(get_area(general_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/general(general_berth)
-		if(!SSshuttles.registered_shuttle_landmarks["hangar_3_echidna"])
+		if(!shuttles_registered_shuttle_landmarks()["hangar_3_echidna"])
 			var/turf/echidna_berth = locate(155, 141, station_z)
 			if(istype(get_area(echidna_berth), /area/hangar/three))
 				new /obj/effect/shuttle_landmark/southern_cross/expedition_station/echidna(echidna_berth)
@@ -210,8 +210,8 @@ CAPABILITIES(/datum/system/flight)
 		"needle_dock",
 		"echidna_dock",
 	)
-	for(var/landmark_tag in SSshuttles.registered_shuttle_landmarks)
-		var/obj/effect/shuttle_landmark/landmark = SSshuttles.registered_shuttle_landmarks[landmark_tag]
+	for(var/landmark_tag in shuttles_registered_shuttle_landmarks())
+		var/obj/effect/shuttle_landmark/landmark = shuttles_registered_shuttle_landmarks()[landmark_tag]
 		var/host_id
 		if(landmark.landmark_tag in carrier_port_tags)
 			host_id = carrier_id

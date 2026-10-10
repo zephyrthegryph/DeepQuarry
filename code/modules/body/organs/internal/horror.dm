@@ -5,8 +5,10 @@
 	decays = FALSE
 	can_reject = FALSE
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
-/obj/item/organ/internal/appendix/horror/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/organ/internal/appendix/horror)
+	after_init(0, then(PROC_REF(horror_appendix_scale)))
+
+/obj/item/organ/internal/appendix/horror/proc/horror_appendix_scale(datum/act/timer/A)
 	adjust_scale(1.5,1.5)
 
 /obj/item/organ/internal/appendix/horror/organ_tick(cycles)

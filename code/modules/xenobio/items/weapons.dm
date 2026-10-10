@@ -223,10 +223,10 @@ TRACKED(/obj/item/slime_grinder, cube_making)
 CAPABILITIES(/obj/item/slime_grinder)
 	every(1 SECOND, then(PROC_REF(make_cubes)), when = nameof(cube_making))
 	op("grind_monkey", at_target(/mob/living/carbon/human/monkey), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
-		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		needs(req_adjacent(), req_bool(PROC_REF(grinder_free), silent = TRUE), req_bool(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
 		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_monkey)))
 	op("grind_slime", at_target(/mob/living/simple_mob/slime), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
-		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		needs(req_adjacent(), req_bool(PROC_REF(grinder_free), silent = TRUE), req_bool(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
 		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_core_done)))
 
 /// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.

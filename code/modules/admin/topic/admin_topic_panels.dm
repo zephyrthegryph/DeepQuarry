@@ -43,7 +43,7 @@
 
 /datum/admins/proc/topic_call_shuttle(datum/act/op/A, href_call_shuttle)
 	var/mob/user = A.actor
-	if(round_mode().name == "blob")
+	if(ticker_mode().name == "blob")
 		tgui_alert_async(user, "You can't call the shuttle during blob!")
 		return
 
@@ -71,7 +71,7 @@
 
 /// What the shuttle is counting down to: "launch", "arrive", or null while it is neither.
 /datum/admins/proc/shuttle_countdown_kind()
-	if(SSemergency_shuttle.wait_for_launch)
+	if(emergency_shuttle_wait_for_launch())
 		return "launch"
 	if(SSemergency_shuttle.shuttle.has_arrive_time())
 		return "arrive"
@@ -116,15 +116,15 @@
 
 /datum/admins/proc/topic_delay_round_end(datum/act/op/A)
 	var/mob/user = A.actor
-	SSticker.delay_end = !SSticker.delay_end
-	log_admin("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].")
-	message_admins(span_blue("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"]."), 1)
+	SSticker.delay_end = !ticker_delay_end()
+	log_admin("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].")
+	message_admins(span_blue("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"]."), 1)
 
 MSG_DEF_SELF(admin_topic/round_started, "The game has already started.")
 MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 
 /datum/admins/proc/round_not_started(datum/act/op/A)
-	return !(SSticker && round_mode())
+	return !(SSticker && ticker_mode())
 
 /datum/admins/proc/round_is_secret(datum/act/op/A)
 	return GLOB.master_mode == "secret"
@@ -188,7 +188,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 /datum/admins/proc/admin_set_master_mode(mob/user, mode)
 	if(!check_rights_for(user?.client, R_ADMIN|R_SERVER|R_EVENT) || !mode)
 		return
-	if(SSticker && round_mode())
+	if(SSticker && ticker_mode())
 		tgui_alert_async(user, "The game has already started.")
 		return
 	GLOB.master_mode = mode
@@ -202,7 +202,7 @@ MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")
 /datum/admins/proc/admin_set_secret_force_mode(mob/user, mode)
 	if(!check_rights_for(user?.client, R_ADMIN|R_SERVER|R_EVENT) || !mode)
 		return
-	if(SSticker && round_mode())
+	if(SSticker && ticker_mode())
 		tgui_alert_async(user, "The game has already started.")
 		return
 	if(GLOB.master_mode != "secret")

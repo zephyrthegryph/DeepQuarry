@@ -13,9 +13,9 @@
 
 	var/climb_time = 2 SECONDS
 
-/obj/structure/ladder/Initialize(mapload)
-	. = ..()
+/obj/structure/ladder/proc/init_connect(datum/act/timer/A)
 	attempt_connection()
+
 
 /obj/structure/ladder/proc/attempt_connection()
 	// The DOWN-allowing ladder links to the UP-allowing one below, wiring BOTH ends:
@@ -31,6 +31,7 @@
 
 CAPABILITIES(/obj/structure/ladder)
 	silicon_hand(robots = TRUE)
+	after_init(0, then(PROC_REF(init_connect)))
 	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
 	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))

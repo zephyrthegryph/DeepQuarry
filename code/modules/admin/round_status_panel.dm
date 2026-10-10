@@ -40,9 +40,9 @@
 
 /datum/round_status_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(SSantag.all_antag_types)
-		for(var/antag_type in SSantag.all_antag_types)
-			var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
+	if(antag_all_antag_types())
+		for(var/antag_type in antag_all_antag_types())
+			var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
@@ -55,14 +55,14 @@
 // ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor
 /datum/round_status_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
-	.["mode_name"] = round_mode()?.name || "(none)"
+	.["mode_name"] = ticker_mode()?.name || "(none)"
 	.["round_duration"] = roundduration2text()
 	.["delay_end"] = !!SSticker?.delay_end
 
 	var/list/shuttle_data = list()
 	if(!SSemergency_shuttle.online())
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
-	else if(SSemergency_shuttle.wait_for_launch)
+	else if(emergency_shuttle_wait_for_launch())
 		shuttle_data["state"] = SHUTTLE_STATE_COUNTING_DOWN
 		var/timeleft = SSemergency_shuttle.estimate_launch_time()
 		shuttle_data["time_left_seconds"] = timeleft
@@ -95,7 +95,7 @@
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
 		return FALSE
-	if(round_mode()?.name == "blob")
+	if(ticker_mode()?.name == "blob")
 		return refuse(user, "You can't call the shuttle during blob!")
 	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
@@ -119,7 +119,7 @@
 /datum/round_status_panel/proc/act_edit_shuttle_time(mob/user)
 	if(!admin_require(user.client, R_SERVER, "round_status_panel:edit_shuttle_time"))
 		return FALSE
-	if(SSemergency_shuttle.wait_for_launch)
+	if(emergency_shuttle_wait_for_launch())
 		var/new_time_left = ask_number(user, "Enter new shuttle launch countdown (seconds):", 0, INFINITY, "Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time())
 		if(isnull(new_time_left))
 			return FALSE
@@ -140,9 +140,9 @@
 /datum/round_status_panel/proc/act_toggle_delay_end(mob/user)
 	if(!admin_require(user.client, R_SERVER, "round_status_panel:toggle_delay_end"))
 		return FALSE
-	SSticker.delay_end = !SSticker.delay_end
+	SSticker.delay_end = !ticker_delay_end()
 	// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
-	log_and_message_admins("[SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].", user)
+	log_and_message_admins("[ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].", user)
 	return TRUE
 
 // Antag-row actions: PP / PM / TP for an antagonist's mob.
@@ -163,7 +163,7 @@
 	var/mob/M = ui_ref(ref, null, /mob)
 	if(!M)
 		return TRUE
-	if(!SSticker || !round_mode())
+	if(!SSticker || !ticker_mode())
 		return refuse(user, "The game hasn't started yet!")
 	if(user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, M)

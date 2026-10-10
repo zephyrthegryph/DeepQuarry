@@ -56,7 +56,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	if(!docking_controller_tag)
 		return
 	var/docking_tag = docking_controller_tag
-	rel_set(src, nameof(docking_controller), SSshuttles.docking_registry[docking_tag])
+	rel_set(src, nameof(docking_controller), shuttles_docking_registry()[docking_tag])
 	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
 	// No QDELETING registration: docking_controller is a relation view, cleared when the controller dies.

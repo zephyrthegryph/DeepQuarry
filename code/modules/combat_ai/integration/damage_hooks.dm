@@ -1,7 +1,7 @@
 // Bridges incoming injuries into the brain's notify pipeline.
 //
 // Every harm to a living mob goes through injure() (doc/body_architecture.md
-// §2), which emits /datum/om/event/living_injured after the injury lands. The brain
+// §2), which emits /datum/definition_event/living_injured after the injury lands. The brain
 // listens for it (registered in /datum/ai_brain/New), so it learns of every
 // hit regardless of the source (projectile, melee, generic attack,
 // environmental). Mobs without a brain pay nothing.

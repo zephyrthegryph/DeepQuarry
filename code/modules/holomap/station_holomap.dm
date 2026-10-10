@@ -49,7 +49,7 @@ CAPABILITIES(/obj/machinery/station_map)
 	. = ..()
 	original_zLevel = loc.z
 	SSholomaps.station_holomaps += src
-	if(SSholomaps.holomaps_initialized)
+	if(holomaps_holomaps_initialized())
 		setup_holomap()
 
 /// Phase 2: leaves the holomap index and stops watching.
@@ -61,7 +61,7 @@ CAPABILITIES(/obj/machinery/station_map)
 /obj/machinery/station_map/proc/setup_holomap()
 	var/turf/T = get_turf(src)
 	original_zLevel = T.z
-	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in SSholomaps.extraMiniMaps))
+	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in holomaps_extraMiniMaps()))
 		set_bogus(TRUE)
 		holomap_datum.initialize_holomap_bogus()
 		return
@@ -190,7 +190,7 @@ MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 	else
 		look.state("station_map")
 		if(!bogus)
-			look.overlay(look_overlay_image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], null, dir = dir))
+			look.overlay(look_overlay_image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], null, dir = dir))
 
 	// Put the little "map" overlay down where it looks nice
 	if(!bogus && offsets_settled_flag)

@@ -32,8 +32,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 
 REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
-/obj/machinery/photocopier/faxmachine/Initialize(mapload)
-	. = ..()
+/obj/machinery/photocopier/faxmachine/proc/register_department(datum/act/timer/A)
 	if(!destination) destination = "[using_map.boss_name]"
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
@@ -159,6 +158,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 // The fax's window: the copier's buttons and its own. The paper title and the department are asked in their ops (asks()); sending a
 // default-titled fax to an admin department asks whether to rename it first.
 CAPABILITIES(/obj/machinery/photocopier/faxmachine)
+	after_init(0, then(PROC_REF(register_department)))
 	interface("Fax")
 	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	// the staff request form: the window's button and the menu's verb, four questions, then the ping
 	op("send_automated_staff_request", inputs(ui_act("send_automated_staff_request"), menu()), label("Staff Request Form"),
-		needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req(PROC_REF(role_request_ready), because = MSG(fax/relays_recalibrating))),
+		needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon), because = /datum/msg/req_failed), req_on_origin(ORIGIN_MENU | ORIGIN_VERB, req_adjacent()), req_bool(PROC_REF(role_request_ready), because = MSG(fax/relays_recalibrating))),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Are you sure you want to send automated crew request?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel"), "buttons" = TRUE), step = "confirm"),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick the job to request.", "title" = "Job Request", "choices" = computed(PROC_REF(requestable_jobs)), "buttons" = FALSE), step = "role", when = PROC_REF(request_confirmed)),
 		asks(/datum/prompt/choice/fax_role_request, fields = list("question" = "Pick request reason.", "title" = "Request reason", "choices" = computed(PROC_REF(request_reasons)), "buttons" = FALSE), step = "reason", when = PROC_REF(request_role_picked)),
@@ -181,10 +181,10 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 	op("dept", ui_act("dept"), asks(/datum/prompt/choice/fax_department, fields = list("choices" = computed(PROC_REF(department_choices))), step = "department", when = PROC_REF(fax_logged_in)),
 		then(PROC_REF(ui_act_dept)))
 	// behind the open service panel the multitool sets the department; with the panel shut it takes the click and does nothing
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set department"), needs(req_bool(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/text/fax_department_id, fields = list("default" = nameof(department))),
 		then(PROC_REF(fax_department_id_answered)))
-	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))
+	op("faxmachine_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_bool(PROC_REF(no_id_inserted_holds))), then(PROC_REF(interaction_insert_id)))
 	op("faxmachine_insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 1), label("Insert toner"), then(PROC_REF(interaction_insert_toner_impl)))
 	op("faxmachine_open_ui_silicon", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon)), label("Use"), then(PROC_REF(silicon_open_ui)))
 	op("faxmachine_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_open_ui_impl)))

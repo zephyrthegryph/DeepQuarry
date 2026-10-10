@@ -957,7 +957,7 @@ CAPABILITIES(/obj/item/toy/plushie)
 	// A squeeze of an opened plushie takes a second to find what is stitched inside; the plushie is claimed meanwhile.
 	op("find_inside", ai(), claims(CLAIM_TARGET), wait(1 SECOND), then(PROC_REF(found_inside)))
 	// the old Name Plushie verb, carried, by someone with a mind (a unique plushie refuses)
-	op("rename", menu(), label("Name Plushie"), needs(carried(), req(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
+	op("rename", menu(), label("Name Plushie"), needs(carried(), req_bool(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the plushie?", "default" = "", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
 		then(PROC_REF(plushie_named)))
 
@@ -2292,7 +2292,7 @@ CAPABILITIES(/obj/item/toy/minigibber)
 /// A figure goes in, a character only from the feeder's own hands.
 /obj/item/toy/minigibber/proc/can_feed(datum/act/op/A)
 	var/obj/item/O = A.held
-	return istype(O, /obj/item/toy/figure) || read_once(O.loc == A.actor)
+	return (istype(O, /obj/item/toy/figure) || read_once(O.loc == A.actor)) ? null : /datum/msg/req_failed
 
 /obj/item/toy/minigibber/proc/feed_begins(datum/act/op/A)
 	return msg_text(span_notice("You start feeding \the [A.held] [icon2html(A.held, A.actor.client)] into \the [src]'s mini-input."))
@@ -2368,11 +2368,11 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	var/bullets_left = 0
 	var/max_shots = 6
 
-/obj/item/toy/russian_revolver/Initialize(mapload)
-	. = ..()
+/obj/item/toy/russian_revolver/proc/revolver_after_init(datum/act/timer/A)
 	spin_cylinder()
 
 CAPABILITIES(/obj/item/toy/russian_revolver)
+	after_init(0, then(PROC_REF(revolver_after_init)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

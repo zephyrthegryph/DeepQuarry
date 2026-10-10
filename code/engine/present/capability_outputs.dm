@@ -24,6 +24,12 @@
 	var/list/look_watching
 	/// The types look.neighbours() asked for: a turf the atom watches tells it only of a mover of one of these (null: every change). Lazy.
 	var/list/look_neighbour_types
+	/// Own keys of the atoms whose look the atom's draw composes (look.watch_look()): look_published() on any of them marks the atom. Lazy.
+	var/list/look_watching_looks
+	/// Own key -> count of the atoms whose draw composes THIS atom's look (look.watch_look()); look_published() marks them. Lazy.
+	var/list/look_watchers
+	/// How many times look_published() announced this atom's look (only counted while someone composes it): a draw that composes it keeps the number in its change key.
+	var/look_serial = 0
 
 /// A's engine record, or null when the engine has kept nothing for it.
 /proc/cap_engine_state_of(atom/A)

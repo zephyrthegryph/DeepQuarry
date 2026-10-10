@@ -14,7 +14,7 @@
 	return data
 
 CAPABILITIES(/datum/tgui_module/cardmod)
-	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
 	interface("IdentificationComputer")
 	op("mode", ui_act("mode", arg("mode_target", num(0, 1))), then(PROC_REF(ui_act_mode)))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))

@@ -99,13 +99,13 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	after_init(0, then(PROC_REF(leech_pest_ready)))
 	immune_to_incapacitation()
 	op("infest", ai(), reach(REACH_RANGE(1)), wait(0.2 SECONDS), then(PROC_REF(do_infest_leech_done)), on_interrupt(PROC_REF(do_infest_leech_failed)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
-/mob/living/simple_mob/animal/sif/leech/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/animal/sif/leech/proc/leech_pest_ready(datum/act/timer/A)
 
 
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)

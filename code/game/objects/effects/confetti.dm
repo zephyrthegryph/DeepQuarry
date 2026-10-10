@@ -3,9 +3,12 @@
 	icon = 'icons/effects/effects_vr.dmi'
 	icon_state = "confetti"
 
-/obj/effect/effect/sparks/confetti/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/effect/sparks/confetti)
+	after_init(0, then(PROC_REF(init_confetti_sound)))
+
+/obj/effect/effect/sparks/confetti/proc/init_confetti_sound(datum/act/timer/A)
 	playsound(src, "sound/items/confetti.ogg", 100, 1)
+
 
 /datum/effect/effect/system/confetti_spread
 	var/total_sparks = 0 // To stop it being spammed and lagging!

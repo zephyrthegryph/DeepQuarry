@@ -2,4 +2,8 @@
 /obj/compass_holder state: 
 /obj/compass_holder dir: 2
 /obj/compass_holder overlay: ::95 x24
+/obj/compass_holder/dq_small_heading icon: 
+/obj/compass_holder/dq_small_heading state: 
+/obj/compass_holder/dq_small_heading dir: 2
+/obj/compass_holder/dq_small_heading overlay: ::95 x25
 

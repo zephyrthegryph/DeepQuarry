@@ -323,7 +323,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
-	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/pinata/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)
@@ -498,7 +498,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
-	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req(PROC_REF(punctured_by))), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(punctured_by))), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/moneyorgan/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)

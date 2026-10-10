@@ -192,7 +192,7 @@ CAPABILITIES(/datum/status_effect)
 /datum/status_effect/proc/nextmove_adjust()
 	return 0
 
-/// /datum/om/event/living_aheal handler: removes us on a full heal
+/// /datum/definition_event/living_aheal handler: removes us on a full heal
 /datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 

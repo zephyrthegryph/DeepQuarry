@@ -28,13 +28,13 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 /datum/capability/lib/injector/entries()
 	return list(
 		op("inject", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(goes_slowly))), priority(OP_PRIORITY_PART), label("Inject"),
-			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
-				req(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
+			needs(req_reagents(1, because = MSG(injector/empty)), req_bool(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
+				req_bool(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
 			then(CAP_PROC(skin_holds_up))),
 		op("inject_slowly", at_target(/mob/living/carbon/human), when(CAP_PROC(goes_slowly)), priority(OP_PRIORITY_PART), label("Inject"),
 			begins(CAP_PROC(begin_message)), wait(CAP_PROC(slow_wait)),
-			needs(req_reagents(1, because = MSG(injector/empty)), req(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
-				req(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
+			needs(req_reagents(1, because = MSG(injector/empty)), req_bool(CAP_PROC(belly_free), because = MSG(injector/from_belly)),
+				req_bool(CAP_PROC(limb_there), because = MSG(injector/limb_missing))),
 			then(CAP_PROC(skin_holds_up))),
 		vial ? op("unload", hand(), when(CAP_PROC(unloadable)), priority(OP_PRIORITY_NORMAL + 5), label("Remove the vial")) : null)
 

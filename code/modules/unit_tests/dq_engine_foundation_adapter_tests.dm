@@ -8,8 +8,8 @@
 	var/obj/item/paper/paper = allocate(/obj/item/paper)
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
 	var/datum/relation_definition/slot/slot_def = declared_slot_def(holder.type, ENGINE_ADAPTER_SLOT, 2, null, /obj/item/paper, TRUE, SLOT_EXPOSURE_SEALED)
-	TEST_ASSERT(istype(slot_def, /datum/om/relation/slot), "declared slots retain their legacy slot ancestry")
-	TEST_ASSERT(istype(slot_def, /datum/om/relation/slot/declared/sealed), "sealed factory keeps the original concrete type")
+	TEST_ASSERT(istype(slot_def, /datum/relation_definition/slot), "declared slots are engine slots")
+	TEST_ASSERT(istype(slot_def, /datum/relation_definition/slot/declared/sealed), "sealed factory keeps the original concrete type")
 	TEST_ASSERT_EQUAL(slot_def.capacity_for(holder), 2, "factory configuration reaches the engine slot")
 	TEST_ASSERT(!slot_def.passes_gas(), "sealed slot retains its propagation policy")
 	TEST_ASSERT_NULL(slot_def.refusal(holder, paper, null), "concrete declared accepts permits paper")
@@ -18,7 +18,6 @@
 
 	var/datum/relation_definition/slot/canonical = containment_slot_factory().canonical_create(SLOT_EXPOSURE_SEALED)
 	TEST_ASSERT(istype(canonical, /datum/relation_definition/slot/declared/sealed), "standalone engine factory constructs its genuine canonical sealed slot")
-	TEST_ASSERT(!istype(canonical, /datum/om/relation/slot), "canonical and compatibility factories have distinct concrete identities")
 	canonical.set_declared_accepts(/obj/item/paper)
 	var/allowed = canonical.refusal(holder, paper, null)
 	var/denied = canonical.refusal(holder, pen, null)

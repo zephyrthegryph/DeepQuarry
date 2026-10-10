@@ -98,7 +98,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		post_comm_message("'[my_department] Mission Summary'", message)
 
 /**
- * Event handler for when the shuttle emits /datum/om/event/world_supply_shuttle_depart
+ * Event handler for when the shuttle emits /datum/definition_event/world_supply_shuttle_depart
  */
 /datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

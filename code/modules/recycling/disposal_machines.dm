@@ -67,7 +67,7 @@ CAPABILITIES(/obj/machinery/disposal)
 // into the bin before a flush). Drop policy is left to this type's own
 // Destroy() below, which already calls eject() -- emptying the bin onto the
 // floor -- before ..() reaches the base Destroy()'s generic drop-policy pass.
-/datum/om/relation/slot/disposal_bin
+/datum/relation_definition/slot/disposal_bin
 	holder = /obj/machinery/disposal
 	slot_id = CONTAINER_SLOT_DISPOSAL
 	name = "contents"
@@ -183,11 +183,11 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /// Requirement: the grab holds a mob.
 /obj/machinery/disposal/proc/grabs_mob(datum/act/op/A)
 	var/obj/item/grab/G = A.held
-	return istype(G) && ismob(G.grab_target())
+	return istype(G) && ismob(G.grab_target()) ? null : /datum/msg/req_silent
 
 /// Requirement: the bin is not broken.
 /obj/machinery/disposal/proc/not_broken(datum/act/op/A)
-	return !broken_now()
+	return (!broken_now()) ? null : /datum/msg/req_silent
 
 /obj/machinery/disposal/proc/dunk_started(datum/act/op/A)
 	wake_for_state_change()
@@ -405,15 +405,15 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/mob/living/user = A.actor
 	var/mob/living/target = A.held
 	if(!istype(user) || !istype(target))
-		return FALSE
+		return /datum/msg/req_silent
 	//animals cannot put mobs other than themselves into disposal
 	if(isanimal(user) && target != user)
-		return FALSE
+		return /datum/msg/req_silent
 	if(user.stat || !read_once(user.canmove))
-		return FALSE
+		return /datum/msg/req_silent
 	if(target.buckled_to() || read_once(get_dist(user, src) > 1) || read_once(get_dist(user, target) > 1))
-		return FALSE
-	return TRUE
+		return /datum/msg/req_silent
+	return null
 
 /obj/machinery/disposal/proc/stuff_started(datum/act/op/A)
 	add_fingerprint(A.actor)

@@ -122,8 +122,10 @@ CAPABILITIES(/datum/generated_room_solution)
 	name = "remote station authority card"
 	desc = "An emergency authority credential for the isolated installation."
 
-/obj/item/card/id/generated_station_master/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/card/id/generated_station_master)
+	after_init(0, then(PROC_REF(grant_station_access)))
+
+/obj/item/card/id/generated_station_master/proc/grant_station_access(datum/act/timer/A)
 	access |= SSaccess.get_all_station_access()
 
 /// Shared baseline area used when generated geometry releases turf ownership.

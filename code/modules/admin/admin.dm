@@ -132,9 +132,9 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 	if(world.TgsAvailable())
 		options += TGS_RESTART;
 
-	if(SSticker.admin_delay_notice)
+	if(ticker_admin_delay_notice())
 		if(!("delayed" in replay_answers))
-			open_request(src, /datum/prompt/choice/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "delayed", buttons = TRUE, question = "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", title = "Confirmation", choices = list("Yes", "No"))
+			open_request(src, /datum/prompt/choice/admin_restart_replay, PROC_REF(restart_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "delayed", buttons = TRUE, question = "Are you sure? An admin has already delayed the round end for the following reason: [ticker_admin_delay_notice()]", title = "Confirmation", choices = list("Yes", "No"))
 			return
 		var/sure = replay_answers["delayed"]
 		if(sure != "Yes")
@@ -436,13 +436,13 @@ ADMIN_VERB(toggletraitorscaling, R_ADMIN, "Toggle traitor scaling", "Toggle trai
 	feedback_add_details("admin_verb","TTS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADMIN_CATEGORY_SERVER_GAME)
-	if(round_game_state() > GAME_STATE_PREGAME)
+	if(ticker_current_state() > GAME_STATE_PREGAME)
 		to_chat(user, span_warning("Error: Start Now: Game has already started."))
 		return
-	if(!SSticker.start_immediately)
+	if(!ticker_start_immediately())
 		SSticker.start_immediately = TRUE
 		var/msg = ""
-		if(round_game_state() == GAME_STATE_STARTUP)
+		if(ticker_current_state() == GAME_STATE_STARTUP)
 			msg = " (The server is still setting up, but the round will be started as soon as possible.)"
 
 		log_admin("[key_name(user)] has started the game.[msg]")
@@ -519,12 +519,12 @@ ADMIN_VERB(toggle_space_ninja, R_FUN|R_SERVER, "Toggle Space Ninjas", "Toggle sp
 	feedback_add_details("admin_verb","TSN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(delay, R_SERVER|R_EVENT|R_ADMIN|R_MOD, "Delay", "Delay the game start/end.", ADMIN_CATEGORY_SERVER_GAME)
-	if (round_game_state() >= GAME_STATE_PLAYING)
+	if (ticker_current_state() >= GAME_STATE_PLAYING)
 		// Tell the ticker to delay/resume
 		SSticker.toggle_delay()
 
-		log_admin("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].")
-		message_admins(span_blue("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"]."))
+		log_admin("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].")
+		message_admins(span_blue("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"]."))
 		return
 	GLOB.round_progressing = !GLOB.round_progressing
 	if (!GLOB.round_progressing)
@@ -567,7 +567,7 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 ////////////////////////////////////////////////////////////////////////////////////////////////ADMIN HELPER PROCS
 
 /proc/is_special_character(character) // returns 1 for special characters and 2 for heroes of gamemode
-	if(!SSticker|| !round_mode())
+	if(!SSticker|| !ticker_mode())
 		return 0
 	var/datum/mind/M
 	if (ismob(character))
@@ -577,8 +577,8 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 		M = character
 
 	if(M)
-		if(round_mode().antag_templates && round_mode().antag_templates.len)
-			for(var/datum/antagonist/antag in round_mode().antag_templates)
+		if(ticker_mode().antag_templates && ticker_mode().antag_templates.len)
+			for(var/datum/antagonist/antag in ticker_mode().antag_templates)
 				if(antag.is_antagonist(M))
 					return 2
 		if(M.special_role)
@@ -598,12 +598,12 @@ ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", 
 	if(!("a9" in seed_answers))
 		if(!user || !user.mob || QDELETED(user.mob))
 			return
-		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a9", question = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a9", question = "Select Seed.", title = "Seed Type", choices = plants_seeds())
 		return
 	var/seedtype = seed_answers["a9"]
 	if(isnull(seedtype))
 		return
-	if(!seedtype || !SSplants.seeds[seedtype])
+	if(!seedtype || !plants_seeds()[seedtype])
 		return
 	if(!("a10" in seed_answers))
 		if(!user || !user.mob || QDELETED(user.mob))
@@ -615,7 +615,7 @@ ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", 
 		return
 	var/mob/user_mob = user.mob
 	if(!isnull(amount))
-		var/datum/seed/S = SSplants.seeds[seedtype]
+		var/datum/seed/S = plants_seeds()[seedtype]
 		S.harvest(user_mob,0,0,amount)
 	log_admin("[key_name(user)] spawned [seedtype] fruit at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
@@ -672,15 +672,15 @@ ADMIN_VERB(spawn_plant, R_SPAWN, "Spawn Plant", "Spawn a spreading plant effect.
 	if(!("a13" in seed_answers))
 		if(!user || !user.mob || QDELETED(user.mob))
 			return
-		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a13", question = "Select Seed.", title = "Seed Type", choices = SSplants.seeds)
+		open_request(src, /datum/prompt/choice/admin_seed_spawn, PROC_REF(seed_spawn_answered), answerer = user.mob, seed_answers = seed_answers, seed_key = "a13", question = "Select Seed.", title = "Seed Type", choices = plants_seeds())
 		return
 	var/seedtype = seed_answers["a13"]
 	if(isnull(seedtype))
 		return
-	if(!seedtype || !SSplants.seeds[seedtype])
+	if(!seedtype || !plants_seeds()[seedtype])
 		return
 	var/mob/user_mob = user.mob
-	new /obj/effect/plant(get_turf(user_mob), SSplants.seeds[seedtype])
+	new /obj/effect/plant(get_turf(user_mob), plants_seeds()[seedtype])
 	log_admin("[key_name(user)] spawned [seedtype] vines at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
 ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATEGORY_DEBUG_GAME, object as text|null)
@@ -885,31 +885,31 @@ ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn",
 		if((istype(resumed, /datum/prompt/choice/admin_force_antag_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(force_antag_latespawn_replay_answered))
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
-	if(!SSticker|| !round_mode())
+	if(!SSticker|| !ticker_mode())
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
 	if(!("a14" in replay_answers))
-		open_request(src, /datum/prompt/choice/admin_force_antag_replay, PROC_REF(force_antag_latespawn_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a14", question = "Choose a template.", title = "Force Latespawn", choices = SSantag.all_antag_types)
+		open_request(src, /datum/prompt/choice/admin_force_antag_replay, PROC_REF(force_antag_latespawn_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a14", question = "Choose a template.", title = "Force Latespawn", choices = antag_all_antag_types())
 		return
 	var/antag_type = replay_answers["a14"]
 	if(isnull(antag_type))
 		return
-	if(!antag_type || !SSantag.all_antag_types[antag_type])
+	if(!antag_type || !antag_all_antag_types()[antag_type])
 		to_chat(user, span_warning("Aborting."))
 		return
 
-	var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
+	var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 	message_admins("[key_name(user)] attempting to force latespawn with template [antag.id].")
 	antag.attempt_late_spawn()
 
 ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "Force autotraitor to proc.", ADMIN_CATEGORY_EVENTS)
-	if(!SSticker|| !round_mode())
+	if(!SSticker|| !ticker_mode())
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
 	log_and_message_admins("attempting to force mode autospawn.", user.mob)
-	round_mode().try_latespawn()
+	ticker_mode().try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	return toggle_paralyze(user, living_target)

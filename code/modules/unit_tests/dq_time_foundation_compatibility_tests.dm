@@ -1,10 +1,17 @@
+// Test-owned mutable data keeps runtime-storage regression coverage independent of retired content capabilities.
+/datum/capability/dq_runtime_storage_fixture
+	data_type = /datum/dq_runtime_storage_data
+
+/datum/dq_runtime_storage_data
+	var/label
+
 // Legacy carrier identities and global forwards share the actual time-engine state.
 /datum/unit_test/dq_time_foundation_compatibility/Run()
 	var/datum/time_scheduler/sched = time_scheduler()
-	TEST_ASSERT(istype(sched, /datum/om/scheduler), "The real compatibility factory preserves downstream scheduler extensions")
+	TEST_ASSERT(istype(sched, /datum/time_scheduler), "The real compatibility factory preserves downstream scheduler extensions")
 	TEST_ASSERT_EQUAL(time_scheduler(), sched, "Both scheduler entry points return the same active instance")
 	var/datum/owner = timer_global_owner()
-	TEST_ASSERT(istype(owner, /datum/om/global_owner), "The timer owner factory preserves downstream owned relation declarations")
+	TEST_ASSERT(istype(owner, /datum/timer_owner), "The timer owner factory preserves downstream owned relation declarations")
 	TEST_ASSERT_EQUAL(timer_global_owner(), owner, "Both timer-owner entry points return the same actual owner")
 	var/datum/probe = allocate(/datum)
 	var/datum/scheduler_record/record = scheduler_record_of(probe)
@@ -17,12 +24,12 @@
 	qdel(probe)
 	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the canonical handle")
 	TEST_ASSERT_NULL(resolve_handle(handle), "Deleting the original datum invalidates the legacy handle too")
-	var/datum/relation_definition/relation = allocate(/datum/om/relation)
+	var/datum/relation_definition/relation = allocate(/datum/relation_definition)
 	var/datum/relation_edge/edge = relation.make_edge()
-	TEST_ASSERT(istype(edge, /datum/om/edge), "A real link carrier still passes existing legacy edge identity checks")
+	TEST_ASSERT(istype(edge, /datum/relation_edge), "A real link carrier still passes existing legacy edge identity checks")
 	qdel(edge)
 	var/datum/scheduled_behaviour/inline/inline_callback = definition_registry().make_inline_behaviour()
-	TEST_ASSERT(istype(inline_callback, /datum/om/behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
+	TEST_ASSERT(istype(inline_callback, /datum/scheduled_behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback)
 
 /datum/unit_test/om/dq_time_foundation_clock_callback
@@ -79,7 +86,7 @@
 		feedback = transfer_feedback_provider()
 		reused = factory == time_scheduler_factory() && native == native_watch_provider() && construction == construction_stage_provider() && feedback == transfer_feedback_provider()
 		made_scheduler = factory.make()
-		legacy_scheduler = istype(made_scheduler, /datum/om/scheduler)
+		legacy_scheduler = istype(made_scheduler, /datum/time_scheduler)
 	catch(var/exception/error)
 		problem = error
 	// Restore before assertions (TEST_ASSERT returns on failure) and before deleting probes.
@@ -109,9 +116,9 @@
 	TEST_ASSERT(cap_set(first, CAP_LOCKED, TRUE), "Setting an absent bit changes real capability state")
 	TEST_ASSERT_EQUAL(capability_bits(first), CAP_LOCKED, "The stored bits match the actual mutation")
 	TEST_ASSERT_EQUAL(capability_bits(second), 0, "Another holder keeps its independent default")
-	var/datum/capability/label/capability = allocate(/datum/capability/label)
-	var/datum/cap_label_data/first_data = capability_instance_data(first, capability)
-	var/datum/cap_label_data/second_data = capability_instance_data(second, capability)
+	var/datum/capability/dq_runtime_storage_fixture/capability = allocate(/datum/capability/dq_runtime_storage_fixture)
+	var/datum/dq_runtime_storage_data/first_data = capability_instance_data(first, capability)
+	var/datum/dq_runtime_storage_data/second_data = capability_instance_data(second, capability)
 	first_data.label = "private label"
 	TEST_ASSERT_EQUAL(capability_instance_data(first, capability), first_data, "Repeated lookup preserves the original capability-data identity")
 	TEST_ASSERT(first_data != second_data, "Two holders have distinct mutable capability data")
@@ -157,8 +164,8 @@
 	TEST_ASSERT_NOTNULL(service, "The actual cell admits a running material service")
 	var/datum/material_assembly/assembly = material_assembly_of(holder)
 	var/datum/material_build/build = material_build(holder)
-	var/datum/capability/label/capability = allocate(/datum/capability/label)
-	var/datum/cap_label_data/data = capability_instance_data(holder, capability)
+	var/datum/capability/dq_runtime_storage_fixture/capability = allocate(/datum/capability/dq_runtime_storage_fixture)
+	var/datum/dq_runtime_storage_data/data = capability_instance_data(holder, capability)
 	TEST_ASSERT(assembly && build && data, "The holder owns real material records and ordinary capability data")
 	LAZYADD(capability_runtime(holder).extras, capability)
 	TEST_ASSERT(after_pending(service, "material_service"), "The actual material service has scheduled work before the abort")

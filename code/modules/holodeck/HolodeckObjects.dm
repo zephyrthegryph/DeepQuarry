@@ -421,7 +421,7 @@ CAPABILITIES(/obj/structure/holohoop)
 CAPABILITIES(/obj/machinery/readybutton)
 	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
 	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
-	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))
+	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req_bool(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))
 
 /// Old attack_ai: refuse silicons.
 /obj/machinery/readybutton/proc/readybutton_silicon_refuse(datum/act/op/A)
@@ -512,9 +512,12 @@ TRACKED(/obj/machinery/readybutton, ready)
 	meat_amount = 0
 	meat_type = null
 
-/mob/living/simple_mob/animal/space/carp/holodeck/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
+	after_init(0, then(PROC_REF(init_hologram_light)))
+
+/mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)
 	set_light(2) //hologram lighting
+
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)
 	if (safe)

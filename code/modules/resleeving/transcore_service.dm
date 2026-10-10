@@ -176,6 +176,7 @@ SYSTEM_DEF(transcore)
 	var/key // Key for this DB
 
 CAPABILITIES(/datum/transcore_db)
+	ref_many(nameof(implants))
 	owns_many(nameof(backed_up), /datum/transhuman/mind_record)
 	owns_many(nameof(body_scans), /datum/transhuman/body_record)
 
@@ -263,9 +264,5 @@ CAPABILITIES(/datum/transcore_db)
 /// The database owns its records: mind records (backed_up, and has_left once they cryo) and
 /// body records, keyed by name. A core dump moves the mind records to the disk first.
 
-/datum/system/transcore/relations()
-	. = ..()
-	. += rel_many(nameof(current_run))
-/datum/transcore_db/relations()
-	. = ..()
-	. += rel_many(nameof(implants))
+CAPABILITIES(/datum/system/transcore)
+	ref_many(nameof(current_run))

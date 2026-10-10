@@ -19,8 +19,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 /obj/item/assembly/signaler/var/deadman = FALSE
 TRACKED(/obj/item/assembly/signaler, deadman)
 
-/obj/item/assembly/signaler/Initialize(mapload)
-	. = ..()
+/obj/item/assembly/signaler/proc/join_frequency(datum/act/timer/A)
 	set_frequency(frequency)
 
 /obj/item/assembly/signaler/activate()
@@ -30,6 +29,7 @@ TRACKED(/obj/item/assembly/signaler, deadman)
 	return TRUE
 
 CAPABILITIES(/obj/item/assembly/signaler)
+	after_init(0, then(PROC_REF(join_frequency)))
 	every(2 SECONDS, then(PROC_REF(signaler_step)), when = nameof(deadman))
 	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")

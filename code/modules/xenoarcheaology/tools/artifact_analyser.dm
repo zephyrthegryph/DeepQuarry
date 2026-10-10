@@ -24,6 +24,7 @@
 
 CAPABILITIES(/obj/machinery/artifact_analyser)
 	started_work(step = PROC_REF(work_step))
+	after_init(0, then(PROC_REF(reconnect_scanner)))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(scanned_object), /obj)
 	interface("XenoarchArtifactAnalyzer")
@@ -31,11 +32,7 @@ CAPABILITIES(/obj/machinery/artifact_analyser)
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("artifact_analyser_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_analyser_use)))
 
-/obj/machinery/artifact_analyser/Initialize(mapload)
-	. = ..()
-	reconnect_scanner()
-
-/obj/machinery/artifact_analyser/proc/reconnect_scanner()
+/obj/machinery/artifact_analyser/proc/reconnect_scanner(datum/act/A)
 	//connect to a nearby scanner pad
 	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())

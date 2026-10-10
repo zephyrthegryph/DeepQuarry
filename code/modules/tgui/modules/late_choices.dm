@@ -55,7 +55,7 @@
 
 CAPABILITIES(/datum/tgui_module/late_choices)
 	interface("LateChoices")
-	op("join", ui_act("join", arg("job", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_join)))
+	op("join", ui_act("join", arg("job", schema_text(4096))), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_join)))
 
 /datum/tgui_module/late_choices/ui_data(datum/act/eval/A)
 	var/mob/new_player/user = A.actor
@@ -69,7 +69,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 	if(SSemergency_shuttle?.going_to_centcom())
 		data["evac"] = "Gone"
 	else if(SSemergency_shuttle?.online())
-		if(SSemergency_shuttle.evac)
+		if(emergency_shuttle_evac())
 			data["evac"] = "Emergency"
 		else
 			data["evac"] = "Crew Transfer"
@@ -78,7 +78,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 
 	var/list/jobs = list()
 
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in job_occupations())
 		if(job && user.IsJobAvailable(job.title))
 			// Check for jobs with minimum age requirements
 			if(!character_old_enough_for_job(user.client.prefs, job))
@@ -125,7 +125,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 	if(!CONFIG_GET(flag/enter_allowed))
 		to_chat(new_user, span_notice("There is an administrative lock on entering the game!"))
 		return
-	else if(SSticker && round_mode() && round_mode().explosion_in_progress)
+	else if(SSticker && ticker_mode() && ticker_mode().explosion_in_progress)
 		to_chat(new_user, span_danger("The station is currently exploding. Joining would go poorly."))
 		return
 

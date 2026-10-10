@@ -100,7 +100,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	if(id == "self")
 		user.client.debug_variables(src)
 		return
-	var/datum/antagonist/antag = SSantag.all_antag_types[id]
+	var/datum/antagonist/antag = antag_all_antag_types()[id]
 	if(antag)
 		user.client.debug_variables(antag)
 		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
@@ -112,7 +112,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	if(antag_tags && (id in antag_tags))
 		to_chat(user, "Cannot remove core mode antag type.")
 		return
-	var/datum/antagonist/antag = SSantag.all_antag_types[id]
+	var/datum/antagonist/antag = antag_all_antag_types()[id]
 	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
 		rel_remove(src, nameof(antag_templates), antag)
 		GLOB.additional_antag_types -= antag.id
@@ -120,14 +120,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	refresh_game_mode_panel(user)
 
 /datum/game_mode/proc/antag_type_choices(datum/act/op/A)
-	return SSantag.all_antag_types
+	return antag_all_antag_types()
 
 /datum/game_mode/proc/topic_add_antag_type(datum/act/op/A)
 	var/mob/user = A.actor
-	var/datum/antagonist/antag = SSantag.all_antag_types[A.step_value("type")]
+	var/datum/antagonist/antag = antag_all_antag_types()[A.step_value("type")]
 	if(antag)
-		if(!(antag in round_mode().antag_templates))
-			rel_add(round_mode(), nameof(/datum/game_mode::antag_templates), antag)
+		if(!(antag in SSticker.mode.antag_templates))
+			rel_add(ticker_mode(), nameof(/datum/game_mode::antag_templates), antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/game_mode_option_prompt(option)
@@ -191,7 +191,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/enemy_count = 0
 	if(antag_tags && length(antag_tags))
 		for(var/antag_tag in antag_tags)
-			var/datum/antagonist/antag = SSantag.all_antag_types[antag_tag]
+			var/datum/antagonist/antag = antag_all_antag_types()[antag_tag]
 			if(!antag)
 				continue
 			var/list/potential = list()
@@ -211,10 +211,10 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	if(event_delay_mod_moderate || event_delay_mod_major)
 		SSevents.report_at_round_end = TRUE
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EModerate = SSevents.event_containers[EVENT_LEVEL_MODERATE]
+			var/datum/event_container/EModerate = events_event_containers()[EVENT_LEVEL_MODERATE]
 			EModerate.delay_modifier = event_delay_mod_moderate
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EMajor = SSevents.event_containers[EVENT_LEVEL_MAJOR]
+			var/datum/event_container/EMajor = events_event_containers()[EVENT_LEVEL_MAJOR]
 			EMajor.delay_modifier = event_delay_mod_major
 
 /datum/game_mode/proc/pre_setup()
@@ -246,8 +246,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an io_job write; returns at once
-	if(SSticker && round_mode())
-		feedback_set_details("game_mode","[round_mode()]")
+	if(SSticker && SSticker.mode)
+		feedback_set_details("game_mode","[ticker_mode()]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")
 	return 1
 
@@ -400,7 +400,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/text = ""
 	if(surviving_total > 0)
 		text += "<br>There [surviving_total>1 ? ("were " + span_bold("[surviving_total] survivors")) : ("was " + span_bold("one survivor"))] ("
-		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [SSemergency_shuttle.evac ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
+		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [emergency_shuttle_evac() ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
 		text += ".<br>"
 	else
 		text += "There were " + span_bold("no survivors") + " (" + span_bold("[ghosts] ghosts") + ")."
@@ -446,7 +446,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/list/players = list()
 	var/list/candidates = list()
 
-	var/datum/antagonist/antag_template = SSantag.all_antag_types[antag_id]
+	var/datum/antagonist/antag_template = antag_all_antag_types()[antag_id]
 	if(!antag_template)
 		return candidates
 
@@ -495,13 +495,13 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	if(antag_tags && length(antag_tags))
 		rel_clear(src, nameof(antag_templates))
 		for(var/antag_tag in antag_tags)
-			var/datum/antagonist/antag = SSantag.all_antag_types[antag_tag]
+			var/datum/antagonist/antag = antag_all_antag_types()[antag_tag]
 			if(antag && !(antag in antag_templates))
 				rel_add(src, nameof(antag_templates), antag)
 
 	if(GLOB.additional_antag_types && GLOB.additional_antag_types.len)
 		for(var/antag_type in GLOB.additional_antag_types)
-			var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
+			var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 			if(antag && !(antag in antag_templates))
 				rel_add(src, nameof(antag_templates), antag)
 
@@ -596,16 +596,16 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	set name = "Check Round Info"
 	set category = VERB_CAT_OOC_GAME
 
-	if(!SSticker|| !round_mode())
+	if(!SSticker|| !ticker_mode())
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))
 		return
 
 	if(GLOB.master_mode != "secret")
-		to_chat(usr, span_boldnotice("The roundtype is [capitalize(round_mode().name)]"))
-		if(round_mode().round_description)
-			to_chat(usr, span_notice(span_italics("[round_mode().round_description]")))
-		if(round_mode().extended_round_description)
-			to_chat(usr, span_notice("[round_mode().extended_round_description]"))
+		to_chat(usr, span_boldnotice("The roundtype is [capitalize(ticker_mode().name)]"))
+		if(ticker_mode().round_description)
+			to_chat(usr, span_notice(span_italics("[ticker_mode().round_description]")))
+		if(ticker_mode().extended_round_description)
+			to_chat(usr, span_notice("[ticker_mode().extended_round_description]"))
 	else
 		to_chat(usr, span_notice(span_italics("Shhhh") + ". It's a secret."))
 	return

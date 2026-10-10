@@ -43,8 +43,10 @@
 
 	allow_mind_transfer = TRUE
 
-/mob/living/simple_mob/vore/bee/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	after_init(0, then(PROC_REF(bee_swarm_ready)))
+
+/mob/living/simple_mob/vore/bee/proc/bee_swarm_ready(datum/act/timer/A)
 	enable_swarming()
 
 /mob/living/simple_mob/vore/bee/Process_Spacemove(check_drift = 0)

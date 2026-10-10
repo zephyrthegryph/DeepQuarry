@@ -45,8 +45,8 @@
 	return 1
 
 CAPABILITIES(/obj/item/sample)
-	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
-		needs(req(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), then(PROC_REF(sample_merged)))
+	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req_bool(PROC_REF(matching_sample))),
+		needs(req_bool(PROC_REF(sample_releasable), because = PROC_REF(sample_release_refusal))), then(PROC_REF(sample_merged)))
 	param(nameof(taken_from), pos = 1, apply = PROC_REF(copy_from), keep = FALSE)
 
 /// Compiled DM type identities are immutable; this helper reads no mutable entity state.

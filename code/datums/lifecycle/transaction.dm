@@ -284,7 +284,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// anything a DECLARE_REF line, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
-/// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
+/// Behaviours get the same hook as /datum/scheduled_behaviour/proc/on_entity_destroy(E).
 // ---- Phase 1: unbind (hook point) ----
 
 /// Phase 1 (doc/rewrite/lifecycle.md §2): R10 entity bindings
