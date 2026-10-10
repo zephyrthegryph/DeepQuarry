@@ -2,7 +2,7 @@
 //
 // One proc per relation end, typed so reads chain (M.buckled_to()?.loc). They
 // replaced the BUCKLED()/PULLING()/... accessor macros; tools/ci/check_ratchets.sh
-// bans the macros and bare link_of() outside code/datums/om.
+// bans the macros and bare link_of() outside the relation core.
 
 /// What the mob is buckled to, or null (the sparse link LK_BUCKLED_TO, links() in CAPABILITIES(/atom/movable)). Was BUCKLED().
 /mob/proc/buckled_to() as /atom/movable
