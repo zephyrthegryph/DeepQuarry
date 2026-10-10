@@ -254,10 +254,6 @@
 	icon = 'icons/mob/species/protean/protean.dmi'
 	icon_state = "posi"
 
-/obj/item/mmi/digital/posibrain/nano/Initialize(mapload)
-	. = ..()
-	icon_state = "posi"
-
 /obj/item/mmi/digital/posibrain/nano/request_player()
 	icon_state = initial(icon_state)
 	return //We don't do this stuff

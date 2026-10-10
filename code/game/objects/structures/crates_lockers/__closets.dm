@@ -618,9 +618,12 @@ CAPABILITIES(/obj/structure/closet)
 	user.begin_instant_nom(user, target, user, user.vore_selected)
 	return OP_OK
 
-/obj/structure/closet/bluespace/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/closet/bluespace)
+	after_init(0, then(PROC_REF(init_join_network)))
+
+/obj/structure/closet/bluespace/proc/init_join_network(datum/act/timer/A)
 	join_bluespace_network()
+
 
 /// The icon is derived from closet_appearance by the look (C5 parity).
 /obj/structure/closet/state_exclude()

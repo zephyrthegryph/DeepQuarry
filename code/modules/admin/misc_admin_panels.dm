@@ -440,8 +440,8 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	// Antagonist block — driven by the antag service, not by SSjob department.
 	var/list/antag_jobs = list()
 	var/dept_antag_ban = !!jobban_isbanned(target(), JOB_SYNDICATE)
-	for(var/antag_type in SSantag.all_antag_types)
-		var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
+	for(var/antag_type in antag_all_antag_types())
+		var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 		if(!antag || !antag.bantype)
 			continue
 		antag_jobs += list(list(

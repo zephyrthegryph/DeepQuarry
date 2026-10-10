@@ -66,7 +66,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 
 /proc/registry_transcore_db(datum/transcore_db/D)
 	for(var/key in SStranscore?.databases)
-		if(SStranscore.databases[key] == D)
+		if(transcore_databases()[key] == D)
 			return D
 	return null
 

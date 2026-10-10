@@ -3,8 +3,8 @@ ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract s
 
 /datum/admin_verb/dq_inspect_contract/proc/contract_inspect_stage(client/user, list/inspect_answers)
 	var/list/options = list()
-	for(var/id in SScontracts.contracts_by_id)
-		var/datum/contract/contract = SScontracts.contracts_by_id[id]
+	for(var/id in contracts_contracts_by_id())
+		var/datum/contract/contract = contracts_contracts_by_id()[id]
 		options["[contract.id] — [contract.title] ([contract.state])"] = contract
 	if(!("k6" in inspect_answers))
 		if(!user || !user.mob || QDELETED(user.mob))
@@ -32,8 +32,8 @@ ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract s
 	for(var/datum/contract_audit_entry/entry in contract.audit_log)
 		html += "<tr><td>[worldtime2stationtime(entry.time)]</td><td>[html_encode(entry.category)]</td><td>[html_encode(entry.detail)]</td></tr>"
 	html += "</table><h3>Recent routed evidence</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Time</th><th>ID</th><th>Type</th><th>Fact / revision</th><th>Active</th><th>Actor/source</th><th>Detail</th></tr>"
-	for(var/index = length(SScontracts.recent_events), index >= 1, index--)
-		var/datum/contract_event/event = SScontracts.recent_events[index]
+	for(var/index = length(contracts_recent_events()), index >= 1, index--)
+		var/datum/contract_event/event = contracts_recent_events()[index]
 		if(event.contract_id && event.contract_id != contract.id)
 			continue
 		html += "<tr><td>[worldtime2stationtime(event.occurred_at)]</td><td>[html_encode(event.id)]</td><td>[html_encode(event.event_type)]</td><td>[html_encode(event.fact_id || "final event")] / [event.fact_revision]</td><td>[event.fact_active ? "yes" : "no"]</td><td>[html_encode(event.actor_name || event.actor_account || event.source_type || "system")]</td><td>[html_encode(event.value("detail") || "")]</td></tr>"
@@ -48,27 +48,27 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 	html += "<b>Outcomes:</b> [summary["materialized"]] materialized, [summary["declined"]] declined, [summary["expired"]] expired, [summary["withdrawn"]] ineligible withdrawals.<br>"
 	html += "<b>Opportunity broker:</b> [opportunity_summary["rules"]] rules, [opportunity_summary["windows"]] rolling windows, [opportunity_summary["events"]] relevant events, [opportunity_summary["triggered"]] offers triggered, [opportunity_summary["suppressed"]] duplicate/cooldown triggers suppressed.<br>"
 	html += "<h3>Candidate queue</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>ID</th><th>Definition</th><th>Board</th><th>Priority</th><th>Expires</th><th>Reason</th></tr>"
-	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
+	for(var/datum/contract_offer_candidate/candidate in contracts_offer_candidates())
 		var/expires = candidate.expires_at ? worldtime2stationtime(candidate.expires_at) : "standing"
 		html += "<tr><td>[html_encode(candidate.id)]</td><td>[html_encode(candidate.definition_id)]</td><td>[html_encode(candidate.board_key)]</td><td>[candidate.priority]</td><td>[html_encode(expires)]</td><td>[html_encode(candidate.reason)]</td></tr>"
 	html += "</table><h3>Offer cooldowns</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Offer key</th><th>Available</th></tr>"
-	for(var/offer_key in SScontracts.offer_cooldowns)
-		var/available_at = SScontracts.offer_cooldowns[offer_key]
+	for(var/offer_key in contracts_offer_cooldowns())
+		var/available_at = contracts_offer_cooldowns()[offer_key]
 		html += "<tr><td>[html_encode(offer_key)]</td><td>[html_encode(BEFORE(src, available_at, CLOCK_WORLD) ? worldtime2stationtime(available_at) : "now")]</td></tr>"
 	html += "</table><h3>Opportunity windows / near misses</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Rule</th><th>Bucket</th><th>Overall</th><th>Lane progress</th><th>Last activity</th></tr>"
 	for(var/list/near_miss as anything in SScontracts.opportunity_near_misses())
 		html += "<tr><td>[html_encode(near_miss["rule"])]</td><td>[html_encode(near_miss["bucket"])]</td><td>[near_miss["progress"]]%</td><td>[html_encode(near_miss["lanes"])]</td><td>[worldtime2stationtime(near_miss["last_event_at"])]</td></tr>"
 	html += "</table><h3>Recent opportunity triggers</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Time</th><th>Rule</th><th>Bucket</th><th>Offer</th><th>Trigger event</th><th>Signal snapshot</th></tr>"
-	for(var/index = length(SScontracts.opportunity_history), index >= 1, index--)
-		var/datum/contract_opportunity_history_entry/opportunity = SScontracts.opportunity_history[index]
+	for(var/index = length(contracts_opportunity_history()), index >= 1, index--)
+		var/datum/contract_opportunity_history_entry/opportunity = contracts_opportunity_history()[index]
 		var/list/signal_parts = list()
 		for(var/signal_id in opportunity.snapshots)
 			var/list/snapshot = opportunity.snapshots[signal_id]
 			signal_parts += "[signal_id]: [round(snapshot["value"], 0.1)] value / [snapshot["facts"]] facts / [snapshot["actors"]] actors"
 		html += "<tr><td>[worldtime2stationtime(opportunity.time)]</td><td>[html_encode(opportunity.rule_id)]</td><td>[html_encode(opportunity.bucket)]</td><td>[html_encode(opportunity.offer_key)]</td><td>[html_encode(opportunity.event_id)]</td><td>[html_encode(jointext(signal_parts, "; "))]</td></tr>"
 	html += "</table><h3>Recent lifecycle history</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Time</th><th>Action</th><th>Definition / contract</th><th>Board</th><th>Reason</th></tr>"
-	for(var/index = length(SScontracts.lifecycle_history), index >= 1, index--)
-		var/datum/contract_lifecycle_entry/entry = SScontracts.lifecycle_history[index]
+	for(var/index = length(contracts_lifecycle_history()), index >= 1, index--)
+		var/datum/contract_lifecycle_entry/entry = contracts_lifecycle_history()[index]
 		html += "<tr><td>[worldtime2stationtime(entry.time)]</td><td>[html_encode(entry.action)]</td><td>[html_encode(entry.definition_id)] / [html_encode(entry.contract_id || "candidate")]</td><td>[html_encode(entry.board_key || "none")]</td><td>[html_encode(entry.reason || "") ]</td></tr>"
 	html += "</table>"
 	user.mob << browse(html, "window=dq_contract_board;size=900x680")

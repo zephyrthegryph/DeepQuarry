@@ -28,7 +28,7 @@
 	var/high_count = 0
 	var/med_count = 0
 	var/low_count = 0
-	for(var/datum/job/job in SSjob.occupations)
+	for(var/datum/job/job in job_occupations())
 		if(job.title == "AI" || job.title == "Cyborg" || job.title == "NOPE")
 			continue
 		if(!LAZYLEN(job.departments))
@@ -74,8 +74,8 @@
 	var/list/dept_buckets = list()
 	var/list/alt_titles_by_job = list()
 
-	for(var/dept_name in SSjob.department_datums)
-		var/datum/department/dept = SSjob.department_datums[dept_name]
+	for(var/dept_name in job_department_datums())
+		var/datum/department/dept = job_department_datums()[dept_name]
 		if(dept.centcom_only || !dept.visible)
 			continue
 		var/list/job_entries = list()

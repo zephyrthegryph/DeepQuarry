@@ -447,7 +447,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 	if(action == "help")
 		var/list/whitelist_jobs = list()
-		for(var/datum/job/our_job in SSjob.occupations)
+		for(var/datum/job/our_job in job_occupations())
 			if(our_job.whitelist_only)
 				whitelist_jobs += our_job.title
 		var/list/whitelisted_language = list()

@@ -23,8 +23,7 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/spacecash/Initialize(mapload)
-	. = ..()
+/obj/item/spacecash/proc/register_sellable(datum/act/timer/A)
 	make_sellable(/datum/sellable/spacecash)
 
 /obj/item/spacecash
@@ -102,6 +101,7 @@ TRACKED(/obj/item/spacecash, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecash)
+	after_init(0, then(PROC_REF(register_sellable)))
 	rolls(nameof(note_seed), range_of(0, 49))
 	op("cash_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(cash_take_question)), "title" = "Take Money", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k92"),

@@ -531,8 +531,10 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 
 	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
-/mob/living/simple_mob/metroid/juvenile/queen/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	after_init(0, then(PROC_REF(queen_metroid_ready)))
+
+/mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)
 	play_sfx(src, SFX_METROID_METROIDQUEEN)
 	GLOB.queen_amount++
 

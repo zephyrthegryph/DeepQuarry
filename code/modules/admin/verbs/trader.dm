@@ -48,7 +48,7 @@ CAPABILITIES(/datum/admin_trader_dispatch_review)
 	if(!user || QDELETED(user.mob))
 		return
 	rel_set(src, nameof(actor), user.mob)
-	if(SSticker.current_state <= GAME_STATE_PREGAME)
+	if(ticker_current_state() <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_beruang)
@@ -147,7 +147,7 @@ GLOBAL_VAR(trader_loaded)
 /proc/consider_trader_load()
 	if(!GLOB.trader_loaded)
 		GLOB.trader_loaded = TRUE
-		var/datum/map_template/MT = SSmapping.map_templates["Special Area - Salamander Trader"] //was: "Special Area - Trader"
+		var/datum/map_template/MT = mapping_map_templates()["Special Area - Salamander Trader"] //was: "Special Area - Trader"
 		if(!istype(MT))
 			log_mapping("Trader is not a valid map template!")
 		else

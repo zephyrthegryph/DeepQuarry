@@ -41,7 +41,7 @@
 	for(var/module_name in GLOB.robot_modules)
 		all_modules += module_name
 		var/list/chassis_names = list()
-		var/list/sprites = SSrobot_sprites.cyborg_sprites_by_module[module_name]
+		var/list/sprites = robot_sprites_cyborg_sprites_by_module()[module_name]
 		if(islist(sprites))
 			for(var/datum/robot_sprite/RS as anything in sprites)
 				chassis_names += RS.name

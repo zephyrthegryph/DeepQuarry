@@ -138,9 +138,9 @@ CAPABILITIES(/datum/game_mode)
 	op("add_antag_type", topic("add_antag_type"), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/choice, fields = list("title" = "Select Antag Type", "question" = "Which type do you wish to add?", "choices" = computed(PROC_REF(antag_type_choices)), "rights" = R_ADMIN|R_SERVER, "timeout" = 0), step = "type"), then(PROC_REF(topic_add_antag_type)))
 
 /proc/open_game_mode_panel(mob/user)
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !ticker_mode())
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
 	if(!SSticker.mode.tgui_game_mode_panel)
-		rel_set(SSticker.mode, nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(SSticker.mode))
+		rel_set(ticker_mode(), nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(ticker_mode()))
 	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)

@@ -7,8 +7,7 @@
 	var/worth = 250 // Pricey... Should be hard-ish to obtain.
 	special_handling = TRUE
 
-/obj/item/assembly/signaler/anomaly/Initialize(mapload)
-	. = ..()
+/obj/item/assembly/signaler/anomaly/proc/register_sellable(datum/act/timer/A)
 	if(worth)
 		make_sellable(/datum/sellable)
 
@@ -25,6 +24,7 @@
 
 
 CAPABILITIES(/obj/item/assembly/signaler/anomaly)
+	after_init(0, then(PROC_REF(register_sellable)))
 	op("anomaly_analyze", item(/obj/item/analyzer), label("Analyze"), then(PROC_REF(anomaly_analyze)))
 	op("anomaly_scan", item(/obj/item/anomaly_scanner), label("Scan"), then(PROC_REF(anomaly_scan)))
 	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), needs(req_bool(PROC_REF(releaser_fresh), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(release_done)))

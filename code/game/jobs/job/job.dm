@@ -202,7 +202,7 @@ CAPABILITIES(/datum/job)
 	return message
 
 /datum/job/proc/get_job_icon()
-	if(!SSjob.job_icon_cache[title])
+	if(!job_job_icon_cache()[title])
 		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin("#job_icon")
 		dress_mannequin(mannequin)
 		mannequin.dir = SOUTH
@@ -212,7 +212,7 @@ CAPABILITIES(/datum/job)
 		preview_icon.Scale(preview_icon.Width() * 2, preview_icon.Height() * 2) // Scaling here to prevent blurring in the browser.
 		SSjob.job_icon_cache[title] = preview_icon
 
-	return SSjob.job_icon_cache[title]
+	return job_job_icon_cache()[title]
 
 /datum/job/proc/dress_mannequin(mob/living/carbon/human/dummy/mannequin/mannequin)
 	mannequin.delete_inventory(TRUE)

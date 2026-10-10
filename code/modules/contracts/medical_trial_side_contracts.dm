@@ -207,7 +207,7 @@
 		return FALSE
 	if(faction_id && owner && owner.get_faction_reputation(faction_id) < minimum_reputation)
 		return FALSE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[context["trial_id"]]
+	var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[context["trial_id"]]
 	return istype(trial) && trial.state == CONTRACT_ACTIVE
 
 /proc/medical_trial_offer_side_contract(definition_id, datum/contract/medical_trial/trial, owner_account, datum/medical_trial_participant/participant, list/additional_context)
@@ -278,7 +278,7 @@
 /// offer deliverable. Revisit only participants whose first attempt never made
 /// it onto either the live board or candidate queue.
 /proc/reconcile_medical_trial_side_contracts()
-	for(var/datum/contract/medical_trial/trial in SScontracts.active_contracts)
+	for(var/datum/contract/medical_trial/trial in contracts_active_contracts())
 		for(var/subject_id in trial.participants)
 			var/datum/medical_trial_participant/participant = trial.participants?[subject_id]
 			var/mob/living/carbon/human/subject = participant.current_subject()
@@ -289,16 +289,16 @@
 /proc/medical_trial_cancel_conflicts(datum/contract/medical_trial_personal/completed)
 	if(!(completed.action_key in list(MEDICAL_SIDE_COVERUP, MEDICAL_SIDE_ADVOCATE)))
 		return
-	for(var/id in SScontracts.contracts_by_id)
-		var/datum/contract/medical_trial_personal/other = SScontracts.contracts_by_id[id]
+	for(var/id in contracts_contracts_by_id())
+		var/datum/contract/medical_trial_personal/other = contracts_contracts_by_id()[id]
 		if(!istype(other) || other == completed || other.linked_trial_id != completed.linked_trial_id || other.target_ref != completed.target_ref)
 			continue
 		if((other.action_key in list(MEDICAL_SIDE_COVERUP, MEDICAL_SIDE_ADVOCATE)) && (other.state in list(CONTRACT_OFFERED, CONTRACT_ACTIVE, CONTRACT_GRACE)))
 			other.cancel("The consent record was resolved by a competing claimant.")
 
 /proc/medical_trial_cancel_subject_contracts(trial_id, subject_id)
-	for(var/id in SScontracts.contracts_by_id)
-		var/datum/contract/medical_trial_personal/side_contract = SScontracts.contracts_by_id[id]
+	for(var/id in contracts_contracts_by_id())
+		var/datum/contract/medical_trial_personal/side_contract = contracts_contracts_by_id()[id]
 		if(!istype(side_contract) || side_contract.linked_trial_id != trial_id || side_contract.target_ref != subject_id)
 			continue
 		if(side_contract.state in list(CONTRACT_OFFERED, CONTRACT_ACTIVE, CONTRACT_GRACE))
@@ -333,7 +333,7 @@
 		document.register_agent_approach_signature(src, user, field_id)
 
 /datum/contract_document/proc/register_clinical_signature(obj/item/paper/paper, mob/living/carbon/human/subject, signature)
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
+	var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[contract_id]
 	if(payload["subject_id"] || !istype(subject) || !istype(trial) || trial.state != CONTRACT_ACTIVE)
 		return FALSE
 	if(!trial.enroll(subject, payload["issuer_account"]))
@@ -404,7 +404,7 @@
 	var/datum/contract_document/document = paper.contract_document
 	if(!document)
 		return FALSE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[document.contract_id]
+	var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[document.contract_id]
 	if(document.document_kind == CONTRACT_DOCUMENT_CONSENT_REVOCATION)
 		if(document.submitted || !document.payload["signed"] || destination != document.destination)
 			return FALSE
@@ -412,7 +412,7 @@
 		if(istype(trial))
 			success = trial.revoke_consent(document.payload["subject_id"])
 		else
-			var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[document.contract_id]
+			var/datum/contract/medical_case_report/report = contracts_contracts_by_id()[document.contract_id]
 			success = report?.revoke_consent(document.payload["subject_id"])
 		if(!success || !SScontracts.evidence_available(list(document.evidence_id)) || !SScontracts.consume_evidence(list(document.evidence_id), document.contract_id))
 			return FALSE
@@ -435,7 +435,7 @@
 		to_chat(sender, span_warning("The receiving office requires an ID-linked personal account for this private filing."))
 		return FALSE
 	var/datum/contract/medical_trial_personal/side_contract
-	for(var/datum/contract/medical_trial_personal/candidate in SScontracts.active_contracts + SScontracts.grace_contracts)
+	for(var/datum/contract/medical_trial_personal/candidate in contracts_active_contracts() + contracts_grace_contracts())
 		if(candidate.owner_account_number == sender_account && candidate.linked_trial_id == document.contract_id && candidate.target_ref == document.payload["subject_id"] && candidate.action_key == action_key)
 			side_contract = candidate
 			break
@@ -474,7 +474,7 @@
 	if(!subject_id)
 		to_chat(sender, span_warning("VeyMed rejects the unsigned consent form."))
 		return FALSE
-	var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[consent_document.contract_id]
+	var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[consent_document.contract_id]
 	var/datum/medical_trial_participant/participant = trial?.participants?[subject_id]
 	if(!istype(trial) || !(trial.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || !participant)
 		to_chat(sender, span_warning("VeyMed cannot authenticate this packet against an active study."))
@@ -552,7 +552,7 @@
 		var/datum/contract_document/manifest = paper.contract_document
 		if(manifest?.document_kind != CONTRACT_DOCUMENT_MANIFEST || manifest.submitted)
 			continue
-		var/datum/contract/medical_trial_personal/contract = SScontracts.contracts_by_id[manifest.payload["side_contract_id"]]
+		var/datum/contract/medical_trial_personal/contract = contracts_contracts_by_id()[manifest.payload["side_contract_id"]]
 		if(!istype(contract) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 			continue
 		var/valid = FALSE

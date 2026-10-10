@@ -10,12 +10,9 @@
 	default_max_vol = 60 // smoll
 
 CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	climb()
-
-/obj/machinery/reagent_refinery/splitter/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)

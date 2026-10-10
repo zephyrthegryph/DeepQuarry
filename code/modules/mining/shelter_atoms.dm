@@ -167,7 +167,7 @@
 /obj/item/survivalcapsule/superpose/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[template_id]
+	template_static = mapping_shelter_templates()[template_id]
 	if(!template())
 		template_static = null
 
@@ -283,7 +283,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/survivalcapsule/proc/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[get_template_id()]
+	template_static = mapping_shelter_templates()[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
 

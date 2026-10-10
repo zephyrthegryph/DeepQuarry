@@ -20,14 +20,14 @@
 	var/arming_controller_tag = arming_controller()
 	if(!arming_controller() && active_docking_controller())
 		arming_controller_tag = active_docking_controller().id_tag
-	rel_set(src, nameof(arming_controller), SSshuttles.docking_registry[arming_controller_tag])
+	rel_set(src, nameof(arming_controller), shuttles_docking_registry()[arming_controller_tag])
 	if(!istype(arming_controller(), /datum/embedded_program/docking/simple/escape_pod_berth))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
 	// Every pod names the shared berth program through a relation view, cleared when the
 	// program is deleted: no QDELETING registration.
 
 	//find the pod's own controller
-	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_registry[docking_controller_tag]
+	var/datum/embedded_program/docking/simple/prog = shuttles_docking_registry()[docking_controller_tag]
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/controller_master = prog.master
 	if(!istype(controller_master))
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")

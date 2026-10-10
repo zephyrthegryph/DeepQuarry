@@ -2368,11 +2368,11 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	var/bullets_left = 0
 	var/max_shots = 6
 
-/obj/item/toy/russian_revolver/Initialize(mapload)
-	. = ..()
+/obj/item/toy/russian_revolver/proc/revolver_after_init(datum/act/timer/A)
 	spin_cylinder()
 
 CAPABILITIES(/obj/item/toy/russian_revolver)
+	after_init(0, then(PROC_REF(revolver_after_init)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

@@ -22,10 +22,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/ghost_activated/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/ghost_activated/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/ghost_activated/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()
@@ -105,7 +107,7 @@
 	H.forceMove(T)
 
 	if(make_antag)
-		var/datum/antagonist/antag = SSantag.all_antag_types[make_antag]
+		var/datum/antagonist/antag = antag_all_antag_types()[make_antag]
 		if(antag)
 			if(antag.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")
@@ -144,10 +146,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/manual/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/manual/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/manual/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/manual/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()
@@ -223,7 +227,7 @@
 	H.forceMove(T)
 
 	if(make_antag)
-		var/datum/antagonist/antag = SSantag.all_antag_types[make_antag]
+		var/datum/antagonist/antag = antag_all_antag_types()[make_antag]
 		if(antag)
 			if(antag.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")

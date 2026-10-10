@@ -75,8 +75,10 @@
 	spleen_efficiency = 0.3
 	spleen_tick = 15
 
-/obj/item/organ/internal/spleen/minor/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/organ/internal/spleen/minor)
+	after_init(0, then(PROC_REF(minor_spleen_scale)))
+
+/obj/item/organ/internal/spleen/minor/proc/minor_spleen_scale(datum/act/timer/A)
 	adjust_scale(0.7)
 
 // When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).

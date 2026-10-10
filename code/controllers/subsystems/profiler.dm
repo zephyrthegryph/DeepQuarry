@@ -71,8 +71,8 @@ SYSTEM_DEF(profiler)
 		"explosions" = system_diagnostics(SSexplosions),
 	)
 	var/list/material_graphs = list()
-	for(var/id in SSmachines.power_material_overlays)
-		var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[id]
+	for(var/id in machines_power_material_overlays())
+		var/datum/material_power_overlay/overlay = machines_power_material_overlays()[id]
 		var/datum/material_power_graph/graph = overlay.material_graph
 		if(graph)
 			material_graphs += list(list("cables" = length(overlay.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
@@ -109,11 +109,11 @@ SYSTEM_DEF(profiler)
 		"stage_average_ms" = list("machinery" = machine_profile_cost_machinery(), "powernets" = machine_profile_cost_powernets()),
 		"stage_last_logical_run_ms" = list("machinery" = machine_profile_last_cost_machinery(), "powernets" = machine_profile_last_cost_powernets()),
 		"pump_commit" = list("active_ms" = machine_profile_last_pump_commit_ms(), "wall_ms" = machine_profile_last_pump_commit_wall_ms(), "suspended_ms" = machine_profile_last_pump_commit_suspended_ms(), "operations" = machine_profile_last_pump_commit_operations(), "turfs" = machine_profile_last_pump_commit_turfs()),
-		"power" = list("regions" = length(SSmachines.power_grids)),
-		"counts" = list("all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_grids)),
-		"gas_wakes" = list("dirty" = machine_profile_gas_dirty_last(), "subscribers_checked" = machine_profile_gas_wake_subscribers_last(), "scan_ms" = machine_profile_gas_wake_scan_last_ms(), "woken" = machine_profile_gas_woken_last(), "dead" = machine_profile_gas_dead_last(), "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
+		"power" = list("regions" = length(machines_power_grids())),
+		"counts" = list("all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(machines_power_grids())),
+		"gas_wakes" = list("dirty" = machine_profile_gas_dirty_last(), "subscribers_checked" = machine_profile_gas_wake_subscribers_last(), "scan_ms" = machine_profile_gas_wake_scan_last_ms(), "woken" = machine_profile_gas_woken_last(), "dead" = machine_profile_gas_dead_last(), "pending" = length(machines_pending_dirty_gas_mixtures())),
 	)
-	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(SSmobs.death_list)))
+	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(mobs_death_list())))
 	subsystems["periodic"] = periodic_diagnostics()
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()

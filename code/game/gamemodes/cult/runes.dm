@@ -1113,7 +1113,7 @@ TRACKED(/obj/effect/rune, manifesting)
 /obj/effect/rune/proc/bloodboil(mob/living/user) //cultists need at least one DANGEROUS rune. Even if they're all stealthy.
 /*
 	var/list/mob/living/carbon/cultists = new
-	for(var/datum/mind/H in SSticker.mode.cult)
+	for(var/datum/mind/H in ticker_mode().cult)
 		if (istype(H.current,/mob/living/carbon))
 			cultists+=H.current
 */

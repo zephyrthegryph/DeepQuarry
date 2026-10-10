@@ -43,8 +43,11 @@
 	default_cartridge = /obj/item/cartridge/mime
 	icon_state = "pda-mime"
 
-/obj/item/pda/mime/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/pda/mime)
+	after_init(0, then(PROC_REF(silence_messenger)))
+
+/// Mimes keep their messenger silent.
+/obj/item/pda/proc/silence_messenger(datum/act/timer/A)
 	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
 	if(M)
 		M.notify_silent = TRUE
@@ -126,11 +129,8 @@
 	desc = "A portable microcomputer by Thinktronic Systems, LTD. This is model is a WGW-11 series e-reader."
 	model_name = "Thinktronic 5290 WGW-11 Series E-reader and Personal Data Assistant"
 
-/obj/item/pda/librarian/Initialize(mapload)
-	. = ..()
-	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
-	if(M)
-		M.notify_silent = TRUE //Quiet in the library!
+CAPABILITIES(/obj/item/pda/librarian)
+	after_init(0, then(PROC_REF(silence_messenger))) // Quiet in the library!
 
 /obj/item/pda/clear
 	icon_state = "pda-transp"

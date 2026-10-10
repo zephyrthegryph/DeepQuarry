@@ -47,7 +47,7 @@
 /proc/dq_dark_tunnel_template()
 	var/static/datum/map_template/shelter/template
 	if(!template)
-		template = SSmapping.shelter_templates["dark_portal"]
+		template = mapping_shelter_templates()["dark_portal"]
 		if(!template)
 			throw EXCEPTION("Shelter template (dark_portal) not found!")
 	return template

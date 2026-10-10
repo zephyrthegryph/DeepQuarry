@@ -11,11 +11,13 @@
 	anchored = TRUE
 	var/tmp/datum/rogue/asteroid/myasteroid
 
-/obj/asteroid_spawner/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/asteroid_spawner)
+	after_init(0, then(PROC_REF(register_spawn)))
+
+/obj/asteroid_spawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
-		var/area/asteroid/rogue/A = loc.loc
-		LAZYADD(A.asteroid_spawns, src)
+		var/area/asteroid/rogue/zone = loc.loc
+		LAZYADD(zone.asteroid_spawns, src)
 
 /obj/rogue_mobspawner
 	name = "mob spawn"
@@ -25,11 +27,13 @@
 	anchored = TRUE
 	var/tmp/mob/mymob
 
-/obj/rogue_mobspawner/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/rogue_mobspawner)
+	after_init(0, then(PROC_REF(register_spawn)))
+
+/obj/rogue_mobspawner/proc/register_spawn(datum/act/timer/A)
 	if(loc && istype(loc,/turf/space) && istype(loc.loc,/area/asteroid/rogue))
-		var/area/asteroid/rogue/A = loc.loc
-		LAZYADD(A.mob_spawns, src)
+		var/area/asteroid/rogue/zone = loc.loc
+		LAZYADD(zone.mob_spawns, src)
 
 /// Accessor for the myasteroid var.
 /obj/asteroid_spawner/proc/myasteroid() as /datum/rogue/asteroid

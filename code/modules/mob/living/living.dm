@@ -450,8 +450,8 @@
 
 	//check for nuke disks
 	if(client && stat != DEAD) //if they are clientless and dead don't bother, the parent will treat them as any other container
-		if(SSticker && istype(SSticker.mode, /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
-			var/datum/game_mode/nuclear/G = SSticker.mode
+		if(SSticker && istype(ticker_mode(), /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
+			var/datum/game_mode/nuclear/G = ticker_mode()
 			if(G.check_mob(src))
 				if(x <= TRANSITIONEDGE)
 					inertia_dir = 4

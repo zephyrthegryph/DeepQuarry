@@ -112,8 +112,8 @@ CAPABILITIES(/datum/system/pois)
 	if(!(length(GLOB.global_used_pois)) || !(GLOB.global_used_pois[poi_to_load.poi_type]))
 		GLOB.global_used_pois[poi_to_load.poi_type] = list()
 		var/list/poi_list = GLOB.global_used_pois[poi_to_load.poi_type]
-		for(var/map in SSmapping.map_templates)
-			var/template = SSmapping.map_templates[map]
+		for(var/map in mapping_map_templates())
+			var/template = mapping_map_templates()[map]
 			if(istype(template, poi_to_load.poi_type))
 				poi_list += template
 

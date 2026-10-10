@@ -46,6 +46,7 @@
 	allow_mind_transfer = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	after_init(0, then(PROC_REF(mothroach_name_ready)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	op("mothroach_item", item(/obj/item), then(PROC_REF(mothroach_interaction_item)))
@@ -70,8 +71,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand_grab(datum/act/op/A)
 	return mothroach_interaction_hand(A, I_GRAB)
 
-/mob/living/simple_mob/animal/passive/mothroach/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_name_ready(datum/act/timer/A)
 
 
 	real_name = name

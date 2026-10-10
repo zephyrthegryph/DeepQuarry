@@ -192,8 +192,10 @@ CAPABILITIES(/obj/effect/blob/core)
 	brute_resist = 1
 	fire_resist = 2
 
-/obj/effect/blob/shield/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/blob/shield)
+	after_init(0, then(PROC_REF(blob_shield_tiles)))
+
+/obj/effect/blob/shield/proc/blob_shield_tiles(datum/act/timer/A)
 	update_nearby_tiles()
 
 /obj/effect/blob/shield/appearance_state()

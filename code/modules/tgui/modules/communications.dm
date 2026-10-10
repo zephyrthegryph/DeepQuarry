@@ -485,7 +485,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 		to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 		return
 
-	if(SSemergency_shuttle.deny_shuttle)
+	if(emergency_shuttle_deny_shuttle())
 		to_chat(user, "The emergency shuttle may not be sent at this time. Please try again later.")
 		return
 
@@ -527,7 +527,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 	// if force is 0, some things may stop the shuttle call
 	if(!force)
-		if(SSemergency_shuttle.deny_shuttle)
+		if(emergency_shuttle_deny_shuttle())
 			to_chat(user, "[using_map.boss_short] does not currently have a shuttle available in your sector. Please try again later.")
 			return
 

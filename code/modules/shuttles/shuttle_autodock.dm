@@ -63,7 +63,7 @@
 		current_dock_target = location.special_dock_targets[name]
 	else
 		current_dock_target = docking_controller_tag
-	set_shuttle_docking_controller(SSshuttles.docking_registry[current_dock_target])
+	set_shuttle_docking_controller(shuttles_docking_registry()[current_dock_target])
 	if(current_dock_target && !shuttle_docking_controller)
 		log_shuttle(span_danger("warning: shuttle [src] can't find its controller with tag [current_dock_target]!")) // No toggle because this is an error message that needs to be seen
 

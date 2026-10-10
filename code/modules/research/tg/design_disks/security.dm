@@ -3,9 +3,10 @@
 	name = "security armory design disk"
 	desc = "A disk containing many, many, many bullets."
 
-/obj/item/disk/design_disk/security/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/disk/design_disk/security)
+	after_init(0, then(PROC_REF(load_security_designs)))
 
+/obj/item/disk/design_disk/security/proc/load_security_designs(datum/act/timer/A)
 	// Lets get all security nodes and put them on a disk.
 	// This way if bullets are disabled by default we can get a disk mapped instead.
 	var/list/process_nodes = list(

@@ -7,8 +7,8 @@
 	var/datum/money_account/account = pda().id ? get_account(pda().id.associated_account_number) : null
 	var/list/orders = list()
 	if(account)
-		for(var/index = length(SSsupply.order_history), index >= 1, index--)
-			var/datum/supply_order/order = SSsupply.order_history[index]
+		for(var/index = length(supply_order_history()), index >= 1, index--)
+			var/datum/supply_order/order = supply_order_history()[index]
 			if(!order.personal_order || order.funding_account_number != account.account_number)
 				continue
 			orders.Add(list(list(
@@ -41,4 +41,4 @@ CAPABILITIES(/datum/data/pda/app/supply_orders)
 
 /// The supply order history, for the UI's order refs.
 /datum/data/pda/app/supply_orders/proc/order_history()
-	return SSsupply.order_history
+	return supply_order_history()

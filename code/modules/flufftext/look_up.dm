@@ -30,7 +30,7 @@
 		if(T.z <= 0 || SSplanets.z_to_planet.len < T.z || !(SSplanets.z_to_planet[T.z]))
 			to_chat(usr, span_warning("You appear to be outside, but not on a planet... Something is wrong."))
 			return
-		var/datum/planet/P = SSplanets.z_to_planet[T.z]
+		var/datum/planet/P = planets_z_to_planet()[T.z]
 
 		var/datum/weather_holder/WH = P.weather_holder
 

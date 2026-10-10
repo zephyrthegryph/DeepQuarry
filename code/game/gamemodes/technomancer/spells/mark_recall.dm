@@ -39,7 +39,7 @@ CAPABILITIES(/datum/system/antag)
 
 /// `user`'s placed mark, or null.
 /proc/technomancer_marker_of(mob/user)
-	for(var/datum/technomancer_marker/marker as anything in SSantag.mark_spells)
+	for(var/datum/technomancer_marker/marker as anything in antag_mark_spells())
 		if(marker.caster == user)
 			return marker
 	return null

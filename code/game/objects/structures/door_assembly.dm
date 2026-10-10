@@ -13,9 +13,9 @@
 	var/glass = 0 // 0 = glass can be installed. -1 = glass can't be installed. 1 = glass is already installed. Text = mineral plating is installed instead.
 	var/created_name = null
 
-/obj/structure/door_assembly/Initialize(mapload)
-	. = ..()
+/obj/structure/door_assembly/proc/init_update_state(datum/act/timer/A)
 	update_state()
+
 
 /obj/structure/door_assembly/door_assembly_com
 	base_icon_state = "com"
@@ -177,6 +177,7 @@ MSG_DEF_SELF(door_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(door_assembly/plated, "Take the plating off first.")
 
 CAPABILITIES(/obj/structure/door_assembly)
+	after_init(0, then(PROC_REF(init_update_state)))
 	construction(start(STAGE_DOOR_ASSEMBLY_FRAME),
 		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
 		stage(STAGE_DOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),

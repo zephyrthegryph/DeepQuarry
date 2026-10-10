@@ -71,7 +71,7 @@
 
 /// What the shuttle is counting down to: "launch", "arrive", or null while it is neither.
 /datum/admins/proc/shuttle_countdown_kind()
-	if(SSemergency_shuttle.wait_for_launch)
+	if(emergency_shuttle_wait_for_launch())
 		return "launch"
 	if(SSemergency_shuttle.shuttle.has_arrive_time())
 		return "arrive"
@@ -116,9 +116,9 @@
 
 /datum/admins/proc/topic_delay_round_end(datum/act/op/A)
 	var/mob/user = A.actor
-	SSticker.delay_end = !SSticker.delay_end
-	log_admin("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].")
-	message_admins(span_blue("[key_name(user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"]."), 1)
+	SSticker.delay_end = !ticker_delay_end()
+	log_admin("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].")
+	message_admins(span_blue("[key_name(user)] [ticker_delay_end() ? "delayed the round end" : "has made the round end normally"]."), 1)
 
 MSG_DEF_SELF(admin_topic/round_started, "The game has already started.")
 MSG_DEF_SELF(admin_topic/not_secret, "The game mode has to be secret!")

@@ -34,9 +34,8 @@
 // Claim machine ID
 REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
-/obj/machinery/cash_register/Initialize(mapload)
+/obj/machinery/cash_register/proc/set_up_register(datum/act/timer/A)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
-	. = ..()
 	cash_stored = rand(10, 70)*10
 	if(GLOB.economy_init && account_to_connect)
 		rel_set(src, nameof(linked_account), GLOB.department_accounts[account_to_connect])
@@ -109,6 +108,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/cash_register)
+	after_init(0, then(PROC_REF(set_up_register)))
 	interface("RetailScanner")
 	without("ui_open")
 	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))

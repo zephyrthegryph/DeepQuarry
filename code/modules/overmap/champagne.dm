@@ -37,7 +37,7 @@
 	if(length(shuttle_name) < min_name_len || length(shuttle_name) > max_name_len)
 		to_chat(user, span_warning("Name length must be between [min_name_len] and [max_name_len]."))
 		return
-	if(shuttle_name in SSshuttles.shuttles)
+	if(shuttle_name in shuttles_shuttles())
 		to_chat(user, span_warning("Invalid name: Already in use."))
 		return
 
@@ -45,7 +45,7 @@
 	if(!my_area || istype(my_area, /area/space))
 		to_chat(user, span_warning("[comp] must be in a valid area to become a shuttle."))
 		return
-	if(my_area in SSshuttles.shuttle_areas)
+	if(my_area in shuttles_shuttle_areas())
 		to_chat(user, span_warning("[comp] is already in a shuttle."))
 		return
 	// Count turfs in the area

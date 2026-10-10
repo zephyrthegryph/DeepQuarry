@@ -34,10 +34,12 @@
 	var/suffer_cloneloss = FALSE
 	var/clone_severity = 5
 
-/obj/structure/ghost_pod/manual/survivor/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/manual/survivor)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/manual/survivor/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/manual/survivor/trigger(mob/user)
 	. = ..()
@@ -118,7 +120,7 @@
 	H.forceMove(T)
 
 	if(special_role)
-		var/datum/antagonist/role = SSantag.all_antag_types[special_role] //Explicitly NOT an antagonist.
+		var/datum/antagonist/role = antag_all_antag_types()[special_role] //Explicitly NOT an antagonist.
 		if(role)
 			if(role.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [role.role_text].")

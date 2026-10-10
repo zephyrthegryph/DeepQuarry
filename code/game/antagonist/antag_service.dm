@@ -77,7 +77,7 @@ SYSTEM_DEF(antag)
 							code_phrase += " "
 							code_phrase += pick(GLOB.last_names)
 					if(2)
-						code_phrase += pick(SSjob.occupations_by_name)//Returns a job.
+						code_phrase += pick(job_occupations_by_name())//Returns a job.
 				safety -= 1
 			if(2)
 				switch(rand(1,2))//Places or things.

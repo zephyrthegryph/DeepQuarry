@@ -587,7 +587,7 @@ CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
 			AO.set_charges(AO.charges - (1))
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in SSplanets.planets)
+	for(var/datum/planet/PL in planets_planets())
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
@@ -1009,7 +1009,7 @@ MSG_DEF_SELF(paper/area_made, "This paper has already been used to create an are
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in SSplanets.planets)
+	for(var/datum/planet/PL in planets_planets())
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)

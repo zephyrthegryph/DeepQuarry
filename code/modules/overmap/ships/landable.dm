@@ -23,7 +23,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	return ..()
 
 /obj/effect/overmap/visitable/ship/landable/check_ownership(obj/object)
-	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
+	var/datum/shuttle/shuttle_datum = shuttles_shuttles()[shuttle]
 	if(!shuttle_datum)
 		return
 	var/list/areas = shuttle_datum.find_childfree_areas()
@@ -59,14 +59,14 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	testing("Setup overmap location for \"[name]\" containing Z [english_list(map_z)]")
 
 /obj/effect/overmap/visitable/ship/landable/get_areas()
-	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
+	var/datum/shuttle/shuttle_datum = shuttles_shuttles()[shuttle]
 	if(!shuttle_datum)
 		return list()
 	return shuttle_datum.find_childfree_areas()
 
 /obj/effect/overmap/visitable/ship/landable/populate_sector_objects()
 	..()
-	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
+	var/datum/shuttle/shuttle_datum = shuttles_shuttles()[shuttle]
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
 		rel_set(oms, nameof(oms.myship), src)
@@ -129,7 +129,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	. = ..()
 	if(!.)
 		return
-	var/datum/shuttle/boss_shuttle = SSshuttles.shuttles[core_landmark.shuttle_name]
+	var/datum/shuttle/boss_shuttle = shuttles_shuttles()[core_landmark.shuttle_name]
 	if(boss_shuttle.current_location() != core_landmark)
 		return FALSE // Only available when our governing shuttle is in space.
 	if(shuttle == boss_shuttle) // Boss shuttle only lands on main landmark
@@ -157,11 +157,11 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	var/datum/shuttle/given_shuttle = A.target
 	var/datum/notice/observer_shuttle_pre_move/event = A
 	var/obj/effect/shuttle_landmark/into = event.destination
-	if(given_shuttle != SSshuttles.shuttles[shuttle])
+	if(given_shuttle != shuttles_shuttles()[shuttle])
 		return
 	if(into == landmark)
 		setup_overmap_location() // They're coming boys, better actually exist!
-		unobserve(SSshuttles.shuttles[shuttle], /datum/notice/observer_shuttle_pre_move, src)
+		unobserve(shuttles_shuttles()[shuttle], /datum/notice/observer_shuttle_pre_move, src)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -169,7 +169,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	var/datum/notice/observer_shuttle_moved/event = A
 	var/obj/effect/shuttle_landmark/from = event.old_location
 	var/obj/effect/shuttle_landmark/into = event.destination
-	if(given_shuttle != SSshuttles.shuttles[shuttle])
+	if(given_shuttle != shuttles_shuttles()[shuttle])
 		return
 	var/datum/shuttle/autodock/auto = given_shuttle
 	if(into == auto.landmark_transition())
@@ -185,9 +185,9 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_landing(obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
 	var/obj/effect/overmap/visitable/target = get_overmap_sector(get_z(into))
-	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
+	var/datum/shuttle/shuttle_datum = shuttles_shuttles()[shuttle]
 	if(into.landmark_tag == shuttle_datum.motherdock) // If our motherdock is a landable ship, it won't be found properly here so we need to find it manually.
-		for(var/obj/effect/overmap/visitable/ship/landable/landable in SSshuttles.ships)
+		for(var/obj/effect/overmap/visitable/ship/landable/landable in shuttles_ships())
 			if(landable.shuttle == shuttle_datum.mothershuttle)
 				target = landable
 				break
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 	if(vessel && destination)
 		var/datum/flight_port/port = SSflight.port_for_landmark(into)
 		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
-			var/datum/flight_port/old_port = SSflight.ports[vessel.docked_port_id]
+			var/datum/flight_port/old_port = flight_ports()[vessel.docked_port_id]
 			if(old_port?.occupied_by() == vessel)
 				rel_clear(old_port, nameof(old_port.occupied_by))
 		vessel.docked_port_id = port?.id
@@ -206,13 +206,13 @@ CAPABILITIES(/obj/effect/shuttle_landmark/visiting_shuttle)
 			rel_set(port, nameof(port.occupied_by), vessel)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
-		var/datum/flight_destination/physical_host = SSflight.destinations[port?.host_destination_id]
+		var/datum/flight_destination/physical_host = flight_destinations()[port?.host_destination_id]
 		vessel.orbit_parent_id = physical_host?.orbit_parent_id || (destination.kind == FLIGHT_DEST_SURFACE ? destination.id : destination.orbit_parent_id)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_takeoff(obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
 	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
 	if(vessel)
-		var/datum/flight_port/port = SSflight.ports[vessel.docked_port_id]
+		var/datum/flight_port/port = flight_ports()[vessel.docked_port_id]
 		if(port?.occupied_by() == vessel)
 			rel_clear(port, nameof(port.occupied_by))
 		vessel.docked_port_id = null

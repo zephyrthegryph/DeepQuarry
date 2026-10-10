@@ -297,7 +297,7 @@ CAPABILITIES(/obj/item/communicator)
 		)))
 
 	//Weather reports.
-	for(var/datum/planet/planet in SSplanets.planets)
+	for(var/datum/planet/planet in planets_planets())
 		if(planet.weather_holder && planet.weather_holder.current_weather)
 			var/list/W = list(
 				"Planet" = planet.name,

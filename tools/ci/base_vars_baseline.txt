@@ -325,7 +325,6 @@ base_var	code/modules/crafting/crafting.dm	/mob/living/carbon/human/var/datum/pe
 base_var	code/modules/detectivework/tools/rag.dm	var/bloody_hands = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/track_blood = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/list/feet_blood_DNA
-base_var	code/modules/detectivework/tools/rag.dm	var/track_blood_type
 base_var	code/modules/detectivework/tools/rag.dm	var/feet_blood_color
 base_var	code/modules/economy/price_list.dm	/atom/movable/var/price_tag = null
 base_var	code/modules/economy/service_invoices.dm	/obj/item/var/datum/economic_adoption/economic_adoption

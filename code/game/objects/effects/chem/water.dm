@@ -1,4 +1,5 @@
 /obj/effect/effect/water
+	lifecycle_lifetime = 15 SECONDS
 	name = "water"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "extinguish"
@@ -24,10 +25,6 @@ CAPABILITIES(/obj/effect/effect/water)
 /// The deciseconds between steps.
 /obj/effect/effect/water/proc/spray_delay(datum/act/A)
 	return step_delay
-
-/obj/effect/effect/water/Initialize(mapload)
-	. = ..()
-	expire(15 SECONDS)
 
 /obj/effect/effect/water/proc/set_color() // Call it after you move reagents to it
 	icon += reagents.get_color()

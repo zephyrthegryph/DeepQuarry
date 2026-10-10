@@ -110,7 +110,7 @@ GLOBAL_LIST_INIT(centcom_job_names, list("VIP Guest", \
 		return C.registered_name
 
 /proc/get_all_job_icons() //For all existing HUD icons
-	return SSjob.occupations_by_name + GLOB.alt_titles_with_icons + list("Prisoner")
+	return job_occupations_by_name() + GLOB.alt_titles_with_icons + list("Prisoner")
 
 /proc/GetJobName(obj/source) //Used in secHUD icon generation
 	var/obj/item/card/id/I = source.GetID()

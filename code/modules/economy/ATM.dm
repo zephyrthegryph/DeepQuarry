@@ -36,9 +36,8 @@ log transactions
 	var/view_screen = NO_SCREEN
 
 
-/obj/machinery/atm/Initialize(mapload)
+/obj/machinery/atm/proc/assign_machine_id(datum/act/timer/A)
 	machine_id = "[station_name()] RT #[GLOB.num_financial_terminals++]"
-	. = ..()
 
 
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
@@ -195,6 +194,7 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
+	after_init(0, then(PROC_REF(assign_machine_id)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))

@@ -8,12 +8,12 @@ ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a 
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
 	if(!("map" in replay_answers))
-		open_request(src, /datum/prompt/choice/admin_map_template_replay, PROC_REF(map_template_load_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "map", question = "Choose a Map Template to place at your CURRENT LOCATION", title = "Place Map Template", choices = SSmapping.map_templates)
+		open_request(src, /datum/prompt/choice/admin_map_template_replay, PROC_REF(map_template_load_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "map", question = "Choose a Map Template to place at your CURRENT LOCATION", title = "Place Map Template", choices = mapping_map_templates())
 		return
 	var/map = replay_answers["map"]
 	if(!map)
 		return
-	var/datum/map_template/template = SSmapping.map_templates[map]
+	var/datum/map_template/template = mapping_map_templates()[map]
 
 	var/turf/T = get_turf(user.mob)
 	if(!T)
@@ -69,7 +69,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 	if(!A.answer || A.answer.value != "Yes")
 		return
 	var/datum/prompt/choice/map_template_place/ask = A.answer
-	var/datum/map_template/template = SSmapping.map_templates[ask.template_name]
+	var/datum/map_template/template = mapping_map_templates()[ask.template_name]
 	if(template?.annihilate)
 		var/datum/request/next_request = open_request(src, /datum/prompt/choice/map_template_place, PROC_REF(place_confirmed), answerer = ask.answerer, template_name = ask.template_name, place_at = ask.place_at, preview = ask.preview, question = "This template is set to annihilate everything in the red square. EVERYTHING IN THE RED SQUARE WILL BE DELETED, ARE YOU ABSOLUTELY SURE?")
 		ask.preview_transferred = !isnull(next_request)
@@ -82,7 +82,7 @@ CAPABILITIES(/datum/prompt/choice/map_template_place)
 	var/datum/prompt/choice/map_template_place/ask = A.answer
 	var/mob/user = ask.answerer
 	ask.end_preview()
-	var/datum/map_template/template = SSmapping.map_templates[ask.template_name]
+	var/datum/map_template/template = mapping_map_templates()[ask.template_name]
 	if(!template)
 		to_chat(user, "Failed to place map")
 		return
@@ -98,14 +98,14 @@ ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns 
 			replay_answers = resumed.captured.Copy()
 			replay_answers[resumed.step_name] = resumed.value
 	if(!("a1" in replay_answers))
-		open_request(src, /datum/prompt/choice/admin_map_template_z_replay, PROC_REF(map_template_load_on_new_z_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "Choose a Map Template to place on a new Z-level.", title = "Place Map Template", choices = SSmapping.map_templates)
+		open_request(src, /datum/prompt/choice/admin_map_template_z_replay, PROC_REF(map_template_load_on_new_z_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "Choose a Map Template to place on a new Z-level.", title = "Place Map Template", choices = mapping_map_templates())
 		return
 	var/map = replay_answers["a1"]
 	if(isnull(map))
 		return
 	if(!map)
 		return
-	var/datum/map_template/template = SSmapping.map_templates[map]
+	var/datum/map_template/template = mapping_map_templates()[map]
 
 	if(template.width > world.maxx || template.height > world.maxx)
 		if(!("a2" in replay_answers))

@@ -55,9 +55,12 @@ TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
 // Blue wood.
 TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
-/obj/structure/bonfire/permanent/Initialize(mapload, material_name)
-	. = ..()
+CAPABILITIES(/obj/structure/bonfire/permanent)
+	after_init(0, then(PROC_REF(init_ignite)))
+
+/obj/structure/bonfire/permanent/proc/init_ignite(datum/act/timer/A)
 	ignite()
+
 
 TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 

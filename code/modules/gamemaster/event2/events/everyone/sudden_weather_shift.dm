@@ -19,7 +19,7 @@
 		abort()
 		return
 
-	chosen_planet_static = pick(SSplanets.planets)
+	chosen_planet_static = pick(planets_planets())
 
 /datum/event2/event/sudden_weather_shift/announce()
 	if(!chosen_planet())

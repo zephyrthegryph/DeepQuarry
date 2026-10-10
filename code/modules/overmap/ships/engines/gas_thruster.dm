@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)
+	for(var/obj/effect/overmap/visitable/ship/S as anything in shuttles_ships())
 		if(S.check_ownership(src))
 			rel_add(S, nameof(S.engines), controller)
 			if(dir != S.fore_dir)

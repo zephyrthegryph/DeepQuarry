@@ -2,7 +2,6 @@
 	var/bloody_hands = 0
 	var/track_blood = 0
 	var/list/feet_blood_DNA
-	var/track_blood_type
 	var/feet_blood_color
 
 /obj/item/clothing/gloves
@@ -41,6 +40,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 		settable = FALSE,
 		shows_contents = FALSE,
 		transfer_default = nameof(amount_per_transfer_from_this))
+	after_init(0, then(PROC_REF(name_refreshed)))
 	wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit))
 	extend("wiper.soak", then(PROC_REF(name_refreshed)))
 	extend("wiper.wring_into", then(PROC_REF(name_refreshed)))
@@ -54,13 +54,9 @@ CAPABILITIES(/obj/item/reagent_containers/glass/rag)
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
 
 /// What the rag is called follows what it holds and whether it burns.
-/obj/item/reagent_containers/glass/rag/proc/name_refreshed(datum/act/op/A)
+/obj/item/reagent_containers/glass/rag/proc/name_refreshed(datum/act/A)
 	update_name()
 	return OP_OK
-
-/obj/item/reagent_containers/glass/rag/Initialize(mapload)
-	. = ..()
-	update_name()
 
 /// What a person reads when they look from two tiles: what is in it (a glass container says it through its capability; a rag is not one).
 /obj/item/reagent_containers/glass/rag/examine(mob/user)

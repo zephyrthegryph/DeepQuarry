@@ -22,8 +22,8 @@
 // The random spawn proc on the antag datum will handle announcing the spawn and whatnot, in theory.
 /datum/event2/event/random_antagonist/start()
 	var/list/valid_types = list()
-	for(var/antag_type in SSantag.all_antag_types)
-		var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
+	for(var/antag_type in antag_all_antag_types())
+		var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 		if(antag.flags & ANTAG_RANDSPAWN)
 			valid_types |= antag
 	if(valid_types.len)

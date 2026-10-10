@@ -39,7 +39,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 		return console.linked()
 	if(istype(host(), /obj/machinery/computer/shuttle_control/explore))
 		var/obj/machinery/computer/shuttle_control/explore/console = host()
-		var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[console.shuttle_tag]
+		var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[console.shuttle_tag]
 		return shuttle?.myship()
 	return null
 

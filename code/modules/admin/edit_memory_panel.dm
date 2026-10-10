@@ -46,8 +46,8 @@ CAPABILITIES(/datum/edit_memory_panel)
 /datum/edit_memory_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
 	if(target_mind && SSantag.all_antag_types)
-		for(var/antag_type in SSantag.all_antag_types)
-			var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
+		for(var/antag_type in antag_all_antag_types())
+			var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 			var/list/entry = A?.get_panel_data(target_mind)
 			if(entry)
 				blocks += list(entry)
@@ -97,7 +97,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	return TRUE
 
 /datum/edit_memory_panel/proc/ui_act_edit_role_a1_choices(datum/act/op/A)
-	return SSjob.occupations_by_name
+	return job_occupations_by_name()
 
 /datum/edit_memory_panel/proc/ui_act_edit_role_a1_default(datum/act/op/A)
 	return target_mind.assigned_role
@@ -184,7 +184,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	var/datum/antagonist/A2 = antag_all_antag_types()[id]
 	if(A2 && A2.add_antagonist(target_mind, 1, 1, 0, 1, 1))
 		log_admin("[key_name_admin(user)] made [key_name(target_mind)] into a [A2.role_text].")
 	snapshot_antag_blocks()
@@ -193,7 +193,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 /datum/edit_memory_panel/proc/ui_act_antag_remove(datum/act/op/A, id)
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	var/datum/antagonist/A2 = antag_all_antag_types()[id]
 	if(A2)
 		A2.remove_antagonist(target_mind)
 	snapshot_antag_blocks()
@@ -202,7 +202,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 /datum/edit_memory_panel/proc/ui_act_antag_equip(datum/act/op/A, id)
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	var/datum/antagonist/A2 = antag_all_antag_types()[id]
 	if(A2 && target_mind.current)
 		A2.equip(target_mind.current)
 	return TRUE
@@ -210,7 +210,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 /datum/edit_memory_panel/proc/ui_act_antag_unequip(datum/act/op/A, id)
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	var/datum/antagonist/A2 = antag_all_antag_types()[id]
 	if(A2 && target_mind.current)
 		A2.unequip(target_mind.current)
 	return TRUE
@@ -218,7 +218,7 @@ CAPABILITIES(/datum/edit_memory_panel)
 /datum/edit_memory_panel/proc/ui_act_antag_move_to_spawn(datum/act/op/A, id)
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/antagonist/A2 = SSantag.all_antag_types[id]
+	var/datum/antagonist/A2 = antag_all_antag_types()[id]
 	if(A2 && target_mind.current)
 		A2.place_mob(target_mind.current)
 	return TRUE

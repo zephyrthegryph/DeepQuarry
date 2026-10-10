@@ -258,7 +258,7 @@ CAPABILITIES(/datum/data/pda/app/crew_records)
 		supplyData["shuttle_loc"] = shuttle.at_station() ? "Station" : "Dock"
 	var/supplyOrderCount = 0
 	var/supplyOrderData[0]
-	for(var/datum/supply_order/SO as anything in SSsupply.shoppinglist)
+	for(var/datum/supply_order/SO as anything in supply_shoppinglist())
 
 		supplyOrderCount++
 		supplyOrderData[++supplyOrderData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.supply_pack_of().name), "ApprovedBy" = SO.approved_by, "Comment" = html_encode(SO.comment))
@@ -268,7 +268,7 @@ CAPABILITIES(/datum/data/pda/app/crew_records)
 
 	var/requestCount = 0
 	var/requestData[0]
-	for(var/datum/supply_order/SO as anything in SSsupply.order_history)
+	for(var/datum/supply_order/SO as anything in supply_order_history())
 		if(SO.status != SUP_ORDER_REQUESTED)
 			continue
 

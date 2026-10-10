@@ -11,14 +11,15 @@
 	/// Whether anyone is buckled to it (the armrests are drawn over the rider).
 	var/occupied = FALSE
 
-/obj/structure/bed/chair/Initialize(mapload, new_material, new_padding_material)
-	. = ..()
+/obj/structure/bed/chair/proc/init_update_layer(datum/act/timer/A)
 	update_layer()
+
 
 MSG_DEF_SELF(chair/kit_unready, "The kit is not ready to be attached!")
 MSG_DEF_SELF(chair/padded, "Take the padding off first.")
 
 CAPABILITIES(/obj/structure/bed/chair)
+	after_init(0, then(PROC_REF(init_update_layer)))
 	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
 		needs(req_bool(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req_bool(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
 	op("interaction_tk", tk(), label("Rotate"), then(PROC_REF(interaction_tk)))

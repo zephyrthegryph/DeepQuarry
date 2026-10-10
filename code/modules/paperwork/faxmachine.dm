@@ -32,8 +32,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 
 REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
-/obj/machinery/photocopier/faxmachine/Initialize(mapload)
-	. = ..()
+/obj/machinery/photocopier/faxmachine/proc/register_department(datum/act/timer/A)
 	if(!destination) destination = "[using_map.boss_name]"
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
@@ -159,6 +158,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 // The fax's window: the copier's buttons and its own. The paper title and the department are asked in their ops (asks()); sending a
 // default-titled fax to an admin department asks whether to rename it first.
 CAPABILITIES(/obj/machinery/photocopier/faxmachine)
+	after_init(0, then(PROC_REF(register_department)))
 	interface("Fax")
 	without("ui_open")
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))

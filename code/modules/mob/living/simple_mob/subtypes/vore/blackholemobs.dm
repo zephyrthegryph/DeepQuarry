@@ -736,8 +736,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	var/oursize = rand(90, 150) / 100
 	resize(oursize)
 
-/mob/living/simple_mob/vore/blackhole/bikers/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
+	after_init(0, then(PROC_REF(biker_rescale)))
+
+/mob/living/simple_mob/vore/blackhole/bikers/proc/biker_rescale(datum/act/timer/A)
 	resize(1) // Scale them back down
 
 // ALLOW(init/INSTANCE_STATE): rolls the size of each creature

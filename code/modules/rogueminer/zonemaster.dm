@@ -189,7 +189,7 @@
 		return
 
 	var/farEnough = 1
-	for(var/turf/T as anything in SSxenoarch.digsite_spawning_turfs)
+	for(var/turf/T as anything in xenoarch_digsite_spawning_turfs())
 		if(T in range(5, M))
 			farEnough = 0
 			break
@@ -246,8 +246,8 @@
 
 	//create artifact machinery
 	var/num_artifacts_spawn = rand(ARTIFACTSPAWNNUM_LOWER, ARTIFACTSPAWNNUM_UPPER)
-	while(length(SSxenoarch.artifact_spawning_turfs) > num_artifacts_spawn)
-		rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), pick(SSxenoarch.artifact_spawning_turfs))
+	while(length(xenoarch_artifact_spawning_turfs()) > num_artifacts_spawn)
+		rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), pick(xenoarch_artifact_spawning_turfs()))
 
 	var/list/artifacts_spawnturf_temp = length(SSxenoarch.artifact_spawning_turfs) ? SSxenoarch.artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)

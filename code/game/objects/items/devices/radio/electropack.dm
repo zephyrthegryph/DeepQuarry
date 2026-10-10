@@ -56,7 +56,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 /obj/item/radio/electropack/proc/can_use(mob/user)
 	if(!user || user.stat || user.restrained())
 		return FALSE
-	if(ishuman(user) && (!SSticker || SSticker.mode != "monkey") && user.contents.Find(src))
+	if(ishuman(user) && (!SSticker || ticker_mode() != "monkey") && user.contents.Find(src))
 		return TRUE
 	if(user.contents.Find(master))
 		return TRUE

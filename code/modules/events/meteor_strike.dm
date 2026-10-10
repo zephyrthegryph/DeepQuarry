@@ -23,8 +23,10 @@
 	icon_state = "large"
 	anchored = TRUE
 
-/obj/effect/meteor_falling/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/meteor_falling)
+	after_init(0, then(PROC_REF(start_falling)))
+
+/obj/effect/meteor_falling/proc/start_falling(datum/act/timer/A)
 	SpinAnimation()
 	meteor_fall()
 
@@ -52,7 +54,7 @@
 	new /obj/structure/meteorite(current)
 
 	var/datum/planet/impacted
-	for(var/datum/planet/P in SSplanets.planets)
+	for(var/datum/planet/P in planets_planets())
 		if(current.z in P.expected_z_levels)
 			impacted = P
 			break

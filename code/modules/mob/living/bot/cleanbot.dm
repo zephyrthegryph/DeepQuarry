@@ -19,8 +19,7 @@
 	var/blood = 1
 	var/list/target_types = list() // ALLOW(instance_list): d: per-mob target_types, sized at creation and filled in place; mobs are few
 
-/mob/living/bot/cleanbot/Initialize(mapload)
-	. = ..()
+/mob/living/bot/cleanbot/proc/cleanbot_targets_ready(datum/act/timer/A)
 	get_targets()
 
 /// Phase 2: releases the turf it reserved.
@@ -209,6 +208,7 @@
 		icon_state = "cleanbot[on]"
 
 CAPABILITIES(/mob/living/bot/cleanbot)
+	after_init(0, then(PROC_REF(cleanbot_targets_ready)))
 	interface("Cleanbot")
 	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
 	op("blood", ui_act("blood"), then(PROC_REF(ui_act_blood)))

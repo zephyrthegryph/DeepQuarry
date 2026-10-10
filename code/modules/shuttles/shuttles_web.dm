@@ -207,7 +207,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
 
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
-	return SSshuttles.shuttles[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return shuttles_shuttles()[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
 /// Requirement (was REQ_* has_shuttle): the legacy check answers TRUE to pass.
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle_holds(datum/act/op/A)
@@ -217,7 +217,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/clothing/head/pilot/H = A.held
-	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	rel_set(H, nameof(H.shuttle_comp), src)
 	rel_add(shuttle, nameof(shuttle.helmets), H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
@@ -237,7 +237,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/list/data = list()
 
 	var/list/routes[0]
-	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return
@@ -313,7 +313,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 /obj/machinery/computer/shuttle_control/web/console_gate(mob/user)
 	if(!..())
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!istype(WS))
 		message_admins("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
 		return FALSE
@@ -326,14 +326,14 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.rename_shuttle(user)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_dock_command(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
@@ -353,7 +353,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!WS.can_cloak)
 		return
 	dq_set_cloaked(WS, !dq_get_cloaked(WS))
@@ -365,14 +365,14 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_autopilot(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.adjust_autopilot(!WS.autopilot)
 
 /obj/machinery/computer/shuttle_control/web/proc/ui_act_traverse(datum/act/op/A, traverse)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
 		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
@@ -462,7 +462,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/observer_shuttle_added/event = A
 	var/new_shuttle = event.shuttle
-	var/datum/shuttle/autodock/web_shuttle/ES = SSshuttles.shuttles[shuttle_name]
+	var/datum/shuttle/autodock/web_shuttle/ES = shuttles_shuttles()[shuttle_name]
 	if(ES != new_shuttle)
 		return // Its not our shuttle! Ignore!
 	if(destinations && istype(ES))

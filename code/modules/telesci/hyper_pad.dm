@@ -30,13 +30,13 @@ CAPABILITIES(/obj/machinery/hyperpad)
 	var/max_item_teleport = 30
 
 CAPABILITIES(/obj/machinery/hyperpad/centre)
+	after_init(0, then(PROC_REF(detect_and_light)))
 	ref_one(nameof(linked_pad), /obj/machinery/hyperpad/centre, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
 	owns_many(nameof(linked))
 	op("hyperpad_centre_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(hyperpad_centre_ghost_travel)))
 	op("hyperpad_centre_teleport", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Activate"), then(PROC_REF(interaction_teleport)))
 
-/obj/machinery/hyperpad/centre/Initialize(mapload)
-	. = ..()
+/obj/machinery/hyperpad/centre/proc/detect_and_light(datum/act/timer/A)
 	if(map_pad_id)
 		detect()
 	set_light(3, 1, newcolor)

@@ -11,10 +11,6 @@
 	var/const/limit = 50
 	VAR_PRIVATE/list/holdingitems = list()
 
-/obj/machinery/reagent_refinery/grinder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/reagent_refinery/grinder/ownership()
 	. = ..()
 	. += owns(nameof(holdingitems), policy = OWN_SPILL, is_list = TRUE)
@@ -152,5 +148,6 @@
 	return FALSE
 
 CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
+	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_bool(PROC_REF(has_room_holds), because = PROC_REF(has_room_refusal))), then(PROC_REF(interaction_insert)))
