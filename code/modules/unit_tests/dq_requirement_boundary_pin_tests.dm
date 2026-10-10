@@ -418,3 +418,225 @@
 /datum/unit_test/dq_requirement_fourth_pin
 	parent_type = /datum/unit_test/dq_conversion_pin
 	capture_roots = list(/obj/item/beehive_assembly, /obj/item/bodybag, /obj/item/card/id/guest, /obj/item/disk/botany, /obj/item/ducttape, /obj/item/reagent_containers/food/snacks/bun, /obj/item/reagent_containers/food/snacks/customizable, /obj/item/reagent_containers/food/snacks/customizable/sandwich, /obj/item/reagent_containers/food/snacks/slice/bread, /obj/item/reagent_containers/food/snacks/sliceable/flatdough, /obj/item/reagent_containers/food/snacks/spagetti, /obj/item/tape_roll, /obj/item/trash/bowl, /obj/machinery/alarm, /obj/machinery/atmospherics/binary/passive_gate, /obj/machinery/atmospherics/binary/pump, /obj/machinery/atmospherics/binary/volume_pump, /obj/machinery/atmospherics/omni, /obj/machinery/atmospherics/pipe, /obj/machinery/atmospherics/portables_connector, /obj/machinery/atmospherics/trinary, /obj/machinery/atmospherics/tvalve, /obj/machinery/atmospherics/unary/heat_exchanger, /obj/machinery/atmospherics/unary/outlet_injector, /obj/machinery/atmospherics/unary/vent_pump, /obj/machinery/atmospherics/unary/vent_scrubber, /obj/machinery/atmospherics/valve, /obj/machinery/beehive, /obj/machinery/botany, /obj/machinery/botany/editor, /obj/machinery/botany/extractor, /obj/machinery/computer/atmoscontrol, /obj/machinery/computer/cloning, /obj/machinery/computer/pandemic, /obj/machinery/computer/secure_data, /obj/machinery/computer/skills, /obj/machinery/computer/telecomms, /obj/machinery/computer/telecomms/server, /obj/machinery/door/unpowered, /obj/machinery/embedded_controller, /obj/machinery/embedded_controller/radio/airlock, /obj/machinery/field_generator, /obj/machinery/firealarm, /obj/machinery/holoposter, /obj/machinery/honey_extractor, /obj/machinery/particle_smasher, /obj/machinery/partyalarm, /obj/machinery/portable_atmospherics/hydroponics, /obj/machinery/power/emitter, /obj/machinery/power/generator, /obj/machinery/power/smes, /obj/machinery/recharge_station, /obj/machinery/seed_storage, /obj/machinery/space_heater, /obj/machinery/suit_storage_unit, /obj/machinery/telecomms, /obj/machinery/telecomms/relay, /obj/machinery/washing_machine, /obj/structure/AIcore, /obj/structure/closet, /obj/structure/closet/bluespace, /obj/structure/closet/body_bag, /obj/structure/closet/body_bag/cryobag, /obj/structure/closet/crate, /obj/structure/closet/crate/secure, /obj/structure/closet/secure_closet, /obj/structure/closet/secure_closet/mind, /obj/structure/closet/secure_closet/personal, /obj/structure/closet/walllocker/emerglocker)
+
+// Append to the included dq_requirement_boundary_pin_tests.dm.
+/datum/unit_test/dq_requirement_fifth_machinery
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_fifth_machinery/pipelayer/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/machinery/pipelayer/P = allocate(/obj/machinery/pipelayer, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	P.set_on(FALSE)
+	P.metal = 0
+	check(P, H, "toggle", "can_run", /datum/msg/pipelayer/no_metal)
+	P.metal = 1
+	check(P, H, "toggle", "can_run", null)
+	P.metal = 0
+	P.set_on(TRUE)
+	check(P, H, "toggle", "can_run", null)
+	P.set_on(FALSE)
+	check(P, H, "toggle", "can_run", /datum/msg/pipelayer/no_metal)
+
+/datum/unit_test/dq_requirement_fifth_machinery/generators/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/power/port_gen/pacman/P = allocate(/obj/machinery/power/port_gen/pacman, run_loc_floor_bottom_left)
+	P.set_sheets(P.max_sheets)
+	check(P, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	P.set_sheets(P.max_sheets - 1)
+	check(P, H, "add_fuel", "has_room", null)
+	P.set_sheets(P.max_sheets)
+	check(P, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	var/obj/machinery/power/port_gen/large_altevian/L = allocate(/obj/machinery/power/port_gen/large_altevian, run_loc_floor_bottom_left)
+	L.set_sheets(L.max_sheets)
+	check(L, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	L.set_sheets(L.max_sheets - 1)
+	check(L, H, "add_fuel", "has_room", null)
+	L.set_sheets(L.max_sheets)
+	check(L, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+
+/datum/unit_test/dq_requirement_fifth_machinery/portable/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/portable_atmospherics/powered/pump/P = allocate(/obj/machinery/portable_atmospherics/powered/pump, run_loc_floor_bottom_left)
+	P.set_destroyed(TRUE)
+	check(P, H, "port", "not_destroyed", /datum/msg/portable/wrecked)
+	P.set_destroyed(FALSE)
+	check(P, H, "port", "not_destroyed", null)
+	P.set_destroyed(TRUE)
+	check(P, H, "port", "not_destroyed", /datum/msg/portable/wrecked)
+
+// Old-code boundary proof for the industrial requirement cohort; the same
+// compiled clause is checked after its null-or-reason conversion.
+/datum/unit_test/dq_requirement_industry_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_industry_boundary/pump/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/pump/P = allocate(/obj/machinery/pump, H.loc)
+	var/obj/item/cell/C = allocate(/obj/item/cell, H.loc)
+	P.open = FALSE
+	P.unlocked = FALSE
+	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_watertight), C)
+	P.unlocked = TRUE
+	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_screwed), C)
+	P.open = TRUE
+	check(P, H, "insert_cell", "battery_panel_open", null, C)
+	var/obj/item/cell/initial_cell = P.cell
+	TEST_ASSERT_NOTNULL(initial_cell, "The default parts initialize their real cell view")
+	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
+	rel_take(P, nameof(P.cell), initial_cell)
+	check(P, H, "insert_cell", "no_cell", null, C)
+	rel_set(P, nameof(P.cell), C)
+	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
+	rel_take(P, nameof(P.cell), C)
+	check(P, H, "insert_cell", "no_cell", null, C)
+
+/datum/unit_test/dq_requirement_industry_boundary/syringe/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, H.loc)
+	var/obj/item/reagent_containers/syringe/ld50_syringe/L = allocate(/obj/item/reagent_containers/syringe/ld50_syringe, H.loc)
+	check(S, H, "stab", "may_stab", null, null, H)
+	check(L, H, "stab", "may_stab", MSG(syringe/too_big), null, H)
+	check(S, H, "stab", "may_stab", null, null, H)
+
+/datum/unit_test/dq_requirement_industry_boundary/chem_master/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, H.loc)
+	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
+		check(M, H, key, "makes_drugs", /datum/msg/req_silent)
+	M.reagents.add_reagent(REAGENT_ID_WATER, 5)
+	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
+		check(M, H, key, "makes_drugs", null)
+	M.condi = TRUE
+	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
+	M.condi = FALSE
+	check(M, H, "create_pill_multiple", "makes_drugs", null)
+	M.reagents.clear_reagents()
+	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
+
+/datum/unit_test/dq_requirement_industry_boundary/mixer/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/appliance/mixer/candy/M = allocate(/obj/machinery/appliance/mixer/candy, H.loc)
+	var/datum/cooking_item/CI = LAZYACCESS(M.cooking_objs, 1)
+	TEST_ASSERT_NOTNULL(CI, "A real mixer initializes its owned cooking container")
+	var/obj/item/reagent_containers/cooking_container/C = CI.container()
+	TEST_ASSERT_NOTNULL(C, "The cooking slot contains its real container")
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", "there's nothing in it, add ingredients before turning [M] on")
+	C.reagents.add_reagent(REAGENT_ID_WATER, 5)
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", null)
+	C.reagents.clear_reagents()
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", "there's nothing in it, add ingredients before turning [M] on")
+
+/datum/unit_test/dq_requirement_industry_boundary/furnace/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/material_furnace/F = allocate(/obj/machinery/material_furnace, H.loc)
+	var/obj/item/stack/material/steel/S = allocate(/obj/item/stack/material/steel, H.loc)
+	check(F, H, "eject_contents", "can_eject_contents_holds", "the furnace is empty")
+	check(F, H, "use", "can_use_furnace_holds", "the furnace is empty; load material sheets before firing it")
+	check(F, H, "load_stock", "can_load_stock_holds", null, S)
+	F.set_firing(TRUE)
+	check(F, H, "load_stock", "can_load_stock_holds", "the furnace must be idle and its output removed first", S)
+	check(F, H, "use", "can_use_furnace_holds", "the furnace is still firing")
+	F.set_firing(FALSE)
+	check(F, H, "load_stock", "can_load_stock_holds", null, S)
+
+/datum/unit_test/dq_requirement_industry_boundary/food/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/reagent_containers/food/snacks/bun/B = allocate(/obj/item/reagent_containers/food/snacks/bun, H.loc)
+	B.package = FALSE
+	B.canned = FALSE
+	check(B, H, "stuff", "stuffing_free", null)
+	B.package = TRUE
+	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	B.package = FALSE
+	B.canned = TRUE
+	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	B.canned = FALSE
+	check(B, H, "stuff", "stuffing_free", null)
+	var/obj/item/reagent_containers/food/drinks/coffee/C = allocate(/obj/item/reagent_containers/food/drinks/coffee, H.loc)
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, TRUE)
+	check(C, H, "stuff", "stuffing_free", null)
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, FALSE)
+	check(C, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, TRUE)
+	check(C, H, "stuff", "stuffing_free", null)
+
+// Actual compiled clauses: no duplicated predicate logic or fake client eligibility.
+/datum/unit_test/dq_requirement_fifth_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_fifth_boundary/void_components/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	for(var/suit_type in list(/obj/item/clothing/suit/space/void, /obj/item/clothing/suit/space/void/autolok, /obj/item/clothing/suit/space/void/responseteam))
+		var/obj/item/clothing/suit/space/void/S = allocate(suit_type, H.loc)
+		// Strip real starting components through their declared relations before each boundary.
+		rel_clear(S, nameof(S.hood))
+		rel_clear(S, nameof(S.boots))
+		rel_clear(S, nameof(S.tank))
+		rel_clear(S, nameof(S.cooler))
+		check(S, H, "voidsuit_remove_component", "has_removable_component", MSG(void/nothing_installed))
+		var/obj/item/suit_cooling_unit/C = allocate(/obj/item/suit_cooling_unit, S)
+		rel_set(S, nameof(S.cooler), C)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", suit_type == /obj/item/clothing/suit/space/void ? MSG(void/nothing_installed) : null)
+		rel_set(S, nameof(S.cooler), null)
+		var/obj/item/tank/T = allocate(/obj/item/tank, S)
+		rel_set(S, nameof(S.tank), T)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", null)
+		rel_set(S, nameof(S.tank), null)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", MSG(void/nothing_installed))
+
+/datum/unit_test/dq_requirement_fifth_boundary/tongue_and_lightreplacer/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/robot_tongue/L = allocate(/obj/item/robot_tongue, H.loc)
+	L.water = allocate(/datum/matter_synth, 500)
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", /datum/msg/req_silent)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", MSG(tongue/full))
+	TEST_ASSERT(L.water.use_charge(1), "The real matter reservoir spends one unit")
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", null)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", null)
+	L.water.add_charge(1)
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", /datum/msg/req_silent)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", MSG(tongue/full))
+	var/obj/item/lightreplacer/dogborg/R = allocate(/obj/item/lightreplacer/dogborg, H.loc)
+	R.set_uses(R.max_uses)
+	check(R, H, "fabricate", "has_room", MSG(lightreplacer/full))
+	R.set_uses(R.max_uses - 1)
+	check(R, H, "fabricate", "has_room", null)
+	R.set_uses(R.max_uses)
+	check(R, H, "fabricate", "has_room", MSG(lightreplacer/full))
+
+/datum/unit_test/dq_requirement_fifth_boundary/weaver/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/trait_state/weaver/W = H.add_trait_state(/datum/trait_state/weaver)
+	TEST_ASSERT_NOTNULL(W, "The real trait attaches to the human")
+	var/list/costs = list("binding" = 50, "floor" = 25, "wall" = 100, "nest" = 100, "trap" = 250)
+	for(var/product in costs)
+		var/cost = costs[product]
+		W.set_silk_reserve(cost - 1)
+		check(W, H, "weave_[product]", "weave_silk_[product]", /datum/msg/weaver/no_silk)
+		W.set_silk_reserve(cost)
+		check(W, H, "weave_[product]", "weave_silk_[product]", null)
+		W.set_silk_reserve(cost - 1)
+		check(W, H, "weave_[product]", "weave_silk_[product]", /datum/msg/weaver/no_silk)
+	check(W, H, "weave_floor", "weave_site_free", null)
+	var/obj/effect/weaversilk/floor/F = allocate(/obj/effect/weaversilk/floor, H.loc)
+	check(W, H, "weave_floor", "weave_site_free", /datum/msg/weaver/already_there)
+	qdel(F)
+	check(W, H, "weave_floor", "weave_site_free", null)
+/datum/unit_test/dq_requirement_fifth_boundary/vv_remote/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, H.loc)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
+	rel_set(target, nameof(target.teleop), H)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", MSG(vv/player_mob))
+	rel_set(target, nameof(target.teleop), null)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
+// Record and compare concrete old-code types for requirement batch E.
+/datum/unit_test/dq_requirement_fifth_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/obj/item/assembly/signaler/anomaly, /obj/item/clamp, /obj/item/clothing/accessory/badge/holo, /obj/item/clothing/glasses/hud/health/eyepatch, /obj/item/clothing/glasses/hud/security/eyepatch, /obj/item/clothing/glasses/hud/security/eyepatch2, /obj/item/clothing/shoes/black, /obj/item/clothing/suit/space/void, /obj/item/clothing/suit/space/void/autolok, /obj/item/clothing/suit/space/void/responseteam, /obj/item/clothing/under/color/grey, /obj/item/dogborg/sleeper, /obj/item/frame, /obj/item/glamour_face, /obj/item/lightreplacer, /obj/item/lightreplacer/dogborg, /obj/item/pipe, /obj/item/pipe_meter, /obj/item/reagent_containers/cooking_container, /obj/item/reagent_containers/food/drinks/coffee, /obj/item/reagent_containers/food/snacks/bun, /obj/item/reagent_containers/food/snacks/csandwich, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/syringe/ld50_syringe, /obj/item/resonator, /obj/item/rig, /obj/item/robot_tongue, /obj/item/solar_assembly, /obj/item/stack/cable_coil/alien, /obj/item/stack/flag, /obj/item/stack/lightpole, /obj/item/storage/firstaid, /obj/machinery/appliance/mixer/candy, /obj/machinery/atmospherics/unary/cryo_cell, /obj/machinery/beehive, /obj/machinery/chem_master, /obj/machinery/chemical_dispenser, /obj/machinery/clamp, /obj/machinery/door/airlock, /obj/machinery/door/blast, /obj/machinery/door/firedoor, /obj/machinery/door/window, /obj/machinery/honey_extractor, /obj/machinery/material_furnace, /obj/machinery/meter, /obj/machinery/mineral/processing_unit_console, /obj/machinery/mining/brace, /obj/machinery/mining/drill, /obj/machinery/nuclearbomb, /obj/machinery/pipedispenser, /obj/machinery/pipedispenser/disposal, /obj/machinery/pipelayer, /obj/machinery/porta_turret, /obj/machinery/portable_atmospherics/canister, /obj/machinery/portable_atmospherics/powered/pump, /obj/machinery/portable_atmospherics/powered/pump/huge, /obj/machinery/portable_atmospherics/powered/scrubber/huge, /obj/machinery/power/apc, /obj/machinery/power/port_gen/large_altevian, /obj/machinery/power/port_gen/pacman, /obj/machinery/power/thermoregulator, /obj/machinery/pump, /obj/machinery/reagent_refinery/filter, /obj/machinery/reagent_refinery/grinder, /obj/machinery/recharger, /obj/machinery/rnd/destructive_analyzer, /obj/machinery/seed_storage, /obj/machinery/smartfridge, /obj/machinery/smartfridge/secure, /obj/machinery/vr_sleeper, /obj/structure/glamour_ring)
