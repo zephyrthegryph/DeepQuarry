@@ -277,9 +277,8 @@ SYSTEM_DEF(atoms)
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
-/datum/system/atoms/relations()
-	. = ..()
-	. += rel_many(nameof(queued_deletions))
+CAPABILITIES(/datum/system/atoms)
+	ref_many(nameof(queued_deletions))
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
 /datum/system/atoms/var/list/atom/queued_deletions

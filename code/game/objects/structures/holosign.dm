@@ -11,14 +11,8 @@
 		alpha = 0
 */
 
-/obj/structure/holosign/relations()
-	. = ..()
-	. += rel_one(nameof(projector), back = nameof(/obj/item/holosign_creator::signs))
-/obj/item/holosign_creator/relations()
-	. = ..()
-	. += rel_many(nameof(signs), back = nameof(/obj/structure/holosign::projector))
-
 CAPABILITIES(/obj/structure/holosign)
+	links(/obj/structure/holosign::projector, /obj/item/holosign_creator::signs, b_many = TRUE)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	param(nameof(projector), pos = 1)

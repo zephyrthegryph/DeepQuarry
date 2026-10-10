@@ -23,11 +23,6 @@
 
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
-/obj/machinery/power/quantumpad/relations()
-	. = ..()
-	. += rel_one(nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/power/quantumpad)
-	. += rel_key(nameof(map_pad_id))
-
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
 	. += span_notice("It is [linked_pad() ? "currently" : "not"] linked to another pad.")
@@ -63,6 +58,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
+	ref_one(nameof(linked_pad), /obj/machinery/power/quantumpad, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("quantumpad_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(quantumpad_ghost_travel)))
 	op("quantumpad_boost", item(/obj/item/quantum_pad_booster), priority(OP_PRIORITY_DEFAULT - 1), label("Install booster"), then(PROC_REF(interaction_boost)))

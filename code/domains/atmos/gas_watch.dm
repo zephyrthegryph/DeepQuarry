@@ -24,9 +24,8 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 	/// The holder (the watch's callback reaches it through its record).
 	var/tmp/datum/watcher
 
-/datum/cap_data/gas_watch/relations()
-	. = ..()
-	. += rel_one(nameof(watch), /datum/native_watch/gas, kind = RELK_OWNED, policy = OWN_DELETE)
+CAPABILITIES(/datum/cap_data/gas_watch)
+	owns_one(nameof(watch), /datum/native_watch/gas)
 
 /datum/capability/lib/gas_watch/on_holder_init(datum/act/eval/A)
 	gas_watch_arm(A.holder)

@@ -55,6 +55,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
 	// What the dog does on its own for a while (eating the weather it floats in, going down to a place and back up): the dog is still for as long as it takes.
@@ -179,10 +180,6 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 /mob/living/simple_mob/vore/overmap/stardog/Initialize(mapload)
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
-
-/mob/living/simple_mob/vore/overmap/stardog/relations()
-	. = ..()
-	. += rel_one(nameof(control_node), back = nameof(/obj/structure/control_pod::host))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -858,10 +855,6 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		if(!dog.control_node)
 			rel_set(src, nameof(host), dog)
-
-/obj/structure/control_pod/relations()
-	. = ..()
-	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
 MSG_DEF_SELF(control_pod/unresponsive, span_warning("It doesn't respond..."))
 MSG_DEF_SELF(control_pod/resists, span_warning("As you press your hand to %T%, it resists your advance... A sense of longing ripples through your mind..."))

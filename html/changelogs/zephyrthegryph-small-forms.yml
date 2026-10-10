@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Look keys name an image's transform and maptext; the compass holder redraws its markers from tracked state with no update_icon call"
+  - refactor: "look.watch_look(): a draw that composes another atom's whole look redraws on that atom's look change only; the voodoo doll and remote scene tools are drawn that way"
+  - refactor: "slot_release() takes a gibbed occupant's remains out of the occupant slot without moving them; om_unlink is gone"
+  - refactor: "The Rust world watches are engine forms (world_watch_changed, world_watch_when, world_diagnostics); a rule's hold_for is a kernel timer; the om_world_* and om_rate_* procs are gone"
+  - refactor: "Remaining relations() table procs outside machinery and power moved into CAPABILITIES blocks as ref_one, ref_many, links and owns_one"

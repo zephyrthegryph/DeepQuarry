@@ -487,6 +487,3 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(s_active)) // the storage being viewed, anywhere nearby

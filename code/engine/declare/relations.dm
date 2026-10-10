@@ -32,7 +32,7 @@
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
 				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
 				if(by)
-					keyed_target_register(E.args["type"], by)
+					keyed_target_register(E.args["type"], E.args["target_key"] || by)
 			if(ENTRY_OWNS_ONE, ENTRY_OWNS_MANY)
 				var/policy = relation_policy(E.args["on_destroy"])
 				var/starts = relation_starts(E)
