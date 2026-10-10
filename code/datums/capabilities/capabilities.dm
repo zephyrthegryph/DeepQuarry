@@ -153,28 +153,6 @@
 	if(caps)
 		data["caps"] = caps
 
-// ---- gating ----
-
-/**
- * Why an operation used at compartment `bay` (BAY_*) on `holder` is refused right now, or null: the ONE
- * place the boundary is asked (op_ctx stage 2 comes here). Asks the holder's
- * boundary capability, passes(ctx.route, ctx), with the operation context. With no context (a caller that
- * has no attempt to describe) the question is asked of a short-lived context of the holder itself.
- * A holder that declares no such bay refuses an op (fails closed) and lets a context-less check through.
- */
-/proc/op_at_reason(atom/holder, bay, datum/op_ctx/ctx)
-	var/datum/capability/compartment/boundary = compartment_of(holder, bay)
-	if(!boundary)
-		return ctx?.op ? /datum/msg/req_sealed : null
-	var/datum/op_ctx/asked = ctx
-	if(!asked)
-		asked = op_ctx_take(null, holder)
-	asked.reason = null
-	if(!boundary.passes(asked.route, asked))
-		. = asked.reason || /datum/msg/req_sealed
-	if(asked != ctx)
-		asked.release()
-
 // ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
 
 /// Any capability with periodic work that wants to run keeps the holder stepping.
