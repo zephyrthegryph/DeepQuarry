@@ -4,21 +4,23 @@
 	var/list/data = list("donor" = null, "viruses" = null, "blood_DNA" = null, "blood_type" = null, "resistances" = null, "trace_chems" = null, "changeling"=FALSE) // ALLOW(instance_list): d: edited in place per instance (191 writers)
 	var/list/diseases
 
-	/// The disease the culture is grown from: one is made per vial when its init is complete, and the vial gets 10 units of blood carrying it.
+	/// The disease the culture is grown from: one is made per vial, and the vial starts with 10 units of blood carrying it.
 	var/culture_disease
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/culture)
 	owns_many(nameof(diseases))
-	// After init, not in the reagents() preinit: the vial's ownership of its diseases is set up by then, so they go with it.
-	after_init(0, then(PROC_REF(grow_culture)))
+	configure(reagents(add = list(REAGENT_ID_BLOOD = PROC_REF(culture_blood_units)), data = list(REAGENT_ID_BLOOD = PROC_REF(culture_blood_data))))
 
-/// The culture's disease and the blood that carries it (its own `data`).
-/obj/item/reagent_containers/glass/beaker/vial/culture/proc/grow_culture(datum/act/timer/A)
-	if(!culture_disease)
-		return
-	rel_add(src, nameof(diseases), new culture_disease)
+/// 10 units of blood when the culture names a disease, none otherwise.
+/obj/item/reagent_containers/glass/beaker/vial/culture/proc/culture_blood_units()
+	return culture_disease ? 10 : 0
+
+/// The culture's blood data: its own `data`, carrying the disease made for this vial.
+/obj/item/reagent_containers/glass/beaker/vial/culture/proc/culture_blood_data()
+	if(culture_disease)
+		rel_add(src, nameof(diseases), new culture_disease)
 	data["viruses"] = (diseases || list())
-	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+	return data
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold
 	name = "cold virus culture"
