@@ -4277,3 +4277,8 @@ The unused legacy capability-library leaves are retired in the same follow-up, w
 - The conversion pins (`dq_conversion_pin`, `machinery_timed_1008`, `last_timed_1008`) are re-blessed for the lane's preserved silicon Equip op: key `gen_silicon_item_silicon_equip_module` and the disabled `Equip (refused: not possible right now)` row for robot and AI on items outside a module, as described above.
 - The cryopod and medical kiosk lose master's interim `cryopod_load` and `medical_kiosk_scan` keys: the lane's native prompt ops replace the minimal timed-op conversion master made in parallel. The cryopod's `Put grabbed victim in` row is now listed (silently refused) for every probe without a grab, like the suit cycler's `Put in cycler`.
 - Boolean requirement callbacks master added after the lane forked (soap, multitool, detective scanner, animal hide, leash, glasses kit, nail polish and remover, nanopaste, straw, medical stacks, mecha bolts and passengers, bonfire dismantle) and the mecha wreckage salvage checks the lane missed now return null or a reason; behaviour is unchanged (the wreckage's cut rows were briefly refused in the merged tree before this fix).
+
+### Requirements burn-down merge: oxygen-pump silicon menu pin (2026-10-10)
+
+* **/obj/machinery/oxygen_pump:** master's native-only interaction routing (86a5998d5b) exposes the already-declared silicon_ui operation in the robot and AI menus as Use. The timed pin adds those two menu rows and silicon_ui to the keys, replacing the old key row (four differing rows total). Human, robot and AI plain-click choices remain unchanged. This refresh records the resolver retirement on master, not a Boolean-requirement behavior change.
+
