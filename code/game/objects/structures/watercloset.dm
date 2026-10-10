@@ -46,7 +46,7 @@ TRACKED(/obj/structure/toilet, refilling)
 CAPABILITIES(/obj/structure/toilet)
 	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
-	owns_one(nameof(teleplumb_crystal), /obj/item)
+	owns_one(nameof(teleplumb_crystal), /obj/item, starts = PROC_REF(make_teleplumb_crystal))
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
 	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req_bool(PROC_REF(cistern_open), silent = TRUE), req_bool(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
@@ -73,7 +73,6 @@ CAPABILITIES(/obj/structure/toilet)
 	. = ..()
 
 	if(teleplumb_crystal)
-		rel_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
@@ -1375,3 +1374,8 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 /// Relation view: crusher (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/crusher() as /obj/machinery/recycling/crusher
 	return crusher
+
+/// A bluespace toilet (teleplumb_crystal set true on the map) starts with its crystal (owns_one(starts =)).
+/obj/structure/toilet/proc/make_teleplumb_crystal(current)
+	if(current)
+		return /obj/item/bluespace_crystal

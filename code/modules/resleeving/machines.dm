@@ -10,10 +10,13 @@
 	circuit = /obj/item/circuitboard/transhuman_clonepod
 
 //A full version of the pod
-/obj/machinery/clonepod/transhuman/full/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to container_limit)
-		rel_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
+CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
+	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL, starts = PROC_REF(make_biomass))
+
+/// A full pod starts with every biomass bottle it holds (owns_many(starts =)).
+/obj/machinery/clonepod/transhuman/full/proc/make_biomass(current)
+	. = list()
+	.[/obj/item/reagent_containers/glass/bottle/biomass] = container_limit
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.

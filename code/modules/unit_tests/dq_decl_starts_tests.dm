@@ -88,3 +88,18 @@
 	TEST_ASSERT(P.front?.pile == P, "a pillow pile starts with its front, which knows its pile")
 	var/obj/machinery/mining/drill/D = allocate(/obj/machinery/mining/drill, T)
 	TEST_ASSERT(istype(D.faultreporter, /obj/item/radio/intercom), "a drill starts with its fault reporter")
+
+/// Subtype-declared starting children and holders: uplinks, the refinery's holder type, the fryer's oil, a full grower pod.
+/datum/unit_test/dq_decl_starts_subtypes/Run()
+	var/turf/T = dq_containment_floor()
+	for(var/path in list(/obj/item/radio/uplink, /obj/item/multitool/uplink, /obj/item/radio/headset/uplink, /obj/item/implant/uplink))
+		var/obj/item/I = allocate(path, T)
+		TEST_ASSERT(istype(I.hidden_uplink, /obj/item/uplink/hidden), "[path] starts with a hidden uplink")
+	var/obj/machinery/reagent_refinery/reactor/R = allocate(/obj/machinery/reagent_refinery/reactor, T)
+	TEST_ASSERT(istype(R.reagents, /datum/reagents/distilling), "the reactor's holder is its reagent_type")
+	var/obj/machinery/reagent_refinery/hub/H = allocate(/obj/machinery/reagent_refinery/hub, T)
+	TEST_ASSERT(isnull(H.reagents), "a hub has no holder")
+	var/obj/machinery/appliance/cooker/fryer/F = allocate(/obj/machinery/appliance/cooker/fryer, T)
+	TEST_ASSERT(F.oil?.get_reagent_amount(REAGENT_ID_COOKINGOIL) > 0, "the fryer starts with oil")
+	var/obj/machinery/clonepod/transhuman/full/P = allocate(/obj/machinery/clonepod/transhuman/full, T)
+	TEST_ASSERT_EQUAL(length(P.containers), P.container_limit, "a full grower pod starts with its biomass")
