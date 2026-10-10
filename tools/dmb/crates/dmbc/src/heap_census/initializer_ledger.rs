@@ -78,6 +78,7 @@ mod tests {
                 ))),
             }],
             groups: vec![RuntimeGroup {
+                declaration_presence: None,
                 receiver: None,
                 writes: vec![0],
             }],

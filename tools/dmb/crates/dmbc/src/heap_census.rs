@@ -199,7 +199,7 @@ impl HeapCensus {
             false
         }
     }
-    fn string(&mut self, owner: &str, value: &String) {
+    pub(crate) fn string(&mut self, owner: &str, value: &String) {
         self.buffer(
             owner,
             value.as_ptr() as usize,
@@ -232,7 +232,7 @@ impl HeapCensus {
             size_of::<T>(),
         )
     }
-    fn path(&mut self, owner: &str, value: &PathBuf) {
+    pub(crate) fn path(&mut self, owner: &str, value: &PathBuf) {
         self.buffer(
             owner,
             value.as_os_str().as_encoded_bytes().as_ptr() as usize,

@@ -568,6 +568,7 @@ mod resource_tests {
                 )),
             }],
             groups: vec![crate::initializer_policy::RuntimeGroup {
+                declaration_presence: None,
                 receiver: None,
                 writes: vec![0],
             }],

@@ -128,6 +128,7 @@ export async function withCompiledOutput<T>(output: CompiledOutput, execute: Pai
   catch (error) { throw new NativeAcquisitionError(`Cannot allocate native run ownership: ${error}`); }
   const receipt = path.join(root, 'acquisition.json');
   let acquired: AcquiredPair | undefined;
+  let failed = false;
   try {
     try {
       const result = await execute(output.compiler, ['acquire', '--output-store', output.store, '--pair-id', output.pairId, '--slots', root, '--result-file', receipt], { throw: false });
@@ -135,9 +136,20 @@ export async function withCompiledOutput<T>(output: CompiledOutput, execute: Pai
       acquired = parseAcquiredResult(readNativeResult(receipt), output, root);
     } catch (error) { throw new NativeAcquisitionError(`Cannot host the requested native generation: ${error}`); }
     return await child(acquired.dmb);
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
     try { removeOwnedOutputs(root, acquired); }
-    catch (error) { throw new NativeAcquisitionError(`Native owned run cleanup failed: ${error}`); }
+    catch (error) {
+      if (failed) {
+        // Preserve the hosted child's typed status, including cancellation.
+        // The cleanup limitation leaves owned evidence for inspection.
+        console.warn(`Native owned run cleanup preserved ${root}: ${error}`);
+      } else {
+        throw new NativeAcquisitionError(`Native owned run cleanup failed: ${error}`);
+      }
+    }
   }
 }
 

@@ -297,12 +297,17 @@ fn retained_modifier_binds_current_group_debug_ordinal_after_an_inserted_write()
         if moved {
             fragments.push(prepared.lower_fragment(0, &host).unwrap());
         }
-        fragments.push(
-            store
-                .fragment(&key, &prepared, index, &write, &host)
-                .unwrap()
-                .unwrap(),
-        );
+        let issued = store
+            .fragment_with_recipes(&key, &prepared, index, &write, &host)
+            .unwrap()
+            .unwrap();
+        let admitted = issued
+            .recipes
+            .unwrap()
+            .into_iter()
+            .map(|recipe| (index, recipe.with_assignment_origin(index as u32)))
+            .collect();
+        fragments.push(issued.code);
         let current = prepared.assemble(fragments).unwrap();
         let fresh = dm_codegen_byond::initializer::lower_assignment_views(&views, context(), &host)
             .unwrap();
@@ -313,6 +318,21 @@ fn retained_modifier_binds_current_group_debug_ordinal_after_an_inserted_write()
         assert_eq!(captured.origin, expected.origin);
         assert_eq!(captured.field_origins, expected.field_origins);
         assert_eq!(captured.source_span, Some(value.span));
+        let assemblies = super::super::assemblies::InitializerAssemblies::default();
+        let group_key = receipts::Binding::fixture(b"actual-fragment-recipe-handoff");
+        assemblies.retain_keys(&[group_key.clone()]);
+        let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+        assert!(assemblies
+            .remember_with_recipes(&group_key, &current, &views, &recorder, Some(admitted))
+            .is_some());
+        let replay = assemblies
+            .lookup(&group_key, &views, &symbols, &host)
+            .unwrap();
+        assert_eq!(replay.procedure, fresh.procedure);
+        let replay_capture = replay.modified_instances.values().next().unwrap();
+        assert_eq!(replay_capture.origin, expected.origin);
+        assert_eq!(replay_capture.field_origins, expected.field_origins);
+        assert_eq!(replay_capture.source_span, Some(value.span));
     }
     assert_eq!(store.hits.load(Ordering::Relaxed), 1);
     assert_eq!(store.recomputed.load(Ordering::Relaxed), 1);
@@ -380,6 +400,7 @@ fn earlier_unrelated_write_preserves_fragment_locator_and_real_hit() {
             runtime_value: Some(runtime.clone()),
         }],
         groups: vec![RuntimeGroup {
+            declaration_presence: None,
             receiver: None,
             writes: vec![0],
         }],

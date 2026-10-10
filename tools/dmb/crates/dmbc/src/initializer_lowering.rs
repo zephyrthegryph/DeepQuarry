@@ -36,7 +36,22 @@ impl crate::stage_measurements::StageName for InitializerStage {
 }
 pub type InitializerObserver<'a> = crate::stage_measurements::Observer<'a, InitializerStage>;
 
+/// Issued only after current declaration/provenance validation by lower_group.
+#[derive(Clone)]
+pub struct DeclarationPresence {
+    owner: dm_ir::SymbolId,
+    source_ordinal: usize,
+}
+impl DeclarationPresence {
+    pub(crate) fn owner(&self) -> dm_ir::SymbolId {
+        self.owner
+    }
+    pub(crate) fn source_ordinal(&self) -> usize {
+        self.source_ordinal
+    }
+}
 pub struct LoweredInitializerUnit {
+    pub(crate) declaration_presence: Option<DeclarationPresence>,
     pub scope: InitializerScope,
     /// Exact selected source writes, in executable order after ABI phasing.
     pub write_ordinals: Vec<usize>,
@@ -389,11 +404,15 @@ fn lower_group<R: Resolver>(
     let symbols = plan.symbols.as_ref();
     let mut entries = Vec::with_capacity(group.writes.len());
     let mut write_ordinals = Vec::with_capacity(group.writes.len());
-    for &write_index in &group.writes {
+    let mut declaration_presence = None;
+    for &write_index in group.writes.iter().chain(group.declaration_presence.iter()) {
         let write = classified
             .writes
             .get(write_index)
             .ok_or("initializer group write missing")?;
+        if plan.writes.get(write.source_ordinal) != Some(&write.write) {
+            return Err("initializer write differs from current source ledger".into());
+        }
         let origin = plan
             .origins
             .get(write.source_ordinal)
@@ -455,6 +474,34 @@ fn lower_group<R: Resolver>(
             return Err("initializer source span out of bounds".into());
         }
         let line = file.line_starts.partition_point(|start| *start <= offset);
+        if group.declaration_presence == Some(write_index) && group.writes.is_empty() {
+            let dm_ir::InitializerTarget::Instance { receiver_owner, .. } = write.write.target
+            else {
+                return Err("declaration presence is not an instance field".into());
+            };
+            if Some(receiver_owner) != group.receiver
+                || write.phase.is_some()
+                || !matches!(write.write.value, dm_ir::InitializerValue::NoAuthoredValue)
+                || !write.write.declared_array.as_ref().is_some_and(|array| {
+                    array.dimensions.len() == 1 && array.dimensions[0].is_none()
+                })
+                || !matches!(
+                    origin.kind,
+                    dm_tree::initializers::InitializerOriginKind::Declaration(_)
+                )
+            {
+                return Err("declaration presence differs from current unsized field".into());
+            }
+            declaration_presence = Some(DeclarationPresence {
+                owner: receiver_owner,
+                source_ordinal: write.source_ordinal,
+            });
+            continue;
+        }
+        if group.declaration_presence == Some(write_index) && !group.writes.contains(&write_index) {
+            continue;
+        }
+
         if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
             expanded_span, ..
         } = &origin.kind
@@ -511,6 +558,7 @@ fn lower_group<R: Resolver>(
             host,
         ) {
             return Ok(LoweredInitializerUnit {
+                declaration_presence,
                 scope: group
                     .receiver
                     .map(InitializerScope::Instance)
@@ -563,6 +611,7 @@ fn lower_group<R: Resolver>(
         recorder: assembly_recorder.as_ref(),
     };
     let host = &observed_host;
+    let mut assembled_recipes = None;
     let code = if let Some((store, keys)) = fragments {
         let prepared = dm_codegen_byond::initializer::prepare_assignment_group(
             &assignment_views,
@@ -571,6 +620,7 @@ fn lower_group<R: Resolver>(
         )
         .map_err(map_error)?;
         let mut continuations = Vec::with_capacity(group.writes.len());
+        let mut recipe_fragments = Vec::with_capacity(group.writes.len());
         let mut unsupported = false;
         for (index, &write_index) in group.writes.iter().enumerate() {
             let write = &classified.writes[write_index];
@@ -578,7 +628,7 @@ fn lower_group<R: Resolver>(
                 .get(&write.source_ordinal)
                 .ok_or("initializer fragment key missing")?;
             let fragment = store
-                .fragment(key, &prepared, index, &write.write, host)
+                .fragment_with_recipes(key, &prepared, index, &write.write, host)
                 .map_err(|mut error| {
                     if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) =
                         &mut error
@@ -599,7 +649,28 @@ fn lower_group<R: Resolver>(
                 unsupported = true;
                 break;
             };
-            continuations.push(fragment);
+            let mut recipes = fragment.recipes.map(|recipes| {
+                recipes
+                    .into_iter()
+                    .map(|recipe| (recipe.reference(), recipe))
+                    .collect::<std::collections::BTreeMap<_, _>>()
+            });
+            let entries = fragment
+                .code
+                .code()
+                .modified_instances
+                .keys()
+                .map(|reference| {
+                    (
+                        *reference,
+                        recipes
+                            .as_mut()
+                            .and_then(|recipes| recipes.remove(reference)),
+                    )
+                })
+                .collect();
+            recipe_fragments.push((index, entries));
+            continuations.push(fragment.code);
         }
         if unsupported {
             dm_codegen_byond::initializer::lower_assignment_views(
@@ -610,7 +681,24 @@ fn lower_group<R: Resolver>(
             .map_err(map_error)?
         } else {
             match prepared.assemble(continuations) {
-                Ok(code) => code,
+                Ok(code) => {
+                    assembled_recipes = recipe_handoff::first_placements(
+                        recipe_fragments,
+                        code.modified_instances.keys().copied(),
+                    )
+                    .and_then(|placements| {
+                        placements
+                            .into_iter()
+                            .map(|(_, index, recipe)| {
+                                Some((
+                                    index,
+                                    recipe.with_assignment_origin(u32::try_from(index).ok()?),
+                                ))
+                            })
+                            .collect::<Option<Vec<_>>>()
+                    });
+                    code
+                }
                 Err(_) => {
                     // Cross-fragment collisions use the established producer's
                     // exact diagnostics rather than introducing a new failure.
@@ -718,11 +806,12 @@ fn lower_group<R: Resolver>(
     };
     let encoding =
         if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
-            store.remember(key, &code, &assignment_views, recorder)
+            store.remember_with_recipes(key, &code, &assignment_views, recorder, assembled_recipes)
         } else {
             None
         };
     Ok(LoweredInitializerUnit {
+        declaration_presence,
         scope: group
             .receiver
             .map(InitializerScope::Instance)
@@ -733,3 +822,6 @@ fn lower_group<R: Resolver>(
         encoding,
     })
 }
+
+#[path = "initializer_recipe_handoff.rs"]
+mod recipe_handoff;

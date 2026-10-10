@@ -94,6 +94,23 @@ impl ResourceManifest {
             archive,
         })
     }
+    pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        crate::runner_host::resources::inspect_snapshot(&self.inputs, census);
+        census.vec_payload("resources.archive_order", &self.order);
+        census.vec_payload("resources.aliases", &self.catalog.aliases);
+        for alias in &self.catalog.aliases {
+            census.string("resources.aliases", &alias.name);
+            census.path("resources.aliases", &alias.disk_path);
+        }
+        census.vec_payload("resources.contexts", &self.catalog.contexts);
+        for context in &self.catalog.contexts {
+            census.vec_payload("resources.contexts", context);
+        }
+        census.vec_payload("resources.lookups", &self.catalog.lookups);
+        for lookup in &self.catalog.lookups {
+            census.string("resources.lookups", &lookup.path);
+        }
+    }
     pub fn archive(&self) -> ResourceIdentity {
         self.archive
     }
@@ -315,13 +332,50 @@ mod tests {
             .unwrap();
         let archive = ResourceIdentity { bytes: 9, hash: 42 };
         let manifest = ResourceManifest::capture(3, &catalog, inputs, vec![0], archive).unwrap();
+        // Resident hints carry no asset bytes and never replace current admission.
+        let owner = crate::runner_host::resources::Resources::default();
+        let configuration = crate::runner_host::resources::Configuration {
+            policy: 3,
+            project: "game/project.dme".into(),
+            defines: Default::default(),
+            output: "output/project.dme".into(),
+            store: Some("store".into()),
+            generated: Default::default(),
+        };
+        owner.remember(
+            configuration.clone(),
+            crate::runner_host::resources::Hint {
+                pair: 7,
+                manifest: std::sync::Arc::new(manifest.clone()),
+                outputs: InputSnapshot::new(0),
+            },
+        );
+        let retained = owner.hint(&configuration).unwrap();
+        assert_eq!(*retained.manifest, manifest);
+        let mut changed = configuration.clone();
+        changed.output = "other/project.dme".into();
+        assert!(owner.hint(&changed).is_none());
+        changed = configuration.clone();
+        changed.defines.insert("MODE".into(), "1".into());
+        assert!(owner.hint(&changed).is_none());
+        changed = configuration.clone();
+        changed.generated.insert("game/authored.dm".into());
+        assert!(owner.hint(&changed).is_none());
+        changed = configuration.clone();
+        changed.policy += 1;
+        assert!(owner.hint(&changed).is_none());
+        assert!(std::sync::Arc::ptr_eq(
+            &retained,
+            &owner.hint(&configuration).unwrap()
+        ));
         let demand = dm_resources::capture::discover_demand(&plan, &expanded, &[], &[]).unwrap();
         let stages = std::cell::RefCell::new(Vec::new());
         let observer = |measurement: ResourceValidationMeasurement| {
             assert!(measurement.seconds.is_finite() && measurement.seconds >= 0.0);
             stages.borrow_mut().push(measurement.stage);
         };
-        assert!(manifest
+        assert!(retained
+            .manifest
             .validate_observed(
                 3,
                 &demand,
@@ -344,18 +398,21 @@ mod tests {
                 ResourceValidationStage::ArchiveAuthentication
             ]
         );
-        assert!(manifest
+        assert!(retained
+            .manifest
             .validate(3, &demand, &provider, false, 20_000_000_000, |_| Ok(false))
             .unwrap()
             .is_none());
         provider.bytes = b"new".to_vec();
-        assert!(manifest
+        assert!(retained
+            .manifest
             .validate(3, &demand, &provider, true, 20_000_000_000, |_| Ok(true))
             .unwrap()
             .is_none());
         provider.bytes = b"old".to_vec();
         provider.listing = FolderListing::Present(vec!["shadow.txt".into()]);
-        assert!(manifest
+        assert!(retained
+            .manifest
             .validate(3, &demand, &provider, false, 20_000_000_000, |_| Ok(true))
             .unwrap()
             .is_none());
@@ -365,9 +422,27 @@ mod tests {
             ..Default::default()
         };
         let changed = dm_resources::capture::discover_demand(&plan, &changed, &[], &[]).unwrap();
-        assert!(manifest
+        assert!(retained
+            .manifest
             .validate(3, &changed, &provider, false, 20_000_000_000, |_| Ok(true))
             .unwrap()
             .is_none());
+        // A new exact configuration replaces the sole resident entry. External
+        // readers remain valid until dropped, but the store owns no history.
+        let old = std::sync::Arc::downgrade(&retained);
+        let mut next = configuration.clone();
+        next.output = "next/project.dme".into();
+        owner.remember(
+            next.clone(),
+            crate::runner_host::resources::Hint {
+                pair: 8,
+                manifest: std::sync::Arc::new(manifest),
+                outputs: InputSnapshot::new(0),
+            },
+        );
+        assert!(owner.hint(&configuration).is_none());
+        assert_eq!(owner.hint(&next).unwrap().pair, 8);
+        drop(retained);
+        assert!(old.upgrade().is_none());
     }
 }

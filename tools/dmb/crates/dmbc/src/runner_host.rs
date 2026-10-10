@@ -15,6 +15,8 @@ mod idle_census;
 mod memo;
 #[path = "runner_query_snapshot.rs"]
 pub(crate) mod query_snapshot;
+#[path = "runner_host_resources.rs"]
+pub(crate) mod resources;
 pub(crate) use engine_payload::EnginePayloads;
 #[path = "runner_executor_pool.rs"]
 mod executor_pool;
@@ -65,6 +67,7 @@ pub struct BuildHost {
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
+    resources: Option<Arc<resources::Resources>>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -121,10 +124,18 @@ impl Default for BuildHost {
             link_bindings: None,
             generation: None,
             host_facts: None,
+            resources: None,
         }
     }
 }
 impl BuildHost {
+    pub(crate) fn resources(&mut self) -> Option<Arc<resources::Resources>> {
+        self.memo.as_ref()?;
+        Some(Arc::clone(
+            self.resources
+                .get_or_insert_with(|| Arc::new(Default::default())),
+        ))
+    }
     pub(crate) fn retention_status(&self) -> serde_json::Value {
         serde_json::json!({
             "scope": "process_local_diagnostic_only",
@@ -232,6 +243,7 @@ impl BuildHost {
             link_bindings: None,
             generation: None,
             host_facts: None,
+            resources: None,
         }
     }
 
@@ -533,6 +545,7 @@ impl BuildHost {
         self.link_bindings = None;
         self.generation = None;
         self.host_facts = None;
+        self.resources = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(

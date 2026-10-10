@@ -119,3 +119,37 @@ fn canonical_resource_proof_and_unambiguous_current_node_are_required() {
     args.push(nested(&old).clone());
     assert!(ExpressionRecipe::from_capture(reference, &captured, &ambiguous).is_none());
 }
+
+#[test]
+fn assignment_rebase_preserves_current_nodes_and_disabled_debug() {
+    let mut symbols = SymbolTable::default();
+    symbols.intern("/").unwrap();
+    let host = Host { resource: 1 };
+    let old = root(0, "1");
+    let (reference, mut captured) = capture(nested(&old), &host, &symbols);
+    for enabled in [true, false] {
+        captured.origin = enabled.then_some(0);
+        for origin in &mut captured.field_origins {
+            *origin = enabled.then_some(0);
+        }
+        let recipe = ExpressionRecipe::from_capture(reference, &captured, &old).unwrap();
+        let rebound = recipe.with_assignment_origin(3);
+        assert_eq!(recipe.path, rebound.path);
+        assert!(Arc::ptr_eq(
+            recipe.descriptor.canonical(),
+            rebound.descriptor.canonical()
+        ));
+        let current = root(500, "1");
+        let (_, current_capture) = rebound.reissue(&current, &host, &symbols).unwrap();
+        assert_eq!(current_capture.origin, enabled.then_some(3));
+        assert!(current_capture
+            .field_origins
+            .iter()
+            .all(|origin| *origin == enabled.then_some(3)));
+        assert_eq!(current_capture.source_span, Some(nested(&current).span));
+        assert_eq!(
+            current_capture.descriptor.fields()[0].1.span,
+            dm_syntax::Span::new(530, 531)
+        );
+    }
+}

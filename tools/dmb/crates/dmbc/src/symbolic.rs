@@ -579,7 +579,8 @@ fn finish_frozen_inventory(
         append_debug_inventory(&unit.debug_origins, &mut inventory, &mut string_inventory);
         let mut content = b"dm-initializer-code-v1\0".to_vec();
         match &unit.coverage {
-            crate::initialization_artifact::InitializationCoverage::DeclarationWrites(_) => {
+            crate::initialization_artifact::InitializationCoverage::DeclarationWrites(_)
+            | crate::initialization_artifact::InitializationCoverage::DeclarationPresence(_) => {
                 content.push(0)
             }
             crate::initialization_artifact::InitializationCoverage::MapAssignments {

@@ -105,6 +105,7 @@ impl Drop for LatestRequest {
     }
 }
 struct Slot {
+    request_serial: Mutex<()>,
     host: Mutex<crate::runner_host::BuildHost>,
     newest: Mutex<BTreeMap<RequestKey, control::Cancellation>>,
     last: Mutex<Instant>,
@@ -118,6 +119,18 @@ struct SessionKey {
     bootstrap: bool,
 }
 impl Slot {
+    fn lock_request_until(&self, deadline: &admission_deadline::AdmissionDeadline) -> io::Result<std::sync::MutexGuard<'_, ()>> {
+        loop {
+            control::checkpoint()?;
+            let remaining = deadline.remaining(Instant::now())?;
+            match self.request_serial.try_lock() {
+                Ok(guard) => return Ok(guard),
+                Err(std::sync::TryLockError::Poisoned(error)) => return Ok(error.into_inner()),
+                Err(std::sync::TryLockError::WouldBlock) => {}
+            }
+            std::thread::sleep(Duration::from_millis(20).min(remaining));
+        }
+    }
     #[cfg(test)]
     fn lock_host(&self) -> io::Result<std::sync::MutexGuard<'_, crate::runner_host::BuildHost>> {
         self.lock_host_until(&admission_deadline::AdmissionDeadline::new(Instant::now()))
@@ -172,6 +185,7 @@ impl Shared {
             })
             .or_insert_with(|| {
                 Arc::new(Slot {
+                    request_serial: Mutex::new(()),
                     host: Mutex::new(crate::runner_host::BuildHost::with_daemon_owners(
                         Arc::clone(&self.engines),
                         Arc::clone(&self.executors),
@@ -197,13 +211,28 @@ impl Shared {
         workers: usize,
         deadline: &admission_deadline::AdmissionDeadline,
     ) -> io::Result<Permit> {
+        self.acquire_until_observing(workers, deadline, transport::private_bytes)
+    }
+    fn acquire_until_observing(
+        self: &Arc<Self>,
+        workers: usize,
+        deadline: &admission_deadline::AdmissionDeadline,
+        private_bytes: impl Fn() -> Option<u64>,
+    ) -> io::Result<Permit> {
         let workers = workers.max(1);
         if workers > 8 {
             return Err(io::Error::other("daemon supports at most eight workers per request; use --no-daemon for a larger pool"));
         }
         let mut active = self.running.lock().unwrap_or_else(|e| e.into_inner());
+        let initial_private = private_bytes();
+        if initial_private.is_none() {
+            super::emit_stderr(format_args!("dmbd memory admission probe unavailable; count-only admission"));
+        }
+        // Soft throttle, not a hard private-memory ceiling: one admitted build
+        // can grow past the limit. Preserve a single-build progress lane.
         while (*active >= 3
-            || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > 8)
+            || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > 8
+            || *active > 0 && private_bytes().is_some_and(|bytes| bytes >= 4_000_000_000))
             && !self.retiring.load(Ordering::Acquire)
         {
             control::checkpoint()?;
@@ -444,8 +473,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             let _output = super::output_binding(Arc::clone(&stream));
             let _binding = control::bind(token);
             let admission = admission_deadline::AdmissionDeadline::new(Instant::now());
-            let mut host = match slot.lock_host_until(&admission) {
-                Ok(host) => host,
+            let _serial = match slot.lock_request_until(&admission) {
+                Ok(serial) => serial,
                 Err(error) => {
                     return protocol::send(
                         &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
@@ -466,6 +495,16 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     )
                 }
             };
+            let mut host = match slot.lock_host_until(&admission) {
+                Ok(host) => host,
+                Err(error) => {
+                    return protocol::send(
+                        &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                    )
+                }
+            };
+            slot.idle_tier.store(0, Ordering::Release);
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
@@ -501,6 +540,8 @@ mod tests {
     use super::*;
     #[path = "panic_reset_tests.rs"]
     mod panic_reset;
+    #[path = "pressure_tests.rs"]
+    mod pressure;
     fn shared() -> Arc<Shared> {
         Arc::new(Shared {
             engines: Arc::new(Default::default()),

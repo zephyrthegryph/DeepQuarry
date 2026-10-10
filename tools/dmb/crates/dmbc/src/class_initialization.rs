@@ -31,11 +31,41 @@ pub(crate) struct BorrowedDefault<'a> {
     pub runtime: bool,
     pub initializer: InitializerIdentity,
 }
+fn validate_presence(
+    plan: &InitializerPlan,
+    classified: &ClassifiedInitializers,
+    presence: &crate::initializer_lowering::DeclarationPresence,
+) -> Result<(), String> {
+    let write = plan
+        .writes
+        .get(presence.source_ordinal())
+        .ok_or("declaration presence source absent")?;
+    if !matches!(write.target, InitializerTarget::Instance { receiver_owner, .. } if receiver_owner == presence.owner())
+        || !matches!(write.value, dm_ir::InitializerValue::NoAuthoredValue)
+        || !write
+            .declared_array
+            .as_ref()
+            .is_some_and(|array| array.dimensions.len() == 1 && array.dimensions[0].is_none())
+        || !classified.writes.iter().any(|fact| {
+            fact.source_ordinal == presence.source_ordinal()
+                && fact.write == *write
+                && fact.phase.is_none()
+        })
+    {
+        return Err("declaration presence differs from captured current field".into());
+    }
+    Ok(())
+}
 pub(crate) fn admit_lowered_borrowed<'a>(
     plan: &InitializerPlan,
     classified: &'a ClassifiedInitializers,
     units: &[crate::initializer_lowering::LoweredInitializerUnit],
 ) -> Result<Vec<BorrowedDefault<'a>>, String> {
+    for unit in units {
+        if let Some(presence) = &unit.declaration_presence {
+            validate_presence(plan, classified, presence)?;
+        }
+    }
     admit_coverage_with(
         plan,
         classified,
@@ -56,6 +86,17 @@ pub fn admit(
     classified: &ClassifiedInitializers,
     batch: &FrozenBatch,
 ) -> Result<DefaultLedger, String> {
+    for unit in &batch.initializers {
+        if let crate::initialization_artifact::InitializationCoverage::DeclarationPresence(
+            presence,
+        ) = &unit.coverage
+        {
+            if unit.identity != InitializerIdentity::Class(presence.owner()) {
+                return Err("declaration presence receiver differs".into());
+            }
+            validate_presence(plan, classified, presence)?;
+        }
+    }
     admit_coverage(
         plan,
         classified,
@@ -70,6 +111,11 @@ pub fn admit_lowered(
     classified: &ClassifiedInitializers,
     units: &[crate::initializer_lowering::LoweredInitializerUnit],
 ) -> Result<DefaultLedger, String> {
+    for unit in units {
+        if let Some(presence) = &unit.declaration_presence {
+            validate_presence(plan, classified, presence)?;
+        }
+    }
     admit_coverage(
         plan,
         classified,

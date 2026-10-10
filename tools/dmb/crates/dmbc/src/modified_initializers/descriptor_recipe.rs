@@ -12,6 +12,11 @@ pub(crate) struct DescriptorRecipe {
     origin: Option<u32>,
 }
 impl DescriptorRecipe {
+    pub(super) fn with_assignment_origin(&self, origin: u32) -> Self {
+        let mut rebound = self.clone();
+        rebound.origin = self.origin.map(|_| origin);
+        rebound
+    }
     pub(super) fn evidence(
         &self,
     ) -> (

@@ -251,7 +251,7 @@ fn run_build_attempt(
                         }
                         if resource_prior.is_none() {
                             if let Some(manifest) = &record.resource_manifest {
-                                resource_prior = Some((record.pair, manifest.clone()));
+                                resource_prior = Some((record.pair, std::sync::Arc::new(manifest.clone())));
                             }
                         }
                     },
@@ -403,6 +403,15 @@ fn run_build_attempt(
     } else {
         None
     };
+    let resource_owner = if executable && !verification_capture { host.resources() } else { None };
+    let resource_configuration = crate::runner_host::resources::Configuration {
+        policy: memo_policy, project: project.clone(), defines: defines.clone(),
+        output: output_project.clone(), store: output_store.clone(), generated: generated_paths.clone(),
+    };
+    if let Some(hint) = resource_owner.as_ref().and_then(|owner| owner.hint(&resource_configuration)) {
+        resource_prior = Some((hint.pair, std::sync::Arc::clone(&hint.manifest)));
+        prior_outputs = Some(hint.outputs.clone());
+    }
     let host_facts = if executable { host.host_facts() } else { None };
     let (frontend_memo, execution, semantic_state) = host.execution(
         workers,
@@ -834,7 +843,7 @@ fn run_build_attempt(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
-        if let Some(session) = &session.filter(|_| !verification_capture) {
+        if !verification_capture && (session.is_some() || resource_owner.is_some()) {
             let inputs = publication_inputs;
             let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
             let publication_proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_publication_proofs, generated_paths.iter().cloned());
@@ -855,12 +864,16 @@ fn run_build_attempt(
                     publication.resource_archive_order.clone(),
                     publication.archive.identity(),
                 )?;
-                session.store(dmbc::session::Record {
-                    inputs,
-                    pair: pair.id,
-                    outputs: Some(outputs),
-                    resource_manifest: Some(resource_manifest),
-                })?;
+                let resource_manifest = std::sync::Arc::new(resource_manifest);
+                if let Some(owner) = &resource_owner {
+                    owner.remember(resource_configuration, crate::runner_host::resources::Hint {
+                        pair: pair.id, manifest: std::sync::Arc::clone(&resource_manifest), outputs: outputs.clone(),
+                    });
+                }
+                if let Some(session) = &session {
+                    session.store(dmbc::session::Record { inputs, pair: pair.id,
+                        outputs: Some(outputs), resource_manifest: Some((*resource_manifest).clone()) })?;
+                }
             } else {
                 dmbc::daemon_eprintln!("native session not saved: inputs changed during compilation");
             }

@@ -12,6 +12,15 @@ pub(crate) struct ExpressionRecipe {
 #[path = "expression_recipe_tests.rs"]
 mod tests;
 impl ExpressionRecipe {
+    pub(crate) fn reference(&self) -> SymRef {
+        self.descriptor.reference()
+    }
+    pub(crate) fn with_assignment_origin(&self, origin: u32) -> Self {
+        Self {
+            descriptor: self.descriptor.with_assignment_origin(origin),
+            path: self.path.clone(),
+        }
+    }
     pub(crate) fn from_capture(
         reference: SymRef,
         captured: &CapturedModifiedInstance,

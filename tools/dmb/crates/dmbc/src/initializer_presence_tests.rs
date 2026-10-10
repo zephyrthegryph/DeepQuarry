@@ -93,3 +93,62 @@ fn unsized_instance_presence_matches_captured_init_without_allocating() {
     assert!(empty.phase.is_none());
     assert!(empty.runtime_value.is_none());
 }
+
+#[test]
+fn presence_survives_current_symbolic_admission_and_links_end_only() {
+    let frontend =
+        dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+    let declarations = dm_tree::initializers::capture_declaration_plan(
+        &frontend.snapshot,
+        &frontend.emission_order,
+    )
+    .unwrap();
+    let plan = declarations.plan();
+    let host = frontend.snapshot.tree.as_ref();
+    let evaluator = crate::driver_facts::DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: host,
+        symbols: plan.symbols.as_ref(),
+    };
+    let lowered = lower(&frontend, plan, &evaluator, host, None).unwrap();
+    let unit = lowered
+        .units
+        .into_iter()
+        .find(|unit| unit.scope == InitializerScope::Instance(SymbolId::of("/datum/empty_only")))
+        .unwrap();
+    let artifact = crate::initialization_artifact::InitializationArtifact::from(unit);
+    artifact.validate().unwrap();
+    let mut invalid = artifact.clone();
+    invalid.coverage =
+        crate::initialization_artifact::InitializationCoverage::DeclarationWrites(Vec::new());
+    assert!(
+        invalid.validate().is_err(),
+        "empty writes must not impersonate declaration presence"
+    );
+    invalid.coverage = artifact.coverage.clone();
+    invalid.identity = dm_link::InitializerIdentity::Global;
+    assert!(
+        invalid.validate().is_err(),
+        "presence cannot create a global initializer"
+    );
+    let frozen = crate::symbolic::freeze_artifact_tables_with_workers(
+        crate::lowering::LoweringBatch {
+            units: Vec::new(),
+            diagnostics: Vec::new(),
+        },
+        plan.symbols.as_ref(),
+        &crate::symbolic::ReferenceBindings::default(),
+        dm_link::LinkInventory::default(),
+        vec![artifact],
+        1,
+    )
+    .unwrap();
+    assert_eq!(frozen.initializers.len(), 1);
+    let image = frozen.link_initializer(&frozen.initializers[0]).unwrap();
+    assert_eq!(
+        image.words.as_slice(),
+        &[byond_dmb::bytecode::opcode::END as u32]
+    );
+    assert!(frozen.initializers[0].declaration_writes().is_empty());
+}

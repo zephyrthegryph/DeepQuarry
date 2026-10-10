@@ -78,6 +78,12 @@ impl BuildHost {
                 serde_json::to_value(self.host_facts_retention_census())
                     .map_err(io::Error::other)?,
             )?;
+            if let Some(resources) = &self.resources {
+                emit(
+                    "resources",
+                    serde_json::to_value(resources.census()).map_err(io::Error::other)?,
+                )?;
+            }
             emit(
                 "query_snapshot",
                 serde_json::to_value(self.query_snapshot_retention_census())

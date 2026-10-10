@@ -269,11 +269,15 @@ fn finish_pending(
         let index = *receiver_groups.entry(receiver).or_insert_with(|| {
             let index = groups.len();
             groups.push(RuntimeGroup {
+                declaration_presence: None,
                 receiver,
                 writes: Vec::new(),
             });
             index
         });
+        if empty_instance_initializer && groups[index].declaration_presence.is_none() {
+            groups[index].declaration_presence = Some(write_index);
+        }
         if write.phase.is_some() {
             groups[index].writes.push(write_index);
         }

@@ -27,6 +27,7 @@ impl BuildHost {
         self.link_bindings = None;
         self.generation = None;
         self.host_facts = None;
+        // Payload-free resource/demand proofs remain with the semantic owner.
         self.maps = None;
         if self.memo.is_some() {
             self.memo = Some(Default::default());

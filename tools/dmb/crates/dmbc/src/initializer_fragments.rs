@@ -19,6 +19,10 @@ pub struct InitializerFragments {
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
 }
+pub(super) struct FragmentWithRecipes {
+    pub code: AssignmentFragment,
+    pub recipes: Option<Vec<crate::modified_initializers::ExpressionRecipe>>,
+}
 struct RetainedFragment {
     code: AssignmentFragment,
     recipes: Vec<crate::modified_initializers::ExpressionRecipe>,
@@ -95,6 +99,7 @@ impl InitializerFragments {
         self.values
             .retain_current_keys(keys.values().map(|binding| binding.key.as_ref()));
     }
+    #[cfg(test)]
     pub(super) fn fragment<R: Resolver>(
         &self,
         key: &receipts::Binding,
@@ -103,6 +108,17 @@ impl InitializerFragments {
         write: &dm_ir::InitializerWrite,
         host: &R,
     ) -> Result<Option<AssignmentFragment>, InitializerError> {
+        self.fragment_with_recipes(key, prepared, index, write, host)
+            .map(|value| value.map(|value| value.code))
+    }
+    pub(super) fn fragment_with_recipes<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        prepared: &PreparedAssignmentGroup<'_>,
+        index: usize,
+        write: &dm_ir::InitializerWrite,
+        host: &R,
+    ) -> Result<Option<FragmentWithRecipes>, InitializerError> {
         let root = prepared.expression(index).ok_or_else(|| {
             InitializerError::Invalid("initializer current expression missing".into())
         })?;
@@ -122,7 +138,10 @@ impl InitializerFragments {
             if let Some(captured) = captured {
                 if let Ok(code) = fragment.code.clone().bind_modified(captured) {
                     self.hits.fetch_add(1, Ordering::Relaxed);
-                    return Ok(Some(code));
+                    return Ok(Some(FragmentWithRecipes {
+                        code,
+                        recipes: Some(fragment.recipes.clone()),
+                    }));
                 }
             }
             // A recipe is only a candidate. Uncertain current binding executes
@@ -152,6 +171,7 @@ impl InitializerFragments {
             .collect::<Option<Vec<_>>>();
         // Only current-roster retention is constructed here. This inline charge
         // is not a resident byte estimate; full ownership remains census-only.
+        let handoff = recipes.clone();
         if let Some(recipes) = recipes {
             let weight = std::mem::size_of::<RetainedFragment>();
             self.values
@@ -164,7 +184,10 @@ impl InitializerFragments {
         } else {
             self.declined.fetch_add(1, Ordering::Relaxed);
         }
-        Ok(Some(fragment))
+        Ok(Some(FragmentWithRecipes {
+            code: fragment,
+            recipes: handoff,
+        }))
     }
 }
 #[cfg(test)]

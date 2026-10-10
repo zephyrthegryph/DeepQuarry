@@ -315,6 +315,8 @@ pub enum RuntimeValue {
 }
 #[derive(Clone, Debug)]
 pub struct RuntimeGroup {
+    /// Current classified write proving an otherwise empty instance initializer.
+    pub(crate) declaration_presence: Option<usize>,
     /// None is the global/shared VM initializer. Class receivers are explicit.
     pub receiver: Option<SymbolId>,
     /// Indices into ClassifiedInitializers::writes; runtime ASTs have one owner.

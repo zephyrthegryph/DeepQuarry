@@ -40,7 +40,12 @@ impl Shared {
             let slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
             let mut candidates = BTreeMap::new();
             for (key, slot) in slots.iter() {
-                if Arc::strong_count(slot) != 1 {
+                if Arc::strong_count(slot) != 1 && !pressured {
+                    continue;
+                }
+                // Queued requests keep their slot, but do not borrow host state.
+                // Exclude currently running hosts before bounding the candidates.
+                if matches!(slot.host.try_lock(), Err(std::sync::TryLockError::WouldBlock)) {
                     continue;
                 }
                 let last = *slot.last.lock().unwrap_or_else(|e| e.into_inner());
@@ -57,21 +62,28 @@ impl Shared {
         };
         for ((last, key), (slot, next)) in candidates {
             let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
-            // A newly admitted/queued request owns another Arc. Never trim it.
+            // Never remove a request-owned slot. Under pressure its idle host
+            // may be cleared in place only while no build borrows host state.
             if !slots
                 .get(&key)
                 .is_some_and(|current| Arc::ptr_eq(current, &slot))
-                || Arc::strong_count(&slot) != 2
+                || Arc::strong_count(&slot) != 2 && !pressured
                 || *slot.last.lock().unwrap_or_else(|e| e.into_inner()) != last
             {
                 continue;
             }
-            if next == 4 {
+            let mut host = match slot.host.try_lock() {
+                Ok(host) => host,
+                Err(std::sync::TryLockError::Poisoned(error)) => error.into_inner(),
+                Err(std::sync::TryLockError::WouldBlock) => continue,
+            };
+            if next == 4 && Arc::strong_count(&slot) == 2 {
                 let removed = slots.remove(&key);
                 drop(slots);
                 let before = transport::private_bytes();
                 let started = Instant::now();
                 // Pool joins and artifact destructors never run under slot roster lock.
+                drop(host);
                 drop(removed);
                 drop(slot);
                 super::super::emit_stderr(format_args!(
@@ -82,13 +94,18 @@ impl Shared {
                 ));
                 continue;
             }
-            let mut host = match slot.host.try_lock() {
-                Ok(host) => host,
-                Err(std::sync::TryLockError::Poisoned(error)) => error.into_inner(),
-                Err(std::sync::TryLockError::WouldBlock) => continue,
-            };
             slot.idle_tier.store(next, Ordering::Release);
             drop(slots);
+            if next == 4 {
+                // Preserve the queued Slot and its cancellation/serialization
+                // state; replace only idle compiler ownership outside roster lock.
+                self.reset_host(&mut host);
+                super::super::emit_stderr(format_args!(
+                    "dmbd idle release tier=queued-session project={} pressure={pressured}",
+                    key.manifest.display()
+                ));
+                continue;
+            }
             host.release_idle_executor();
             if next >= 2 {
                 let before = transport::private_bytes();
@@ -117,6 +134,7 @@ impl Shared {
                 key.manifest.display()
             ));
         }
+        self.capacity.notify_all();
     }
 }
 

@@ -12,6 +12,7 @@ pub enum InitializationCoverage {
         canonical_body: Arc<[u8]>,
     },
     DeclarationWrites(Vec<usize>),
+    DeclarationPresence(crate::initializer_lowering::DeclarationPresence),
     /// Canonical authored atom block, including empty-block presence and
     /// ordered repeated assignments. Absolute source spans stay outside it.
     MapAssignments {
@@ -37,7 +38,12 @@ impl From<LoweredInitializerUnit> for InitializationArtifact {
             code: Arc::new(unit.code),
             debug_origins: Arc::new(unit.debug_origins),
             encoding: unit.encoding,
-            coverage: InitializationCoverage::DeclarationWrites(unit.write_ordinals),
+            coverage: match unit.declaration_presence {
+                Some(presence) if unit.write_ordinals.is_empty() => {
+                    InitializationCoverage::DeclarationPresence(presence)
+                }
+                _ => InitializationCoverage::DeclarationWrites(unit.write_ordinals),
+            },
         }
     }
 }
@@ -59,6 +65,26 @@ impl InitializationArtifact {
                 let distinct: std::collections::HashSet<_> = writes.iter().collect();
                 if distinct.len() != writes.len() {
                     return Err("duplicated declaration initializer coverage".into());
+                }
+            }
+            (
+                InitializerIdentity::Class(owner),
+                InitializationCoverage::DeclarationPresence(presence),
+            ) if *owner == presence.owner() => {
+                let items = &self.code.procedure.code.items;
+                if items.len() != 1
+                    || !matches!(&items[0], dm_codegen_byond::Item::Instruction(instruction)
+                    if instruction.opcode == byond_dmb::bytecode::opcode::END && instruction.operands.is_empty())
+                    || !self.debug_origins.entries.is_empty()
+                    || !self.code.slots.is_empty()
+                    || !self.code.modified_instances.is_empty()
+                    || !self.code.procedure_values.is_empty()
+                    || !self.code.procedure_statics.is_empty()
+                    || !self.code.resources.is_empty()
+                    || !self.code.instances.is_empty()
+                    || !self.code.procedure.local_names.is_empty()
+                {
+                    return Err("declaration presence initializer emits executable work".into());
                 }
             }
             _ => return Err("initializer identity differs from its coverage domain".into()),

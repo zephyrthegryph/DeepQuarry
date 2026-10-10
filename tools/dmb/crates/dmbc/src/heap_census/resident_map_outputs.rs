@@ -87,6 +87,7 @@ pub(crate) fn weight(
                 } => {
                     census.slice("retained_maps.coverage", canonical_body, true);
                 }
+                InitializationCoverage::DeclarationPresence(_) => {}
                 InitializationCoverage::DeclarationWrites(writes) => {
                     census.vec_payload("retained_maps.coverage", writes);
                 }

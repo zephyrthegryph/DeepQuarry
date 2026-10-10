@@ -202,6 +202,7 @@ impl InitializerAssemblies {
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some((code, std::sync::Arc::clone(&payload.encoding)))
     }
+    #[cfg(test)]
     pub(super) fn remember(
         &self,
         key: &receipts::Binding,
@@ -209,25 +210,51 @@ impl InitializerAssemblies {
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
     ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
+        self.remember_with_recipes(key, code, roots, recorder, None)
+    }
+    pub(super) fn remember_with_recipes(
+        &self,
+        key: &receipts::Binding,
+        code: &ResolverProc,
+        roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
+        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
+        admitted: Option<Vec<(usize, ExpressionRecipe)>>,
+    ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
-        for (reference, captured) in &code.modified_instances {
-            let matches: Vec<_> = roots
+        if let Some(admitted) = admitted {
+            if admitted
                 .iter()
-                .enumerate()
-                .filter_map(|(index, root)| {
-                    ExpressionRecipe::from_capture(*reference, captured, root.value)
-                        .map(|recipe| (index, recipe))
-                })
-                .collect();
-            if matches.len() != 1 {
+                .map(|(_, recipe)| recipe.reference())
+                .ne(code.modified_instances.keys().copied())
+                || admitted.iter().any(|(index, _)| *index >= roots.len())
+            {
                 self.declined.fetch_add(1, Ordering::Relaxed);
                 return None;
             }
-            let (index, recipe) = matches.into_iter().next().unwrap();
-            root_indexes.push(index);
-            recipes.push(recipe);
+            for (index, recipe) in admitted {
+                root_indexes.push(index);
+                recipes.push(recipe);
+            }
+        } else {
+            for (reference, captured) in &code.modified_instances {
+                let matches: Vec<_> = roots
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, root)| {
+                        ExpressionRecipe::from_capture(*reference, captured, root.value)
+                            .map(|recipe| (index, recipe))
+                    })
+                    .collect();
+                if matches.len() != 1 {
+                    self.declined.fetch_add(1, Ordering::Relaxed);
+                    return None;
+                }
+                let (index, recipe) = matches.into_iter().next().unwrap();
+                root_indexes.push(index);
+                recipes.push(recipe);
+            }
         }
         let references = code.modified_instances.keys().copied().collect();
         let mut stripped = code.clone();

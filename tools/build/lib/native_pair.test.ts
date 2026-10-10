@@ -87,6 +87,38 @@ test('parallel hosted children acquire the same generation with distinct writabl
   })));
   expect(new Set(identities).size).toBe(2);
 });
+test('cleanup failure preserves typed child cancellation and its evidence', async () => {
+  let root = '';
+  const cancellation = Object.assign(new Error('hosted child cancelled'), { code: 75 });
+  try {
+    const failure = await withCompiledOutput(native, async (_exe, args) => {
+      root = args[args.indexOf('--slots') + 1];
+      fs.writeFileSync(args[args.indexOf('--result-file') + 1], JSON.stringify(acquired(root)));
+      return { code: 0, combined: '' };
+    }, async file => {
+      // Portable cleanup failure: an expected removable file is a directory.
+      fs.mkdirSync(path.join(path.dirname(file), 'deepquarry.dyn.rsc'));
+      throw cancellation;
+    }).then(() => null, error => error);
+    expect(failure).toBe(cancellation);
+    expect(failure.code).toBe(75);
+    expect(fs.existsSync(path.join(root, 'slot-mock', 'deepquarry.dyn.rsc'))).toBe(true);
+  } finally { if (root) fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('cleanup failure after a successful child remains an acquisition error', async () => {
+  let root = '';
+  try {
+    await expect(withCompiledOutput(native, async (_exe, args) => {
+      root = args[args.indexOf('--slots') + 1];
+      fs.writeFileSync(args[args.indexOf('--result-file') + 1], JSON.stringify(acquired(root)));
+      return { code: 0, combined: '' };
+    }, async file => {
+      fs.mkdirSync(path.join(path.dirname(file), 'deepquarry.dyn.rsc'));
+    })).rejects.toThrow('Native owned run cleanup failed');
+  } finally { if (root) fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('cleanup removes bulky copies while preserving runtime diagnostic leaves', async () => {
   let root = '';
   let log = '';

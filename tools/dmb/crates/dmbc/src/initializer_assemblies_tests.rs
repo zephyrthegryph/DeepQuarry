@@ -150,6 +150,7 @@ fn ordered_group_and_current_token_roster_answers_are_exact_key_inputs() {
         accepted: Vec::new(),
         writes: vec![write(0, "a"), write(1, "b")],
         groups: vec![RuntimeGroup {
+            declaration_presence: None,
             receiver: None,
             writes: vec![0, 1],
         }],
@@ -196,6 +197,7 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
         accepted: Vec::new(),
         writes: Vec::new(),
         groups: vec![RuntimeGroup {
+            declaration_presence: None,
             receiver: Some(SymbolId::of("/datum/current")),
             writes: Vec::new(),
         }],
@@ -213,6 +215,7 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
     classified.groups.insert(
         0,
         RuntimeGroup {
+            declaration_presence: None,
             receiver: Some(SymbolId::of("/datum/earlier")),
             writes: Vec::new(),
         },
