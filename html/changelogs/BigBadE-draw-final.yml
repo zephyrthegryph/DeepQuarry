@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Hardsuits, mechs, mineral turfs, nail polish, the maintenance recycler, pill bottles, capture crystals and the last small items now draw their look from tracked state, slots and relations, with no redraw call."
+  - bugfix: "A chem master recolouring a pill bottle now redraws the wrapper, a repair droid or crisis drone on a mech shows its state, and a hardsuit module's overlay follows the module when it is switched."
+  - bugfix: "Ore no longer spreads each time a rock tile is redrawn; it spreads once when the rock is made."
+  - code_imp: "Paper text is a tracked var written through set_info(), and nets and jars declare a slot for what they hold."
