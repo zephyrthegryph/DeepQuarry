@@ -261,8 +261,6 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
-	op("zmove_timed", ai(), takes("duration", "direction", "start", "destination", "done_message", "needs_flight", "fail_message"), wait(PROC_REF(zmove_time)), on_interrupt(PROC_REF(zmove_timed_interrupted)), then(PROC_REF(zmove_timed_done)))
-	op("yank_out", ai(), reach(REACH_ADJACENT), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
