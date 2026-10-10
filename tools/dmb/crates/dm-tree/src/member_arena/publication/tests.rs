@@ -15,6 +15,13 @@ fn build(
     state: &mut RetainedSemanticTree,
     executor: &dm_exec::BuildExecutor,
 ) -> crate::frontend::ColdFrontend {
+    try_build(source, state, executor).unwrap()
+}
+fn try_build(
+    source: &str,
+    state: &mut RetainedSemanticTree,
+    executor: &dm_exec::BuildExecutor,
+) -> Result<crate::frontend::ColdFrontend, Vec<crate::frontend::Diagnostic>> {
     build_with_executor_and_semantic_state(
         Path::new("publication.dme"),
         &Source(source.into()),
@@ -28,7 +35,6 @@ fn build(
         executor,
         Some(state),
     )
-    .unwrap()
 }
 fn same_current(a: &SemanticTree, b: &SemanticTree) {
     assert_eq!(
@@ -177,4 +183,46 @@ fn metadata_update_releases_previous_publication_without_changing_current_tree()
         first.snapshot.tree.members()[0],
         next.snapshot.tree.members()[0]
     );
+}
+
+#[test]
+fn failed_structural_binding_preserves_fresh_diagnostics_and_recovery() {
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let valid =
+        "/obj/base\n    var/value = 1\n/obj/child\n    parent_type = /obj/base\n    value = 2\n";
+    let mut state = RetainedSemanticTree::default();
+    let _ = build(valid, &mut state, &executor);
+    for invalid in [
+        "/obj/base/proc/test()\n    return 1\n/obj/base/proc/test()\n    return 2\n",
+        "/obj/base\n    parent_type = /obj/missing\n",
+        "/obj/base\n    absent = 2\n",
+    ] {
+        let retained = match try_build(invalid, &mut state, &executor) {
+            Err(errors) => errors,
+            Ok(_) => panic!("invalid structural fixture was admitted"),
+        };
+        let fresh = match try_build(invalid, &mut RetainedSemanticTree::default(), &executor) {
+            Err(errors) => errors,
+            Ok(_) => panic!("fresh invalid structural fixture was admitted"),
+        };
+        let describe = |errors: Vec<crate::frontend::Diagnostic>| {
+            errors
+                .into_iter()
+                .map(|error| {
+                    (
+                        error.kind,
+                        error.stage,
+                        error.message,
+                        error
+                            .location
+                            .map(|location| (location.path, location.line)),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(describe(retained), describe(fresh));
+        let recovered = build(valid, &mut state, &executor);
+        let fresh = build(valid, &mut RetainedSemanticTree::default(), &executor);
+        same_current(&recovered.snapshot.tree, &fresh.snapshot.tree);
+    }
 }

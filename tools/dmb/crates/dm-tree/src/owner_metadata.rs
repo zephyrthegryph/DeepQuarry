@@ -16,7 +16,6 @@ use dm_session::{
 };
 use std::{
     collections::BTreeMap,
-    ops::{Index, IndexMut},
     sync::atomic::{AtomicUsize, Ordering},
 };
 pub use variables::{VariableFact, VariableInputs};
@@ -111,13 +110,13 @@ fn key(owner: SymbolId) -> Arc<[u8]> {
     bytes.extend_from_slice(&owner.bits().to_le_bytes());
     bytes.into()
 }
-struct Host<'a, M> {
+struct Host<'a, M: ?Sized> {
     tree: &'a SemanticTree,
     normalized: &'a OwnerContributions,
     members: &'a M,
-    projection: &'a BTreeMap<DeclarationKey, MemberId>,
+    projection: &'a std::collections::HashMap<DeclarationKey, MemberId>,
 }
-impl<M: Index<usize, Output = MemberNode>>
+impl<M: crate::member_binding::MemberRead + ?Sized>
     ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Host<'_, M>
 {
     fn answer(&self, query: &MetadataQuery) -> MetadataAnswer {
@@ -137,7 +136,7 @@ impl<M: Index<usize, Output = MemberNode>>
             MetadataQuery::Effective(key) => MetadataAnswer::Effective(
                 self.projection
                     .get(key)
-                    .map(|id| Arc::clone(&self.members[id.index()].metadata)),
+                    .map(|id| Arc::clone(self.members.member(id.index()).metadata)),
             ),
         }
     }
@@ -214,45 +213,25 @@ impl RetainedMetadata {
             }
         });
     }
-    pub(crate) fn resolve<M: Index<usize, Output = MemberNode> + IndexMut<usize>>(
+    pub(crate) fn resolve<M: crate::member_binding::MemberWrite + ?Sized>(
         &self,
         tree: &SemanticTree,
         members: &mut M,
         normalized: &OwnerContributions,
         order: &[MemberId],
+        current_projection: &crate::member_binding::CurrentProjection,
     ) -> crate::host_declaration_selection::Selections {
         let mut selections = crate::host_declaration_selection::Selections::new();
-        let mut projection = BTreeMap::new();
-        let mut keys_by_id = std::collections::HashMap::new();
-        // Current projection is certified by the successful namespace phase;
-        // matching owner-local source order determines the new dense IDs.
+        let projection = &current_projection.ids;
+        let keys_by_id = &current_projection.keys;
         let mut by_owner = BTreeMap::<SymbolId, Vec<MemberId>>::new();
         for &id in order {
             by_owner
-                .entry(tree.types[members[id.index()].owner.index()].path)
+                .entry(tree.types[members.member(id.index()).owner.index()].path)
                 .or_default()
                 .push(id);
         }
-        for (owner, source) in normalized {
-            let Some(ids) = by_owner.get(owner) else {
-                continue;
-            };
-            let mut ids = ids.clone();
-            ids.sort_unstable_by_key(|id| id.index());
-            if ids.len() != source.len() {
-                crate::metadata_update::resolve_metadata(tree, members, order);
-                return crate::host_declaration_selection::collect(
-                    tree,
-                    members,
-                    order.iter().copied(),
-                );
-            }
-            for (input, id) in source.iter().zip(ids) {
-                projection.insert(input.key, id);
-                keys_by_id.insert(id, input.key);
-            }
-        }
-        if projection.len() != order.len() {
+        if current_projection.keys.len() != order.len() {
             crate::metadata_update::resolve_metadata(tree, members, order);
             return crate::host_declaration_selection::collect(
                 tree,
@@ -281,7 +260,7 @@ impl RetainedMetadata {
                     tree,
                     normalized,
                     members: &*members,
-                    projection: &projection,
+                    projection,
                 };
                 let accepted = self
                     .store
@@ -297,13 +276,14 @@ impl RetainedMetadata {
                     let query = MetadataQuery::NormalizedOwner(owner);
                     ledger.record(query, host.answer(&query), query.domain(), None);
                     for &id in ids {
-                        let member = &members[id.index()];
+                        let member = members.member(id.index());
                         if member.definition == DefinitionMode::Override
                             && member.kind == MemberKind::Var
                         {
                             if let Some(previous) = member.previous {
-                                if members[previous.index()].owner != member.owner {
-                                    let query = MetadataQuery::Effective(keys_by_id[&previous]);
+                                if members.member(previous.index()).owner != member.owner {
+                                    let query =
+                                        MetadataQuery::Effective(keys_by_id[previous.index()]);
                                     ledger.record(query, host.answer(&query), query.domain(), None);
                                 }
                             }
@@ -320,18 +300,17 @@ impl RetainedMetadata {
                 selections.insert(owner, Arc::clone(selection));
                 // Current exact normalized observations, not old dense IDs,
                 // supply every unchanged local field before applying deltas.
-                for input in normalized[&owner].iter() {
-                    members[projection[&input.key].index()].metadata = Arc::clone(&input.metadata);
-                }
+                // Namespace admission installed the exact current immutable local
+                // owner before this pass. Only effective deltas need rebinding.
                 for (key, metadata) in values.iter() {
-                    members[projection[key].index()].metadata = Arc::clone(metadata);
+                    members.set_metadata(projection[key].index(), Arc::clone(metadata));
                 }
             } else {
                 crate::metadata_update::resolve_metadata(tree, members, ids);
                 let values: Arc<[_]> = normalized[&owner]
                     .iter()
                     .filter_map(|input| {
-                        let effective = &members[projection[&input.key].index()].metadata;
+                        let effective = members.member(projection[&input.key].index()).metadata;
                         (!(Arc::ptr_eq(effective, &input.metadata) || effective == &input.metadata))
                             .then(|| (input.key, Arc::clone(effective)))
                     })

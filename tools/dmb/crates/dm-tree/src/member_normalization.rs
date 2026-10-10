@@ -12,9 +12,9 @@ pub(crate) fn formal_chain<T: Copy + PartialEq>(
         .chain(ids.iter().copied().filter(|id| Some(*id) != formal))
         .collect()
 }
-pub(crate) fn normalize_groups(
+pub(crate) fn normalize_groups<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &mut SemanticTree,
-    members: &mut [MemberNode],
+    members: &mut M,
     modes: &[DefinitionMode],
     groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>>,
 ) {
@@ -25,7 +25,7 @@ pub(crate) fn normalize_groups(
         let chain = formal_chain(&ids, |id| modes[id.index()] == DefinitionMode::Declare);
         let mut previous = None;
         for id in &chain {
-            members[id.index()].previous = previous;
+            members.set_previous(id.index(), previous);
             previous = Some(*id);
         }
         if let Some(last) = chain.last() {
@@ -33,18 +33,24 @@ pub(crate) fn normalize_groups(
         }
     }
 }
-pub(crate) fn resolve_previous(
+pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &SemanticTree,
-    members: &mut [MemberNode],
+    members: &mut M,
     modes: &[DefinitionMode],
     root: SymbolId,
     callable_kinds: &crate::callable_namespace::CallableKinds,
     indices: impl IntoIterator<Item = usize>,
 ) -> Result<(), TreeError> {
     for i in indices {
-        callable_namespace::validate_explicit(tree, &members[i], modes[i], root, callable_kinds)?;
-        if members[i].previous.is_none() {
-            let node = &members[i];
+        callable_namespace::validate_explicit(
+            tree,
+            members.member(i),
+            modes[i],
+            root,
+            callable_kinds,
+        )?;
+        if members.member(i).previous.is_none() {
+            let node = members.member(i);
             let mut parent = tree.parent(node.owner);
             let mut previous = None;
             while let Some(owner) = parent {
@@ -57,9 +63,9 @@ pub(crate) fn resolve_previous(
                 }
                 parent = tree.parent(owner);
             }
-            members[i].previous = previous;
-            metadata_update::apply_opaque_base(tree, &mut members[i]);
-            let node = &members[i];
+            members.set_previous(i, previous);
+            metadata_update::apply_opaque_base(tree, members, i);
+            let node = members.member(i);
             if modes[i] == DefinitionMode::Override
                 && previous.is_none()
                 && node.metadata.inherited_opaque.is_none()
@@ -77,9 +83,8 @@ pub(crate) fn resolve_previous(
                     );
                     cursor = tree.parent(owner);
                 }
-                let candidates: Vec<_> = members
-                    .iter()
-                    .enumerate()
+                let candidates: Vec<_> = (0..modes.len())
+                    .map(|index| (index, members.member(index)))
                     .filter(|(_, candidate)| {
                         candidate.name == node.name && candidate.kind == node.kind
                     })
@@ -100,7 +105,7 @@ pub(crate) fn resolve_previous(
                     kind: node.kind,
                 });
             }
-            members[i].previous = previous;
+            members.set_previous(i, previous);
         }
     }
     Ok(())

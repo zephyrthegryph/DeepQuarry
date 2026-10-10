@@ -2,7 +2,7 @@
 use super::*;
 pub(super) type SelectionKey = (SymbolId, SymbolId, bool);
 
-pub(super) fn keys<M: std::ops::Index<usize, Output = MemberNode>>(
+pub(super) fn keys<M: crate::member_binding::MemberRead + ?Sized>(
     _tree: &SemanticTree,
     _members: &M,
     _order: &[MemberId],

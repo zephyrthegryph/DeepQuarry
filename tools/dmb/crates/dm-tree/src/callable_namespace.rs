@@ -151,7 +151,7 @@ pub(crate) fn effective_kind(
 }
 pub(crate) fn validate_explicit(
     tree: &SemanticTree,
-    node: &MemberNode,
+    node: crate::member_binding::MemberView<'_>,
     mode: DefinitionMode,
     root: SymbolId,
     callable_kinds: &CallableKinds,

@@ -5,6 +5,7 @@ use crate::declaration_contributions::{DeclarationKey, KeyedDeclarations};
 use crate::{DefinitionMode, MemberId, MemberKind, SemanticTree, Skeleton, Target};
 use dm_ir::SymbolId;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Shape {
@@ -246,7 +247,12 @@ pub(crate) fn dependency_order(
     }
     order
 }
-pub(crate) fn apply_opaque_base(tree: &SemanticTree, member: &mut crate::MemberNode) {
+pub(crate) fn apply_opaque_base<M: crate::member_binding::MemberWrite + ?Sized>(
+    tree: &SemanticTree,
+    members: &mut M,
+    index: usize,
+) {
+    let member = members.member(index);
     if member.definition != DefinitionMode::Override
         || member.previous.is_some()
         || member.kind != MemberKind::Var
@@ -267,30 +273,30 @@ pub(crate) fn apply_opaque_base(tree: &SemanticTree, member: &mut crate::MemberN
             if member.metadata.declared_type == declared_type
                 && member.metadata.inherited_opaque.as_ref() == Some(opaque)
             {
-                break;
+                return;
             }
-            let metadata = std::sync::Arc::make_mut(&mut member.metadata);
+            let mut metadata = member.metadata.as_ref().clone();
             metadata.declared_type = declared_type;
             metadata.inherited_opaque = Some(opaque.clone());
-            break;
+            members.set_metadata(index, Arc::new(metadata));
+            return;
         }
         owner = tree.parent(current);
     }
 }
-pub(crate) fn resolve_metadata<
-    M: std::ops::Index<usize, Output = crate::MemberNode> + std::ops::IndexMut<usize>,
->(
+pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &SemanticTree,
     members: &mut M,
     order: &[MemberId],
 ) {
     for &id in order {
         let i = id.index();
-        apply_opaque_base(tree, &mut members[i]);
-        if members[i].definition == DefinitionMode::Override && members[i].kind == MemberKind::Var {
-            if let Some(previous) = members[i].previous {
-                let inherited = members[previous.index()].metadata.clone();
-                let current = &members[i].metadata;
+        apply_opaque_base(tree, members, i);
+        let member = members.member(i);
+        if member.definition == DefinitionMode::Override && member.kind == MemberKind::Var {
+            if let Some(previous) = member.previous {
+                let inherited = members.member(previous.index()).metadata;
+                let current = member.metadata;
                 if current.inherited_opaque == inherited.inherited_opaque
                     && current.declared_type == inherited.declared_type
                     && current.list_element_type == inherited.list_element_type
@@ -300,13 +306,14 @@ pub(crate) fn resolve_metadata<
                 {
                     continue;
                 }
-                let metadata = std::sync::Arc::make_mut(&mut members[i].metadata);
+                let mut metadata = current.as_ref().clone();
                 metadata.inherited_opaque = inherited.inherited_opaque.clone();
                 metadata.declared_type = inherited.declared_type;
                 metadata.list_element_type = inherited.list_element_type;
                 metadata.flags = inherited.flags;
                 metadata.array = inherited.array.clone();
                 metadata.declared_initializer = inherited.declared_initializer.clone();
+                members.set_metadata(i, Arc::new(metadata));
             }
         }
     }

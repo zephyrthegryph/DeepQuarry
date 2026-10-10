@@ -18,6 +18,8 @@ mod host_declaration_selection;
 pub mod initializers;
 pub mod maps;
 mod member_arena;
+mod member_binding;
+use member_binding::{MemberRead, MemberWrite};
 mod member_normalization;
 mod metadata_update;
 pub use host_declaration_selection::HostDeclarationSelection;
@@ -580,7 +582,14 @@ pub(crate) fn build_with_intrinsic_members_indexed(
             .collect(),
     );
     let member_install_profile = dm_profile::stage("frontend.tree.member_install");
-    let mut members: Vec<MemberNode> = Vec::new();
+    let member_count = skeletons
+        .iter()
+        .filter(|row| matches!(row, Skeleton::Member { .. }))
+        .count();
+    let member_projection = normalization.and_then(|(declarations, _)| {
+        member_binding::CurrentProjection::new(declarations, member_count)
+    });
+    let mut members = member_binding::MemberBindings::new(member_projection.as_ref());
     let mut targets = Vec::new();
     let mut owned = vec![Vec::new(); tree.types.len()];
     // First collect every member so inherited overrides work even when the child
@@ -599,6 +608,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     });
     let local_members = local_owners.as_ref().and_then(|owners| {
         let (declarations, _) = normalization?;
+        member_projection.as_ref()?;
         let members: Vec<_> = declarations
             .roster()
             .iter()
@@ -658,12 +668,12 @@ pub(crate) fn build_with_intrinsic_members_indexed(
                 }
                 let id =
                     MemberId(u32::try_from(members.len()).map_err(|_| TreeError::TooManyNodes)?);
-                members.push(MemberNode {
+                members.push(member_binding::MemberView {
                     definition: *mode,
                     owner: owner_id,
                     name: *name,
                     kind,
-                    metadata: Arc::clone(metadata),
+                    metadata,
                     content: *content,
                     previous,
                 });
@@ -678,13 +688,12 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         }
     }
     if let Some(local_members) = &local_members {
-        let projection: HashMap<_, _> = local_members
-            .iter()
-            .enumerate()
-            .map(|(index, member)| (member.key, MemberId(index as u32)))
-            .collect();
+        let projection = &member_projection
+            .as_ref()
+            .expect("local rows have current key projection")
+            .ids;
         for (index, local) in local_members.iter().enumerate() {
-            members[index].previous = local.previous.map(|key| projection[&key]);
+            members.set_previous(index, local.previous.map(|key| projection[&key]));
         }
         for (owner, local) in local_owners
             .as_ref()
@@ -701,7 +710,14 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     drop(member_install_profile);
     let previous_resolution_profile = dm_profile::stage("frontend.tree.previous_resolution");
     let normalized = if let Some((declarations, retained)) = normalization {
-        retained.resolve(&tree, &mut members, &modes, &callable_kinds, declarations)?
+        retained.resolve(
+            &tree,
+            &mut members,
+            &modes,
+            &callable_kinds,
+            declarations,
+            member_projection.as_ref(),
+        )?
     } else {
         let member_count = members.len();
         member_normalization::resolve_previous(
@@ -716,12 +732,18 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     };
     drop(previous_resolution_profile);
     let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
-    let order = metadata_update::resolution_order(members.len(), |id| members[id].previous);
+    let order = metadata_update::resolution_order(members.len(), |id| members.member(id).previous);
     tree.host_selections = Arc::new(
         if let (Some((_, retained)), Some(normalized)) = (normalization, normalized) {
-            retained
-                .metadata
-                .resolve(&tree, &mut members, &normalized, &order)
+            retained.metadata.resolve(
+                &tree,
+                &mut members,
+                &normalized,
+                &order,
+                member_projection
+                    .as_ref()
+                    .expect("normalized rows have current projection"),
+            )
         } else {
             metadata_update::resolve_metadata(&tree, &mut members, &order);
             host_declaration_selection::collect(&tree, &members, order.iter().copied())
@@ -734,8 +756,8 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     }
     tree.types = mutable_types.into();
     tree.members = match normalization {
-        Some((declarations, retained)) => retained.publish_members(members, declarations),
-        None => members.into(),
+        Some((_, retained)) => retained.publish_members(&members, member_projection.as_ref()),
+        None => members.bind_all(),
     };
     if rebuild_inventory {
         if let Some((index, retained)) = normalization {

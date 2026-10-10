@@ -6,7 +6,7 @@ use crate::{
     *,
 };
 use dm_session::{observations::ObservationLedger, ObservedArtifactStore};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 mod receipts;
 mod shared;
 #[cfg(test)]
@@ -73,25 +73,25 @@ impl RetainedNormalization {
     }
     pub(crate) fn publish_members(
         &self,
-        members: Vec<MemberNode>,
-        declarations: &KeyedDeclarations,
+        members: &crate::member_binding::MemberBindings<'_>,
+        projection: Option<&crate::member_binding::CurrentProjection>,
     ) -> MemberArena {
         let mut current = self
             .publication
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        let keys: Vec<_> = declarations
-            .ordered()
-            .filter_map(|row| matches!(row.skeleton, Skeleton::Member { .. }).then_some(row.key))
-            .collect();
-        if keys.len() != members.len() {
-            *current = None;
-            return members.into();
-        }
+        let Some(projection) = projection else {
+            let old = current.take();
+            drop(current);
+            drop(old);
+            return members.bind_all();
+        };
         let published =
-            crate::member_arena::MemberPublication::publish(members, keys, current.as_ref());
+            crate::member_arena::MemberPublication::publish(members, projection, current.as_ref());
         let arena = published.arena().clone();
-        *current = Some(published);
+        let old = current.replace(published);
+        drop(current);
+        drop(old);
         arena
     }
     pub(crate) fn with_shared(owner: Arc<SharedNormalizedDeclarations>) -> Self {
@@ -236,7 +236,7 @@ pub(crate) fn anchor(
 fn record_member(
     host: &DeclarationHost<'_>,
     ledger: &Ledger,
-    node: &MemberNode,
+    node: crate::member_binding::MemberView<'_>,
     mode: DefinitionMode,
     root: SymbolId,
 ) -> Result<(), TreeError> {
@@ -311,50 +311,37 @@ impl RetainedNormalization {
     pub(crate) fn hits(&self) -> usize {
         self.hits.load(std::sync::atomic::Ordering::Relaxed)
     }
-    pub(crate) fn resolve(
+    pub(crate) fn resolve<M: crate::member_binding::MemberWrite + ?Sized>(
         &self,
         tree: &SemanticTree,
-        members: &mut [MemberNode],
+        members: &mut M,
         modes: &[DefinitionMode],
         callable_kinds: &callable_namespace::CallableKinds,
         declarations: &KeyedDeclarations,
+        current_projection: Option<&crate::member_binding::CurrentProjection>,
     ) -> Result<Option<crate::owner_metadata::OwnerContributions>, TreeError> {
         let root = SymbolId::of("/");
-        let member_keys: Vec<_> = declarations
-            .ordered()
-            .filter_map(|row| matches!(row.skeleton, Skeleton::Member { .. }).then_some(row.key))
-            .collect();
-        if member_keys.len() != members.len() {
-            let count = members.len();
+        let Some(current_projection) = current_projection else {
             crate::member_normalization::resolve_previous(
                 tree,
                 members,
                 modes,
                 root,
                 callable_kinds,
-                0..count,
+                0..modes.len(),
             )?;
             return Ok(None);
-        }
-        let mut owners = std::collections::BTreeMap::<SymbolId, Vec<usize>>::new();
-        for (index, key) in member_keys.iter().enumerate() {
-            owners.entry(key.owner).or_default().push(index);
-        }
-        let projection: HashMap<_, _> = member_keys
-            .iter()
-            .enumerate()
-            .map(|(index, key)| (*key, MemberId(index as u32)))
-            .collect();
+        };
+        let member_keys = &current_projection.keys;
+        let owners = &current_projection.owners;
+        let projection = &current_projection.ids;
         let host = DeclarationHost {
             declarations,
             tree,
-            member_keys: &member_keys,
+            member_keys,
             callable_kinds,
         };
-        let keys: Vec<_> = declarations
-            .owners()
-            .map(|(owner, _)| key(*owner))
-            .collect();
+        let keys: Vec<_> = owners.keys().map(|owner| key(*owner)).collect();
         self.values
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let mut current = crate::owner_metadata::OwnerContributions::new();
@@ -363,14 +350,17 @@ impl RetainedNormalization {
             let accepted = self
                 .values
                 .visit_explained(&key(*owner), &host, &mut |value| {
-                    value.members.iter().all(|member| {
-                        projection
-                            .get(&member.key)
-                            .is_some_and(|id| members[id.index()].kind == member.kind)
-                            && member
-                                .previous
-                                .is_none_or(|key| projection.contains_key(&key))
-                    })
+                    let indices = owners.get(owner).map(Vec::as_slice).unwrap_or(&[]);
+                    value.members.len() == indices.len()
+                        && value.members.iter().zip(indices).all(|(member, &index)| {
+                            member.key == member_keys[index]
+                                && projection.get(&member.key).is_some_and(|id| {
+                                    members.member(id.index()).kind == member.kind
+                                })
+                                && member
+                                    .previous
+                                    .is_none_or(|key| projection.contains_key(&key))
+                        })
                 })
                 .0;
             if let Some(value) = accepted {
@@ -378,13 +368,11 @@ impl RetainedNormalization {
                 self.hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 for cached in value.members.iter() {
                     let id = projection[&cached.key];
-                    members[id.index()].previous = cached.previous.map(|key| projection[&key]);
-                    members[id.index()].metadata = Arc::clone(&cached.metadata);
                     reused.insert(id.index());
                 }
             }
         }
-        let count = members.len();
+        let count = modes.len();
         crate::member_normalization::resolve_previous(
             tree,
             members,
@@ -406,13 +394,14 @@ impl RetainedNormalization {
             observe(&host, &ledger, SourceQuery::Owner { owner: *owner });
             let mut payload = Vec::with_capacity(indices.len());
             for &index in indices {
-                record_member(&host, &ledger, &members[index], modes[index], root)?;
+                record_member(&host, &ledger, members.member(index), modes[index], root)?;
+                let member = members.member(index);
                 payload.push(ResolvedMember {
                     key: member_keys[index],
-                    definition: members[index].definition,
-                    kind: members[index].kind,
-                    metadata: Arc::clone(&members[index].metadata),
-                    previous: members[index].previous.map(|id| member_keys[id.index()]),
+                    definition: member.definition,
+                    kind: member.kind,
+                    metadata: Arc::clone(member.metadata),
+                    previous: member.previous.map(|id| member_keys[id.index()]),
                 });
             }
             // Current-roster mode does not use a byte budget. Zero is not a
@@ -429,6 +418,9 @@ impl RetainedNormalization {
                 )
                 .expect("current-roster admission is not budgeted");
             current.insert(*owner, Arc::clone(&retained.members));
+        }
+        for (&owner, rows) in &current {
+            members.install_namespace(owner, rows, current_projection);
         }
         Ok(Some(current))
     }

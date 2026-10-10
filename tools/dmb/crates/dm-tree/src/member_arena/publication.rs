@@ -1,5 +1,6 @@
 //! Latest physical publication; semantic and dense bindings are already current.
 use super::*;
+use crate::member_binding::MemberRead;
 use crate::declaration_contributions::DeclarationKey;
 use std::collections::BTreeMap;
 
@@ -16,13 +17,17 @@ impl MemberPublication {
         self.index.len()
     }
     pub(crate) fn publish(
-        nodes: Vec<MemberNode>,
-        keys: Vec<DeclarationKey>,
+        members: &crate::member_binding::MemberBindings<'_>,
+        projection: &crate::member_binding::CurrentProjection,
         previous: Option<&Self>,
     ) -> Self {
-        assert_eq!(nodes.len(), keys.len(), "current publication key coverage");
-        let len = nodes.len();
-        let mut remaining = nodes.into_iter();
+        let keys = &projection.keys;
+        assert_eq!(
+            members.len(),
+            keys.len(),
+            "current publication key coverage"
+        );
+        let len = members.len();
         let mut chunks = Vec::new();
         let mut key_chunks = Vec::new();
         let mut offsets = Vec::new();
@@ -42,18 +47,19 @@ impl MemberPublication {
                 .filter(|(old, i)| {
                     old.arena.chunks[*i]
                         .iter()
-                        .eq(remaining.as_slice()[..count].iter())
+                        .enumerate()
+                        .all(|(offset, node)| members.member(start + offset).matches(node))
                 });
             let (chunk, key_chunk) = if let Some((old, i)) = old {
                 // Complete final value equality includes CURRENT owner and previous
                 // dense IDs. No stable key or pointer alone authorizes reuse.
-                for _ in 0..count {
-                    remaining.next();
-                }
                 (Arc::clone(&old.arena.chunks[i]), Arc::clone(&old.keys[i]))
             } else {
                 (
-                    remaining.by_ref().take(count).collect::<Vec<_>>().into(),
+                    (start..start + count)
+                        .map(|index| members.bind_node(index))
+                        .collect::<Vec<_>>()
+                        .into(),
                     Arc::from(current_keys),
                 )
             };

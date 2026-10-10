@@ -8,7 +8,7 @@ pub struct HostDeclarationSelection {
     pub scalar_requests: Arc<[constant_resolution::ScalarQuery]>,
 }
 pub(crate) type Selections = BTreeMap<SymbolId, Arc<HostDeclarationSelection>>;
-pub(crate) fn select<M: std::ops::Index<usize, Output = MemberNode>>(
+pub(crate) fn select<M: crate::member_binding::MemberRead + ?Sized>(
     owner: SymbolId,
     members: &M,
     ids: impl IntoIterator<Item = MemberId>,
@@ -17,7 +17,7 @@ pub(crate) fn select<M: std::ops::Index<usize, Output = MemberNode>>(
     let mut declared_variable_names = Vec::new();
     let mut scalar_requests = Vec::new();
     for id in ids {
-        let member = &members[id.index()];
+        let member = members.member(id.index());
         match member.kind {
             MemberKind::Proc | MemberKind::Verb => callable_names.push(member.name),
             MemberKind::Var => {
@@ -39,7 +39,7 @@ pub(crate) fn select<M: std::ops::Index<usize, Output = MemberNode>>(
         scalar_requests: scalar_requests.into(),
     })
 }
-pub(crate) fn collect<M: std::ops::Index<usize, Output = MemberNode>>(
+pub(crate) fn collect<M: crate::member_binding::MemberRead + ?Sized>(
     tree: &SemanticTree,
     members: &M,
     ids: impl IntoIterator<Item = MemberId>,
@@ -47,7 +47,7 @@ pub(crate) fn collect<M: std::ops::Index<usize, Output = MemberNode>>(
     let mut owners = BTreeMap::<SymbolId, Vec<MemberId>>::new();
     for id in ids {
         owners
-            .entry(tree.types[members[id.index()].owner.index()].path)
+            .entry(tree.types[members.member(id.index()).owner.index()].path)
             .or_default()
             .push(id);
     }
@@ -76,7 +76,7 @@ impl SemanticTree {
     pub(crate) fn refresh_host_selections(&mut self, dirty: &[MemberId]) {
         let owners = dirty
             .iter()
-            .map(|id| self.members[id.index()].owner)
+            .map(|id| self.members.member(id.index()).owner)
             .collect::<std::collections::HashSet<_>>();
         if owners.is_empty() {
             return;
