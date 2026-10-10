@@ -4,13 +4,9 @@ init_reagents	code/modules/integrated_electronics/subtypes/reagents.dm	create_re
 init_reagents	code/modules/projectiles/projectile/blob.dm	create_reagents(splatter_volume)
 init_reagents	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents.add_reagent(new_chem, 3)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
-init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_scheduling	code/game/gamemodes/cult/narsie.dm	after(src, 10 SECONDS, /proc/narsie_call_evac)
 init_scheduling	code/game/objects/effects/anomalies/anomalies_weather.dm	after(src, telegraph, PROC_REF(start_weather))
 init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 3 + metal * 3, PROC_REF(post_spread))
-init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
-init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
-init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
@@ -26,7 +22,6 @@ init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
-init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
