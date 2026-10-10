@@ -79,7 +79,11 @@ impl RetainedGeneration {
         let captured = raw.clone();
         raw.canonicalize();
         let bound = raw.bind(batch);
-        *cached = procedure_plan::CachedPlan::capture(captured, batch, &bound);
+        let mut replacement = procedure_plan::CachedPlan::capture(captured, batch, &bound);
+        if let (Some(next), Some(previous)) = (replacement.as_mut(), cached.as_mut()) {
+            next.inherit_metadata(previous);
+        }
+        *cached = replacement;
         bound
     }
     pub(super) fn argument_sources(

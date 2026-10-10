@@ -211,27 +211,30 @@ impl CachedPlan {
         references: &std::sync::Arc<dm_link::ArgumentSourceReferences>,
         executor: Option<&dm_exec::BuildExecutor>,
     ) -> Vec<Result<PreparedMetadata, CompositionError>> {
-        let current = self.bindings.same_owner(&batch.tables.binding_tables());
-        let admitted = current
-            .then(|| {
-                self.metadata
-                    .as_ref()
-                    .and_then(|owner| owner.admit(slots, batch, projection, symbols, references))
-            })
-            .flatten();
+        let admitted = self
+            .metadata
+            .as_ref()
+            .and_then(|owner| owner.admit(slots, batch, projection, symbols, references));
         if let Some(rows) = &admitted {
             if rows.iter().all(Option::is_some) {
-                if let Some(owner) = &mut self.metadata {
-                    owner.retain_current_prefix(slots.len());
-                }
-                return rows
+                let prepared = rows
                     .iter()
                     .map(|row| {
                         Ok(PreparedMetadata::Retained(std::sync::Arc::clone(
                             row.as_ref().expect("all rows admitted"),
                         )))
                     })
-                    .collect();
+                    .collect::<Vec<_>>();
+                if !self
+                    .metadata
+                    .as_ref()
+                    .is_some_and(|owner| owner.is_current_roster(slots, &prepared))
+                {
+                    self.metadata = metadata_roster::MetadataRoster::capture(
+                        slots, batch, projection, references, &prepared,
+                    );
+                }
+                return prepared;
             }
         }
         let prepared = prepare_metadata_with_admitted(
@@ -244,14 +247,15 @@ impl CachedPlan {
             true,
             admitted.as_deref(),
         );
-        self.metadata = if current {
-            metadata_roster::MetadataRoster::capture(
-                slots, batch, projection, references, &prepared,
-            )
-        } else {
-            None
-        };
+        self.metadata = metadata_roster::MetadataRoster::capture(
+            slots, batch, projection, references, &prepared,
+        );
         prepared
+    }
+    /// Move the one metadata owner into the current plan. Every row must pass
+    /// current per-frame admission before reuse; old binding tables are discarded.
+    pub(super) fn inherit_metadata(&mut self, previous: &mut Self) {
+        self.metadata = previous.metadata.take();
     }
     pub fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         if let Some(owner) = &self.metadata {

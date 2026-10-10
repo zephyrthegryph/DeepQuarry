@@ -2,8 +2,6 @@
 use super::*;
 use std::sync::Arc;
 struct Row {
-    table_index: u32,
-    artifact: usize,
     identity: UnitIdentity,
     frame: Arc<crate::symbolic::FrozenFrame>,
     abi: Arc<crate::procedure_policy::PreparedAbi>,
@@ -11,16 +9,15 @@ struct Row {
     prepared: Arc<super::super::frame_contribution::FrameContribution>,
 }
 pub(super) struct MetadataRoster {
-    references: Arc<dm_link::ArgumentSourceReferences>,
-    declarations: Option<Arc<std::collections::BTreeMap<Key, bool>>>,
     rows: Vec<Option<Row>>,
+    identities: Vec<(UnitIdentity, usize)>,
 }
 impl MetadataRoster {
     pub(super) fn capture(
         slots: &[Slot<UnitIdentity>],
         batch: &FrozenBatch,
-        projection: Option<&crate::class_projection::ClassProjection>,
-        references: &Arc<dm_link::ArgumentSourceReferences>,
+        _projection: Option<&crate::class_projection::ClassProjection>,
+        _references: &Arc<dm_link::ArgumentSourceReferences>,
         prepared: &[Result<PreparedMetadata, CompositionError>],
     ) -> Option<Self> {
         if slots.len() != prepared.len() {
@@ -36,8 +33,6 @@ impl MetadataRoster {
                 let artifact = slot.artifact?;
                 let unit = batch.units.get(artifact)?;
                 Some(Row {
-                    table_index: slot.table_index,
-                    artifact,
                     identity: slot.identity,
                     frame: Arc::clone(&unit.lowered.frame),
                     abi: Arc::clone(unit.lowered.abi.as_ref()?),
@@ -49,11 +44,16 @@ impl MetadataRoster {
         if !rows.iter().any(Option::is_some) {
             return None;
         }
-        Some(Self {
-            references: Arc::clone(references),
-            declarations: projection.map(|p| Arc::clone(&p.procedure_declarations)),
-            rows,
-        })
+        let mut identities: Vec<_> = rows
+            .iter()
+            .enumerate()
+            .filter_map(|(index, row)| row.as_ref().map(|row| (row.identity, index)))
+            .collect();
+        identities.sort_unstable_by_key(|row| row.0);
+        if identities.windows(2).any(|pair| pair[0].0 == pair[1].0) {
+            return None;
+        }
+        Some(Self { rows, identities })
     }
     pub(super) fn admit(
         &self,
@@ -63,37 +63,30 @@ impl MetadataRoster {
         symbols: &SymbolTable,
         references: &Arc<dm_link::ArgumentSourceReferences>,
     ) -> Option<Vec<Option<Arc<super::super::frame_contribution::FrameContribution>>>> {
-        // A references owner is admitted only under the enclosing plan's current
-        // binding owner. A numerically equal independently minted owner declines.
-        if !Arc::ptr_eq(&self.references, references) {
-            return None;
-        }
-        match (&self.declarations, projection) {
-            (None, None) => {}
-            (Some(old), Some(current))
-                if Arc::ptr_eq(old, &current.procedure_declarations)
-                    || old.as_ref() == current.procedure_declarations.as_ref() => {}
-            _ => return None,
-        }
-        // Each current slot retains its own exact proof. Missing, shifted, or
-        // changed rows decline independently; the common preparation path handles
-        // them in current order. No errors or fresh metadata are retained.
+        // Current identities select old owners independently of physical roster
+        // positions. The frame's existing metadata admission checks the exact
+        // current declaration and every embedded helper binding. Final emission
+        // still checks string/variable frontiers and rebinds procedure/list IDs.
         Some(
             slots
                 .iter()
-                .enumerate()
-                .map(|(index, slot)| {
-                    let row = self.rows.get(index)?.as_ref()?;
+                .map(|slot| {
+                    let position = self
+                        .identities
+                        .binary_search_by_key(&slot.identity, |row| row.0)
+                        .ok()?;
+                    let row = self.rows.get(self.identities[position].1)?.as_ref()?;
                     let unit = batch.units.get(slot.artifact?)?;
-                    if row.table_index != slot.table_index
-                        || Some(row.artifact) != slot.artifact
-                        || row.identity != slot.identity
+                    if row.identity != slot.identity
                         || unit.lowered.identity != row.identity
                         || !Arc::ptr_eq(&row.frame, &unit.lowered.frame)
                         || !Arc::ptr_eq(&row.abi, unit.lowered.abi.as_ref()?)
                         || !Arc::ptr_eq(&row.recipe, &unit.metadata_recipe)
                         || symbols.text(row.identity.owner).is_none()
                         || symbols.text(row.identity.name).is_none()
+                        || !row
+                            .prepared
+                            .admit_current_metadata(unit, projection, symbols, references)
                     {
                         return None;
                     }
@@ -102,21 +95,10 @@ impl MetadataRoster {
                 .collect(),
         )
     }
-    pub(super) fn retain_current_prefix(&mut self, len: usize) {
-        // Used only after every current position passed exact admission.
-        self.rows.truncate(len);
-    }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         let label = "composition.metadata_roster";
         census.vec_payload(label, &self.rows);
-        census.arc_object(label, &self.references);
-        census.unknown(
-            label,
-            "argument-reference and declaration BTreeMap private backing is unavailable",
-        );
-        if let Some(owner) = &self.declarations {
-            census.arc_object(label, owner);
-        }
+        census.vec_payload(label, &self.identities);
         for row in self.rows.iter().flatten() {
             census.frozen_frame(label, &row.frame);
             census.abi(&row.abi);
@@ -125,6 +107,28 @@ impl MetadataRoster {
                 row.prepared.census(census);
             }
         }
+    }
+    /// Performance-only index retention after every current row was admitted.
+    /// Reordered/deleted rows get a new index; numeric slot IDs need not persist.
+    pub(super) fn is_current_roster(
+        &self,
+        slots: &[Slot<UnitIdentity>],
+        prepared: &[Result<PreparedMetadata, CompositionError>],
+    ) -> bool {
+        self.rows.len() == slots.len()
+            && prepared.len() == slots.len()
+            && self
+                .rows
+                .iter()
+                .zip(slots)
+                .zip(prepared)
+                .all(|((row, slot), prepared)| {
+                    let (Some(row), Ok(PreparedMetadata::Retained(prepared))) = (row, prepared)
+                    else {
+                        return false;
+                    };
+                    row.identity == slot.identity && Arc::ptr_eq(&row.prepared, prepared)
+                })
     }
 }
 #[cfg(test)]
