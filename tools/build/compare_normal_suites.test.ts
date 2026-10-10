@@ -82,3 +82,55 @@ test('rejects truncated and missing structured runtime evidence', () => fixture(
   delete (native.batches[0].run.results[name] as Partial<typeof row>).runtime_errors;
   expect(compare).toThrow('structured runtime evidence');
 }));
+
+test('equal test and automatic failures match but do not pass', () => {
+  fixture(({ native, referenceFile, nativeFile, write }) => {
+    const reference = suite('byond', null);
+    for (const value of [reference, native]) {
+      value.status = 'failed'; value.batches[0].run.clean = false;
+      value.inventory.inventory.automaticRows = ['framework'];
+      value.batches[0].run.results[name].status = 1;
+      (value.batches[0].run.results as Record<string, typeof row>).framework = { ...row, name: 'framework', status: 1 };
+    }
+    const bytes = JSON.stringify(reference); fs.writeFileSync(referenceFile, bytes);
+    native.plan.sha256 = sha(bytes);
+    const result = compareEvidence(referenceFile, sha(bytes), nativeFile, write());
+    expect(result.matches).toBe(true);
+    expect(result.referenceAllTestsPassed).toBe(false); expect(result.nativeAllTestsPassed).toBe(false);
+    expect(result.referenceClean).toBe(false); expect(result.nativeClean).toBe(false);
+    expect(result.generationIdentityAuthenticated).toBe(false);
+  });
+});
+
+test('historical reference continuation authenticates preserved pair and rejects changed prefix or pair', () => {
+  const directory = `E:/dq-cache/dmb-native-v2/normal-suite-join-test-${randomUUID()}`;
+  fs.mkdirSync(directory, { recursive: true });
+  try {
+    const reference = suite('byond', null);
+    const prior = structuredClone(reference);
+    const priorFile = `${directory}/prior.json`; const priorBytes = JSON.stringify(prior); fs.writeFileSync(priorFile, priorBytes);
+    const dmb = `${directory}/pair.dmb`, rsc = `${directory}/pair.rsc`;
+    fs.writeFileSync(dmb, 'dmb'); fs.writeFileSync(rsc, 'rsc');
+    const checkpointFile = `${directory}/checkpoint.json`;
+    const checkpoint = { schema: 1, kind: 'historical_normal_suite_resume', inputClosureAuthenticated: false,
+      evidence: { path: priorFile, sha256: sha(priorBytes) }, compilation: reference.compilation, runtimeIdentity: runtime,
+      pair: { dmb, rsc, dmbBytes: 3, rscBytes: 3, dmbSha256: sha('dmb'), rscSha256: sha('rsc') } };
+    const checkpointBytes = JSON.stringify(checkpoint); fs.writeFileSync(checkpointFile, checkpointBytes);
+    const continued = { ...reference, continuation: { checkpoint: checkpointFile, sha256: sha(checkpointBytes) } };
+    const referenceFile = `${directory}/reference.json`, nativeFile = `${directory}/native.json`;
+    const compare = () => {
+      const bytes = JSON.stringify(continued); fs.writeFileSync(referenceFile, bytes);
+      const native = suite('native', sha(bytes)); const nativeBytes = JSON.stringify(native); fs.writeFileSync(nativeFile, nativeBytes);
+      return compareEvidence(referenceFile, sha(bytes), nativeFile, sha(nativeBytes));
+    };
+    const result = compare();
+    expect(result.generationIdentityAuthenticated).toBe(true);
+    expect(result.historicalByondGeneration?.pair.dmbSha256).toBe(sha('dmb'));
+    expect(result.inputClosureAuthenticated).toBe(false);
+    continued.batches[0].run.results[name].status = 1;
+    expect(compare).toThrow('completed prefix');
+    continued.batches[0].run.results[name].status = 0;
+    fs.writeFileSync(rsc, 'bad'); expect(compare).toThrow('pair identity');
+    fs.writeFileSync(rsc, 'rsc'); fs.writeFileSync(priorFile, 'tampered'); expect(compare).toThrow('resume JSON identity differs');
+  } finally { fs.rmSync(directory, { recursive: true }); }
+});

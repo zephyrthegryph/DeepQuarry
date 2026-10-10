@@ -7,6 +7,7 @@ import { compareNormalSuiteResults, type ComparableNormalSuite } from './lib/nor
 import { bindNormalPlan, normalSuiteBatches, sameSuiteRuntime, type IssuedNormalInventory, type RuntimeIdentity } from './lib/normal_suite_plan';
 import type { CompilerProvenance } from './lib/compiler_provenance';
 import type { UnitTestEntry } from './lib/bench';
+import { loadNormalResume } from './lib/normal_suite_resume';
 
 type Run = {
   compilation: CompilerProvenance; killedByWatchdog: boolean; clean: boolean;
@@ -18,6 +19,7 @@ type Evidence = {
   selectionProtocol: string;
   inventory: Run; plan: { sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
   batches: { requested: string[]; run: Run }[];
+  continuation?: { checkpoint: string; sha256: string };
 };
 const SHA256 = /^[0-9a-f]{64}$/;
 const HEX128 = /^[0-9a-f]{32}$/;
@@ -94,12 +96,33 @@ export function compareEvidence(referenceFile: string, referenceSha256: string, 
       || !equal(reference.compilation.orderedDefines, native.compilation.orderedDefines)) {
     throw new Error('native suite does not authenticate the same reference plan/batch size/configuration');
   }
+  let historicalByondGeneration = null as null | { checkpoint: string; sha256: string; pair: ReturnType<typeof loadNormalResume>['checkpoint']['pair'] };
+  if (reference.continuation !== undefined) {
+    const continuation = reference.continuation;
+    if (!continuation || typeof continuation.checkpoint !== 'string' || typeof continuation.sha256 !== 'string') throw new Error('malformed reference continuation');
+    const previous = loadNormalResume<Run>(continuation.checkpoint, continuation.sha256, reference.batchSize);
+    if (!equal(previous.checkpoint.compilation, reference.compilation)
+      || !sameSuiteRuntime(previous.checkpoint.runtimeIdentity, reference.inventory.runtimeIdentity)
+      || !equal(previous.plan, left.inventory)
+      || !equal(previous.batches, reference.batches.map(batch => batch.requested))
+      || !equal(previous.completed, reference.batches.slice(0, previous.completed.length))) {
+      throw new Error('reference continuation does not bind this generation/plan/completed prefix');
+    }
+    historicalByondGeneration = { checkpoint: previous.checkpointPath, sha256: previous.checkpointSha256, pair: previous.checkpoint.pair };
+  }
+  const comparison = compareNormalSuiteResults(left, right);
+  const referenceClean = reference.inventory.clean && reference.batches.every(batch => batch.run.clean);
+  const nativeClean = native.inventory.clean && native.batches.every(batch => batch.run.clean);
   return { schema: 1, kind: 'preliminary_normal_suite_comparison', inputClosureAuthenticated: false,
+    generationIdentityAuthenticated: historicalByondGeneration !== null, historicalByondGeneration,
+    referenceClean, nativeClean,
     acceptedRuntimeBaseline: false, evidence: {
       reference: { path: path.resolve(referenceFile), sha256: referenceSha256 },
       native: { path: path.resolve(nativeFile), sha256: nativeSha256 },
     }, observedOrderDiffers: { reference: reference.plan.observedOrderDiffers, native: native.plan.observedOrderDiffers },
-    ...compareNormalSuiteResults(left, right) };
+    ...comparison,
+    referenceAllTestsPassed: referenceClean && comparison.referenceAllTestsPassed,
+    nativeAllTestsPassed: nativeClean && comparison.nativeAllTestsPassed };
 }
 
 if (import.meta.main) {

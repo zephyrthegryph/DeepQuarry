@@ -1,4 +1,4 @@
-import { exactNormalUnion, bindNormalPlan, sameSuiteRuntime, type IssuedNormalInventory, type RuntimeIdentity, type BatchRows } from './normal_suite_plan';
+import { exactNormalUnion, bindNormalPlan, sameSuiteRuntime, suiteRowSucceeded, type IssuedNormalInventory, type RuntimeIdentity, type BatchRows } from './normal_suite_plan';
 import type { UnitTestEntry } from './bench';
 
 export type ComparableNormalSuite = {
@@ -39,5 +39,7 @@ export function compareNormalSuiteResults(reference: ComparableNormalSuite, nati
     return signature(baseline) === signature(translated) ? [] : [{ index, reference: baseline, native: translated }];
   });
   return { matches: differences.length === 0 && frameworkDifferences.length === 0, differences, frameworkDifferences,
+    referenceAllTestsPassed: [...Object.values(left.tests), ...left.frameworkFindings].every(suiteRowSucceeded),
+    nativeAllTestsPassed: [...Object.values(right.tests), ...right.frameworkFindings].every(suiteRowSucceeded),
     referenceFramework: left.frameworkFindings, nativeFramework: right.frameworkFindings };
 }
