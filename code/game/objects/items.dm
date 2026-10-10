@@ -388,12 +388,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 /// Preserve the silicon module menu: items outside a module retain a disabled Equip row.
 /// A module item equips for a robot; other silicons retain their successful no-op.
 /obj/item/proc/item_silicon_equip_module(datum/act/op/A)
-	if(!isrobot(A.actor))
-		return OP_OK
-	var/mob/living/silicon/robot/R = A.actor
-	R.activate_module(src)
-	R.hud_used.update_robot_modules_display()
-	return OP_OK
+	var/mob/living/silicon/S = A.actor
+	return S.equip_item_from_module(src)
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return
