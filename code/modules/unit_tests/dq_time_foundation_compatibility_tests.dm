@@ -1,3 +1,10 @@
+// Test-owned mutable data keeps runtime-storage regression coverage independent of retired content capabilities.
+/datum/capability/dq_runtime_storage_fixture
+	data_type = /datum/dq_runtime_storage_data
+
+/datum/dq_runtime_storage_data
+	var/label
+
 // Legacy carrier identities and global forwards share the actual time-engine state.
 /datum/unit_test/dq_time_foundation_compatibility/Run()
 	var/datum/time_scheduler/sched = time_scheduler()
@@ -109,9 +116,9 @@
 	TEST_ASSERT(cap_set(first, CAP_LOCKED, TRUE), "Setting an absent bit changes real capability state")
 	TEST_ASSERT_EQUAL(capability_bits(first), CAP_LOCKED, "The stored bits match the actual mutation")
 	TEST_ASSERT_EQUAL(capability_bits(second), 0, "Another holder keeps its independent default")
-	var/datum/capability/label/capability = allocate(/datum/capability/label)
-	var/datum/cap_label_data/first_data = capability_instance_data(first, capability)
-	var/datum/cap_label_data/second_data = capability_instance_data(second, capability)
+	var/datum/capability/dq_runtime_storage_fixture/capability = allocate(/datum/capability/dq_runtime_storage_fixture)
+	var/datum/dq_runtime_storage_data/first_data = capability_instance_data(first, capability)
+	var/datum/dq_runtime_storage_data/second_data = capability_instance_data(second, capability)
 	first_data.label = "private label"
 	TEST_ASSERT_EQUAL(capability_instance_data(first, capability), first_data, "Repeated lookup preserves the original capability-data identity")
 	TEST_ASSERT(first_data != second_data, "Two holders have distinct mutable capability data")
@@ -157,8 +164,8 @@
 	TEST_ASSERT_NOTNULL(service, "The actual cell admits a running material service")
 	var/datum/material_assembly/assembly = material_assembly_of(holder)
 	var/datum/material_build/build = material_build(holder)
-	var/datum/capability/label/capability = allocate(/datum/capability/label)
-	var/datum/cap_label_data/data = capability_instance_data(holder, capability)
+	var/datum/capability/dq_runtime_storage_fixture/capability = allocate(/datum/capability/dq_runtime_storage_fixture)
+	var/datum/dq_runtime_storage_data/data = capability_instance_data(holder, capability)
 	TEST_ASSERT(assembly && build && data, "The holder owns real material records and ordinary capability data")
 	LAZYADD(capability_runtime(holder).extras, capability)
 	TEST_ASSERT(after_pending(service, "material_service"), "The actual material service has scheduled work before the abort")

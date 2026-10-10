@@ -244,37 +244,9 @@
 	TEST_ASSERT_EQUAL(jointext(F.ran, ","), "peek", "the observer op ran")
 	TEST_ASSERT_NULL(gesture_entry_for(H, F, null, GESTURE_CLICK), "a hand's click does not reach it")
 
-/// G16: every entry a library capability builds is a real op (a key, not a preset), so the router ranks it; a bespoke
-/// cap_hand() / cap_tool() / ... on the type itself stays a preset until its file migrates.
-/datum/unit_test/dx_cap_library_ops/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/list/types = list(
-		/obj/cap_fixture/anchorable, /obj/cap_fixture/breakable, /obj/lib_fixture/chair, /obj/cap_fixture/cell_box,
-		/obj/cap_fixture/cell_charger, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
-		/obj/cap_fixture/emag,
-		/obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
-		/obj/cap_fixture/panel, /obj/cap_fixture/rotatable,
-		/obj/cap_fixture/beacon, /obj/item/dq_cap_fixture/cig, /obj/cap_fixture/stampable,
-		/obj/item/cap_fixture/hoodie, /obj/cap_fixture/weldable, /obj/item/cap_fixture/two_handed,
-		/obj/cap_fixture/writable, /obj/item/cap_slot_probe, /obj/cap_fixture/ladder_probe, /obj/cap_fixture/rigged,
-		/obj/machinery/power/apc/dx_test,
-	)
-	var/checked = 0
-	for(var/path in types)
-		var/atom/A = allocate(path, T)
-		for(var/datum/interaction/capability/E as anything in cap_interactions(A))
-			if(istype(E.cap, /datum/capability/entry))
-				continue // a bespoke entry of the type's own (a preset or a cap_op()): not the library's
-			checked++
-			TEST_ASSERT(E.op, "[path]: [E.cap.type] builds [E.id] with no op")
-			if(!E.op)
-				continue
-			TEST_ASSERT(!E.op.legacy, "[path]: [E.cap.type] builds [E.id] as a preset")
-			TEST_ASSERT(length(E.op.key), "[path]: [E.cap.type] builds [E.id] with no op key")
-			TEST_ASSERT(E.op.action, "[path]: [E.cap.type] builds [E.id] with no action")
-	TEST_ASSERT(checked > 40, "the sweep covered the library ([checked] entries)")
+// The former dx_cap_library_ops sweep covered retired leaf-library builders.
+// Core gesture/resolution regression groups above and below remain live.
 
-/// The key of the op a click by user with held (exactly) reaches on A, or null: the legacy gesture table's, else the op engine's winner.
 /proc/dx_gesture_key(mob/user, atom/A, obj/item/held)
 	var/datum/interaction/capability/E = gesture_entry_for(user, A, held, GESTURE_CLICK)
 	if(E)

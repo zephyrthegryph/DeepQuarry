@@ -59,10 +59,6 @@ TRACKED(/obj/item/assembly, secured)
 		holder().process_activation(src, 1, 0)
 	if(holder() && (wires_type & WIRE_PULSE_SPECIAL))
 		holder().process_activation(src, 0, 1)
-	if(!holder() && isobj(loc) && (wires_type & WIRE_PULSE))
-		var/obj/host = loc
-		if(host.attached_assembly == src) // attached through the assembly capability
-			cap_assembly_pulsed(host, src)
 	return 1
 
 /obj/item/assembly/proc/activate()

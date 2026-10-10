@@ -62,7 +62,6 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/computer/drone_control/C = allocate(/obj/machinery/computer/drone_control, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_NOTNULL(cap_of(C, /datum/capability/require/access), "the console declares cap_access()")
 	TEST_ASSERT_NOTNULL(test_op(H, C, "open_console"), "no credential: refused")
 	TEST_ASSERT(!access_allowed(C, H), "access_allowed() agrees")
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)

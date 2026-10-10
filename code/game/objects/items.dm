@@ -561,7 +561,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 //For non-projectile attacks this usually means the attack is blocked.
 //Otherwise should return 0 to indicate that the attack is not affected in any way.
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	return cap_block_hit(src, user, damage, damage_source, attacker, attack_text) // cap_block() (code/datums/capabilities/library/block.dm)
+	return FALSE
 
 /obj/item/proc/get_loc_turf()
 	var/atom/L = loc

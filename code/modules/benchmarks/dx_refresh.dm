@@ -7,10 +7,6 @@
 	periodic_cadence = CADENCE_SECOND
 	var/bench_level = 0
 
-/obj/machinery/dx_bench_drawer/capabilities()
-	. = ..()
-	. += legacy_machine_basics(board = null)
-
 /obj/machinery/dx_bench_drawer/should_run()
 	return TRUE
 
