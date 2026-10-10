@@ -313,11 +313,11 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(door), add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
-	icon_state = "suit_storage"
 
 
 /obj/machinery/gear_dispenser/suit_fancy/draw(datum/look/look)
 	..()
+	look.state("suit_storage") // the map sprite is suit_storage_map
 
 	if(special_frame)
 		look.overlay(special_frame)

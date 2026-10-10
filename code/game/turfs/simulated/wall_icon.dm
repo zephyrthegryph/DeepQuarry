@@ -107,6 +107,7 @@ SETTER(/turf/simulated/wall, construction_stage)
 /// The walls around it reach it through wall_connections only (the adjacency index recomputes them when a neighbour comes or goes).
 /turf/simulated/wall/draw(datum/look/look)
 	..()
+	look.state("blank") // the wall is its overlays
 	look_parts(look)
 
 /// The layers of the wall's look; a kind of wall with its own sprites replaces them.

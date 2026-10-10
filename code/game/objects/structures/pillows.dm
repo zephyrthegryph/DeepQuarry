@@ -55,7 +55,7 @@ CAPABILITIES(/obj/item/bedsheet/pillow)
 	flippable = FALSE
 
 CAPABILITIES(/obj/structure/bed/pillowpile)
-	owns_one(nameof(front), /obj/structure/bed/pillowpilefront)
+	owns_one(nameof(front), /obj/structure/bed/pillowpilefront, starts = PROC_REF(make_front))
 	bed_hands_off()
 	without("drag_buckle")   // its own Use replaced every inherited interaction
 	op("disassemble", hand(), label("Disassemble"), begins(MSG(pillowpile/disassembling)), wait(3 SECONDS), then(PROC_REF(disassembled)))
@@ -73,8 +73,6 @@ CAPABILITIES(/obj/structure/bed/pillowpile)
 
 /obj/structure/bed/pillowpile/Initialize(mapload)
 	. = ..()
-	var/turf/T = get_turf(src)
-	rel_set(src, nameof(front), new pillowpilefront(T))
 	rel_set(front, nameof(front.pile), src)
 
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the
@@ -289,3 +287,7 @@ MSG_DEF_SELF(pillowpilefront/disassembling, span_notice("Now disassembling the f
 	)
 	time = 60
 	category = CAT_MISC
+
+/// The front half of the pile (owns_one(starts =)), on the pile's turf.
+/obj/structure/bed/pillowpile/proc/make_front(current)
+	return new pillowpilefront(get_turf(src))

@@ -71,7 +71,6 @@ TRACKED(/area, party)
 	apply_ceiling()
 	. = ..()
 	luminosity = !(dynamic_lighting)
-	icon_state = ""
 
 /// An area's pass after the map load: its power state and spoiler cover, once its machines exist (area_after_init() is extended by the
 /// away-mission spawns and the turf initializers).
@@ -232,6 +231,7 @@ TRACKED(/area, party)
 
 /area/draw(datum/look/look)
 	..()
+	look.state("") // in game an area shows nothing (its map sprite marks it in the editor) but an alarm
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
 			look.state(null) // Let lights take care of it

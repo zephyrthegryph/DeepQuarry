@@ -15,17 +15,12 @@
 	var/is_raining = FALSE
 
 CAPABILITIES(/obj/effect/anomaly/weather)
-	owns_one(nameof(selected_weather), /datum/anomalous_weather)
+	owns_one(nameof(selected_weather), /datum/anomalous_weather, starts = PROC_REF(make_weather))
 
 /obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
 
 	LAZYADD(affected_areas, impact_area())
-
-	if(selected_weather)
-		rel_set(src, nameof(selected_weather), new selected_weather)
-	else
-		pick_weather()
 
 	var/telegraph = lifespan / telegraph_percent
 
@@ -192,4 +187,7 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 /obj/effect/anomaly/weather/hail
 	selected_weather = /datum/anomalous_weather/hail
 
-
+/// The weather (owns_one(starts =)): the type set in selected_weather, else any.
+/obj/effect/anomaly/weather/proc/make_weather(current)
+	var/weather_path = ispath(current) ? current : pick(subtypesof(/datum/anomalous_weather))
+	return new weather_path

@@ -17,6 +17,7 @@ fundamental differences
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
+	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer, starts = /datum/looping_sound/mixer)
 
 /obj/machinery/appliance/mixer/examine(mob/user)
@@ -26,7 +27,6 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	rel_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	set_cooking(FALSE)
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
@@ -149,3 +149,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 		return PROCESS_KILL
 	for(var/i in cooking_objs)
 		do_cooking_tick(i)
+
+/// The mixer's one cooking slot (owns_many(starts =)).
+/obj/machinery/appliance/mixer/proc/make_cooking_objs(current)
+	return list(new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))

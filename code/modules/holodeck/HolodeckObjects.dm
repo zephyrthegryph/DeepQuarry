@@ -114,11 +114,19 @@ CAPABILITIES(/turf/simulated/floor/holofloor)
 	base_icon = 'icons/turf/flooring/asteroid.dmi'
 	initial_flooring = null
 
-// ALLOW(init/INSTANCE_STATE): rolls whether this tile shows rocks
-/turf/simulated/floor/holofloor/desert/Initialize(mapload)
-	. = ..()
-	if(prob(10))
-		add_overlay("asteroid[rand(0,9)]")
+/// Rolled before init (rolls()): the rocks this tile shows, one tile in ten ("asteroid0" to "asteroid9"), else null.
+/turf/simulated/floor/holofloor/desert/var/rocks
+
+CAPABILITIES(/turf/simulated/floor/holofloor/desert)
+	rolls(nameof(rocks), PROC_REF(roll_rocks))
+
+/turf/simulated/floor/holofloor/desert/proc/roll_rocks(datum/roller/R)
+	if(R.chance(10))
+		return "asteroid[R.number(0, 9)]"
+
+/turf/simulated/floor/holofloor/desert/draw(datum/look/look)
+	..()
+	look.overlay(rocks)
 
 /turf/simulated/floor/holofloor/bmarble
 	name = "marble"

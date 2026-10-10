@@ -136,7 +136,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	. = ..()
 	if(icon_state == "ranger_gloves")
 		name = "[glovecolor] ranger gloves"
-		icon_state = "[glovecolor]_ranger_gloves"
 
 /obj/item/clothing/gloves/ranger/black
 	glovecolor = "black"
@@ -253,3 +252,9 @@ CAPABILITIES(/obj/item/clothing/gloves/weddingring)
 	desc = "A pair of ordinary looking black gloves. On closer examination, they seem somewhat well-made, with an almost metallic sheen to them."
 	description_fluff = "A prohibited concealed weapon, the Melee Grip Reinforcement system is the product of the military applications of nanotechnology. The striking face of the glove hardens in response to impact, producing monofilament blades from the knuckles to greatly enhance the wearer's close-combat lethality."
 	special_attack_type = /datum/unarmed_attack/hardclaws
+
+/// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
+/obj/item/clothing/gloves/ranger/draw(datum/look/look)
+	..()
+	if(look.state_so_far(src) == "ranger_gloves")
+		look.state("[glovecolor]_ranger_gloves")

@@ -20,7 +20,7 @@
 //   add          list(REAGENT_ID_X = amount): more contents. Under configure() it MERGES into what was inherited, amounts summing, the way
 //                every DECLARE_REAGENTS line added to its parent's.
 //   tint         colour the holder from its starting contents (pills, patches). Only when it starts with declared contents.
-//   holder       the /datum/reagents subtype of the holder (the distillery's /datum/reagents/distilling).
+//   holder       the /datum/reagents subtype of the holder (the distillery's /datum/reagents/distilling), or nameof(var) holding it.
 //   starts_from  list(nameof(id var) = amount): a reagent named by a holder var (a shower's spray, a blood pack's blood), put in first. The
 //                amount is a number, nameof(var) or a PROC_REF; its data is keyed by nameof(id var) in `data` (or by the id).
 //   contents_from  nameof(var) or PROC_REF(x): a list(REAGENT_ID_X = amount) the holder answers at init, added after `add` (a rolled recipe:
@@ -79,7 +79,8 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 		stack_trace("reagents(): [holder] ([holder?.type]) is not an atom; only atoms have reagents")
 		return
 	var/max_volume = reagents_volume_of(holder)
-	holder.create_reagents(max_volume, ispath(src.holder, /datum/reagents) ? src.holder : /datum/reagents)
+	var/holder_type = (istext(src.holder) && (src.holder in holder.vars)) ? holder.vars[src.holder] : src.holder // nameof(var): the holder's own type var
+	holder.create_reagents(max_volume, ispath(holder_type, /datum/reagents) ? holder_type : /datum/reagents)
 	var/total = 0
 	for(var/id_var in starts_from)
 		var/id = holder.vars[id_var]

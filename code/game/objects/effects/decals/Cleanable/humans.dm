@@ -194,14 +194,13 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	amount = 0
 	var/message
 
-/obj/effect/decal/cleanable/blood/writing/Initialize(mapload)
-	. = ..()
-	if(length(random_icon_states))
-		for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
-			LAZYREMOVE(random_icon_states, W.icon_state)
-		icon_state = DEFAULTPICK(random_icon_states, null)
-	else
-		icon_state = "writing1"
+/// Rolled before init: a writing sprite no other writing on the tile shows yet (all taken: the first).
+/obj/effect/decal/cleanable/blood/writing/roll_icon_state(datum/roller/R)
+	var/list/free = random_icon_states.Copy()
+	for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
+		if(W != src)
+			free -= W.icon_state
+	return length(free) ? R.choose(free) : "writing1"
 
 /obj/effect/decal/cleanable/blood/writing/examine(mob/user)
 	. = ..()
@@ -284,9 +283,12 @@ SETTER(/obj/effect/decal/cleanable/blood/gibs, fleshcolor)
 	var/sampled = FALSE
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
-/obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(viruses), new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
+CAPABILITIES(/obj/effect/decal/cleanable/mucus/mapped)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_mapped_virus))
+
+/// Mapped mucus carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/mucus/mapped/proc/make_mapped_virus(current)
+	return list(new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())

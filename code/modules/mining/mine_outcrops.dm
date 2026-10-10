@@ -11,17 +11,19 @@
 	var/outcropdrop = /obj/item/ore/glass
 
 CAPABILITIES(/obj/structure/outcrop)
+	rolls(nameof(has_egg), chance(1))
 	climb()
 	op("pickaxe", item(/obj/item/pickaxe), label("Dig"), priority(OP_PRIORITY_PART), begins(MSG(outcrop/hacking)), wait(4 SECONDS), then(PROC_REF(dig_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 MSG_DEF(outcrop/hacking, span_notice("%U% begins to hack away at %T%."), span_notice("%U% begins to hack away at %T%."))
 
-// ALLOW(init/INSTANCE_STATE): rolls whether this outcrop shows an egg
-/obj/structure/outcrop/Initialize(mapload)
-	. = ..()
-	if(prob(1))
-		add_overlay("[initial(icon_state)]-egg")
+/// Rolled before init (rolls()): one outcrop in a hundred shows an egg.
+/obj/structure/outcrop/var/has_egg = FALSE
+
+/obj/structure/outcrop/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]-egg", when = has_egg)
 
 /obj/structure/outcrop/diamond
 	name = "shiny outcrop"

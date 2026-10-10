@@ -61,9 +61,6 @@
 				return TRUE
 	return FALSE
 
-/obj/item/reagent_containers/food/drinks/glass2/Initialize(mapload)
-	. = ..()
-	icon_state = base_icon
 
 /obj/item/reagent_containers/food/drinks/glass2/proc/can_add_extra(obj/item/glass_extra/GE)
 	if(!icon_exists(icon, "[base_icon]_[GE.glass_addition]left") || !icon_exists(icon, "[base_icon]_[GE.glass_addition]right"))
@@ -74,6 +71,7 @@
 /// The glass shows what is in it (named and described by it, its filling and the ice or fizz of it beneath the glass) and what sits on its rim.
 /obj/item/reagent_containers/food/drinks/glass2/draw(datum/look/look)
 	..()
+	look.state(base_icon)
 	look.watch(reagents)
 	draw_contents(look)
 

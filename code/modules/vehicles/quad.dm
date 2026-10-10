@@ -30,6 +30,7 @@
 /obj/vehicle/train/engine/quadbike/ownership()
 	. = ..()
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = when(cond_not(nameof(built_from_assembly)), /obj/item/cell/high)) // a bike built from an assembly brings no cell
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 	param(nameof(built_from_assembly), pos = 1)
@@ -41,8 +42,6 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 // ALLOW(init/INSTANCE_STATE): a quad bike not built from an assembly comes with a cell and an engine sound, and starts switched off
 /obj/vehicle/train/engine/quadbike/Initialize(mapload)
 	. = ..()
-	if(!built_from_assembly)
-		rel_set(src, nameof(cell), new /obj/item/cell/high(src))
 	turn_off()
 
 /obj/vehicle/train/engine/quadbike/built
