@@ -23,6 +23,8 @@
 //   holder       the /datum/reagents subtype of the holder (the distillery's /datum/reagents/distilling).
 //   starts_from  list(nameof(id var) = amount): a reagent named by a holder var (a shower's spray, a blood pack's blood), put in first. The
 //                amount is a number, nameof(var) or a PROC_REF; its data is keyed by nameof(id var) in `data` (or by the id).
+//   contents_from  nameof(var) or PROC_REF(x): a list(REAGENT_ID_X = amount) the holder answers at init, added after `add` (a rolled recipe:
+//                rolls() runs before this, so a proc reading a rolled var sees its value). Data as for the other contents.
 //   last         list(REAGENT_ID_X = amount): contents added after everything else, so they take what room the rest left (a snack's own
 //                nutriment tops up after its recipe's reagents). Amounts and configure() merging as for `add`.
 //   data         list(REAGENT_ID_X = data): the data the reagent is added with (a food's taste list, a culture's blood data). The value is a
@@ -35,7 +37,7 @@
 // ran: a subtype's Initialize() sees the filled holder right after `. = ..()`, and reagent_container()'s init (later) finds it made.
 // Memory: one interned definition per distinct declaration; an instance owns only its /datum/reagents.
 
-CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NONE, volume = 0, starts = null, add = null, tint = FALSE, holder = null, starts_from = null, data = null, last = null)
+CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NONE, volume = 0, starts = null, add = null, tint = FALSE, holder = null, starts_from = null, data = null, last = null, contents_from = null)
 
 /datum/capability/lib/reagents
 	holder_hooks = HOLDER_HOOK_PREINIT
@@ -102,6 +104,15 @@ CAPABILITY_TYPE(reagents, CAP_REAGENTS, /datum/capability/lib/reagents, key = NO
 		total += amount
 		declared = TRUE
 		holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
+	if(contents_from)
+		var/list/rolled = istext(contents_from) && (contents_from in holder.vars) ? holder.vars[contents_from] : holder_call(holder, contents_from)
+		for(var/id in rolled)
+			var/amount = reagents_amount_of(holder, rolled[id])
+			if(amount <= 0)
+				continue
+			total += amount
+			declared = TRUE
+			holder.reagents.add_reagent(id, amount, reagents_data_of(holder, id))
 	for(var/id in last)
 		var/amount = reagents_amount_of(holder, last[id])
 		if(amount <= 0)
