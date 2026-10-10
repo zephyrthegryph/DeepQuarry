@@ -1,0 +1,100 @@
+human|none click: nothing
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Build assembly secured
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Build assembly secured
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Dismantle
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Dismantle
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Install plating
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Install plating
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+human|/obj/item/airlock_electronics menu: Hit
+human|/obj/item/airlock_electronics menu: Move To Top
+human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/airlock_electronics click: nothing
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Rename
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Rename
+human|/obj/item/stack/material/glass/reinforced menu: Hit
+human|/obj/item/stack/material/glass/reinforced menu: Install windows
+human|/obj/item/stack/material/glass/reinforced menu: Move To Top
+human|/obj/item/stack/material/glass/reinforced menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/glass/reinforced click: Click: Install windows
+human|/obj/item/stack/material/gold menu: Hit
+human|/obj/item/stack/material/gold menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/gold menu: Move To Top
+human|/obj/item/stack/material/gold menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/gold click: Click: Install plating
+human|/obj/item/stack/material/silver menu: Hit
+human|/obj/item/stack/material/silver menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/silver menu: Move To Top
+human|/obj/item/stack/material/silver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/silver click: Click: Install plating
+human|/obj/item/stack/material/diamond menu: Hit
+human|/obj/item/stack/material/diamond menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/diamond menu: Move To Top
+human|/obj/item/stack/material/diamond menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/diamond click: Click: Install plating
+human|/obj/item/stack/material/uranium menu: Hit
+human|/obj/item/stack/material/uranium menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/uranium menu: Move To Top
+human|/obj/item/stack/material/uranium menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/uranium click: Click: Install plating
+human|/obj/item/stack/material/phoron menu: Hit
+human|/obj/item/stack/material/phoron menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/phoron menu: Move To Top
+human|/obj/item/stack/material/phoron menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/phoron click: Click: Install plating
+human|/obj/item/stack/material/sandstone menu: Hit
+human|/obj/item/stack/material/sandstone menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/sandstone menu: Move To Top
+human|/obj/item/stack/material/sandstone menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/sandstone click: Click: Install plating
+human|/obj/item/stack/material menu: Hit
+human|/obj/item/stack/material menu: Install plating
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material click: Click: Install plating
+keys: construction.build:door_assembly_boarded, construction.build:door_assembly_finished, construction.build:door_assembly_secured, construction.build:door_assembly_wired, construction.dismantle, construction.undo:door_assembly_boarded, construction.undo:door_assembly_secured, construction.undo:door_assembly_wired, drag_buckle, melee_hit, plate, plate_bad, plate_glass, rename, rename_robot, unplate
+
