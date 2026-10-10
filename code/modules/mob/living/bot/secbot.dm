@@ -94,12 +94,12 @@
 CAPABILITIES(/mob/living/bot/secbot)
 	interface("Secbot")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
-	op("idcheck", ui_act("idcheck"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_idcheck)))
-	op("ignorerec", ui_act("ignorerec"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_ignorerec)))
-	op("ignorearr", ui_act("ignorearr"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_ignorearr)))
-	op("switchmode", ui_act("switchmode"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_switchmode)))
-	op("patrol", ui_act("patrol"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_patrol)))
-	op("declarearrests", ui_act("declarearrests"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_declarearrests)))
+	op("idcheck", ui_act("idcheck"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_idcheck)))
+	op("ignorerec", ui_act("ignorerec"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_ignorerec)))
+	op("ignorearr", ui_act("ignorearr"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_ignorearr)))
+	op("switchmode", ui_act("switchmode"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_switchmode)))
+	op("patrol", ui_act("patrol"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_patrol)))
+	op("declarearrests", ui_act("declarearrests"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_declarearrests)))
 
 /// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/secbot/ui_data(datum/act/eval/A)

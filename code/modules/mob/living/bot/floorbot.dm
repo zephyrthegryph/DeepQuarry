@@ -33,11 +33,11 @@
 CAPABILITIES(/mob/living/bot/floorbot)
 	interface("Floorbot")
 	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
-	op("vocal", ui_act("vocal"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_vocal)))
-	op("improve", ui_act("improve"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_improve)))
-	op("tiles", ui_act("tiles"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_tiles)))
-	op("make", ui_act("make"), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_make)))
-	op("bridgemode", ui_act("bridgemode", arg("dir")), needs(req_bool(PROC_REF(settings_unlocked), silent = TRUE)), then(PROC_REF(ui_act_bridgemode)))
+	op("vocal", ui_act("vocal"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_vocal)))
+	op("improve", ui_act("improve"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_improve)))
+	op("tiles", ui_act("tiles"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_tiles)))
+	op("make", ui_act("make"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_make)))
+	op("bridgemode", ui_act("bridgemode", arg("dir")), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_bridgemode)))
 
 /// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/floorbot/ui_data(datum/act/eval/A)
