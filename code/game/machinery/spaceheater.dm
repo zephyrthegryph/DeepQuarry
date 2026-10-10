@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 	// Regulates the air while switched on (any state but SHEATER_OFF); a step with no charge left switches it off and stops the work.
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(state), unpowered = TRUE) // it runs from its own cell, whatever its area gives; work_step() reads the cell itself
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"), wait(0),
-		needs(req_bool(PROC_REF(hatch_open), because = MSG(space_heater/hatch_closed)), req_bool(PROC_REF(no_cell_installed), because = MSG(space_heater/cell_present))),
+		needs(req(PROC_REF(hatch_open)), req(PROC_REF(no_cell_installed))),
 		then(PROC_REF(interaction_insert_cell)))
 	part_replacement()
 	op("use", hand(), ungated(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand_interact)))
@@ -65,9 +65,9 @@ CAPABILITIES(/obj/machinery/space_heater)
 	// pumping into the station's heat-rejection loop at a Carnot-bounded COP. Its work is paid from the cell (work_step()).
 	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heating_power), nameof(set_temperature), HEAT_PUMP_BOTH, TRUE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
 	interface("SpaceHeater", state = nameof(GLOB.tgui_physical_state))
-	op("temp", ui_act("temp", arg("newtemp", num())), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
-	op("cellremove", ui_act("cellremove"), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
-	op("cellinstall", ui_act("cellinstall"), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
+	op("temp", ui_act("temp", arg("newtemp", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_temp)))
+	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
+	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/space_heater/Initialize(mapload)
@@ -126,10 +126,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 	return 0
 
 /obj/machinery/space_heater/proc/hatch_open(datum/act/op/A)
-	return panel_open
+	return (panel_open) ? null : MSG(space_heater/hatch_closed)
 
 /obj/machinery/space_heater/proc/no_cell_installed(datum/act/op/A)
-	return !cell
+	return (!cell) ? null : MSG(space_heater/cell_present)
 
 /obj/machinery/space_heater/proc/interaction_insert_cell(datum/act/op/A)
 	var/mob/user = A.actor
@@ -196,8 +196,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 
 /obj/machinery/space_heater/proc/ui_gate(datum/act/op/A)
 	if(!panel_open)
-		return FALSE
-	return TRUE
+		return MSG(req_failed)
+	return null
 
 /obj/machinery/space_heater/proc/ui_act_temp(datum/act/op/A, newtemp)
 	// limit to 0-90 degC

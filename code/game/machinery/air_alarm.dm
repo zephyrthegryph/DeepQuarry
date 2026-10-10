@@ -172,13 +172,13 @@ CAPABILITIES(/obj/machinery/alarm)
 			"min_value" = computed(PROC_REF(thermostat_min)),
 			"max_value" = computed(PROC_REF(thermostat_max)))),
 		then(PROC_REF(thermostat_answered)))
-	op("lock", ui_act("lock"), needs(req_bool(PROC_REF(works_lock_by_window), because = MSG(alarm/silicons_only)), req_wire(WIRE_IDSCAN)), toggles(LOCK_LOCKED))
+	op("lock", ui_act("lock"), needs(req(PROC_REF(works_lock_by_window)), req_wire(WIRE_IDSCAN)), toggles(LOCK_LOCKED))
 	alarm_device_setting_ops()
 	op("set_external_pressure", ui_act("set_external_pressure", arg("id_tag", schema_text(64)), arg("value", num())), then(PROC_REF(ui_set_pressure)))
 	op("set_internal_pressure", ui_act("set_internal_pressure", arg("id_tag", schema_text(64)), arg("value", num())), then(PROC_REF(ui_set_pressure)))
 	op("reset_external_pressure", ui_act("reset_external_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
 	op("reset_internal_pressure", ui_act("reset_internal_pressure", arg("id_tag", schema_text(64))), then(PROC_REF(ui_reset_pressure)))
-	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req_bool(PROC_REF(threshold_known), because = MSG(alarm/no_such_threshold))),
+	op("threshold", ui_act("threshold", arg("env", schema_text(64)), arg("var", int(1, 4))), needs(req(PROC_REF(threshold_known))),
 		asks(/datum/prompt/number, fields = list(
 			"title" = computed(PROC_REF(threshold_title)),
 			"question" = computed(PROC_REF(threshold_question)),
@@ -643,9 +643,9 @@ CAPABILITIES(/obj/machinery/alarm)
 /obj/machinery/alarm/proc/works_lock_by_window(datum/act/op/A)
 	var/mob/user = A.actor
 	if(remote_link_allowed(A))
-		return TRUE
+		return null
 	var/mob/observer/dead/ghost = user
-	return istype(ghost) && ghost.can_admin_interact()
+	return (istype(ghost) && ghost.can_admin_interact()) ? null : MSG(alarm/silicons_only)
 
 /obj/machinery/alarm/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -788,7 +788,7 @@ CAPABILITIES(/obj/machinery/alarm)
 
 /// The threshold button names a band the alarm has.
 /obj/machinery/alarm/proc/threshold_known(datum/act/op/A)
-	return islist(TLV[A.args?["env"]]) // ALLOW(reads): asked when the threshold button is pressed, never from a cached menu
+	return (islist(TLV[A.args?["env"]])) ? null : MSG(alarm/no_such_threshold) // ALLOW(reads): asked when the threshold button is pressed, never from a cached menu
 
 /obj/machinery/alarm/proc/threshold_title(datum/act/op/A)
 	return "[A.args?["var"]]"

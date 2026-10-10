@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	when(nameof(leads_pair), heat_link(HEAT_PORT(1), nameof(partner), nameof(exchange_conductance)))
 	links(/obj/machinery/atmospherics/unary/heat_exchanger::partner, /obj/machinery/atmospherics/unary/heat_exchanger::partner)
 	pipe_device_unwrench()
-	extend("unwrench", needs(req_bool(PROC_REF(floor_clear), because = MSG(air_device/plating))))
+	extend("unwrench", needs(req(PROC_REF(floor_clear))))
 
 /obj/machinery/atmospherics/unary/heat_exchanger/draw(datum/look/look)
 	..()
@@ -54,7 +54,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 /// Its floor does not cover it: a pipe-level exchanger under intact tiles cannot be reached.
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/floor_clear(datum/act/A)
 	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; it stays where it was built
-	return !(level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): the exchanger level is fixed by where it was built; asked when the wrench is used
+	return (!(level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): the exchanger level is fixed by where it was built; asked when the wrench is used
 
 /obj/machinery/atmospherics/unary/heat_exchanger/proc/heat_exchanger_leads()
 	if(!partner)
@@ -74,4 +74,4 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 
 /// It comes off its pipe whether or not its loops run (only its gas holds it).
 /obj/machinery/atmospherics/unary/heat_exchanger/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null

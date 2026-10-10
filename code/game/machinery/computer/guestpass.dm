@@ -54,7 +54,7 @@ MSG_DEF_SELF(guest_pass/deactivation_unavailable, "this guest pass is already de
 CAPABILITIES(/obj/item/card/id/guest)
 	without("show")
 	op("show_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP, I_DISARM, I_GRAB), label("Show"), then(PROC_REF(interaction_guest_pass_show)))
-	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req_bool(PROC_REF(deactivation_allowed), because = MSG(guest_pass/deactivation_unavailable))),
+	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Deactivation", "question" = "Do you really want to deactivate this guest pass? (you can't reactivate it)", "timeout" = 0)), then(PROC_REF(interaction_guest_pass_deactivate)))
 
 /// Old attack_self outside combat mode: flash the pass.
@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/card/id/guest)
 /// Old attack_self in combat mode: deactivate the pass.
 /obj/item/card/id/guest/proc/deactivation_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && (src in contents_of(user)) && !user.incapacitated() && !expired
+	return (istype(user) && (src in contents_of(user)) && !user.incapacitated() && !expired) ? null : MSG(guest_pass/deactivation_unavailable)
 
 /obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(datum/act/op/A)
 	if(!A.answer?.value)

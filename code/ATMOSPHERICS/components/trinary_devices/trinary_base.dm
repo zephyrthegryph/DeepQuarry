@@ -196,4 +196,4 @@ CAPABILITIES(/obj/machinery/atmospherics/trinary)
 
 /// A filter or a mixer comes off its pipes whether it runs or not (only its gas holds it).
 /obj/machinery/atmospherics/trinary/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null

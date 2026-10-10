@@ -58,7 +58,7 @@ CAPABILITIES(/obj/machinery/particle_smasher)
 	owns_many(nameof(recipes))
 	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))
 	op("fill_target", item(/obj/item/stack/material), label("Fill target"),
-		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req_bool(PROC_REF(not_synthesized), because = MSG(particle_smasher/synthesizer))),
+		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req(PROC_REF(not_synthesized))),
 		then(PROC_REF(interaction_fill_target)))
 	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
 		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
@@ -75,7 +75,7 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 /// Synthesiser stock can't fill the target.
 /obj/machinery/particle_smasher/proc/not_synthesized(datum/act/op/A)
 	var/obj/item/stack/material/held = A.held
-	return !(istype(held) && held.uses_charge) // ALLOW(reads): the held sheet's source is read when it is used, never from a cached menu
+	return (!(istype(held) && held.uses_charge)) ? null : MSG(particle_smasher/synthesizer) // ALLOW(reads): the held sheet's source is read when it is used, never from a cached menu
 
 /obj/machinery/particle_smasher/proc/interaction_fill_target(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held

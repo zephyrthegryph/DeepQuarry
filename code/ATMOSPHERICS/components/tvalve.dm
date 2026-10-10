@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 
 /// A three-way valve never runs: it comes off whenever its gas lets it.
 /obj/machinery/atmospherics/tvalve/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null
 
 /// The wheel turns: the valve moves a second later.
 /obj/machinery/atmospherics/tvalve/proc/wheel_turned(datum/act/op/A)
@@ -186,10 +186,10 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 /// A digital three-way valve turns for someone its access lets in, while it has power.
 CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 	silicon_hand()
-	extend("toggle", needs(req_bool(PROC_REF(actor_allowed), because = MSG(lock/denied)), req_bool(PROC_REF(has_power), because = MSG(valve/unpowered))))
+	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
 
 /obj/machinery/atmospherics/tvalve/digital/proc/has_power(datum/act/A)
-	return !power_lost()
+	return (!power_lost()) ? null : MSG(valve/unpowered)
 
 //Radio remote control
 

@@ -49,7 +49,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 	owns_many(nameof(loop_watches), /datum/native_watch/gas)
 	membership(joins = REGISTRY_TURBINES)
 	interface("TEGenerator")
-	extend("ui_open", needs(req_bool(PROC_REF(ready), because = MSG(teg/not_ready))))
+	extend("ui_open", needs(req(PROC_REF(ready))))
 	ui_shape(totalOutput = num(), maxTotalOutput = num(), thermalOutput = num(), primary = list_of(), secondary = list_of())
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(teg_step)), when = nameof(generating))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/power/generator)
 
 /// Bolted down and working: its window opens.
 /obj/machinery/power/generator/proc/ready(datum/act/A)
-	return anchored && operable()
+	return (anchored && operable()) ? null : MSG(teg/not_ready)
 
 /obj/machinery/power/generator/proc/gas_wake_condition()
 	if(!circ1() || !circ2())

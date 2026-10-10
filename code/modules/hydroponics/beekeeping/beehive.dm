@@ -29,11 +29,11 @@ CAPABILITIES(/obj/machinery/beehive)
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req_bool(PROC_REF(can_dismantle_holds), because = PROC_REF(can_dismantle_refusal))),
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(can_dismantle_holds))),
 		begins(MSG(beehive/dismantling)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE, volume = 0.5), wait(3 SECONDS), then(PROC_REF(dismantle_done)))
 	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
-	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req_bool(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
-	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req_bool(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
+	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(can_load_frame_holds))), then(PROC_REF(interaction_beehive_load_frame)))
+	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req(PROC_REF(can_move_bees_holds))), then(PROC_REF(interaction_beehive_bee_pack)))
 	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
 	// A closed hive is not harvested (the click goes on); an open one gives a frame every 3 seconds while it holds a filled one.
 	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), when(req(PROC_REF(hive_open))), starts(PROC_REF(harvest_started)),
@@ -68,26 +68,18 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 /obj/machinery/beehive/proc/can_load_frame_holds(datum/act/op/A)
 	var/obj/item/honey_frame/typed_held = A.held
 	var/answer = can_load_frame(A.actor, src, typed_held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
+
 
 /// Why can_load_frame_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/beehive/proc/can_load_frame_refusal(datum/act/op/A)
-	var/obj/item/honey_frame/typed_held = A.held
-	var/answer = can_load_frame(A.actor, src, typed_held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement (was REQ_* can_move_bees): the legacy check answers TRUE to pass.
 /obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
 	var/obj/item/bee_pack/typed_held = A.held
 	var/answer = can_move_bees(A.actor, src, typed_held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
+
 
 /// Why can_move_bees_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/beehive/proc/can_move_bees_refusal(datum/act/op/A)
-	var/obj/item/bee_pack/typed_held = A.held
-	var/answer = can_move_bees(A.actor, src, typed_held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
@@ -175,14 +167,13 @@ MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_n
 
 /// Requirement: the hive holds no bees and no frames.
 /obj/machinery/beehive/proc/can_dismantle_holds(datum/act/op/A)
-	return !bee_count && !length(frames)
-
-/// Why can_dismantle_holds refuses: the bees, else the frames still inside.
-/obj/machinery/beehive/proc/can_dismantle_refusal(datum/act/op/A)
+	if(!bee_count && !length(frames))
+		return null
 	if(bee_count)
 		return span_notice("You can't dismantle the hive with these bees inside.")
 	return span_notice("You can't dismantle the hive with [length(frames)] frames still inside!")
 
+/// Why can_dismantle_holds refuses: the bees, else the frames still inside.
 /obj/machinery/beehive/proc/dismantle_done(datum/act/op/A)
 	var/mob/user = A.actor
 	if(bee_count || length(frames))
@@ -287,25 +278,18 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 /// Requirement (was REQ_* ready_for_item): the legacy check answers TRUE to pass.
 /obj/machinery/honey_extractor/proc/ready_for_item_holds(datum/act/op/A)
 	var/answer = ready_for_item(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
+
 
 /// Why ready_for_item_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/honey_extractor/proc/ready_for_item_refusal(datum/act/op/A)
-	var/answer = ready_for_item(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement (was REQ_* can_extract_frame): the legacy check answers TRUE to pass.
 /obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
 	var/obj/item/honey_frame/typed_held = A.held
 	var/answer = can_extract_frame(A.actor, src, typed_held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
+
 
 /// Why can_extract_frame_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/honey_extractor/proc/can_extract_frame_refusal(datum/act/op/A)
-	var/obj/item/honey_frame/typed_held = A.held
-	var/answer = can_extract_frame(A.actor, src, typed_held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 /// The old attackby's shared guard: not spinning, powered, panel closed.
@@ -469,8 +453,8 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req_bool(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_bool(PROC_REF(can_extract_frame_holds), because = PROC_REF(can_extract_frame_refusal))), then(PROC_REF(interaction_honey_extractor_load_frame)))
-	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req_bool(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
+	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(ready_for_item_holds)), req(PROC_REF(can_extract_frame_holds))), then(PROC_REF(interaction_honey_extractor_load_frame)))
+	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req(PROC_REF(ready_for_item_holds)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
 
 /obj/machinery/honey_extractor/proc/crowbar_used(datum/act/op/A)
 	if(processing)

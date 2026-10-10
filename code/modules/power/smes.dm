@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 	op("cut_terminal", tool(TOOL_WIRECUTTER), at(SPACE_PANEL),
 		needs(req(PROC_REF(terminal_cut_refusal))),
 		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
-	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req_bool(PROC_REF(casing_damaged), because = MSG(smes/whole))),
+	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req(PROC_REF(casing_damaged))),
 		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
@@ -431,7 +431,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// The casing has damage to weld.
 /obj/machinery/power/smes/proc/casing_damaged(datum/act/A)
-	return get_integrity() < max_integrity // ALLOW(reads): a unit's max_integrity is its type's constant
+	return (get_integrity() < max_integrity) ? null : MSG(smes/whole) // ALLOW(reads): a unit's max_integrity is its type's constant
 
 /// The weld is done: every point of damage is repaired.
 /obj/machinery/power/smes/proc/casing_repaired(datum/act/op/A)

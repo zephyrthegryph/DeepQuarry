@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 	op("print_release_form", ui_act("print_release_form", arg("index", num())), needs(req(PROC_REF(release_form_ready))),
 		asks(/datum/prompt/text/pandemic_release_reason, step = "reason", fields = list("title" = "Write", "question" = "Enter a reason for the release", "multiline" = TRUE, "affliction" = computed(PROC_REF(release_strain)), "timeout" = 0)),
 		asks(/datum/prompt/yes_no/pandemic_release_sign, step = "signature", fields = list("title" = "Signature", "question" = "Would you like to add your signature?", "disease" = computed(PROC_REF(release_reason_disease)), "reason" = computed(PROC_REF(release_reason_text)), "timeout" = 0), when = PROC_REF(release_has_reason)), then(PROC_REF(ui_act_print_release_form)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(console_works), because = MSG(pandemic/not_working))))
+	extend(TAG_UI, needs(req(PROC_REF(console_works))))
 
 CAPABILITIES(/datum/prompt/text/pandemic_release_reason)
 	ref_one(nameof(affliction), /datum/affliction/contagion/engineered)
@@ -118,7 +118,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 /// The console answers only while it works.
 /obj/machinery/computer/pandemic/proc/console_works(datum/act/op/A)
-	return operable()
+	return (operable()) ? null : MSG(pandemic/not_working)
 
 /obj/machinery/computer/pandemic/ui_data(datum/act/eval/A)
 	var/list/data = list()

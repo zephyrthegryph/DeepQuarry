@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 
 /// A valve needs no power to come off: it never runs.
 /obj/machinery/atmospherics/valve/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null
 
 /// The wheel turns: the valve moves a second later.
 /obj/machinery/atmospherics/valve/proc/wheel_turned(datum/act/op/A)
@@ -184,11 +184,11 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 /// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
 CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
 	silicon_hand()
-	extend("toggle", needs(req_bool(PROC_REF(actor_allowed), because = MSG(lock/denied)), req_bool(PROC_REF(has_power), because = MSG(valve/unpowered))))
-	extend("unwrench", needs(req_bool(PROC_REF(actor_allowed), because = MSG(lock/denied))))
+	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
+	extend("unwrench", needs(req(PROC_REF(actor_allowed))))
 
 /obj/machinery/atmospherics/valve/digital/proc/has_power(datum/act/A)
-	return !power_lost()
+	return (!power_lost()) ? null : MSG(valve/unpowered)
 
 /obj/machinery/atmospherics/valve/digital/open
 	open = 1

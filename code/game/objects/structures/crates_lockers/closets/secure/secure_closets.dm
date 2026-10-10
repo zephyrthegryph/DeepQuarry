@@ -82,7 +82,8 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 /// A locker too small to stuff a person into (large = 0) refuses a grab.
 /obj/structure/closet/secure_closet/grab_fits(datum/act/op/A)
-	return large
+	return (large) ? null : /datum/msg/closet/too_small
+
 
 /// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
 /obj/structure/closet/secure_closet/proc/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)

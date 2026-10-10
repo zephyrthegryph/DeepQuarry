@@ -14,7 +14,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	owns_one(nameof(program), /datum/embedded_program)
 	interface("EmbeddedController")
 	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
-	op("program_command", ui_act("*"), needs(req_bool(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
+	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/embedded_controller/Initialize(mapload)
@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 
 /// The controller's actions are its program's commands, listed per type in valid_actions.
 /obj/machinery/embedded_controller/proc/command_listed(datum/act/op/A)
-	return (A.window_action() in valid_actions)
+	return ((A.window_action() in valid_actions)) ? null : MSG(req_failed)
 
 /// A program command from the window.
 /obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)

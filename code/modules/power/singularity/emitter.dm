@@ -62,10 +62,10 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	emag(then(PROC_REF(on_emag)), say = MSG(emitter/shorted), powered = FALSE)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emitter_step)), when = PROC_REF(firing))
 	op("toggle", hand(), when(req_empty_hand()), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
-		needs(req_bool(PROC_REF(is_welded), because = MSG(emitter/unwelded))),
+		needs(req(PROC_REF(is_welded))),
 		then(PROC_REF(toggled)))
 	op("repair", item(/obj/item/stack/material/steel), label("Repair with steel"),
-		needs(req_bool(PROC_REF(damaged), because = MSG(emitter/whole)), req_bool(PROC_REF(enough_sheets), because = MSG(emitter/too_few_sheets))),
+		needs(req(PROC_REF(damaged)), req(PROC_REF(enough_sheets))),
 		says(MSG(emitter/repairing)), wait(3 SECONDS), then(PROC_REF(repaired)))
 	op("anomalous", item(/obj/item/anomaly_scanner), label("Toggle anomalous mode"), wait(0), then(PROC_REF(anomalous_toggled)))
 	op("particle", tool(TOOL_MULTITOOL), label("Select particle"), wait(0), when(nameof(anomalous)),
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	return active && !broken_now()
 
 /obj/machinery/power/emitter/proc/is_welded(datum/act/A)
-	return state == FLOOR_WELD_WELDED
+	return (state == FLOOR_WELD_WELDED) ? null : MSG(emitter/unwelded)
 
 /// The sheets a repair takes: one per 10 integrity missing.
 /obj/machinery/power/emitter/proc/repair_sheets()
@@ -109,10 +109,10 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	return istype(S) && S.get_amount() >= n
 
 /obj/machinery/power/emitter/proc/damaged(datum/act/A)
-	return emitter_repair_sheets(src) > 0
+	return (emitter_repair_sheets(src) > 0) ? null : MSG(emitter/whole)
 
 /obj/machinery/power/emitter/proc/enough_sheets(datum/act/op/A)
-	return emitter_stack_holds(A.held, emitter_repair_sheets(src))
+	return (emitter_stack_holds(A.held, emitter_repair_sheets(src))) ? null : MSG(emitter/too_few_sheets)
 
 // ---- effects ----
 
