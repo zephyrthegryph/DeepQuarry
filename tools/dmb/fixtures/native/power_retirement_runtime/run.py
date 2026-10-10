@@ -73,7 +73,10 @@ def observations(file):
         for (source, number, message), count in sorted(errors.items())]}
 
 
-def main():
+def main(*, fixture_directory=None, observation_reader=None,
+         scope="four deterministic retirement decoder cases only"):
+    fixture_directory = HERE if fixture_directory is None else Path(fixture_directory)
+    observation_reader = observations if observation_reader is None else observation_reader
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -88,9 +91,9 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 2, "scope": "four deterministic retirement decoder cases only",
+    receipt = {"schema": 2, "scope": scope,
                "complete": False, "root": str(root), "executions": {}}
-    receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme")}
+    receipt["fixture_sources"] = {name: h.sha(fixture_directory / name) for name in ("probe.dm", "probe.dme")}
     memory = None
     previous_memory = h._owned_memory
     status = 1
@@ -122,7 +125,7 @@ def main():
             directory = root / (backend + "-source")
             directory.mkdir()
             for name in ("probe.dm", "probe.dme"):
-                shutil.copyfile(HERE / name, directory / name)
+                shutil.copyfile(fixture_directory / name, directory / name)
             project = directory / "probe.dme"
             if backend == "byond":
                 run("byond-compile", args.dm, [str(project)], 30)
@@ -148,9 +151,9 @@ def main():
                 fresh.admit_pair(result, acquired, artifacts / "probe.dme", store, slots, h.regular, h.sha)
                 dmb = Path(acquired["dmb"])
             run(backend + "-runtime", args.dd, [str(dmb), "-close", "-trusted", "-invisible", "-logself"], 30)
-            receipt[backend] = observations(dmb.with_suffix(".log"))
+            receipt[backend] = observation_reader(dmb.with_suffix(".log"))
             for name in ("probe.dm", "probe.dme"):
-                if h.sha(directory / name) != receipt["fixture_sources"][name] or h.sha(HERE / name) != receipt["fixture_sources"][name]:
+                if h.sha(directory / name) != receipt["fixture_sources"][name] or h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:
                     raise ValueError("fixture source changed during run")
         for name in ("native", "template", "dm", "dd"):
             if h.sha(getattr(args, name)) != getattr(args, name + "_sha256"):
