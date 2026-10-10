@@ -559,9 +559,12 @@ CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
 	climb()
 	configure(reagents(add = list(REAGENT_ID_BLOOD = 1000), data = list(REAGENT_ID_BLOOD = PROC_REF(stock_blood_data))))
 
-/// The barrel's O- stock blood data.
+TYPE_TABLE_DECLARE(/obj/structure/reagent_dispensers/bloodbarrel, bloodbarrel_stock_data, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+
+/// The barrel's O- stock blood data: a copy, since the reagent keeps and edits it.
 /obj/structure/reagent_dispensers/bloodbarrel/proc/stock_blood_data()
-	return list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE)
+	var/list/stock = TYPE_TABLE_GET(src, bloodbarrel_stock_data)
+	return stock.Copy()
 
 
 /obj/structure/reagent_dispensers/space_cleaner

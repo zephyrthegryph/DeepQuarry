@@ -440,27 +440,28 @@ CAPABILITIES(/obj/structure/thecake)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chaoscakeslice)
 	rolls(nameof(slice_kind), range_of(1, 6))
+	rolls(nameof(icon_state), PROC_REF(roll_slice_icon), from = list(nameof(slice_kind)))
 	configure(reagents(contents_from = PROC_REF(slice_contents)))
 
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chaos_slice_recipes, list(
+	list(REAGENT_ID_NEUROTOXIC_PROTEIN = 2, REAGENT_ID_SHOCKCHEM = 2, REAGENT_ID_AMATOXIN = 2, REAGENT_ID_CARPOTOXIN = 2, REAGENT_ID_SPIDERTOXIN = 2),
+	list(REAGENT_ID_STOXIN = 2, REAGENT_ID_BLISS = 10, REAGENT_ID_SEROTROTIUM = 4, REAGENT_ID_CRYPTOBIOLIN = 8, REAGENT_ID_MINDBREAKER = 10, REAGENT_ID_PSILOCYBIN = 10),
+	list(REAGENT_ID_BLOOD = 20, REAGENT_ID_STOMACID = 10, REAGENT_ID_MUTAGEN = 4, REAGENT_ID_THIRTEENLOKO = 20, REAGENT_ID_HYPERZINE = 10),
+	list(REAGENT_ID_ANTITOXIN = 2, REAGENT_ID_TRICORDRAZINE = 2),
+	list(REAGENT_ID_DEXALINP = 2, REAGENT_ID_TRICORDRAZINE = 2),
+	list(REAGENT_ID_BICARIDINE = 2, REAGENT_ID_TRICORDRAZINE = 2, REAGENT_ID_KELOTANE = 2)))
+
 /obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_contents()
-	switch(slice_kind)
-		if(1)
-			return list(REAGENT_ID_NEUROTOXIC_PROTEIN = 2, REAGENT_ID_SHOCKCHEM = 2, REAGENT_ID_AMATOXIN = 2, REAGENT_ID_CARPOTOXIN = 2, REAGENT_ID_SPIDERTOXIN = 2)
-		if(2)
-			return list(REAGENT_ID_STOXIN = 2, REAGENT_ID_BLISS = 10, REAGENT_ID_SEROTROTIUM = 4, REAGENT_ID_CRYPTOBIOLIN = 8, REAGENT_ID_MINDBREAKER = 10, REAGENT_ID_PSILOCYBIN = 10)
-		if(3)
-			return list(REAGENT_ID_BLOOD = 20, REAGENT_ID_STOMACID = 10, REAGENT_ID_MUTAGEN = 4, REAGENT_ID_THIRTEENLOKO = 20, REAGENT_ID_HYPERZINE = 10)
-		if(4)
-			return list(REAGENT_ID_ANTITOXIN = 2, REAGENT_ID_TRICORDRAZINE = 2)
-		if(5)
-			return list(REAGENT_ID_DEXALINP = 2, REAGENT_ID_TRICORDRAZINE = 2)
-		if(6)
-			return list(REAGENT_ID_BICARIDINE = 2, REAGENT_ID_TRICORDRAZINE = 2, REAGENT_ID_KELOTANE = 2)
+	var/list/recipes = TYPE_TABLE_GET(src, chaos_slice_recipes)
+	return (slice_kind >= 1 && slice_kind <= length(recipes)) ? recipes[slice_kind] : null
+
+/// Its icon follows the slice it rolled.
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_icon(datum/roller/R)
+	return "chaoscake_slice-[slice_kind]"
 
 // ALLOW(init/INSTANCE_STATE): names and sizes the slice it rolled
 /obj/item/reagent_containers/food/snacks/chaoscakeslice/Initialize(mapload)
 	. = ..()
-	icon_state = "chaoscake_slice-[slice_kind]"
 	switch(slice_kind)
 		if(1)
 			name = "Slice Of Evil" //Pretty damn poisonous, takes a lot of work to make safe for consumption, useful for medical.

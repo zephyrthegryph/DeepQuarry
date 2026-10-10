@@ -2520,28 +2520,21 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mysterysoup)
 	rolls(nameof(mystery_recipe), range_of(1, 10))
 	configure(reagents(contents_from = PROC_REF(mystery_contents)))
 
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/mysterysoup, mystery_soup_recipes, list(
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 10),
+	list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_BANANA = 10),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_BLOOD = 10),
+	list(REAGENT_ID_SLIMEJELLY = 10, REAGENT_ID_WATER = 10),
+	list(REAGENT_ID_CARBON = 10, REAGENT_ID_TOXIN = 10),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_TOMATOJUICE = 10),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5)))
+
 /obj/item/reagent_containers/food/snacks/mysterysoup/proc/mystery_contents()
-	switch(mystery_recipe)
-		if(1)
-			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2)
-		if(2)
-			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2)
-		if(3)
-			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5)
-		if(4)
-			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 10)
-		if(5)
-			return list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_BANANA = 10)
-		if(6)
-			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_BLOOD = 10)
-		if(7)
-			return list(REAGENT_ID_SLIMEJELLY = 10, REAGENT_ID_WATER = 10)
-		if(8)
-			return list(REAGENT_ID_CARBON = 10, REAGENT_ID_TOXIN = 10)
-		if(9)
-			return list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_TOMATOJUICE = 10)
-		if(10)
-			return list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5)
+	var/list/recipes = TYPE_TABLE_GET(src, mystery_soup_recipes)
+	return (mystery_recipe >= 1 && mystery_recipe <= length(recipes)) ? recipes[mystery_recipe] : null
 
 /obj/item/reagent_containers/food/snacks/wishsoup
 	name = "Wish Soup"
