@@ -131,10 +131,14 @@
 /datum/unit_test/dq_p1/wait_rechecks_on_a_published_read/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/obj/e0_fixture/p1_waiter/W = allocate(/obj/e0_fixture/p1_waiter)
+	// The index also holds the watches of things that live on after other tests (a contagion's every() parked on its host relation), so the test
+	// counts what its own wait adds and removes, not the absolute size.
+	var/watchers_before = length(GLOB.op_watchers)
+	var/pending_before = length(GLOB.op_pending_all)
 	var/datum/op_result/waiting = test_click(M, W, null)
 	var/datum/pending_op/P = op_pending_of(M)
 	var/watching = length(P?.watching)
-	var/watchers_while_waiting = length(GLOB.op_watchers)
+	var/watchers_while_waiting = length(GLOB.op_watchers) - watchers_before
 	var/timer_pending = P ? after_left(P, "op_recheck") : 0
 	W.set_ready(FALSE) // the requirement's read is published: the wait re-checks inside this call
 	var/outcome_without_time = waiting?.outcome
@@ -155,8 +159,8 @@
 	TEST_ASSERT_NULL(pending_after, "the actor is free again")
 	TEST_ASSERT_NULL(outcome_before_move, "the second press waits")
 	TEST_ASSERT_EQUAL(outcome_after_move, ACT_REFUSED, "moving the actor out of reach cancelled it at once (the ADJACENT keep)")
-	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), 0, "an ended wait leaves nothing in the watch index")
-	TEST_ASSERT_EQUAL(length(GLOB.op_pending_all), 0, "or in the pending list")
+	TEST_ASSERT_EQUAL(length(GLOB.op_watchers), watchers_before, "an ended wait leaves nothing in the watch index ([unit_test_watch_index_text()])")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pending_all), pending_before, "or in the pending list")
 	TEST_ASSERT_EQUAL(W.finished, 0, "and nothing ran")
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -245,6 +245,11 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 /// Puts one block turf back to its template state: no hotspot, the default air and temperature on an open turf, a floor where a test left a wall.
 /proc/unit_test_block_reset_turf(turf/T)
+	if(istype(T, /turf/simulated))
+		// A wet floor stays wet (its dry timer runs on kernel time, which a test may never advance): the next test's mob slips on it and drops what it holds.
+		var/turf/simulated/wet_turf = T
+		if(wet_turf.wet)
+			wet_turf.wet_floor_finish()
 	if(istype(T, /turf/open))
 		var/turf/open/OT = T
 		if(OT.active_hotspot)
@@ -896,6 +901,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/list/sites_before = SSexpedition?.sites?.Copy()
 	var/list/globals_before = unit_test_globals_snapshot()
 	var/list/gravity_before = unit_test_gravity_snapshot()
+	var/watching_before = length(GLOB.op_watchers)
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -988,6 +994,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
 	unit_test_globals_guard(globals_before, test_path)
 	unit_test_gravity_guard(gravity_before, test_path)
+	unit_test_watch_guard(watching_before, test_path)
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
@@ -1046,6 +1053,26 @@ GLOBAL_VAR(dq_test_select_names)
 			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
 		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
 			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
+
+/// What the watch index holds, as "type|key xholders": the leftover, named, when a test finds it not empty.
+/proc/unit_test_watch_index_text()
+	var/list/rows = list()
+	for(var/index in GLOB.op_watchers)
+		var/list/parts = splittext(index, "|")
+		var/datum/watched = locate(parts[1])
+		var/list/on = GLOB.op_watchers[index]
+		var/list/holders = list()
+		for(var/datum/holder as anything in on)
+			holders += "[holder.type]"
+		rows += "[watched?.type || parts[1]]|[parts[2]] x[length(on)] by [jointext(holders, ",")]"
+	return jointext(rows, "; ")
+
+/// Logs "STATE LEAK" when the test left more entries in the watch index than it found: a wait, task or every() hop watch that never ended
+/// poisons the tests that assert the index is empty (dq_p1/wait_rechecks_on_a_published_read), which then fail only in a long run.
+/proc/unit_test_watch_guard(watching_before, test_path)
+	var/now = length(GLOB.op_watchers)
+	if(now > watching_before)
+		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
 
 /// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
 /// program), and every later test's mobs then drift.

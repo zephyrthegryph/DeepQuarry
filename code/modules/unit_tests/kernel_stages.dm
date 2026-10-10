@@ -1,9 +1,20 @@
 // Stages and per-entity loops on the kernel: the periodic cadences and the hotspot burn are kernel work now, and every
 // stage still on the object-model engine can be adapted into a work item the kernel's graph validator accepts.
 
+/// How far from the burning tile the hotspot test restores air and floor heat (the burn's hot gas and fire spread past the first few tiles).
+#define KERNEL_HOTSPOT_TEST_REACH 8
+
 /// A hotspot burns as a kernel work item (every SSair tick) in the game run level, and leaves the membership when it
 /// is deleted.
 /datum/unit_test/kernel_hotspot_work
+
+/// Puts out whatever the hotspot test's burn spread around `T` and cools the floors it heated. The test is the only thing burning in the world.
+/proc/kernel_hotspot_test_cleanup(turf/T)
+	for(var/obj/effect/hotspot/fire in world)
+		qdel(fire)
+	for(var/turf/open/near in range(KERNEL_HOTSPOT_TEST_REACH, T))
+		near.active_hotspot = null
+		heat_set_solid(near, T20C)
 
 /datum/unit_test/kernel_hotspot_work/Run()
 	var/datum/controller/kernel/K = kernel()
@@ -16,6 +27,12 @@
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
 		T.active_hotspot = null
+	// The world's first simulated turf is also where the atmos tests look for clear floor. The burn heats its air, its neighbours' and its floor,
+	// and spreads fire to the tiles around it that goes on burning after this hotspot is gone. None of that is for a later test to inherit: the air
+	// goes back through the atmos snapshot at teardown, the fire and the floors' heat in the deferred cleanup.
+	for(var/turf/open/near in range(KERNEL_HOTSPOT_TEST_REACH, T))
+		dq_atmos_test_snapshot_air(near)
+	defer_cleanup(null, GLOBAL_PROC_REF(kernel_hotspot_test_cleanup), T)
 	var/datum/gas_mixture/air = T.return_air()
 	air.adjust_gas(/datum/gas/plasma, 20)
 	air.adjust_gas(/datum/gas/oxygen, 50)

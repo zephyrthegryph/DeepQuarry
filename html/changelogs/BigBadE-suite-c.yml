@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "The first full normal-tier run's order-dependent test failures are fixed at their sources: a wet test floor is dried between tests, the hotspot test puts out and cools what it burned, the loot resolver pin counts rolls from zero, and the unit-test run names any test that leaves entries in the wait/watch index."
+  - code_imp: "Stale tests follow the timed-action and draw conversions: the fishing net and glass jar force-move tests use their declared slots, the ant builder builds a fixed structure, the lasertag suicide test keeps its user conscious, and the click-explanation golden lists the mob ability ops."
