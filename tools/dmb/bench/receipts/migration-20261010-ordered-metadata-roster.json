@@ -9,13 +9,30 @@
         "composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority"
       ],
       "exit": 0,
-      "seconds": 0.0611608000472188,
-      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.03s\n\n",
+      "seconds": 0.053379899996798486,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.02s\n\n",
       "stderr": ""
     },
     {
-      "filter": "composition::tests::frame_contribution_tests",
-      "error": "no matching fixtures"
+      "filter": "composition::tests::frame_contribution",
+      "selected": [
+        "composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority",
+        "composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers"
+      ],
+      "exit": 0,
+      "seconds": 0.06932979996781796,
+      "stdout": "\nrunning 2 tests\ntest composition::tests::frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_authority ... ok\ntest composition::tests::frame_contribution_requires_current_resolved_argument_source_numbers ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 671 filtered out; finished in 0.04s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::procedure_plan::argument_sources_tests::",
+      "selected": [
+        "composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order"
+      ],
+      "exit": 0,
+      "seconds": 0.025866899988614023,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::argument_sources_tests::references_reuse_only_current_binding_start_and_exact_helper_order ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
     }
   ]
 }
