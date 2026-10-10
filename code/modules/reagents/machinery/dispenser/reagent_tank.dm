@@ -129,7 +129,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
-	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req_bool(PROC_REF(no_rig), because = MSG(fueltank/in_the_way))),
+	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req(PROC_REF(no_rig))),
 		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
 
 /obj/structure/reagent_dispensers/fueltank/high
@@ -210,7 +210,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 
 /// Requirement: nothing is rigged to the tank yet.
 /obj/structure/reagent_dispensers/fueltank/proc/no_rig(datum/act/op/A)
-	return !rig
+	return (!rig) ? null : MSG(fueltank/in_the_way)
 
 /obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(datum/act/op/A)
 	var/mob/user = A.actor

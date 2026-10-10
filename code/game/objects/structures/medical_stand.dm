@@ -26,7 +26,7 @@ CAPABILITIES(/obj/structure/medical_stand)
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
-	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req_bool(PROC_REF(actor_is_living), because = MSG(medical_stand/cannot))), then(PROC_REF(medical_stand_toggle_mode_effect)))
+	op("toggle_iv_mode", menu(), label("Toggle IV Mode"), needs(req(PROC_REF(actor_is_living))), then(PROC_REF(medical_stand_toggle_mode_effect)))
 	op("set_iv_transfer", menu(), label("Set IV transfer amount"), then(PROC_REF(set_APTFT_effect)))
 	op("medical_stand_interaction_hand", hand(), ungated(), then(PROC_REF(medical_stand_interaction_hand)))
 	op("medical_stand_interaction_item", item(/obj/item), then(PROC_REF(medical_stand_interaction_item)))
@@ -41,7 +41,7 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 
 /// Only a living thing works the stand's menu.
 /obj/structure/medical_stand/proc/actor_is_living(datum/act/op/A)
-	return isliving(A.actor)
+	return (isliving(A.actor)) ? null : MSG(medical_stand/cannot)
 
 /obj/structure/medical_stand/var/mob/living/carbon/human/breather
 /obj/structure/medical_stand/var/valve_opened = FALSE

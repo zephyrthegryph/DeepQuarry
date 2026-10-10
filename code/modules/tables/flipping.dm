@@ -47,10 +47,7 @@
 
 /// Put back's precondition: nothing is in the way of the flipped table (and the flipped tables in line with it) standing up.
 /obj/structure/table/proc/can_put_back(datum/act/op/A)
-	return unflipping_check() == 1
-
-/obj/structure/table/proc/put_back_reason(datum/act/op/A)
-	return can_climb_turf(src) ? /datum/msg/table/in_the_way : /datum/msg/table/wont_budge
+	return unflipping_check() == 1 ? null : (can_climb_turf(src) ? /datum/msg/table/in_the_way : /datum/msg/table/wont_budge)
 
 /// The Flip table entry: flips a table away from the person, and shakes off whoever was climbing it.
 /obj/structure/table/proc/flip_over(datum/act/op/A)

@@ -92,9 +92,6 @@
 
 /// A drag onto the table is the reinforcing of a plated one with a steel stack held in hand: the build ladder's edge takes that drag when it can, and
 /// otherwise, with the stack held in hand, the table says why it cannot be reinforced and nothing is put down.
-/obj/structure/table/proc/not_a_reinforcing_drag(datum/act/op/A)
-	return isnull(reinforce_refusal(A))
-
 /obj/structure/table/proc/reinforce_refusal(datum/act/op/A)
 	var/mob/living/user = A.actor
 	if(!(can_reinforce && isliving(user) && istype(A.held, /obj/item/stack/material) && A.held.loc == user)) // ALLOW(reads): where the dragged stack is read when it is dropped on the table; the drop asks again
@@ -142,10 +139,7 @@
 
 /// A grab that can put its person on the table: nothing in the way (the person must also be at the grabber's side: the effect asks).
 /obj/structure/table/proc/person_can_go_on(datum/act/op/A)
-	return !can_climb_turf(src)
-
-/obj/structure/table/proc/person_refusal(datum/act/op/A)
-	return can_climb_turf(src) ? /datum/msg/table/in_the_way : /datum/msg/table/better_grip
+	return can_climb_turf(src) ? /datum/msg/table/in_the_way : null
 
 /// A firm grab sets the person on the table and knocks them down; a loose one lets go of them (the grab is used up either way).
 /obj/structure/table/proc/put_person_on(datum/act/op/A)

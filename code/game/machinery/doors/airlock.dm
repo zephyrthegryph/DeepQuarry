@@ -177,9 +177,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
 		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
 	op("wires_window", hand(), at(SPACE_PANEL), priority(OP_PRIORITY_PART), wait(0),
-		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
+		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
 	op("tear", hand(), label("Tear"), when(PROC_REF(claws_tear)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
-		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
+		needs(req(PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
 	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held)))
 	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
 	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin)))
@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
 		priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
-	extend("panel.open", wait(0), needs(req_bool(PROC_REF(panel_closable), because = MSG(airlock/panel_broken))), then(PROC_REF(panel_toggled)))
+	extend("panel.open", wait(0), needs(req(PROC_REF(panel_closable))), then(PROC_REF(panel_toggled)))
 	extend("weld_shut.toggle", priority(above("repair")), when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP)))))
 	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
 	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE), then(PROC_REF(touched_early), early = TRUE))
@@ -222,14 +222,14 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		toggles_hold(STAT_AIDISABLEDIDSCANNER, source = SRC_AI_CONTROL))
 	op("emergency_toggle", ui_act("emergency-toggle"), toggles(DOOR_EMERGENCY_ENGAGED), says(PROC_REF(emergency_message)), logs(LOG_GAME))
 	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
-		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req_bool(PROC_REF(actor_may_move_bolts), because = MSG(airlock/no_power_to_raise))),
+		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req(PROC_REF(actor_may_move_bolts))),
 		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
 	op("light_toggle", ui_act("light-toggle"), needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	op("safe_toggle", ui_act("safe-toggle"), needs(req_wire(WIRE_SAFETY, because = MSG(airlock/safety_wire_cut))), then(PROC_REF(safeties_toggled)))
 	op("speed_toggle", ui_act("speed-toggle"), needs(req_wire(WIRE_SPEED, because = MSG(airlock/timing_wire_cut))), toggles(nameof(normalspeed)))
 	op("open_close", ui_act("open-close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
 		req_is(WELD_SHUT_WELDED, FALSE, because = MSG(airlock/welded)), req_is(STAT_BOLTED, FALSE, because = MSG(airlock/bolted)),
-		req_bool(PROC_REF(not_held_by_another), because = MSG(airlock/held_open))), then(PROC_REF(ui_open_close)))
+		req(PROC_REF(not_held_by_another))), then(PROC_REF(ui_open_close)))
 	// a silicon's gestures over its link: shift opens or closes it, ctrl bolts it, alt electrifies it, middle switches the bolt lights (the AI's: a
 	// cyborg's middle-click cycles its modules)
 	extend("open_close", binds(remote()), gesture(GESTURE_SHIFT))
@@ -417,7 +417,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// The bolt button: raising this actor's own hold needs power (dropping one never does).
 /obj/machinery/door/airlock/proc/actor_may_move_bolts(datum/act/op/A)
-	return !held_by_source(src, STAT_BOLTED, A.actor) || power_systems_on()
+	return (!held_by_source(src, STAT_BOLTED, A.actor) || power_systems_on()) ? null : MSG(airlock/no_power_to_raise)
 
 /obj/machinery/door/airlock/proc/bolts_message(datum/act/op/A)
 	return bolted ? /datum/msg/airlock/bolts_dropped : /datum/msg/airlock/bolts_raised
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /// Nobody but the actor holds the door open.
 /obj/machinery/door/airlock/proc/not_held_by_another(datum/act/op/A)
-	return density || isnull(hold_open()) || hold_open() == A.actor
+	return (density || isnull(hold_open()) || hold_open() == A.actor) ? null : MSG(airlock/held_open)
 
 /// The window's open-close button: the door swings, a holder's own press lets go of it first.
 /obj/machinery/door/airlock/proc/ui_open_close(datum/act/op/A)
@@ -679,7 +679,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return OP_OK
 
 /obj/machinery/door/airlock/proc/panel_closable(datum/act/A)
-	return !(panel_open(src) && broken_now())
+	return (!(panel_open(src) && broken_now())) ? null : MSG(airlock/panel_broken)
 
 /// The panel was moved: an open one shows its wires.
 /obj/machinery/door/airlock/proc/panel_toggled(datum/act/op/A)

@@ -29,7 +29,7 @@ TRACKED(/obj/item/geiger, last_perceived_radiation_danger)
 CAPABILITIES(/obj/item/geiger)
 	owns_one(nameof(geiger_sound), /datum/geiger_sound)
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
-	op("reset", hand(), gesture(GESTURE_ALT), label("Reset"), needs(req_bool(PROC_REF(is_scanning), because = MSG(geiger/off))), then(PROC_REF(reset_counts)))
+	op("reset", hand(), gesture(GESTURE_ALT), label("Reset"), needs(req(PROC_REF(is_scanning))), then(PROC_REF(reset_counts)))
 
 MSG_DEF_SELF(geiger/off, "It must be on to reset its radiation level.")
 
@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 /// A running counter can be told to forget what it measured.
 /obj/item/geiger/proc/is_scanning(datum/act/A)
-	return scanning
+	return (scanning) ? null : MSG(geiger/off)
 
 /// The alt-click: flush the stored radiation levels.
 /obj/item/geiger/proc/reset_counts(datum/act/op/A)

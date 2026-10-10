@@ -79,7 +79,7 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 
 /datum/capability/lib/occupant_pod/entries()
 	GLOB.occupant_pod_slots[slot] = TRUE
-	var/list/who = list(req_bool(CAP_PROC(victim_fits), because = CAP_PROC(victim_refusal)))
+	var/list/who = list(req(CAP_PROC(victim_fits)))
 	var/list/entries = list(
 		slot(slot, accepts = accepts, capacity = 1, exposure = SLOT_EXPOSURE_SEALED),
 		op("put_in", item(/mob/living), gesture(GESTURE_DRAG), label("Put inside"), global.tag(TAG_POD_ENTER),
@@ -134,10 +134,8 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 	return null
 
 /datum/capability/lib/occupant_pod/proc/victim_fits(datum/act/op/A)
-	return isnull(refusal(A.holder, victim_of(A), A.actor))
-
-/datum/capability/lib/occupant_pod/proc/victim_refusal(datum/act/op/A)
-	return refusal(A.holder, victim_of(A), A.actor) || /datum/msg/op/not_available
+	var/why = refusal(A.holder, victim_of(A), A.actor)
+	return isnull(why) ? null : (why || /datum/msg/op/not_available)
 
 /datum/capability/lib/occupant_pod/proc/begins_message(datum/act/op/A)
 	return A.held == A.actor ? /datum/msg/occupant_pod/begins_climb : /datum/msg/occupant_pod/begins_put

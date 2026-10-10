@@ -36,11 +36,11 @@ CAPABILITIES(/obj/machinery/button/remote)
 	extend("emag.use", needs(req(PROC_REF(has_access_lock))))
 	extend("emag.subvert", needs(req(PROC_REF(has_access_lock))))
 	op("press_hand", hand(), label("Toggle"), wait(0),
-		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+		needs(req(PROC_REF(hand_refusal)), req(PROC_REF(can_press)), req(PROC_REF(may_press))), then(PROC_REF(pressed)))
 	op("press_item", item(/obj/item), label("Toggle"), when(PROC_REF(item_presses)), priority(OP_PRIORITY_NORMAL + 1), wait(0),
-		needs(req_bool(PROC_REF(button_works), because = MSG(button/dead)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+		needs(req(PROC_REF(button_works)), req(PROC_REF(can_press)), req(PROC_REF(may_press))), then(PROC_REF(pressed)))
 	op("press_silicon", ai(), wait(0),
-		needs(req_bool(PROC_REF(has_network), because = MSG(button/no_route)), req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req_bool(PROC_REF(can_press), because = MSG(button/spent)), req_bool(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+		needs(req(PROC_REF(has_network)), req(PROC_REF(hand_refusal)), req(PROC_REF(can_press)), req(PROC_REF(may_press))), then(PROC_REF(pressed)))
 	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
@@ -58,23 +58,23 @@ CAPABILITIES(/obj/machinery/button/remote)
 
 /// Not spent (a single use button is, once pressed).
 /obj/machinery/button/remote/proc/can_press(datum/act/A)
-	return TRUE
+	return null
 
 /// It works at all (it has power and is not broken).
 /obj/machinery/button/remote/proc/button_works(datum/act/A)
-	return operable()
+	return operable() ? null : MSG(button/dead)
 
 /// Its network wire is whole (a silicon cannot reach it otherwise).
 /obj/machinery/button/remote/proc/has_network(datum/act/A)
-	return !!(wires_num & 2)
+	return (wires_num & 2) ? null : MSG(button/no_route)
 
 /// Whoever has access presses it, and anyone does while its check wire is cut.
 /obj/machinery/button/remote/proc/may_press(datum/act/op/A)
-	return allowed(A.actor) || !(wires_num & 1)
+	return (allowed(A.actor) || !(wires_num & 1)) ? null : MSG(button/denied)
 
 /// A refusal flashes the denial on a working button that is not spent and checks access (what refused it, then, was its lock).
 /obj/machinery/button/remote/proc/denied_flash(datum/act/A)
-	if(operable() && can_press(A) && (wires_num & 1))
+	if(operable() && isnull(can_press(A)) && (wires_num & 1))
 		flick("doorctrl-denied", src)
 	return OP_OK
 
@@ -338,7 +338,7 @@ CAPABILITIES(/obj/machinery/button/remote/driver)
 TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 
 /obj/machinery/button/remote/blast_door/single_use/can_press(datum/act/A)
-	return !has_been_pressed
+	return !has_been_pressed ? null : MSG(button/spent)
 
 /obj/machinery/button/remote/blast_door/single_use/trigger()
 	set_has_been_pressed(TRUE)

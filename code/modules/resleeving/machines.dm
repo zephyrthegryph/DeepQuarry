@@ -363,22 +363,17 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	blur_amount = (48 - manip_rating * 8)
 
-/// Requirement (was REQ_* can_take_dragged): the legacy check answers TRUE to pass.
-/obj/machinery/transhuman/resleever/proc/can_take_dragged_holds(datum/act/op/A)
-	var/answer = can_take_dragged(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_take_dragged_holds refuses: the legacy check's text, else the clause's own reason.
+/// Requirement: an attached mob refuses with the legacy text; a free passenger is allowed.
 /obj/machinery/transhuman/resleever/proc/can_take_dragged_refusal(datum/act/op/A)
 	var/answer = can_take_dragged(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	return istext(answer) ? answer : (answer ? null : /datum/msg/req_failed)
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
 	interface("ResleevingPod", title = "Resleever")
 	without("ui_open")
 	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())
 	op("resleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(resleever_interaction_item)))
-	op("resleever_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(maintenance_panel_shut), because = /datum/msg/req_failed), req_bool(PROC_REF(can_take_dragged_holds), because = PROC_REF(can_take_dragged_refusal))), then(PROC_REF(resleever_interaction_drag)))
+	op("resleever_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(maintenance_panel_shut), because = /datum/msg/req_failed), req(PROC_REF(can_take_dragged_refusal))), then(PROC_REF(resleever_interaction_drag)))
 	op("resleever_verb_eject", menu(), label("EJECT Occupant"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_eject)))
 	op("resleever_verb_move_inside", menu(), label("Move INSIDE"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_move_inside)))
 

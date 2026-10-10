@@ -357,11 +357,11 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
 	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))
-	extend("sensor", needs(req_bool(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics))))
+	extend("sensor", needs(req(PROC_REF(electronics_welcome))))
 
 /// A wooden bucket does not take electronics.
 /obj/item/reagent_containers/glass/bucket/wood/proc/electronics_welcome(datum/act/op/A)
-	return FALSE
+	return (FALSE) ? null : MSG(glass/no_electronics)
 
 /obj/item/reagent_containers/glass/bucket/wood/proc/cut_into_wood_helmet(datum/act/op/A)
 	var/mob/user = A.actor

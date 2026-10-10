@@ -332,12 +332,12 @@ CAPABILITIES(/obj/machinery/access_button)
 		list("Tag", "master_tag", "text", 30),
 		list("Frequency", "frequency", "frequency"),
 		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'.")))
-	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req_bool(PROC_REF(button_allows), because = MSG(access_button/denied))), then(PROC_REF(pressed)))
+	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req(PROC_REF(button_allows))), then(PROC_REF(pressed)))
 	on_op("press", then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED)
 
 /// Whoever has access presses it.
 /obj/machinery/access_button/proc/button_allows(datum/act/op/A)
-	return allowed(A.actor)
+	return (allowed(A.actor)) ? null : MSG(access_button/denied)
 
 /// The press: its signal goes to the controller.
 /obj/machinery/access_button/proc/pressed(datum/act/op/A)

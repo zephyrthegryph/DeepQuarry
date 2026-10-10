@@ -1021,3 +1021,32 @@
 	var/obj/item/p2_storage_probe/I = sb_make(/obj/item/p2_storage_probe)
 	sb_click(H, B, I)
 	TEST_ASSERT_EQUAL(sb_icon(B), "laundry-full", "full of laundry")
+
+/// A matched storage.put_in candidate checks its requirement again if the slot's rules change.
+/datum/unit_test/dq_p2_storage/fits_requirement_keeps_its_exact_refusal
+/datum/unit_test/dq_p2_storage/fits_requirement_keeps_its_exact_refusal/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/box/B = sb_make(/obj/item/storage/box)
+	var/obj/item/p2_storage_probe/first = sb_make(/obj/item/p2_storage_probe)
+	TEST_ASSERT(H.put_in_active_hand(first), "the first input is held")
+	var/datum/op_result/inserted = test_click(H, B, first)
+	TEST_ASSERT_EQUAL(inserted?.key, "storage.put_in", "the real click selected the insertion candidate")
+	TEST_ASSERT_EQUAL(inserted?.outcome, ACT_COMMITTED, "a fitting item passed the actual requirement")
+	TEST_ASSERT_EQUAL(first.loc, B, "the insertion committed real containment")
+	var/obj/item/p2_storage_probe/next = sb_make(/obj/item/p2_storage_probe)
+	TEST_ASSERT(H.put_in_active_hand(next), "the second input is held")
+	var/datum/op_resolution/R = own(op_resolve(H, B, next, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK))
+	var/datum/op_cand/insertion
+	for(var/datum/op_cand/C as anything in R.ordered)
+		if(C.oplan.key == "storage.put_in" && op_cand_when(R, C))
+			insertion = C
+	TEST_ASSERT_NOTNULL(insertion, "a genuine insertion candidate matched before its rules changed")
+	if(!insertion)
+		return
+	TEST_ASSERT_NULL(op_cand_require_reason(R, insertion), "the matched candidate initially allows")
+	storage_restrict(B, list(/obj/item/stack/tile), null)
+	var/before_count = sb_count(B)
+	var/why = op_cand_require_reason(R, insertion)
+	TEST_ASSERT_EQUAL(why, "\The [next] won't go in 	he [B]: it doesn't take that.", "the same candidate now refuses with the original formatted reason")
+	TEST_ASSERT_EQUAL(next.loc, H, "the refused requirement kept the input in the actor's hand")
+	TEST_ASSERT_EQUAL(sb_count(B), before_count, "requirement inspection made no containment change")

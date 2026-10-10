@@ -189,11 +189,11 @@ CAPABILITIES(/datum/syringe_contamination)
 
 // The lethal injection syringe draws no blood and does not stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe)
-	extend("needle.draw_blood", needs(req_bool(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
-	extend("needle.take_blood", needs(req_bool(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
+	extend("needle.draw_blood", needs(req(PROC_REF(no_blood_draw))))
+	extend("needle.take_blood", needs(req(PROC_REF(no_blood_draw))))
 
 /obj/item/reagent_containers/syringe/ld50_syringe/proc/no_blood_draw(datum/act/op/A)
-	return FALSE
+	return (FALSE) ? null : MSG(syringe/no_blood)
 
 /obj/item/reagent_containers/syringe/ld50_syringe/may_stab(datum/act/op/A)
 	return FALSE

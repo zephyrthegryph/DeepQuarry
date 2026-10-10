@@ -14,7 +14,7 @@ TRACKED(/obj/structure/drop_pod, finished)
 
 CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air)
-	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req_bool(PROC_REF(is_finished), because = MSG(drop_pod/not_opened))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req(PROC_REF(is_finished))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
 	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
 	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
 	param(nameof(auto_open), pos = 2)
@@ -133,7 +133,7 @@ MSG_DEF_SELF(drop_pod/not_opened, span_warning("%T% hasn't been opened yet. Do t
 MSG_DEF_SELF(drop_pod/breaking_down, span_notice("You start breaking down %T%."))
 
 /obj/structure/drop_pod/proc/is_finished(datum/act/op/A)
-	return finished
+	return (finished) ? null : MSG(drop_pod/not_opened)
 
 /obj/structure/drop_pod/proc/wrench_act_done(datum/act/op/A)
 	var/obj/item/O = A.held

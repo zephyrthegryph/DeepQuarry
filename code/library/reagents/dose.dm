@@ -37,13 +37,13 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	var/touch = route == CHEM_TOUCH
 	return list(
 		touch ? op("apply", at_target(/mob/living/carbon/human), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Put on"),
-			needs(req_reagents(1, because = MSG(dose/target_empty)), req_bool(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
-				req_bool(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req_bool(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
+			needs(req_reagents(1, because = MSG(dose/target_empty)), req(CAP_PROC(limb_there)),
+				req(CAP_PROC(limb_not_robotic)), req(CAP_PROC(limb_open))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(put_on)), says(MSG(dose/applied))) : null,
 		touch ? op("stick", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Apply to"),
 			begins(MSG(dose/begin_stick)), wait(CAP_PROC(wait_time)),
-			needs(req_reagents(1, because = MSG(dose/target_empty)), req_bool(CAP_PROC(limb_there), because = MSG(dose/limb_missing)),
-				req_bool(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req_bool(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
+			needs(req_reagents(1, because = MSG(dose/target_empty)), req(CAP_PROC(limb_there)),
+				req(CAP_PROC(limb_not_robotic)), req(CAP_PROC(limb_open))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(put_on_other)), says(MSG(dose/stuck))) : null,
 		touch ? null : op("take", at_target(/mob/living/carbon/human), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Swallow"),
 			needs(req_belly_free(), req_mouth_free()),
@@ -54,7 +54,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(forced_down)), says(MSG(dose/forced))),
 		cuts_into ? op("cut", item(/obj/item), when(CAP_PROC(held_cuts)), label("Cut it up"), then(CAP_PROC(cut_up))) : null,
 		op("dissolve", at_target(), when(CAP_PROC(target_is_open_holder)), priority(OP_PRIORITY_PART), label("Dissolve in it"),
-			needs(req_bool(CAP_PROC(target_has_reagents), because = MSG(dose/target_empty)), req_bool(CAP_PROC(target_has_room), because = MSG(reagent_container/full))),
+			needs(req(CAP_PROC(target_has_reagents)), req(CAP_PROC(target_has_room))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(dose_dissolved)), says(MSG(dose/dissolved))))
 
 /// (source, sink, mode) of the act's op: the thing into the one it is taken by, put on, or dissolved in.
@@ -100,24 +100,24 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 
 /datum/capability/lib/dose/proc/target_has_reagents(datum/act/op/A)
 	var/atom/target = A.target
-	return !!target?.reagents?.total_volume
+	return (!!target?.reagents?.total_volume) ? null : /datum/msg/dose/target_empty
 
 /datum/capability/lib/dose/proc/target_has_room(datum/act/op/A)
 	var/atom/target = A.target
-	return reagents_takeable(target) > 0
+	return (reagents_takeable(target) > 0) ? null : /datum/msg/reagent_container/full
 
 /datum/capability/lib/dose/proc/req_belly_free()
-	return req_bool(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
+	return req(CAP_PROC(belly_free))
 
 /datum/capability/lib/dose/proc/req_mouth_free()
-	return req_bool(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
+	return req(CAP_PROC(mouth_free))
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return target.consume_liquid_belly || !reagents_from_belly(A.holder)
+	return (target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
 
 /datum/capability/lib/dose/proc/mouth_free(datum/act/op/A)
-	return isnull(mouth_blocked_reason(A.actor, A.target))
+	return (isnull(mouth_blocked_reason(A.actor, A.target))) ? null : /datum/msg/reagent_container/mouth_blocked
 
 /// The limb the one who acts aims at, on the person it goes on.
 /datum/capability/lib/dose/proc/limb_aimed(datum/act/op/A)
@@ -128,11 +128,11 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	return target.get_organ(check_zone(user.zone_sel.selecting))
 
 /datum/capability/lib/dose/proc/limb_there(datum/act/op/A)
-	return !isnull(limb_aimed(A))
+	return (!isnull(limb_aimed(A))) ? null : /datum/msg/dose/limb_missing
 
 /datum/capability/lib/dose/proc/limb_not_robotic(datum/act/op/A)
 	var/obj/item/organ/external/affecting = limb_aimed(A)
-	return isnull(affecting) || affecting.status < ORGAN_ROBOT
+	return (isnull(affecting) || affecting.status < ORGAN_ROBOT) ? null : /datum/msg/dose/limb_robotic
 
 /// Whatever covers the limb lets it through (a patch may pierce material, if it says so). The thick hide of some species is a roll made when it goes on.
 /datum/capability/lib/dose/proc/limb_open(datum/act/op/A)
@@ -142,7 +142,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	var/pierce = pierces
 	if(istext(pierce))
 		pierce = holder.vars[pierce]
-	return !!target.can_inject(user, FALSE, user.zone_sel.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)
+	return (!!target.can_inject(user, FALSE, user.zone_sel.selecting, pierce, INJECT_METHOD_NEEDLE, FALSE)) ? null : /datum/msg/dose/limb_covered
 
 /// The roll of a thick hide, for the limb aimed at: TRUE when the thing is turned away.
 /datum/capability/lib/dose/proc/hide_turns_it_away(datum/act/op/A)

@@ -50,7 +50,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 /datum/capability/lib/buckle
 
 /datum/capability/lib/buckle/entries()
-	var/list/who = list(req_bool(CAP_PROC(can_buckle_victim), because = CAP_PROC(why_not)))
+	var/list/who = list(req(CAP_PROC(can_buckle_victim)))
 	return list(
 		slot(SLOT_BUCKLE, accepts = list(/mob/living), capacity = slots),
 		examine_line(CAP_PROC(seated_line), when = CAP_PROC(has_occupants)),
@@ -135,10 +135,8 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 			. += L
 
 /datum/capability/lib/buckle/proc/can_buckle_victim(datum/act/op/A)
-	return isnull(refusal(A.holder, victim_of(A), A.actor))
-
-/datum/capability/lib/buckle/proc/why_not(datum/act/op/A)
-	return refusal(A.holder, victim_of(A), A.actor) || /datum/msg/op/not_available
+	var/why = refusal(A.holder, victim_of(A), A.actor)
+	return isnull(why) ? null : (why || /datum/msg/op/not_available)
 
 // ---- buckle ----
 

@@ -89,12 +89,12 @@ CAPABILITIES(/obj/item/reagent_containers/powder)
 		transfer_min = nameof(min_transfer_amount),
 		transfer_max = nameof(max_transfer_amount))
 	op("snort", inputs(item(/obj/item/glass_extra/straw), item(/obj/item/reagent_containers/rollingpaper)), label("Snort it"),
-		needs(req_bool(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), then(PROC_REF(snorted)))
+		needs(req(PROC_REF(snorter_is_human))), then(PROC_REF(snorted)))
 
 MSG_DEF_SELF(powder/not_flesh, "You have to be fleshy to snort the naughty drugs.")
 
 /obj/item/reagent_containers/powder/proc/snorter_is_human(datum/act/op/A)
-	return ishuman(A.actor)
+	return (ishuman(A.actor)) ? null : MSG(powder/not_flesh)
 
 /// A little is snorted: into the blood; the powder is used up with the last of it.
 /obj/item/reagent_containers/powder/proc/snorted(datum/act/op/A)

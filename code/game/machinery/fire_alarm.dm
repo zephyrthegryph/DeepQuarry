@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/firealarm)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req_bool(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
+	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
