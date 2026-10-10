@@ -99,8 +99,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
-	add_overlay(MAT_GLASS)
-
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	/*
@@ -257,3 +255,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	network = list(NETWORK_XENOBIO)
 	circuit = /obj/item/circuitboard/security/xenobio
 	light_color = "#F9BBFC"
+
+/obj/machinery/computer/security/telescreen/entertainment/draw(datum/look/look)
+	..()
+	look.overlay(MAT_GLASS)

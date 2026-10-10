@@ -20,23 +20,11 @@ init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, 
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
-init_visuals	code/datums/reactive_icon_update.dm	icon_state = "screwdriver"
 init_visuals	code/game/area/areas.dm	icon_state = ""
-init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
-init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
-init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
-init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
-init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
-init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
-init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
-init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
-init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "corgi"
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
-init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_proc")
-init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_but")
 init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(MA)
@@ -47,27 +35,14 @@ init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
 init_visuals	code/game/turfs/simulated/walls.dm	icon_state = "blank"
 init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
-init_visuals	code/modules/clothing/gloves/miscellaneous.dm	icon_state = "[glovecolor]_ranger_gloves"
-init_visuals	code/modules/clothing/shoes/miscellaneous.dm	icon_state = "[bootcolor]_ranger_boots"
-init_visuals	code/modules/clothing/under/miscellaneous.dm	icon_state = "[unicolor]_ranger_uniform"
-init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "fingerprint1"
-init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
-init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
-init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
-init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
-init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
-init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
-init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
-init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
 init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
-init_visuals	code/modules/vehicles/bike.dm	icon_state = "[bike_icon]_off"
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
