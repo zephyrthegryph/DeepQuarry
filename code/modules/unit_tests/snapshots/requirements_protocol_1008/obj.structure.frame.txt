@@ -1,85 +1,130 @@
 human|none menu: Climb
+human|none menu: Rotate Clockwise
+human|none menu: Rotate Counter Clockwise
+human|none menu: Turn Around
 human|none click: nothing
 robot|none menu: Climb
+robot|none menu: Rotate Clockwise
+robot|none menu: Rotate Counter Clockwise
+robot|none menu: Turn Around
 robot|none click: nothing
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: Rotate Clockwise
+ghost|none menu: Rotate Counter Clockwise
+ghost|none menu: Turn Around
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Turn Around
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Turn Around
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Turn Around
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Wrench into place
 human|/obj/item/tool/wrench click: Click: Wrench into place
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Turn Around
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Turn Around
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Cut frame apart
 human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Turn Around
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Cut frame apart
 human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Turn Around
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Turn Around
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Climb
 human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Turn Around
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 human|/obj/item/circuitboard menu: Climb
 human|/obj/item/circuitboard menu: Hit
 human|/obj/item/circuitboard menu: Move To Top
+human|/obj/item/circuitboard menu: Rotate Clockwise
+human|/obj/item/circuitboard menu: Rotate Counter Clockwise
 human|/obj/item/circuitboard menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/circuitboard menu: Turn Around
 human|/obj/item/circuitboard menu: Use
 human|/obj/item/circuitboard click: Click: Use
 human|/obj/item/stack/material menu: Climb
 human|/obj/item/stack/material menu: Hit
 human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Rotate Clockwise
+human|/obj/item/stack/material menu: Rotate Counter Clockwise
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Turn Around
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Use
-keys: climb.climb, climb.climb_menu, construction.build:machine_frame_board_in.insert_board, construction.build:machine_frame_board_in.unfasten_board, construction.build:machine_frame_fastened.anchor_cover, construction.build:machine_frame_fastened.fasten_board, construction.build:machine_frame_fastened.unwire, construction.build:machine_frame_finished.connect_monitor, construction.build:machine_frame_finished.cut_apart, construction.build:machine_frame_finished.finish_alarm, construction.build:machine_frame_finished.finish_machine, construction.build:machine_frame_loose.unanchor, construction.build:machine_frame_paneled.add_glass, construction.build:machine_frame_placed.anchor, construction.build:machine_frame_placed.remove_board, construction.build:machine_frame_placed.unfasten_cover, construction.build:machine_frame_wired.remove_components, construction.build:machine_frame_wired.remove_glass, construction.build:machine_frame_wired.wire, drag_buckle, item, melee_hit
+keys: climb.climb, climb.climb_menu, construction.build:machine_frame_board_in.insert_board, construction.build:machine_frame_board_in.unfasten_board, construction.build:machine_frame_fastened.anchor_cover, construction.build:machine_frame_fastened.fasten_board, construction.build:machine_frame_fastened.unwire, construction.build:machine_frame_finished.connect_monitor, construction.build:machine_frame_finished.cut_apart, construction.build:machine_frame_finished.finish_alarm, construction.build:machine_frame_finished.finish_machine, construction.build:machine_frame_loose.unanchor, construction.build:machine_frame_paneled.add_glass, construction.build:machine_frame_placed.anchor, construction.build:machine_frame_placed.remove_board, construction.build:machine_frame_placed.unfasten_cover, construction.build:machine_frame_wired.remove_components, construction.build:machine_frame_wired.remove_glass, construction.build:machine_frame_wired.wire, drag_buckle, item, melee_hit, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around
 
