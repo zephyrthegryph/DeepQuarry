@@ -10,6 +10,18 @@ function receiptDirectory() {
 }
 import { testRunRecord } from './bench';
 
+test('focused test record preserves observed runtime library identity without inventing legacy evidence', () => {
+  const identity = { id: 'runtime-fixture', timestamp: '', commit: '', branch: '', dirty_files: 0, host: '', platform: '' };
+  const runtime = { executable: 'pinned-dreamdaemon', sha256: 'a'.repeat(64), version: null, security: '-trusted',
+    library: { source: 'current/verdigris.dll', hosted: 'owned/verdigris.dll', sha256: 'b'.repeat(64), bytes: 123 } };
+  const rows = { probe: { status: 1, name: 'probe', message: 'actual failure' } };
+  const record = testRunRecord(identity, 'focused', [], false, 1, rows, null, runtime);
+  expect(JSON.parse(JSON.stringify(record)).runtime_identity).toEqual(runtime);
+  expect(record.counts.failed).toBe(1);
+  const legacy = testRunRecord(identity, 'legacy', [], true, 1, rows);
+  expect(Object.hasOwn(legacy, 'runtime_identity')).toBe(false);
+});
+
 test('record retains actual fallback compiler and complete ordered defines', () => {
   const defines = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG', 'VALUE=1', 'VALUE=2'];
   const compilation = byondProvenance('native', defines, { invocation: {

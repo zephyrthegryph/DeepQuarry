@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { conventionalOutput, createNativeRequestDirectory, parseAcquiredResult, parseCompileResult, withCompiledOutput, type NativePairOutput } from './native_pair';
+import { stageRuntimeLibrary } from './runtime_library';
 
 const native: NativePairOutput = { kind: 'native_pair', compiler: 'mock-dmbc', store: path.resolve('E:/dq-cache/fixture-store'), outputProject: path.resolve('project.dme'), pairId: '1'.repeat(32), dmbHash: '2'.repeat(32), rscHash: '3'.repeat(32), dmbBytes: 1, rscBytes: 2 };
 function fields() {
@@ -136,3 +137,45 @@ test('cleanup removes bulky copies while preserving runtime diagnostic leaves', 
     expect(fs.existsSync(log.replace(/\.log$/, '.rsc'))).toBe(false);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+for (const fails of [false, true]) {
+  test(`hosted mutable RSC and staged library preserve compiled inputs on ${fails ? 'failure' : 'success'}`, async () => {
+    const inputs = createNativeRequestDirectory('immutable-runtime-inputs');
+    const compiledRsc = path.join(inputs, 'compiled.rsc');
+    const sourceLibrary = path.join(inputs, 'verdigris.dll');
+    fs.writeFileSync(compiledRsc, 'rs');
+    fs.writeFileSync(sourceLibrary, 'current exact DLL');
+    let hostedRoot = '';
+    let hostedRsc = '';
+    let hostedLibrary = '';
+    const childFailure = new Error('simulated reaped child failure');
+    try {
+      const outcome = await withCompiledOutput(native, async (_exe, args) => {
+        hostedRoot = args[args.indexOf('--slots') + 1];
+        const report = acquired(hostedRoot);
+        // The real Rust acquire producer uses authenticated independent copies.
+        fs.copyFileSync(compiledRsc, report.rsc);
+        fs.writeFileSync(args[args.indexOf('--result-file') + 1], JSON.stringify(report));
+        return { code: 0, combined: '' };
+      }, async dmb => {
+        hostedRsc = dmb.replace(/\.dmb$/, '.rsc');
+        const staged = stageRuntimeLibrary(sourceLibrary, path.dirname(dmb));
+        hostedLibrary = staged.identity.hosted;
+        try {
+          fs.writeFileSync(hostedRsc, 'DD rewrote its writable resource archive');
+          expect(fs.readFileSync(compiledRsc, 'utf8')).toBe('rs');
+          expect(fs.readFileSync(hostedLibrary, 'utf8')).toBe('current exact DLL');
+          expect(fs.statSync(hostedRsc).nlink).toBe(1);
+          if (fails) throw childFailure;
+          return 'completed';
+        } finally { staged.remove(); }
+      }).then(value => value, error => error);
+      expect(outcome).toBe(fails ? childFailure : 'completed');
+      expect(fs.readFileSync(compiledRsc, 'utf8')).toBe('rs');
+      expect(fs.readFileSync(sourceLibrary, 'utf8')).toBe('current exact DLL');
+      expect(fs.existsSync(hostedRsc)).toBe(false);
+      expect(fs.existsSync(hostedLibrary)).toBe(false);
+      expect(fs.existsSync(hostedRoot)).toBe(false);
+    } finally { fs.rmSync(inputs, { recursive: true, force: true }); }
+  });
+}

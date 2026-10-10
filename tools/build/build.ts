@@ -567,6 +567,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
 type WorldRun = {
   compilation: CompilerProvenance | null;
   compilerReceipt: string;
+  runtimeIdentity?: RuntimeIdentity;
   clean: boolean;
   cleanText: string | null;
   results: Record<string, UnitTestEntry> | null;
@@ -605,6 +606,7 @@ async function runTestWorld(
   const started = Date.now();
   let killedByWatchdog = false;
   let runtimeError: string | null = null;
+  let runtimeIdentity: RuntimeIdentity | undefined;
   try {
     const result = await DreamDaemon(
       {
@@ -613,6 +615,7 @@ async function runTestWorld(
         watchdogFile: 'data/unit_tests.json',
         onSpawn: (pid) => sampler?.start(pid),
         onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
+        onRuntimeIdentity: identity => { runtimeIdentity = identity; },
       },
       '-close',
       ddSecurityFlag(),
@@ -652,6 +655,7 @@ async function runTestWorld(
   return {
     compilation: compiled.provenance ?? null,
     compilerReceipt: compilerReceipt.file,
+    runtimeIdentity,
     clean: cleanText !== null,
     cleanText,
     results,
@@ -756,7 +760,7 @@ function linkOrCopy(from: string, to: string): void {
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
-type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedSuiteInventory; runtimeIdentity?: RuntimeIdentity };
+type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedSuiteInventory };
 
 /**
  * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
@@ -838,7 +842,7 @@ async function runIsolatedTestWorld(
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
           onPreparedOutput: (dmb) => { options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
           watchdogMaximumMs: options.issueInventory || options.exactBatch ? 300_000 : undefined,
-          onRuntimeIdentity: options.issueInventory || options.exactBatch ? identity => { runtimeIdentity = identity; } : undefined,
+          onRuntimeIdentity: identity => { runtimeIdentity = identity; },
         },
         String(port),
         '-close',
@@ -977,7 +981,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
     return null;
   }
   recordSweepHashes(run.results);
-  const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation);
+  const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation, run.runtimeIdentity);
   record.compiler_receipt = run.compilerReceipt;
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(

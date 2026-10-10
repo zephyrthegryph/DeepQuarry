@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { CompilerProvenance } from './compiler_provenance';
+import type { RuntimeIdentity } from './normal_suite_plan';
 
 // ---------------------------------------------------------------------------
 // Git / run identity
@@ -839,6 +840,7 @@ export type TestRun = RunIdentity & {
   compilation: CompilerProvenance | null;
   compiler_receipt?: string;
   compiler_receipts?: string[];
+  runtime_identity?: RuntimeIdentity;
   clean: boolean;
   duration_seconds: number;
   counts: { passed: number; failed: number; skipped: number };
@@ -854,6 +856,7 @@ export function testRunRecord(
   durationSeconds: number,
   results: Record<string, UnitTestEntry>,
   compilation: CompilerProvenance | null = null,
+  runtimeIdentity?: RuntimeIdentity,
 ): TestRun {
   const counts = { passed: 0, failed: 0, skipped: 0 };
   const failed: string[] = [];
@@ -870,6 +873,7 @@ export function testRunRecord(
     label,
     defines: [...(compilation?.orderedDefines ?? defines)],
     compilation,
+    ...(runtimeIdentity ? { runtime_identity: runtimeIdentity } : {}),
     clean,
     duration_seconds: durationSeconds,
     counts,
