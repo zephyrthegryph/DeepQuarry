@@ -7,7 +7,8 @@
 	var/turf/surface = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, surface)
 	actor.enable_godmode()
-	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, surface)
+	// the fixture opens the exosuit's links to a clientless actor: topic_usable() needs a player's client, which is the gate and not the pressure handler under test
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley/dq_topic_guard_fixture, surface)
 	mech.state = MECHA_BOLTS_SECURED
 	perform_op(actor, mech, "set_internal_tank_valve", null, ORIGIN_SYSTEM)
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/number/mecha_tank_valve), "Production pressure handler opens the actual native numeric request")

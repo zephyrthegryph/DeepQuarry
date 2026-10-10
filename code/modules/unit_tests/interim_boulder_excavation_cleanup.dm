@@ -8,7 +8,7 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT(actor.put_in_active_hand(pen), "The actual actor holds the original unsupported pen")
 	var/depth_before = boulder.excavation_level
-	TEST_ASSERT_EQUAL(boulder.interaction_item(actor, pen, null), INTERACTION_HANDLED_PASS, "The real unsupported item preserves the original interaction result")
+	TEST_ASSERT_EQUAL(test_op_handler(boulder, "interaction_item", actor, pen), OP_PASS, "The real unsupported item preserves the original interaction result")
 	TEST_ASSERT(!QDELETED(boulder) && boulder.loc == T, "The real unsupported item preserves the original boulder")
 	TEST_ASSERT_EQUAL(boulder.excavation_level, depth_before, "The real unsupported item does not excavate the boulder")
 	TEST_ASSERT(actor.drop_from_inventory(pen), "The actual actor releases its original pen")
@@ -18,7 +18,7 @@
 	TEST_ASSERT_EQUAL(tool.digspeed, 2 SECONDS, "The actual archaeological brush retains its canonical two-second wait")
 	// Set the public accumulated depth to a real late-excavation state; the actual completion still does its increment and probability check.
 	boulder.excavation_level = 100
-	TEST_ASSERT_EQUAL(boulder.interaction_item(actor, tool, null), INTERACTION_HANDLED_PASS, "The real brush interaction starts actual timed excavation")
+	TEST_ASSERT_NOTNULL(perform_op(actor, boulder, "dig", tool, ORIGIN_CLICK, AUTH_PHYSICAL), "The real brush dig op starts actual timed excavation")
 	scheduler_advance((1.9 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!QDELETED(boulder) && boulder.loc == T, "The actual boulder survives before its original excavation deadline")
 	TEST_ASSERT_EQUAL(boulder.excavation_level, 100, "The actual brush spends no excavation amount before its original deadline")

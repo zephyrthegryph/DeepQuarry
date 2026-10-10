@@ -3,7 +3,9 @@ SYSTEM_DEF(assets)
 	needs = list(
 		/datum/system/atoms,
 		/datum/system/holomaps,
-		/datum/system/robot_sprites
+		/datum/system/robot_sprites,
+		// pai_icons draws one sprite per chassis the pAI system registers on initialize.
+		/datum/system/pai
 	)
 	var/list/datum/asset_cache_item/cache = list()
 	var/list/preload = list()
