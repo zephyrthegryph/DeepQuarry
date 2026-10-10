@@ -39,6 +39,7 @@ CAPABILITIES(/turf/simulated/wall)
 	every(2 SECONDS, then(PROC_REF(wall_step)), when = nameof(radioactive))
 	op("wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(wall_item)))
 	wall_construction()
+	op("wall_dissolve", ai(), wait(5 SECONDS), then(PROC_REF(wall_dissolve_done)))
 	op("wall_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"), then(PROC_REF(wall_hand)))
 	op("wall_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(wall_graffiti_alt)))
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
@@ -47,6 +48,11 @@ CAPABILITIES(/turf/simulated/wall)
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
 	param(nameof(girder_material_key), pos = 3)
+
+/// The resin wall porous under a hivenode touch (resin.dm) dissolves once the toucher has stayed five seconds.
+/turf/simulated/wall/proc/wall_dissolve_done(datum/act/op/A)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
+	dismantle_wall()
 
 /// The wall's material, reinforcement and girder (its constructor params; the type's forced ones win).
 /turf/simulated/wall/var/wall_material_key

@@ -4161,3 +4161,14 @@ Group D: the timed actions of girders, the medical stand, the stasis cage, trans
   - Class (message): the stasis cage refusal for a creature that is not netted no longer names the creature (`It's going to be difficult to convince the creature to move into the cage without capturing it in a net.`); the begin line names it. The stasis cage is entered by the cage's own drag op (the creature's `MouseDrop` override is gone); the dragger must be next to the cage (the old check was the creature next to it).
   - Class (timing): transit pods wait at least one tick between stages (a zero delay was a zero-length task step); the first stage runs one tick after `follow_tube()`.
   - Class (claims): a girder being plated or reinforced is claimed, as the old per-target task limit did; a second action on it is refused as in use.
+## Timed actions round 3 (rewrite/timed3-E)
+
+* **Walls, fryer, scanner, nail polish (class: message wording and cancel timing).**
+  * Resin wall dissolve (`wall_dissolve`), fryer `fry_mob`: the victim walking away no longer cancels the wait; the end re-checks reach and says "slipped free" (fryer; before: silent cancel).
+  * Nail polish and remover: the refusals read "%T% already has nail polish on that limb!" / "... missing that limb!" / "... no nail polish to remove on that limb!" (static message templates; the limb name is no longer in the line). The same ops now apply to every intent that used `attack()` (use and harm).
+  * Fishing: a second cast on water that is being fished is refused as in use (`claims()`), where before the click fell through to the next op.
+  * Cash register wrench: anchoring takes two seconds as before; the tool sound at the start is the op's (was `use_tool`).
+  * Crafting: the "busy" flag of the window is `op_claimed()`; a craft of time 0 skips the pre-wait checks and reports a changed material at the end.
+  * Hide scraping: the count message is said once at the end or on interrupt (same as before) from `A.laps()`.
+  * Spinning (`/mob/proc/spin`) is a chain of `after()` calls, not a task: same turns at the same times.
+

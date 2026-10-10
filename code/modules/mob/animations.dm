@@ -212,23 +212,13 @@
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		play_sfx(src, SFX_EFFECTS_ROLL)
-	task_start(/datum/task/spin, src, null, left = spintime, speed = speed, facing = dir)
+	// One quarter turn every `speed` deciseconds until the time runs out (spin_step re-arms itself while a whole turn is left).
+	if(spintime >= speed)
+		after(src, speed, PROC_REF(spin_step), with = list(spintime, speed, dir))
 
-/// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
-/datum/task/spin
-	name = "spin"
-	steps = list(/mob/proc/spin_step = 0)
-	var/left = 0
-	var/speed = 1
-	var/facing = NORTH
-	var/started = FALSE
-
-/mob/proc/spin_step(datum/task/spin/T)
-	var/speed = T.speed
-	if(!T.started)
-		T.started = TRUE
-		return T.left >= speed ? STEP_REPEAT(speed) : STEP_DONE
-	var/D = T.facing
+/// One quarter turn of a spin; `left` is the time still to spin, `facing` the direction it turned to last.
+/mob/proc/spin_step(left, speed, facing)
+	var/D = facing
 	switch(D)
 		if(NORTH)
 			D = EAST
@@ -238,13 +228,11 @@
 			D = SOUTH
 		if(WEST)
 			D = NORTH
-	T.facing = D
 	set_dir(D)
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office))
 		var/obj/structure/bed/chair/office/O = src?.buckled_to()
 		O.dir = D
 		O.set_dir(D)
-	T.left -= speed
-	if(T.left < speed)
-		return STEP_DONE
-	return STEP_REPEAT(speed)
+	left -= speed
+	if(left >= speed)
+		after(src, speed, PROC_REF(spin_step), with = list(left, speed, D))

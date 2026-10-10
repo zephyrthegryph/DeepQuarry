@@ -224,6 +224,15 @@ Status: **DONE** = built in code/engine (or code/library) and documented in fina
 | KD2 | `ai()` ops started by a hook for work on a foreign thing: PAT override (an airlock), pickpocket (a person), medical stand needle and mask (a patient), core dormancy repair (a site) | The op lives on the thing that holds the hook (the module, the gloves, the stand, the affliction), so `TARGET_PRESENT` / `ADJACENT` keep the holder and not the thing worked on. The old tasks ended when the target moved or was deleted. | Converted with a check when the wait ends (the pickpocket compares the victim's place at each lap, the stand checks adjacency, the dormancy repair checks the site exists). Proposal: `takes("patient", keeps = TARGET_PRESENT | ADJACENT)` so a taken atom joins the keeps like `keeps_answer`. Behaviour difference listed in intended_changes.md. |
 | KD3 | `wait(repeats =)` laps with different progress presentation | The pickpocket opens a backpack with `progress = FALSE` (no bar, no cog) for its middle lap; a lap has no `silent` flag. | Proposal: `wait(t, silent = TRUE | PROC_REF(x))` per lap. Converted with the bar shown. |
 | KD4 | an op hosted by a datum that is not an atom (`/datum/affliction/core_dormancy`) | The dormancy repair op is declared on the affliction and performed with the affliction as the target (`perform_op` accepts any datum, `A.target_atom` is null so the target keeps skip). Not exercised by any test yet. | Verify with a pin that drives the repair steps; if non-atom hosts are not meant to hold ops, host the op on the protean's control cluster item. |
+### KT3. Found converting timed actions, round 3 group E (rewrite/timed3-E)
+
+All sites of the group were converted; these are the places where the form fits but not exactly.
+
+| ID | Where | Problem | Proposal |
+|---|---|---|---|
+| KE1 | `on_interrupt()` that continues the work (detective scanner stages) | The pending op is still active while `on_interrupt()` runs (`cancel()` calls it before `end_pending()`), so a `perform_op(..., ORIGIN_SYSTEM)` for the next stage is refused (`BUSY_REFUSE`). The scanner defers the follow-up with `after(src, 0, ...)`. | Run the interrupted handler after `end_pending()`, or document that a follow-up from `on_interrupt()` goes through `after(0)`. |
+| KE2 | `takes("victim")` as a keep (fryer `fry_mob`) | The op is on the fryer and the victim is a value, so the victim walking away is not a keep (the old task had the victim as its target and was cancelled by it moving). The done handler re-checks `Adjacent`. | `takes("victim", keeps = ADJACENT | TARGET_PRESENT)` or `keeps_answer` for a taken value (K22 for `takes()`). |
+| KE3 | `wait()` with a start that can refuse (crafting `make`) | `starts()` runs only for a wait that lasts, so a recipe with `time = 0` skips the pre-wait checks (the done handler re-checks and says the failure). | `starts()` for an instant wait, or a `needs()` that may read `A.arg()` of a `ui_act` arg and name a dynamic text. |
 
 ## K. Relations conversion (rewrite/relations, prefix KR)
 

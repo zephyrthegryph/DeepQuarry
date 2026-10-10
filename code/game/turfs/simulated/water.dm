@@ -49,7 +49,7 @@ TRACKED(/turf/simulated/floor/water, water_state)
 	return "water_shallow"
 
 CAPABILITIES(/turf/simulated/floor/water)
-	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), priority(OP_PRIORITY_PART + 1), then(PROC_REF(water_fishing)))
+	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), priority(OP_PRIORITY_PART + 1), claims(), starts(PROC_REF(fishing_cast)), wait(PROC_REF(fishing_wait_time)), on_interrupt(PROC_REF(fishing_ended)), then(PROC_REF(fishing_done)))
 	op("water_fill", item(/obj/item), label("Fill"), then(PROC_REF(water_fill)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(explosive_fishing)))
 

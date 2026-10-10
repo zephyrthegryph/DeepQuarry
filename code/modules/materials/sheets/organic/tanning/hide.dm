@@ -14,37 +14,33 @@
 
 //Step one - dehairing.
 CAPABILITIES(/obj/item/stack/animalhide)
-	op("animalhide_interaction_item", item(/obj/item), then(PROC_REF(animalhide_interaction_item)))
+	// One hide every 2.5 seconds until the stack is used up or the user stops.
+	op("animalhide_interaction_item", item(/obj/item), when(req(PROC_REF(held_cuts))), begins(MSG(animalhide/cutting), blind = "You hear the sound of a knife rubbing against flesh"),
+		wait(2.5 SECONDS, repeats = PROC_REF(scrape_more), after_step = PROC_REF(scrape_one)), on_interrupt(PROC_REF(scrape_report)), then(PROC_REF(scrape_finished)))
 
-/// Old attackby.
-/obj/item/stack/animalhide/proc/animalhide_interaction_item(datum/act/op/A)
+MSG_DEF(animalhide/cutting, span_notice("You start cutting the hair off %T%"), span_infoplain(span_bold("%U%") + " starts cutting hair off %T%"))
+
+/obj/item/stack/animalhide/proc/held_cuts(datum/act/op/A)
+	return has_edge(A.held) || is_sharp(A.held)
+
+/// Another hide follows while the stack has any left.
+/obj/item/stack/animalhide/proc/scrape_more(datum/act/op/A)
+	return amount > 0
+
+/obj/item/stack/animalhide/proc/scrape_report(datum/act/op/A)
+	var/scraped = A.laps()
+	if(scraped && A.actor)
+		to_chat(A.actor, span_notice("You scrape the hair off [scraped] hide\s."))
+
+/// The series ended on its own: say how many and clean up the stack when the last hide went.
+/obj/item/stack/animalhide/proc/scrape_finished(datum/act/op/A)
+	scrape_report(A)
+	if(amount <= 0)
+		spent(src)
+
+/// One hide scraped.
+/obj/item/stack/animalhide/proc/scrape_one(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(has_edge(W) || is_sharp(W))
-		//visible message on mobs is defined as visible_message(var/message, var/self_message, var/blind_message)
-		act_message(user, src, MSG_SELF(span_notice("You start cutting the hair off %T%")), \
-			MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts cutting hair off %T%")), \
-			MSG_BLIND("You hear the sound of a knife rubbing against flesh"))
-		if(amount > 0)
-			task_start(/datum/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
-	else
-		return OP_DECLINE
-	return OP_PASS
-
-/// Scraping the stack one hide every 2.5 seconds until it is used up or the user stops.
-/datum/task/timed/scrape_hides
-	steps = list(/obj/item/stack/animalhide/proc/scrape_one = 2.5 SECONDS)
-	complete_proc = /obj/item/stack/animalhide/proc/scrape_report
-	cancel_proc = /obj/item/stack/animalhide/proc/scrape_report
-	var/scraped = 0
-
-/obj/item/stack/animalhide/proc/scrape_report(datum/task/timed/scrape_hides/task)
-	if(task.scraped && task.actor)
-		to_chat(task.actor, span_notice("You scrape the hair off [task.scraped] hide\s."))
-	task.scraped = 0
-
-/obj/item/stack/animalhide/proc/scrape_one(datum/task/timed/scrape_hides/task)
-	var/mob/user = task.actor
 	//Try locating an exisitng stack on the tile and add to there if possible
 	var/obj/item/stack/hairlesshide/H = null
 	for(var/obj/item/stack/hairlesshide/HS in user.loc) // Could be scraping something inside a locker, hence the .loc, not get_turf
@@ -59,14 +55,7 @@ CAPABILITIES(/obj/item/stack/animalhide)
 	else
 		H = new /obj/item/stack/hairlesshide(user.loc)
 
-	// Increment the amount
-	task.scraped++
-	if(amount <= 1)
-		scrape_report(task) // before the last one goes, and the stack with it
-		src.use(1)
-		return STEP_DONE
-	src.use(1)
-	return STEP_REPEAT(2.5 SECONDS)
+	set_amount(amount - 1, TRUE)
 
 /obj/item/stack/animalhide/human
 	name = "skin"

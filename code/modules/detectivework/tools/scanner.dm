@@ -19,7 +19,11 @@
 
 CAPABILITIES(/obj/item/detective_scanner)
 	owns_many(nameof(stored))
-	op("examine_data_effect", menu(), label("Examine Forensic Data"), then(PROC_REF(examine_data_effect)))
+	// The stored records are shown one per second (a lap each), so moving stops the spam.
+	op("examine_data_effect", menu(), label("Examine Forensic Data"), needs(req(PROC_REF(has_stored_data), silent = TRUE)), wait(1 SECOND, repeats = PROC_REF(display_more), after_step = PROC_REF(display_record)))
+	// The scan of a thing (afterattack() starts it): a second standing still, then fibres and blood are each a five-second stage when the scanner analyses them.
+	op("forensic_scan", ai(), takes("scanned"), wait(1 SECOND), on_interrupt(PROC_REF(scan_interrupted)), then(PROC_REF(scan_done)))
+	op("forensic_stage", ai(), takes("scanned", "stage"), wait(5 SECONDS), on_interrupt(PROC_REF(scan_stage_skipped)), then(PROC_REF(scan_stage_done)))
 	op("detective_scanner_wipe_effect", menu(), label("Wipe Forensic Data"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(detective_scanner_wipe_effect_k217_question)), "title" = "Wipe Data", "choices" = list("Yes","No"), "buttons" = TRUE, "timeout" = 0), step = "k217"), then(PROC_REF(detective_scanner_wipe_effect)))
 
 /obj/item/detective_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -56,19 +60,18 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 	add_fingerprint(user)
 
-	task_start(/datum/task/timed/detective_scanner_scan, user, src, A = A)
+	perform_op(user, src, "forensic_scan", src, ORIGIN_SYSTEM, with = list("scanned" = A))
 	return 0
 
-/datum/task/timed/detective_scanner_scan
-	duration = 1 SECOND
-	complete_proc = /obj/item/detective_scanner/proc/scan_done
-	fail_message = span_warning("You must remain still for the device to complete its work.")
-	var/atom/A
+/obj/item/detective_scanner/proc/scan_interrupted(datum/act/op/run)
+	to_chat(run.actor, span_warning("You must remain still for the device to complete its work."))
 
 /// The scan: prints now, then fibres and blood (each a further timed action when analysed).
-/obj/item/detective_scanner/proc/scan_done(datum/task/timed/detective_scanner_scan/task)
-	var/atom/A = task.A
-	var/mob/user = task.actor
+/obj/item/detective_scanner/proc/scan_done(datum/act/op/run)
+	var/atom/A = run.arg("scanned")
+	var/mob/user = run.actor
+	if(QDELETED(A))
+		return
 	// Contract evidence is authenticated by its ordinary paper/shipment
 	// metadata, not by a bespoke scanner mode. This runs before the traditional
 	// fingerprint early return so a clean document remains investigable.
@@ -121,23 +124,18 @@ CAPABILITIES(/obj/item/detective_scanner)
 		to_chat(user,span_notice("Fibers/Materials detected.[reveal_fibers ? " Analysing..." : " Acquisition of fibers for H.R.F.S. analysis advised."]"))
 		flick("[icon_state]1",src)
 		if(reveal_fibers)
-			task_start(/datum/task/timed/forensic_scan, user, src, scanned = A, stage = "fibers")
+			perform_op(user, src, "forensic_stage", src, ORIGIN_SYSTEM, with = list("scanned" = A, "stage" = "fibers"))
 			return
 	scan_blood(A, user)
 
 /// One five-second stage of a forensic scan (fibers, then blood). Interrupted, the scan skips
 /// to the next stage.
-/datum/task/timed/forensic_scan
-	duration = 5 SECONDS
-	complete_proc = /obj/item/detective_scanner/proc/scan_stage_done
-	cancel_proc = /obj/item/detective_scanner/proc/scan_stage_skipped
-	var/atom/scanned
-	var/stage
-
-/obj/item/detective_scanner/proc/scan_stage_done(datum/task/timed/forensic_scan/task)
-	var/atom/A = task.scanned
-	var/mob/user = task.actor
-	if(task.stage == "fibers")
+/obj/item/detective_scanner/proc/scan_stage_done(datum/act/op/run)
+	var/atom/A = run.arg("scanned")
+	var/mob/user = run.actor
+	if(QDELETED(A))
+		return
+	if(run.arg("stage") == "fibers")
 		to_chat(user, span_notice("Apparel samples scanned:"))
 		for(var/sample in A.forensic_data?.get_fibres())
 			to_chat(user, " - " + span_notice("[sample]"))
@@ -149,11 +147,15 @@ CAPABILITIES(/obj/item/detective_scanner)
 		to_chat(user, "Blood type: " + span_warning("[blood_data[blood]]") + " DNA: " + span_warning("[blood]"))
 	scan_finish(A, user)
 
-/obj/item/detective_scanner/proc/scan_stage_skipped(datum/task/timed/forensic_scan/task)
-	if(task.stage == "fibers")
-		scan_blood(task.scanned, task.actor)
+/// A stage that was interrupted: the scan goes on to the next stage once the interrupted action has ended.
+/obj/item/detective_scanner/proc/scan_stage_skipped(datum/act/op/run)
+	after(src, 0, PROC_REF(scan_stage_resume), with = list(run.arg("scanned"), run.actor, run.arg("stage")))
+
+/obj/item/detective_scanner/proc/scan_stage_resume(atom/A, mob/user, stage)
+	if(stage == "fibers")
+		scan_blood(A, user)
 	else
-		scan_finish(task.scanned, task.actor)
+		scan_finish(A, user)
 
 /obj/item/detective_scanner/proc/scan_blood(atom/A, mob/user)
 	if(!A || !user)
@@ -161,7 +163,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 	if (A.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood detected.[reveal_blood ? " Analysing..." : " Acquisition of swab for H.R.F.S. analysis advised."]"))
 		if(reveal_blood)
-			task_start(/datum/task/timed/forensic_scan, user, src, scanned = A, stage = "blood")
+			perform_op(user, src, "forensic_stage", src, ORIGIN_SYSTEM, with = list("scanned" = A, "stage" = "blood"))
 			return
 	scan_finish(A, user)
 
@@ -183,22 +185,19 @@ CAPABILITIES(/obj/item/detective_scanner)
 		. = 1
 	rel_add(src, nameof(stored), fresh, "\ref [A]")
 
-/obj/item/detective_scanner/proc/examine_data_effect(datum/act/op/A)
+/obj/item/detective_scanner/proc/has_stored_data(datum/act/op/A)
+	return length(stored) > 0
+
+/// Another record follows while there are records left.
+/obj/item/detective_scanner/proc/display_more(datum/act/op/A)
+	return A.laps() < length(stored)
+
+/// One record shown (after each second).
+/obj/item/detective_scanner/proc/display_record(datum/act/op/A)
 	var/mob/user = A.actor
-
-	//to_world("user is [user]") //why was this a thing? -KK.
-	display_data(user)
-
-/// Shows the stored records one per second (a timed action each, so moving stops the spam).
-/obj/item/detective_scanner/proc/display_data(mob/user)
-	if(user && stored && stored.len)
-		task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, 1))
-
-/obj/item/detective_scanner/proc/display_record(mob/user, index)
+	var/index = A.laps()
 	if(index > length(stored))
 		return
-	if(index < length(stored))
-		task_timed(user, 1 SECOND, src, src, PROC_REF(display_record), list(user, index + 1))
 	var/datum/data/record/forensic/F = stored[stored[index]]
 	var/list/fprints = F.fields["fprints"]
 	var/list/fibers = F.fields["fibers"]

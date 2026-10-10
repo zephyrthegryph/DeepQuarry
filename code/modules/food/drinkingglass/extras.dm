@@ -84,46 +84,40 @@
 	glass_desc = "There is a straw in the glass."
 	icon_state = "straw"
 
-// This isn't great code, so if you're doing something that happens many times or isn't user-initiated
-// like this is, where it'll likely happen 0-4 times a shift, then don't copy this pattern.
-/obj/item/glass_extra/straw/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	if(ismob(target) && proximity_flag)
-		// Clicked protean blob
-		var/mob/living/carbon/human/blob_host = target
-		if(ishuman(blob_host) && istype(blob_host.current_form(), /datum/form/protean_blob))
-			sipp_mob(target, user, REAGENT_ID_LIQUIDPROTEAN)
-			return
-		// Clicked humanoid
-		else if(ishuman(target))
-			var/mob/living/carbon/human/H = target
-			var/speciesname = H.species?.name
-			switch(speciesname)
-				if(SPECIES_PROTEAN)
-					sipp_mob(target, user, REAGENT_ID_LIQUIDPROTEAN)
-					return
-				if(SPECIES_PROMETHEAN)
-					sipp_mob(target, user, REAGENT_ID_NUTRIMENT)
-					return
-	return ..()
+CAPABILITIES(/obj/item/glass_extra/straw)
+	// Sipping a protean or a promethean (the reagent it gives depends on what they are): three seconds next to them.
+	op("sip", at_target(/mob/living/carbon/human), when(req(PROC_REF(sip_reagent_known))), needs(req(PROC_REF(sip_victim_whole), because = MSG(straw/too_little))),
+		begins(MSG(straw/sipping)), wait(3 SECONDS), then(PROC_REF(sipp_done)))
 
-/obj/item/glass_extra/straw/proc/sipp_mob(mob/living/victim, mob/user, reagent_type = REAGENT_ID_NUTRIMENT)
-	if(victim.is_critical())
-		to_chat(user, span_warning("There's not enough of [victim] left to sip on!"))
-		return
+MSG_DEF(straw/sipping, span_info("You start sipping on %T% with %I%."), span_infoplain(span_bold("%U%") + " starts sipping on %T% with %I%!"))
+MSG_DEF_SELF(straw/too_little, span_warning("There's not enough of %T% left to sip on!"))
 
-	act_message(user, victim, MSG_SELF(span_info("You start sipping on %T% with [src].")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts sipping on %T% with [src]!")))
-	task_start(/datum/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
+/// The reagent a sip of this person gives, or null when they are not something to sip on.
+/obj/item/glass_extra/straw/proc/sip_reagent_of(mob/living/carbon/human/H)
+	if(!ishuman(H))
+		return null
+	// Clicked protean blob
+	if(istype(H.current_form(), /datum/form/protean_blob))
+		return REAGENT_ID_LIQUIDPROTEAN
+	// Clicked humanoid
+	switch(H.species?.name)
+		if(SPECIES_PROTEAN)
+			return REAGENT_ID_LIQUIDPROTEAN
+		if(SPECIES_PROMETHEAN)
+			return REAGENT_ID_NUTRIMENT
+	return null
 
-/datum/task/timed/straw_sipp
-	duration = 3 SECONDS
-	complete_proc = /obj/item/glass_extra/straw/proc/sipp_done
-	var/reagent_type
+/obj/item/glass_extra/straw/proc/sip_reagent_known(datum/act/op/A)
+	return !isnull(sip_reagent_of(A.target))
 
-/obj/item/glass_extra/straw/proc/sipp_done(datum/task/timed/straw_sipp/task)
-	var/mob/living/victim = task.target
-	var/mob/user = task.actor
-	var/reagent_type = task.reagent_type
+/obj/item/glass_extra/straw/proc/sip_victim_whole(datum/act/op/A)
+	var/mob/living/victim = A.target
+	return !victim.is_critical()
+
+/obj/item/glass_extra/straw/proc/sipp_done(datum/act/op/A)
+	var/mob/living/carbon/human/victim = A.target
+	var/mob/user = A.actor
+	var/reagent_type = sip_reagent_of(victim) || REAGENT_ID_NUTRIMENT
 	act_message(user, victim, MSG_SELF(span_info("You take a sip of %T% with [src]. Yum!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " sips some of %T% with [src]!")))
 	if(victim.vore_taste)
