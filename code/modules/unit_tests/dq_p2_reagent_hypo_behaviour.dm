@@ -362,3 +362,18 @@
 	rc_click(H, pack, S)
 	TEST_ASSERT_EQUAL(rc_units(S), 5, "the syringe drew one transfer")
 	TEST_ASSERT_EQUAL(rc_units(pack), 195, "from the pack")
+
+/// A missing limb is the injector requirement's canonical message, before any contents are committed.
+/datum/unit_test/dq_p2_reagents/injector_missing_limb_keeps_its_exact_reason
+/datum/unit_test/dq_p2_reagents/injector_missing_limb_keeps_its_exact_reason/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/mob/living/carbon/human/patient = rc_actor()
+	var/obj/item/reagent_containers/hypospray/S = rc_hypo(/obj/item/reagent_containers/hypospray, 20)
+	H.zone_sel.set_selecting(BP_L_ARM)
+	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
+	arm.droplimb(TRUE, DROPLIMB_EDGE)
+	rc_click(H, patient, S, I_HELP, FALSE)
+	TEST_ASSERT_EQUAL(rc_last_click?.key, "injector.inject", "the actual click reaches the injector entry")
+	TEST_ASSERT_EQUAL(rc_last_click?.outcome, ACT_REFUSED, "the missing limb refuses before injection")
+	TEST_ASSERT_EQUAL(rc_last_click?.reason, MSG(injector/limb_missing), "the injector's exact missing-limb message survives")
+	TEST_ASSERT_EQUAL(rc_units(S), 20, "the refused operation did not spend its contents")

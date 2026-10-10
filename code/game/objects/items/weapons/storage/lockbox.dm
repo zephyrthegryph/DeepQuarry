@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/storage/lockbox)
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	lock(id_types = list(/obj/item/card/id), starts_locked = TRUE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
-	extend("lock.toggle", needs(req_bool(PROC_REF(lock_works), because = MSG(lockbox/broken))))
+	extend("lock.toggle", needs(req(PROC_REF(lock_works))))
 	extend("storage.put_in", when(cond_not(LOCK_LOCKED)))
 	extend("storage.refuse", when(cond_not(LOCK_LOCKED)))
 	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed)))
@@ -34,7 +34,7 @@ CAPABILITIES(/obj/item/storage/lockbox)
 
 /// The lock still works: a broken one stays open.
 /obj/item/storage/lockbox/proc/lock_works(datum/act/A)
-	return !broken
+	return (!broken) ? null : MSG(lockbox/broken)
 
 /// Locking it shuts the window of whoever is looking inside; either way it is drawn again.
 /obj/item/storage/lockbox/proc/lock_changed(datum/act/A)

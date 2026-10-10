@@ -100,7 +100,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom, starts = PROC_REF(make_faultreporter))
 	climb()
-	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req_bool(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)),
+	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req(PROC_REF(label_available), silent = TRUE)),
 		asks(/datum/prompt/text/drill_label), then(PROC_REF(label_entered)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
@@ -259,7 +259,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	return OP_DECLINE
 
 /obj/machinery/mining/drill/proc/label_available(datum/act/op/A)
-	return !active
+	return (!active) ? null : MSG(op/not_available)
 
 /// The multitool's answer: the drill's new id number, or no number at all (an active drill keeps its name).
 /obj/machinery/mining/drill/proc/label_entered(datum/act/op/A)

@@ -96,9 +96,6 @@ CAPABILITIES(/obj/structure/closet/crate)
 
 /// A crate takes no person a grab holds.
 /obj/structure/closet/crate/grab_fits(datum/act/op/A)
-	return FALSE
-
-/obj/structure/closet/crate/grab_refusal(datum/act/op/A)
 	return /datum/msg/crate/no_grabs
 
 /// A length of cable rigs it.

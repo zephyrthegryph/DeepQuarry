@@ -218,9 +218,9 @@ MSG_DEF(solar_assembly/electronics_out, "You take out the electronics from the s
 // a tracker); a crowbar takes the electronics back out. Wrenched down, it cannot be picked up.
 CAPABILITIES(/obj/item/solar_assembly)
 	op("fixed", hand(), label("Touch"), wait(0), when(nameof(anchored)), when(req_empty_hand()), then(PROC_REF(touched)))
-	op("wrench", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req_bool(PROC_REF(on_floor), because = MSG(solar_assembly/not_placed))), then(PROC_REF(wrenched)))
+	op("wrench", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(PROC_REF(on_floor))), then(PROC_REF(wrenched)))
 	op("glass", stack(/obj/item/stack/material, 2), label("Add glass"), wait(0), when(req_bool(PROC_REF(held_is_glass))),
-		needs(req_bool(PROC_REF(on_floor), because = MSG(solar_assembly/not_placed)), req_is(nameof(anchored), TRUE, because = MSG(solar_assembly/unanchored))),
+		needs(req(PROC_REF(on_floor)), req_is(nameof(anchored), TRUE, because = MSG(solar_assembly/unanchored))),
 		says(MSG(solar_assembly/glassed)), then(PROC_REF(glassed)))
 	op("electronics", item(/obj/item/tracker_electronics), label("Insert electronics"), wait(0), when(cond_not(nameof(tracker))),
 		says(MSG(solar_assembly/electronics_in)), then(PROC_REF(electronics_in)))
@@ -234,7 +234,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	return OP_OK
 
 /obj/item/solar_assembly/proc/on_floor(datum/act/A)
-	return isturf(loc) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
+	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
 
 /obj/item/solar_assembly/proc/held_is_glass(datum/act/op/A)
 	var/obj/item/stack/material/S = A.held

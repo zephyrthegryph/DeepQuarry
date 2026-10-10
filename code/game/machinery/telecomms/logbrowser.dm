@@ -21,7 +21,7 @@ MSG_DEF_SELF(tcomms_console/no_entry, "There is no such log entry on the server 
 CAPABILITIES(/obj/machinery/computer/telecomms/server)
 	interface("TelecommsLogBrowser")
 	tcomms_probe_console()
-	op("delete", ui_act("delete", arg("id", num())), needs(req_bool(PROC_REF(may_delete), because = MSG(tcomms_console/denied)), req_bool(PROC_REF(entry_exists), because = MSG(tcomms_console/no_entry))), then(PROC_REF(ui_act_delete)))
+	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))
 
 /obj/machinery/computer/telecomms/server/probed()
 	return servers
@@ -43,13 +43,13 @@ CAPABILITIES(/obj/machinery/computer/telecomms/server)
 
 /// needs: the actor has the browser's access, or it was emagged.
 /obj/machinery/computer/telecomms/server/proc/may_delete(datum/act/op/A)
-	return emag_emagged(src) || allowed(A.actor)
+	return (emag_emagged(src) || allowed(A.actor)) ? null : MSG(tcomms_console/denied)
 
 /// needs: the server shown has a log entry at that place.
 /obj/machinery/computer/telecomms/server/proc/entry_exists(datum/act/op/A)
 	var/idx = A.args["id"]
 	var/obj/machinery/telecomms/server/S = SelectedServer()
-	return S && isnum(idx) && idx >= 1 && idx <= LAZYLEN(S.log_entries)
+	return (S && isnum(idx) && idx >= 1 && idx <= LAZYLEN(S.log_entries)) ? null : MSG(tcomms_console/no_entry)
 
 /// The log entry goes (the server's log count is its length, so the place is free again).
 /obj/machinery/computer/telecomms/server/proc/ui_act_delete(datum/act/op/A, id)

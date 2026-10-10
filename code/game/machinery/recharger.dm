@@ -92,10 +92,10 @@ CAPABILITIES(/obj/machinery/recharger)
 	part_replacement()
 	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL)
 	op("insert", item(/obj/item), when(req_bool(PROC_REF(takes_device))),
-		needs(req_bool(PROC_REF(device_ok), because = PROC_REF(device_refusal))),
+		needs(req(PROC_REF(device_refusal))),
 		then(PROC_REF(insert_device)))
 	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req_bool(PROC_REF(takes_device))),
-		needs(req_bool(PROC_REF(device_ok), because = PROC_REF(device_refusal))),
+		needs(req(PROC_REF(device_refusal))),
 		then(PROC_REF(drag_in_device)))
 	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_device)))
 	examine_line(PROC_REF(examine_contents))
@@ -189,8 +189,6 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 			return TRUE
 	return FALSE
 
-/obj/machinery/recharger/proc/device_ok(datum/act/op/A)
-	return isnull(device_refusal(A))
 
 /// A device goes in by hand: an unlucky person sometimes puts it in backwards, and it lands on the floor.
 /obj/machinery/recharger/proc/insert_device(datum/act/op/A)

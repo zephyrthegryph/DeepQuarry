@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	extend("part_replacement.replace", needs(req_bool(PROC_REF(idle), because = MSG(analyzer/busy))))
 	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
 	// An item goes in through the closed hatch while it is idle (not a cyborg's module item); a part replacer dragged onto it recycles its lowest parts.
-	op("load", item(/obj/item), label("Load"), priority(OP_PRIORITY_DEFAULT), when(req_bool(PROC_REF(hatch_shut))), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)),
+	op("load", item(/obj/item), label("Load"), priority(OP_PRIORITY_DEFAULT), when(req(PROC_REF(hatch_shut))), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)),
 		needs(req_bool(PROC_REF(idle), because = MSG(analyzer/busy))), then(PROC_REF(interaction_load)))
 	op("recycle", item(/obj/item/storage/part_replacer), gesture(GESTURE_DRAG), label("Recycle parts"), then(PROC_REF(interaction_recycle)))
 	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
@@ -84,7 +84,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 
 /// Its maintenance hatch is shut (an item goes in only then).
 /obj/machinery/rnd/destructive_analyzer/proc/hatch_shut(datum/act/op/A)
-	return !panel_open(src)
+	return (!panel_open(src)) ? null : /datum/msg/req_failed
 
 /obj/machinery/rnd/destructive_analyzer/proc/interaction_load(datum/act/op/A)
 	var/mob/user = A.actor

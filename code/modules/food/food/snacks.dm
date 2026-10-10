@@ -156,14 +156,14 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks)
 		survival = nameof(survivalfood),
 		shut = list(nameof(package) = MSG(edible/wrapped), nameof(canned) = MSG(edible/sealed)))
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
-	op("unwrap", in_hand(), when(req_bool(PROC_REF(is_wrapped))), label("Unwrap it"), then(PROC_REF(unwrapped)))
-	op("open_can", in_hand(), priority(OP_PRIORITY_NORMAL + 1), when(req_bool(PROC_REF(is_sealed))), label("Open it"), then(PROC_REF(can_opened)))
+	op("unwrap", in_hand(), when(PROC_REF(is_wrapped)), label("Unwrap it"), then(PROC_REF(unwrapped)))
+	op("open_can", in_hand(), priority(OP_PRIORITY_NORMAL + 1), when(PROC_REF(is_sealed)), label("Open it"), then(PROC_REF(can_opened)))
 	op("scoop", item(/obj/item/material/kitchen/utensil), priority(OP_PRIORITY_PART + 1), label("Scoop up"), then(PROC_REF(scooped)), passes())
-	op("slice", item(/obj/item), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(is_cut_by_held))), label("Slice it"), then(PROC_REF(sliced)))
-	op("hide", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(req_bool(PROC_REF(takes_hidden_item))), label("Hide it inside"),
+	op("slice", item(/obj/item), priority(OP_PRIORITY_PART), when(PROC_REF(is_cut_by_held)), label("Slice it"), then(PROC_REF(sliced)))
+	op("hide", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(PROC_REF(takes_hidden_item)), label("Hide it inside"),
 		asks(/datum/prompt/yes_no, fields = list("question" = "You can't slice it here. Would you like to hide the thing inside it instead?", "title" = "No Cutting Surface!")), then(PROC_REF(hidden_inside)))
-	op("coat", at_target(), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(target_has_coating))), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
-	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(pours_into_target))), label("Empty it into"),
+	op("coat", at_target(), priority(OP_PRIORITY_PART), when(PROC_REF(target_has_coating)), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
+	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(PROC_REF(pours_into_target)), label("Empty it into"),
 		needs(req_reagent_room(because = MSG(reagent_container/full))), costs(RES_REAGENTS, PROC_REF(pour_amount)), consumes(), says(PROC_REF(pour_message)))
 
 MSG_DEF(snack/crack, "You crack %I% into %T%.", "%U% cracks %I% into %T%.")
@@ -764,7 +764,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg)
 	every(2 SECONDS, then(PROC_REF(grow_step)), when = nameof(growing))
 	configure(reagents(add = list(REAGENT_ID_EGG = 3)))
 	op("colour", item(/obj/item/pen/crayon), priority(OP_PRIORITY_PART), label("Colour it"),
-		needs(req_bool(PROC_REF(takes_colour), because = MSG(snack/egg_refuses))), then(PROC_REF(coloured)))
+		needs(req(PROC_REF(takes_colour))), then(PROC_REF(coloured)))
 
 MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 
@@ -772,7 +772,7 @@ MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 /obj/item/reagent_containers/food/snacks/egg/proc/takes_colour(datum/act/op/A)
 	var/static/list/colours = list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")
 	var/obj/item/pen/crayon/C = A.held
-	return (C.colourName in colours) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return ((C.colourName in colours)) ? null : /datum/msg/snack/egg_refuses // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
 /obj/item/reagent_containers/food/snacks/egg/proc/coloured(datum/act/op/A)
 	var/obj/item/pen/crayon/C = A.held
@@ -1130,12 +1130,12 @@ TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpo
 
 // Its package is crushed once; twenty seconds later it is heated.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket)
-	op("crush", in_hand(), priority(OP_PRIORITY_PART), label("Crush package"), needs(req_bool(PROC_REF(not_yet_heated), because = MSG(snack/heat_spent))), then(PROC_REF(crushed)))
+	op("crush", in_hand(), priority(OP_PRIORITY_PART), label("Crush package"), needs(req(PROC_REF(not_yet_heated))), then(PROC_REF(crushed)))
 
 MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/not_yet_heated(datum/act/op/A)
-	return !has_been_heated // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return (!has_been_heated) ? null : /datum/msg/snack/heat_spent // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/crushed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -1792,7 +1792,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
 // A wrapped cube is unwrapped by using it in hand.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
-	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(cube_is_wrapped))), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
+	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(PROC_REF(cube_is_wrapped)), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_is_wrapped(datum/act/op/A)
 	return !!wrapped // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
@@ -3850,14 +3850,14 @@ TRACKED(/obj/item/pizzabox, boxtag)
 CAPABILITIES(/obj/item/pizzabox)
 	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
 	ref_many(nameof(boxes), /obj/item/pizzabox)
-	op("toggle", in_hand(), label("Open or close it"), needs(req_bool(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
-	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
-	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
-	op("stack", item(/obj/item/pizzabox), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(held_is_another))), label("Put it on top"),
-		needs(req_bool(PROC_REF(both_shut), because = MSG(pizzabox/close_first)), req_bool(PROC_REF(stack_has_room), because = MSG(pizzabox/too_high))), then(PROC_REF(box_stacked)))
+	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked))), then(PROC_REF(toggled)))
+	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
+	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
+	op("stack", item(/obj/item/pizzabox), priority(OP_PRIORITY_PART), when(PROC_REF(held_is_another)), label("Put it on top"),
+		needs(req(PROC_REF(both_shut)), req(PROC_REF(stack_has_room))), then(PROC_REF(box_stacked)))
 	op("put_pizza", item(/obj/item/reagent_containers/food/snacks/sliceable/pizza), priority(OP_PRIORITY_PART),
-		needs(req_bool(PROC_REF(is_open), because = MSG(pizzabox/lid_shut))), then(PROC_REF(pizza_put_in)))
-	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(is_shut))), label("Write on the tag"),
+		needs(req(PROC_REF(is_open))), then(PROC_REF(pizza_put_in)))
+	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
 
 MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
@@ -3902,7 +3902,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 /// A stack stays shut.
 /obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
-	return length(boxes) == 0
+	return (length(boxes) == 0) ? null : MSG(pizzabox/stacked)
 
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	set_open(!open)
@@ -3911,13 +3911,13 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 	return OP_OK
 
 /obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
-	return open && !isnull(pizza) && isnull(A.held)
+	return (open && !isnull(pizza) && isnull(A.held)) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/is_open(datum/act/op/A)
-	return !!open
+	return (!!open) ? null : /datum/msg/pizzabox/lid_shut
 
 /obj/item/pizzabox/proc/is_shut(datum/act/op/A)
-	return !open
+	return (!open) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/pizza_taken(datum/act/op/A)
 	var/mob/user = A.actor
@@ -3929,7 +3929,7 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 /// A stack of boxes, with the one it is in held in the other hand.
 /obj/item/pizzabox/proc/stack_in_off_hand(datum/act/op/A)
 	var/mob/user = A.actor
-	return length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src
+	return (length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src) ? null : /datum/msg/req_failed
 
 /obj/item/pizzabox/proc/box_taken(datum/act/op/A)
 	var/mob/user = A.actor
@@ -3945,12 +3945,12 @@ MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn
 
 /obj/item/pizzabox/proc/both_shut(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return !box.open && !open
+	return (!box.open && !open) ? null : MSG(pizzabox/close_first)
 
 /// The boxes to add, with the ones already in the pile, are no more than five.
 /obj/item/pizzabox/proc/stack_has_room(datum/act/op/A)
 	var/obj/item/pizzabox/box = A.held
-	return (length(boxes) + 1) + (1 + length(box.boxes)) <= 5
+	return ((length(boxes) + 1) + (1 + length(box.boxes)) <= 5) ? null : MSG(pizzabox/too_high)
 
 /obj/item/pizzabox/proc/box_stacked(datum/act/op/A)
 	var/mob/user = A.actor
@@ -5370,7 +5370,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
 
 // A chip held to a dip is dipped.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
-	op("dip_chip", item(/obj/item/reagent_containers/food/snacks/chip), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(is_dippable))), label("Dip it"), then(PROC_REF(chip_dipped)))
+	op("dip_chip", item(/obj/item/reagent_containers/food/snacks/chip), priority(OP_PRIORITY_PART + 1), when(PROC_REF(is_dippable)), label("Dip it"), then(PROC_REF(chip_dipped)))
 
 /// What a chip dipped here becomes, or null when it is not one that can be.
 /obj/item/reagent_containers/food/snacks/dip/proc/dipped_type(obj/item/reagent_containers/food/snacks/item)

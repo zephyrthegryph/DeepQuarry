@@ -467,8 +467,10 @@
 	var/datum/op_result/again = perform_op(biter, target, "natural_weapon.attack", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(again?.outcome, ACT_COMMITTED, "once the cooldown is over it bites again: [reason_text(again?.reason)]")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 20, "the second bite landed")
+	test_time(2 SECONDS)
 	var/datum/op_result/by_self = perform_op(biter, biter, "natural_weapon.attack", null, ORIGIN_AI, AUTH_AI)
-	TEST_ASSERT(!by_self || by_self.outcome != ACT_COMMITTED, "it will not bite itself")
+	TEST_ASSERT_EQUAL(by_self?.outcome, ACT_REFUSED, "the real natural weapon refuses a self attack")
+	TEST_ASSERT_EQUAL(by_self?.reason, MSG(natural_weapon/self), "self attack retains its reason after the cooldown ends")
 	// no hand ops: the mob has no hands, so a hand op of a machine is refused for want of a provider
 	var/provider_kinds = 0
 	for(var/datum/prov/P in providers_for(biter, null))

@@ -78,7 +78,7 @@ CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
 
 /// It comes off only with nothing on it (a portable standing on it, even one not attached, holds it down).
 /obj/machinery/atmospherics/portables_connector/pipe_device_idle(datum/act/A)
-	return !connected_device && !locate_within(loc, /obj/machinery/portable_atmospherics)
+	return (!connected_device && !locate_within(loc, /obj/machinery/portable_atmospherics)) ? null : MSG(pipe_device/running)
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()

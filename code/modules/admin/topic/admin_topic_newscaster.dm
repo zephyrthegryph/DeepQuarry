@@ -7,11 +7,11 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 
 /// Requirement: the channel being drafted can be created.
 /datum/admins/proc/ac_channel_ready(datum/act/op/A)
-	return admincaster_channel_ready
+	return (admincaster_channel_ready) ? null : MSG(admin_topic/channel_unsubmittable)
 
 /// Requirement: the Wanted draft can be issued.
 /datum/admins/proc/ac_wanted_ready(datum/act/op/A)
-	return admincaster_wanted_ready
+	return (admincaster_wanted_ready) ? null : MSG(admin_topic/wanted_unsubmittable)
 
 /// Brings the tracked readiness of the channel and the Wanted draft in line with the drafts and the network.
 /datum/admins/proc/admincaster_resync()

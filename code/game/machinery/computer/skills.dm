@@ -266,7 +266,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 	extend(TAG_UI, then(PROC_REF(ui_records_fresh), early = TRUE))
 	// The record modals (the old ui_modal_opened()/ui_modal_answered()): a field is edited by a pick or by typing, as the field's kind says.
-	op("edit", ui_act("modal:edit", arg("arguments")), needs(req_bool(PROC_REF(edit_field_known), silent = TRUE)),
+	op("edit", ui_act("modal:edit", arg("arguments")), needs(req(PROC_REF(edit_field_known), silent = TRUE)),
 		asks(/datum/prompt/choice/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_choice", when = PROC_REF(edit_by_choice)),
 		asks(/datum/prompt/text/skills_record_edit, fields = list("arguments" = arg_of("arguments"), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
@@ -823,7 +823,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 
 /// Requirement: the edit modal names a field this console edits (silently refused otherwise, as the old modal never opened).
 /obj/machinery/computer/skills/proc/edit_field_known(datum/act/op/A)
-	return !isnull(edit_field(A.args["arguments"]))
+	return (!isnull(edit_field(A.args["arguments"]))) ? null : MSG(req_failed)
 
 /// The field is edited by picking from its choices.
 /obj/machinery/computer/skills/proc/edit_by_choice(datum/act/op/A)

@@ -84,7 +84,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 
 /// The multitool works a powered poster (an unpowered one takes the click and does nothing).
 /obj/machinery/holoposter/proc/is_powered(datum/act/op/A)
-	return !power_lost()
+	return (!power_lost()) ? null : MSG(req_failed)
 
 /// The posters the multitool's question offers.
 /obj/machinery/holoposter/proc/poster_choices(datum/act/A)
@@ -112,7 +112,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 
 CAPABILITIES(/obj/machinery/holoposter)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
-	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req_bool(PROC_REF(is_powered), silent = TRUE)),
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("question" = "Available Posters", "title" = "Holographic Poster", "choices" = computed(PROC_REF(poster_choices)), "timeout" = 0)),
 		then(PROC_REF(poster_chosen)))
 

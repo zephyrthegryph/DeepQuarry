@@ -263,7 +263,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 
 /// An omni device comes off its pipes whether it runs or not (only its gas holds it).
 /obj/machinery/atmospherics/omni/pipe_device_idle(datum/act/A)
-	return TRUE
+	return null
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.

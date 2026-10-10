@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/light)
 	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift))
 	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off))
 	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0),
-		needs(req_bool(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
+		needs(req(PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
 	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
 	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), wait(0), then(PROC_REF(hit_by)))
 	op("toggle_emergency", remote(), label("Toggle emergency lights"), wait(0), then(PROC_REF(toggle_emergency_lights)))
@@ -459,9 +459,6 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 // ---- the socket ----
 
 /// Requirement: the fitting is empty and takes this kind of light.
-/obj/machinery/light/proc/can_take_bulb(datum/act/op/A)
-	return isnull(bulb_refusal(A))
-
 /// Why the held light does not go in, or null.
 /obj/machinery/light/proc/bulb_refusal(datum/act/op/A)
 	if(status != LIGHT_EMPTY)
@@ -1425,14 +1422,11 @@ CAPABILITIES(/obj/machinery/light/flamp)
 	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
 	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
 	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
-		needs(req_bool(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp)))
+		needs(req(PROC_REF(has_light_in_fitting))), then(PROC_REF(toggle_lamp)))
 	extend("open_casing", when(cond_not(nameof(lamp_shade))))
 
 /obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)
-	return status != LIGHT_EMPTY
-
-/obj/machinery/light/flamp/proc/no_light_reason(datum/act/op/A)
-	return /datum/msg/light/no_bulb
+	return status != LIGHT_EMPTY ? null : /datum/msg/light/no_bulb
 
 MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 

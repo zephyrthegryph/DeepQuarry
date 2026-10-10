@@ -82,7 +82,8 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 /// A locker too small to stuff a person into (large = 0) refuses a grab.
 /obj/structure/closet/secure_closet/grab_fits(datum/act/op/A)
-	return large
+	return (large) ? null : /datum/msg/closet/too_small
+
 
 /// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
 /obj/structure/closet/secure_closet/proc/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)
@@ -125,13 +126,13 @@ CAPABILITIES(/obj/structure/closet/secure_closet)
 
 // Only the mind it was made for works the lock.
 CAPABILITIES(/obj/structure/closet/secure_closet/mind)
-	extend(CAP_LOCK, needs(req_bool(PROC_REF(owner_present), because = MSG(lock/denied))))
-	extend("lock_with_item", needs(req_bool(PROC_REF(owner_present), because = MSG(lock/denied))))
+	extend(CAP_LOCK, needs(req(PROC_REF(owner_present))))
+	extend("lock_with_item", needs(req(PROC_REF(owner_present))))
 	param(nameof(owner), pos = 1)
 	param(nameof(self_del), pos = 2)
 
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
-	return allowed(A.actor)
+	return (allowed(A.actor)) ? null : MSG(lock/denied)
 
 // ALLOW(init/INSTANCE_STATE): an owned closet is named for its owner and shows their picture
 /obj/structure/closet/secure_closet/mind/Initialize(mapload)

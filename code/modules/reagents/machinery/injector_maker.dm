@@ -46,10 +46,10 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),
 		label("Add container"), then(PROC_REF(beaker_added)))
 	op("add_small_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/empty), label("Add injector"),
-		needs(req_bool(PROC_REF(small_rack_free), because = MSG(injector_maker/rack_full)), req_bool(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		needs(req(PROC_REF(small_rack_free)), req(PROC_REF(injector_empty))),
 		then(PROC_REF(small_injector_added)))
 	op("add_large_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty), label("Add injector"),
-		needs(req_bool(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req_bool(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		needs(req(PROC_REF(large_rack_free)), req(PROC_REF(injector_empty))),
 		then(PROC_REF(large_injector_added)))
 	op("add_plastic", item(/obj/item/stack/material), label("Add plastic"), then(PROC_REF(plastic_added)))
 	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))
@@ -88,15 +88,15 @@ CAPABILITIES(/obj/machinery/injector_maker)
 
 /// The small injector rack has room.
 /obj/machinery/injector_maker/proc/small_rack_free(datum/act/op/A)
-	return count_small_injector < capacity_small_injector
+	return (count_small_injector < capacity_small_injector) ? null : MSG(injector_maker/rack_full)
 
 /// The large injector rack has room.
 /obj/machinery/injector_maker/proc/large_rack_free(datum/act/op/A)
-	return count_large_injector < capacity_large_injector
+	return (count_large_injector < capacity_large_injector) ? null : MSG(injector_maker/rack_full)
 
 /// The held injector is empty.
 /obj/machinery/injector_maker/proc/injector_empty(datum/act/op/A)
-	return !(A.held?.reagents?.total_volume > 0)
+	return (!(A.held?.reagents?.total_volume > 0)) ? null : MSG(injector_maker/filled)
 
 /// An empty small injector goes on its rack.
 /obj/machinery/injector_maker/proc/small_injector_added(datum/act/op/A)

@@ -109,19 +109,19 @@ MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firml
 /// pipe holds too much pressure.
 /proc/air_device_unwrench()
 	return list(op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS),
-		needs(req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_device_idle), because = MSG(pipe_device/running)),
-			req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, pipe_reachable), because = MSG(air_device/plating)),
-			req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, not_welded), because = MSG(air_device/welded)),
-			req_bool(TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_safe), because = MSG(pipe_device/exerted))),
+		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_device_idle)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, pipe_reachable)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, not_welded)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_safe))),
 		says(MSG(pipe_device/unfastened)),
 		then(TYPE_PROC_REF(/obj/machinery/atmospherics, unfastened))))
 
 /obj/machinery/atmospherics/unary/proc/pipe_reachable(datum/act/A)
 	var/turf/T = loc // ALLOW(reads): asked when the wrench is used, never from a cached menu; a pipe on a floor stays where it was built
-	return !(node && node.level == 1 && isturf(T) && !T.is_plating()) // ALLOW(reads): a pipe's level is fixed by its type; the node is the pipe network's link
+	return (!(node && node.level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating) // ALLOW(reads): a pipe's level is fixed by its type; the node is the pipe network's link
 
 /obj/machinery/atmospherics/unary/proc/not_welded(datum/act/A)
-	return !weld_shut_welded(src, null)
+	return (!weld_shut_welded(src, null)) ? null : MSG(air_device/welded)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary)
 	ref_one(nameof(node))
