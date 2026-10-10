@@ -74,6 +74,7 @@ pub struct Diagnostic {
 /// tree. Editing executable statements changes this occurrence, not tree identity.
 #[derive(Clone, Debug)]
 pub struct BodyOccurrence {
+    stored_candidates: bool,
     pub declaration: OccurrenceId,
     pub member: MemberId,
     pub ast_path: Arc<[usize]>,
@@ -406,6 +407,11 @@ pub struct IssuedBodyInput<'a> {
     source: &'a str,
 }
 impl IssuedBodyInput<'_> {
+    /// Lexical prefilter minted with the exact relative source recipe. This is
+    /// only a candidate fact; actual declarations still require semantic capture.
+    pub fn may_contain_stored_declarations(&self) -> bool {
+        self.occurrence.stored_candidates
+    }
     pub fn source(&self) -> &str {
         self.source
     }
@@ -799,6 +805,7 @@ fn collect_bodies(
             })
             .collect::<Result<Vec<_>, _>>()?;
         bodies.push(BodyOccurrence {
+            stored_candidates: recipe.stored_candidates(),
             declaration: declaration.0,
             member: declaration.1,
             ast_path: recipe.path(),

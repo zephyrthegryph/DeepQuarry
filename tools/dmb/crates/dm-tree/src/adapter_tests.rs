@@ -1,6 +1,57 @@
 use super::*;
 use crate::{build, MemberKind, OccurrenceTable};
 #[test]
+fn numeric_parameter_is_a_typed_source_error_at_its_current_token() {
+    for prefix in ["", "// shifted source\n\n"] {
+        let source = format!("{prefix}/proc/work(1)\n    return 1\n");
+        let errors = from_ast(
+            &dm_syntax::parse(&source),
+            SymbolTable::default(),
+            FileId(3),
+            7,
+            11,
+        )
+        .unwrap_err();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].kind, dm_syntax::DiagnosticKind::Expression);
+        assert_eq!(errors[0].message, "bad argument definition");
+        assert_eq!(
+            &source[errors[0].span.start as usize..errors[0].span.end as usize],
+            "1"
+        );
+        assert_eq!(errors[0].span.file, FileId(3));
+    }
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok("/proc/work(1)\n    return 1\n".into())
+        }
+    }
+    let errors = crate::frontend::build_with_config(
+        std::path::Path::new("probe.dme"),
+        &Source,
+        &Default::default(),
+        crate::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(errors.len(), 1);
+    assert_eq!(errors[0].kind, crate::frontend::DiagnosticKind::SourceError);
+    // Numeric default expressions are valid; only the declaration path is rejected.
+    let source = "/proc/work(value = 1 as num)\n    return 1\n";
+    assert!(from_ast(
+        &dm_syntax::parse(source),
+        SymbolTable::default(),
+        FileId(0),
+        0,
+        0
+    )
+    .is_ok());
+}
+#[test]
 fn variable_input_annotations_are_not_initializer_tokens() {
     // Exact declaration spellings from the captured quantum/hyper pad sources.
     let source = "/datum/pad\n    var/map_pad_id = \"\" as text\n    var/map_pad_link_id = \"\" as text\n    var/control = list(\" as text\", list(\"as\")) as anything\n    var/plain = \" as text\"\n";

@@ -20,8 +20,14 @@ struct RelativeBody {
     path: Arc<[usize]>,
     span: Span,
     settings: Arc<[Span]>,
+    stored_candidates: bool,
 }
-fn capture_bodies(items: &[Item], path: &mut Vec<usize>, output: &mut Vec<RelativeBody>) {
+fn capture_bodies(
+    items: &[Item],
+    source: &str,
+    path: &mut Vec<usize>,
+    output: &mut Vec<RelativeBody>,
+) {
     for (index, item) in items.iter().enumerate() {
         path.push(index);
         if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
@@ -31,9 +37,12 @@ fn capture_bodies(items: &[Item], path: &mut Vec<usize>, output: &mut Vec<Relati
                 path: path.clone().into(),
                 span: item.span,
                 settings: settings.into(),
+                stored_candidates: crate::procedure_statics::may_contain_stored_declarations(
+                    &source[item.span.range()],
+                ),
             });
         } else {
-            capture_bodies(&item.children, path, output);
+            capture_bodies(&item.children, source, path, output);
         }
         path.pop();
     }
@@ -44,6 +53,9 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     root_prefix: usize,
 }
 impl CurrentBodyRecipe<'_> {
+    pub(crate) fn stored_candidates(&self) -> bool {
+        self.relative.stored_candidates
+    }
     pub(crate) fn span(&self) -> Span {
         Span::new(
             self.relative.span.start + self.offset,
@@ -77,7 +89,7 @@ impl RelativeSyntax {
             pending.extend(&item.children);
         }
         let mut bodies = Vec::new();
-        capture_bodies(&items, &mut Vec::new(), &mut bodies);
+        capture_bodies(&items, source, &mut Vec::new(), &mut bodies);
         Ok(Self {
             items: items.into(),
             source_len: source.len(),
@@ -378,6 +390,23 @@ mod tests {
         assert_eq!(items.next().unwrap().span().start, 0);
         assert_eq!(items.next_back().unwrap().span().start, 107);
         assert_eq!(items.len(), 0);
+    }
+    #[test]
+    fn body_candidate_facts_rebind_without_rescanning_current_source() {
+        let source = "/proc/plain()\n    return \"static\"\n/proc/stored()\n    var/static/value = 1\n    return value\n";
+        let parsed = dm_syntax::parse_declaration_skeleton(source);
+        assert!(parsed.diagnostics.is_empty());
+        let relative = Arc::new(RelativeSyntax::capture(parsed.items, source).unwrap());
+        let syntax = DeclarationSyntax::new(vec![
+            relative.bind(source.len(), 0).unwrap(),
+            relative.bind(source.len(), 200).unwrap(),
+        ])
+        .unwrap();
+        let candidates = syntax
+            .body_recipes()
+            .map(|recipe| recipe.stored_candidates())
+            .collect::<Vec<_>>();
+        assert_eq!(candidates, [false, true, false, true]);
     }
     #[test]
     fn body_recipes_share_syntax_and_rebind_paths_settings_and_coordinates() {

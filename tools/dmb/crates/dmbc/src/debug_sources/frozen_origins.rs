@@ -122,6 +122,20 @@ impl FrozenDebugOrigins {
         }
     }
 }
+impl dm_link::SourceBindingAccess for FrozenDebugOrigins {
+    fn first_line(&self) -> u32 {
+        0
+    }
+    fn line(&self, ordinal: u32) -> Option<u32> {
+        let index = usize::try_from(ordinal).ok()?;
+        self.0.origins.get(index).map(|(_, line)| line)
+    }
+    fn file(&self, ordinal: u32) -> Option<dm_ir::SymbolId> {
+        let index = usize::try_from(ordinal).ok()?;
+        let (path, _) = self.0.origins.get(index)?;
+        self.0.paths.get(path).map(|path| dm_ir::SymbolId::of(path))
+    }
+}
 impl PartialEq for FrozenDebugOrigins {
     fn eq(&self, other: &Self) -> bool {
         self.len() == other.len()
@@ -160,5 +174,85 @@ mod tests {
         assert_ne!(frozen, FrozenDebugOrigins::from(moved));
         assert_eq!(snapshot.source_bindings().files, bindings.files);
         assert_eq!(snapshot.source_bindings().lines, bindings.lines);
+    }
+    #[test]
+    fn borrowed_origin_binding_matches_maps_and_preserves_missing_error_order() {
+        use dm_ir::{Relocation, RelocationEncoding, SymRef, SymbolId, SymbolicCode};
+        let path = "unicode/雪.dm";
+        let origins: FrozenDebugOrigins = DebugOrigins {
+            entries: vec![
+                DebugOrigin {
+                    semantic_path: Arc::from(path),
+                    line: 7,
+                },
+                DebugOrigin {
+                    semantic_path: Arc::from(path),
+                    line: u32::MAX,
+                },
+            ],
+        }
+        .into();
+        let id = SymbolId::of(path);
+        let tables = dm_link::LinkTables::build(dm_link::LinkInventory {
+            entries: vec![dm_link::Entry {
+                key: dm_link::Key::String(id),
+                content: path.as_bytes().to_vec().into(),
+            }],
+            spellings: vec![(id, Arc::from(path.as_bytes()))],
+            ..Default::default()
+        })
+        .unwrap();
+        let code = |references: &[SymRef]| {
+            SymbolicCode::new(
+                vec![0; references.len()],
+                references
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, &reference)| Relocation {
+                        offset: offset as u32,
+                        reference,
+                        encoding: RelocationEncoding::Direct,
+                    })
+                    .collect(),
+            )
+            .unwrap()
+        };
+        let mixed = code(&[
+            SymRef::SourceFile(0),
+            SymRef::SourceLine(1),
+            SymRef::LineDelta(5),
+            SymRef::SourceFile(0),
+        ]);
+        let map = origins.source_bindings();
+        assert_eq!(
+            tables.link_from(&mixed, &origins).unwrap(),
+            tables.link(&mixed, &map).unwrap()
+        );
+        let missing = code(&[SymRef::SourceLine(2), SymRef::Type(SymbolId::of("/absent"))]);
+        assert_eq!(
+            tables.link_from(&missing, &origins),
+            Err(dm_link::LinkError::MissingSourceLine(2))
+        );
+        let missing_file = code(&[SymRef::SourceFile(u32::MAX)]);
+        assert_eq!(
+            tables.link_from(&missing_file, &origins),
+            Err(dm_link::LinkError::MissingSourceFile(u32::MAX))
+        );
+        assert_eq!(
+            dm_link::SourceBindingAccess::line(&origins, 1),
+            Some(u32::MAX)
+        );
+        assert_eq!(dm_link::SourceBindingAccess::line(&origins, u32::MAX), None);
+        let mut shifted = origins.to_owned_origins();
+        shifted.entries[1].line = 99;
+        let shifted: FrozenDebugOrigins = shifted.into();
+        assert_eq!(
+            tables.link_from(&mixed, &shifted).unwrap(),
+            tables.link(&mixed, &shifted.source_bindings()).unwrap()
+        );
+        assert_ne!(
+            tables.link_from(&mixed, &origins).unwrap(),
+            tables.link_from(&mixed, &shifted).unwrap()
+        );
     }
 }

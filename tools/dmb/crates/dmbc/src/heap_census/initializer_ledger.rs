@@ -4,6 +4,11 @@ use crate::initializer_policy::{ClassifiedInitializers, DefaultValue, RuntimeVal
 impl HeapCensus {
     pub(crate) fn initializer_ledger(&mut self, classified: &ClassifiedInitializers) {
         let owner = "initializer_ledger";
+        if self.vec_payload(owner, &classified.accepted) {
+            for accepted in classified.accepted.iter().flatten() {
+                accepted.visit(|value| super::initializer_artifacts::classification(self, value));
+            }
+        }
         if self.vec_payload(owner, &classified.writes) {
             for fact in &classified.writes {
                 match &fact.write.value {
@@ -51,6 +56,7 @@ mod tests {
     fn ledger_aliases_deduplicate_inline_owners_and_nested_runtime_heap() {
         use crate::initializer_policy::{ClassifiedWrite, RuntimeGroup};
         let classified = ClassifiedInitializers {
+            accepted: Vec::new(),
             writes: vec![ClassifiedWrite {
                 source_ordinal: 0,
                 write: dm_ir::InitializerWrite {

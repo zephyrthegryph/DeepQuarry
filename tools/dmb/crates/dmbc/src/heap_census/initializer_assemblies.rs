@@ -1,7 +1,7 @@
 //! Actual accessible owners of retained assembled initializer code.
 use super::*;
 use crate::initializer_lowering::InitializerAssemblies;
-use dm_session::ArtifactStorageView as View;
+use dm_session::ObservedArtifactStorageView as View;
 
 pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_initializer_assemblies");
@@ -20,7 +20,10 @@ pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
             census.slice("initializer_assemblies.reads", reads, true);
             census.slice("initializer_assemblies.versions", versions, true);
             for read in reads.iter() {
-                super::resident_weight::answer(&mut census, &read.answer);
+                match &read.answer {
+                    crate::initializer_lowering::receipts::Answer::Semantic(answer) => super::resident_weight::answer(&mut census, answer),
+                    crate::initializer_lowering::receipts::Answer::Input(inputs) => census.initializer_receipt(inputs),
+                }
             }
             if census.arc_object("initializer_assemblies.payload", value) {
                 let (code, recipes, root_indexes, references) = value.retained_parts();
@@ -46,6 +49,57 @@ impl HeapCensus {
                     self.frozen_code(&ready.frozen);
                     self.vec_payload("initializer_encoding.slots", &ready.slots);
                     self.prepared_strings(&ready.strings);
+                }
+            }
+        }
+    }
+}
+
+impl HeapCensus {
+    pub(crate) fn initializer_receipt(
+        &mut self,
+        inputs: &Arc<crate::initializer_lowering::receipts::Inputs>,
+    ) {
+        use crate::initializer_lowering::receipts::{Inputs, Shape};
+        let owner = "initializer_receipts";
+        if !self.arc_object(owner, inputs) {
+            return;
+        }
+        match inputs.as_ref() {
+            Inputs::Fragment(input) => {
+                match &input.write.value {
+                    dm_ir::InitializerValue::Expression(value) => self.expression(owner, value),
+                    dm_ir::InitializerValue::ArrayAllocation(value) => self.array(owner, value),
+                    dm_ir::InitializerValue::NoAuthoredValue => (),
+                }
+                if let Some(array) = &input.write.declared_array {
+                    self.array(owner, array);
+                }
+                if let Shape::SizedArray(dimensions) = &input.shape {
+                    self.slice(owner, dimensions, true);
+                }
+                if let Some(accepted) = &input.accepted {
+                    accepted
+                        .visit(|value| super::initializer_artifacts::classification(self, value));
+                }
+            }
+            Inputs::Assembly { writes, .. } => {
+                if self.vec_payload(owner, writes) {
+                    for write in writes {
+                        self.initializer_receipt(&write.fragment);
+                        match &write.default {
+                            crate::initializer_policy::DefaultValue::Transform(_) => (),
+                            crate::initializer_policy::DefaultValue::Scalar(value) => {
+                                self.semantic_value(owner, value)
+                            }
+                            crate::initializer_policy::DefaultValue::InitializerExpression {
+                                canonical,
+                                ..
+                            } => {
+                                self.slice(owner, canonical, true);
+                            }
+                        }
+                    }
                 }
             }
         }

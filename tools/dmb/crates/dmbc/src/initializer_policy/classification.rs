@@ -223,6 +223,7 @@ fn finish_pending(
 ) -> Result<ClassifiedInitializers, String> {
     let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
     let mut classified = Vec::with_capacity(pending.len());
+    let mut admitted_owners = Vec::with_capacity(pending.len());
     for PendingWrite {
         mut write,
         key,
@@ -240,15 +241,24 @@ fn finish_pending(
             let (token, canonical) = tokens.issue(key)?;
             write.default = DefaultValue::InitializerExpression { token, canonical };
         }
+        admitted_owners.push(accepted.map(ClassificationOwner::new));
         classified.push(write);
     }
     let mut groups: Vec<RuntimeGroup> = Vec::new();
     let mut receiver_groups = std::collections::HashMap::new();
-    for (write_index, write) in classified
-        .iter()
-        .enumerate()
-        .filter(|(_, write)| write.phase.is_some())
-    {
+    for (write_index, write) in classified.iter().enumerate() {
+        // An authored unsized instance-array declaration owns an initializer
+        // even though its null value emits no allocation or assignment.
+        // Inherited arrays have no declared_array receipt on the current write.
+        let empty_instance_initializer =
+            matches!(write.write.target, InitializerTarget::Instance { .. })
+                && matches!(write.write.value, InitializerValue::NoAuthoredValue)
+                && write.write.declared_array.as_ref().is_some_and(|array| {
+                    array.dimensions.len() == 1 && array.dimensions[0].is_none()
+                });
+        if write.phase.is_none() && !empty_instance_initializer {
+            continue;
+        }
         let receiver = match write.write.target {
             InitializerTarget::Shared { .. } => None,
             InitializerTarget::ProcedureStatic(_) => None,
@@ -264,7 +274,9 @@ fn finish_pending(
             });
             index
         });
-        groups[index].writes.push(write_index);
+        if write.phase.is_some() {
+            groups[index].writes.push(write_index);
+        }
     }
     for group in &mut groups {
         if group.receiver.is_none() {
@@ -276,6 +288,7 @@ fn finish_pending(
         }
     }
     Ok(ClassifiedInitializers {
+        accepted: admitted_owners,
         writes: classified,
         groups,
     })

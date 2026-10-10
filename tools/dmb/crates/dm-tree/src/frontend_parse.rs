@@ -231,6 +231,7 @@ pub(super) fn parse_declarations_with_state(
                                         .map(|ledger| (adapted, ledger))
                                         .map_err(|error| {
                                             vec![crate::AdapterError {
+                                                kind: dm_syntax::DiagnosticKind::Unsupported,
                                                 span: dm_ir::Span {
                                                     file: FileId(0),
                                                     start: error.span.start as u32,
@@ -268,6 +269,7 @@ pub(super) fn parse_declarations_with_state(
                                         Ok(bytes) => Some(Arc::<[u8]>::from(bytes)),
                                         Err(message) => {
                                             facts = Err(vec![crate::AdapterError {
+                                                kind: dm_syntax::DiagnosticKind::Unsupported,
                                                 span: dm_ir::Span {
                                                     file: FileId(0),
                                                     start: offset as u32,
@@ -311,7 +313,7 @@ pub(super) fn parse_declarations_with_state(
                                 } else {
                                     super::declaration_state::CurrentContribution::fresh(text,offset,parsed,facts,ledger)
                                 };
-                                current.ok_or_else(||vec![crate::AdapterError{span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
+                                current.ok_or_else(||vec![crate::AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
                             });
                             if sender
                                 .send((index, offset, errors, fragment, current))

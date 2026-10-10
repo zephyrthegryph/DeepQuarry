@@ -33,6 +33,16 @@ impl BindingTables {
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner)
     }
+    /// Actual immutable owner descriptor and logical index counts for opt-in census.
+    /// Private BTree nodes and Arc control blocks are deliberately not estimated.
+    pub fn storage(&self) -> (usize, usize, usize, usize) {
+        (
+            Arc::as_ptr(&self.inner) as usize,
+            std::mem::size_of::<BindingData>(),
+            self.inner.indexes.len(),
+            self.inner.slots.len(),
+        )
+    }
     pub(super) fn slots(&self) -> &BTreeMap<SymbolId, (SymbolId, SymbolId)> {
         &self.inner.slots
     }

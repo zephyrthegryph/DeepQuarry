@@ -555,6 +555,7 @@ mod resource_tests {
             .unwrap(),
         );
         let classified = crate::initializer_policy::ClassifiedInitializers {
+            accepted: Vec::new(),
             writes: vec![crate::initializer_policy::ClassifiedWrite {
                 source_ordinal: 0,
                 write: startup.plan().writes[0].clone(),

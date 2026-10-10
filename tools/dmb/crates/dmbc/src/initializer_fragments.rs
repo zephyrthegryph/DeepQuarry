@@ -1,16 +1,20 @@
 //! Current-roster semantic continuations, validated by the common read ledger.
-use crate::initializer_policy::{ClassifiedInitializers, RuntimeValue};
+use super::receipts;
+use crate::initializer_policy::ClassifiedInitializers;
+#[cfg(test)]
+use crate::initializer_policy::RuntimeValue;
 use dm_codegen_byond::initializer::{
     AssignmentFragment, InitializerError, PreparedAssignmentGroup,
 };
-use dm_ir::{ReadDomain, Resolver};
+use dm_ir::Resolver;
 use std::{
     collections::HashMap,
     sync::atomic::{AtomicU64, Ordering},
+    sync::Arc,
 };
 
 pub struct InitializerFragments {
-    values: dm_session::ArtifactStore<RetainedFragment>,
+    values: receipts::Store<RetainedFragment>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -22,7 +26,7 @@ struct RetainedFragment {
 impl Default for InitializerFragments {
     fn default() -> Self {
         Self {
-            values: dm_session::ArtifactStore::current_revision(),
+            values: receipts::Store::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -33,8 +37,9 @@ pub(super) fn current_keys(
     classified: &ClassifiedInitializers,
     policy: u128,
     resource_context: Option<u128>,
-) -> Result<HashMap<usize, Vec<u8>>, String> {
+) -> Result<HashMap<usize, receipts::Binding>, String> {
     let mut keys = HashMap::new();
+    let mut duplicates = HashMap::<Vec<u8>, usize>::new();
     for group in &classified.groups {
         for &index in &group.writes {
             let write = classified
@@ -45,53 +50,54 @@ pub(super) fn current_keys(
                 .runtime_value
                 .as_ref()
                 .ok_or("initializer runtime value missing")?;
+            let inputs = receipts::FragmentInputs {
+                write: write.write.clone(),
+                shape: runtime.into(),
+                policy,
+                resource_context,
+                debug_enabled: true,
+                accepted: classified.accepted.get(index).cloned().flatten(),
+            };
+            let duplicate = duplicates
+                .entry(receipts::fragment_locator(&write.write))
+                .or_default();
             keys.insert(
                 write.source_ordinal,
-                // Production groups bind their current captured debug origins.
-                semantic_key(&write.write, runtime, policy, resource_context, true),
+                receipts::Binding::fragment(*duplicate, inputs),
             );
+            *duplicate += 1;
         }
     }
     Ok(keys)
 }
+#[cfg(test)]
 fn semantic_key(
     write: &dm_ir::InitializerWrite,
     runtime: &RuntimeValue,
     policy: u128,
     resource_context: Option<u128>,
     debug_enabled: bool,
-) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-continuation-v2-zero-frame-relative-debug\0".to_vec();
-    key.extend_from_slice(&policy.to_le_bytes());
-    key.push(u8::from(debug_enabled));
-    match resource_context {
-        Some(value) => {
-            key.push(1);
-            key.extend_from_slice(&value.to_le_bytes());
-        }
-        None => key.push(0),
-    }
-    write.write_canonical(|bytes| key.extend_from_slice(bytes));
-    match runtime {
-        RuntimeValue::Expression(_) => key.push(0),
-        RuntimeValue::SizedArray(dimensions) => {
-            key.push(1);
-            key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
-            for dimension in dimensions.iter() {
-                key.extend_from_slice(&dimension.to_le_bytes());
-            }
-        }
-    }
-    key
+) -> receipts::Binding {
+    receipts::Binding::fragment(
+        0,
+        receipts::FragmentInputs {
+            write: write.clone(),
+            shape: runtime.into(),
+            policy,
+            resource_context,
+            debug_enabled,
+            accepted: None,
+        },
+    )
 }
 impl InitializerFragments {
-    pub(super) fn retain_keys(&self, keys: &HashMap<usize, Vec<u8>>) {
+    pub(super) fn retain_keys(&self, keys: &HashMap<usize, receipts::Binding>) {
         self.values
-            .retain_current_keys(keys.values().map(Vec::as_slice));
+            .retain_current_keys(keys.values().map(|binding| binding.key.as_ref()));
     }
     pub(super) fn fragment<R: Resolver>(
         &self,
-        key: &[u8],
+        key: &receipts::Binding,
         prepared: &PreparedAssignmentGroup<'_>,
         index: usize,
         write: &dm_ir::InitializerWrite,
@@ -100,7 +106,13 @@ impl InitializerFragments {
         let root = prepared.expression(index).ok_or_else(|| {
             InitializerError::Invalid("initializer current expression missing".into())
         })?;
-        if let Some(fragment) = self.values.lookup(key, host) {
+        if let Some(fragment) = self.values.lookup(
+            &key.key,
+            &receipts::Host {
+                binding: key,
+                resolver: host,
+            },
+        ) {
             let current = crate::lowering_memo::RecordingResolver::new(host);
             let captured = fragment
                 .recipes
@@ -127,8 +139,8 @@ impl InitializerFragments {
             return Ok(None);
         };
         self.recomputed.fetch_add(1, Ordering::Relaxed);
-        let reads = recorder.reads();
-        let versions: Vec<(ReadDomain, u128)> = recorder.domain_receipts();
+        let reads = receipts::reads(key, recorder.reads());
+        let versions = receipts::versions(recorder.domain_receipts());
         let (stripped, captures) = fragment.clone().split_modified();
         let recipes = captures
             .iter()
@@ -143,9 +155,11 @@ impl InitializerFragments {
         if let Some(recipes) = recipes {
             let weight = std::mem::size_of::<RetainedFragment>();
             self.values
-                .insert_with(key.into(), reads, versions, weight, || RetainedFragment {
-                    code: stripped,
-                    recipes,
+                .insert_with(Arc::clone(&key.key), reads, versions, weight, || {
+                    RetainedFragment {
+                        code: stripped,
+                        recipes,
+                    }
                 });
         } else {
             self.declined.fetch_add(1, Ordering::Relaxed);

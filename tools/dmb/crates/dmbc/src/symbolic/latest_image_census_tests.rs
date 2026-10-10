@@ -58,6 +58,20 @@ fn latest_image_census_deduplicates_shared_words_and_preserves_binding_unknowns(
         .unknown
         .iter()
         .any(|reason| reason.contains("HashMap allocated")));
+    assert!(shared
+        .owners
+        .iter()
+        .any(|row| row.owner == "latest_images.source_certificate"
+            && row.unique_known_capacity_bytes > 0));
+    assert!(shared
+        .owners
+        .iter()
+        .any(|row| row.owner == "latest_images.table_certificate"
+            && row.unique_known_capacity_bytes > 0
+            && row
+                .unknown
+                .iter()
+                .any(|reason| reason.contains("private BTree"))));
     let unchanged = owner.link(&frozen, &origins, &tables).unwrap();
     assert!(Arc::ptr_eq(&image.words, &unchanged.words));
 }

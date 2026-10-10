@@ -152,13 +152,11 @@ fn capture_impl_with_bodies_and_artifacts(
     if let Some(artifacts) = artifacts {
         for body in frontend.bodies.iter() {
             let key = (|| {
-                let source = frontend
-                    .expanded
-                    .text
-                    .get(body.expanded_span.range())
-                    .ok_or("startup body source span outside capture")?;
-                if !prefilter || dm_tree::procedure_statics::may_contain_stored_declarations(source)
-                {
+                let input = frontend
+                    .body_input(body)
+                    .map_err(|e| format!("startup body: {e:?}"))?;
+                let source = input.source();
+                if !prefilter || input.may_contain_stored_declarations() {
                     let identity = *identities
                         .get(&body.member)
                         .ok_or("startup procedure identity missing")?;
@@ -179,14 +177,9 @@ fn capture_impl_with_bodies_and_artifacts(
         let identity = *identities
             .get(&body.member)
             .ok_or("startup procedure identity missing")?;
-        frontend
-            .compact_body(body)
+        let input = frontend
+            .body_input(body)
             .map_err(|e| format!("startup body: {e:?}"))?;
-        let source = frontend
-            .expanded
-            .text
-            .get(body.expanded_span.range())
-            .ok_or("startup body source span outside capture")?;
         let candidate_key = keys
             .get(&body.member)
             .map(|result| result.as_ref().map(Option::as_deref).map_err(Clone::clone))
@@ -195,7 +188,7 @@ fn capture_impl_with_bodies_and_artifacts(
         let empty = if artifacts.is_some() {
             candidate_key.is_none()
         } else {
-            prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source)
+            prefilter && !input.may_contain_stored_declarations()
         };
         if empty {
             return Ok((

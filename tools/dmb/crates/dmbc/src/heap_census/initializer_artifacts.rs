@@ -46,7 +46,7 @@ fn storage<T>(
         }
     }
 }
-fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassification>) {
+pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassification>) {
     if !c.arc_object("initializer_classification.payload", value) {
         return;
     }

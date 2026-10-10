@@ -19,6 +19,14 @@ impl HeapCensus {
                 self.vec_payload("latest_images.words",&image.words);
             }
         });
+        owner.visit_certificate(|bindings, origins| {
+            let (address, inline, assignments, slots) = bindings.storage();
+            if self.buffer("latest_images.table_certificate", address, inline, inline) {
+                self.observe_items("latest_images.table_certificate", assignments.saturating_add(slots));
+                self.unknown("latest_images.table_certificate", "private BTree index nodes and Arc control block bytes excluded; immutable owner descriptor size is exact");
+            }
+            origins.census(self, "latest_images.source_certificate");
+        });
         owner.visit_retained_wire(|base, answers, image| {
             for words in [&base.words, &image.words] {
                 if self.arc_object("latest_images.wire_words", words) {

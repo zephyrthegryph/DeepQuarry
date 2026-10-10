@@ -250,7 +250,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
-                kind: DiagnosticKind::UnsupportedModel,
+                kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Declaration,
                 message: error.message,
                 location: mapping.output(error.span.start as usize),

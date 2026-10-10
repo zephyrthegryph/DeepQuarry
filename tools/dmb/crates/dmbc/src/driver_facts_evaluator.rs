@@ -32,8 +32,9 @@ impl DriverEvaluator<'_> {
         name: SymbolId,
         data: &dm_ir::DeclarationMeaning,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        qualified_initial: bool,
     ) -> Result<Option<SemanticValue>, String> {
-        if data.inherited_opaque.is_some() || data.flags & 2 == 0 {
+        if data.inherited_opaque.is_some() || (!qualified_initial && data.flags & 2 == 0) {
             return Err("declaration constant metadata is not certified".into());
         }
         if let Some(value) = &data.resolved_constant {
@@ -240,10 +241,19 @@ impl DriverEvaluator<'_> {
                             ResolvedMeaning::Member {
                                 owner, name, data, ..
                             } => {
-                                if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
+                                if unqualified
+                                    && data.inherited_opaque.is_none()
+                                    && data.flags & 2 == 0
+                                {
                                     return None;
                                 }
-                                return match self.declaration_scalar(owner, name, &data, active) {
+                                return match self.declaration_scalar(
+                                    owner,
+                                    name,
+                                    &data,
+                                    active,
+                                    !unqualified,
+                                ) {
                                     Ok(Some(value)) => scalar_constant(value, self.symbols),
                                     Ok(None) => {
                                         *failure.borrow_mut() =
@@ -274,7 +284,9 @@ impl DriverEvaluator<'_> {
                                 if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
                                     return None;
                                 }
-                                return match self.declaration_scalar(owner, name, &data, active) {
+                                return match self
+                                    .declaration_scalar(owner, name, &data, active, false)
+                                {
                                     Ok(Some(value)) => scalar_constant(value, self.symbols),
                                     Ok(None) => {
                                         *failure.borrow_mut() = Some(
@@ -695,3 +707,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
 #[cfg(test)]
 #[path = "driver_facts_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "driver_qualified_initial_tests.rs"]
+mod qualified_initial_tests;

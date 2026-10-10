@@ -362,6 +362,14 @@ impl ExprParser {
                 break;
             }
             self.index += width;
+            if self.peek().is_none() && self.diagnostics.is_empty() {
+                self.diagnostics.push(Diagnostic {
+                    span: Span::new(lhs.span.end, lhs.span.end),
+                    kind: DiagnosticKind::IncompleteExpression,
+                    message: format!("missing right operand for {op}"),
+                });
+                break;
+            }
             let Some(rhs) = self.expression(right_bp) else {
                 self.error(lhs.span, format!("missing right operand for {op}"));
                 break;
@@ -528,7 +536,15 @@ impl ExprParser {
                 let value = self.expression_nested(0)?;
                 let end = self.take_text(")").map_or_else(
                     || {
-                        self.error(span, "unclosed group");
+                        if self.peek().is_none() && self.diagnostics.is_empty() {
+                            self.diagnostics.push(Diagnostic {
+                                span,
+                                kind: DiagnosticKind::IncompleteExpression,
+                                message: "unclosed group".into(),
+                            });
+                        } else {
+                            self.error(span, "unclosed group");
+                        }
                         value.span.end
                     },
                     |t| t.span.end,
@@ -688,5 +704,37 @@ impl ExprParser {
             }
         }
         best
+    }
+}
+
+#[cfg(test)]
+mod incomplete_tests {
+    use super::*;
+    #[test]
+    fn only_recognized_eof_failures_are_certified() {
+        for source in ["1 +", "(1 +", "(1"] {
+            assert!(
+                parse_expression(source)
+                    .diagnostics
+                    .iter()
+                    .any(|d| d.kind == DiagnosticKind::IncompleteExpression),
+                "{source}"
+            );
+        }
+        for source in [
+            "/datum/example",
+            "new /datum/example",
+            "1 + @",
+            "(1 @",
+            "list(1,)",
+        ] {
+            assert!(
+                !parse_expression(source)
+                    .diagnostics
+                    .iter()
+                    .any(|d| d.kind == DiagnosticKind::IncompleteExpression),
+                "{source}"
+            );
+        }
     }
 }

@@ -150,6 +150,12 @@ struct Shared {
     connections: AtomicUsize,
 }
 impl Shared {
+    fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
+        *host = crate::runner_host::BuildHost::with_daemon_owners(
+            Arc::clone(&self.engines),
+            Arc::clone(&self.executors),
+        );
+    }
     fn slot(
         &self,
         path: PathBuf,
@@ -473,7 +479,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     crate::request_failure::RequestFailure::from_error(error.as_ref()),
                 ),
                 Err(_) => {
-                    *host = crate::runner_host::BuildHost::default();
+                    shared.reset_host(&mut host);
                     Reply::Rejected(crate::request_failure::RequestFailure::internal(
                         "internal compiler panic; retained session cleared",
                     ))
@@ -493,6 +499,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[path = "panic_reset_tests.rs"]
+    mod panic_reset;
     fn shared() -> Arc<Shared> {
         Arc::new(Shared {
             engines: Arc::new(Default::default()),

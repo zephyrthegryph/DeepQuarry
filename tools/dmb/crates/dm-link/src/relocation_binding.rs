@@ -1,6 +1,25 @@
 //! Ordered current relocation binding, separated from symbolic word encoding.
 use super::*;
 
+/// Exact current source answers borrowed from an immutable roster or explicit map.
+/// Missing ordinals remain missing; this interface grants no admission authority.
+pub trait SourceBindingAccess {
+    fn first_line(&self) -> u32;
+    fn line(&self, ordinal: u32) -> Option<u32>;
+    fn file(&self, ordinal: u32) -> Option<SymbolId>;
+}
+impl SourceBindingAccess for SourceBindings {
+    fn first_line(&self) -> u32 {
+        self.first_line
+    }
+    fn line(&self, ordinal: u32) -> Option<u32> {
+        self.lines.get(&ordinal).copied()
+    }
+    fn file(&self, ordinal: u32) -> Option<SymbolId> {
+        self.files.get(&ordinal).copied()
+    }
+}
+
 /// A successful binding borrows exactly the symbolic code whose relocations
 /// were checked. No caller can inject answers or encode a different body.
 pub struct BoundRelocations<'code> {
@@ -48,6 +67,14 @@ impl LinkTables {
         code: &'code SymbolicCode,
         source: &SourceBindings,
     ) -> Result<BoundRelocations<'code>, LinkError> {
+        self.bind_relocations_from(code, source)
+    }
+    /// The same ordered binding checks, without requiring temporary source maps.
+    pub fn bind_relocations_from<'code>(
+        &self,
+        code: &'code SymbolicCode,
+        source: &(impl SourceBindingAccess + ?Sized),
+    ) -> Result<BoundRelocations<'code>, LinkError> {
         let mut resolved = HashMap::new();
         for relocation in code.relocations() {
             let reference = relocation.reference;
@@ -56,17 +83,15 @@ impl LinkTables {
             };
             let index = match reference {
                 SymRef::LineDelta(delta) => source
-                    .first_line
+                    .first_line()
                     .checked_add(delta)
                     .ok_or(LinkError::SourceLineOverflow(delta))?,
-                SymRef::SourceLine(origin) => *source
-                    .lines
-                    .get(&origin)
+                SymRef::SourceLine(origin) => source
+                    .line(origin)
                     .ok_or(LinkError::MissingSourceLine(origin))?,
                 SymRef::SourceFile(origin) => {
-                    let symbol = *source
-                        .files
-                        .get(&origin)
+                    let symbol = source
+                        .file(origin)
                         .ok_or(LinkError::MissingSourceFile(origin))?;
                     self.index(Key::String(symbol))
                         .ok_or(LinkError::UnknownKey(Key::String(symbol)))?
@@ -142,5 +167,34 @@ mod tests {
             tables.bind_relocations(&code, &Default::default()),
             Err(LinkError::MissingSourceLine(2))
         ));
+    }
+    #[test]
+    fn borrowed_first_line_overflow_matches_explicit_maps() {
+        struct Borrowed;
+        impl SourceBindingAccess for Borrowed {
+            fn first_line(&self) -> u32 {
+                u32::MAX
+            }
+            fn line(&self, _: u32) -> Option<u32> {
+                None
+            }
+            fn file(&self, _: u32) -> Option<SymbolId> {
+                None
+            }
+        }
+        let tables = LinkTables::build(Default::default()).unwrap();
+        let code = code(&[SymRef::LineDelta(1), SymRef::SourceLine(0)]);
+        let explicit = SourceBindings {
+            first_line: u32::MAX,
+            ..Default::default()
+        };
+        assert_eq!(
+            tables.link_from(&code, &Borrowed),
+            tables.link(&code, &explicit)
+        );
+        assert_eq!(
+            tables.link_from(&code, &Borrowed),
+            Err(LinkError::SourceLineOverflow(1))
+        );
     }
 }

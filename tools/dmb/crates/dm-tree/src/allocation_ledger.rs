@@ -266,9 +266,9 @@ fn walk(
                 })?;
             let parsed =
                 crate::procedure::parse_signature_declarations(arguments, trailing, symbols)
-                    .map_err(|message| Error {
+                    .map_err(|error| Error {
                         span: item.header_span,
-                        message,
+                        message: error.message,
                     })?;
             let argument_offset = arguments.as_ptr() as usize - item.header.as_ptr() as usize;
             for declaration in parsed.declarations {

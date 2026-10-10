@@ -59,3 +59,6 @@ mod owned_prepare;
 
 #[path = "lowering_tests/reference_capture.rs"]
 mod reference_capture;
+
+#[path = "lowering_tests/incomplete_expression.rs"]
+mod incomplete_expression;

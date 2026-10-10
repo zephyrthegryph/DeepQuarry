@@ -13,6 +13,8 @@ use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
 use std::sync::Arc;
 #[path = "initializer_fragments.rs"]
 mod fragments;
+#[path = "initializer_receipts.rs"]
+pub(crate) mod receipts;
 pub use fragments::InitializerFragments;
 #[path = "initializer_assemblies.rs"]
 mod assemblies;
@@ -344,7 +346,7 @@ fn lower_plan<R: Resolver>(
             fragment_store.zip(fragment_keys.as_ref()),
             assembly_store
                 .zip(assembly_keys.as_ref())
-                .map(|(store, keys)| (store, keys[index].as_slice())),
+                .map(|(store, keys)| (store, &keys[index])),
         )
     };
     let units =
@@ -366,6 +368,10 @@ fn lower_plan<R: Resolver>(
 #[path = "initializer_parallel_groups.rs"]
 mod parallel_groups;
 
+#[cfg(test)]
+#[path = "initializer_presence_tests.rs"]
+mod presence_tests;
+
 fn lower_group<R: Resolver>(
     frontend: &ColdFrontend,
     plan: &InitializerPlan,
@@ -376,9 +382,9 @@ fn lower_group<R: Resolver>(
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     fragments: Option<(
         &InitializerFragments,
-        &std::collections::HashMap<usize, Vec<u8>>,
+        &std::collections::HashMap<usize, receipts::Binding>,
     )>,
-    assembly: Option<(&InitializerAssemblies, &[u8])>,
+    assembly: Option<(&InitializerAssemblies, &receipts::Binding)>,
 ) -> Result<LoweredInitializerUnit, InitializerLoweringError> {
     let symbols = plan.symbols.as_ref();
     let mut entries = Vec::with_capacity(group.writes.len());
@@ -476,7 +482,8 @@ fn lower_group<R: Resolver>(
     let context = || InitializerContext {
         symbols,
         resource_search_context,
-        debug: Some(&debug),
+        // Presence-only groups have no executable source occurrence.
+        debug: (!group.writes.is_empty()).then_some(&debug),
     };
     let map_error = |error| match error {
         dm_codegen_byond::initializer::InitializerError::Unsupported(message) => {

@@ -33,6 +33,15 @@ impl OriginRoster {
         }
     }
 
+    pub(crate) fn get(&self, index: usize) -> Option<(usize, u32)> {
+        match self {
+            Self::Compact(entries) => entries
+                .get(index)
+                .map(|&(path, line)| (path as usize, line)),
+            Self::Wide(entries) => entries.get(index).copied(),
+        }
+    }
+
     pub(crate) fn iter(&self) -> impl Iterator<Item = (usize, u32)> + '_ {
         (0..self.len()).map(|index| match self {
             Self::Compact(entries) => {

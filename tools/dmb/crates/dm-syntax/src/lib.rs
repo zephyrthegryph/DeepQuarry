@@ -66,6 +66,8 @@ pub struct Diagnostic {
 pub enum DiagnosticKind {
     Lexical,
     Expression,
+    /// Recognized syntax reached EOF while a required operand or group close was missing.
+    IncompleteExpression,
     Statement,
     Indentation,
     Unsupported,

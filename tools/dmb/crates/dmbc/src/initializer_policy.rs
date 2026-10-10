@@ -322,6 +322,7 @@ pub struct RuntimeGroup {
 }
 #[derive(Debug)]
 pub struct ClassifiedInitializers {
+    pub(crate) accepted: Vec<Option<ClassificationOwner>>,
     pub writes: Vec<ClassifiedWrite>,
     pub groups: Vec<RuntimeGroup>,
 }
@@ -617,3 +618,31 @@ pub fn classify_with_token_mode_on_executor(
 ) -> Result<ClassifiedInitializers, ClassificationError> {
     classification::parallel::classify(writes, symbols, evaluator, debug_defined, executor)
 }
+
+/// Exact immutable classification admitted by the existing semantic store.
+#[derive(Clone)]
+pub(crate) struct ClassificationOwner(Arc<classification::artifact::SemanticClassification>);
+impl ClassificationOwner {
+    pub(crate) fn new(value: Arc<classification::artifact::SemanticClassification>) -> Self {
+        Self(value)
+    }
+    pub(crate) fn visit(
+        &self,
+        visit: impl FnOnce(&Arc<classification::artifact::SemanticClassification>),
+    ) {
+        visit(&self.0);
+    }
+}
+impl std::fmt::Debug for ClassificationOwner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("ClassificationOwner")
+            .field(&Arc::as_ptr(&self.0))
+            .finish()
+    }
+}
+impl PartialEq for ClassificationOwner {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+impl Eq for ClassificationOwner {}

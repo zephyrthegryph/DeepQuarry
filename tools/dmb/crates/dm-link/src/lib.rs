@@ -160,7 +160,7 @@ pub enum LinkError {
     Relocation(RelocationError),
 }
 mod relocation_binding;
-pub use relocation_binding::{BindingAnswers, BoundRelocations};
+pub use relocation_binding::{BindingAnswers, BoundRelocations, SourceBindingAccess};
 mod bindings;
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
@@ -375,7 +375,15 @@ impl LinkTables {
         code: &SymbolicCode,
         source: &SourceBindings,
     ) -> Result<ProcedureImage, LinkError> {
-        self.bind_relocations(code, source)?.encode()
+        self.link_from(code, source)
+    }
+    /// Borrow current source answers through the common ordered relocation binder.
+    pub fn link_from(
+        &self,
+        code: &SymbolicCode,
+        source: &(impl SourceBindingAccess + ?Sized),
+    ) -> Result<ProcedureImage, LinkError> {
+        self.bind_relocations_from(code, source)?.encode()
     }
 }
 fn symbols(key: Key) -> impl Iterator<Item = SymbolId> {

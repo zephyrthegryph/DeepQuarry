@@ -87,6 +87,9 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         }]
     })?;
     let typed_attempted = parsed.statement_attempted();
+    // The issued parser owner survives ABI hooks that return only a header.
+    // It remains subject to the current startup/settings mask below.
+    let issued_statements = parsed.shared_statement_body();
     // This receipt can only be issued from this arena's authenticated body.
     // Keep its shared owner before ABI preparation consumes the parsed wrapper.
     let static_receipt = parsed.stored_declaration_receipt();
@@ -105,6 +108,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             .prepare_owned_captured(metadata, parsed, &context)
             .map_err(unsupported)?
     };
+    let statements = statements.or(issued_statements);
     let parsed = &parsed;
     let procedure_identity = dm_ir::ProcedureIdentity {
         owner: identity.owner,
@@ -177,6 +181,19 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                     || removed.contains(&(statement.header_span.start, statement.header_span.end))
             },
         );
+        if let Some(diagnostic) = statements.parsed().diagnostics.iter().find(|diagnostic| {
+            diagnostic.kind == dm_syntax::DiagnosticKind::IncompleteExpression
+                && !mask.hides_diagnostic(diagnostic)
+        }) {
+            return Err(vec![LoweringDiagnostic {
+                kind: DiagnosticKind::SourceError,
+                identity: Some(identity),
+                origin: frontend
+                    .location(diagnostic.span.start)
+                    .unwrap_or_else(|| body.source.clone()),
+                message: diagnostic.message.clone(),
+            }]);
+        }
         typed_valid = statements
             .parsed()
             .diagnostics

@@ -698,6 +698,29 @@ fn declaration_skeleton_matches_full_grammar_and_setting_compaction() {
 }
 
 #[test]
+fn issued_body_candidate_facts_match_lexical_prefilter_and_reject_foreign_spans() {
+    let frontend = fixture(&[("project.dme", "/proc/plain()\n    return \"static\"\n/proc/stored()\n    var/static/value = 1\n    return value\n")]).unwrap();
+    for occurrence in frontend.bodies.iter() {
+        let input = frontend.body_input(occurrence).unwrap();
+        assert_eq!(
+            input.may_contain_stored_declarations(),
+            crate::procedure_statics::may_contain_stored_declarations(input.source())
+        );
+        let mut forged = occurrence.clone();
+        forged.expanded_span.end -= 1;
+        assert!(frontend.body_input(&forged).is_err());
+    }
+    assert!(!frontend
+        .body_input(&frontend.bodies[0])
+        .unwrap()
+        .may_contain_stored_declarations());
+    assert!(frontend
+        .body_input(&frontend.bodies[1])
+        .unwrap()
+        .may_contain_stored_declarations());
+}
+
+#[test]
 fn compact_body_preserves_setting_inputs_and_rejects_foreign_occurrences() {
     let frontend = fixture(&[("project.dme", "/proc/probe()\n    if(1)\n        set name = \"display\"\n        return 7\n    else\n        set desc = \"fallback\"\n    return 9\n")]).unwrap();
     let occurrence = &frontend.bodies[0];

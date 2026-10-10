@@ -1,5 +1,6 @@
 //! Current-receiver assembled semantic payloads. Current source binding remains
 //! the caller's mandatory admission before lookup; no origins are retained.
+use super::receipts;
 use crate::modified_initializers::ExpressionRecipe;
 use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_ir::{Resolver, SymRef, SymbolTable};
@@ -7,59 +8,46 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 pub(super) fn current_keys(
     classified: &crate::initializer_policy::ClassifiedInitializers,
-    fragments: &std::collections::HashMap<usize, Vec<u8>>,
-) -> Result<Vec<Vec<u8>>, String> {
+    fragments: &std::collections::HashMap<usize, receipts::Binding>,
+) -> Result<Vec<receipts::Binding>, String> {
+    let mut duplicates = std::collections::HashMap::<Option<dm_ir::SymbolId>, usize>::new();
     classified
         .groups
         .iter()
         .map(|group| {
-            let mut key = b"dmbc-initializer-assembly-v1-current-token-roster\0".to_vec();
-            match group.receiver {
-                Some(receiver) => {
-                    key.push(1);
-                    key.extend_from_slice(&receiver.bits().to_le_bytes());
-                }
-                None => key.push(0),
-            }
-            key.extend_from_slice(&(group.writes.len() as u64).to_le_bytes());
-            for &index in &group.writes {
-                let write = classified
-                    .writes
-                    .get(index)
-                    .ok_or("initializer assembly write missing")?;
-                let fragment = fragments
-                    .get(&write.source_ordinal)
-                    .ok_or("initializer assembly fragment key missing")?;
-                key.extend_from_slice(&(fragment.len() as u64).to_le_bytes());
-                key.extend_from_slice(fragment);
-                match &write.default {
-                    crate::initializer_policy::DefaultValue::Transform(_) => {
-                        return Err("folded transform unexpectedly has runtime assembly".into())
+            let writes = group
+                .writes
+                .iter()
+                .map(|&index| {
+                    let write = classified
+                        .writes
+                        .get(index)
+                        .ok_or("initializer assembly write missing")?;
+                    if matches!(
+                        write.default,
+                        crate::initializer_policy::DefaultValue::Transform(_)
+                    ) {
+                        return Err("folded transform unexpectedly has runtime assembly".into());
                     }
-                    crate::initializer_policy::DefaultValue::Scalar(value) => {
-                        key.push(0);
-                        let bytes = value.canonical_bytes();
-                        key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-                        key.extend_from_slice(&bytes);
-                    }
-                    crate::initializer_policy::DefaultValue::InitializerExpression {
-                        token,
-                        canonical,
-                    } => {
-                        key.push(1);
-                        key.extend_from_slice(&token.to_le_bytes());
-                        key.extend_from_slice(&(canonical.len() as u64).to_le_bytes());
-                        key.extend_from_slice(canonical);
-                    }
-                }
-            }
-            Ok(key)
+                    let fragment = fragments
+                        .get(&write.source_ordinal)
+                        .ok_or("initializer assembly fragment key missing")?;
+                    Ok(receipts::GroupWrite {
+                        fragment: std::sync::Arc::clone(&fragment.inputs),
+                        default: write.default.clone(),
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            let duplicate = duplicates.entry(group.receiver).or_default();
+            let binding = receipts::Binding::assembly(group.receiver, *duplicate, writes);
+            *duplicate += 1;
+            Ok(binding)
         })
         .collect()
 }
 
 pub struct InitializerAssemblies {
-    values: dm_session::ArtifactStore<RetainedAssembly>,
+    values: receipts::Store<RetainedAssembly>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -118,7 +106,7 @@ impl<R: Resolver> Resolver for AssemblyHost<'_, R> {
 impl Default for InitializerAssemblies {
     fn default() -> Self {
         Self {
-            values: dm_session::ArtifactStore::current_revision(),
+            values: receipts::Store::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -128,18 +116,18 @@ impl Default for InitializerAssemblies {
 impl InitializerAssemblies {
     pub(crate) fn visit_storage(
         &self,
-        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, RetainedAssembly>),
+        visitor: impl FnMut(receipts::Storage<'_, RetainedAssembly>),
     ) {
         self.values.visit_storage(visitor);
     }
-    pub(super) fn retain_keys(&self, keys: &[Vec<u8>]) {
+    pub(super) fn retain_keys(&self, keys: &[receipts::Binding]) {
         self.values
-            .retain_current_keys(keys.iter().map(Vec::as_slice));
+            .retain_current_keys(keys.iter().map(|binding| binding.key.as_ref()));
     }
     #[cfg(test)]
     pub(super) fn lookup<R: Resolver>(
         &self,
-        key: &[u8],
+        key: &receipts::Binding,
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         symbols: &SymbolTable,
         host: &R,
@@ -150,7 +138,7 @@ impl InitializerAssemblies {
     #[cfg(test)]
     pub(super) fn lookup_with_encoding<R: Resolver>(
         &self,
-        key: &[u8],
+        key: &receipts::Binding,
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         symbols: &SymbolTable,
         host: &R,
@@ -172,7 +160,7 @@ impl InitializerAssemblies {
     }
     pub(super) fn lookup_with_current_roots<'expr, R: Resolver>(
         &self,
-        key: &[u8],
+        key: &receipts::Binding,
         root_count: usize,
         mut root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
         symbols: &SymbolTable,
@@ -181,7 +169,13 @@ impl InitializerAssemblies {
         ResolverProc,
         std::sync::Arc<crate::symbolic::InitializerEncoding>,
     )> {
-        let payload = self.values.lookup(key, host)?;
+        let payload = self.values.lookup(
+            &key.key,
+            &receipts::Host {
+                binding: key,
+                resolver: host,
+            },
+        )?;
         if root_count != payload.root_count || payload.recipes.len() != payload.root_indexes.len() {
             return None;
         }
@@ -210,7 +204,7 @@ impl InitializerAssemblies {
     }
     pub(super) fn remember(
         &self,
-        key: &[u8],
+        key: &receipts::Binding,
         code: &ResolverProc,
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
@@ -238,21 +232,26 @@ impl InitializerAssemblies {
         let references = code.modified_instances.keys().copied().collect();
         let mut stripped = code.clone();
         stripped.modified_instances.clear();
-        let reads = recorder.reads();
-        let versions = recorder.domain_receipts();
+        let reads = receipts::reads(key, recorder.reads());
+        let versions = receipts::versions(recorder.domain_receipts());
         // This store retains the current roster without a byte admission budget.
         // Full resident ownership is measured only by the opt-in census.
         let weight = std::mem::size_of::<RetainedAssembly>();
         let encoding = std::sync::Arc::new(crate::symbolic::InitializerEncoding::default());
-        self.values
-            .insert_with(key.into(), reads, versions, weight, || RetainedAssembly {
+        self.values.insert_with(
+            std::sync::Arc::clone(&key.key),
+            reads,
+            versions,
+            weight,
+            || RetainedAssembly {
                 code: stripped,
                 recipes,
                 root_indexes,
                 references,
                 root_count: roots.len(),
                 encoding: std::sync::Arc::clone(&encoding),
-            });
+            },
+        );
         Some(encoding)
     }
 }

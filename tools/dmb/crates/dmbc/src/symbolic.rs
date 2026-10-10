@@ -114,7 +114,7 @@ impl CurrentImage {
             owner.link(frozen, origins, tables)?
         } else {
             tables
-                .link(frozen.code(), &origins.source_bindings())
+                .link_from(frozen.code(), origins)
                 .map_err(IntegrationError::Link)?
         };
         Ok(Self {
@@ -146,7 +146,7 @@ fn current_link(
         return Ok(certificate.image.clone());
     }
     tables
-        .link(frozen.code(), &origins.source_bindings())
+        .link_from(frozen.code(), origins)
         .map_err(IntegrationError::Link)
 }
 fn take_current_link(
@@ -165,7 +165,7 @@ fn take_current_link(
     }
     *certificate = None;
     tables
-        .link(frozen.code(), &origins.source_bindings())
+        .link_from(frozen.code(), origins)
         .map_err(IntegrationError::Link)
 }
 

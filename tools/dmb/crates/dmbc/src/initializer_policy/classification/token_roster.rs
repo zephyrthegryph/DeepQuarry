@@ -73,6 +73,12 @@ impl CurrentRoster {
                     .collect();
                 self.hits.fetch_add(1, Ordering::Relaxed);
                 return Ok(ClassifiedInitializers {
+                    accepted: accepted
+                        .iter()
+                        .cloned()
+                        .map(ClassificationOwner::new)
+                        .map(Some)
+                        .collect(),
                     writes,
                     groups: previous.groups.clone(),
                 });

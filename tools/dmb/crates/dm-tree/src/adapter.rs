@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct AdapterError {
+    pub kind: dm_syntax::DiagnosticKind,
     pub span: Span,
     pub message: String,
 }
@@ -64,6 +65,7 @@ pub fn from_ast_in_scope(
     let mut errors = Vec::new();
     for diagnostic in &ast.diagnostics {
         errors.push(AdapterError {
+            kind: diagnostic.kind,
             span: Span {
                 file,
                 start: diagnostic.span.start as u32,
@@ -164,6 +166,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
+        let mut source_argument_span = None;
         let adapted = (|| -> Result<Option<Skeleton>, String> {
             match item.kind {
                 ItemKind::Type => {
@@ -357,7 +360,19 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         arguments,
                         trailing,
                         context.symbols,
-                    )?;
+                    )
+                    .map_err(|error| {
+                        source_argument_span = error.source_span.map(|argument| {
+                            let offset =
+                                arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+                            Span {
+                                file,
+                                start: (item.header_span.start + offset + argument.start) as u32,
+                                end: (item.header_span.start + offset + argument.end) as u32,
+                            }
+                        });
+                        error.message
+                    })?;
                     header_declarations = parsed_signature.declarations;
                     let typed_signature = parsed_signature.signature;
                     let procedure = Some(Arc::new(crate::ProcedureMetadata {
@@ -482,7 +497,15 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                 }
             }
             Ok(None) => {}
-            Err(message) => context.errors.push(AdapterError { span, message }),
+            Err(message) => context.errors.push(AdapterError {
+                kind: if source_argument_span.is_some() {
+                    dm_syntax::DiagnosticKind::Expression
+                } else {
+                    dm_syntax::DiagnosticKind::Unsupported
+                },
+                span: source_argument_span.unwrap_or(span),
+                message,
+            }),
         }
     }
 }

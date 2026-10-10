@@ -106,7 +106,7 @@ fn resource_read_change_invalidates_only_its_retained_continuation_and_matches_c
     assert_eq!(store.recomputed.load(Ordering::Relaxed), 2);
     let mut retained = 0;
     store.values.visit_storage(|view| {
-        if matches!(view, dm_session::ArtifactStorageView::Entry { .. }) {
+        if matches!(view, dm_session::ObservedArtifactStorageView::Entry { .. }) {
             retained += 1;
         }
     });
@@ -115,7 +115,16 @@ fn resource_read_change_invalidates_only_its_retained_continuation_and_matches_c
         "changed read replaces current variant rather than retaining history"
     );
     store.retain_keys(&HashMap::new());
-    assert!(store.values.lookup(&key, &Host { resource: 12 }).is_none());
+    assert!(store
+        .values
+        .lookup(
+            &key.key,
+            &receipts::Host {
+                binding: &key,
+                resolver: &Host { resource: 12 }
+            }
+        )
+        .is_none());
 }
 #[test]
 fn sized_dimensions_and_resource_search_context_are_semantic_inputs() {
@@ -198,7 +207,7 @@ fn retained_modifier_reissues_current_ast_after_old_source_is_dropped() {
             dm_syntax::Span::new(start + 20, start + 21)
         );
         store.values.visit_storage(|view| {
-            if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
+            if let dm_session::ObservedArtifactStorageView::Entry { value, .. } = view {
                 assert!(value.code.code().modified_instances.is_empty());
                 assert_eq!(value.recipes.len(), 1);
             }
@@ -305,6 +314,116 @@ fn retained_modifier_binds_current_group_debug_ordinal_after_an_inserted_write()
         assert_eq!(captured.field_origins, expected.field_origins);
         assert_eq!(captured.source_span, Some(value.span));
     }
+    assert_eq!(store.hits.load(Ordering::Relaxed), 1);
+    assert_eq!(store.recomputed.load(Ordering::Relaxed), 1);
+}
+
+#[test]
+fn same_locator_declines_changed_current_flags_before_reusing_code() {
+    let store = receipts::Store::<()>::current_revision();
+    let mut symbols = SymbolTable::default();
+    let first = write("1", &mut symbols);
+    let runtime =
+        RuntimeValue::Expression(Arc::new(dm_syntax::parse_expression("1").expr.unwrap()));
+    let original = semantic_key(&first, &runtime, 7, None, false);
+    let host = Host { resource: 11 };
+    store.insert_with(
+        Arc::clone(&original.key),
+        receipts::reads(&original, Vec::new()),
+        Vec::new(),
+        1,
+        || (),
+    );
+    assert!(store
+        .lookup(
+            &original.key,
+            &receipts::Host {
+                binding: &original,
+                resolver: &host
+            }
+        )
+        .is_some());
+    let mut changed = first.clone();
+    changed.declaration_flags = Some(3);
+    let current = semantic_key(&changed, &runtime, 7, None, false);
+    assert_eq!(original.key, current.key);
+    assert!(store
+        .lookup(
+            &current.key,
+            &receipts::Host {
+                binding: &current,
+                resolver: &host
+            }
+        )
+        .is_none());
+}
+
+#[test]
+fn earlier_unrelated_write_preserves_fragment_locator_and_real_hit() {
+    use crate::initializer_policy::{
+        ClassifiedInitializers, ClassifiedWrite, DefaultValue, Phase, RuntimeGroup,
+    };
+    let store = InitializerFragments::default();
+    let mut symbols = SymbolTable::default();
+    symbols.intern("/").unwrap();
+    symbols.intern("value").unwrap();
+    let target = write("'asset.dat'", &mut symbols);
+    let expression = dm_syntax::parse_expression("'asset.dat'").expr.unwrap();
+    let runtime = RuntimeValue::Expression(Arc::new(expression.clone()));
+    let mut classified = ClassifiedInitializers {
+        accepted: Vec::new(),
+        writes: vec![ClassifiedWrite {
+            source_ordinal: 0,
+            write: target.clone(),
+            default: DefaultValue::Scalar(dm_ir::SemanticValue::Null),
+            phase: Some(Phase::Runtime),
+            runtime_value: Some(runtime.clone()),
+        }],
+        groups: vec![RuntimeGroup {
+            receiver: None,
+            writes: vec![0],
+        }],
+    };
+    let original = current_keys(&classified, 7, None).unwrap();
+    store.retain_keys(&original);
+    let host = Host { resource: 11 };
+    let roots = [AssignmentView {
+        target: &target.target,
+        lexical_owner: target.lexical_owner,
+        value: &expression,
+        occurrence: dm_syntax::Span::new(0, 0),
+    }];
+    let context = || InitializerContext {
+        symbols: &symbols,
+        resource_search_context: None,
+        debug: None,
+    };
+    let prepared = prepare_assignment_group(&roots, context(), &host).unwrap();
+    store
+        .fragment(&original[&0], &prepared, 0, &target, &host)
+        .unwrap()
+        .unwrap();
+    let mut unrelated = classified.writes[0].clone();
+    unrelated.write.target = InitializerTarget::Shared {
+        slot: SymbolId::of("unrelated"),
+        owner: SymbolId::of("/"),
+        name: SymbolId::of("unrelated"),
+    };
+    classified.writes[0].source_ordinal = 1;
+    classified.writes.insert(0, unrelated);
+    classified.groups[0].writes = vec![0, 1];
+    let current = current_keys(&classified, 7, None).unwrap();
+    assert_eq!(original[&0].key, current[&1].key);
+    store.retain_keys(&current);
+    let reused = store
+        .fragment(&current[&1], &prepared, 0, &target, &host)
+        .unwrap()
+        .unwrap();
+    let actual = prepared.assemble(vec![reused]).unwrap();
+    let fresh =
+        dm_codegen_byond::initializer::lower_assignment_views(&roots, context(), &host).unwrap();
+    assert_eq!(actual.procedure, fresh.procedure);
+    assert_eq!(actual.resources, fresh.resources);
     assert_eq!(store.hits.load(Ordering::Relaxed), 1);
     assert_eq!(store.recomputed.load(Ordering::Relaxed), 1);
 }

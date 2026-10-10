@@ -67,7 +67,34 @@ fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
         .map(|(text, span)| (text.to_owned(), span))
         .collect()
 }
-fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Parameter, String> {
+#[derive(Debug)]
+pub(crate) struct SignatureError {
+    pub(crate) message: String,
+    pub(crate) source_span: Option<Span>,
+}
+impl From<String> for SignatureError {
+    fn from(message: String) -> Self {
+        Self {
+            message,
+            source_span: None,
+        }
+    }
+}
+impl From<&str> for SignatureError {
+    fn from(message: &str) -> Self {
+        message.to_owned().into()
+    }
+}
+impl From<SignatureError> for String {
+    fn from(error: SignatureError) -> Self {
+        error.message
+    }
+}
+fn parameter(
+    text: &str,
+    start: usize,
+    symbols: &mut SymbolTable,
+) -> Result<Parameter, SignatureError> {
     let lexed = LexedHeader::new(text);
     if !lexed.valid() {
         return Err("invalid procedure argument tokens".into());
@@ -109,6 +136,20 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
         let offset = part.as_ptr() as usize - text.as_ptr() as usize;
         !view.slice(offset, offset + part.len()).ident()
     }) {
+        for part in &parts {
+            let offset = part.as_ptr() as usize - text.as_ptr() as usize;
+            let part_view = view.slice(offset, offset + part.len());
+            if part_view
+                .tokens()
+                .iter()
+                .any(|token| token.kind == TokenKind::Number)
+            {
+                return Err(SignatureError {
+                    message: "bad argument definition".into(),
+                    source_span: Some(Span::new(start + offset, start + offset + part.len())),
+                });
+            }
+        }
         return Err("unsupported procedure argument declaration path".into());
     }
     let mut flags = 0;
@@ -224,7 +265,7 @@ pub(crate) fn parse_signature_declarations(
     arguments: &str,
     trailing: &str,
     symbols: &mut SymbolTable,
-) -> Result<ParsedSignature, String> {
+) -> Result<ParsedSignature, SignatureError> {
     let mut parameters = Vec::new();
     let mut declarations = Vec::new();
     let mut variadic = false;

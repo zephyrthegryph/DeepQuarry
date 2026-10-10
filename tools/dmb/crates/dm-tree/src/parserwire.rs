@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 // must never replay under the same fragment identity.
 // Revision 7 includes lexical-owner qualification for sibling field defaults.
 // Older fragments may contain semantically misplaced declaration facts.
-pub(super) const VERSION: u32 = 7;
+pub(super) const VERSION: u32 = 8;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -139,6 +139,7 @@ pub(super) fn encode_with_facts(
                         DiagnosticKind::Statement => 2,
                         DiagnosticKind::Indentation => 3,
                         DiagnosticKind::Unsupported => 4,
+                        DiagnosticKind::IncompleteExpression => 5,
                     },
                     span: bounds(error.span),
                     message: &error.message,
@@ -170,6 +171,7 @@ pub(super) fn decode_with_facts(bytes: &[u8], source: &str) -> Option<DecodedFac
                     2 => DiagnosticKind::Statement,
                     3 => DiagnosticKind::Indentation,
                     4 => DiagnosticKind::Unsupported,
+                    5 => DiagnosticKind::IncompleteExpression,
                     _ => return None,
                 },
                 message: error.message,
@@ -203,7 +205,7 @@ mod tests {
     }
     #[test]
     fn previous_fact_schema_cannot_reuse_parser_fragment_identity() {
-        const PREVIOUS_VERSION: u32 = 6;
+        const PREVIOUS_VERSION: u32 = 7;
         let source = "/datum/probe\n    var/value = 1\n";
         let ast = dm_syntax::parse_declaration_skeleton(source);
         let items = super::super::compact_declarations(ast.items, 0);
