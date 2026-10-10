@@ -505,6 +505,9 @@ def main():
             write_receipt(root, receipt)
         baseline_sources = [source_matches(project, source_snapshot, sha) for project in projects]
         receipt["source_identical_to_captured_baseline"] = baseline_sources
+        if args.worktree_sources and not all(baseline_sources):
+            write_receipt(root, receipt)
+            raise ValueError("six-worktree inputs differ from the authenticated captured source roster; no daemon or compiler request started")
         receipt["private_edit_paths"] = [str(path) for path in sorted(detached)]
         cache_directory = root / "compiler-cache"
         daemon_environment = os.environ.copy()
