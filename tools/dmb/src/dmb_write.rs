@@ -6,9 +6,9 @@ use xxhash_rust::xxh3::Xxh3;
 
 /// Immutable canonical bytes paired with the digest computed by serialization.
 /// Consuming the owner into mutable bytes discards the digest certificate.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EncodedDmb {
-    bytes: Vec<u8>,
+    bytes: std::sync::Arc<Vec<u8>>,
     content_hash: u128,
 }
 impl EncodedDmb {
@@ -28,8 +28,11 @@ impl EncodedDmb {
     pub fn is_empty(&self) -> bool {
         self.bytes.is_empty()
     }
+    pub fn shared_bytes(&self) -> &std::sync::Arc<Vec<u8>> {
+        &self.bytes
+    }
     pub fn into_bytes(self) -> Vec<u8> {
-        self.bytes
+        std::sync::Arc::try_unwrap(self.bytes).unwrap_or_else(|bytes| bytes.as_ref().clone())
     }
 }
 impl AsRef<[u8]> for EncodedDmb {
@@ -63,7 +66,7 @@ impl CanonicalHash {
     fn finish(mut self, writer: Writer<'static>) -> EncodedDmb {
         self.pending(&writer);
         EncodedDmb {
-            bytes: writer.bytes.into_owned(),
+            bytes: std::sync::Arc::new(writer.bytes.into_owned()),
             content_hash: self.state.digest128(),
         }
     }

@@ -33,6 +33,9 @@ pub(super) fn current_keys(
                 key.extend_from_slice(&(fragment.len() as u64).to_le_bytes());
                 key.extend_from_slice(fragment);
                 match &write.default {
+                    crate::initializer_policy::DefaultValue::Transform(_) => {
+                        return Err("folded transform unexpectedly has runtime assembly".into())
+                    }
                     crate::initializer_policy::DefaultValue::Scalar(value) => {
                         key.push(0);
                         let bytes = value.canonical_bytes();

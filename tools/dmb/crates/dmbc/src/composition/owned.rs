@@ -151,6 +151,7 @@ pub fn compose_projected_owned_with_symbols(
         Some((projection, values)),
         stage,
         None,
+        None,
     )
     .map(byond_dmb::dmb::EncodedDmb::into_bytes)
 }
@@ -173,6 +174,7 @@ pub fn compose_projected_owned_with_symbols_on_executor(
         Some((projection, values)),
         stage,
         Some(executor),
+        None,
     )
 }
 /// Consuming counterpart to the bounded reference/global fixture writer.
@@ -185,6 +187,7 @@ pub fn compose_global_fixture_owned(
         engine_bytes,
         BatchAccess::Owned(batch),
         symbols,
+        None,
         None,
         None,
         None,

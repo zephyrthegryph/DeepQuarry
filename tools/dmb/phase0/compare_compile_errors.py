@@ -71,6 +71,29 @@ def run(command, directory, log, timeout):
             "log": str(log), "diagnostics": normalize(text, directory)}
 
 
+def matches(reference, candidate, source_unchanged):
+    """Exact diagnostic parity also requires the native source-error contract."""
+    return (source_unchanged and not reference["timed_out"] and not candidate["timed_out"]
+            and reference["exit_code"] not in (None, 0) and candidate["exit_code"] == 2
+            and any(row["severity"] == "error" for row in reference["diagnostics"])
+            and not any(row["severity"] == "unrecognized diagnostic"
+                        for result in (reference, candidate) for row in result["diagnostics"])
+            and reference["diagnostics"] == candidate["diagnostics"])
+
+
+def template_admission(receipt, actual):
+    expected = [receipt[name] for name in ("engine_template_sha256", "template_sha256")
+                if name in receipt]
+    if not expected:
+        return {"status": "unknown", "reason": "fixture capture has no engine-template hash authority", "actual_sha256": actual}
+    if any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", value) for value in expected):
+        raise ValueError("invalid captured engine-template hash")
+    expected = {value.lower() for value in expected}
+    if len(expected) != 1 or actual.lower() not in expected:
+        raise ValueError("engine template differs from fixture capture authority")
+    return {"status": "passed", "actual_sha256": actual, "expected_sha256": expected.pop()}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--byond", type=Path, required=True)
@@ -87,12 +110,16 @@ def main():
         parser.error("tiny-fixture watchdog must be between 0 and 60 seconds")
     for name in ("byond", "native", "engine_template", "fixtures", "output"):
         setattr(args, name, getattr(args, name).resolve())
+    if args.output.drive.casefold() != "e:":
+        raise ValueError("owned diagnostic outputs must reside on E:")
     args.output.mkdir(parents=True, exist_ok=False)
     fixture_receipt = json.loads((args.fixtures / "receipt.json").read_text(encoding="utf-8-sig"))
     compiler_identities = {"byond": sha(args.byond), "native": sha(args.native),
                            "engine_template": sha(args.engine_template)}
     if compiler_identities["byond"] != fixture_receipt["compiler_sha256"]:
         raise ValueError("BYOND executable differs from captured fixture compiler")
+    template_proof = template_admission(fixture_receipt, compiler_identities["engine_template"])
+    print(f"Template admission: {template_proof['status']}")
     results = []
     default_cases = (["bare", "outer_visible"] if (args.fixtures / "bare/probe.dme").is_file()
                      else DEFAULT_CASES)
@@ -115,20 +142,15 @@ def main():
         defines = [f"-D{define}" for define in args.define]
         reference = run([str(args.byond), *defines, str(source)], directory,
                         directory / "byond.log", args.timeout)
-        candidate = run([str(args.native), "compile", "--no-daemon", str(source),
+        candidate = run([str(args.native), "compile", "--no-daemon", "--no-cache", str(source),
                          "--workers", "1", "--engine-template", str(args.engine_template),
-                         "--bootstrap-catalog", *defines], directory,
+                         "--bootstrap-catalog", "--output-store", str(directory / "native-store"),
+                         "--artifact-directory", str(directory / "native-artifacts"), *defines], directory,
                         directory / "native.log", args.timeout)
         unchanged = sha(source) == source_hash
         # An empty diagnostic vector or successful compile cannot certify an
         # invalid fixture. Timeouts and internal/unsupported failures stay failed.
-        passed = (unchanged and not reference["timed_out"] and not candidate["timed_out"]
-                  and reference["exit_code"] != 0 and candidate["exit_code"] != 0
-                  and any(row["severity"] == "error" for row in reference["diagnostics"])
-                  and not any(row["severity"] == "unrecognized diagnostic"
-                              for run_result in (reference, candidate)
-                              for row in run_result["diagnostics"])
-                  and reference["diagnostics"] == candidate["diagnostics"])
+        passed = matches(reference, candidate, unchanged)
         results.append({"case": case, "source_sha256": source_hash, "defines": args.define,
                         "source_unchanged": unchanged, "passed": passed,
                         "byond": reference, "native": candidate})
@@ -136,7 +158,8 @@ def main():
               f"({len(reference['diagnostics'])}/{len(candidate['diagnostics'])} diagnostics)")
     report = {"schema": 1, "compiler_sha256": compiler_identities,
               "fixture_receipt_sha256": sha(args.fixtures / "receipt.json"),
-              "results": results, "passed": all(result["passed"] for result in results)}
+              "results": results, "template_admission": template_proof,
+              "passed": template_proof["status"] == "passed" and bool(results) and all(result["passed"] for result in results)}
     (args.output / "comparison.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return 0 if report["passed"] else 1
 

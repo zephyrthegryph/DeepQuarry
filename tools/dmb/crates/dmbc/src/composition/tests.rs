@@ -483,6 +483,7 @@ fn consuming_composition_rejects_invalid_post_stage_instructions() {
         None,
         Some(&Corrupt),
         None,
+        None,
     );
     assert!(
         matches!(result, Err(CompositionError::Unsupported(message)) if message.contains("invalid composed bytecode"))
@@ -582,6 +583,7 @@ fn parallel_procedure_plan_preserves_bytes_and_empty_lists() {
         None,
         None,
         None,
+        None,
     )
     .unwrap();
     let parallel = compose_records_access(
@@ -591,6 +593,7 @@ fn parallel_procedure_plan_preserves_bytes_and_empty_lists() {
         None,
         None,
         Some(&executor),
+        None,
     )
     .unwrap();
     assert_eq!(serial.bytes(), parallel.bytes());
@@ -648,4 +651,113 @@ fn composition_transfers_retained_word_owner_without_copy_and_mutation_detaches(
     assert_eq!(original.as_slice(), linked.words.as_slice());
     assert!(!Arc::ptr_eq(dmb.lists.shared(id as usize).unwrap(), &words));
     drop(retained);
+}
+
+#[test]
+fn retained_generation_reuses_only_after_current_stage_admission() {
+    use std::sync::Arc;
+    let generation = RetainedGeneration::default();
+    let executor = dm_exec::BuildExecutor::new(2).unwrap();
+    let (frontend, inputs) = lifecycle_inputs();
+    let first = ValidatedComposition::prepare(&frontend, inputs)
+        .unwrap()
+        .compose_with_generation(&executor, Some(&generation))
+        .unwrap();
+    let (frontend, inputs) = lifecycle_inputs();
+    let second = ValidatedComposition::prepare(&frontend, inputs)
+        .unwrap()
+        .compose_with_generation(&executor, Some(&generation))
+        .unwrap();
+    assert!(Arc::ptr_eq(first.shared_bytes(), second.shared_bytes()));
+    struct Refused;
+    impl NonTextOutputStage for Refused {
+        fn validate_source(&self, _: &dm_tree::frontend::ColdFrontend) -> Result<(), String> {
+            Ok(())
+        }
+        fn apply(&self, _: &mut Dmb, _: &FrozenBatch) -> Result<BTreeSet<Key>, String> {
+            Err("current stage refuses output".into())
+        }
+    }
+    let (frontend, mut inputs) = lifecycle_inputs();
+    inputs.stage = Some(Box::new(Refused));
+    let error = ValidatedComposition::prepare(&frontend, inputs)
+        .unwrap()
+        .compose_with_generation(&executor, Some(&generation))
+        .unwrap_err();
+    assert!(
+        matches!(error, CompositionError::Unsupported(message) if message == "current stage refuses output")
+    );
+    let (frontend, inputs) = lifecycle_inputs();
+    let third = ValidatedComposition::prepare(&frontend, inputs)
+        .unwrap()
+        .compose_with_generation(&executor, Some(&generation))
+        .unwrap();
+    assert!(Arc::ptr_eq(first.shared_bytes(), third.shared_bytes()));
+    let mut once = crate::heap_census::HeapCensus::new("generation");
+    once.composition_generation(&generation);
+    let once = once.finish();
+    let mut twice = crate::heap_census::HeapCensus::new("generation");
+    twice.composition_generation(&generation);
+    twice.output_encoded("external_output", &third);
+    let twice = twice.finish();
+    assert_eq!(
+        once.unique_known_capacity_bytes,
+        twice.unique_known_capacity_bytes
+    );
+}
+
+#[test]
+fn ordered_plan_reuse_requires_current_bindings_and_complete_artifact_order() {
+    use std::sync::Arc;
+    fn plan(batch: &FrozenBatch) -> procedure_plan::CompositionPlan {
+        procedure_plan::CompositionPlan {
+            procedures: batch
+                .units
+                .iter()
+                .map(|unit| {
+                    (
+                        batch
+                            .tables
+                            .index(crate::symbolic::unit_key(unit.lowered.identity))
+                            .unwrap(),
+                        unit.lowered.identity,
+                    )
+                })
+                .collect(),
+            ..Default::default()
+        }
+    }
+    let source = "/proc/first()\n    return 1\n/proc/second()\n    return 2\n";
+    let (mut batch, _) = ownership_fixture_source(source);
+    let owner = RetainedGeneration::default();
+    let first = owner.bind_plan(plan(&batch), &batch).procedures.unwrap();
+    let second = owner.bind_plan(plan(&batch), &batch).procedures.unwrap();
+    assert!(Arc::ptr_eq(&first, &second));
+    batch.units.swap(0, 1);
+    let reordered = owner.bind_plan(plan(&batch), &batch).procedures.unwrap();
+    assert!(!Arc::ptr_eq(&first, &reordered));
+    for slot in reordered.iter() {
+        assert_eq!(
+            batch.units[slot.artifact.unwrap()].lowered.identity,
+            slot.identity
+        );
+    }
+    let (fresh, _) = ownership_fixture_source(source);
+    assert!(!batch
+        .tables
+        .binding_tables()
+        .same_owner(&fresh.tables.binding_tables()));
+    let independent = owner.bind_plan(plan(&fresh), &fresh).procedures.unwrap();
+    assert!(!Arc::ptr_eq(&reordered, &independent));
+    let raw = plan(&batch);
+    batch.units[1].lowered.identity = batch.units[0].lowered.identity;
+    let failed = owner.bind_plan(raw, &batch);
+    assert!(
+        matches!(failed.procedures, Err(CompositionError::Unsupported(message)) if message == "duplicate procedure artifact")
+    );
+    let after_failure = owner.bind_plan(plan(&fresh), &fresh).procedures.unwrap();
+    assert!(!Arc::ptr_eq(&independent, &after_failure));
+    owner.clear();
+    let after_clear = owner.bind_plan(plan(&fresh), &fresh).procedures.unwrap();
+    assert!(!Arc::ptr_eq(&after_failure, &after_clear));
 }

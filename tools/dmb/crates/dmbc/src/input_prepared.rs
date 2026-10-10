@@ -2,7 +2,7 @@
 use super::*;
 use dm_preprocess::regions::prepared_source::PreparedSource;
 use std::sync::Arc;
-struct Payload {
+pub struct PreparedInputPayload {
     source: Arc<PreparedSource>,
     inputs: InputSnapshot,
 }
@@ -14,7 +14,23 @@ impl dm_ir::Resolver for NoSemanticReads {
 }
 /// Current source roster only. Store charges are not decoded heap estimates.
 pub struct PreparedInputArtifacts {
-    values: dm_session::ArtifactStore<Payload>,
+    values: dm_session::ArtifactStore<PreparedInputPayload>,
+}
+impl PreparedInputArtifacts {
+    pub fn visit_storage(
+        &self,
+        visit: impl FnMut(dm_session::ArtifactStorageView<'_, PreparedInputPayload>),
+    ) {
+        self.values.visit_storage(visit);
+    }
+}
+impl PreparedInputPayload {
+    pub fn source(&self) -> &Arc<PreparedSource> {
+        &self.source
+    }
+    pub fn inputs(&self) -> &InputSnapshot {
+        &self.inputs
+    }
 }
 impl Default for PreparedInputArtifacts {
     fn default() -> Self {
@@ -86,7 +102,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let source = Arc::clone(&hit.source);
             owner
                 .values
-                .insert_with(key, Vec::new(), Vec::new(), 0, || Payload {
+                .insert_with(key, Vec::new(), Vec::new(), 0, || PreparedInputPayload {
                     source: Arc::clone(&source),
                     inputs: refreshed,
                 });
@@ -112,7 +128,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         inputs.files.insert(path, fact);
         owner
             .values
-            .insert_with(key, Vec::new(), Vec::new(), 0, || Payload {
+            .insert_with(key, Vec::new(), Vec::new(), 0, || PreparedInputPayload {
                 source: Arc::clone(&source),
                 inputs,
             });
@@ -156,6 +172,12 @@ mod tests {
             RecordingInputs::new(&files, 10_000_000_000).with_prepared_sources(Some(owner.clone()));
         let first = first_capture.prepared_source(path).unwrap();
         first_capture.finish_prepared().unwrap();
+        let report = crate::heap_census::prepared_input_census(&owner);
+        assert!(report.unique_known_capacity_bytes > 0);
+        assert!(report.owners.iter().any(|owner| owner
+            .unknown
+            .iter()
+            .any(|reason| reason.contains("PreparedLine"))));
         drop(first_capture);
         let second_capture =
             RecordingInputs::new(&files, 20_000_000_000).with_prepared_sources(Some(owner.clone()));

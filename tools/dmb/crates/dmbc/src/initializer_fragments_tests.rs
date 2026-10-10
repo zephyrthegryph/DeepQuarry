@@ -75,7 +75,7 @@ fn resource_read_change_invalidates_only_its_retained_continuation_and_matches_c
     }
     let write = write("'asset.dat'", &mut symbols);
     let value = dm_syntax::parse_expression("'asset.dat'").expr.unwrap();
-    let runtime = RuntimeValue::Expression(Box::new(value.clone()));
+    let runtime = RuntimeValue::Expression(std::sync::Arc::new(value.clone()));
     let key = semantic_key(&write, &runtime, 7, None, false);
     store.retain_keys(&HashMap::from([(0, key.clone())]));
     let views = [AssignmentView {
@@ -165,7 +165,7 @@ fn retained_modifier_reissues_current_ast_after_old_source_is_dropped() {
         };
         let key = semantic_key(
             &write,
-            &RuntimeValue::Expression(Box::new(value.clone())),
+            &RuntimeValue::Expression(std::sync::Arc::new(value.clone())),
             7,
             None,
             false,
@@ -272,7 +272,7 @@ fn retained_modifier_binds_current_group_debug_ordinal_after_an_inserted_write()
         });
         let key = semantic_key(
             &write,
-            &RuntimeValue::Expression(Box::new(value.clone())),
+            &RuntimeValue::Expression(std::sync::Arc::new(value.clone())),
             7,
             None,
             true,

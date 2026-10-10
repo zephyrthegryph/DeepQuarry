@@ -114,11 +114,19 @@ impl PreparedComposition {
         executor: &dm_exec::BuildExecutor,
         observer: Option<&ColdObserver<'_>>,
     ) -> Result<ColdOutput, ColdError> {
+        self.compose_with_generation(executor, observer, None)
+    }
+    pub fn compose_with_generation(
+        self,
+        executor: &dm_exec::BuildExecutor,
+        observer: Option<&ColdObserver<'_>>,
+        generation: Option<&crate::composition::RetainedGeneration>,
+    ) -> Result<ColdOutput, ColdError> {
         let started = Instant::now();
         let measurement = StageMeasurement::new(observer, ColdStage::Composition);
         let dmb = self
             .composition
-            .compose(executor)
+            .compose_with_generation(executor, generation)
             .map_err(ColdError::Composition)?;
         measurement.complete();
         let mut timings = self.timings;

@@ -158,12 +158,13 @@ mod handle;
 pub(crate) use handle::{isolated_output_stamp, stamp_handle};
 
 /// One capture owner shared by lexical workers and resource discovery. Records
-/// only actual reads; it retains no payload cache. Drop it after taking snapshot.
+/// actual read proofs and optionally shares authenticated lexical preparation.
+/// Drop the request capture after taking its snapshot.
 #[path = "input_snapshot_nontext.rs"]
 mod nontext;
 #[path = "input_prepared.rs"]
 mod prepared;
-pub use prepared::PreparedInputArtifacts;
+pub use prepared::{PreparedInputArtifacts, PreparedInputPayload};
 
 pub struct RecordingInputs<P = FileSystemInputs> {
     provider: P,

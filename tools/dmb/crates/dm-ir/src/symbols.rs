@@ -80,6 +80,14 @@ impl SymbolTable {
         }
     }
     /// Immutable spelling backing plus a small collision-checked local delta.
+    /// Exact immutable catalog authority: no local delta and the same owned parent.
+    pub fn is_empty_overlay_of(&self, source: &Arc<SymbolTable>) -> bool {
+        self.texts.is_empty()
+            && self
+                .parent
+                .as_ref()
+                .is_some_and(|parent| Arc::ptr_eq(parent, source))
+    }
     pub fn overlay(parent: Arc<SymbolTable>) -> Self {
         Self {
             texts: HashMap::new(),

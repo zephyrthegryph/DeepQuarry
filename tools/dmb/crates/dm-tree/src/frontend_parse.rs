@@ -347,6 +347,7 @@ pub(super) fn parse_declarations_with_state(
     let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
     let mut updated = std::collections::BTreeMap::new();
     let mut adapted = crate::SharedAdaptedDeclarations {
+        symbol_catalog: None,
         symbols: config
             .engine
             .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
@@ -389,13 +390,14 @@ pub(super) fn parse_declarations_with_state(
     }
     adapted.origins = crate::relative_origins::OriginRoster::Bound(origin_leaves);
     if let Some(state) = retained {
-        let symbols = state
-            .current_symbols(&current_contributions)
+        let catalog = state
+            .current_catalog(
+                &current_contributions,
+                config.engine.map(|engine| &engine.symbols),
+            )
             .map_err(|error| vec![internal(&error.to_string())])?;
-        adapted
-            .symbols
-            .merge_from(&symbols)
-            .map_err(|error| vec![internal(&error.to_string())])?;
+        adapted.symbols = SymbolTable::overlay(Arc::clone(&catalog.symbols));
+        adapted.symbol_catalog = Some(catalog);
     }
     if let Some(memo) = memo {
         for record in updated.into_values() {

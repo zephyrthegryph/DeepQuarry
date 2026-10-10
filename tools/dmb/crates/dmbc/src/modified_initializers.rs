@@ -563,7 +563,7 @@ mod resource_tests {
                 ),
                 phase: Some(crate::initializer_policy::Phase::Runtime),
                 runtime_value: Some(crate::initializer_policy::RuntimeValue::Expression(
-                    Box::new(dm_syntax::parse_expression("list(1,2,3)").expr.unwrap()),
+                    Arc::new(dm_syntax::parse_expression("list(1,2,3)").expr.unwrap()),
                 )),
             }],
             groups: vec![crate::initializer_policy::RuntimeGroup {

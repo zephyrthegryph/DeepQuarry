@@ -12,6 +12,11 @@ impl BuildHost {
         // Keep authenticated engine and preprocessing/semantic source owners.
         // Cleared consumers recreate their normal current-revision stores through
         // the same pipeline; disk remains a lazy fallback on subsequent misses.
+        if self.prepared_sources.is_some() {
+            self.prepared_sources = Some(Arc::new(
+                crate::input_snapshot::PreparedInputArtifacts::default(),
+            ));
+        }
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;
@@ -22,6 +27,7 @@ impl BuildHost {
         self.class_projections = None;
         self.link_bindings = None;
         self.maps = None;
+        self.generation = None;
     }
 }
 
@@ -32,14 +38,21 @@ mod tests {
     fn executor_release_preserves_artifacts_and_rich_release_clears_them() {
         let mut host = BuildHost::default();
         host.executor = Some(dm_exec::BuildExecutor::new_unbound(1).unwrap());
+        let prepared = host.prepared_sources().unwrap();
         let first = host.procedure_memo(4, None).unwrap();
+        let generation = host.generation(4).unwrap();
+        let weak_generation = Arc::downgrade(&generation);
+        drop(generation);
         host.release_idle_executor();
         assert!(host.executor.is_none());
+        assert!(weak_generation.upgrade().is_some());
         let second = host.procedure_memo(4, None).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
         host.release_idle_artifacts();
+        assert!(weak_generation.upgrade().is_none());
         let next = host.procedure_memo(4, None).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &next.values));
+        assert!(!Arc::ptr_eq(&prepared, &host.prepared_sources().unwrap()));
         assert!(host.memo.is_some());
         assert!(host.semantic.is_some());
     }

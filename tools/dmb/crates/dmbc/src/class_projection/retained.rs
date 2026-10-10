@@ -46,6 +46,12 @@ fn source_bearing(value: &SemanticValue) -> bool {
 fn default_bytes(value: &DefaultValue) -> Option<Vec<u8>> {
     let mut bytes = Vec::new();
     match value {
+        DefaultValue::Transform(matrix) => {
+            bytes.push(2);
+            for bits in matrix {
+                bytes.extend_from_slice(&bits.to_le_bytes());
+            }
+        }
         DefaultValue::Scalar(value) => {
             if source_bearing(value) {
                 return None;

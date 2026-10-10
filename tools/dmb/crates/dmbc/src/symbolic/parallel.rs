@@ -188,7 +188,17 @@ pub(super) fn freeze_unit(
             },
         });
     }
+    let metadata_recipe = crate::composition::ProcedureMetadataRecipe::capture(
+        lowered.identity,
+        symbols,
+        lowered.abi.as_deref(),
+    )
+    .map_err(|error| IntegrationError::Freeze {
+        unit: lowered.identity,
+        message: format!("procedure metadata recipe {error:?}"),
+    })?;
     let unit = FrozenUnit {
+        metadata_recipe: Arc::new(metadata_recipe),
         features: BytecodeFeatures::of(&lowered.code.procedure.code),
         lowered: FrozenUnitMetadata::consume(lowered),
         frozen: Arc::new(frozen),

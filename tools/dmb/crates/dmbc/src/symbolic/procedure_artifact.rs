@@ -10,6 +10,7 @@ mod retained_census;
 pub struct ReusableProcedureArtifact {
     identity: UnitIdentity,
     frozen: Arc<FrozenProc>,
+    metadata_recipe: Arc<crate::composition::ProcedureMetadataRecipe>,
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     frame: FrozenFrame,
@@ -126,6 +127,7 @@ impl Clone for ReusableProcedureArtifact {
         Self {
             identity: self.identity,
             frozen: self.frozen.clone(),
+            metadata_recipe: Arc::clone(&self.metadata_recipe),
             image_owner: Arc::clone(&self.image_owner),
             features: self.features,
             frame: clone_frame(&self.frame),
@@ -159,6 +161,7 @@ impl Contribution {
         let FrozenUnit {
             lowered,
             frozen,
+            metadata_recipe,
             features,
             current_image,
             image_owner,
@@ -206,6 +209,7 @@ impl Contribution {
             artifact: Arc::new(ReusableProcedureArtifact {
                 identity,
                 frozen,
+                metadata_recipe,
                 image_owner,
                 features,
                 frame,
@@ -240,6 +244,7 @@ impl Contribution {
                 frame: artifact.frame,
             },
             frozen: artifact.frozen,
+            metadata_recipe: artifact.metadata_recipe,
             image_owner: artifact.image_owner,
             features: artifact.features,
             current_image: None,
@@ -284,6 +289,7 @@ impl Contribution {
             .replay(inventory, strings, symbols, units, helpers);
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        crate::composition::ProcedureMetadataRecipe::census(&self.artifact.metadata_recipe, census);
         census.arc_object("prepared_artifact", &self.artifact);
         census.vec_payload("prepared_revision.debug_helpers", &self.binding.helpers);
         census.prepared_procedure_parts(

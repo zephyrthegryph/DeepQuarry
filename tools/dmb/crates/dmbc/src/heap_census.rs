@@ -15,9 +15,11 @@ mod source_text;
 mod storage_inventory;
 pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
+mod prepared_inputs;
 mod relocation_metrics;
 mod resident_abi;
 mod resident_initializer;
+pub(crate) use prepared_inputs::inspect as prepared_input_census;
 mod resident_owner_projection;
 pub(crate) use resident_owner_projection::{
     inspect as owner_projection_census, weight as resident_owner_projection_weight,
@@ -42,7 +44,8 @@ pub(crate) use initializer_assemblies::inspect as initializer_assembly_census;
 mod retained_normalization;
 mod session_symbolic;
 pub(crate) use resident_initializer::{
-    modifier_weight as resident_modifier_weight, weight as resident_initializer_weight,
+    modifier_weight as resident_modifier_weight,
+    syntax_weight as resident_initializer_syntax_weight, weight as resident_initializer_weight,
 };
 pub(crate) use retained_declarations::inspect as retained_declaration_census;
 mod typed_body;
@@ -235,11 +238,12 @@ impl HeapCensus {
     }
     pub fn output_encoded(&mut self, owner: &str, image: &byond_dmb::dmb::EncodedDmb) {
         self.owner(owner).observed_items += image.len() as u64;
-        self.buffer(
+        if self.arc_object(owner, image.shared_bytes()) {
+            self.vec_payload(owner, image.shared_bytes());
+        }
+        self.unknown(
             owner,
-            image.bytes().as_ptr() as usize,
-            image.len(),
-            image.capacity(),
+            "shared encoded Arc control block/allocator overhead is unavailable",
         );
     }
     pub fn output_resources(&mut self, owner: &str, image: &byond_dmb::rsc::EncodedRsc) {
@@ -819,6 +823,7 @@ impl HeapCensus {
         self.vec_payload("frozen_units", &batch.initializers);
         for unit in &batch.units {
             self.latest_image(unit.latest_image());
+            crate::composition::ProcedureMetadataRecipe::census(&unit.metadata_recipe, self);
             self.frozen_code(&unit.frozen);
             self.frozen_debug("frozen_units", &unit.lowered.debug_origins);
             self.strings("frozen_units", &unit.lowered.frame.local_names);
@@ -938,3 +943,5 @@ mod static_plan;
 
 #[path = "heap_census/body_arena.rs"]
 mod body_arena;
+
+mod generation;

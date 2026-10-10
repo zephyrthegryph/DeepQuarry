@@ -176,7 +176,7 @@ fn runtime_recipe_binds_fresh_syntax_and_matches_uncached_result() {
     else {
         panic!("runtime syntax required")
     };
-    assert!(!std::ptr::eq(a.as_ref(), b.as_ref()));
+    assert!(Arc::ptr_eq(a, b));
     assert_eq!(store.hits.load(Ordering::Relaxed), 1);
     let changed_policy = InitializerReuse { policy: 2, ..reuse };
     classify_one(

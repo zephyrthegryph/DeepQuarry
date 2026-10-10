@@ -561,6 +561,8 @@ pub use pipeline::{
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
+#[path = "frontend_symbol_catalog.rs"]
+pub(crate) mod symbol_catalog;
 pub use crate::owner_normalization::NormalizationStorageView;
 pub use semantic_state::RetainedSemanticTree;
 #[path = "frontend_grammar_roster.rs"]

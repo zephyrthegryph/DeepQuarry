@@ -229,8 +229,13 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DefaultValue {
+    /// Certified intrinsic initial transform; ordinary matrices remain mutable.
+    Transform([u32; 6]),
     Scalar(SemanticValue),
-    InitializerExpression { token: u32, canonical: Arc<[u8]> },
+    InitializerExpression {
+        token: u32,
+        canonical: Arc<[u8]>,
+    },
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
@@ -248,7 +253,7 @@ pub struct ClassifiedWrite {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeValue {
-    Expression(Box<dm_syntax::Expr>),
+    Expression(Arc<dm_syntax::Expr>),
     SizedArray(Arc<[u16]>),
 }
 #[derive(Clone, Debug)]

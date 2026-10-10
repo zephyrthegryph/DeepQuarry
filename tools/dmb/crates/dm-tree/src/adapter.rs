@@ -18,6 +18,7 @@ pub struct AdaptedDeclarations {
 }
 #[derive(Clone, Debug)]
 pub(crate) struct SharedAdaptedDeclarations {
+    pub(crate) symbol_catalog: Option<Arc<crate::frontend::symbol_catalog::SymbolCatalog>>,
     pub(crate) symbols: SymbolTable,
     pub(crate) skeletons: crate::skeleton_roster::SkeletonRoster,
     pub(crate) origins: crate::relative_origins::OriginRoster,
@@ -25,6 +26,7 @@ pub(crate) struct SharedAdaptedDeclarations {
 impl From<AdaptedDeclarations> for SharedAdaptedDeclarations {
     fn from(adapted: AdaptedDeclarations) -> Self {
         Self {
+            symbol_catalog: None,
             symbols: adapted.symbols,
             skeletons: crate::skeleton_roster::SkeletonRoster::from_owned(adapted.skeletons),
             origins: adapted.origins.into(),

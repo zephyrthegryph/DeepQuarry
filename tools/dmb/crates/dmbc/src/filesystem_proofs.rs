@@ -249,7 +249,15 @@ impl SnapshotProvider for BulkFileSystemProofs {
                 "file absent from captured parent membership",
             ));
         }
-        let canonical = canonical_path(path);
+        // Canonical captured parents can be probed through borrowed Path keys.
+        // Authored aliases still pass through the same canonical fallback.
+        let canonical = if path.parent().is_some_and(|parent| {
+            self.directories.contains_key(parent) || self.missing_directories.contains(parent)
+        }) {
+            std::borrow::Cow::Borrowed(path)
+        } else {
+            std::borrow::Cow::Owned(canonical_path(path))
+        };
         if let (Some(parent), Some(name)) = (
             canonical.parent(),
             canonical.file_name().and_then(|s| s.to_str()),
@@ -285,12 +293,17 @@ impl SnapshotProvider for BulkFileSystemProofs {
         FileSystemInputs.stamp(path)
     }
     fn list(&self, path: &Path) -> io::Result<FolderListing> {
-        let canonical = canonical_path(path);
-        if self.missing_directories.contains(&canonical) {
+        let canonical =
+            if self.directories.contains_key(path) || self.missing_directories.contains(path) {
+                std::borrow::Cow::Borrowed(path)
+            } else {
+                std::borrow::Cow::Owned(canonical_path(path))
+            };
+        if self.missing_directories.contains(canonical.as_ref()) {
             self.folder_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(FolderListing::Missing);
         }
-        match self.directories.get(&canonical) {
+        match self.directories.get(canonical.as_ref()) {
             Some(proof) => {
                 self.folder_hits.fetch_add(1, Ordering::Relaxed);
                 Ok(FolderListing::Present(
@@ -692,3 +705,7 @@ mod tests {
         assert!(parse_batch(&row, 1, &mut proof).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "filesystem_proofs_lookup_tests.rs"]
+mod lookup_tests;

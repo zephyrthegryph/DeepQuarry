@@ -15,6 +15,7 @@ pub struct ReferenceBindings {
 pub struct FrozenUnit {
     pub lowered: FrozenUnitMetadata,
     pub frozen: Arc<FrozenProc>,
+    pub(crate) metadata_recipe: Arc<crate::composition::ProcedureMetadataRecipe>,
     current_image: Option<CurrentImage>,
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,

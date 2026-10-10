@@ -15,6 +15,7 @@ pub struct RetainedSemanticTree {
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
     symbols: Vec<(dm_ir::SymbolId, String)>,
+    symbol_catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
     engine: Option<EngineSeed>,
     tree: Arc<SemanticTree>,
     occurrence_index: Arc<crate::occurrence_index::TargetOccurrenceIndex>,
@@ -175,19 +176,35 @@ impl RetainedSemanticTree {
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut adapted = adapted.into();
+        if adapted
+            .symbol_catalog
+            .as_ref()
+            .is_some_and(|catalog| !adapted.symbols.is_empty_overlay_of(&catalog.symbols))
+        {
+            adapted.symbol_catalog = None;
+        }
         let origins = std::mem::replace(&mut adapted.origins, Vec::new().into()).into_owned();
-        let symbols = adapted.symbols.ordered();
-        let reusable =
-            self.entry.as_ref().filter(|entry| {
-                entry.index.skeletons().eq(adapted.skeletons.iter())
-                    && entry.symbols.len() == symbols.len()
-                    && entry.symbols.iter().zip(&symbols).all(
-                        |((id, text), (current_id, current))| {
-                            id == current_id && text.as_str() == *current
-                        },
-                    )
-                    && same_engine(entry.engine.as_ref(), engine)
-            });
+        let shared_catalog = self.entry.as_ref().is_some_and(|entry| {
+            entry
+                .symbol_catalog
+                .as_ref()
+                .zip(adapted.symbol_catalog.as_ref())
+                .is_some_and(|(previous, current)| Arc::ptr_eq(previous, current))
+        });
+        let symbols = (!shared_catalog).then(|| adapted.symbols.ordered());
+        let reusable = self.entry.as_ref().filter(|entry| {
+            entry.index.skeletons().eq(adapted.skeletons.iter())
+                && (shared_catalog
+                    || symbols.as_ref().is_some_and(|symbols| {
+                        entry.symbols.len() == symbols.len()
+                            && entry.symbols.iter().zip(symbols).all(
+                                |((id, text), (current_id, current))| {
+                                    id == current_id && text.as_str() == *current
+                                },
+                            )
+                    }))
+                && same_engine(entry.engine.as_ref(), engine)
+        });
         if let Some(entry) = reusable {
             let tree = Arc::clone(&entry.tree);
             let occurrences = crate::OccurrenceTable::build_with_index(
@@ -206,6 +223,7 @@ impl RetainedSemanticTree {
                 occurrences: Arc::new(occurrences),
             });
         }
+        let symbols = symbols.unwrap_or_else(|| adapted.symbols.ordered());
         // Exact per-owner equality shares immutable declaration contributions;
         // this index never carries a previous request's source authority.
         let index = crate::declaration_contributions::KeyedDeclarations::capture_view(
@@ -262,6 +280,7 @@ impl RetainedSemanticTree {
             entry.occurrence_index = occurrences.target_index();
             entry.tree = Arc::clone(&tree);
             entry.index = index.expect("updated tree has its exact contribution index");
+            entry.symbol_catalog = adapted.symbol_catalog.clone();
             entry.symbols = symbols
                 .into_iter()
                 .map(|(id, text)| (id, text.to_owned()))
@@ -277,6 +296,7 @@ impl RetainedSemanticTree {
             .into_iter()
             .map(|(id, text)| (id, text.to_owned()))
             .collect();
+        let symbol_catalog = adapted.symbol_catalog.clone();
         adapted.origins = origins.into();
         let snapshot = adapted.finish_with_engine_normalization(
             engine,
@@ -290,6 +310,7 @@ impl RetainedSemanticTree {
             Entry {
                 index,
                 symbols,
+                symbol_catalog,
                 engine: engine.cloned(),
                 tree: Arc::clone(&snapshot.tree),
                 occurrence_index: snapshot.occurrences.target_index(),

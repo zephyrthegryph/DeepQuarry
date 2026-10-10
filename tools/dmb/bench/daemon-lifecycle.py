@@ -38,16 +38,10 @@ class Pipe:
         if not endpoint.kernel.GetNamedPipeServerProcessId(handle, ctypes.byref(pid)) or pid.value != owner.pid:
             endpoint.kernel.CloseHandle(handle)
             raise RuntimeError("replacement or foreign daemon refused")
-        self.handle = handle
-        self.file = os.fdopen(msvcrt.open_osfhandle(handle, os.O_BINARY), "r+b", buffering=0)
+        self._adopt_handle(handle)
         endpoint.kernel.PeekNamedPipe.argtypes = [ctypes.wintypes.HANDLE, ctypes.c_void_p,
             ctypes.wintypes.DWORD, ctypes.c_void_p, ctypes.POINTER(ctypes.wintypes.DWORD), ctypes.c_void_p]
-        self.send({"Hello": {"version": 3, "compiler": 0}})
-        hello = self.receive()["Hello"]
-        if hello["version"] != 3 or hello["retiring"]:
-            self.close()
-            raise RuntimeError("unexpected daemon generation state")
-        self.compiler = hello["compiler"]
+        self.compiler = self._hello(0, discovery=True)
         # The first mismatched Hello cannot Build. Reconnect with exact identity.
         self.close()
         self.reconnect(endpoint, owner)
@@ -65,20 +59,55 @@ class Pipe:
         if not endpoint.kernel.GetNamedPipeServerProcessId(handle, ctypes.byref(pid)) or pid.value != owner.pid:
             endpoint.kernel.CloseHandle(handle)
             raise RuntimeError("foreign daemon refused")
+        self._adopt_handle(handle)
+        self._hello(self.compiler)
+
+    def _adopt_handle(self, handle):
         self.handle = handle
-        self.file = os.fdopen(msvcrt.open_osfhandle(handle, os.O_BINARY), "r+b", buffering=0)
-        self.send({"Hello": {"version": 3, "compiler": self.compiler}})
-        if self.receive()["Hello"] != {"version": 3, "compiler": self.compiler, "retiring": False}:
-            raise RuntimeError("generation changed during handshake")
+        try:
+            descriptor = msvcrt.open_osfhandle(handle, os.O_BINARY)
+        except BaseException:
+            self.endpoint.kernel.CloseHandle(handle)
+            raise
+        try:
+            self.file = os.fdopen(descriptor, "r+b", buffering=0)
+        except BaseException:
+            # open_osfhandle already transferred the HANDLE to this descriptor.
+            os.close(descriptor)
+            raise
+
+    def _hello(self, compiler, discovery=False):
+        try:
+            self.send({"Hello": {"version": 3, "compiler": compiler}})
+            hello = self.receive()["Hello"]
+            if discovery:
+                if hello["version"] != 3 or hello["retiring"]:
+                    raise RuntimeError("unexpected daemon generation state")
+            elif hello != {"version": 3, "compiler": compiler, "retiring": False}:
+                raise RuntimeError("generation changed during handshake")
+            return hello["compiler"]
+        except BaseException:
+            self.close()
+            raise
 
     def close(self):
-        self.file.close()
+        stream = getattr(self, "file", None)
+        if stream is not None:
+            self.file = None
+            stream.close()
 
     def send(self, value):
         data = json.dumps(value).encode()
         if len(data) > 4 * 1024 * 1024:
             raise ValueError("oversized protocol frame")
-        self.file.write(struct.pack("<I", len(data)) + data)
+        frame = memoryview(struct.pack("<I", len(data)) + data)
+        while frame:
+            if time.monotonic() >= self.deadline:
+                raise TimeoutError("owned protocol child exceeded 300 seconds")
+            written = self.file.write(frame)
+            if written is None or written <= 0 or written > len(frame):
+                raise OSError("owned pipe write made no valid progress")
+            frame = frame[written:]
 
     def read(self, length):
         result = bytearray()
@@ -87,7 +116,10 @@ class Pipe:
             if not self.endpoint.kernel.PeekNamedPipe(self.handle, None, 0, None, ctypes.byref(available), None):
                 raise OSError(ctypes.get_last_error(), "owned pipe disconnected")
             if available.value:
-                result.extend(self.file.read(min(available.value, length - len(result))))
+                chunk = self.file.read(min(available.value, length - len(result)))
+                if not chunk:
+                    raise OSError("owned pipe disconnected during frame")
+                result.extend(chunk)
             elif time.monotonic() >= self.deadline:
                 raise TimeoutError("owned protocol child exceeded 300 seconds")
             else:

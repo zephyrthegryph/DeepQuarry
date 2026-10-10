@@ -3,7 +3,7 @@ use super::*;
 use crate::{lowering::UnitIdentity, symbolic::FrozenUnit};
 use dm_codegen_byond::procedure_abi::ArgumentSource;
 
-#[derive(Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub(super) struct CompositionPlan {
     pub procedures: Vec<(u32, UnitIdentity)>,
     pub helpers: Vec<(u32, Key)>,
@@ -25,6 +25,11 @@ impl CompositionPlan {
     }
     pub fn bind(self, batch: &FrozenBatch) -> BoundCompositionPlan {
         BoundCompositionPlan {
+            counts: [
+                self.procedures.len(),
+                self.helpers.len(),
+                self.initializers.len(),
+            ],
             procedures: bind(
                 self.procedures,
                 batch
@@ -56,42 +61,146 @@ impl CompositionPlan {
         }
     }
 }
+#[derive(Clone, Copy)]
 pub(super) struct Slot<K> {
     pub table_index: u32,
     pub identity: K,
     pub artifact: Option<usize>,
 }
 pub(super) struct BoundCompositionPlan {
-    pub procedures: Result<Vec<Slot<UnitIdentity>>, CompositionError>,
-    pub helpers: Result<Vec<Slot<Key>>, CompositionError>,
-    pub initializers: Result<Vec<Slot<dm_link::InitializerIdentity>>, CompositionError>,
+    pub counts: [usize; 3],
+    pub procedures: Result<std::sync::Arc<Vec<Slot<UnitIdentity>>>, CompositionError>,
+    pub helpers: Result<std::sync::Arc<Vec<Slot<Key>>>, CompositionError>,
+    pub initializers:
+        Result<std::sync::Arc<Vec<Slot<dm_link::InitializerIdentity>>>, CompositionError>,
 }
 fn bind<K: Ord + Copy>(
     rows: Vec<(u32, K)>,
     artifacts: impl Iterator<Item = (K, usize)>,
     duplicate: &str,
-) -> Result<Vec<Slot<K>>, CompositionError> {
+) -> Result<std::sync::Arc<Vec<Slot<K>>>, CompositionError> {
     let mut artifacts: Vec<_> = artifacts.collect();
     artifacts.sort_by_key(|row| row.0);
     if artifacts.windows(2).any(|pair| pair[0].0 == pair[1].0) {
         return Err(unsupported(duplicate));
     }
-    Ok(rows
-        .into_iter()
-        .map(|(table_index, identity)| Slot {
-            table_index,
-            identity,
-            artifact: artifacts
-                .binary_search_by_key(&identity, |row| row.0)
-                .ok()
-                .map(|index| artifacts[index].1),
+    Ok(std::sync::Arc::new(
+        rows.into_iter()
+            .map(|(table_index, identity)| Slot {
+                table_index,
+                identity,
+                artifact: artifacts
+                    .binary_search_by_key(&identity, |row| row.0)
+                    .ok()
+                    .map(|index| artifacts[index].1),
+            })
+            .collect(),
+    ))
+}
+
+/// Private numeric projection, admitted against current shared assignments and
+/// complete ordered artifact identities. No body, ABI or source proof is retained.
+pub(super) struct CachedPlan {
+    bindings: dm_link::BindingTables,
+    raw: CompositionPlan,
+    units: Vec<UnitIdentity>,
+    helpers: Vec<Key>,
+    initializers: Vec<dm_link::InitializerIdentity>,
+    procedures: std::sync::Arc<Vec<Slot<UnitIdentity>>>,
+    helper_rows: std::sync::Arc<Vec<Slot<Key>>>,
+    initializer_rows: std::sync::Arc<Vec<Slot<dm_link::InitializerIdentity>>>,
+}
+impl CachedPlan {
+    pub fn admit(
+        &self,
+        raw: &CompositionPlan,
+        batch: &FrozenBatch,
+    ) -> Option<BoundCompositionPlan> {
+        if !self.bindings.same_owner(&batch.tables.binding_tables())
+            || self.raw != *raw
+            || !self
+                .units
+                .iter()
+                .copied()
+                .eq(batch.units.iter().map(|unit| unit.lowered.identity))
+            || !self.helpers.iter().copied().eq(batch
+                .helpers
+                .iter()
+                .map(|unit| crate::symbolic::helper_key(unit.owner, unit.argument)))
+            || !self
+                .initializers
+                .iter()
+                .copied()
+                .eq(batch.initializers.iter().map(|unit| unit.identity))
+        {
+            return None;
+        }
+        Some(BoundCompositionPlan {
+            counts: [
+                self.procedures.len(),
+                self.helper_rows.len(),
+                self.initializer_rows.len(),
+            ],
+            procedures: Ok(std::sync::Arc::clone(&self.procedures)),
+            helpers: Ok(std::sync::Arc::clone(&self.helper_rows)),
+            initializers: Ok(std::sync::Arc::clone(&self.initializer_rows)),
         })
-        .collect())
+    }
+    pub fn capture(
+        raw: CompositionPlan,
+        batch: &FrozenBatch,
+        bound: &BoundCompositionPlan,
+    ) -> Option<Self> {
+        Some(Self {
+            bindings: batch.tables.binding_tables(),
+            raw,
+            units: batch
+                .units
+                .iter()
+                .map(|unit| unit.lowered.identity)
+                .collect(),
+            helpers: batch
+                .helpers
+                .iter()
+                .map(|unit| crate::symbolic::helper_key(unit.owner, unit.argument))
+                .collect(),
+            initializers: batch
+                .initializers
+                .iter()
+                .map(|unit| unit.identity)
+                .collect(),
+            procedures: std::sync::Arc::clone(bound.procedures.as_ref().ok()?),
+            helper_rows: std::sync::Arc::clone(bound.helpers.as_ref().ok()?),
+            initializer_rows: std::sync::Arc::clone(bound.initializers.as_ref().ok()?),
+        })
+    }
+    pub fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        let name = "composition.plan";
+        census.vec_payload(name, &self.raw.procedures);
+        census.vec_payload(name, &self.raw.helpers);
+        census.vec_payload(name, &self.raw.initializers);
+        census.vec_payload(name, &self.units);
+        census.vec_payload(name, &self.helpers);
+        census.vec_payload(name, &self.initializers);
+        if census.arc_object(name, &self.procedures) {
+            census.vec_payload(name, &self.procedures);
+        }
+        if census.arc_object(name, &self.helper_rows) {
+            census.vec_payload(name, &self.helper_rows);
+        }
+        if census.arc_object(name, &self.initializer_rows) {
+            census.vec_payload(name, &self.initializer_rows);
+        }
+        census.unknown(
+            name,
+            "binding owner BTreeMap backing, Arc controls and allocator overhead are unavailable",
+        );
+    }
 }
 
 pub(super) struct ProcedureMetadata {
-    pub path: Result<String, CompositionError>,
-    pub default_display: Result<String, CompositionError>,
+    pub path: Result<std::sync::Arc<str>, CompositionError>,
+    pub default_display: Result<std::sync::Arc<str>, CompositionError>,
     pub value_sources: Vec<Result<u32, CompositionError>>,
 }
 fn metadata(
@@ -124,18 +233,11 @@ fn metadata(
             .ok_or_else(|| unsupported("missing source procedure declaration provenance")),
         None => Ok(true),
     };
-    let path = declared.and_then(|declared| {
-        proc_path(
-            symbols,
-            identity.owner,
-            identity.name,
-            identity.namespace,
-            declared,
-        )
-    });
-    let default_display = text(symbols, identity.name).map(|name| name.replace('_', " "));
-    let value_sources = abi
-        .argument_sources
+    let path = declared.and_then(|declared| unit.metadata_recipe.path(symbols, declared));
+    let default_display = unit.metadata_recipe.display(symbols);
+    let value_sources = unit
+        .metadata_recipe
+        .selectors(&abi.argument_sources)
         .iter()
         .map(|source| match source {
             ArgumentSource::Builtin { kind, parameter } => {

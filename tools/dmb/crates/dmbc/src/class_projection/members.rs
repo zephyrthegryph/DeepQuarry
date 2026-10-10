@@ -276,6 +276,11 @@ pub(crate) fn materialize_members_with_roster(
         types: &dyn TypeValuePolicy,
     ) -> Result<(u8, u32), ProjectionError> {
         let value = match default {
+            DefaultValue::Transform(_) => {
+                return Err(ProjectionError::Unsupported(
+                    "transform default outside intrinsic transform".into(),
+                ))
+            }
             DefaultValue::Scalar(value) => value,
             DefaultValue::InitializerExpression { token, .. } => return Ok((62, *token)),
         };
@@ -460,6 +465,18 @@ pub(crate) fn materialize_members_with_roster(
             .ok_or(ProjectionError::MissingMember)?;
         if field.intrinsic && !declarations.contains_key(&(field.declaring_owner, field.name)) {
             let name = text(field.name)?;
+            if let DefaultValue::Transform(matrix) = &field.value {
+                if name != "transform" || field.declaring_owner != SymbolId::of("/atom") {
+                    return Err(ProjectionError::Unsupported(
+                        "transform default has uncertified target".into(),
+                    ));
+                }
+                let record = &mut dmb.classes[class as usize];
+                let identity = [1.0f32.to_bits(), 0, 0, 0, 1.0f32.to_bits(), 0];
+                record.transform_flag = u8::from(*matrix != identity);
+                record.transform = (*matrix != identity).then_some(*matrix);
+                continue;
+            }
             let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
             let numeric = match &field.value {
                 DefaultValue::Scalar(SemanticValue::NumberBits(bits)) => {
@@ -494,6 +511,11 @@ pub(crate) fn materialize_members_with_roster(
                     }
                 };
                 dmb.classes[class as usize].set_normally_visible(visible);
+            }
+            if name == "transform" && kind == 0 {
+                dmb.classes[class as usize].transform_flag = 0;
+                dmb.classes[class as usize].transform = None;
+                continue;
             }
             match name {
                 "name" | "desc" | "icon_state" | "text" | "maptext" | "suffix" => {
@@ -654,3 +676,11 @@ pub(crate) fn materialize_members_with_roster(
 #[cfg(test)]
 #[path = "members_luminosity_tests.rs"]
 mod luminosity_tests;
+
+#[cfg(test)]
+#[path = "members_transform_tests.rs"]
+mod transform_tests;
+
+#[cfg(test)]
+#[path = "members_visibility_tests.rs"]
+mod visibility_tests;

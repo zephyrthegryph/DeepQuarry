@@ -17,6 +17,7 @@ impl HeapCensus {
                     self.array(owner, array);
                 }
                 match &fact.default {
+                    DefaultValue::Transform(_) => {}
                     DefaultValue::Scalar(value) => self.semantic_value(owner, value),
                     DefaultValue::InitializerExpression { canonical, .. } => {
                         self.slice(owner, canonical, true);
@@ -25,12 +26,7 @@ impl HeapCensus {
                 match &fact.runtime_value {
                     Some(RuntimeValue::Expression(expression)) => {
                         let owner = "initializer_ledger.runtime_ast";
-                        if self.buffer(
-                            owner,
-                            expression.as_ref() as *const dm_syntax::Expr as usize,
-                            std::mem::size_of::<dm_syntax::Expr>(),
-                            std::mem::size_of::<dm_syntax::Expr>(),
-                        ) {
+                        if self.arc_object(owner, expression) {
                             self.typed_expression(owner, expression);
                         }
                     }
@@ -71,7 +67,7 @@ mod tests {
                 },
                 default: DefaultValue::Scalar(dm_ir::SemanticValue::Null),
                 phase: None,
-                runtime_value: Some(RuntimeValue::Expression(Box::new(
+                runtime_value: Some(RuntimeValue::Expression(Arc::new(
                     dm_syntax::parse_expression("list(1,2)").expr.unwrap(),
                 ))),
             }],

@@ -1,3 +1,5 @@
+#[path = "classification/transform.rs"]
+mod transform;
 use super::*;
 pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
@@ -150,6 +152,21 @@ fn classify_pending<'a>(
                             }
                         };
                         let expr = &ast;
+                        if let Some(matrix) =
+                            transform::fold(&write, expr, &text, symbols, evaluator)?
+                        {
+                            classified.push(PendingWrite {
+                                write: ClassifiedWrite {
+                                    source_ordinal: ordinal,
+                                    write,
+                                    default: DefaultValue::Transform(matrix),
+                                    phase: None,
+                                    runtime_value: None,
+                                },
+                                key: None,
+                            });
+                            continue;
+                        }
                         let literal =
                             scalar_list || scalar_literal(expr, &write, symbols, &text, evaluator)?;
                         let default = if let Some(key) =
@@ -175,7 +192,7 @@ fn classify_pending<'a>(
             }
         };
         let runtime_value = if phase.is_some() {
-            Some(RuntimeValue::Expression(Box::new(
+            Some(RuntimeValue::Expression(Arc::new(
                 parsed_runtime.ok_or("runtime expression missing")?,
             )))
         } else {

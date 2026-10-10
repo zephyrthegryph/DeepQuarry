@@ -342,5 +342,61 @@
       "replacement": "two newly added word-owner fixtures moved to focused integration target, both passed"
     },
     "query_fixture_correction": "source corrected: opaque absence unsupported, authored Type known; focused rerun pending next compiler gate"
+  },
+  "shared_generation_catalog_and_recipes": {
+    "source_status": "production hooks complete; workspace all-target check and bounded focused fixtures passed",
+    "workspace_check_seconds": 71.37794110004324,
+    "workspace_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-185246-5f785d59.json",
+    "integration_repairs": [
+      "second inline transform census match",
+      "modified initializer fixture Box to Arc"
+    ],
+    "implemented": [
+      "shared initializer syntax admitted against exact current spelling and full initial AST",
+      "prepared-source physical owner census and pressure release",
+      "one canonical encoded generation admitted against fully validated exact final model",
+      "ordered link plan shares numeric slots only for exact assignment owner and artifact roster",
+      "procedure metadata paths/display/selectors retained on existing symbolic artifacts",
+      "shared source and engine symbol catalog with exact empty-overlay receipt authority",
+      "fixed-size declaration locators with exact captured source bytes checked before every bind",
+      "stable bounded emission counting passes with sparse canonical-sort fallback",
+      "borrowed current filesystem proof paths without skipping live proof obligations",
+      "target-specific matrix transform headers and captured BYOND field regressions",
+      "bounded lifecycle pipe write-all/owned handle cleanup",
+      "compile diagnostic parity requires source exit2 and known template authority"
+    ],
+    "python_focused_fixtures_passed": 13,
+    "optimized_build": {
+      "commit": "93773e98a1ae39b3b74a73555acf217ae052582b",
+      "status": "three bounded attempts hit 300-second watchdog; all owned children reaped; no new executable or benchmark result",
+      "receipts": [
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-183346-8f14f784.json",
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-183959-7b58cf5d.json",
+        "E:/dq-cache/dmb-native-v2/frozen-build/20261009-184549-e1d81637.json"
+      ]
+    },
+    "end_to_end_timings": null,
+    "remaining": [
+      "current source/provenance issuance and full proof walks",
+      "full procedure and metadata emission roster visitation",
+      "locals/args/variable reconstruction",
+      "whole output model materialization and equality",
+      "six-worktree end-to-end acceptance",
+      "compile-error corpus parity and template admission",
+      "whole-program BYOND structural baseline",
+      "runtime baseline deferred to Phase5"
+    ],
+    "dmbc_focused_fixtures_passed": 18,
+    "dm_tree_focused_fixtures_passed": 5,
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190131-97359fbe.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-dmbc-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-185610-tree-focused.json"
+    ],
+    "disk_cleanup": {
+      "incident": "focused build failed from E disk exhaustion, not fixture failure",
+      "action": "owned Cargo clean -p dmbc --profile dev removed 12.5 GiB; verification retry passed with incremental storage disabled and dmbc test debug info disabled",
+      "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-190101-deba2f00.json"
+    }
   }
 }

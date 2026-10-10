@@ -36,10 +36,18 @@ impl ValidatedComposition {
 
     /// Consume the validated inputs through the common composer. This still
     /// validates runtime-initializer coverage, stage key attachment, all actual
-    /// instructions/references and the independent encoded round trip.
+    /// instructions/references. New generations receive an independent encoded
+    /// round trip; an exactly equal validated model reuses its prior generation.
     pub fn compose(
         self,
         executor: &dm_exec::BuildExecutor,
+    ) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
+        self.compose_with_generation(executor, None)
+    }
+    pub fn compose_with_generation(
+        self,
+        executor: &dm_exec::BuildExecutor,
+        generation: Option<&RetainedGeneration>,
     ) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
         let OwnedCompositionInputs {
             engine,
@@ -56,6 +64,7 @@ impl ValidatedComposition {
             Some((&projection, values.as_ref())),
             stage.as_deref(),
             Some(executor),
+            generation,
         )
     }
 }

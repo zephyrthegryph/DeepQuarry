@@ -21,6 +21,7 @@ from watchdog import terminate_owned
 from iteration_structural import Comparison, source_matches, authenticate_source_snapshot
 import semantic_configuration
 from iteration_history import EditHistory
+import host_context
 
 
 DEFAULT = Path("E:/dmb-native-v2-phase0/review-power-focus")
@@ -365,6 +366,7 @@ def main():
                 return root / mode if len(projects) == 1 else root / f"session-{index}" / mode
             def logs(index, mode):
                 return root / str(ordinal) / mode if len(projects) == 1 else root / str(ordinal) / f"session-{index}" / mode
+            row["host_context_before_retained"] = host_context.sample()
             burst_started = time.monotonic()
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(projects)) as executor:
                 futures = [executor.submit(compile_one, executable, project, manifest,
@@ -380,11 +382,14 @@ def main():
                 if failures:
                     raise RuntimeError("; ".join(failures))
             row["retained_burst_wall_s"] = time.monotonic() - burst_started
+            row["host_context_after_retained"] = host_context.sample()
             # Fresh oracle processes never compete with retained measured work.
             for index, (project, session) in enumerate(zip(projects, row["sessions"])):
+                session["host_context_before_fresh"] = host_context.sample()
                 session["fresh"] = compile_one(executable, project, manifest, args.workers,
                     semantic, destination(index, "fresh"), logs(index, "fresh"), "fresh",
                     deadline, False, endpoint, daemon, cache_directory)
+                session["host_context_after_fresh"] = host_context.sample()
                 session["output_hashes"] = check_outputs(destination(index, "retained"), destination(index, "fresh"), manifest)
                 session["fresh_native_byte_oracle"] = True
                 source_context = {"snapshot_manifest_sha256": receipt["source_snapshot_sha256"],

@@ -1,6 +1,8 @@
 //! Per-write semantics, independently admitted by the shared dependency ledger.
 //! Current declarations, ordinals and runtime syntax never escape into this store.
 use super::*;
+#[path = "shared_expression.rs"]
+mod shared_expression;
 use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(test)]
@@ -9,7 +11,7 @@ mod tests;
 
 #[derive(Clone)]
 enum RuntimeRecipe {
-    Expression,
+    Expression(shared_expression::SharedExpression),
     SizedArray(Arc<[u16]>),
 }
 struct SemanticClassification {
@@ -79,7 +81,7 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v1\0".to_vec();
+    let mut key = b"dmbc-initializer-classification-v2\0".to_vec();
     key.extend_from_slice(&reuse.policy.to_le_bytes());
     key.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
@@ -111,22 +113,28 @@ pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Vec<u8>]) {
         .retain_current_keys(keys.iter().map(Vec::as_slice));
 }
 impl SemanticClassification {
-    fn capture(pending: &PendingWrite) -> Self {
-        Self {
+    fn capture(pending: &PendingWrite, symbols: &SymbolTable) -> Option<Self> {
+        let runtime = match pending.write.runtime_value.as_ref() {
+            None => None,
+            Some(RuntimeValue::SizedArray(dimensions)) => {
+                Some(RuntimeRecipe::SizedArray(Arc::clone(dimensions)))
+            }
+            Some(RuntimeValue::Expression(expression)) => {
+                let InitializerValue::Expression(value) = &pending.write.write.value else {
+                    return None;
+                };
+                let source = value.source_text(symbols)?;
+                Some(RuntimeRecipe::Expression(
+                    shared_expression::SharedExpression::capture(source, expression)?,
+                ))
+            }
+        };
+        Some(Self {
             default: pending.write.default.clone(),
             phase: pending.write.phase,
-            runtime: pending
-                .write
-                .runtime_value
-                .as_ref()
-                .map(|value| match value {
-                    RuntimeValue::Expression(_) => RuntimeRecipe::Expression,
-                    RuntimeValue::SizedArray(dimensions) => {
-                        RuntimeRecipe::SizedArray(Arc::clone(dimensions))
-                    }
-                }),
+            runtime,
             key: pending.key.clone(),
-        }
+        })
     }
     fn bind(
         &self,
@@ -149,16 +157,12 @@ impl SemanticClassification {
             Some(RuntimeRecipe::SizedArray(dimensions)) => {
                 Some(RuntimeValue::SizedArray(Arc::clone(dimensions)))
             }
-            Some(RuntimeRecipe::Expression) => {
+            Some(RuntimeRecipe::Expression(syntax)) => {
                 let InitializerValue::Expression(value) = &write.value else {
                     return None;
                 };
                 let text = value.source_text(symbols)?;
-                let parsed = dm_syntax::parse_expression(&text);
-                if !parsed.diagnostics.is_empty() {
-                    return None;
-                }
-                Some(RuntimeValue::Expression(Box::new(parsed.expr?)))
+                Some(RuntimeValue::Expression(syntax.bind(&text)?))
             }
         };
         Some(PendingWrite {
@@ -266,7 +270,11 @@ pub(super) fn classify_one(
     if captured && hit {
         reuse.store.hits.fetch_add(1, Ordering::Relaxed);
     } else if captured {
-        let value = SemanticClassification::capture(&pending);
+        let Some(value) = SemanticClassification::capture(&pending, symbols) else {
+            reuse.store.declined.fetch_add(1, Ordering::Relaxed);
+            reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);
+            return Ok(pending);
+        };
         let reads = recorder.reads();
         let versions = recorder.domain_receipts();
         let dimensions = match &value.runtime {
@@ -281,6 +289,14 @@ pub(super) fn classify_one(
             &reads,
             &versions,
         )
+        .and_then(|weight| match &value.runtime {
+            Some(RuntimeRecipe::Expression(syntax)) => {
+                let (source, expression) = syntax.retained_parts();
+                crate::heap_census::resident_initializer_syntax_weight(source, expression)
+                    .and_then(|extra| weight.checked_add(extra))
+            }
+            _ => Some(weight),
+        })
         .is_some_and(|weight| {
             reuse
                 .store

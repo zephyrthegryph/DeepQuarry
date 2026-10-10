@@ -17,6 +17,7 @@ pub(crate) fn weight(
     for value in values {
         match value {
             MemberContribution::Field(field) => match &field.value {
+                DefaultValue::Transform(_) => {}
                 DefaultValue::Scalar(value) => {
                     census.semantic_value("resident_owner_projection.defaults", value)
                 }
@@ -99,6 +100,7 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
                 for member in value.iter() {
                     if let MemberContribution::Field(field) = member {
                         match &field.value {
+                            DefaultValue::Transform(_) => {}
                             DefaultValue::Scalar(value) => {
                                 census.semantic_value("owner_projection.defaults", value)
                             }

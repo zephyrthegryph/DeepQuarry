@@ -9,6 +9,7 @@ impl ReusableProcedureArtifact {
             return;
         }
         census.latest_image(&artifact.image_owner);
+        crate::composition::ProcedureMetadataRecipe::census(&artifact.metadata_recipe, census);
         census.retained_symbolic_procedure(&artifact.frozen, &artifact.frame, &artifact.abi);
         census.prepared_strings(&artifact.strings.0);
         census.vec_payload("session_symbolic.slots", &artifact.slots.0);

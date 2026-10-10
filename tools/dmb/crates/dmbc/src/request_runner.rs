@@ -10,34 +10,9 @@ mod runner_facts;
 #[path = "runner_report.rs"]
 mod runner_report;
 
-#[derive(Default)]
-struct ResourceOutputs {
-    pins: Vec<dmbc::publish::ResourcePin>,
-    prepared: Option<dmbc::publish::PreparedOutputFile>,
-}
-struct OutputResourceSink<'a> {
-    store: &'a dmbc::publish::PairStore,
-    exact: bool,
-    destination: &'a std::path::Path,
-    outputs: &'a std::sync::Mutex<ResourceOutputs>,
-}
-impl dmbc::assets::ResourceArchiveSink for OutputResourceSink<'_> {
-    fn retain(
-        &self,
-        rows: &[byond_dmb::rsc::NamedResourceView<'_>],
-    ) -> io::Result<dmbc::publish::ResourceIdentity> {
-        let (identity, pin, prepared) =
-            self.store
-                .publish_resource_views_prepared(rows, self.exact, Some(self.destination))?;
-        let mut outputs = self
-            .outputs
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        outputs.pins.push(pin);
-        outputs.prepared = prepared;
-        Ok(identity)
-    }
-}
+#[path = "runner_resources.rs"]
+mod runner_resources;
+use runner_resources::{OutputResourceSink, ResourceOutputs};
 
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -392,6 +367,11 @@ pub fn run_build_with_host(
     };
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
+    let generation = if executable {
+        host.generation(memo_policy)
+    } else {
+        None
+    };
     let (frontend_memo, execution, semantic_state) = host.execution(
         workers,
         expansion_memo
@@ -680,7 +660,7 @@ pub fn run_build_with_host(
             drop(resolver);
             drop(frontend);
             let output =
-                composition.compose(executor, progress_enabled.then_some(&cold_observer))?;
+                composition.compose_with_generation(executor, progress_enabled.then_some(&cold_observer), generation.as_deref())?;
             Ok::<_, dmbc::cold::ColdError>((output, publication, explanations))
         })();
         if progress_enabled && compile_result.is_err() {
@@ -717,6 +697,7 @@ pub fn run_build_with_host(
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
         dmbc::heap_census::emit_if_enabled("publication.ready", |census| {
             census.output_encoded("dmb.bytes", &output.dmb);
+            if let Some(generation) = &generation { census.composition_generation(generation); }
             if let dmbc::assets::ResourceArchive::Captured(archive) = &publication.archive {
                 census.output_resources("rsc.bytes", archive);
             }

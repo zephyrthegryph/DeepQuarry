@@ -107,6 +107,7 @@ pub(crate) fn finalize_headers_with_roster(
         if matches!(
             field.value,
             crate::initializer_policy::DefaultValue::Scalar(_)
+                | crate::initializer_policy::DefaultValue::Transform(_)
         ) {
             own.entry(id).or_default().insert(name);
         }
@@ -363,6 +364,10 @@ fn inherit_record(
             child.maptext_geometry[slot] = parent.maptext_geometry[slot];
         }
     }
+    if !own.contains("transform") {
+        child.transform_flag = parent.transform_flag;
+        child.transform = parent.transform;
+    }
     if !own.contains("invisibility") {
         child.set_normally_visible(parent.is_normally_visible());
     }
@@ -410,6 +415,10 @@ fn native_header_differences(engine: &Dmb, child: &Class, parent: &Class, own: &
         }
     }
     for (name, different) in [
+        (
+            "transform",
+            child.transform_flag != parent.transform_flag || child.transform != parent.transform,
+        ),
         ("layer", child.layer_bits != parent.layer_bits),
         ("dir", child.direction != parent.direction),
         ("maptext", child.maptext != parent.maptext),

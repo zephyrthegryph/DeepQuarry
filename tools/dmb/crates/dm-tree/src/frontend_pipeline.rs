@@ -1,4 +1,6 @@
 use super::*;
+#[path = "frontend_emission_order.rs"]
+mod emission_order;
 
 pub fn build<P: SourceProvider>(
     project: &Path,
@@ -404,10 +406,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
     }
-    let mut emission_order: Vec<_> = (0..declaration_regions.len())
-        .map(|index| OccurrenceId(index as u32))
-        .collect();
-    emission_order.sort_by_key(|id| (ranks[declaration_regions[id.0 as usize]], id.0));
+    let emission_order = emission_order::ordered_occurrences(&declaration_regions, &ranks);
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,

@@ -448,3 +448,44 @@ fn changed_inherited_callable_anchor_invalidates_local_shape() {
         .unwrap();
     assert_eq!(member.kind, crate::MemberKind::Verb);
 }
+#[test]
+fn mutated_overlay_cannot_reuse_or_store_the_old_catalog_receipt() {
+    let source = Arc::new(dm_ir::SymbolTable::default());
+    let catalog = super::super::symbol_catalog::SymbolCatalog::capture(None, source, None).unwrap();
+    let make = || crate::SharedAdaptedDeclarations {
+        symbols: dm_ir::SymbolTable::overlay(Arc::clone(&catalog.symbols)),
+        symbol_catalog: Some(Arc::clone(&catalog)),
+        skeletons: crate::skeleton_roster::SkeletonRoster::default(),
+        origins: Vec::new().into(),
+    };
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut state = RetainedSemanticTree::new();
+    state
+        .resolve(
+            make(),
+            None,
+            |_, _, _| panic!("unexpected resolution error"),
+            &executor,
+        )
+        .unwrap();
+    assert!(state.entry.as_ref().unwrap().symbol_catalog.is_some());
+    let mut changed = make();
+    changed.symbols.intern("new_current_spelling").unwrap();
+    state
+        .resolve(
+            changed,
+            None,
+            |_, _, _| panic!("unexpected resolution error"),
+            &executor,
+        )
+        .unwrap();
+    assert_eq!(state.hits, 0);
+    assert!(state.entry.as_ref().unwrap().symbol_catalog.is_none());
+    assert!(state
+        .entry
+        .as_ref()
+        .unwrap()
+        .symbols
+        .iter()
+        .any(|(_, text)| text == "new_current_spelling"));
+}

@@ -46,6 +46,7 @@ pub struct BuildHost {
     )>,
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
+    generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     symbolic: Option<(
         u128,
         Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>,
@@ -93,10 +94,38 @@ impl Default for BuildHost {
             initializer_assemblies: None,
             class_projections: None,
             link_bindings: None,
+            generation: None,
         }
     }
 }
 impl BuildHost {
+    pub fn prepared_source_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
+        self.prepared_sources
+            .as_deref()
+            .map(crate::heap_census::prepared_input_census)
+    }
+    pub(crate) fn generation(
+        &mut self,
+        policy: u128,
+    ) -> Option<Arc<crate::composition::RetainedGeneration>> {
+        self.memo.as_ref()?;
+        if self
+            .generation
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.generation = Some((policy, Arc::new(Default::default())));
+        }
+        Some(Arc::clone(&self.generation.as_ref().unwrap().1))
+    }
+    /// Diagnostic only: current model/encoded backing, not process-private memory.
+    pub fn generation_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
+        self.generation.as_ref().map(|(_, generation)| {
+            let mut census = crate::heap_census::HeapCensus::new("retained.generation");
+            census.composition_generation(generation);
+            census.finish()
+        })
+    }
     pub(crate) fn prepared_sources(
         &self,
     ) -> Option<Arc<crate::input_snapshot::PreparedInputArtifacts>> {
@@ -142,6 +171,7 @@ impl BuildHost {
             initializer_assemblies: None,
             class_projections: None,
             link_bindings: None,
+            generation: None,
         }
     }
 
@@ -421,6 +451,7 @@ impl BuildHost {
         self.initializer_assemblies = None;
         self.class_projections = None;
         self.link_bindings = None;
+        self.generation = None;
         self.maps = None;
         if self.semantic.is_some() {
             self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
@@ -637,5 +668,20 @@ mod tests {
             .is_err());
         let again = capture(&mut host, BTreeMap::new());
         assert!(Arc::ptr_eq(&first, &again));
+    }
+    #[test]
+    fn generation_is_session_local_policy_scoped_and_reset_by_exact_engine_change() {
+        let mut host = BuildHost::default();
+        capture(&mut host, BTreeMap::new());
+        let first = host.generation(1).unwrap();
+        assert!(Arc::ptr_eq(&first, &host.generation(1).unwrap()));
+        let changed_policy = host.generation(2).unwrap();
+        assert!(!Arc::ptr_eq(&first, &changed_policy));
+        capture(
+            &mut host,
+            BTreeMap::from([("CITESTING".into(), "1".into())]),
+        );
+        assert!(!Arc::ptr_eq(&changed_policy, &host.generation(2).unwrap()));
+        assert!(BuildHost::one_shot().generation(1).is_none());
     }
 }

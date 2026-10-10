@@ -270,6 +270,7 @@ pub fn compose_global_program_encoded(
         None,
         None,
         None,
+        None,
     )
 }
 /// Compose new global procedures into a pinned immutable engine image. Symbolic
@@ -350,6 +351,7 @@ fn compose_records(
         projection,
         stage,
         None,
+        None,
     )
     .map(byond_dmb::dmb::EncodedDmb::into_bytes)
 }
@@ -363,6 +365,7 @@ fn compose_records_access(
     )>,
     stage: Option<&dyn NonTextOutputStage>,
     executor: Option<&dm_exec::BuildExecutor>,
+    generation: Option<&RetainedGeneration>,
 ) -> Result<byond_dmb::dmb::EncodedDmb, CompositionError> {
     let mut dmb = {
         let _profile = dm_profile::stage("composition.decode_engine");
@@ -471,11 +474,14 @@ fn compose_records_access(
             _ => validate_binding(&dmb, key, index, symbols, batch.tables.content(key))?,
         }
     }
-    plan.canonicalize();
-    let procedure_count = plan.procedures.len();
-    let helper_count = plan.helpers.len();
-    let initializer_count = plan.initializers.len();
-    let plan = plan.bind(&batch);
+    let plan = match generation {
+        Some(generation) => generation.bind_plan(plan, &batch),
+        None => {
+            plan.canonicalize();
+            plan.bind(&batch)
+        }
+    };
+    let [procedure_count, helper_count, initializer_count] = plan.counts;
     for (index, data) in strings {
         while dmb.strings.len() < index as usize
             && dm_link::is_reserved_string_index(dmb.strings.len() as u32)
@@ -572,7 +578,7 @@ fn compose_records_access(
         &source_references,
         executor,
     );
-    for (slot, metadata) in procedures.into_iter().zip(metadata) {
+    for (slot, metadata) in procedures.iter().zip(metadata) {
         let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
@@ -657,7 +663,7 @@ fn compose_records_access(
             code_locals_args: [code_id, locals_id, args_id],
         });
     }
-    for slot in plan.helpers? {
+    for slot in plan.helpers?.iter() {
         let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
@@ -681,7 +687,7 @@ fn compose_records_access(
     if initializer_count != batch.initializers.len() {
         return Err(unsupported("initializer inventory coverage mismatch"));
     }
-    for slot in plan.initializers? {
+    for slot in plan.initializers?.iter() {
         let index = slot.table_index;
         let identity = slot.identity;
         reserve_procedure_sentinel(&mut dmb);
@@ -808,27 +814,24 @@ fn compose_records_access(
     dmb.validate_references()
         .map_err(CompositionError::Decode)?;
     drop(references_profile);
-    let bytes = {
-        crate::heap_census::emit_if_enabled("composition.model", |census| census.dmb(&dmb))
-            .map_err(CompositionError::Decode)?;
-        let _profile = dm_profile::stage("composition.encode");
-        match executor {
-            Some(executor) => dmb.encode_on_executor(executor),
-            None => dmb.encode(),
+    crate::heap_census::emit_if_enabled("composition.model", |census| census.dmb(&dmb))
+        .map_err(CompositionError::Decode)?;
+    let bytes = match generation {
+        Some(generation) => generation.encode(
+            generation::CertifiedGenerationInputs::after_validation(dmb),
+            executor,
+        )?,
+        None => {
+            let encoded = generation::encode_model(&dmb, executor)?;
+            drop(dmb);
+            generation::validate_encoded(&encoded)?;
+            encoded
         }
-        .map_err(CompositionError::Decode)?
     };
-    // The encoded image owns its bytes; release the source graph before
-    // constructing the independent round-trip validation graph.
-    drop(dmb);
     crate::heap_census::emit_if_enabled("composition.encoded", |census| {
         census.output_encoded("dmb.bytes", &bytes)
     })
     .map_err(CompositionError::Decode)?;
-    let _profile = dm_profile::stage("composition.independent_roundtrip");
-    Dmb::from_bytes(&bytes)
-        .and_then(|decoded| decoded.validate_references())
-        .map_err(CompositionError::Decode)?;
     Ok(bytes)
 }
 fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &HashSet<u32>) -> bool {
@@ -906,3 +909,9 @@ pub use owned::{
 };
 
 mod procedure_plan;
+
+mod generation;
+pub use generation::RetainedGeneration;
+
+mod procedure_metadata_recipe;
+pub(crate) use procedure_metadata_recipe::ProcedureMetadataRecipe;

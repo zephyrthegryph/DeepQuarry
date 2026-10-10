@@ -43,6 +43,7 @@ pub(crate) fn inspect(state: &RetainedSemanticTree) -> HeapCensusReport {
         }
         DeclarationStorageView::Entry { key, reads, versions, contribution } => {
             let owner = "retained_declarations.payload";
+            census.arc_text(owner, contribution.source);
             census.slice(owner, key, true);
             census.slice(owner, reads, true);
             census.slice(owner, versions, true);

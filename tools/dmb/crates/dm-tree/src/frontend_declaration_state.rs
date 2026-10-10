@@ -37,6 +37,8 @@ impl dm_ir::Resolver for NoReads {
     }
 }
 pub(crate) struct Contribution {
+    // A locator is not source authority. Every current binding checks these bytes.
+    source: Arc<str>,
     facts: crate::AdaptedDeclarations,
     syntax: Arc<RelativeSyntax>,
     skeletons: Arc<Vec<crate::Skeleton>>,
@@ -49,6 +51,7 @@ pub struct DeclarationContributionView<'a> {
     pub allocation_address: usize,
     pub allocation_size: usize,
     pub syntax: &'a Arc<RelativeSyntax>,
+    pub source: &'a Arc<str>,
     pub skeletons: &'a Arc<Vec<crate::Skeleton>>,
     pub facts: &'a crate::AdaptedDeclarations,
     pub ledger: &'a AllocationLedger,
@@ -93,6 +96,20 @@ impl RetainedDeclarations {
             counts: symbols.counts.len(),
             contributions: symbols.contributions.len(),
         });
+        if let Some(catalog) = &symbols.catalog {
+            visit(DeclarationStorageView::SymbolCatalog {
+                symbols: &catalog.symbols,
+                counts: 0,
+                contributions: 0,
+            });
+            if let Some(engine) = &catalog.engine {
+                visit(DeclarationStorageView::SymbolCatalog {
+                    symbols: engine,
+                    counts: 0,
+                    contributions: 0,
+                });
+            }
+        }
         self.values.visit_storage(|storage| match storage {
             ArtifactStorageView::Store { buckets, entries } => {
                 visit(DeclarationStorageView::Store { buckets, entries })
@@ -121,6 +138,7 @@ impl RetainedDeclarations {
                     allocation_address: Arc::as_ptr(value) as usize,
                     allocation_size: std::mem::size_of::<Contribution>(),
                     syntax: &value.syntax,
+                    source: &value.source,
                     skeletons: &value.skeletons,
                     facts: &value.facts,
                     ledger: &value.ledger,
@@ -130,9 +148,10 @@ impl RetainedDeclarations {
         });
     }
     pub(super) fn key(text: &str) -> Vec<u8> {
-        let mut key = b"owned-root-declarations-v1".to_vec();
+        let mut key = b"owned-root-declarations-locator-v2".to_vec();
         key.extend_from_slice(&parserwire::VERSION.to_le_bytes());
-        key.extend_from_slice(text.as_bytes());
+        key.extend_from_slice(&(text.len() as u64).to_le_bytes());
+        key.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(text.as_bytes()).to_le_bytes());
         key
     }
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
@@ -202,6 +221,22 @@ impl RetainedDeclarations {
             ledger.clone(),
         );
     }
+    pub(super) fn current_catalog(
+        &self,
+        current: &[Arc<Contribution>],
+        engine: Option<&SymbolTable>,
+    ) -> Result<Arc<super::symbol_catalog::SymbolCatalog>, dm_ir::SymbolCollision> {
+        let mut active = self
+            .symbols
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        let source = active.update(current)?;
+        let catalog =
+            super::symbol_catalog::SymbolCatalog::capture(active.catalog.as_ref(), source, engine)?;
+        active.catalog = Some(Arc::clone(&catalog));
+        Ok(catalog)
+    }
+    #[cfg(test)]
     pub(super) fn current_symbols(
         &self,
         current: &[Arc<Contribution>],
@@ -210,6 +245,7 @@ impl RetainedDeclarations {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .update(current)
+            .map(|symbols| symbols.as_ref().clone())
     }
     pub(super) fn stats(&self) -> DeclarationRetentionStats {
         DeclarationRetentionStats {
@@ -306,6 +342,16 @@ mod tests {
             .capture(&key, text, 0, ast.items, facts, ledger)
             .unwrap();
         let shifted = store.get_shared(&key, text, 80).unwrap();
+        // Force the same locator for different equal-length source. A collision
+        // must decline before any old syntax or semantic facts are issued.
+        let foreign = text.replace("=1", "=2");
+        assert_eq!(foreign.len(), text.len());
+        assert!(store.get_shared(&key, &foreign, 80).is_none());
+        assert!(first.value.rebind(&foreign, 80).is_none());
+        assert_eq!(
+            key.len(),
+            RetainedDeclarations::key(&"x".repeat(4096)).len()
+        );
         assert!(Arc::ptr_eq(&first.value, &shifted.value));
         assert!(Arc::ptr_eq(
             first.syntax.shared_relative(),
@@ -346,6 +392,17 @@ mod tests {
         let b = shifted.syntax.items().next().unwrap();
         assert!(std::ptr::eq(a.relative_item(), b.relative_item()));
         assert_eq!(b.span().start, a.span().start + 80);
+        let catalog = store
+            .current_catalog(&[Arc::clone(&first.value)], None)
+            .unwrap();
+        let shifted_catalog = store
+            .current_catalog(&[Arc::clone(&shifted.value)], None)
+            .unwrap();
+        assert!(Arc::ptr_eq(&catalog, &shifted_catalog));
+        let empty_catalog = store.current_catalog(&[], None).unwrap();
+        assert!(!Arc::ptr_eq(&catalog, &empty_catalog));
+        assert!(empty_catalog.symbols.text(name).is_none());
+        assert_eq!(catalog.symbols.text(name), Some("unique_name"));
         let symbols = store.current_symbols(&[Arc::clone(&first.value)]).unwrap();
         assert_eq!(symbols.text(name), Some("unique_name"));
         let symbols = store
@@ -411,6 +468,9 @@ pub(super) struct CurrentContribution {
 }
 impl CurrentContribution {
     fn bind(value: Arc<Contribution>, text: &str, offset: usize) -> Option<Self> {
+        if value.source.as_ref() != text {
+            return None;
+        }
         let syntax = value.syntax.bind(text.len(), offset).ok()?;
         // Origin and allocation spans were validated against the same relative source.
         offset
@@ -477,6 +537,7 @@ impl Contribution {
             .max()
             .unwrap_or(0);
         Some(Self {
+            source: Arc::from(text),
             facts,
             ledger,
             event_leaf,
@@ -501,6 +562,9 @@ impl Contribution {
         text: &str,
         offset: usize,
     ) -> Option<(Vec<Item>, crate::AdaptedDeclarations, AllocationLedger)> {
+        if self.source.as_ref() != text {
+            return None;
+        }
         let mut items = self.syntax.relative_items().to_vec();
         let mut facts = self.facts.clone();
         facts.skeletons = self.skeletons.as_ref().clone();
@@ -514,13 +578,14 @@ impl Contribution {
 struct ActiveSymbols {
     contributions: std::collections::BTreeMap<usize, Arc<Contribution>>,
     counts: std::collections::BTreeMap<dm_ir::SymbolId, usize>,
-    symbols: SymbolTable,
+    symbols: Arc<SymbolTable>,
+    catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
 }
 impl ActiveSymbols {
     fn update(
         &mut self,
         current: &[Arc<Contribution>],
-    ) -> Result<SymbolTable, dm_ir::SymbolCollision> {
+    ) -> Result<Arc<SymbolTable>, dm_ir::SymbolCollision> {
         let next: std::collections::BTreeMap<_, _> = current
             .iter()
             .map(|value| (Arc::as_ptr(value) as usize, Arc::clone(value)))
@@ -530,7 +595,7 @@ impl ActiveSymbols {
             return Ok(self.symbols.clone());
         }
         // Precheck every added leaf against a shallow transaction before committing.
-        let mut symbols = self.symbols.clone();
+        let mut symbols = self.symbols.as_ref().clone();
         let mut counts = self.counts.clone();
         for (address, value) in &self.contributions {
             if !next.contains_key(address) {
@@ -558,7 +623,9 @@ impl ActiveSymbols {
             }
         }
         self.counts = counts;
-        self.symbols = symbols;
+        if self.symbols.ordered() != symbols.ordered() {
+            self.symbols = Arc::new(symbols);
+        }
         self.contributions = next;
         Ok(self.symbols.clone())
     }

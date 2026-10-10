@@ -14,6 +14,7 @@ pub(crate) fn weight(
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_initializer_admission");
     match default {
+        DefaultValue::Transform(_) => {}
         DefaultValue::Scalar(value) => census.semantic_value("resident_initializer.default", value),
         DefaultValue::InitializerExpression { canonical, .. } => {
             census.slice("resident_initializer.canonical", canonical, true);
@@ -120,4 +121,24 @@ mod tests {
         let default = DefaultValue::Scalar(dm_ir::SemanticValue::ModifiedInstance(Arc::new(value)));
         assert!(weight(&default, None, None, b"key", &Vec::new(), &Vec::new()).is_none());
     }
+}
+
+/// Actual shared expression/source owners; caller adds this to semantic admission.
+pub(crate) fn syntax_weight(source: &Arc<str>, expression: &Arc<dm_syntax::Expr>) -> Option<usize> {
+    let mut census = HeapCensus::new("resident_initializer_syntax");
+    census.arc_text("resident_initializer.source", source);
+    if census.arc_object("resident_initializer.expression", expression) {
+        census.typed_expression("resident_initializer.expression", expression);
+    }
+    let encounters = census.buffer_encounters;
+    let report = census.finish();
+    if report.unknown_capacity_payload_bytes != 0
+        || report.owners.iter().any(|owner| !owner.unknown.is_empty())
+    {
+        return None;
+    }
+    usize::try_from(report.unique_known_capacity_bytes)
+        .ok()?
+        .checked_add(encounters.checked_mul(64)?)
+        .and_then(|bytes| bytes.checked_add(256))
 }
