@@ -10,6 +10,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Eject occupant (refused: You can't do that right now.)
 ghost|none menu: Move Inside (refused: You can't do that right now.)
@@ -86,5 +87,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, get_out, implant, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move_inside, open_ui_impl, put_in, replenish, robot_remote_blocked, ui_open
+keys: drag_buckle, get_out, implant, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move_inside, open_ui_impl, put_in, replenish, robot_remote_blocked, silicon_hand, ui_open
 

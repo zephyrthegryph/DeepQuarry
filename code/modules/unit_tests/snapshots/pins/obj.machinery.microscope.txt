@@ -4,8 +4,10 @@ human|none click: Click: Examine sample
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Examine sample (refused: the microscope has no sample to examine)
 robot|none menu: Remove sample
+robot|none menu: Use
 robot|none click: Click: Examine sample
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Examine sample (refused: the microscope has no sample to examine)
 human|/obj/item/tool/screwdriver menu: Insert sample
@@ -69,5 +71,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove sample
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Insert sample
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, microscope_examine, microscope_insert_sample, microscope_remove_sample, robot_remote_blocked
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, microscope_examine, microscope_insert_sample, microscope_remove_sample, robot_remote_blocked, silicon_hand
 

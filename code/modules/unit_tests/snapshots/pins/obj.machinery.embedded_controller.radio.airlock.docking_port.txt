@@ -65,5 +65,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item click: Click: Embedded controller open ui
-keys: drag_buckle, edit_tag, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, set_frequency, silicon_ui, ui_open, use_multitool
+keys: drag_buckle, edit_tag, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, set_frequency, silicon_hand, silicon_ui, ui_open, use_multitool
 

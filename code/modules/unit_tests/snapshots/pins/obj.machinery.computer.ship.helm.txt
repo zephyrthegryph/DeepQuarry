@@ -3,9 +3,11 @@ human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
+robot|none menu: Use
 robot|none menu: Use (refused: access denied)
 robot|none menu: Use (refused: Access Denied.)
 robot|none click: Click: Use
+ai|none menu: Use
 ai|none menu: Use (refused: Access Denied.)
 ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
@@ -81,5 +83,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
-keys: accellimit, add, apilot, apilot_lock, brake, climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, melee_hit, move, remove, reset, robot_remote_blocked, setcoord, setds, ship_console_use, ship_ghost_view, ship_silicon_use, speedlimit, sync, update_camera_view, use_gripper, use_item
+keys: accellimit, add, apilot, apilot_lock, brake, climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manual, melee_hit, move, remove, reset, robot_remote_blocked, setcoord, setds, ship_console_use, ship_ghost_view, ship_silicon_use, silicon_hand, speedlimit, sync, update_camera_view, use_gripper, use_item
 
