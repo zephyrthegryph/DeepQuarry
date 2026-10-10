@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "scope": "8 focused Rust checks; not runtime or performance acceptance",
+  "receipts": [
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-065209-58124543-focused.json",
+      "receipt_sha256": "9798f30e1fd9a5c3a0bbd909d021dded865169069f49b28e6e73497ff595b297",
+      "binary_sha256": "0533dda58aebcf7d607f6540943da76b416d76c73747789d119c15b60144a123",
+      "checks": [
+        {
+          "filter": "initializer_tokens::tests::generator",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "cold::ledger_release_tests::production_preparation_releases_cached_initializer_ast_before_body_policy",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "initializer_policy::classification::prepared_keys::tests::prepared_keys_reuse_only_exact_complete_producer_inputs",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "daemon::query::occurrence_pages_tests",
+          "selected": 2,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-064417-e89ec63a-focused.json",
+      "receipt_sha256": "dcbe23d76cbb8a372e69dab265df56b8ba98e4b4140edba6950a4f491f29c4ab",
+      "binary_sha256": "4a675a630c4af1dc98abeaf7462876b3dc1078687a61913cd34c1320860d9fc3",
+      "checks": [
+        {
+          "filter": "regions::region_memo::fragment_tests::shared_chunk_preserves_legacy_wire_matching_and_budget_charge",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-064418-d2a2d2b1-focused.json",
+      "receipt_sha256": "632748cd440aab1741b0f2af46112beee94984f3014279d09b176a193bc1608a",
+      "binary_sha256": "aa986d41bcb20b0657d5f75a6af11a682a2d15151c164642da003185ec065a23",
+      "checks": [
+        {
+          "filter": "frontend::declaration_state::tests::current_bindings_share_relative_payload_and_catalog_removes_old_names",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    }
+  ]
+}
