@@ -325,10 +325,13 @@
 // Test-only invalid constructor: exercises the ownership engine rather than
 // depending on any content defect remaining unfixed.
 /obj/item/dq_pin_expected_part
+	abstract_type = /obj/item/dq_pin_expected_part
 
 /obj/item/dq_pin_wrong_part
+	abstract_type = /obj/item/dq_pin_wrong_part
 
 /obj/dq_pin_rejected_constructor
+	abstract_type = /obj/dq_pin_rejected_constructor
 	var/obj/item/dq_pin_expected_part/part
 
 CAPABILITIES(/obj/dq_pin_rejected_constructor)
