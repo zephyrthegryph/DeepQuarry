@@ -4398,7 +4398,7 @@ In `pins` (45 class files):
 - `/obj/machinery/vending`
 - `/turf/simulated/mineral/floor`
 
-In `requirements_protocol_1008` (27 class files):
+In `requirements_protocol_1008` (26 class files):
 
 - `/obj/machinery/bomb_tester`
 - `/obj/machinery/cablelayer`
@@ -4414,7 +4414,6 @@ In `requirements_protocol_1008` (27 class files):
 - `/obj/machinery/computer/skills`
 - `/obj/machinery/computer/supplycomp`
 - `/obj/machinery/cryopod`
-- `/obj/machinery/floor_light`
 - `/obj/machinery/food_replicator`
 - `/obj/machinery/gear_painter`
 - `/obj/machinery/nuclearbomb`
@@ -4428,6 +4427,8 @@ In `requirements_protocol_1008` (27 class files):
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 
-* **Holder construction error source location (744bd7644):** /obj/item/holder, /obj/item/holder/micro and /obj/item/holder/mouse retain exactly the same missing-mob refusal. The NO_LOC parameter support inserts three source lines, so the recorded params.dm location changes from 234 to 237.
+* **Holder construction error source location (b744bd7644):** /obj/item/holder, /obj/item/holder/micro and /obj/item/holder/mouse retain exactly the same missing-mob refusal. The NO_LOC parameter support inserts three source lines, so the recorded params.dm location changes from 234 to 237.
 
-**Not refreshed:** /obj/item/rig/nikki has an existing order-dependent constructor error (OWN reporting throws once, then a later capture reaches null.adopt_constraint); /obj/structure/extinguisher_cabinet now offers Unwrench instead of Use after the starting occupant was moved to conditional starts in 744bd7644. These are not accepted behavior changes and require owner review.
+**Not refreshed:** /obj/item/rig/nikki has an existing order-dependent constructor error (OWN reporting throws once, then a later capture reaches null.adopt_constraint); /obj/structure/extinguisher_cabinet now offers Unwrench instead of Use after the starting occupant was moved to conditional starts in b744bd7644. These are not accepted behavior changes and require owner review.
+
+The floor-light protocol golden is left exactly as it was, per the user's stale-output correction. Its previous Equip output is not accepted or used as evidence.
