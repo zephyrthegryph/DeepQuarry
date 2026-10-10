@@ -40,7 +40,7 @@ static META: Meta = Meta {
             "silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.",
             "Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.",
         ],
-        banned: &["shortcut", "handler_actor_check"],
+        banned: &["shortcut", "handler_actor_check", "legacy_entry"],
     },
     rules: &[
         RuleMeta { name: "shortcut", hint: H_SHORTCUT },
