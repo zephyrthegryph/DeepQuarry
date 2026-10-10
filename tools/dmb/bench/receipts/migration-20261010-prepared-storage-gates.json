@@ -1,0 +1,17 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_preprocess-34a5ab19716d6e61.exe",
+  "binary_sha256": "901f5021329b9d31899d58972e1c83e849fea838f46ba289c76f7b4e9282e592",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "regions::prepared_source::directive_syntax::tests::storage_exposure_shares_arrays_and_visits_owned_directive_payloads",
+      "selected": [
+        "regions::prepared_source::directive_syntax::tests::storage_exposure_shares_arrays_and_visits_owned_directive_payloads"
+      ],
+      "exit": 0,
+      "seconds": 0.03263809997588396,
+      "stdout": "\nrunning 1 test\ntest regions::prepared_source::directive_syntax::tests::storage_exposure_shares_arrays_and_visits_owned_directive_payloads ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 137 filtered out; finished in 0.00s\n\n",
+      "stderr": ""
+    }
+  ]
+}

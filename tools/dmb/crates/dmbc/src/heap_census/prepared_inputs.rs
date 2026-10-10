@@ -4,7 +4,16 @@ use dm_session::ArtifactStorageView as View;
 
 pub(crate) fn inspect(store: &crate::input_snapshot::PreparedInputArtifacts) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_prepared_inputs");
-    store.visit_storage(|view| match view {
+    census.prepared_inputs(store);
+    census.finish()
+}
+impl HeapCensus {
+    pub(crate) fn prepared_inputs(
+        &mut self,
+        store: &crate::input_snapshot::PreparedInputArtifacts,
+    ) {
+        let census = self;
+        store.visit_storage(|view| match view {
         View::Store { buckets, entries } => {
             census.owner("prepared_inputs.index").observed_items += entries as u64;
             if buckets != 0 {
@@ -26,7 +35,18 @@ pub(crate) fn inspect(store: &crate::input_snapshot::PreparedInputArtifacts) -> 
                     for line in source.lines() {
                         census.source_text("prepared_inputs.logical_text",line.text);
                     }
-                    census.unknown("prepared_inputs.source", "private compact/wide PreparedLine descriptors and directive syntax/index backing excluded; text owners and line-start backing counted exactly");
+                    source.visit_storage(|view| {
+                        use dm_preprocess::regions::prepared_source::PreparedSourceStorage as Storage;
+                        match view {
+                            Storage::Buffer { address, bytes } => { census.buffer("prepared_inputs.lexical_buffers", address, bytes, bytes); }
+                            Storage::String(value) => census.string("prepared_inputs.directive_strings", value),
+                            Storage::Macro(value) => {
+                                census.string("prepared_inputs.directive_strings", &value.replacement);
+                                if let Some(parameters) = &value.parameters { census.strings("prepared_inputs.directive_strings", parameters); }
+                            }
+                        }
+                    });
+                    census.unknown("prepared_inputs.source", "shared Arc control blocks excluded; immutable line and directive array backing counted exactly");
                 }
                 let proof=value.inputs();
                 census.owner("prepared_inputs.proof").observed_items+=proof.files().count() as u64;
@@ -35,5 +55,5 @@ pub(crate) fn inspect(store: &crate::input_snapshot::PreparedInputArtifacts) -> 
             }
         }
     });
-    census.finish()
+    }
 }

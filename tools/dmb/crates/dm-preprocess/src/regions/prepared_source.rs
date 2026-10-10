@@ -40,7 +40,18 @@ pub struct PreparedSource {
     lines: prepared_lines::LineStorage,
     directives: directive_index::DirectiveIndex,
 }
+/// Borrowed allocation exposure; no serialization or lexical interpretation.
+pub enum PreparedSourceStorage<'a> {
+    Buffer { address: usize, bytes: usize },
+    String(&'a String),
+    Macro(&'a crate::Macro),
+}
 impl PreparedSource {
+    pub fn visit_storage(&self, mut visit: impl FnMut(PreparedSourceStorage<'_>)) {
+        self.lines.visit_storage(&mut visit);
+        self.directives.visit_storage(&mut visit);
+    }
+
     pub fn new(original: Arc<str>) -> Self {
         Self::from_text(original.into())
     }

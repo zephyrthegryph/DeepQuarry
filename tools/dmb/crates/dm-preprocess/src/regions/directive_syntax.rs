@@ -9,6 +9,24 @@ pub(crate) struct DirectiveSyntax {
     pub(crate) identifier: Option<Result<String, String>>,
 }
 impl DirectiveSyntax {
+    pub(super) fn visit_storage(&self, visit: &mut impl FnMut(super::PreparedSourceStorage<'_>)) {
+        use super::PreparedSourceStorage as View;
+        if let Some(definition) = &self.definition {
+            match definition {
+                Ok((name, definition)) => {
+                    visit(View::String(name));
+                    visit(View::Macro(definition));
+                }
+                Err(error) => visit(View::String(error)),
+            }
+        }
+        if let Some(identifier) = &self.identifier {
+            match identifier {
+                Ok(value) | Err(value) => visit(View::String(value)),
+            }
+        }
+    }
+
     pub(crate) fn new(text: &str) -> Option<Self> {
         let directive = text.trim_start().strip_prefix('#')?.trim_start();
         let (word, rest) = crate::split_word(directive);
@@ -30,6 +48,47 @@ impl DirectiveSyntax {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn storage_exposure_shares_arrays_and_visits_owned_directive_payloads() {
+        use super::super::{PreparedSource, PreparedSourceStorage};
+        let source = PreparedSource::new(std::sync::Arc::from(
+            "#define JOIN(a,b) a##b\n#undef JOIN\n#define BAD(a\nvar/value = 1\n",
+        ));
+        let clone = source.clone();
+        let buffers = |source: &PreparedSource| {
+            let mut values = Vec::new();
+            source.visit_storage(|view| {
+                if let PreparedSourceStorage::Buffer { address, bytes } = view {
+                    values.push((address, bytes));
+                }
+            });
+            values
+        };
+        assert_eq!(buffers(&source), buffers(&clone));
+        assert_eq!(buffers(&source).len(), 3);
+        assert!(buffers(&source).iter().all(|(_, bytes)| *bytes > 0));
+        let mut strings = Vec::new();
+        let mut macros = 0;
+        source.visit_storage(|view| match view {
+            PreparedSourceStorage::String(value) => strings.push(value.clone()),
+            PreparedSourceStorage::Macro(value) => {
+                macros += 1;
+                assert_eq!(value.parameters.as_ref().unwrap(), &["a", "b"]);
+                assert_eq!(value.replacement, "a##b");
+            }
+            PreparedSourceStorage::Buffer { .. } => (),
+        });
+        assert_eq!(macros, 1);
+        assert_eq!(
+            strings
+                .iter()
+                .filter(|value| value.as_str() == "JOIN")
+                .count(),
+            2
+        );
+        assert_eq!(strings.len(), 3); // definition name, undef name, deferred error
+    }
+
     #[test]
     fn prepared_parts_and_syntax_preserve_whitespace_and_deferred_errors() {
         for text in [

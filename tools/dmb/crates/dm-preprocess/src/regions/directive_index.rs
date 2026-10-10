@@ -15,6 +15,24 @@ pub(super) struct DirectiveIndex {
     lines: usize,
 }
 impl DirectiveIndex {
+    pub(super) fn visit_storage(&self, visit: &mut impl FnMut(super::PreparedSourceStorage<'_>)) {
+        for (address, bytes) in [
+            (
+                self.blocks.as_ptr() as usize,
+                std::mem::size_of_val(self.blocks.as_ref()),
+            ),
+            (
+                self.syntax.as_ptr() as usize,
+                std::mem::size_of_val(self.syntax.as_ref()),
+            ),
+        ] {
+            visit(super::PreparedSourceStorage::Buffer { address, bytes });
+        }
+        for syntax in self.syntax.iter() {
+            syntax.visit_storage(visit);
+        }
+    }
+
     pub(super) fn new(lines: PreparedLines<'_>) -> Self {
         let mut blocks = Vec::with_capacity(lines.len().div_ceil(64));
         let mut syntax = Vec::new();

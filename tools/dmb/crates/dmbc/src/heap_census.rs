@@ -100,12 +100,16 @@ impl HeapCensus {
         &mut self,
         state: Option<&dm_tree::frontend::RetainedSemanticTree>,
         expansion: Option<&dm_preprocess::regions::ExpansionInputs>,
+        prepared: Option<&crate::input_snapshot::PreparedInputArtifacts>,
     ) {
         if let Some(state) = state {
             retained_declarations::inspect_into(self, state);
         }
         if let Some(expansion) = expansion {
             self.expansion_inputs(expansion);
+        }
+        if let Some(prepared) = prepared {
+            self.prepared_inputs(prepared);
         }
     }
     pub fn new(stage: impl Into<String>) -> Self {

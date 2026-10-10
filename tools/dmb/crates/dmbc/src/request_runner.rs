@@ -155,12 +155,12 @@ fn run_build_attempt(
             trace_path.as_deref(),
         )?,
     );
-    let generated_paths =
-        dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
+    let generated_paths = dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
             .expect("explicit generated output policy");
+    let prepared_sources = host.prepared_sources();
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
         .with_exact_reuse(exact_inputs)
-        .with_prepared_sources(host.prepared_sources());
+        .with_prepared_sources(prepared_sources.clone());
     drop(request_profile);
     let engine_input_profile = dm_profile::stage("engine_input");
     let engine_bytes = if embedded_engine {
@@ -497,15 +497,10 @@ fn run_build_attempt(
             .ok_or("compile requires captured engine")?;
         let bytes = &retained_engine.bytes;
         let engine = &retained_engine.snapshot;
-        dmbc::heap_census::emit_if_enabled("frontend.ready", |census| {
-            census.frontend(&frontend);
-            census.retained_frontend_owners(
-                semantic_state.as_deref(),
-                frontend_memo.as_ref().and_then(|memo| {
-                    dm_preprocess::regions::ExpansionMemo::input_admissions(memo)
-                }),
-            );
-        })?;
+        crate::runner_retained_census::emit_frontend(&frontend, semantic_state.as_deref(),
+            frontend_memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+            prepared_sources.as_deref(),
+        )?;
         crate::runner_retained_census::emit(semantic_state.as_deref())?;
         if progress_enabled {
             dmbc::daemon_eprintln!(

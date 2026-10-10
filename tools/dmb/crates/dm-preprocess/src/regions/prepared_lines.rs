@@ -28,6 +28,20 @@ pub(super) enum LineStorage {
     Wide(Arc<[PreparedLine]>),
 }
 impl LineStorage {
+    pub(super) fn visit_storage(&self, visit: &mut impl FnMut(super::PreparedSourceStorage<'_>)) {
+        let (address, bytes) = match self {
+            Self::Compact(lines) => (
+                lines.as_ptr() as usize,
+                std::mem::size_of_val(lines.as_ref()),
+            ),
+            Self::Wide(lines) => (
+                lines.as_ptr() as usize,
+                std::mem::size_of_val(lines.as_ref()),
+            ),
+        };
+        visit(super::PreparedSourceStorage::Buffer { address, bytes });
+    }
+
     pub(super) fn from_lines(lines: impl IntoIterator<Item = PreparedLine>) -> Self {
         let lines = lines.into_iter();
         let mut compact = Vec::with_capacity(lines.size_hint().0);
