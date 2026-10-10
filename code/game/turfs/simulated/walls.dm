@@ -67,7 +67,6 @@ CAPABILITIES(/turf/simulated/wall)
 		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
 		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
 	. = ..()
-	icon_state = "blank"
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
 	set_material(get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
