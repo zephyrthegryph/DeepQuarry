@@ -1,0 +1,30 @@
+import { expect, test } from 'bun:test';
+import { byondProvenance, nativeProvenance } from './compiler_provenance';
+import { testRunRecord } from './bench';
+
+test('record retains actual fallback compiler and complete ordered defines', () => {
+  const defines = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG', 'VALUE=1', 'VALUE=2'];
+  const compilation = byondProvenance('native', defines, { invocation: {
+    command: ['pinned-dm', '-DVALUE=2', 'project.dme'], version: 516, build: 1687,
+    compilerIdentity: { status: 'observed', executable: 'pinned-dm', sha256: 'a'.repeat(64) },
+  } }, 'internal_error_70');
+  const record = testRunRecord({ id: 'fixture', timestamp: '', commit: '', branch: '', dirty_files: 0, host: '', platform: '' },
+    'native-request', ['VALUE=2'], true, 1, { probe: { status: 0, name: 'probe' } }, compilation);
+  expect(record.defines).toEqual(defines);
+  expect(record.compilation?.requestedBackend).toBe('native');
+  expect(record.compilation?.actualBackend).toBe('byond');
+  expect(record.compilation?.fallback).toBe('internal_error_70');
+  expect(record.compilation?.compiler).toEqual({ executable: 'pinned-dm', sha256: 'a'.repeat(64), version: 516, build: 1687 });
+  expect(record.compilation?.nativePair).toBeNull();
+});
+
+test('native pair identity is recorded without fabricating executable version', () => {
+  const output = { kind: 'native_pair' as const, compiler: 'native', store: 'store', outputProject: 'project',
+    pairId: '1'.repeat(32), dmbHash: '2'.repeat(32), rscHash: '3'.repeat(32), dmbBytes: 4, rscBytes: 5 };
+  const receipt = nativeProvenance(output, ['DEBUG', 'DEBUG=0'], { executable: 'native', sha256: 'b'.repeat(64) });
+  expect(receipt.nativePair).toEqual({ pairId: output.pairId, dmbHash: output.dmbHash, rscHash: output.rscHash, dmbBytes: 4, rscBytes: 5 });
+  expect(receipt.orderedDefines).toEqual(['DEBUG', 'DEBUG=0']);
+  expect(receipt.compiler.version).toBeNull();
+  expect(receipt.compiler.build).toBeNull();
+  expect(byondProvenance('byond', [], undefined).compiler.sha256).toBeNull();
+});

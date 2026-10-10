@@ -13,6 +13,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { CompilerProvenance } from './compiler_provenance';
 
 // ---------------------------------------------------------------------------
 // Git / run identity
@@ -833,6 +834,7 @@ export type TestRun = RunIdentity & {
   kind: 'test';
   label: string | null;
   defines: string[];
+  compilation: CompilerProvenance | null;
   clean: boolean;
   duration_seconds: number;
   counts: { passed: number; failed: number; skipped: number };
@@ -847,6 +849,7 @@ export function testRunRecord(
   clean: boolean,
   durationSeconds: number,
   results: Record<string, UnitTestEntry>,
+  compilation: CompilerProvenance | null = null,
 ): TestRun {
   const counts = { passed: 0, failed: 0, skipped: 0 };
   const failed: string[] = [];
@@ -861,7 +864,8 @@ export function testRunRecord(
     ...identity,
     kind: 'test',
     label,
-    defines,
+    defines: [...(compilation?.orderedDefines ?? defines)],
+    compilation,
     clean,
     duration_seconds: durationSeconds,
     counts,

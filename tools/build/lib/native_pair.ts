@@ -1,15 +1,18 @@
 /** Native generation results and independently owned writable hosted outputs. */
 import fs from 'node:fs';
 import path from 'node:path';
+import type { CompilerProvenance } from './compiler_provenance';
 
 export type PairIdentity = {
   pairId: string; dmbHash: string; rscHash: string; dmbBytes: number; rscBytes: number;
 };
 export type NativePairOutput = PairIdentity & {
   kind: 'native_pair'; compiler: string; store: string; outputProject: string;
+  provenance?: CompilerProvenance;
 };
 export type CompiledOutput = NativePairOutput | {
   kind: 'conventional'; backend: 'byond'; dmb: string; rsc: string;
+  provenance?: CompilerProvenance;
 };
 export type PairExecutor = (executable: string, args: string[], options?: { throw?: boolean }) => Promise<{ code: number | null; combined: string }>;
 

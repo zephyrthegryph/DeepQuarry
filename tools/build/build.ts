@@ -64,6 +64,7 @@ import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './
 import { prependDefines } from './lib/tgs';
 import { compilerMode } from './lib/compiler_selection';
 import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
+import type { CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -554,6 +555,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
 }
 
 type WorldRun = {
+  compilation: CompilerProvenance | null;
   clean: boolean;
   cleanText: string | null;
   results: Record<string, UnitTestEntry> | null;
@@ -579,6 +581,7 @@ async function runTestWorld(
   worldParams: Record<string, string>,
   sample: boolean,
 ): Promise<WorldRun> {
+  const compiled = currentCompiledOutput(dmbFile, compilerMode() === 'native');
   Juke.rm('data/logs/ci', { recursive: true });
   Juke.rm('data/unit_tests.json');
   Juke.rm('data/bench/process.json');
@@ -624,6 +627,7 @@ async function runTestWorld(
     // the world died before finishing
   }
   return {
+    compilation: compiled.provenance ?? null,
     clean: cleanText !== null,
     cleanText,
     results,
@@ -825,6 +829,7 @@ async function runIsolatedTestWorld(
     }
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
+      compilation: compiled.provenance ?? null,
       clean: cleanText !== null,
       cleanText,
       results,
@@ -916,7 +921,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
     return null;
   }
   recordSweepHashes(run.results);
-  const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
+  const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
     `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
@@ -1537,6 +1542,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     clean,
     wallSeconds,
     results,
+    compiledOutput.provenance ?? null,
   );
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
@@ -1612,12 +1618,12 @@ export const DmTestTarget = new Juke.Target({
       return;
     }
     reportFocus(focus);
-    await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    const compiledOutput = await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
     const selection = resolveTestSelection(get);
     const worldParams = testWorldParams(get);
     if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
     if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
-    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus);
+    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus, { compiledOutput });
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
     if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
     recordTestRun(run, get(LabelParameter), get(DefineParameter));

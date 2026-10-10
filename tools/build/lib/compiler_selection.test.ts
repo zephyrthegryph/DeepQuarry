@@ -36,6 +36,9 @@ test('native uses current manifest/defines and successful compilation does not r
   let byondCalls = 0;
   const output = await selectedCompiler('project.dme', { defines: ['CITESTING=1'] }, async () => { byondCalls++; }, execute);
   expect(output.kind).toBe('native_pair');
+  expect(output.provenance?.actualBackend).toBe('native');
+  expect(output.provenance?.orderedDefines).toEqual(['CITESTING=1']);
+  expect(output.provenance?.nativePair?.pairId).toBe('1'.repeat(32));
   expect(byondCalls).toBe(0);
   expect(recorded).toContain('-DCITESTING=1');
   expect(recorded).toContain('6');
@@ -172,6 +175,20 @@ test('native internal status 70 falls back once and propagates BYOND failure', a
   expect(calls).toBe(1);
   expect(failure).toBe(expected);
   expect(failure.code).toBe(37);
+});
+
+test('successful internal fallback records BYOND as the actual test compiler', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  const output = await selectedCompiler('project.dme', { defines: ['DEBUG', 'X=1', 'X=2'] }, async () => ({ invocation: {
+    command: ['dm', 'project.dme'], version: 516, build: 1687,
+  } }), async () => ({ code: 70, combined: 'internal' }));
+  expect(output.kind).toBe('conventional');
+  expect(output.provenance?.requestedBackend).toBe('native');
+  expect(output.provenance?.actualBackend).toBe('byond');
+  expect(output.provenance?.fallback).toBe('internal_error_70');
+  expect(output.provenance?.orderedDefines).toEqual(['DEBUG', 'X=1', 'X=2']);
 });
 
 test('native setup and transport failures preserve errors without fallback', async () => {
