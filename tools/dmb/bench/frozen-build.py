@@ -67,6 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
+    parser.add_argument("--cargo-home", default="E:/dq-cache/dmb-native-v2/cargo-home")
     parser.add_argument("--seconds", type=int, default=300)
     parser.add_argument("--memory-bytes", type=int, default=4_000_000_000,
                         help="Windows owned Job commit limit; not a private-memory ceiling")
@@ -90,6 +91,9 @@ def main():
     cache = Path(os.path.abspath(args.cache))
     allowed = Path("E:/dq-cache").resolve()
     safe(cache, allowed)
+    cargo_home = safe(Path(args.cargo_home), allowed)
+    if cargo_home == allowed:
+        raise ValueError("a dedicated Cargo home subdirectory is required")
     if cache == allowed:
         raise ValueError("a dedicated cache subdirectory is required")
     cache.mkdir(parents=True, exist_ok=True)
@@ -154,7 +158,7 @@ def main():
                     target.unlink()
                     removed += 1
         receipt_path = cache / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
-        env = dict(os.environ, CARGO_HOME="E:/cargo",
+        env = dict(os.environ, CARGO_HOME=str(cargo_home),
                    CARGO_TARGET_DIR="E:/dq-cache/dmb-native-v2/cargo-target",
                    CARGO_PROFILE_RELEASE_LTO="false")
         command = ["E:/cargo/bin/cargo.exe", "build", "--release", "--locked",
@@ -177,6 +181,7 @@ def main():
                        changed_files=changed, removed_files=removed, exit_code=code,
                        build_seconds=time.monotonic() - started, watchdog_seconds=args.seconds,
                        command=command, acceptance_profile=False, lto=False,
+                       cargo_home=str(cargo_home),
                        dmbc_codegen_units=args.dmbc_codegen_units,
                        dmbc_opt_level=args.dmbc_opt_level,
                        dm_tree_opt_level=args.tree_opt_level,
