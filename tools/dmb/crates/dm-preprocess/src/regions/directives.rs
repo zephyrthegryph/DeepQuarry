@@ -432,6 +432,15 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             directive_span,
             directive_line,
             suppressed: false,
+            return_cursor: parent.and_then(|parent_occurrence| {
+                let parent = &self.plan.occurrences[parent_occurrence];
+                let text = self.plan.source_texts.get(parent.path.as_ref())?;
+                (directive_span.start <= directive_span.end
+                    && directive_span.end <= text.len()
+                    && text.is_char_boundary(directive_span.start)
+                    && text.is_char_boundary(directive_span.end))
+                    .then_some(IncludeReturnCursor { parent_occurrence, decoded_offset: directive_span.end })
+            }),
         });
         index
     }

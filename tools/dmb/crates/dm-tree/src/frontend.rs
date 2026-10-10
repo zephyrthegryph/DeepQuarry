@@ -9,6 +9,8 @@ mod compile_only;
 pub use callable_roster::{CallableRoster, CallableRosterStorage};
 #[path = "parserwire.rs"]
 mod parserwire;
+#[path = "frontend_diagnostic_cursor.rs"]
+mod diagnostic_cursor;
 
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};

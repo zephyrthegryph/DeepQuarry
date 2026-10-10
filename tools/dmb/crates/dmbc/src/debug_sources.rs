@@ -54,24 +54,16 @@ pub(crate) fn diagnostic_origin(
             Ok(origin)
         }
         A::LexerCursorAfterOffset(end) => {
+            if let Some((semantic_path, line)) = frontend.diagnostic_cursor_after(end) {
+                return Ok(DebugOrigin {
+                    semantic_path,
+                    line: u32::try_from(line)
+                        .map_err(|_| "diagnostic cursor line exceeds debug operand range")?,
+                });
+            }
             let text = frontend.expanded.text.as_ref();
             if end == 0 || end > text.len() || !text.is_char_boundary(end) {
                 return Err("diagnostic cursor outside current source".into());
-            }
-            if let Some(token) = dm_syntax::next_significant_token(text, end) {
-                let same_issuer = match (
-                    frontend.location(end - 1),
-                    frontend.location(token.span.start),
-                ) {
-                    (Some(before), Some(after)) => {
-                        before.path == after.path
-                            && before.include_occurrence == after.include_occurrence
-                    }
-                    _ => false,
-                };
-                if same_issuer {
-                    return frontend.origin(token.span.start);
-                }
             }
             // Expanded text alone cannot certify an include-return cursor.
             let mut origin = frontend.origin(end - 1)?;

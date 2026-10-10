@@ -46,6 +46,21 @@ pub struct IncludeOccurrence {
     pub directive_span: Span,
     pub directive_line: usize,
     pub suppressed: bool,
+    return_cursor: Option<IncludeReturnCursor>,
+}
+
+/// Current directive planner authority; offsets are decoded physical source bytes.
+#[derive(Clone, Copy, Debug)]
+pub struct IncludeReturnCursor {
+    parent_occurrence: usize,
+    decoded_offset: usize,
+}
+impl IncludeReturnCursor {
+    pub fn parent_occurrence(self) -> usize { self.parent_occurrence }
+    pub fn decoded_offset(self) -> usize { self.decoded_offset }
+}
+impl IncludeOccurrence {
+    pub fn return_cursor(&self) -> Option<IncludeReturnCursor> { self.return_cursor }
 }
 
 /// One logical source line; offsets refer to the original decoded source.
