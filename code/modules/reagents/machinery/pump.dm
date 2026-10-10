@@ -21,6 +21,8 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	default_parts()
+	hose_sockets(list(/datum/hose_connector/output))
 	silicon_hand()
 	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
 		needs(req(PROC_REF(battery_panel_open)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
@@ -36,14 +38,9 @@ CAPABILITIES(/obj/machinery/pump)
 
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 
-	add_hose_connector(/datum/hose_connector/output)
-
 	RefreshParts()
-
-
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades

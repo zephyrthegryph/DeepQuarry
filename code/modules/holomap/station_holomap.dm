@@ -3,7 +3,6 @@
 //
 /obj/machinery/station_map
 	name = "station holomap"
-	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).
 	desc = "A virtual map of the surrounding station."
 	icon = 'icons/obj/machines/stationmap.dmi'
 	icon_state = "station_map"
@@ -36,6 +35,7 @@ TRACKED(/obj/machinery/station_map, bogus)
 TRACKED(/obj/machinery/station_map, offsets_settled_flag)
 
 CAPABILITIES(/obj/machinery/station_map)
+	without("silicon_hand") // silicons can't use it by a plain click
 	ref_one(nameof(watching_mob))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

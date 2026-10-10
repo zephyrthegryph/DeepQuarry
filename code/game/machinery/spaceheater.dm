@@ -51,6 +51,7 @@ MSG_DEF_SELF(space_heater/hatch_closed, "the hatch must be open to insert a powe
 MSG_DEF_SELF(space_heater/cell_present, "there is already a power cell inside")
 
 CAPABILITIES(/obj/machinery/space_heater)
+	default_parts()
 	climb()
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	// Regulates the air while switched on (any state but SHEATER_OFF); a step with no charge left switches it off and stops the work.
@@ -72,7 +73,6 @@ CAPABILITIES(/obj/machinery/space_heater)
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/space_heater/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	update_icon()
 
 /obj/machinery/space_heater/RefreshParts(limited = 0)
@@ -262,6 +262,5 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 #undef DEFAULT_MIN_TEMP
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
-
 
 TRACKED_BRIDGED(/obj/machinery/space_heater, state, CHANGE_MACHINE_SETTINGS)

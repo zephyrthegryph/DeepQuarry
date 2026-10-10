@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -76,5 +78,5 @@ human|/obj/item/disk/species menu: Toggle Digestable (refused: You can't do that
 human|/obj/item/disk/species menu: Ui open
 human|/obj/item/disk/species menu: Upload species files
 human|/obj/item/disk/species click: Click: Upload species files
-keys: build, build_queue, clear_queue, construction.dismantle, del_queue_part, drag_buckle, fabricator.drop_here, fabricator.remove_mat, fabricator.store, limb_disk, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manufacturer, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, species, species_disk, stop_queue, ui_open
+keys: build, build_queue, clear_queue, construction.dismantle, del_queue_part, drag_buckle, fabricator.drop_here, fabricator.remove_mat, fabricator.store, limb_disk, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, manufacturer, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, silicon_hand, species, species_disk, stop_queue, ui_open
 

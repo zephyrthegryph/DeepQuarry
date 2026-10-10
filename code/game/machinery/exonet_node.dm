@@ -30,7 +30,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	op("toggle_PDA_port", ui_act("toggle_PDA_port"), then(PROC_REF(ui_act_toggle_pda_port)))
 	op("toggle_communicator_port", ui_act("toggle_communicator_port"), then(PROC_REF(ui_act_toggle_communicator_port)))
 	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	interface("ExonetNode")
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
@@ -38,7 +38,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 // Parameters: None
 // Description: Adds components to the machine for deconstruction.
 /obj/machinery/exonet_node/Initialize(mapload)
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
+	. = ..()
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -50,7 +50,6 @@ CAPABILITIES(/obj/machinery/exonet_node)
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
 			soundloop.mid_length = 30
 	soundloop.start()
-	. = ..()
 	default_apply_parts()
 	if(mapload)
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \

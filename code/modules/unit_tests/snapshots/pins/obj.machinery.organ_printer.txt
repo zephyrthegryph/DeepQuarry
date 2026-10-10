@@ -6,8 +6,10 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Eject Beaker
 robot|none menu: Printer menu
+robot|none menu: Use
 robot|none click: Click: Printer menu
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Eject Beaker (refused: You can't reach that.)
 ghost|none click: nothing
@@ -86,5 +88,5 @@ human|/obj/item menu: Printer item
 human|/obj/item menu: Printer menu
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Printer item
-keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, printer_eject, printer_item, printer_menu, robot_remote_blocked
+keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, printer_eject, printer_item, printer_menu, robot_remote_blocked, silicon_hand
 

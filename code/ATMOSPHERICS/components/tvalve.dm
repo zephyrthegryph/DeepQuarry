@@ -1,6 +1,4 @@
 /obj/machinery/atmospherics/tvalve
-	// A manual valve: the AI can't turn it (digital valves set SILICON_USE_HAND).
-	silicon_use = NONE
 	icon = 'icons/atmos/tvalve.dmi'
 	icon_state = "map_tvalve0"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -83,6 +81,7 @@
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/tvalve)
+	without("silicon_hand") // a manual valve: silicons can't turn it (digital valves declare their own)
 	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
 	pipe_device_unwrench()
 

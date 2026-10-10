@@ -11,15 +11,13 @@
 CAPABILITIES(/obj/machinery/embedded_controller)
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
-	owns_one(nameof(program), /datum/embedded_program)
+	owns_one(nameof(program), /datum/embedded_program, starts = nameof(program))
 	interface("EmbeddedController")
 	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
 	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/embedded_controller/Initialize(mapload)
-	if(ispath(program))
-		rel_set(src, nameof(program), new program(src))
 	return ..()
 
 

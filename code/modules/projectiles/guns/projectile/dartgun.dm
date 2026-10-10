@@ -7,10 +7,9 @@
 
 	muzzle_type = null
 
-/obj/item/projectile/bullet/chemdart/Initialize(mapload)
-	. = ..()
-	create_reagents(reagent_amount)
-	rel_set(reagents, nameof(reagents.my_atom), src)
+CAPABILITIES(/obj/item/projectile/bullet/chemdart)
+	reagents(nameof(reagent_amount))
+
 
 /obj/item/ammo_casing/chemdart
 	name = "chemical dart"

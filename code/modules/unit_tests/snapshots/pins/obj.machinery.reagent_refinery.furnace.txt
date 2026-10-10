@@ -15,7 +15,8 @@ robot|none menu: Set Sintering Chemical
 robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Flip Furnace Direction (refused: You can't reach that.)
 ghost|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
@@ -167,5 +168,5 @@ human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (r
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Use
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
-keys: climb.climb, climb.climb_menu, drag_buckle, furnace_flip, furnace_set_filter, furnace_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, furnace_flip, furnace_set_filter, furnace_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench
 

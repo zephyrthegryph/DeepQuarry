@@ -138,7 +138,7 @@ TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm)
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm, starts = /datum/looping_sound/alarm/decompression_alarm)
 	// The thermostat: a heat pump on the room's air toward the target while it works, heating resistively and cooling into the station's
 	// heat-rejection loop at no better than one joule per joule (the old rate both ways).
 	when(nameof(regulating_temperature), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(thermostat_watts), nameof(target_temperature), nameof(thermostat_mode), TRUE, 0.5, 1, reads = list("target_temperature", "thermostat_mode")))
@@ -260,7 +260,6 @@ CAPABILITIES(/obj/machinery/alarm)
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	TLV = default_TLV()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
 		alarm_area?.elect_main_air_alarm()
 	else

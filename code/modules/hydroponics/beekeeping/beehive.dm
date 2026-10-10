@@ -238,7 +238,6 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/honey_extractor/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	RefreshParts()
 
 /obj/machinery/honey_extractor/examine(mob/user)
@@ -421,6 +420,7 @@ TRACKED(/obj/item/bee_pack, full)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/machinery/honey_extractor)
+	default_parts()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))

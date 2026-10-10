@@ -1,139 +1,73 @@
 # Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).
 # rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.
-init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	create_reagents(max_water)
-init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
 init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, list("something good" = 8))
-init_reagents	code/modules/food/kitchen/microwave.dm	create_reagents(100)
 init_reagents	code/modules/hydroponics/grown.dm	reagents.add_reagent(rid,max(1,rtotal),data)
 init_reagents	code/modules/hydroponics/grown_inedible.dm	reagents.add_reagent(rid,max(1,rtotal))
 init_reagents	code/modules/integrated_electronics/subtypes/reagents.dm	create_reagents(volume)
 init_reagents	code/modules/mob/living/carbon/brain/brain.dm	create_reagents(1000)
-init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	create_reagents(reagent_amount)
 init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	B.reagents.add_reagent(chem, 60)
-init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_CRYOSLURRY, 150)
-init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
-init_reagents	code/modules/projectiles/precursor/eclipse.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
-init_reagents	code/modules/projectiles/precursor/eclipse.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
 init_reagents	code/modules/projectiles/projectile/blob.dm	create_reagents(splatter_volume)
 init_reagents	code/modules/refinery/core/industrial_reagent_machines.dm	create_reagents(default_max_vol, reagent_type)
 init_reagents	code/modules/refinery/equipment/chemcontainer.dm	reagents.add_reagent(R.id, volume)
 init_reagents	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents.add_reagent(new_chem, 3)
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
 init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
 init_scheduling	code/game/gamemodes/cult/narsie.dm	after(src, 10 SECONDS, /proc/narsie_call_evac)
 init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	after(src, lifespan, PROC_REF(lifespan_over))
 init_scheduling	code/game/objects/effects/anomalies/anomalies_weather.dm	after(src, telegraph, PROC_REF(start_weather))
 init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 3 + metal * 3, PROC_REF(post_spread))
-init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 12 SECONDS, PROC_REF(pre_harden))
-init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 15 SECONDS, PROC_REF(harden))
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
-init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
-init_scheduling	code/modules/shieldgen/directional_shield.dm	after(src, 0, PROC_REF(create_shields))
-init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
-init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/datums/reactive_icon_update.dm	icon_state = "screwdriver"
 init_visuals	code/game/area/areas.dm	icon_state = ""
 init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
 init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
-init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "corgi"
-init_visuals	code/game/objects/structures/electricchair.dm	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,2)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,3)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = bush_icon
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "firstbush_[rand(1, 4)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "sunnybush_[rand(1, 3)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "genericbush_[rand(1, 4)]"
-init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "mush[rand(1,4)]"
-init_visuals	code/game/objects/structures/flora/grass.dm	icon_state = grass_icon
-init_visuals	code/game/objects/structures/flora/moretrees.dm	add_overlay(i)
-init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = choose_icon_state()
-init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = "[base_state][rand(1, 6)]"
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
-init_visuals	code/game/objects/structures/loot_piles.dm	icon_state = DEFAULTPICK(icon_states_to_use, null)
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
 init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_proc")
 init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_but")
 init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
-init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "personal[rand(0,12)]"
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(MA)
 init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(I)
-init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
-init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "alienpod[rand(1, 9)]"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
 init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
 init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
 init_visuals	code/game/turfs/simulated/walls.dm	icon_state = "blank"
 init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
-init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
-init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
-init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_[random_color]"
-init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = initial(new_item.icon_state)
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
 init_visuals	code/modules/clothing/gloves/miscellaneous.dm	icon_state = "[glovecolor]_ranger_gloves"
 init_visuals	code/modules/clothing/shoes/miscellaneous.dm	icon_state = "[bootcolor]_ranger_boots"
-init_visuals	code/modules/clothing/spacesuits/void/void.dm	add_overlay(glass_overlay)
 init_visuals	code/modules/clothing/under/miscellaneous.dm	icon_state = "[unicolor]_ranger_uniform"
 init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "fingerprint1"
-init_visuals	code/modules/entrepreneur/entrepreneur_items.dm	icon_state = pick(colour_choice)
 init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
-init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
 init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
-init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cmo")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cmo")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cent")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cent")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
-init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamp-cap")
-init_visuals	code/modules/power/cells/power_cells.dm	add_overlay("[icon_state]_100")
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
-init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
 init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
-init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)
 init_visuals	code/modules/vehicles/bike.dm	icon_state = "[bike_icon]_off"
-init_visuals	code/modules/vehicles/cargo_train.dm	add_overlay(I)
-init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
-init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
@@ -146,145 +80,58 @@ init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "P
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "changerock"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remains"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remainsrobot"
-init_new_child	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	rel_set(src, nameof(internal), new /datum/gas_mixture)
 init_new_child	code/ATMOSPHERICS/environmental/LINDA_fire.dm	rel_set(src, nameof(our_hot_group), new /datum/hot_group)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/ATMOSPHERICS/pipes/tank.dm	rel_set(src, nameof(air_temporary), new /datum/gas_mixture)
-init_new_child	code/_onclick/hud/picture_in_picture.dm	rel_set(src, nameof(popup_screen), new /atom/movable/screen/map_view_tg)
 init_new_child	code/game/machinery/Beacon.dm	rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 init_new_child	code/game/machinery/CableLayer.dm	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
-init_new_child	code/game/machinery/air_alarm.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
-init_new_child	code/game/machinery/bomb_tester.dm	rel_set(src, nameof(faketank), new /datum/gas_mixture)
-init_new_child	code/game/machinery/camera/camera.dm	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 init_new_child	code/game/machinery/computer/ai_core.dm	rel_set(src, nameof(laws), new using_map.default_law_type)
-init_new_child	code/game/machinery/computer/camera.dm	rel_set(src, nameof(camera), new camera_datum_type(src, network))
-init_new_child	code/game/machinery/computer/station_alert.dm	rel_set(src, nameof(alarm_monitor), new monitor_type(src))
 init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	rel_set(src, nameof(program), new/datum/embedded_program/docking/airlock(src, airlock_program))
-init_new_child	code/game/machinery/embedded_controller/embedded_controller_base.dm	rel_set(src, nameof(program), new program(src))
-init_new_child	code/game/machinery/exonet_node.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
-init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
-init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
-init_new_child	code/game/machinery/fire_alarm.dm	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new frame_type.circuit(src))
-init_new_child	code/game/machinery/gear_dispenser.dm	rel_set(src, nameof(one_setting), new one_setting)
-init_new_child	code/game/machinery/pda_multicaster.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/game/machinery/requests_console.dm	rel_set(src, nameof(announcement), new /datum/announcement)
-init_new_child	code/game/machinery/virtual_reality/vr_console.dm	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
 init_new_child	code/game/mecha/equipment/tools/cable_layer.dm	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
-init_new_child	code/game/mecha/equipment/tools/powertool.dm	rel_set(src, nameof(my_tool), new tooltype(src))
-init_new_child	code/game/mecha/equipment/tools/shield.dm	rel_set(src, nameof(my_shield), new my_shield_type)
-init_new_child	code/game/mecha/working/ripley.dm	rel_set(src, nameof(orescanner), new /obj/item/mining_scanner)
 init_new_child	code/game/objects/effects/anomalies/_anomalies.dm	rel_set(src, nameof(anomaly_core), new anomaly_core(src))
 init_new_child	code/game/objects/effects/anomalies/anomalies_weather.dm	rel_set(src, nameof(selected_weather), new selected_weather)
 init_new_child	code/game/objects/effects/decals/Cleanable/humans.dm	rel_add(src, nameof(viruses), new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
-init_new_child	code/game/objects/effects/map_effects/effect_emitter.dm	rel_set(src, nameof(effect_system), new effect_system_type())
-init_new_child	code/game/objects/effects/misc.dm	rel_set(src, nameof(light_spot), new /obj/effect/abstract/light_spot)
 init_new_child	code/game/objects/items/devices/flipper.dm	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
 init_new_child	code/game/objects/items/devices/uplink.dm	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 init_new_child	code/game/objects/items/devices/uplink.dm	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 init_new_child	code/game/objects/items/devices/uplink.dm	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 init_new_child	code/game/objects/items/weapons/implants/implantuplink.dm	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 init_new_child	code/game/objects/items/weapons/weldbackpack.dm	rel_set(src, nameof(nozzle), new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
-init_new_child	code/game/objects/mob_spawner.dm	rel_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
 init_new_child	code/game/objects/structures/crates_lockers/vehiclecage.dm	rel_set(src, nameof(my_vehicle), new my_vehicle_type(src))
-init_new_child	code/game/objects/structures/droppod.dm	rel_set(src, nameof(air), new /datum/gas_mixture/pod_air)
-init_new_child	code/game/objects/structures/extinguisher.dm	rel_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
-init_new_child	code/game/objects/structures/mirror.dm	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 init_new_child	code/game/objects/structures/pillows.dm	rel_set(src, nameof(front), new pillowpilefront(T))
-init_new_child	code/game/objects/structures/props/transmitter.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/sequence/morse(list(src), FALSE))
 init_new_child	code/game/objects/structures/watercloset.dm	rel_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
-init_new_child	code/game/objects/structures/watercloset.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 init_new_child	code/game/objects/structures/watercloset.dm	rel_set(src, nameof(muffinmonster), new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
-init_new_child	code/game/turfs/simulated/lava.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
-init_new_child	code/modules/anomalies/anomaly.dm	rel_set(src, nameof(effect_remover), new /datum/effect_remover(src, \
 init_new_child	code/modules/artifice/telecube.dm	rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
-init_new_child	code/modules/blob2/overmind/overmind.dm	rel_set(src, nameof(blob_type), new desired_blob_type())
-init_new_child	code/modules/blob2/overmind/overmind.dm	rel_set(src, nameof(blob_type), new BT())
 init_new_child	code/modules/body/body.dm	rel_set(src, nameof(body), new body_type(src))
 init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/device.dm	rel_set(src, nameof(device), new device_type(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/device.dm	rel_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
-init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/device.dm	rel_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
-init_new_child	code/modules/combat_ai/integration/mob_living.dm	rel_set(src, nameof(say_list), new say_list_type(src))
-init_new_child	code/modules/entopics/entopics.dm	rel_set(src, nameof(ent_debug), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
 init_new_child	code/modules/food/kitchen/cooking_machines/_cooker.dm	rel_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 init_new_child	code/modules/food/kitchen/cooking_machines/_mixer.dm	rel_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
-init_new_child	code/modules/food/kitchen/cooking_machines/_mixer.dm	rel_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/cooking_machines/candy.dm	rel_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/cooking_machines/cereal.dm	rel_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/cooking_machines/fryer.dm	rel_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
 init_new_child	code/modules/food/kitchen/cooking_machines/fryer.dm	rel_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
-init_new_child	code/modules/food/kitchen/cooking_machines/grill.dm	rel_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/cooking_machines/oven.dm	rel_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/microwave.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
-init_new_child	code/modules/food/kitchen/smartfridge/smartfridge.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
-init_new_child	code/modules/holomap/mapper.dm	rel_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 init_new_child	code/modules/holomap/mapper.dm	rel_set(src, nameof(cell), new cell_type(src))
 init_new_child	code/modules/hydroponics/trays/tray.dm	rel_set(src, nameof(temp_chem_holder), new /obj())
 init_new_child	code/modules/identification/item_procs.dm	rel_set(src, nameof(identity), new identity_type(src))
-init_new_child	code/modules/instruments/items.dm	rel_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
-init_new_child	code/modules/instruments/stationary.dm	rel_set(src, nameof(song), new /datum/song/stationary(src, allowed_instrument_ids))
-init_new_child	code/modules/integrated_electronics/subtypes/camera.dm	rel_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
-init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
-init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
-init_new_child	code/modules/maint_recycler/code/maint_vendor.dm	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 init_new_child	code/modules/mining/drilling/drill.dm	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
-init_new_child	code/modules/mining/machine_silo.dm	rel_set(src, nameof(materials), new /datum/material_container( \
-init_new_child	code/modules/mob/living/silicon/ai/multicam.dm	rel_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
-init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
-init_new_child	code/modules/power/generator.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
-init_new_child	code/modules/power/turbine.dm	rel_set(src, nameof(gas_contained), new /datum/gas_mixture())
 init_new_child	code/modules/projectiles/ammunition.dm	rel_add(src, nameof(stored_ammo), new ammo_type(src))
-init_new_child	code/modules/projectiles/gun.dm	rel_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new cell_type(src))
-init_new_child	code/modules/projectiles/guns/magnetic/bore.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
-init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	rel_set(src, nameof(capacitor), new capacitor(src))
-init_new_child	code/modules/projectiles/guns/modular_guns.dm	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
-init_new_child	code/modules/projectiles/guns/modular_guns.dm	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
-init_new_child	code/modules/projectiles/guns/modular_guns.dm	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 init_new_child	code/modules/projectiles/guns/projectile.dm	rel_add(src, nameof(loaded), new ammo_type(src))
 init_new_child	code/modules/projectiles/guns/projectile.dm	rel_set(src, nameof(ammo_magazine), new magazine_type(src))
-init_new_child	code/modules/projectiles/guns/projectile/revolver.dm	rel_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
-init_new_child	code/modules/projectiles/projectile/arc.dm	rel_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
-init_new_child	code/modules/refinery/core/industrial_reagent_reactor.dm	rel_set(src, nameof(internal_tank), new /obj/machinery/portable_atmospherics/canister/empty())
-init_new_child	code/modules/research/message_server.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 init_new_child	code/modules/research/tg/machinery/destructive_analyzer.dm	rel_set(src, nameof(rmat), new /datum/remote_materials( \
 init_new_child	code/modules/resleeving/machines.dm	rel_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
-init_new_child	code/modules/shieldgen/shield_gen.dm	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 init_new_child	code/modules/vehicles/quad.dm	rel_set(src, nameof(cell), new /obj/item/cell/high(src))
-init_new_child	code/modules/vehicles/quad.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
-init_new_child	code/modules/vehicles/vehicle.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 init_new_child	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	rel_set(src, nameof(BB), new our_gun.projectile_type(src)) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
 init_new_child	code/modules/xenoarcheaology/finds/find_spawning.dm	rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
-init_new_child	code/modules/xenobio/items/weapons.dm	rel_set(src, nameof(bcell), new/obj/item/cell/device(src))
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
 destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))
 destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))
 destroy_drop	code/game/objects/structures/crates_lockers/closets/statue.dm	dump_contents()
 destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
 destroy_drop	code/modules/vore/eating/belly_obj.dm	for(var/mob/observer/G in contents_of(src))
-destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [src] collapses!"))
 destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [thing] tumbles out!"))
 destroy_effects	code/game/objects/structures/gargoyle.dm	visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 destroy_effects	code/modules/artifice/telecube.dm	mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
-destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	src.visible_message(span_bolddanger("[src] shatters!"))
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard/phoron(src.loc)
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard(src.loc)
-destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	visible_message(span_cult("\The [src] screeches as it's destroyed"))

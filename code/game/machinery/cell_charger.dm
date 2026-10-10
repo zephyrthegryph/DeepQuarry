@@ -34,6 +34,7 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 TRACKED(/obj/machinery/cell_charger, chargelevel)
 
 CAPABILITIES(/obj/machinery/cell_charger)
+	default_parts()
 	machine_basics(repair = NONE)
 	anchor(empty = nameof(charging))
 	part_replacement()
@@ -51,7 +52,6 @@ CAPABILITIES(/obj/machinery/cell_charger)
 
 /obj/machinery/cell_charger/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	settle_power()
 
 /// Its charge rate follows its capacitors (the machine core calls this when parts change).

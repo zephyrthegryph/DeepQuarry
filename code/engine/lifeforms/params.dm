@@ -68,6 +68,9 @@
 /// The placeholder OWNER names (a type path, so it travels in a list): replaced by the creator wherever a make() or starts_args value holds it.
 /datum/lifeform_owner
 
+/// The placeholder NO_LOC names: first in starts_args, the occupant is constructed without its holder as the first argument (starts_construct()).
+/datum/lifeform_no_loc
+
 /// `value` with OWNER replaced by `owner` (a list is copied, one level deep).
 /proc/owner_resolve(value, datum/owner)
 	if(value == OWNER)

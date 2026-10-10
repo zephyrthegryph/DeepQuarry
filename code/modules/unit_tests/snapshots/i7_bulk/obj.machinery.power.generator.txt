@@ -8,8 +8,10 @@ robot|none menu: Rotate Clockwise
 robot|none menu: Rotate Counter Clockwise
 robot|none menu: Turn Around
 robot|none menu: Ui open (refused: It isn't bolted down and working.)
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open (refused: It isn't bolted down and working.)
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Rotate Clockwise
 ghost|none menu: Rotate Counter Clockwise
@@ -89,5 +91,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Turn Around
 human|/obj/item menu: Ui open (refused: It isn't bolted down and working.)
 human|/obj/item click: Click: Ui open
-keys: anchor, cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, ui_open
+keys: anchor, cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, ui_open
 

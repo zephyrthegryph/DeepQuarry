@@ -47,10 +47,10 @@ CAPABILITIES(/obj/machinery/firealarm)
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
 	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
 	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
-	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
-	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
-	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm)
-	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
+	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm, starts = /datum/looping_sound/alarm/sm_causality_alarm)
+	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm, starts = /datum/looping_sound/alarm/sm_critical_alarm)
+	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm, starts = /datum/looping_sound/alarm/engineering_alarm)
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm, starts = /datum/looping_sound/alarm/fire_alarm)
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
@@ -82,10 +82,6 @@ CAPABILITIES(/obj/machinery/firealarm)
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
-	rel_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
-	rel_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
-	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
 // a sounding alarm is reset for its area.
 /obj/machinery/firealarm/on_destroy(force)

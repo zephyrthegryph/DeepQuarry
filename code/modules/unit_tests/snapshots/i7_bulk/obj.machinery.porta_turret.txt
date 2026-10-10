@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -64,5 +66,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: anchor.toggle, authaccess, authall, autharrest, authdown, authnorecord, authsynth, authweapon, authxeno, drag_buckle, emag.subvert, emag.use, lethal, lock.toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, robot_remote_blocked, salvage, strike, ui_open
+keys: anchor.toggle, authaccess, authall, autharrest, authdown, authnorecord, authsynth, authweapon, authxeno, drag_buckle, emag.subvert, emag.use, lethal, lock.toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, robot_remote_blocked, salvage, silicon_hand, strike, ui_open
 

@@ -73,9 +73,10 @@
 // Each is one remote() op one tier below the type's own ops, so a type's own remote controls still answer first.
 
 /// silicon_hand(robots =, adjacent =): a silicon's click is the hand's Use (attack_hand) over its link. `robots` keeps it to cyborgs (the old
-/// ROBOT_USE_HAND), `adjacent` to a cyborg next to it (ROBOT_USE_HAND_ADJACENT); with neither it is every silicon's (SILICON_USE_HAND).
-/proc/silicon_hand(robots = FALSE, adjacent = FALSE)
-	var/list/parts = list(remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"))
+/// ROBOT_USE_HAND), `adjacent` to a cyborg next to it (ROBOT_USE_HAND_ADJACENT); with neither it is every silicon's (SILICON_USE_HAND). `tier` is its
+/// priority: a base type's (every machine's) sits below the tier of the subtypes' own silicon ops. A type that takes it away says without("silicon_hand").
+/proc/silicon_hand(robots = FALSE, adjacent = FALSE, tier = OP_PRIORITY_DEFAULT - 1)
+	var/list/parts = list(remote(), priority(tier), label("Use"))
 	if(robots || adjacent)
 		parts += when(req_actor_kind(/mob/living/silicon/robot))
 	if(adjacent)

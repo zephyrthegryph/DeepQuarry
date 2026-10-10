@@ -58,14 +58,14 @@
 	return FALSE
 
 /**
- * Reach for a physical route: adjacent; or a silicon the target lets use it remotely (silicon_use).
+ * Reach for a physical route: adjacent; or a silicon the target lets use it remotely (its silicon_hand() op).
  */
 /proc/dq_interaction_reach(mob/actor, atom/target, obj/item/held)
 	if(!actor || !target)
 		return FALSE
 	if(actor.Adjacent(target))
 		return TRUE
-	if(issilicon(actor) && (target.silicon_use & (SILICON_USE_HAND | ROBOT_USE_HAND)))
+	if(issilicon(actor) && op_plan_for(target, "silicon_hand"))
 		return TRUE
 	return FALSE
 

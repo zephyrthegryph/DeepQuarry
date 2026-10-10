@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -60,5 +62,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Ui open
-keys: attackby, cancel, drag_buckle, ejectBoard, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, queue, queueBoard, remove_mat, robot_remote_blocked, ui_open
+keys: attackby, cancel, drag_buckle, ejectBoard, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, queue, queueBoard, remove_mat, robot_remote_blocked, silicon_hand, ui_open
 

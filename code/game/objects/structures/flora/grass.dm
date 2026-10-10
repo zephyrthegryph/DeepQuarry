@@ -12,15 +12,12 @@ CAPABILITIES(/obj/structure/flora/grass)
 /// The look it is planted with (its constructor param).
 /obj/structure/flora/grass/var/grass_icon
 
-// ALLOW(init/INSTANCE_STATE): flora picks one of its type's looks, or the one it was planted with
-/obj/structure/flora/grass/Initialize(mapload)
+/// Rolled before init: one of the type's looks, else the one it was planted with (its param).
+/obj/structure/flora/grass/roll_icon_state(datum/roller/R)
 	var/list/icon_choice = TYPE_TABLE_GET(src, grass_icon_choice)
 	if(icon_choice)
-		grass_icon = "[icon_choice[1]][rand(1, 3)][icon_choice[2]]"
-		. = ..()
-	else
-		. = ..()
-	icon_state = grass_icon
+		grass_icon = "[icon_choice[1]][R.number(1, 3)][icon_choice[2]]"
+	return grass_icon
 
 /obj/structure/flora/grass/brown
 	icon_state = "snowgrass1bb"

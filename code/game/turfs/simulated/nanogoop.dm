@@ -66,7 +66,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	return !!checker.nif //Proteans have NIFS
 
 /// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
-/// attack_hand (ROBOT_USE_HAND), so they fall through to the hand op.
+/// attack_hand (silicon_hand(robots = TRUE)), so they fall through to the hand op.
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_ok(datum/act/op/A)
 	return read_once(ai_interface_open(A.actor)) // who holds the goop and who stands near it is asked when the click is made
 

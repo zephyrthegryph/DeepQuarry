@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -62,5 +64,5 @@ human|/obj/item/storage/pill_bottle menu: Switch gathering method (refused: You 
 human|/obj/item/storage/pill_bottle menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/pill_bottle menu: Ui open
 human|/obj/item/storage/pill_bottle click: Click: Load pill bottle
-keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, print, remove, removecustom, robot_remote_blocked, toggle, ui_open
+keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, print, remove, removecustom, robot_remote_blocked, silicon_hand, toggle, ui_open
 

@@ -172,6 +172,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 	return 1
 
 CAPABILITIES(/turf)
+	silicon_hand(robots = TRUE, tier = OP_PRIORITY_DEFAULT - 100) // a cyborg's empty-gripper Use of a turf is the hand's
 	ref_many(nameof(opacity_sources))
 	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
 	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 10), label("Touch"), then(PROC_REF(turf_touch_op)))
@@ -233,7 +234,6 @@ CAPABILITIES(/turf)
 	return FALSE
 
 /turf
-	silicon_use = ROBOT_USE_HAND
 
 // Hits a mob on the tile.
 /turf/proc/attack_tile(obj/item/W, mob/living/user)

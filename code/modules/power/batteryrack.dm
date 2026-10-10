@@ -51,6 +51,7 @@ TRACKED(/obj/machinery/power/smes/batteryrack, ui_tick)
 TRACKED(/obj/machinery/power/smes/batteryrack, shown_overlays)
 
 CAPABILITIES(/obj/machinery/power/smes/batteryrack)
+	default_parts()
 	without("tryinput")
 	without("tryoutput")
 	without("input")
@@ -70,7 +71,6 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 
 /obj/machinery/power/smes/batteryrack/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	sync_look()
 
 /obj/machinery/power/smes/batteryrack/RefreshParts()
@@ -81,7 +81,6 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	set_max_cells(min(PSU_MAXCELLS, maxcells))
 	set_input_level(max_transfer_rate)
 	set_output_level(max_transfer_rate)
-
 
 /// A rack keeps its charge in cells: it works without an input terminal.
 /obj/machinery/power/smes/batteryrack/needs_terminals()

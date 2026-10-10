@@ -11,8 +11,6 @@
 
 /obj/item/rig_module/device/Initialize(mapload)
 	. = ..()
-	if(device_type)
-		rel_set(src, nameof(device), new device_type(src))
 
 /obj/item/rig_module/device/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
@@ -154,17 +152,14 @@
 	interface_desc = "Leave your mark."
 	engage_string = "Toggle stamp type"
 	usable = 1
+	device_type = /obj/item/stamp/internalaffairs
 	/// The stamp not currently mounted as `device`; the two swap on toggle.
 	var/obj/item/stamp/spare_stamp
 
 /obj/item/rig_module/device/stamp/ownership()
 	. = ..()
-	. += owns(nameof(spare_stamp), policy = OWN_CONTAINED)
+	. += owns(nameof(spare_stamp), policy = OWN_CONTAINED, starts = /obj/item/stamp/denied)
 
-/obj/item/rig_module/device/stamp/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
-	rel_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
 
 /obj/item/rig_module/device/stamp/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
@@ -185,4 +180,4 @@
 
 /obj/item/rig_module/device/ownership()
 	. = ..()
-	. += owns(nameof(device), policy = OWN_CONTAINED)
+	. += owns(nameof(device), policy = OWN_CONTAINED, starts = nameof(device_type))

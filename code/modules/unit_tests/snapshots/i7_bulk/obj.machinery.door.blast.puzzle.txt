@@ -2,8 +2,10 @@ human|none menu: Open
 human|none click: Click: Open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Open
+robot|none menu: Use
 robot|none click: Click: Open
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open
@@ -80,5 +82,5 @@ human|/obj/item/stack/material/plasteel menu: Strike
 human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plasteel menu: Use
 human|/obj/item/stack/material/plasteel click: Click: Repair
-keys: drag_buckle, emag.subvert, emag.use, force_generic, force_xeno, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mend, puzzle_strike, repair, robot_remote_blocked, strike, touch, use
+keys: drag_buckle, emag.subvert, emag.use, force_generic, force_xeno, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mend, puzzle_strike, repair, robot_remote_blocked, silicon_hand, strike, touch, use
 

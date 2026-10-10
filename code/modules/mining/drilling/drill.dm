@@ -96,6 +96,7 @@ TRACKED(/obj/machinery/mining/drill, need_player_check)
 TRACKED(/obj/machinery/mining/drill, supported)
 
 CAPABILITIES(/obj/machinery/mining/drill)
+	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
@@ -128,9 +129,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
-
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
@@ -158,7 +157,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 	if(need_update_field)
 		get_resource_field()
-
 
 	if(!active)
 		return
@@ -410,7 +408,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 				set_supported(1)
 		for(var/obj/machinery/mining/brace/check in braces)
 			total_brace_tier += check.brace_tier
-
 
 /obj/machinery/mining/drill/proc/system_error(error)
 

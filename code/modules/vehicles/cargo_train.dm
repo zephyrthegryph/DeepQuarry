@@ -44,8 +44,6 @@
 
 /obj/vehicle/train/engine/Initialize(mapload)
 	. = ..()
-	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
-	add_overlay(I)
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/engine/Move(atom/newloc, direct = 0, movetime)
@@ -174,7 +172,6 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	else
 		attack_log += text("\[[time_stamp()]\] [span_red("ran over [M.name] ([M.ckey])")]")
 
-
 //-------------------------------------------
 // Interaction procs
 //-------------------------------------------
@@ -199,7 +196,6 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	if(Adjacent(user))
 		. += "The power light is [on ? "on" : "off"].\nThere are[key ? "" : " no"] keys in the ignition."
 		. += "The charge meter reads [cell? round(cell.percent(), 0.01) : 0]%"
-
 
 /obj/vehicle/train/engine/click_ctrl(mob/user)
 	if(Adjacent(user))
@@ -403,8 +399,8 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	flags = OPENCONTAINER
 	paint_color = "#efdd16"
 
-
 CAPABILITIES(/obj/vehicle/train/trolley_tank)
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	reagents(CARGOTANKER_VOLUME)
 	climb()
 	// the tank's own uses answer before the vehicle's generic item use (a hit), one tier above it
@@ -419,8 +415,6 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/Initialize(mapload)
 	. = ..()
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
 	make_sellable(/datum/sellable/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)

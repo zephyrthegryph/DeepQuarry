@@ -90,7 +90,6 @@ Class Procs:
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	name = "machinery"
-	silicon_use = SILICON_USE_HAND
 	icon = 'icons/obj/stationobjs.dmi'
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = UNDER_JUNK_LAYER
@@ -148,6 +147,7 @@ SETTER(/obj/machinery, use_power)
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	silicon_hand(tier = OP_PRIORITY_DEFAULT - 100) // the AI's Use of a machine is the hand's
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
 	extend("melee_hit", when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))))
 	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
@@ -382,7 +382,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-/// Machines take the AI's Use as a hand's (silicon_use), but a cyborg looking
+/// Machines take the AI's Use as a hand's (silicon_hand()), but a cyborg looking
 /// through a camera can't remotely control them (old /obj/machinery/attack_ai). Offered
 /// only while that holds, so it doesn't compete with a machine's own silicon interactions.
 /// machinery_maintenance.dm declares the machine's other interactions.

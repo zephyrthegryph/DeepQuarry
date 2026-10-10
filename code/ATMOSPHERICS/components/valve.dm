@@ -1,6 +1,4 @@
 /obj/machinery/atmospherics/valve
-	// A manual valve: the AI can't turn it (digital and shutoff valves set SILICON_USE_HAND).
-	silicon_use = NONE
 	icon = 'icons/atmos/valve.dmi'
 	icon_state = "map_valve0"
 	construction_type = /obj/item/pipe/binary
@@ -87,6 +85,7 @@ TRACKED(/obj/machinery/atmospherics/valve, open)
 MSG_DEF_SELF(valve/unpowered, "It has no power.")
 
 CAPABILITIES(/obj/machinery/atmospherics/valve)
+	without("silicon_hand") // a manual valve: silicons can't turn it (digital and shutoff valves declare their own)
 	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
 	pipe_device_unwrench()
 

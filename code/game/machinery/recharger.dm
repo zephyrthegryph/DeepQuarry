@@ -86,6 +86,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 TRACKED(/obj/machinery/recharger, charge_phase)
 
 CAPABILITIES(/obj/machinery/recharger)
+	default_parts()
 	machine_basics(repair = NONE)
 	anchor(empty = nameof(charging))
 	part_replacement()
@@ -126,7 +127,6 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 
 /obj/machinery/recharger/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	settle_power()
 
 /obj/machinery/recharger/RefreshParts()

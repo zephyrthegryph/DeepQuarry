@@ -535,11 +535,12 @@ CAPABILITIES(/obj/item/entrepreneur/spirit_board)
 	icon_state = "crystal_pink"
 	w_class = ITEMSIZE_TINY
 
-// ALLOW(init/INSTANCE_STATE): rolls this crystal's colour
-/obj/item/entrepreneur/crystal/Initialize(mapload)
-	. = ..()
-	var/list/colour_choice = list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple")
-	icon_state = pick(colour_choice)
+CAPABILITIES(/obj/item/entrepreneur/crystal)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/entrepreneur/crystal/proc/roll_look(datum/roller/R)
+	return R.choose(list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple"))
 
 /obj/item/reagent_containers/glass/bottle/essential_oil
 	name = "essential oils"

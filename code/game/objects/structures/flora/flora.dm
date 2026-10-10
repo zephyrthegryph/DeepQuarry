@@ -25,12 +25,14 @@
 
 TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the type's numbered looks, when it has several.
+/obj/structure/flora/proc/roll_icon_state(datum/roller/R)
+	var/variants = TYPE_TABLE_GET(src, initial_icon_variant_count)
+	if(variants)
+		return "[initial(icon_state)][R.number(1, variants)]"
+	return icon_state
+
 /obj/structure/flora/Initialize(mapload)
-	switch(TYPE_TABLE_GET(src, initial_icon_variant_count))
-		if(2)
-			icon_state = "[initial(icon_state)][rand(1,2)]"
-		if(3)
-			icon_state = "[initial(icon_state)][rand(1,3)]"
 	. = ..()
 
 	if(randomize_size)
@@ -57,6 +59,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 		. += span_notice("\The [src] can be removed with \a [initial(tool.name)].")
 
 CAPABILITIES(/obj/structure/flora)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
 
@@ -120,11 +123,8 @@ MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
 	max_harvests = 1
 
-CAPABILITIES(/obj/structure/flora/bush)
-	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
-
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/bush/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/bush/roll_icon_state(datum/roller/R)
 	return "snowbush[R.number(1, 6)]"
 
 /obj/structure/flora/pottedplant
@@ -180,18 +180,12 @@ CAPABILITIES(/obj/structure/flora/ausbushes)
 /// The look it is planted with (its constructor param).
 /obj/structure/flora/ausbushes/var/bush_icon
 
-// ALLOW(init/INSTANCE_STATE): flora picks one of its type's looks, or the one it was planted with
-/obj/structure/flora/ausbushes/Initialize(mapload)
+/// Rolled before init: one of the type's looks, else the one it was planted with (its param), else a first bush.
+/obj/structure/flora/ausbushes/roll_icon_state(datum/roller/R)
 	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
 	if(icon_choice)
-		bush_icon = "[icon_choice[1]]_[rand(1, icon_choice[2])]"
-		. = ..()
-	else
-		. = ..()
-	if(bush_icon)
-		icon_state = bush_icon
-		return
-	icon_state = "firstbush_[rand(1, 4)]"
+		bush_icon = "[icon_choice[1]]_[R.number(1, icon_choice[2])]"
+	return bush_icon || "firstbush_[R.number(1, 4)]"
 
 /obj/structure/flora/ausbushes/reedbush
 	icon_state = "reedbush_1"
@@ -226,16 +220,14 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fernybush, ausbush_icon_choice, list("
 /obj/structure/flora/ausbushes/sunnybush
 	icon_state = "sunnybush_1"
 
-/obj/structure/flora/ausbushes/sunnybush/Initialize(mapload)
-	. = ..(mapload, )
-	icon_state = "sunnybush_[rand(1, 3)]"
+/obj/structure/flora/ausbushes/sunnybush/roll_icon_state(datum/roller/R)
+	return "sunnybush_[R.number(1, 3)]"
 
 /obj/structure/flora/ausbushes/genericbush
 	icon_state = "genericbush_1"
 
-/obj/structure/flora/ausbushes/genericbush/Initialize(mapload)
-	. = ..(mapload, )
-	icon_state = "genericbush_[rand(1, 4)]"
+/obj/structure/flora/ausbushes/genericbush/roll_icon_state(datum/roller/R)
+	return "genericbush_[R.number(1, 4)]"
 
 /obj/structure/flora/ausbushes/pointybush
 	icon_state = "pointybush_1"
@@ -489,9 +481,11 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 	max_harvests = 2
 	min_harvests = 0
 
+/obj/structure/flora/mushroom/roll_icon_state(datum/roller/R)
+	return "mush[R.number(1, 4)]"
+
 /obj/structure/flora/mushroom/Initialize(mapload)
 	. = ..()
-	icon_state = "mush[rand(1,4)]"
 	if(prob(50))
 		adjust_scale(-1, 1)
 	pixel_x = rand(-4, 4)

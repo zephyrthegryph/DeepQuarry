@@ -18,7 +18,7 @@
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	emp_disable(300 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
@@ -34,7 +34,6 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 		"cargo" = new /obj/item/pda/multicaster/cargo(src),
 		"civilian" = new /obj/item/pda/multicaster/civilian(src))
 
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -47,11 +46,8 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 			soundloop.mid_length = 30
 	update_power()
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/pda_multicaster/prebuilt/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
+CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
+	default_parts()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/pda_multicaster/draw(datum/look/look)

@@ -20,7 +20,6 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 /// Grinds what sits on it every frame while operating and operable.
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()
-	add_hose_connector(/datum/hose_connector/output)
 	for(var/dir in GLOB.cardinal)
 		rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
 		if(src.crusher())
@@ -64,6 +63,7 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/v_garbosystem)
+	hose_sockets(list(/datum/hose_connector/output))
 	reagents(CARGOTANKER_VOLUME * 2)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)

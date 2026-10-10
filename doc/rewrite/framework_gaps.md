@@ -653,3 +653,24 @@ compartment's `passes()` ask (no stages, no pending waits); the empty `construct
 | SF4 (DONE) | `world_watch_when/changed`, `world_diagnostics`, rule hold timers | See IX-R2 (d). |
 | SF5 (DONE for everything outside machinery and power) | `ref_one` / `ref_many` (`by =`, new `target_key =` when the holder and the target keep the id in differently named vars: a pad's `map_pad_link_id` names its partner's `map_pad_id`), `links()`, `owns_one` | 43 `relations()` procs converted in 36 files (ten pairs became one `links()` line each, the `rel_key()` target lines went with the keyed `by =`). `relations()` is `banned_outside` for `code/engine/`, `code/game/machinery/`, `code/modules/power/`, `code/modules/unit_tests/` and `code/modules/shieldgen/shield_gen.dm` (its `rel_key(id)` is declared by the shield button in `door_control.dm`, which moves with machinery); the ban becomes hard when those are converted. |
 | SF6 (DONE) | Unit-test helpers `dq_test_ticks`, `dq_test_wait_for`, `dq_test_has_arrived`, `dq_test_all_woken`, `dq_wake_test`, `dq_wakes_pending`, `dq_settle`, `dq_wait_for_wake`, `dq_test_global_hit`, `dq_cf_global_hit` | Renamed from their `om_` names, the last `om_*(` procs in code; each old name is hard-banned. What still says `om_` are comments naming deleted procs and the `/datum/om/*` carriers (doc/rewrite/proposals/om_carriers.md). |
+
+## Init forms added by the ratchet-fw lane (2026-10-10)
+
+| Form | Replaces | Where |
+|---|---|---|
+| `keeps_if(PROC_REF(cond), warn =)` | an `Initialize()` that only returned `INITIALIZE_HINT_QDEL` on a failed check (stairs, moblight, hidden uplink, random spawns) | `code/engine/lifeforms/keeps_if.dm` |
+| `hose_sockets(list(types))` | `add_hose_connector()` calls after `..()` (26 sites) | `code/modules/reagents/hose/connector.dm` |
+| `reagents(data =, contents_from =, last =)`, computed amounts | `add_reagent()` in `Initialize()` with data, var-named ids, rolled recipes | `code/library/reagents/reagents.dm` |
+| `SYSTEM_ACCESSOR(..., type)` | typed reads of a system's object var (`ticker_mode()?.name`) | `tools/analyze/src/gens/system_accessors.rs` |
+
+`default_parts()` (existing) now also takes the `default_apply_parts()` calls that sat right after `..()`; the freezer and heater keep theirs, because
+their `RefreshParts()` reads state the pipe init makes after the capabilities' init.
+
+## N. Decl burn-down forms (rewrite/rf-decl, 2026-10-10)
+
+| ID | Form | Change |
+|---|---|---|
+| DC1 (DONE) | `starts_args = NO_LOC` / `list(NO_LOC, args...)` (`code/__defines/engine/lifeforms.dm`, `starts_construct()` in `code/engine/declare/lifecycle.dm`) | A starting occupant was always made as `new type(holder, args...)`. A datum whose first constructor argument is not a location (a gas mixture's volume, a screen object made in nullspace, a tgui module's host plus null) could not be declared. `NO_LOC` first in `starts_args` drops the holder: `owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)` is `new /datum/gas_mixture`. |
+| DC2 (DONE) | `gas_store(..., pressure =)` (`code/datums/capabilities/library/gas_store.dm`) | The gases are fractions of `pressure` (kPa, or `nameof()` a holder var), so a type whose subtypes fill to another `start_pressure` (the pressure tanks and their `/full` variants) declares one line. |
+| DC3 (DONE) | `/datum/looping_sound/New()` takes one atom as well as a list | A sound loop is a starting occupant (`owns_one(nameof(soundloop), /datum/looping_sound/x, starts = /datum/looping_sound/x)`): `new type(holder)` passes the holder, which the loop now wraps into its output list. |
+| DC4 (open) | A per-instance random roll on a field a `starts =` reads (a blood decal's random virus, a mouse's diseases, `rand()` in constructor args) | `starts = PROC_REF(make_x)` covers it (the proc builds the instance), but the roll then draws from the world RNG; a `starts_args` form reading a rolled var is the clean answer. |

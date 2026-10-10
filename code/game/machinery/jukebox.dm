@@ -29,6 +29,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
@@ -64,7 +65,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 // ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
@@ -336,7 +336,6 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 // Ghostly jukebox for adminbuse
 /obj/machinery/media/jukebox/ghost
-	silicon_use = NONE // silicons can't use it
 	name = "ghost jukebox"
 	desc = "A jukebox from the nether-realms! Spooky."
 
@@ -355,6 +354,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	var/list/custom_tracks
 
 CAPABILITIES(/obj/machinery/media/jukebox/ghost)
+	without("silicon_hand") // silicons can't use it by a plain click
 	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Track URL", "question" = "REQUIRED: Provide URL for track", "timeout" = 0), step = "url"), asks(/datum/prompt/text, fields = list("title" = "Track Title", "question" = "REQUIRED: Provide title for track", "timeout" = 0), step = "title", when = PROC_REF(track_url_entered)), asks(/datum/prompt/number, fields = list("title" = "Track Duration", "question" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "timeout" = 0), step = "duration", when = PROC_REF(track_title_entered)), asks(/datum/prompt/text, fields = list("title" = "Track Artist", "question" = "Optional: Provide artist for track", "timeout" = 0), step = "artist", when = PROC_REF(track_duration_entered)), then(PROC_REF(vv_topic_add_track)), on_interrupt(PROC_REF(vv_track_interrupted)))
 	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), needs(req_rights(R_FUN|R_ADMIN)), asks(/datum/prompt/text, fields = list("title" = "Remove Track", "question" = "Input track title or URL to remove (must be exact)", "timeout" = 0)), then(PROC_REF(vv_topic_remove_track)))
 	op("ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(ghost_jukebox_observer_use)))
@@ -425,7 +425,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
-
 
 /obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(datum/act/op/A)
 	if(track_duration_entered(A))

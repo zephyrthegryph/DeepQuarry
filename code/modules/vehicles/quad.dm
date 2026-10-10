@@ -43,7 +43,6 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 	. = ..()
 	if(!built_from_assembly)
 		rel_set(src, nameof(cell), new /obj/item/cell/high(src))
-		rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 	turn_off()
 
 /obj/vehicle/train/engine/quadbike/built

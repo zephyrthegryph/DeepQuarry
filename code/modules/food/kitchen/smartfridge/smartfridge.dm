@@ -37,7 +37,7 @@ STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
+	owns_one(nameof(soundloop), /datum/looping_sound/fridge, starts = /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))
 	interface("SmartVend")
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
@@ -80,7 +80,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	if(persistent)
 		SSpersistence.track_value(src, persistent)
 
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
 	default_apply_parts()
 
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm).

@@ -1,7 +1,7 @@
 // Actor adapters (roadmap I3): the AI, cyborg, ghost and telekinesis adapters
 // produce the hands' actions filtered by what the actor can do, and the
 // forwarding attack_ai/attack_robot/attack_ghost overrides are replaced by
-// `silicon_use`. The parity tests click real converted types through the router
+// a type's silicon_hand()/silicon_ui() op. The parity tests click real converted types through the router
 // and check the same handler runs as the deleted override ran.
 
 // ---- Fixtures ----
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/dq_actor_probe)
 	// The AI-style forwards reach the cyborg through attack_robot -> attack_ai. A cyborg
 	// looking through a camera can't control machines remotely (a cyborg with no client is not blocked: only a player's click or a script reaches it).
 	TEST_ASSERT_EQUAL(dq_actor_op(R, allocate(/obj/structure/privacyswitch/dq_actor_probe, T), "silicon_hand"), "attack_hand", "privacy switch: the cyborg interfaces like the AI")
-	TEST_ASSERT_EQUAL(dq_actor_click(R, allocate(/obj/machinery/button/dq_actor_probe, T), ops_first = FALSE), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
+	TEST_ASSERT_EQUAL(dq_actor_op(R, allocate(/obj/machinery/button/dq_actor_probe, T), "silicon_hand"), "attack_hand", "button: a cyborg not looking through a camera controls a machine like the AI")
 
 /// A ghost's Use on types whose attack_ghost only called tgui_interact.
 /datum/unit_test/dq_actor_parity_ghost

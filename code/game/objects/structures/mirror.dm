@@ -15,7 +15,7 @@
 TRACKED(/obj/structure/mirror, glass)
 
 CAPABILITIES(/obj/structure/mirror)
-	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror)
+	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
 	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
@@ -30,7 +30,6 @@ CAPABILITIES(/obj/structure/mirror)
 // ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
 /obj/structure/mirror/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)
 		set_glass(0)
 		icon_state = "mirror_frame"

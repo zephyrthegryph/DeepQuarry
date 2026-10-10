@@ -57,7 +57,7 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 TRACKED(/obj/item/rig_module, suit_overlay)
 
 CAPABILITIES(/obj/item/rig_module)
-	owns_many(nameof(stat_modules))
+	owns_many(nameof(stat_modules), starts = list(/atom/movable/stat_rig_module/activate, /atom/movable/stat_rig_module/deactivate, /atom/movable/stat_rig_module/engage, /atom/movable/stat_rig_module/select, /atom/movable/stat_rig_module/charge))
 	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
 	op("mend_cable", item(/obj/item/stack/cable_coil), label("Mend with cable"),
@@ -120,11 +120,6 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 
 		charges = processed_charges
 
-	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
-	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
-	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
-	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
-	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
 
 
 // Called when the module is installed into a suit.

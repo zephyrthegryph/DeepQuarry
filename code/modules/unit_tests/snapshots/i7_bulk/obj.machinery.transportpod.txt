@@ -2,8 +2,10 @@ human|none menu: Move Inside
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Move Inside (refused: It is not designed for that organism.)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Move Inside (refused: You can't do that right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move Inside (refused: There is nobody to put in.)
@@ -48,5 +50,5 @@ human|/obj/item menu: Move Inside (refused: There is nobody to put in.)
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, robot_remote_blocked
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, robot_remote_blocked, silicon_hand
 

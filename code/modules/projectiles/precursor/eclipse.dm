@@ -33,21 +33,20 @@ MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORP
 	stage = 2
 	sealed = TRUE
 
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a)
+	configure(reagents(add = list(REAGENT_ID_CRYOSLURRY = 150, REAGENT_ID_POTASSIUM = 150)))
+
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 150, REAGENT_ID_SUGAR = 150)))
+
 CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a, /obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b))
 	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
-/obj/item/grenade/chem_grenade/frost/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/bluespace/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/bluespace/B2 = new(src)
-
-	B1.reagents.add_reagent(REAGENT_ID_CRYOSLURRY, 150)
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
-
-	rel_add(src, nameof(beakers), B1)
-	rel_add(src, nameof(beakers), B2)
 
 /obj/item/projectile/bullet/frostshotgun
 	use_submunitions = 1

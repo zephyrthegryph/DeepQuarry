@@ -615,8 +615,8 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 		/mob/living/simple_mob/vore/woof
 	)
 
-/obj/structure/flora/tree/fur/choose_icon_state()
-	return "[base_state][rand(1, 2)]"
+/obj/structure/flora/tree/fur/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 2)]"
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)

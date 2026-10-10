@@ -37,7 +37,6 @@
 	/// A second between shocks from bumping it.
 	COOLDOWN_DECLARE(bump_zap_cooldown)
 	normalspeed = 1
-	silicon_use = SILICON_USE_UI
 	var/obj/item/airlock_electronics/electronics = null
 	COOLDOWN_DECLARE(hasShocked) //Prevents multiple shocks from happening
 	var/secured_wires = 0
@@ -210,6 +209,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	section(controls, "The remote control window (an AI's, a cyborg's, an admin ghost's) and a silicon's gestures over its link")
 	interface("AiAirlock")
 	extend("ui_open", inputs(remote())) // silicons only: remote() replaces the hand binding
+	without("silicon_hand") // a silicon's plain click opens the window (ui_open), never the hand's Use
 	extend(TAG_UI, needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
 	op("disrupt_main", ui_act("disrupt-main"), needs(req_is(STAT_MAIN_POWER_OUT, FALSE, because = MSG(airlock/main_offline))), then(PROC_REF(lose_main_power)))
 	op("disrupt_backup", ui_act("disrupt-backup"), needs(req(PROC_REF(backup_available), because = MSG(airlock/backup_offline))), then(PROC_REF(lose_backup_power)))

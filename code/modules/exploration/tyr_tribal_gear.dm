@@ -61,7 +61,7 @@ CAPABILITIES(/obj/structure/flora/tyr/flowers)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/flora/tyr/flowers/proc/roll_icon_state(datum/roller/R)
+/obj/structure/flora/tyr/flowers/roll_icon_state(datum/roller/R)
 	return "tyrflora[R.number(1, 5)]gb"
 
 //tier 2

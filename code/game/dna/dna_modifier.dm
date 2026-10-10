@@ -82,7 +82,6 @@ CAPABILITIES(/datum/dna2/record)
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and sizes itself from them
 /obj/machinery/dna_scannernew/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	RefreshParts()
 
 /// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
@@ -104,6 +103,7 @@ CAPABILITIES(/datum/dna2/record)
 
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
+	default_parts()
 	blast_contents()
 	op("dna_scanner_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_scanner_interaction_item)))
 	op("dna_scanner_interaction_drag", item(/atom/movable), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(dna_scanner_interaction_drag)))

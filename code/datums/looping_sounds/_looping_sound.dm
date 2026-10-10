@@ -62,6 +62,8 @@
 		WARNING("A looping sound datum was created without sounds to play.")
 		return
 
+	if(isatom(_output_atoms)) // a declared starting occupant (owns_one(starts =)) is made as new type(holder)
+		_output_atoms = list(_output_atoms)
 	for(var/atom/thing as anything in _output_atoms)
 		add_output(thing)
 	if(disable_direct)

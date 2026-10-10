@@ -28,15 +28,18 @@
 	var/see_dark = FALSE
 
 CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
-	owns_one(nameof(camera), /obj/machinery/camera/intcircuit)
+	owns_one(nameof(camera), /obj/machinery/camera/intcircuit, starts = PROC_REF(make_camera))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 // ALLOW(init/INSTANCE_STATE): gets its own camera network id and the camera that uses it
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
-	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	rel_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
+
+/// The starting camera (owns_one(starts =)) on its own network.
+/obj/item/integrated_circuit/output/video_camera/proc/make_camera(current)
+	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
+	return new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark)
 
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()

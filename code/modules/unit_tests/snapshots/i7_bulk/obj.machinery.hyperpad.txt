@@ -2,8 +2,10 @@ human|none menu: Activate
 human|none click: Click: Activate
 robot|none menu: Activate
 robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
 robot|none click: Click: Activate
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: View
 ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Activate
@@ -48,5 +50,5 @@ human|/obj/item menu: Activate
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Activate
-keys: drag_buckle, hyperpad_delegate, hyperpad_ghost_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: drag_buckle, hyperpad_delegate, hyperpad_ghost_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
 

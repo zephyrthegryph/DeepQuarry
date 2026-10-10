@@ -2,8 +2,10 @@ human|none menu: Eject Particle Focus Contents
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Particle Focus Contents
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Particle Focus Contents
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -81,5 +83,5 @@ human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is 
 human|/obj/item/reagent_containers/glass/beaker menu: Store
 human|/obj/item/reagent_containers/glass/beaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass/beaker click: Click: Attach container
-keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, secure, store, swipe_id
+keys: analyzer_block, attach_beaker, drag_buckle, eject_contents, fill_target, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, secure, silicon_hand, store, swipe_id
 

@@ -24,7 +24,7 @@
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	interface("NTNetRelay")
 	without("ui_open")
 	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
@@ -112,7 +112,6 @@ TRACKED(/obj/machinery/ntnet_relay, dos_failure)
 		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

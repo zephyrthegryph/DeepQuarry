@@ -32,8 +32,9 @@
 TRACKED(/obj/machinery/bomb_tester, simulating)
 
 CAPABILITIES(/obj/machinery/bomb_tester)
+	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(faketank), /datum/gas_mixture)
+	owns_one(nameof(faketank), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("BombTester")
 	op("set_mode", ui_act("set_mode", arg("mode", num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), then(PROC_REF(ui_act_set_mode)))
 	op("add_tank", ui_act("add_tank", arg("slot", num())), then(PROC_REF(ui_act_add_tank)))
@@ -58,9 +59,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /obj/machinery/bomb_tester/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	RefreshParts()
-	rel_set(src, nameof(faketank), new /datum/gas_mixture)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
@@ -375,7 +374,6 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 			results += "<br>[GLOB.gas_data.name[mix]]: [round((LINDA_GAS_AMT(G, mix) / G.total_moles()) * 100)]%"
 
 	return results
-
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/bomb_tester/step_start_condition()

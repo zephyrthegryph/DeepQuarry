@@ -17,7 +17,7 @@
 CAPABILITIES(/obj/machinery/ore_silo)
 	ref_many(nameof(holds))
 	ref_many(nameof(ore_connected_machines))
-	owns_one(nameof(materials), /datum/material_container)
+	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
 	interface("OreSilo")
 	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
 	op("hold", ui_act("hold", arg("id", num())), then(PROC_REF(ui_act_hold)))
@@ -28,8 +28,12 @@ CAPABILITIES(/obj/machinery/ore_silo)
 
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
+	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
+		GLOB.ore_silo_default = src
 
-	rel_set(src, nameof(materials), new /datum/material_container( \
+/// The starting material store (owns_one(starts =)): every material, unlimited.
+/obj/machinery/ore_silo/proc/make_materials(current)
+	return new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \
@@ -39,9 +43,7 @@ CAPABILITIES(/obj/machinery/ore_silo)
 			(/datum/notice/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
 		), \
 		allowed_items = /obj/item/stack \
-	))
-	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
-		GLOB.ore_silo_default = src
+	)
 
 // the default silo clears.
 /obj/machinery/ore_silo/lifecycle_dematerialize()

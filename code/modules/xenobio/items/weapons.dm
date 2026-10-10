@@ -29,9 +29,8 @@
 				H.injure(INJURY_PAIN, agony_to_apply, source = src)
 
 	..()
-/obj/item/melee/baton/slime/loaded/Initialize(mapload)
-	rel_set(src, nameof(bcell), new/obj/item/cell/device(src))
-	return ..()
+CAPABILITIES(/obj/item/melee/baton/slime/loaded)
+	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device) // starts with a cell installed
 
 // Xeno stun gun + projectile
 /obj/item/gun/energy/taser/xeno/get_mechanics_info(list/additional_information)

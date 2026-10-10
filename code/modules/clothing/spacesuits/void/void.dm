@@ -313,9 +313,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 /obj/item/clothing/head/helmet/space/void/heck/Initialize(mapload)
 	. = ..()
-	var/mutable_appearance/glass_overlay = mutable_appearance(icon, "hostile_env_glass")
-	glass_overlay.appearance_flags = RESET_COLOR
-	add_overlay(glass_overlay)
 
 /obj/item/clothing/head/helmet/space/void/heck/apply_accessories(image/standing)
 	. = ..()
@@ -465,3 +462,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 	. += owns(nameof(boots), policy = OWN_CONTAINED, starts = nameof(boots))
 	. += owns(nameof(tank), policy = OWN_CONTAINED, starts = nameof(tank))
 	. += owns(nameof(cooler), policy = OWN_CONTAINED)
+
+/obj/item/clothing/head/helmet/space/void/heck/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "hostile_env_glass", appearance_flags = RESET_COLOR))
