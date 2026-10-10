@@ -1,5 +1,54 @@
 use super::*;
-use crate::{link_proc, Ledger};
+use crate::{Ledger, link_proc};
+
+#[test]
+fn constant_string_and_null_tables_preserve_executable_debug_sources() {
+    struct Debug;
+    impl DebugSourceProvider for Debug {
+        fn entry_ordinal(&self) -> Result<u32, String> {
+            Ok(0)
+        }
+        fn ordinal(&self, offset: usize) -> Result<u32, String> {
+            u32::try_from(offset).map_err(|error| error.to_string())
+        }
+    }
+    let parsed = dm_syntax::parse(
+        "/proc/probe(value)\n  switch(value)\n    if(\"text\")\n      return 1\n    if(null)\n      return 2\n    else\n      return 3\n",
+    );
+    let bindings = LowerBindings {
+        parameters: vec!["value".into()],
+        ..Default::default()
+    };
+    let compiled = compile_with_lookup(
+        &parsed.items[0].children,
+        None,
+        &bindings,
+        None,
+        Some(&Debug),
+    )
+    .unwrap();
+    assert_eq!(compiled.local_count, 0);
+    let frozen = crate::freeze_proc(&compiled.code).unwrap();
+    let decoded = byond_dmb::bytecode::decode(frozen.code().words()).unwrap();
+    assert!(decoded.iter().any(|instruction| instruction.opcode == 0x78));
+    assert!(
+        !decoded
+            .iter()
+            .any(|instruction| instruction.opcode == opcode::TEQ)
+    );
+    let selector = decoded
+        .iter()
+        .position(|instruction| instruction.opcode == opcode::GET_VAR)
+        .unwrap();
+    assert_eq!(decoded[selector - 2].opcode, 0x84);
+    assert_eq!(decoded[selector - 1].opcode, 0x85);
+    assert!(
+        frozen
+            .code()
+            .relocations()
+            .any(|site| matches!(site.reference, SymRef::SourceLine(_)))
+    );
+}
 
 #[test]
 fn constant_switch_tables_have_no_synthetic_locals_and_valid_case_targets() {
@@ -96,10 +145,12 @@ fn overlapping_range_and_exact_case_preserve_authored_fallback() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     assert_eq!(compiled.local_count, 1);
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-    assert!(!byond_dmb::bytecode::decode(&linked.words)
-        .unwrap()
-        .iter()
-        .any(|ins| ins.opcode == 0x7a));
+    assert!(
+        !byond_dmb::bytecode::decode(&linked.words)
+            .unwrap()
+            .iter()
+            .any(|ins| ins.opcode == 0x7a)
+    );
 }
 
 #[test]

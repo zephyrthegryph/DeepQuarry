@@ -3,7 +3,8 @@ use crate::lowering_memo::{ReplayDecline, ResolverRead};
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
-pub(crate) const SCHEMA: u32 = 0x0206_000c;
+// Includes the certified src-cache operand encoding policy.
+pub(crate) const SCHEMA: u32 = 0x0206_000d;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]

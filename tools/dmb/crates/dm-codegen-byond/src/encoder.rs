@@ -1,6 +1,8 @@
 //! Direct typed BYOND operand emission. Only final linking chooses wire IDs.
 use crate::{Item, LinkError, LinkedProc, SymbolicProc, Table, ValueWord, VariableWord, Word};
 pub use dm_ir::RelocationEncoding as OperandEncoding;
+#[path = "encoder_src_cache.rs"]
+mod src_cache;
 use dm_ir::{Relocation, RelocationKind, SymRef, SymbolicCode};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -85,7 +87,9 @@ pub fn freeze_proc_observed<G>(
     };
     let mut starts = Vec::with_capacity(proc.items.len());
     let mut branches = Vec::new();
+    let mut receiver = src_cache::SrcCache::default();
     for item in &proc.items {
+        receiver.begin(item);
         if let Item::Instruction(instruction) = item {
             starts.push(emission.words.len());
             emission.words.push(instruction.opcode);
@@ -121,9 +125,9 @@ pub fn freeze_proc_observed<G>(
                         emission.words.push(at);
                     }
                     Word::Value(value) => emission.value(value).map_err(FreezeError::Abi)?,
-                    Word::Variable(variable) => {
-                        emission.variable(variable).map_err(FreezeError::Abi)?
-                    }
+                    Word::Variable(variable) => emission
+                        .variable(receiver.variable(variable, instruction.opcode))
+                        .map_err(FreezeError::Abi)?,
                 }
             }
         }
@@ -168,7 +172,9 @@ fn label_offsets(proc: &SymbolicProc) -> Result<(Vec<Option<u32>>, usize), LinkE
     }
     let mut labels = vec![None; count];
     let mut offset = 0usize;
+    let mut receiver = src_cache::SrcCache::default();
     for item in &proc.items {
+        receiver.begin(item);
         match item {
             Item::Label(label) => {
                 let at = u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
@@ -179,9 +185,13 @@ fn label_offsets(proc: &SymbolicProc) -> Result<(Vec<Option<u32>>, usize), LinkE
             Item::Instruction(instruction) => {
                 offset = offset.checked_add(1).ok_or(LinkError::OffsetOverflow)?;
                 for operand in &instruction.operands {
-                    offset = offset
-                        .checked_add(operand.width())
-                        .ok_or(LinkError::OffsetOverflow)?;
+                    let width = match operand {
+                        Word::Variable(variable) => {
+                            receiver.variable(variable, instruction.opcode).width()
+                        }
+                        _ => operand.width(),
+                    };
+                    offset = offset.checked_add(width).ok_or(LinkError::OffsetOverflow)?;
                 }
                 u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
             }

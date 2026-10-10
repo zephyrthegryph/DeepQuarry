@@ -51,12 +51,18 @@ impl Compiler<'_> {
             }
         }
         if let ExprKind::SafeMember { object, selector } = &target.kind {
+            let constant_first = op == "=" && Self::safe_assignment_constant(value);
+            if constant_first {
+                self.expression(value, statement)?;
+            }
             self.expression(object, statement)?;
             let end = self.label();
             self.emit(318, vec![Word::Branch(end)]);
-            self.emit(opcode::PUSH_CACHE, vec![]);
-            self.expression(value, statement)?;
-            self.emit(opcode::POP_CACHE, vec![]);
+            if !constant_first {
+                self.emit(opcode::PUSH_CACHE, vec![]);
+                self.expression(value, statement)?;
+                self.emit(opcode::POP_CACHE, vec![]);
+            }
             let variable = self
                 .expression_member_global(object, selector)?
                 .map(VariableWord::Global)
@@ -83,12 +89,18 @@ impl Compiler<'_> {
             return Ok(());
         }
         if let ExprKind::SafeIndex { object, index } = &target.kind {
+            let constant_first = op == "=" && Self::safe_assignment_constant(value);
+            if constant_first {
+                self.expression(value, statement)?;
+            }
             self.expression(object, statement)?;
             let end = self.label();
             self.emit(318, vec![Word::Branch(end)]);
-            self.emit(opcode::PUSH_CACHE, vec![]);
-            self.expression(value, statement)?;
-            self.emit(opcode::POP_CACHE, vec![]);
+            if !constant_first {
+                self.emit(opcode::PUSH_CACHE, vec![]);
+                self.expression(value, statement)?;
+                self.emit(opcode::POP_CACHE, vec![]);
+            }
             self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Cache)]);
             self.expression(index, statement)?;
             if op == "=" {
@@ -306,6 +318,21 @@ impl Compiler<'_> {
             self.emit(opcode::POP_CACHE, vec![]);
         }
         Ok(())
+    }
+
+    // Immutable RHS values cannot observe receiver evaluation or overwrite its
+    // cache. Native safe writes place them before the receiver guard; dynamic
+    // RHS expressions retain their guarded cache-preserving continuation.
+    fn safe_assignment_constant(value: &Expr) -> bool {
+        if fold_number(value).is_some() {
+            return true;
+        }
+        match &value.kind {
+            ExprKind::Group(inner) => Self::safe_assignment_constant(inner),
+            ExprKind::Literal(raw) if matches!(raw.as_str(), "null" | "TRUE" | "FALSE") => true,
+            ExprKind::Literal(raw) => matches!(decode_constant_string_literal(raw), Ok(Some(_))),
+            _ => false,
+        }
     }
 
     pub(super) fn assignment_variable(
@@ -637,14 +664,16 @@ impl Compiler<'_> {
             {
                 self.named_arguments(args, statement)?;
                 self.emit(0xcf, vec![]);
-            } else if let [Expr {
-                kind:
-                    ExprKind::Call {
-                        callee,
-                        args: list_args,
-                    },
-                ..
-            }] = args
+            } else if let [
+                Expr {
+                    kind:
+                        ExprKind::Call {
+                            callee,
+                            args: list_args,
+                        },
+                    ..
+                },
+            ] = args
             {
                 if matches!(&callee.kind, ExprKind::Ident(name) if name == "arglist")
                     && list_args.len() == 1

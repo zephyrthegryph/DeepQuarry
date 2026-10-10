@@ -49,20 +49,32 @@ impl Compiler<'_> {
             return Ok(ValueWord::Number(number.to_bits()));
         }
         let start = self.result.code.items.len();
-        self.expression(expr, text)?;
+        // Table values are compile-time data, not executed expressions. Keep
+        // ordinary value production and interning, but do not issue debug
+        // instructions or consume the current executable source transition.
+        let current = self.debug_current.take();
+        let last = self.debug_last.take();
+        let produced = self.expression(expr, text);
+        self.debug_current = current;
+        self.debug_last = last;
         let emitted = self.result.code.items.split_off(start);
+        produced?;
         match emitted.as_slice() {
-            [CodeItem::Instruction(Instruction {
-                opcode: opcode::PUSH_INT,
-                operands,
-            })] => match operands.as_slice() {
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::PUSH_INT,
+                    operands,
+                }),
+            ] => match operands.as_slice() {
                 [Word::Immediate(value)] => Ok(ValueWord::Number((*value as f32).to_bits())),
                 _ => Err(error(text, "constant switch integer has invalid operands")),
             },
-            [CodeItem::Instruction(Instruction {
-                opcode: opcode::PUSH_VAL,
-                operands,
-            })] => match operands.as_slice() {
+            [
+                CodeItem::Instruction(Instruction {
+                    opcode: opcode::PUSH_VAL,
+                    operands,
+                }),
+            ] => match operands.as_slice() {
                 [Word::Value(value)] => Ok(value.clone()),
                 _ => Err(error(text, "constant switch value has invalid operands")),
             },
