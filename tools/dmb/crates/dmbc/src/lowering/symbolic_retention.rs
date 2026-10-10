@@ -73,6 +73,9 @@ impl SessionSymbolicMemo {
                 continue;
             }
             census.slice("session_symbolic.keys", &record.key, true);
+            if let Some(recipe) = &record.recipe {
+                census.procedure_metadata("session_symbolic.key_metadata", &recipe.metadata);
+            }
             census.retained_symbolic_ledger(&record.reads, &record.versions);
             match &record.value {
                 super::RecordValue::Executable(artifact) => {

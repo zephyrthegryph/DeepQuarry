@@ -534,7 +534,7 @@ impl HeapCensus {
             }
         }
     }
-    fn procedure_metadata(&mut self, owner: &str, metadata: &Arc<dm_ir::ProcedureMetadata>) {
+    pub(crate) fn procedure_metadata(&mut self, owner: &str, metadata: &Arc<dm_ir::ProcedureMetadata>) {
         if !self.arc_object(owner, metadata) {
             return;
         }

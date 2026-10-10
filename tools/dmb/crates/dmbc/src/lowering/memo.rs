@@ -47,7 +47,13 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         )
         .map(CompletedInput::lowered);
     }
-    let Some(mut key) = crate::lowering_memo::key(frontend, body, memo.policy) else {
+    let Some(current_key) = crate::lowering_memo::key_recipe::CurrentKey::new(
+        frontend,
+        body,
+        memo.policy,
+        capture_references,
+        selections_only,
+    ) else {
         return lower_one(
             frontend,
             body,
@@ -59,13 +65,6 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         )
         .map(CompletedInput::lowered);
     };
-    if capture_references {
-        key.push(0);
-        key.extend_from_slice(dm_ir::SELECTED_REFERENCES_POLICY);
-    }
-    if selections_only {
-        key.extend_from_slice(b"selected-facts-only-v1");
-    }
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
@@ -82,7 +81,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
         };
         let metadata = node.metadata.procedure.as_ref()?;
-        let (needs_parsed, prepared) = match policy
+        let (needs_parsed, prepared, prepared_tail) = match policy
             .prepare_issued(metadata, &issued, &context)
             .ok()?
         {
@@ -91,8 +90,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                     .issued_preparations
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 let prepared = replay.into_view();
-                crate::lowering_memo::prepared_replay_key(&mut key, &prepared)?;
-                (false, prepared)
+                let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared)?;
+                (false, prepared, tail)
             }
             None => {
                 memo.counts
@@ -104,13 +103,19 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                     })
                     .ok()?
                     .ok()?;
-                crate::lowering_memo::prepared_key(&mut key, &prepared, body.expanded_span.start)?;
-                (true, prepared)
+                let mut tail = Vec::new();
+                crate::lowering_memo::prepared_key(&mut tail, &prepared, body.expanded_span.start)?;
+                (
+                    true,
+                    prepared,
+                    crate::lowering_memo::key_recipe::PreparedKey::Parsed(tail),
+                )
             }
         };
         Some((
             needs_parsed,
             prepared,
+            prepared_tail,
             dm_ir::ProcedureIdentity {
                 owner: identity.owner,
                 name: identity.name,
@@ -119,7 +124,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             },
         ))
     })();
-    let Some((needs_parsed, prepared, identity)) = ready else {
+    let Some((needs_parsed, prepared, prepared_tail, identity)) = ready else {
         return lower_one(
             frontend,
             body,
@@ -152,7 +157,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     if symbolic || selections_only {
         if let Some(store) = &memo.symbolic {
             if let Some(input) = store.lookup(
-                &key,
+                &current_key,
+                &prepared_tail,
                 host,
                 request_admission,
                 &recording,
@@ -173,6 +179,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             }
         }
     }
+    let key = current_key.materialize(&prepared_tail);
     let (value, changed_query) = {
         let _profile = dm_profile::item("lowering.resident_validate");
         memo.values.visit_receipted(&key, host, &mut |value| {
@@ -234,7 +241,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 .discard_parsed(body)
                 .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
             note(MemoOutcome::ResidentHit, None, None);
-            return Ok(CompletedInput::lowered(unit).with_admission(admission));
+            return Ok(CompletedInput::lowered(unit).with_admission(
+                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+            ));
         }
         miss = MemoMissReason::UnrebasablePrivateSidecar;
     }
@@ -341,7 +350,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(CompletedInput::reused(value).with_admission(admission));
+        return Ok(CompletedInput::reused(value)
+            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));
     }
     if let Some(unit) = disk
         .unit
@@ -361,7 +371,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(CompletedInput::lowered(unit).with_admission(admission));
+        return Ok(CompletedInput::lowered(unit)
+            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));
     }
     if let Some(reason) = disk.miss {
         miss = reason;
@@ -458,7 +469,10 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             &recording.domain_receipts(),
         );
     }
-    result.map(|unit| CompletedInput::lowered(unit).with_admission(admission))
+    result.map(|unit| {
+        CompletedInput::lowered(unit)
+            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))))
+    })
 }
 
 fn body_diagnostic(

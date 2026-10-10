@@ -34,6 +34,7 @@ struct DeclineCounters {
     nonreusable_completion: AtomicU64,
 }
 struct Record {
+    recipe: Option<crate::lowering_memo::key_recipe::KeyRecipe>,
     key: Arc<[u8]>,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
@@ -50,6 +51,7 @@ enum RecordValue {
     },
 }
 pub(crate) struct Admission {
+    metadata: Option<Arc<dm_ir::ProcedureMetadata>>,
     store: Option<Arc<SessionSymbolicMemo>>,
     disk: Option<crate::lowering_memo::DiskWriter>,
     key: Arc<[u8]>,
@@ -58,6 +60,10 @@ pub(crate) struct Admission {
     relative_debug: Vec<usize>,
 }
 impl Admission {
+    pub(super) fn with_metadata(mut self, metadata: Arc<dm_ir::ProcedureMetadata>) -> Self {
+        self.metadata = Some(metadata);
+        self
+    }
     pub(super) fn shared_key(&self) -> Arc<[u8]> {
         Arc::clone(&self.key)
     }
@@ -199,6 +205,12 @@ impl CompletedInput {
             if let Some(store) = admission.store {
                 if value.is_reusable() {
                     let record = Record {
+                        recipe: admission.metadata.and_then(|metadata| {
+                            crate::lowering_memo::key_recipe::KeyRecipe::new(
+                                &admission.key,
+                                metadata,
+                            )
+                        }),
                         key: admission.key,
                         reads: admission.reads,
                         versions: admission.versions,
@@ -266,7 +278,8 @@ impl SessionSymbolicMemo {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn lookup<R: Resolver>(
         &self,
-        key: &[u8],
+        key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
+        prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
         host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
@@ -294,7 +307,7 @@ impl SessionSymbolicMemo {
                 self.declines.record_absent.fetch_add(1, Ordering::Relaxed);
                 None
             })?;
-        if record.key.as_ref() != key {
+        if !key.matches(&record.key, record.recipe.as_ref(), prepared_tail) {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
@@ -432,6 +445,7 @@ pub(super) fn admission(
         |store| receipt_groups::grouped(&store.receipt_groups, reads.iter().cloned().collect()),
     );
     Some(Admission {
+        metadata: None,
         store,
         disk,
         key,
@@ -458,6 +472,7 @@ pub(super) fn disk_admission<R: Resolver>(
         .collect();
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
+        metadata: None,
         store: Some(store),
         disk: None,
         key: key.into(),
@@ -485,6 +500,7 @@ pub(super) fn remember_selections<R: Resolver>(
         return;
     };
     let record = Record {
+        recipe: None,
         key: admission.key,
         reads: admission.reads,
         versions: admission.versions,
@@ -514,6 +530,7 @@ pub(super) fn accepted_admission(
         accepted.reads.iter().cloned().collect(),
     );
     Some(Admission {
+        metadata: None,
         store: Some(store),
         disk: None,
         key: key.into(),

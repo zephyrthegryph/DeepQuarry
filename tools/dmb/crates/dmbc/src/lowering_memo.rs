@@ -628,6 +628,7 @@ fn prepared_metadata_key(
     Some(())
 }
 
+#[cfg(test)]
 pub(crate) fn prepared_replay_key(
     key: &mut Vec<u8>,
     prepared: &crate::procedure_policy::PreparedUnit,
@@ -677,6 +678,10 @@ pub(crate) fn prepared_key(
     Some(())
 }
 
+#[path = "lowering_memo/key_recipe.rs"]
+pub(crate) mod key_recipe;
+
+#[cfg(test)]
 pub(crate) fn key(
     frontend: &dm_tree::frontend::ColdFrontend,
     body: &dm_tree::frontend::BodyOccurrence,
@@ -692,16 +697,7 @@ pub(crate) fn key(
     key.extend_from_slice(&owner.bits().to_le_bytes());
     key.extend_from_slice(&member.name.bits().to_le_bytes());
     key.push(u8::from(member.kind == dm_tree::MemberKind::Verb));
-    let occurrence = tree
-        .override_chain(body.member)
-        .iter()
-        .filter(|id| {
-            tree.member(**id).is_some_and(|node| {
-                node.owner == member.owner && node.name == member.name && node.kind == member.kind
-            })
-        })
-        .count()
-        .checked_sub(1)?;
+    let occurrence = tree.member_occurrence(body.member)?;
     key.extend_from_slice(&(occurrence as u64).to_le_bytes());
     fn part(key: &mut Vec<u8>, bytes: &[u8]) {
         key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
