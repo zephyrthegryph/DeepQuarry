@@ -8,8 +8,10 @@ robot|none menu: Climb
 robot|none menu: Rotate Clockwise
 robot|none menu: Rotate Counter Clockwise
 robot|none menu: Turn Around
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Rotate Clockwise
 ghost|none menu: Rotate Counter Clockwise
@@ -102,5 +104,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Turn Around
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: attackby, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use_crowbar, use_screwdriver, use_wrench
+keys: attackby, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_crowbar, use_screwdriver, use_wrench
 

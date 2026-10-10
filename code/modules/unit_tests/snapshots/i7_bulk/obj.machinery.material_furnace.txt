@@ -3,9 +3,11 @@ human|none menu: Use (refused: the furnace is empty; load material sheets before
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject contents (refused: the furnace is empty)
+robot|none menu: Use
 robot|none menu: Use (refused: the furnace is empty; load material sheets before firing it)
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject contents (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject contents (refused: the furnace is empty)
@@ -85,5 +87,5 @@ human|/obj/item/reagent_containers menu: Pour
 human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/reagent_containers click: Click: Pour
-keys: drag_buckle, eject_contents, load_carbon, load_stock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, transfer_gas, transfer_reagents, use
+keys: drag_buckle, eject_contents, load_carbon, load_stock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, transfer_gas, transfer_reagents, use
 

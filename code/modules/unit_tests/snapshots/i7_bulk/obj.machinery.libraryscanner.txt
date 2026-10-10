@@ -6,6 +6,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -66,5 +67,5 @@ human|/obj/item/book menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/book menu: Ui open
 human|/obj/item/book menu: Use
 human|/obj/item/book click: Click: Insert book
-keys: clear, drag_buckle, eject, insert_book, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, scan, ui_open
+keys: clear, drag_buckle, eject, insert_book, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, scan, silicon_hand, ui_open
 

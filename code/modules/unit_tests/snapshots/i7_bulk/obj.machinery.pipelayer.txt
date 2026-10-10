@@ -2,8 +2,10 @@ human|none menu: Toggle (refused: It doesn't work without metal.)
 human|none click: Click: Toggle
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Toggle (refused: It doesn't work without metal.)
+robot|none menu: Use
 robot|none click: Click: Toggle
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
@@ -56,5 +58,5 @@ human|/obj/item/stack/material menu: Load metal (refused: It only takes steel.)
 human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material click: Click: Load metal
-keys: auto_dismantle, dismantle, drag_buckle, eject, load, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, pipe_type, recycle, robot_remote_blocked, toggle
+keys: auto_dismantle, dismantle, drag_buckle, eject, load, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, pipe_type, recycle, robot_remote_blocked, silicon_hand, toggle
 

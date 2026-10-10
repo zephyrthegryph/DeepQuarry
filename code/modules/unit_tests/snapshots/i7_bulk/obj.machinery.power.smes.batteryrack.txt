@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -66,5 +68,5 @@ human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Ui open
 human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Insert cell
-keys: add_cable, cable_place, cut_terminal, disable, drag_buckle, ejectcell, enable, equaliseoff, equaliseon, insert_cell, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, ui_open, weld
+keys: add_cable, cable_place, cut_terminal, disable, drag_buckle, ejectcell, enable, equaliseoff, equaliseon, insert_cell, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, ui_open, weld
 
