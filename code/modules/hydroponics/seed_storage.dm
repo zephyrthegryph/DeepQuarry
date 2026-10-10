@@ -279,7 +279,6 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	var/answer = not_locked_down(A.actor, src, A.held)
 	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : "it's locked down")
 
-/// Why not_locked_down_holds refuses: the legacy check's text, else the clause's own reason.
 /obj/machinery/seed_storage/proc/interaction_insert_seeds(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/seeds/O = A.held

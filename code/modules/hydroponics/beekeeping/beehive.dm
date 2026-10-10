@@ -71,7 +71,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
 
 
-/// Why can_load_frame_holds refuses: the legacy check's text, else the clause's own reason.
 /// Requirement (was REQ_* can_move_bees): the legacy check answers TRUE to pass.
 /obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
 	var/obj/item/bee_pack/typed_held = A.held
@@ -79,7 +78,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
 
 
-/// Why can_move_bees_holds refuses: the legacy check's text, else the clause's own reason.
 /obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
@@ -281,7 +279,6 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
 
 
-/// Why ready_for_item_holds refuses: the legacy check's text, else the clause's own reason.
 /// Requirement (was REQ_* can_extract_frame): the legacy check answers TRUE to pass.
 /obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
 	var/obj/item/honey_frame/typed_held = A.held
@@ -289,7 +286,6 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : /datum/msg/req_failed)
 
 
-/// Why can_extract_frame_holds refuses: the legacy check's text, else the clause's own reason.
 MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 /// The old attackby's shared guard: not spinning, powered, panel closed.
