@@ -574,15 +574,25 @@ fn compose_records_access(
         return Err(unsupported("every unit must be one fresh global procedure"));
     }
     let procedures = plan.procedures?;
-    let metadata = procedure_plan::prepare_metadata(
-        &procedures,
-        &batch,
-        projection.map(|(plan, _)| plan),
-        symbols,
-        &source_references,
-        executor,
-        generation.is_some(),
-    );
+    let metadata = match generation {
+        Some(owner) => owner.prepare_metadata(
+            &procedures,
+            &batch,
+            projection.map(|(plan, _)| plan),
+            symbols,
+            &source_references,
+            executor,
+        ),
+        None => procedure_plan::prepare_metadata(
+            &procedures,
+            &batch,
+            projection.map(|(plan, _)| plan),
+            symbols,
+            &source_references,
+            executor,
+            false,
+        ),
+    };
     for (slot, metadata) in procedures.iter().zip(metadata) {
         let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);

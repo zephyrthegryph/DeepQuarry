@@ -1,0 +1,21 @@
+{
+  "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-d02f53bd52aad7c5.exe",
+  "binary_sha256": "6cc83aa63de1922ff160e2fbad65622ad4cb2ea4dbfe6d62d6fefd1e4f415dc2",
+  "scope": "focused fixture execution, not full suite or runtime parity",
+  "rows": [
+    {
+      "filter": "composition::procedure_plan::metadata_roster::tests::",
+      "selected": [
+        "composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority"
+      ],
+      "exit": 0,
+      "seconds": 0.0611608000472188,
+      "stdout": "\nrunning 1 test\ntest composition::procedure_plan::metadata_roster::tests::ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 672 filtered out; finished in 0.03s\n\n",
+      "stderr": ""
+    },
+    {
+      "filter": "composition::tests::frame_contribution_tests",
+      "error": "no matching fixtures"
+    }
+  ]
+}

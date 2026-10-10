@@ -2,6 +2,8 @@
 use super::*;
 use crate::{lowering::UnitIdentity, symbolic::FrozenUnit};
 use dm_codegen_byond::procedure_abi::ArgumentSource;
+#[path = "metadata_roster.rs"]
+mod metadata_roster;
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub(super) struct CompositionPlan {
@@ -110,6 +112,7 @@ pub(super) struct CachedPlan {
     helper_rows: std::sync::Arc<Vec<Slot<Key>>>,
     initializer_rows: std::sync::Arc<Vec<Slot<dm_link::InitializerIdentity>>>,
     argument_sources: Option<(usize, std::sync::Arc<dm_link::ArgumentSourceReferences>)>,
+    metadata: Option<metadata_roster::MetadataRoster>,
 }
 impl CachedPlan {
     pub(super) fn argument_sources(
@@ -196,9 +199,44 @@ impl CachedPlan {
             helper_rows: std::sync::Arc::clone(bound.helpers.as_ref().ok()?),
             initializer_rows: std::sync::Arc::clone(bound.initializers.as_ref().ok()?),
             argument_sources: None,
+            metadata: None,
         })
     }
+    pub(super) fn prepare_metadata(
+        &mut self,
+        slots: &[Slot<UnitIdentity>],
+        batch: &FrozenBatch,
+        projection: Option<&crate::class_projection::ClassProjection>,
+        symbols: &SymbolTable,
+        references: &std::sync::Arc<dm_link::ArgumentSourceReferences>,
+        executor: Option<&dm_exec::BuildExecutor>,
+    ) -> Vec<Result<PreparedMetadata, CompositionError>> {
+        let current = self.bindings.same_owner(&batch.tables.binding_tables());
+        if current {
+            if let Some(hit) = self
+                .metadata
+                .as_ref()
+                .and_then(|owner| owner.admit(slots, batch, projection, symbols, references))
+            {
+                return hit;
+            }
+        }
+        let prepared = prepare_metadata(
+            slots, batch, projection, symbols, references, executor, true,
+        );
+        self.metadata = if current {
+            metadata_roster::MetadataRoster::capture(
+                slots, batch, projection, references, &prepared,
+            )
+        } else {
+            None
+        };
+        prepared
+    }
     pub fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        if let Some(owner) = &self.metadata {
+            owner.census(census);
+        }
         let name = "composition.plan";
         census.vec_payload(name, &self.raw.procedures);
         census.vec_payload(name, &self.raw.helpers);

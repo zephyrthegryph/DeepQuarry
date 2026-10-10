@@ -40,6 +40,7 @@ fn references_reuse_only_current_binding_start_and_exact_helper_order() {
         helper_rows: Arc::new(Vec::new()),
         initializer_rows: Arc::new(Vec::new()),
         argument_sources: None,
+        metadata: None,
     };
     let first = plan.argument_sources(&tables, 1, &keys).unwrap();
     assert_eq!(first.index(keys[0]), Some(1));

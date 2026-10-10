@@ -358,7 +358,7 @@ fn ownership_fixture() -> (FrozenBatch, SymbolTable) {
     ownership_fixture_source("/proc/ownership_transfer_probe()\n    return \"exact\"\n")
 }
 
-fn ownership_fixture_source(source: &'static str) -> (FrozenBatch, SymbolTable) {
+pub(super) fn ownership_fixture_source(source: &'static str) -> (FrozenBatch, SymbolTable) {
     ownership_fixture_with_initializers(source, false)
 }
 

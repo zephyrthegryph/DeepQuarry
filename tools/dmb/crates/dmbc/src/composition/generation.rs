@@ -95,6 +95,25 @@ impl RetainedGeneration {
                 .map(std::sync::Arc::new),
         }
     }
+    pub(super) fn prepare_metadata(
+        &self,
+        slots: &[procedure_plan::Slot<crate::lowering::UnitIdentity>],
+        batch: &FrozenBatch,
+        projection: Option<&crate::class_projection::ClassProjection>,
+        symbols: &SymbolTable,
+        references: &std::sync::Arc<dm_link::ArgumentSourceReferences>,
+        executor: Option<&dm_exec::BuildExecutor>,
+    ) -> Vec<Result<procedure_plan::PreparedMetadata, CompositionError>> {
+        let mut plan = self.plan.lock().unwrap_or_else(|e| e.into_inner());
+        match plan.as_mut() {
+            Some(plan) => {
+                plan.prepare_metadata(slots, batch, projection, symbols, references, executor)
+            }
+            None => procedure_plan::prepare_metadata(
+                slots, batch, projection, symbols, references, executor, true,
+            ),
+        }
+    }
     pub(crate) fn census_plan(&self, census: &mut crate::heap_census::HeapCensus) {
         if let Some(plan) = self
             .plan
