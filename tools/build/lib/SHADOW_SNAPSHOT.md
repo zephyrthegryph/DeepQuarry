@@ -44,3 +44,17 @@ A complete implementation must:
 Until that integration exists, shadow fails with incomplete source authority
 and retains the named structural report plus context receipt. Native success,
 typed source-error/cancellation behavior and BYOND fallback remain unchanged.
+
+## Output capture scope
+
+Shadow inspectors read exclusive, owned read-only DMB/RSC copies. Capture hashes
+both original files before copying and again afterward, and verifies the copied
+bytes against those hashes. Each file is bounded to 2 GiB; hashing uses a bounded
+buffer. A detected race rejects capture.
+
+The receipt calls this `stable_output_pair` and explicitly records
+`invocation_generation_complete: false`: another writer could replace either
+file before capture, and hash equality cannot prove which invocation produced
+it. This output proof does not complete shared input authority or admit parity.
+Captured bulky files are removed by the existing invocation cleanup; small
+proof and comparison receipts remain.

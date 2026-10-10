@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Juke from '../juke/index.js';
 import { classifyResourceReport } from './shadow_resources';
+import { captureShadowOutputPair } from './shadow_output';
 import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
@@ -153,12 +154,14 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
     }
+    const byondOutput = captureShadowOutputPair(path.resolve(dme), artifacts);
+    fs.writeFileSync(path.join(artifacts, 'byond-output-capture.json'), JSON.stringify(byondOutput.proof, null, 2));
     const inspector = process.env.DQ_DMB_INSPECT;
     if (!inspector) throw new Error('Shadow mode requires DQ_DMB_INSPECT for named per-procedure comparison.');
     return await withCompiledOutput(native.output!, execute, async acquiredDmb => {
       const acquiredRsc = acquiredDmb.replace(/\.dmb$/i, '.rsc');
       const report = path.join(artifacts, 'structural-diff.json');
-      const expected = path.resolve(dme.replace(/\.dme$/i, '.dmb'));
+      const expected = byondOutput.dmb;
       // A comparison label identifies this evidence, never proves both compilers
       // consumed the same complete source/resource snapshot. DreamMaker currently
       // returns no authenticated read roster or effective-version receipt.
@@ -184,7 +187,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
         throw new Juke.ExitCode(1);
       }
       const resourceReport = path.join(artifacts, 'resource-diff.json');
-      const resourceCompared = await execute(inspector, ['rsc-diff', path.resolve(dme.replace(/\.dme$/i, '.rsc')), acquiredRsc, resourceReport, snapshot], { throw: false });
+      const resourceCompared = await execute(inspector, ['rsc-diff', byondOutput.rsc, acquiredRsc, resourceReport, snapshot], { throw: false });
       let resourceAdmission: ReturnType<typeof classifyResourceReport>;
       if (resourceCompared.code !== 0) {
         resourceAdmission = { status: 'incomplete', reason: `resource inspector failed or exceeded its 32MiB entry bound (${resourceCompared.code})` };
@@ -199,7 +202,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       const structuralAdmission = admission;
       if (admission.status === 'parity' && resourceAdmission.status !== 'parity') admission = resourceAdmission;
       if (admission.status === 'parity') admission = sourceSnapshot;
-      fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, resourceAdmission, sourceSnapshot }, null, 2));
+      fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, resourceAdmission, sourceSnapshot, outputCapture: byondOutput.proof }, null, 2));
       if (admission.status !== 'parity') {
         Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
         throw new Juke.ExitCode(1);
@@ -214,8 +217,8 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       try { fs.rmSync(store, { recursive: true, force: true }); }
       catch (error) { Juke.logger.warn(`Shadow store cleanup: ${store}: ${error}`); }
     }
-    for (const file of [nativeDmb, nativeRsc]) {
-      try { fs.unlinkSync(file); } catch (error) {
+    for (const file of [nativeDmb, nativeRsc, path.join(artifacts, 'byond-captured.dmb'), path.join(artifacts, 'byond-captured.rsc')]) {
+      try { if (fs.existsSync(file)) fs.chmodSync(file, 0o666); fs.unlinkSync(file); } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') Juke.logger.warn(`Shadow cleanup: ${file}: ${error}`);
       }
     }

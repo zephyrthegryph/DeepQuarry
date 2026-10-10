@@ -3,6 +3,7 @@ import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedComp
 import Juke from '../juke/index.js';
 import { observeDreamMakerIdentity, type PreparedDreamMaker } from './byond';
 import fs from 'node:fs';
+import { captureShadowOutputPair } from './shadow_output';
 import path from 'node:path';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
@@ -351,5 +352,35 @@ test('shadow cancellation preserves status and evidence without BYOND or inspect
       .toBe('native request cancelled by newer request');
   } finally {
     fs.rmSync(ownedRoot, { recursive: true, force: true });
+  }
+});
+
+
+test('shadow output capture freezes stable bytes without invocation authority and rejects races', () => {
+  const directory = fs.mkdtempSync('E:/dq-cache/shadow-output-fixture-');
+  const project = path.join(directory, 'probe.dme');
+  const copies = path.join(directory, 'captured');
+  fs.mkdirSync(copies);
+  fs.writeFileSync(project.replace('.dme', '.dmb'), 'original DMB');
+  fs.writeFileSync(project.replace('.dme', '.rsc'), 'original RSC');
+  try {
+    const captured = captureShadowOutputPair(project, copies);
+    expect(captured.proof.stable_output_pair).toBe(true);
+    expect(captured.proof.invocation_generation_complete).toBe(false);
+    fs.writeFileSync(project.replace('.dme', '.dmb'), 'later DMB');
+    expect(fs.readFileSync(captured.dmb, 'utf8')).toBe('original DMB');
+    expect(() => captureShadowOutputPair(project, copies)).toThrow();
+    const raced = path.join(directory, 'raced');
+    fs.mkdirSync(raced);
+    expect(() => captureShadowOutputPair(project, raced, () => {
+      fs.writeFileSync(project.replace('.dme', '.rsc'), 'changed RSC');
+    })).toThrow('changed during capture');
+    expect(fs.existsSync(path.join(raced, 'byond-captured.dmb'))).toBe(false);
+  } finally {
+    for (const file of ['byond-captured.dmb', 'byond-captured.rsc']) {
+      const copy = path.join(copies, file);
+      if (fs.existsSync(copy)) fs.chmodSync(copy, 0o666);
+    }
+    fs.rmSync(directory, { recursive: true, force: true });
   }
 });
