@@ -52,6 +52,18 @@ pub(crate) struct ResolverInventory {
     pub(crate) unique_certificates: BTreeMap<SymbolId, u64>,
 }
 impl SemanticTree {
+    /// Borrow the captured intrinsic roster without cloning a catalog. Positive
+    /// rows remain valid when incomplete; missing rows then prove no absence.
+    pub fn intrinsic_members(&self) -> &[IntrinsicMember] {
+        &self.inventory.intrinsic
+    }
+    pub fn intrinsic_inventory_complete(&self) -> bool {
+        self.inventory.complete
+    }
+    pub fn intrinsic_hierarchy_certified(&self) -> bool {
+        self.inventory.hierarchy_certified
+    }
+
     /// The caller certifies this is the complete intrinsic inventory for the
     /// pinned engine. This produces another immutable snapshot; no global state
     /// or wire IDs enter the model. Source declarations take precedence.

@@ -684,3 +684,6 @@ mod map_export_tests {
         assert!(rows[1]["identity"].as_str().unwrap().len() == 32);
     }
 }
+
+mod roster_pages;
+pub use roster_pages::{write_roster_page, SemanticRoster};

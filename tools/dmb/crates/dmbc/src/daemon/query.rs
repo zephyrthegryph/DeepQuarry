@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 mod occurrence_pages;
 #[path = "query/selected_envelope.rs"]
 mod selected_envelope;
+mod semantic_pages;
+pub mod semantic_client;
 use std::{
     collections::BTreeMap,
     io::{self, Write},
@@ -25,6 +27,19 @@ pub struct QueryRequest {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SourceQuery {
+    SemanticIntrinsicMembersPage {
+        start: u32,
+        limit: u32,
+    },
+    /// Dense semantic cursor belongs only to the explicitly pinned tree revision.
+    SemanticTypesPage {
+        start: u32,
+        limit: u32,
+    },
+    SemanticMembersPage {
+        start: u32,
+        limit: u32,
+    },
     /// Enumerate the current issued occurrence roster without a separate export.
     /// Cursor belongs only to both explicitly pinned revisions.
     OccurrencesPage {
@@ -112,6 +127,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected_source.as_deref(),
             )?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
+            semantic_pages::validate_requested(&reply, &source_questions)?;
             Ok(reply)
         }
         super::protocol::Reply::Rejected(error) => Err(error.into()),
@@ -158,6 +174,14 @@ fn validate_reply(
     let (mut rows, mut source_rows) = (0, 0);
     for line in reply.jsonl.lines() {
         let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+        if row["row"] == "semantic_types_page"
+            || row["row"] == "semantic_members_page"
+            || row["row"] == "semantic_intrinsic_members_page"
+        {
+            semantic_pages::validate(&row, &reply.revision)?;
+            source_rows += 1;
+            continue;
+        }
         if row["row"] == "source_occurrences_page" {
             occurrence_pages::validate(&row, reply.source_revision.as_deref())?;
             source_rows += 1;
@@ -246,7 +270,11 @@ impl QueryRequest {
                 "query batch exceeds 64 KiB",
             ));
         }
-        if !self.source_queries.is_empty()
+        semantic_pages::validate_request(self)?;
+        if self
+            .source_queries
+            .iter()
+            .any(|query| !semantic_pages::is_semantic(query))
             && (self.expected_revision.is_none() || self.expected_source_revision.is_none())
         {
             return Err(io::Error::new(
@@ -343,6 +371,9 @@ pub(super) fn evaluate_snapshot(
     }
     for question in &request.source_queries {
         super::control::checkpoint()?;
+        if semantic_pages::write(question, tree, &mut output)? {
+            continue;
+        }
         let snapshot = snapshot.ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "source snapshot unavailable")
         })?;
@@ -357,7 +388,11 @@ pub(super) fn evaluate_snapshot(
         let (ordinal, provenance) = match question {
             SourceQuery::Occurrence { ordinal } => (*ordinal, false),
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
-            SourceQuery::SelectedReferences { .. } | SourceQuery::OccurrencesPage { .. } => {
+            SourceQuery::SelectedReferences { .. }
+            | SourceQuery::OccurrencesPage { .. }
+            | SourceQuery::SemanticTypesPage { .. }
+            | SourceQuery::SemanticMembersPage { .. }
+            | SourceQuery::SemanticIntrinsicMembersPage { .. } => {
                 unreachable!("handled above")
             }
         };
@@ -370,7 +405,7 @@ pub(super) fn evaluate_snapshot(
     }
     Ok(QueryReply {
         schema: "dm-session-query-v2".into(), revision, complete: false,
-        coverage: "semantic tree plus caller-selected issued declaration occurrences and source/definition spans; bounded previously captured compiler-selected references only; complete executable resolution, full macro traces and pinned resource/runtime host facts excluded".into(),
+        coverage: "semantic tree and bounded revision-pinned semantic type/authored member-node/captured intrinsic roster selectors (intrinsic completeness explicit; inherited effective lookup uses parent links and Resolver, not an expanded roster) plus caller-selected issued declaration occurrences and source/definition spans; bounded previously captured compiler-selected references only; complete executable resolution, full macro traces and pinned resource/runtime host facts excluded".into(),
         query_count: request.queries.len(), source_query_count: request.source_queries.len(), source_revision,
         snapshot_outcome: snapshot.map_or("semantic_snapshot_only", |snapshot| snapshot.outcome).into(),
         last_request_outcome: state.last_request_outcome.into(),
