@@ -2,7 +2,7 @@
 use super::*;
 
 /// Append scalar variable records/default assignments and procedure chains to a
-/// staged output. Shared slot IDs are checked against footer positions; instance
+/// staged output. Shared operand IDs are checked against actual VarIDs; instance
 /// field declaration IDs remain a separate exact(owner,name) record domain.
 /// The caller discards this staged image on error and must emit any runtime
 /// initializer units before publication.
@@ -382,7 +382,12 @@ pub(crate) fn materialize_members_with_roster(
             let index = tables.index(key).ok_or_else(|| {
                 ProjectionError::Unsupported("shared slot binding missing".into())
             })?;
-            if shared_records.insert(index, (variable, flags)).is_some() {
+            if index != variable {
+                return Err(ProjectionError::Unsupported(
+                    "shared VarID disagrees with record allocation".into(),
+                ));
+            }
+            if shared_records.insert(key, (variable, flags)).is_some() {
                 return Err(ProjectionError::Unsupported(
                     "duplicate shared slot record".into(),
                 ));
@@ -412,8 +417,16 @@ pub(crate) fn materialize_members_with_roster(
         let variable = u32::try_from(dmb.variables.len())
             .map_err(|_| ProjectionError::Unsupported("procedure static record overflow".into()))?;
         dmb.variables.push(Variable { kind, value, name });
+        if index != variable {
+            return Err(ProjectionError::Unsupported(
+                "procedure static VarID disagrees with record allocation".into(),
+            ));
+        }
         if shared_records
-            .insert(index, (variable, local.wire_flags))
+            .insert(
+                Key::ProcedureStatic(local.identity),
+                (variable, local.wire_flags),
+            )
             .is_some()
         {
             return Err(ProjectionError::Unsupported(
@@ -435,15 +448,18 @@ pub(crate) fn materialize_members_with_roster(
                 "invalid variable footer".into(),
             ));
         }
-        for (index, (record, flags)) in shared_records {
-            if usize::try_from(index).ok() != Some(footer.len() / 2) {
-                return Err(ProjectionError::Unsupported(
-                    "shared slot order disagrees with footer allocation".into(),
-                ));
-            }
+        for key in projection.shared_slot_order.iter() {
+            let Some((record, flags)) = shared_records.remove(key) else {
+                continue;
+            };
             // BYOND retains tmp on the class declaration, but strips it from
             // the shared VM slot footer (including globals and proc statics).
             footer.extend([record, flags & !4]);
+        }
+        if !shared_records.is_empty() {
+            return Err(ProjectionError::Unsupported(
+                "shared declaration order incomplete".into(),
+            ));
         }
         dmb.variable_footer = list(dmb, footer)?;
     }
@@ -616,26 +632,7 @@ pub(crate) fn materialize_members_with_roster(
         let id = extend(dmb, old, words)?;
         dmb.classes[class as usize].lists_and_procs[3] = id;
     }
-    // Group order is the explicit first-encounter projection, not hash order.
-    let mut proc_lists: BTreeMap<(SymbolId, bool), Vec<u32>> = BTreeMap::new();
-    for chain in projection.chains.iter() {
-        let ids = chain
-            .entries
-            .iter()
-            .map(|key| {
-                tables.index(*key).ok_or_else(|| {
-                    ProjectionError::Unsupported("missing procedure chain binding".into())
-                })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        if chain.owner == SymbolId::of("/") {
-            continue;
-        }
-        proc_lists
-            .entry((chain.owner, chain.verb))
-            .or_default()
-            .extend(ids);
-    }
+    let proc_lists = methods::procedure_membership(projection, tables)?;
     for ((owner, verb), mut entries) in proc_lists {
         if owner == SymbolId::of("/world") {
             if verb {

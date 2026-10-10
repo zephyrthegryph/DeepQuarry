@@ -106,15 +106,25 @@ pub fn write_queries_jsonl<'a>(
     let mut count = 0;
     for query in queries {
         let meaning = resolver.resolve(query.query);
+        let domain_version = resolver.domain_version(query.query.domain());
+        let domain_version_scope = domain_version.map(|_| {
+            if query.query.domain().persistent_version() {
+                "persistent"
+            } else {
+                "process_local"
+            }
+        });
         let domain = match query.query.domain() {
             ReadDomain::Tree => "tree",
             ReadDomain::ResourceSearch => "resource_search",
+            ReadDomain::OwnerHierarchy(_) => "owner_hierarchy",
+            ReadDomain::OwnerCallable(_) => "owner_callable",
         };
         emit(
             writer,
             json!({"row":"resolved_query","schema":"dm-resolved-query-v1","subject":query.subject,
             "query_wire":serde_json::to_string(&query.query).map_err(ExportError::Json)?,
-            "domain":domain,"domain_version":resolver.domain_version(query.query.domain()).map(|version|format!("{version:032x}")),
+            "domain":domain,"domain_qualification":serde_json::to_value(query.query.domain()).map_err(ExportError::Json)?,"domain_version":domain_version.map(|version|format!("{version:032x}")),"domain_version_scope":domain_version_scope,
             "meaning_fingerprint":format!("{:032x}",xxhash_rust::xxh3::xxh3_128(&meaning.canonical_bytes())),
             "answer":answer(symbols,&meaning)?}),
         )?;

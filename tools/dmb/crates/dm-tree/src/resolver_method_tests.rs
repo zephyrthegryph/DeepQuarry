@@ -68,5 +68,5 @@ fn missing_method_does_not_fabricate_a_source_identity() {
         Resolver::resolve(frontend.snapshot.tree.as_ref(), query),
         M::Value(_)
     ));
-    assert_eq!(query.domain(), dm_ir::ReadDomain::Tree);
+    assert_eq!(query.domain(), dm_ir::ReadDomain::OwnerCallable(query));
 }

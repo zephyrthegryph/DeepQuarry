@@ -197,6 +197,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
             },
         })]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
     };
     finalize_headers(&mut dmb, engine_bytes, &projection, &tables, &symbols).unwrap();
     let defaults = dmb.class_builtin_overrides(child as usize).unwrap();
@@ -301,6 +302,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
         })]
         .into(),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         procedure_declarations: Arc::new(BTreeMap::new()),
     };
     let tables = dm_link::LinkTables::build(Default::default()).unwrap();

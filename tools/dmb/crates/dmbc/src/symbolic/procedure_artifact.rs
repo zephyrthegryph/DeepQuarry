@@ -42,6 +42,18 @@ pub(super) struct Contribution {
     artifact: Arc<ReusableProcedureArtifact>,
     binding: ProcedureRevisionBinding,
 }
+impl Contribution {
+    pub(super) fn variable_record_count(&self) -> Option<usize> {
+        let frame = &self.artifact.frame;
+        self.artifact.helpers.iter().try_fold(
+            frame
+                .local_names
+                .len()
+                .checked_add(frame.argument_names.len())?,
+            |count, helper| count.checked_add(helper.local_names.len()),
+        )
+    }
+}
 impl ReusableProcedureArtifact {
     pub fn identity(&self) -> UnitIdentity {
         self.identity

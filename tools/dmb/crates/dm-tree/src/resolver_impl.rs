@@ -2,6 +2,22 @@ use super::*;
 
 impl dm_ir::Resolver for SemanticTree {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if let dm_ir::ReadDomain::OwnerHierarchy(owner) = domain {
+            let base = self.owner_hierarchy.get(&owner)?;
+            // Two states of the current completeness gate are disjoint, while
+            // the exact retained ancestor receipt owns the process-local token.
+            return Some((base << 1) | u128::from(self.inventory.hierarchy_certified));
+        }
+        if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
+            let owner = match query {
+                dm_ir::ResolveQuery::Proc { owner, .. }
+                | dm_ir::ResolveQuery::ProcedureValue { owner, .. }
+                | dm_ir::ResolveQuery::MethodProcedureValue { owner, .. }
+                | dm_ir::ResolveQuery::OverrideChain { owner, .. } => owner,
+                _ => return None,
+            };
+            return self.owner_callables.get(&owner).copied();
+        }
         if domain != dm_ir::ReadDomain::Tree {
             return None;
         }

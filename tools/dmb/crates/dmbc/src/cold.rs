@@ -742,12 +742,29 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     measurement.complete();
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
-    let initialization = initialization
-        .units
-        .into_iter()
-        .map(Into::into)
-        .chain(initialization_artifacts)
-        .collect();
+    let initialization: Vec<crate::initialization_artifact::InitializationArtifact> =
+        initialization
+            .units
+            .into_iter()
+            .map(Into::into)
+            .chain(initialization_artifacts)
+            .collect();
+    let frame_records = contributions
+        .iter()
+        .try_fold(0usize, |count, unit| {
+            count.checked_add(unit.variable_record_count()?)
+        })
+        .and_then(|count| {
+            initialization.iter().try_fold(
+                count,
+                |count, unit: &crate::initialization_artifact::InitializationArtifact| {
+                    count.checked_add(unit.code.procedure.local_names.len())
+                },
+            )
+        })
+        .ok_or_else(|| ColdError::Initializer("variable record count overflow".into()))?;
+    crate::class_inventory::bind_global_records(&projection, frame_records, &mut inventory)
+        .map_err(ColdError::Initializer)?;
     let frozen = crate::symbolic::link_prepared_artifact_tables_on_executor_with_bindings(
         contributions,
         plan.symbols.as_ref(),

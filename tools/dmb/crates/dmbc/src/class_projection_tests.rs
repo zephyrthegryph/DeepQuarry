@@ -43,6 +43,7 @@ fn retained_parent_projection_preserves_native_header_and_physical_identity() {
         occurrence_count: 0,
         fields: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         types: Arc::from([TypeProjection {
             path: client,
             parent: Some(datum),
@@ -93,7 +94,10 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
             content: Arc::<[u8]>::from([]).into(),
         });
     }
-    inventory.fixed = vec![(variable, footer_index), (callable, layout.wire_proc)];
+    inventory.fixed = vec![
+        (variable, dmb.variables.len() as u32),
+        (callable, layout.wire_proc),
+    ];
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
         procedure_declarations: Default::default(),
@@ -104,6 +108,7 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
         occurrence_count: 1,
         types: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         fields: Arc::from([std::sync::Arc::new(FieldProjection {
             owner: root,
             declaring_owner: root,
@@ -185,6 +190,7 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
         occurrence_count: 0,
         types: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         fields: Arc::from([
             std::sync::Arc::new(FieldProjection {
                 owner,
@@ -279,6 +285,7 @@ fn ordinary_source_root_matches_native_datum_parent_prototype() {
         occurrence_count: 0,
         fields: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         types: Arc::from([TypeProjection {
             path,
             parent: Some(datum),

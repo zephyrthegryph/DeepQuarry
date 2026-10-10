@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 const MAX_FRAME: usize = 4 * 1024 * 1024;
-pub(super) const VERSION: u32 = 3;
+pub(super) const VERSION: u32 = 4;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
     Hello { version: u32, compiler: u128 },

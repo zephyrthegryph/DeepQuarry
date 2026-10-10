@@ -130,7 +130,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
     };
     inventory.reserved_prefixes.insert(
         Table::Variable,
-        u32::try_from(footer.len()).map_err(|_| "shared footer exceeds u32")?,
+        u32::try_from(dmb.variables.len()).map_err(|_| "variable records exceed u32")?,
     );
     let mut owners = BTreeMap::new();
     for (index, class) in dmb.classes.iter().enumerate() {
@@ -169,8 +169,8 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
             &mut inventory,
             &mut indexes,
             Key::Variable { owner, name },
-            slot,
-            retained_identity(engine, Table::Variable, slot),
+            footer[slot].0 as usize,
+            retained_identity(engine, Table::Variable, footer[slot].0 as usize),
         )?;
     }
     let builtin = dmb.variables.iter().position(|record| {
@@ -254,6 +254,18 @@ mod tests {
         for (index, class) in original.classes.iter().enumerate() {
             let symbol = SymbolId::of_bytes(original.string(class.path_string_id()).unwrap());
             assert_eq!(linked.index(Key::Type(symbol)), Some(index as u32));
+        }
+        for (record, _) in original.global_variable_flags().unwrap() {
+            let name = SymbolId::of_bytes(
+                original
+                    .string(original.variables[record as usize].name)
+                    .unwrap(),
+            );
+            let matches: Vec<_> = linked.assignments().iter().filter(|(key, _)| matches!(key, Key::Variable { name: candidate, .. } if *candidate == name)).collect();
+            assert!(
+                matches.iter().any(|(_, index)| **index == record),
+                "retained global must bind VarID {record}"
+            );
         }
     }
 }

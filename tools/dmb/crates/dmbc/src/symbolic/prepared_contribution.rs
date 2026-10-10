@@ -14,6 +14,9 @@ pub struct PreparedContribution {
     modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
 }
 impl PreparedContribution {
+    pub(crate) fn variable_record_count(&self) -> Option<usize> {
+        self.contribution.variable_record_count()
+    }
     pub(crate) fn is_reusable(&self) -> bool {
         self.modified_recipes.is_some()
     }

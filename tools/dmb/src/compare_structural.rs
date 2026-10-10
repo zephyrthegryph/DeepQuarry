@@ -163,7 +163,7 @@ impl StructuralReport {
             bytecode_procedures: BTreeMap::new(),
             uncovered: BTreeMap::new(), explained_divergences: Vec::new(),
             uncovered_signatures: BTreeMap::new(),
-            normalization: vec!["debug file/line opcodes excluded; branch targets use normalized instruction indices", "typed table references resolve to names; PushInt normalizes to numeric PushVal", "runtime hidden-initializer markers use established comparator semantics", "global-reference-normalization-v2: ordinary Global operands resolve through footer slots; certified builtin vars uses direct VarID"],
+            normalization: vec!["debug file/line opcodes excluded; branch targets use normalized instruction indices", "typed table references resolve to names; PushInt normalizes to numeric PushVal", "runtime hidden-initializer markers use established comparator semantics", "global-reference-normalization-v3: Global operands resolve direct VarIDs; footer ordinals are declaration metadata"],
         }
     }
     pub(super) fn record(&mut self, path: &str, field: &str, expected: String, actual: String) {

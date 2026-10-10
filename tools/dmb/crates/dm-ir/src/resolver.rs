@@ -9,6 +9,18 @@ use std::sync::Arc;
 pub enum ReadDomain {
     Tree,
     ResourceSearch,
+    /// Exact current type/parent/ancestor roster for this known owner.
+    /// Member, scalar and global namespace queries require other domains.
+    OwnerHierarchy(SymbolId),
+    /// Query-qualified callable owner certificate; fallback answers may decline.
+    OwnerCallable(ResolveQuery),
+}
+
+impl ReadDomain {
+    /// Process-local issuer receipts must never authorize a disk artifact.
+    pub const fn persistent_version(self) -> bool {
+        !matches!(self, Self::OwnerHierarchy(_) | Self::OwnerCallable(_))
+    }
 }
 
 #[derive(
@@ -103,6 +115,13 @@ impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
+            Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {
+                ReadDomain::OwnerHierarchy(owner)
+            }
+            Self::Proc { .. }
+            | Self::ProcedureValue { .. }
+            | Self::MethodProcedureValue { .. }
+            | Self::OverrideChain { .. } => ReadDomain::OwnerCallable(self),
             _ => ReadDomain::Tree,
         }
     }

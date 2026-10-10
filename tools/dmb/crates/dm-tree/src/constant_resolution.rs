@@ -316,6 +316,14 @@ fn resolve_with_artifacts(
 
 impl Resolver for ScalarSnapshot {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if matches!(
+            domain,
+            dm_ir::ReadDomain::OwnerHierarchy(_) | dm_ir::ReadDomain::OwnerCallable(_)
+        ) {
+            // Scalar enrichment only changes Var/Constant/GlobalVar, never
+            // Type/Parent/Ancestry or callable queries. Bind to the CURRENT source tree certificate.
+            return self.source.tree.domain_version(domain);
+        }
         if domain != dm_ir::ReadDomain::Tree {
             return self.source.tree.domain_version(domain);
         }

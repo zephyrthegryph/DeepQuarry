@@ -1,6 +1,9 @@
 //! Effective per-owner metadata over current keyed namespace contributions.
 //! Both misses and full construction use the same inheritance resolver.
+mod callables;
+mod hierarchy;
 use crate::{declaration_contributions::DeclarationKey, owner_normalization::ResolvedMember, *};
+pub use callables::{CallableFact, CallableInputs};
 use dm_session::{
     observations::{Observation, ObservationHost, ObservationLedger},
     ObservedArtifactStore,
@@ -15,11 +18,15 @@ pub(crate) type OwnerContributions = BTreeMap<SymbolId, Arc<[ResolvedMember]>>;
 pub enum MetadataQuery {
     NormalizedOwner(SymbolId),
     Effective(DeclarationKey),
+    Hierarchy(SymbolId),
+    CallableLocal(SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
     NormalizedOwner(Option<Arc<[ResolvedMember]>>),
     Effective(Option<Arc<MemberMetadata>>),
+    Hierarchy(Arc<[SymbolId]>),
+    CallableLocal(Arc<CallableInputs>),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataDomain {
@@ -31,15 +38,18 @@ impl MetadataQuery {
         match self {
             Self::NormalizedOwner(_) => MetadataDomain::Namespace,
             Self::Effective(_) => MetadataDomain::EffectiveMembers,
+            Self::Hierarchy(_) | Self::CallableLocal(_) => MetadataDomain::Namespace,
         }
     }
 }
 struct EffectiveOwner {
     selection: Arc<crate::HostDeclarationSelection>,
     values: Arc<[(DeclarationKey, Arc<MemberMetadata>)]>,
+    hierarchy: Option<(Arc<[SymbolId]>, u128)>,
+    callable: Option<(Arc<CallableInputs>, u128)>,
 }
 type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
-pub(crate) struct RetainedMetadata {
+pub struct RetainedMetadata {
     store: Store,
     hits: AtomicUsize,
 }
@@ -57,6 +67,7 @@ fn key(owner: SymbolId) -> Arc<[u8]> {
     bytes.into()
 }
 struct Host<'a, M> {
+    tree: &'a SemanticTree,
     normalized: &'a OwnerContributions,
     members: &'a M,
     projection: &'a BTreeMap<DeclarationKey, MemberId>,
@@ -68,6 +79,12 @@ impl<M: Index<usize, Output = MemberNode>>
         match query {
             MetadataQuery::NormalizedOwner(owner) => {
                 MetadataAnswer::NormalizedOwner(self.normalized.get(owner).cloned())
+            }
+            MetadataQuery::CallableLocal(_) => {
+                unreachable!("effective metadata records no callable certificate inputs")
+            }
+            MetadataQuery::Hierarchy(owner) => {
+                MetadataAnswer::Hierarchy(hierarchy::ancestry(self.tree, *owner))
             }
             MetadataQuery::Effective(key) => MetadataAnswer::Effective(
                 self.projection
@@ -96,6 +113,8 @@ pub enum MetadataStorageView<'a> {
     },
     Values(&'a Arc<[(DeclarationKey, Arc<MemberMetadata>)]>),
     Selection(&'a Arc<crate::HostDeclarationSelection>),
+    Hierarchy(&'a Arc<[SymbolId]>),
+    CallableLocal(&'a Arc<CallableInputs>),
 }
 impl RetainedMetadata {
     pub(crate) fn hits(&self) -> usize {
@@ -130,6 +149,12 @@ impl RetainedMetadata {
                 });
                 visit(MetadataStorageView::Values(&value.values));
                 visit(MetadataStorageView::Selection(&value.selection));
+                if let Some((inputs, _)) = &value.callable {
+                    visit(MetadataStorageView::CallableLocal(inputs));
+                }
+                if let Some((paths, _)) = &value.hierarchy {
+                    visit(MetadataStorageView::Hierarchy(paths));
+                }
             }
         });
     }
@@ -180,6 +205,9 @@ impl RetainedMetadata {
             );
         }
         let keys: Vec<_> = normalized.keys().map(|&owner| key(owner)).collect();
+        let mut keys = keys;
+        keys.extend(tree.types.iter().map(|node| hierarchy::key(node.path)));
+        keys.extend(tree.types.iter().map(|node| callables::key(node.path)));
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
@@ -192,6 +220,7 @@ impl RetainedMetadata {
             };
             let (accepted, reads, versions) = {
                 let host = Host {
+                    tree,
                     normalized,
                     members: &*members,
                     projection: &projection,
@@ -239,9 +268,17 @@ impl RetainedMetadata {
                     .insert_with(key(owner), reads, versions, 0, || EffectiveOwner {
                         values,
                         selection,
+                        hierarchy: None,
+                        callable: None,
                     });
             }
         }
         selections
+    }
+}
+
+impl std::fmt::Debug for RetainedMetadata {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RetainedMetadata").finish_non_exhaustive()
     }
 }

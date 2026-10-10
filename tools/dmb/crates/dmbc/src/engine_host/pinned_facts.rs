@@ -76,6 +76,7 @@ pub struct PinnedHostFacts {
     constants: u128,
     runtime: u128,
     source_versions: Vec<u128>,
+    callable_issuer: Option<u64>,
     callable_absence: Option<Arc<HashSet<SymbolId>>>,
     intrinsic_methods: Option<Arc<intrinsic_methods::IntrinsicMethods>>,
     retained_methods: Option<Arc<crate::engine::procedure_abi::RetainedMethods>>,
@@ -115,6 +116,7 @@ impl PinnedHostFacts {
             constants: constants.identity(),
             runtime: runtime.identity(),
             source_versions: host.source_versions,
+            callable_issuer: host.callable_issuer,
             callable_absence: host.callable_absence,
             intrinsic_methods: host.intrinsic_methods,
             retained_methods: host.retained_methods,
@@ -185,6 +187,7 @@ impl<R: PinnedSource> EngineResolverHost<R> {
         }
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions = facts.source_versions.clone();
+        self.callable_issuer = facts.callable_issuer;
         self.callable_absence = facts.callable_absence.clone();
         self.intrinsic_methods = facts.intrinsic_methods.clone();
         self.retained_methods = facts.retained_methods.clone();

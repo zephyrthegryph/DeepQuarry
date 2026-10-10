@@ -2,7 +2,45 @@
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 
-## Current migration work (9 October, later update)
+## Current migration checkpoint (9 October, evening)
+
+The shared retained pipeline is implemented, with remaining global projection,
+validation and publication work. It is not fully incremental or production ready.
+`phase0/migration_checkpoint_20261009.json` distinguishes focused gates,
+experimental timings and open acceptance gates.
+
+The latest completed real retained/fresh cohort used immutable commit `d889b0cac1`
+with the main compiler crate at optimization level zero, two workers, and captured
+historical DeepQuarry source. This is not a release acceptance cohort.
+
+| Request | Retained end-to-end seconds | Independent fresh seconds |
+| --- | ---: | ---: |
+| Initial | 86.801 | 46.965 |
+| Unchanged | 1.649 | 41.878 |
+| Procedure body edit | 69.485 | 44.075 |
+| New global procedure | 65.672 | 38.217 |
+
+All eight recorded cases, including declaration/default/resource edits, matched
+fresh native DMB and RSC hashes. Retained edits were slower than fresh builds;
+the cause has not yet been established. New lifecycle and symbolic decline counters
+distinguish policy replacement, idle eviction and semantic rebind misses.
+Evidence: `E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json`.
+
+Committed `d99017db7a` fixes absolute-header declaration effects, repeated
+`#pragma multiple` preprocessing, frame frontier reuse and native format-library
+dependencies. Its immutable prototype executable built within the 300-second
+watchdog. Compile-only oracle checks then exposed actual outstanding bugs:
+Global operands used footer slots instead of variable-record IDs; reserved
+constructor classification still dropped initializer markers; method membership
+used an inappropriate ordering. Those fixes and exact hierarchy/callable dependency
+certificates are in the next validation batch. No improved timings are claimed yet.
+
+Whole-program BYOND structural coverage, compile-error parity, real six-worktree
+concurrency, history replay and Phase 5 runtime parity remain open. The 126 unknown
+Input middle operands remain explicitly uncovered. Full runtime testing remains
+deferred to Phase 5.
+
+## Earlier migration checkpoint
 
 The latest completed matched cold cohort is `be11683d0b`, not the older cohort
 below. Against its matched control, launch/reap median was **15.346 s versus

@@ -62,6 +62,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
         })]
         .into(),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         procedure_declarations: Default::default(),
     };
     let mut inventory = dm_link::LinkInventory::default();

@@ -127,6 +127,9 @@ pub struct SemanticTree {
     types: Arc<[TypeNode]>,
     members: MemberArena,
     host_selections: Arc<host_declaration_selection::Selections>,
+    owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
+    owner_callables: Arc<std::collections::BTreeMap<SymbolId, u128>>,
+    owner_certificate_issuer: Option<Arc<owner_metadata::RetainedMetadata>>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -178,6 +181,19 @@ impl SemanticTree {
     }
     pub fn shared_symbols(&self) -> Arc<SymbolTable> {
         Arc::clone(&self.symbols)
+    }
+    /// Diagnostic access to the current immutable hierarchy certificate index.
+    /// Tokens are process-local; no certificate grants authority by itself.
+    /// Borrowed census owner; the store's mutation and certificate issuance APIs
+    /// stay private to the semantic normalization pipeline.
+    pub fn owner_certificate_issuer(&self) -> Option<&Arc<owner_metadata::RetainedMetadata>> {
+        self.owner_certificate_issuer.as_ref()
+    }
+    pub fn owner_callable_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
+        &self.owner_callables
+    }
+    pub fn owner_hierarchy_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
+        &self.owner_hierarchy
     }
     pub fn identity(&self) -> u128 {
         self.identity
@@ -490,6 +506,9 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         types: types.into(),
         members: MemberArena::default(),
         host_selections: Arc::new(Default::default()),
+        owner_hierarchy: Arc::new(Default::default()),
+        owner_callables: Arc::new(Default::default()),
+        owner_certificate_issuer: None,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),
@@ -703,6 +722,11 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         tree_identity::declaration_identity_view(skeletons, fields)
     };
     drop(identity_profile);
+    if let Some((_, retained)) = normalization {
+        tree.owner_certificate_issuer = Some(Arc::clone(&retained.metadata));
+        tree.owner_hierarchy = Arc::new(retained.metadata.certify_hierarchy(&tree));
+        tree.owner_callables = Arc::new(retained.metadata.certify_callables(&tree));
+    }
     Ok(tree)
 }
 mod tree_identity;

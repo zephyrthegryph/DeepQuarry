@@ -169,6 +169,7 @@ struct VariableAbsence {
 pub struct EngineResolverHost<R> {
     answer_domain: std::sync::OnceLock<Option<u128>>,
     source_versions: Vec<u128>,
+    callable_issuer: Option<u64>,
     tree: Arc<R>,
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
@@ -182,6 +183,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         Self {
             answer_domain: std::sync::OnceLock::new(),
             source_versions: Vec::new(),
+            callable_issuer: None,
             tree,
             constants,
             runtime,
@@ -227,6 +229,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             Arc::clone(&frontend.snapshot.tree),
             Arc::clone(&providers.methods),
         )));
+        self.callable_issuer = providers.issuer;
         self.callable_absence = Some(Arc::new(
             frontend
                 .snapshot
@@ -311,6 +314,30 @@ impl<R: Resolver> EngineResolverHost<R> {
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
+            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            // Global authored-name exclusion can change fallback answers even
+            // when this owner's source declarations are unchanged. Such reads
+            // are not certified by a local owner token.
+            if matches!(self.tree.resolve(query), M::Unsupported(_)) {
+                return None;
+            }
+            let provider = if self.callable_absence.is_some()
+                || self.intrinsic_methods.is_some()
+                || self.retained_methods.is_some()
+            {
+                self.callable_issuer?
+            } else {
+                0
+            };
+            return Some((u128::from(base) << 64) | u128::from(provider));
+        }
+        if matches!(domain, dm_ir::ReadDomain::OwnerHierarchy(_)) {
+            // These three queries are delegated unchanged to the current source
+            // resolver. Its certificate includes the pinned hierarchy gate; no
+            // engine method/variable/scalar fallback can answer them here.
+            return self.tree.domain_version(domain);
+        }
         if domain != dm_ir::ReadDomain::Tree {
             return self.tree.domain_version(domain);
         }
@@ -538,3 +565,7 @@ fn verify_lexical_type_namespace(
 #[cfg(test)]
 #[path = "engine_host/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "engine_host/owner_domain_tests.rs"]
+mod owner_domain_tests;

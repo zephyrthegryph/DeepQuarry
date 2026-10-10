@@ -51,6 +51,14 @@ sequence holds an OS lock; different worktrees have independent build locks.
 Conventional output files are compatibility copies; run consumers should acquire
 the authenticated pair through `publish::PairStore`.
 
+Daemon wire clients must send absolute caller-resolved paths for the manifest,
+engine template, cache, pair store, capture/replay files and output directories.
+Relative paths are rejected before session admission with status 64; this is a
+request error and does not trigger BYOND fallback. The CLI resolves its own paths
+before routing. Session and worker admission share a bounded wait; cancellation
+or expiry returns status 75. These safeguards do not establish the six-worktree
+concurrency acceptance gate.
+
 ## Preserved compiler reference
 
 The original prototype's usage and measurements are archived in

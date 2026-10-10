@@ -70,7 +70,6 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
     let root = symbols.intern("/").unwrap();
     let datum = symbols.intern("/datum").unwrap();
     let mut actual = Dmb::from_bytes(bytes).unwrap();
-    let first_slot = actual.global_variable_flags().unwrap().len() as u32;
     let mut inventory = dm_link::LinkInventory::default();
     let mut projections = Vec::new();
     let mut shared_order = Vec::new();
@@ -90,9 +89,10 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
                 key,
                 content: Arc::<[u8]>::from([]).into(),
             });
-            inventory
-                .fixed
-                .push((key, first_slot + shared_order.len() as u32));
+            inventory.fixed.push((
+                key,
+                actual.variables.len() as u32 + projections.len() as u32,
+            ));
             shared_order.push(key);
         }
         projections.push(std::sync::Arc::new(FieldProjection {
@@ -120,9 +120,10 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
         key: local_key,
         content: Arc::<[u8]>::from([]).into(),
     });
-    inventory
-        .fixed
-        .push((local_key, first_slot + shared_order.len() as u32));
+    inventory.fixed.push((
+        local_key,
+        actual.variables.len() as u32 + projections.len() as u32,
+    ));
     let names: std::collections::BTreeSet<_> = projections
         .iter()
         .flat_map(|field| [field.owner, field.name])
@@ -136,7 +137,10 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
         procedure_declarations: Default::default(),
-        shared_slot_order: shared_order.into(),
+        shared_slot_order: {
+            shared_order.push(local_key);
+            shared_order.into()
+        },
         procedure_statics: Arc::from([ProcedureStaticProjection {
             identity: local,
             wire_flags: 5,
@@ -148,6 +152,7 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
         occurrence_count: 0,
         types: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         fields: projections.into(),
     };
     materialize_members(&mut actual, &projection, &tables, &symbols, &NoTypes).unwrap();

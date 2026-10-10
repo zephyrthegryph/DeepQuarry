@@ -35,7 +35,7 @@ class PipeTests(unittest.TestCase):
 
     def test_partial_writes_produce_one_complete_frame(self):
         stream = Stream(2)
-        expected = {"Hello": {"version": 3, "compiler": 123}}
+        expected = {"Hello": {"version": 4, "compiler": 123}}
         self.pipe(stream).send(expected)
         size = struct.unpack("<I", stream.data[:4])[0]
         self.assertEqual(size, len(stream.data) - 4)
@@ -51,7 +51,7 @@ class PipeTests(unittest.TestCase):
         self.assertEqual(pipe.file.data, b"")
 
     def test_handshake_errors_close_once(self):
-        for reply in ({"Hello": {"version": 3, "compiler": 999, "retiring": False}}, {"Rejected": "bad"}, None):
+        for reply in ({"Hello": {"version": 4, "compiler": 999, "retiring": False}}, {"Rejected": "bad"}, None):
             stream = Stream()
             pipe = self.pipe(stream)
 

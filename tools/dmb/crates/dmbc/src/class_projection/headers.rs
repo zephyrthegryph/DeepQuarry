@@ -581,6 +581,7 @@ mod routing_tests {
             ]
             .into(),
             chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
             procedure_declarations: Arc::new(BTreeMap::new()),
         };
         let tables = dm_link::LinkTables::build(Default::default()).unwrap();

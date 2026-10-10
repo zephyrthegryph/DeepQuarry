@@ -316,6 +316,7 @@ mod tests {
             procedure_statics: Vec::new().into(),
             runtime_writes: Vec::new().into(),
             chains: Vec::new().into(),
+            procedure_membership: std::sync::Arc::from([]),
         }
     }
     #[test]

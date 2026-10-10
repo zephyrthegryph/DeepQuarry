@@ -175,7 +175,7 @@ test('typed and unknown native statuses preserve exact exit and never fall back'
   process.env.DQ_COMPILER = 'native';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
-  for (const code of [2, 75, 3, 42, 124]) {
+  for (const code of [2, 64, 75, 3, 42, 124]) {
     let calls = 0;
     const failure = await selectedCompiler('project.dme', {}, async () => { calls++; },
       async () => ({ code, combined: 'native diagnostic' })).then(() => null, error => error);

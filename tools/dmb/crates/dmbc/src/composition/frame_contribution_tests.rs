@@ -250,6 +250,7 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
         types: Arc::from([]),
         fields: Arc::from([]),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
     };
     let PreparedMetadata::Fresh(absent) = prepare(Some(&projection), &symbols, &original, true)
     else {

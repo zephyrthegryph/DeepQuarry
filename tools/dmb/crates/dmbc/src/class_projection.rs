@@ -9,6 +9,7 @@ pub(crate) mod member_contribution;
 mod retained;
 pub(crate) use class_roster::MaterializedClassRoster;
 pub use retained::ClassProjections;
+mod methods;
 mod routing;
 pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
@@ -73,6 +74,9 @@ pub struct ClassProjection {
     /// from assignment records, retaining each ordered assignment.
     pub fields: Arc<[Arc<FieldProjection>]>,
     pub chains: Arc<[ProcedureChain]>,
+    /// Current authored method encounter order, normalized for BYOND membership.
+    /// Independent of hashed linker table indexes and semantic super chains.
+    pub procedure_membership: Arc<[Key]>,
 }
 #[derive(Clone, Debug)]
 pub struct ProcedureStaticProjection {
@@ -250,6 +254,7 @@ fn project_inner(
         .filter(|_| defaults.is_some())
         .and_then(|store| store.begin(source, order, &default_index));
     let mut procedure_declarations = BTreeMap::new();
+    let mut procedure_encounters = Vec::new();
     let mut group_order = Vec::new();
     let mut procs: BTreeMap<(SymbolId, SymbolId, bool), Vec<(bool, Key)>> = BTreeMap::new();
     for &id in order {
@@ -286,6 +291,7 @@ fn project_inner(
                 declared,
             } => {
                 procedure_declarations.insert(key, declared);
+                procedure_encounters.push((declared, key));
                 if !procs.contains_key(&(owner, name, verb)) {
                     group_order.push((owner, name, verb));
                 }
@@ -299,6 +305,21 @@ fn project_inner(
     if let Some(request) = retention {
         request.finish();
     }
+    // BYOND allocates formal methods before implicit overrides and prepends
+    // each allocated member. Preserve the exact cross-name encounter roster;
+    // reversing name groups would incorrectly make override chains contiguous.
+    let procedure_membership = procedure_encounters
+        .iter()
+        .rev()
+        .filter(|(declared, _)| !declared)
+        .chain(
+            procedure_encounters
+                .iter()
+                .rev()
+                .filter(|(declared, _)| *declared),
+        )
+        .map(|(_, key)| *key)
+        .collect::<Vec<_>>();
     let chains = group_order
         .into_iter()
         .map(|(owner, name, verb)| {
@@ -351,6 +372,7 @@ fn project_inner(
         types: types.into(),
         fields: fields.into(),
         chains: chains.into(),
+        procedure_membership: procedure_membership.into(),
     })
 }
 

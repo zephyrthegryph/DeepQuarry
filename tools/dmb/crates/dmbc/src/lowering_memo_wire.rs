@@ -222,7 +222,11 @@ pub(crate) fn encode(
             Some(facts) => Some(selected_wire::SelectedWire::capture(facts)?),
             None => None,
         },
-        versions: versions.to_vec(),
+        versions: versions
+            .iter()
+            .copied()
+            .filter(|(domain, _)| domain.persistent_version())
+            .collect(),
         reads: reads
             .iter()
             .map(|read| (read.query, read.answer.canonical_bytes()))
@@ -262,7 +266,10 @@ fn payload(bytes: &[u8]) -> Result<Payload, String> {
     Ok(payload)
 }
 fn validate_versions(versions: &[(dm_ir::ReadDomain, u128)]) -> Result<(), String> {
-    if versions.len() > 2
+    if versions
+        .iter()
+        .any(|(domain, _)| !domain.persistent_version())
+        || versions.len() > 2
         || versions
             .iter()
             .map(|(domain, _)| *domain)
@@ -319,7 +326,11 @@ pub(crate) fn encode_failure(
     let payload = FailurePayload {
         key: Cow::Borrowed(key),
         identity,
-        versions: versions.to_vec(),
+        versions: versions
+            .iter()
+            .copied()
+            .filter(|(domain, _)| domain.persistent_version())
+            .collect(),
         reads: reads
             .iter()
             .map(|read| (read.query, read.answer.canonical_bytes()))
@@ -374,7 +385,11 @@ pub(crate) fn encode_executable(
         relative_debug: Vec::new(),
         helpers: Vec::new(),
         selected_references: None,
-        versions: versions.to_vec(),
+        versions: versions
+            .iter()
+            .copied()
+            .filter(|(domain, _)| domain.persistent_version())
+            .collect(),
         reads: reads
             .iter()
             .map(|read| (read.query, read.answer.canonical_bytes()))
@@ -970,3 +985,7 @@ mod typed_identity_tests;
 #[cfg(test)]
 #[path = "lowering_memo_borrowed_wire_tests.rs"]
 mod borrowed_wire_tests;
+
+#[cfg(test)]
+#[path = "lowering_memo_owner_domain_tests.rs"]
+mod owner_domain_tests;

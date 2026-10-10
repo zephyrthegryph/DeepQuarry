@@ -97,6 +97,7 @@ fn authored_visibility_and_inheritance_match_captured_byond_headers() {
         types: types.into(),
         fields: fields.into(),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         procedure_declarations: Default::default(),
     };
     let tables = dm_link::LinkTables::build(inventory).unwrap();

@@ -10,6 +10,7 @@ pub(crate) struct PinnedEngineProviders {
     pub(super) variables: VariableProviders,
 }
 pub(super) struct CallableProviders {
+    pub issuer: Option<u64>,
     pub engine: u128,
     pub retained: RetainedMethods,
     pub methods: NativeMethods,
@@ -41,7 +42,16 @@ impl CallableProviders {
                     .ok_or("native callable name absent")
             })
             .collect::<Result<BTreeSet<_>, _>>()?;
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let issuer = NEXT
+            .fetch_update(
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+                |value| value.checked_add(1),
+            )
+            .ok();
         Ok(Self {
+            issuer,
             engine: engine.identity(),
             retained,
             methods,

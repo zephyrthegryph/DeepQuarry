@@ -78,12 +78,12 @@ class Pipe:
 
     def _hello(self, compiler, discovery=False):
         try:
-            self.send({"Hello": {"version": 3, "compiler": compiler}})
+            self.send({"Hello": {"version": 4, "compiler": compiler}})
             hello = self.receive()["Hello"]
             if discovery:
-                if hello["version"] != 3 or hello["retiring"]:
+                if hello["version"] != 4 or hello["retiring"]:
                     raise RuntimeError("unexpected daemon generation state")
-            elif hello != {"version": 3, "compiler": compiler, "retiring": False}:
+            elif hello != {"version": 4, "compiler": compiler, "retiring": False}:
                 raise RuntimeError("generation changed during handshake")
             return hello["compiler"]
         except BaseException:

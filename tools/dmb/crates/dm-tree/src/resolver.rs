@@ -40,9 +40,9 @@ pub enum InventoryError {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct ResolverInventory {
     pub(super) complete: bool,
-    hierarchy_certified: bool,
+    pub(crate) hierarchy_certified: bool,
     source_identity: Option<u128>,
-    intrinsic: Arc<[IntrinsicMember]>,
+    pub(crate) intrinsic: Arc<[IntrinsicMember]>,
     pub(super) index: HashMap<(SymbolId, SymbolId, MemberKind), IntrinsicMember>,
     unique: HashMap<SymbolId, Option<(SymbolId, SymbolId)>>,
     // Positive counterexamples remain valid even when other engine rows are
@@ -158,6 +158,7 @@ impl SemanticTree {
         }
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
+        self.owner_callables = Arc::new(Default::default());
         let source_identity = *Arc::make_mut(&mut self.inventory)
             .source_identity
             .get_or_insert(self.identity);
@@ -171,6 +172,9 @@ impl SemanticTree {
             inventory::rebuild_retained(&mut self, executor, declarations, retained);
         } else {
             self.rebuild_inventory_on_executor(executor);
+        }
+        if let Some(issuer) = &self.owner_certificate_issuer {
+            self.owner_callables = Arc::new(issuer.certify_callables(&self));
         }
         Ok(self)
     }
@@ -192,6 +196,10 @@ impl SemanticTree {
         } else {
             self.identity = source_identity;
         }
+        self.owner_callables = self.owner_certificate_issuer.as_ref().map_or_else(
+            || Arc::new(Default::default()),
+            |issuer| Arc::new(issuer.certify_callables(self)),
+        );
     }
     pub(crate) fn complete_answer(&self, query: Q, answer: M) -> M {
         if !self.inventory.hierarchy_certified && matches!(query, Q::Parent(_) | Q::Ancestry(_)) {

@@ -65,8 +65,7 @@ fn proc_path(
     })
 }
 /// Every retained linker binding is checked against the pinned wire artifact.
-/// VM Variable keys index the global footer, NOT `Dmb.variables`. This bounded
-/// writer accepts global slots only; declaring-owner statics need a later proof.
+/// VM Global operands index `Dmb.variables`; the footer only orders declarations.
 fn validate_binding(
     dmb: &Dmb,
     key: Key,
@@ -98,10 +97,8 @@ fn validate_binding(
             occurrence: 0,
         } => retained_named_procedure(dmb, symbols, owner, name, index, true)?,
         Key::Variable { owner, name } if text(symbols, owner)? == "/" => {
-            dmb.lists
-                .get(dmb.variable_footer as usize)
-                .and_then(|footer| footer.get(index as usize * 2))
-                .and_then(|id| dmb.variables.get(*id as usize))
+            dmb.variables
+                .get(index as usize)
                 .and_then(|record| dmb.string(record.name))
                 == Some(text(symbols, name)?.as_bytes())
         }

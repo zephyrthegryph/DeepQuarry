@@ -154,3 +154,139 @@ pub fn contribute(
     }
     Ok(())
 }
+
+/// Bind VM Global operands to actual VarIDs. Footer order is a separate
+/// declaration roster and must never be substituted for a variable record ID.
+pub(crate) fn bind_global_records(
+    plan: &ClassProjection,
+    frame_records: usize,
+    inventory: &mut LinkInventory,
+) -> Result<(), String> {
+    let mut next = usize::try_from(
+        *inventory
+            .reserved_prefixes
+            .get(&Table::VariableRecord)
+            .ok_or("variable record prefix missing")?,
+    )
+    .map_err(|_| "variable prefix overflow")?;
+    if inventory
+        .entries
+        .iter()
+        .any(|entry| entry.key == Key::BuiltinGlobalVars)
+        && !inventory
+            .fixed
+            .iter()
+            .any(|(key, _)| *key == Key::BuiltinGlobalVars)
+    {
+        next = next.checked_add(1).ok_or("builtin variable overflow")?;
+    }
+    next = next
+        .checked_add(frame_records)
+        .ok_or("procedure variable overflow")?;
+    for field in plan
+        .fields
+        .iter()
+        .filter(|field| field.role == FieldRole::Declaration)
+    {
+        let index = u32::try_from(next).map_err(|_| "field variable overflow")?;
+        next = next.checked_add(1).ok_or("field variable overflow")?;
+        if field.shared {
+            let key = Key::Variable {
+                owner: field.owner,
+                name: field.name,
+            };
+            if inventory.fixed.iter().any(|(existing, _)| *existing == key) {
+                return Err("source field redeclares retained record".into());
+            }
+            inventory.fixed.push((key, index));
+        }
+    }
+    for local in plan.procedure_statics.iter() {
+        let index = u32::try_from(next).map_err(|_| "static variable overflow")?;
+        next = next.checked_add(1).ok_or("static variable overflow")?;
+        inventory
+            .fixed
+            .push((Key::ProcedureStatic(local.identity), index));
+    }
+    inventory.append_orders.remove(&Table::Variable);
+    Ok(())
+}
+
+#[cfg(test)]
+mod global_record_tests {
+    use super::*;
+    #[test]
+    fn frame_and_nonshared_records_are_counted_without_changing_footer_order() {
+        use crate::class_projection::{FieldProjection, ProcedureStaticProjection};
+        let owner = SymbolId::of("/");
+        let shared = Key::Variable {
+            owner,
+            name: SymbolId::of("shared"),
+        };
+        let local = dm_ir::ProcedureStaticIdentity {
+            procedure: dm_ir::ProcedureIdentity {
+                owner,
+                name: SymbolId::of("probe"),
+                verb: false,
+                occurrence: 0,
+            },
+            name: SymbolId::of("local_static"),
+        };
+        let plan = ClassProjection {
+            types: Arc::from([]),
+            chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
+            fields: [false, true]
+                .into_iter()
+                .enumerate()
+                .map(|(ordinal, shared)| {
+                    Arc::new(FieldProjection {
+                        owner,
+                        declaring_owner: owner,
+                        name: SymbolId::of(if ordinal == 0 { "instance" } else { "shared" }),
+                        role: FieldRole::Declaration,
+                        wire_flags: Some(if shared { 1 } else { 0 }),
+                        intrinsic: false,
+                        shared,
+                        value: crate::initializer_policy::DefaultValue::Scalar(
+                            dm_ir::SemanticValue::Null,
+                        ),
+                    })
+                })
+                .collect::<Vec<_>>()
+                .into(),
+            procedure_declarations: Default::default(),
+            shared_slot_order: Arc::from([Key::ProcedureStatic(local), shared]),
+            procedure_statics: Arc::from([ProcedureStaticProjection {
+                identity: local,
+                wire_flags: 1,
+                value: crate::initializer_policy::DefaultValue::Scalar(dm_ir::SemanticValue::Null),
+                source_ordinal: 0,
+            }]),
+            runtime_writes: Arc::from([]),
+            tree_identity: 0,
+            occurrence_count: 0,
+        };
+        let mut inventory = LinkInventory::default();
+        inventory
+            .reserved_prefixes
+            .insert(Table::VariableRecord, 177);
+        inventory.entries.push(Entry {
+            key: Key::BuiltinGlobalVars,
+            content: Vec::<u8>::new().into(),
+        });
+        inventory
+            .append_orders
+            .insert(Table::Variable, plan.shared_slot_order.to_vec());
+        bind_global_records(&plan, 7, &mut inventory).unwrap();
+        assert_eq!(
+            inventory.fixed,
+            vec![(shared, 186), (Key::ProcedureStatic(local), 187)]
+        );
+        assert!(!inventory.append_orders.contains_key(&Table::Variable));
+        assert_eq!(
+            &*plan.shared_slot_order,
+            &[Key::ProcedureStatic(local), shared]
+        );
+    }
+}

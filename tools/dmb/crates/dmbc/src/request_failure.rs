@@ -4,6 +4,7 @@ use std::{error::Error, fmt};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FailureKind {
+    InvalidRequest,
     Source,
     Internal,
     Infrastructure,
@@ -12,6 +13,7 @@ pub enum FailureKind {
 impl FailureKind {
     pub fn exit_code(self) -> i32 {
         match self {
+            Self::InvalidRequest => 64,
             Self::Source => 2,
             Self::Internal => 70,
             Self::Infrastructure => 1,
@@ -25,6 +27,12 @@ pub struct RequestFailure {
     pub message: String,
 }
 impl RequestFailure {
+    pub fn invalid_request(message: impl Into<String>) -> Self {
+        Self {
+            kind: FailureKind::InvalidRequest,
+            message: message.into(),
+        }
+    }
     pub fn source(message: impl Into<String>) -> Self {
         Self {
             kind: FailureKind::Source,
@@ -96,6 +104,7 @@ mod tests {
                 RequestFailure::source("source.dm:9:error: invalid expression"),
                 2,
             ),
+            (RequestFailure::invalid_request("relative daemon path"), 64),
             (RequestFailure::internal("unsupported lowering"), 70),
             (RequestFailure::infrastructure("output unavailable"), 1),
             (RequestFailure::cancelled("build cancelled"), 75),

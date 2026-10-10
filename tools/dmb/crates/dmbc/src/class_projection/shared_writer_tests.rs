@@ -72,6 +72,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
         })]
         .into(),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         procedure_declarations: Default::default(),
     };
     let mut inventory = dm_link::LinkInventory::default();

@@ -605,5 +605,61 @@
       "Phase5 runtime, actual six-worktree concurrency and history replay gates remain open"
     ],
     "new_end_to_end_timings": null
+  },
+  "ongoing_correctness_wave": {
+    "status": "workspace all-target check and bounded focused gates passed; output validation and real benchmark pending",
+    "frozen_prototype_build": {
+      "commit": "d99017db7aeb5e3c8268df6b16b543a0abba337a",
+      "seconds": 247.03003289998742,
+      "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261009-212324-16d8d746.exe",
+      "sha256": "6c40e4e424289b3cac1421f10e89982068b228eecfad471599ccacfa9f00d0ea",
+      "acceptance_profile": false
+    },
+    "compile_only_corpus": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2129/receipt.json",
+    "findings": [
+      "relative typed parameter corpus has zero structural differences",
+      "absolute parameter undefined body remains rejected with different native classification; compile-error parity open",
+      "reserved constructor absence queries prevented initializer markers despite earlier token fixture; production evaluator fix pending emission validation",
+      "BYOND Global operands use direct VarIDs; native footer-ordinal emission is a genuine correctness bug, with planner/writer fix pending gate",
+      "BYOND method membership follows physical declaration encounters; native hashed allocation is not authority for source encounter order",
+      "prompt matrix compiles in both, with null encoding differences and unknown Input middle operand semantics retained"
+    ],
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-212953-51123efe.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-213503-dfbefbcc.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-213739-ae29cb13.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261009-214500-3180cd26.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/current-owner-global-admission-focused.json"
+    ],
+    "daemon_python_focused_passed": 4,
+    "compiler_selection_bun_passed": 12,
+    "constructor_reserved_name_evidence": "E:/dq-cache/dmb-native-v2/constructor-shadow-20261009-2133/receipt.json",
+    "remaining": [
+      "global planner production fixture and real emitted output validation",
+      "callable and hierarchy domain wrapper/disk gates",
+      "daemon absolute path and shared admission deadline Rust fixtures",
+      "new protocol4 immutable executable and inspector",
+      "four-case real end-to-end benchmark",
+      "whole-program structural, six-worktree, history replay and Phase5 runtime gates"
+    ],
+    "workspace_check": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-214321-b06194a5.json",
+    "dmbc_focused_passed": 15,
+    "implemented": [
+      "direct variable-record global bindings with predicted frame/field/static allocation and writer equality checks",
+      "source-issued method membership roster separated from override chains and hashed table allocation",
+      "reserved file/icon constructor classification independent of incomplete callable catalogs",
+      "hierarchy and callable owner certificates issued by the shared observed artifact store, qualified by current engine/scalar providers",
+      "process-local domain versions omitted from persisted receipts, with reads retained for exact replay",
+      "daemon protocol4 absolute caller paths, invalid-request64 and one600s total session/worker admission deadline",
+      "analysis query export labels persistent versus process-local domain versions"
+    ],
+    "limitations": [
+      "global/variable queries and several output stages still use whole-program admission",
+      "Proc receipts still include callee body content; name-specific projections planned",
+      "new output not yet admitted against fresh native or BYOND",
+      "daemon fixtures do not substitute for real six-worktree acceptance",
+      "unknown global typo classification remains unsupported without complete engine namespace proof",
+      "Phase5 runtime remains deferred"
+    ]
   }
 }

@@ -33,6 +33,7 @@ mod tests {
             types: Arc::from([]),
             fields: Arc::from([]),
             chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
             procedure_declarations: Default::default(),
         }
     }

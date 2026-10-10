@@ -13,8 +13,13 @@ use std::{
     },
     time::{Duration, Instant},
 };
+#[path = "admission_deadline.rs"]
+mod admission_deadline;
 #[path = "service_housekeeping.rs"]
 mod housekeeping;
+#[cfg(test)]
+#[path = "service_queue_tests.rs"]
+mod queue_tests;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
 /// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
@@ -101,22 +106,23 @@ struct SessionKey {
     bootstrap: bool,
 }
 impl Slot {
+    #[cfg(test)]
     fn lock_host(&self) -> io::Result<std::sync::MutexGuard<'_, crate::runner_host::BuildHost>> {
-        let deadline = Instant::now() + Duration::from_secs(600);
+        self.lock_host_until(&admission_deadline::AdmissionDeadline::new(Instant::now()))
+    }
+    fn lock_host_until(
+        &self,
+        deadline: &admission_deadline::AdmissionDeadline,
+    ) -> io::Result<std::sync::MutexGuard<'_, crate::runner_host::BuildHost>> {
         loop {
             control::checkpoint()?;
+            let remaining = deadline.remaining(Instant::now())?;
             match self.host.try_lock() {
                 Ok(host) => return Ok(host),
                 Err(std::sync::TryLockError::Poisoned(error)) => return Ok(error.into_inner()),
                 Err(std::sync::TryLockError::WouldBlock) => {}
             }
-            if Instant::now() >= deadline {
-                return Err(io::Error::new(
-                    io::ErrorKind::TimedOut,
-                    "daemon session admission deadline expired",
-                ));
-            }
-            std::thread::sleep(Duration::from_millis(20));
+            std::thread::sleep(Duration::from_millis(20).min(remaining));
         }
     }
 }
@@ -161,7 +167,18 @@ impl Shared {
         slot.idle_tier.store(0, Ordering::Release);
         slot
     }
+    #[cfg(test)]
     fn acquire(self: &Arc<Self>, workers: usize) -> io::Result<Permit> {
+        self.acquire_until(
+            workers,
+            &admission_deadline::AdmissionDeadline::new(Instant::now()),
+        )
+    }
+    fn acquire_until(
+        self: &Arc<Self>,
+        workers: usize,
+        deadline: &admission_deadline::AdmissionDeadline,
+    ) -> io::Result<Permit> {
         let workers = workers.max(1);
         if workers > 8 {
             return Err(io::Error::other("daemon supports at most eight workers per request; use --no-daemon for a larger pool"));
@@ -172,13 +189,15 @@ impl Shared {
             && !self.retiring.load(Ordering::Acquire)
         {
             control::checkpoint()?;
+            let remaining = deadline.remaining(Instant::now())?;
             active = self
                 .capacity
-                .wait_timeout(active, Duration::from_millis(100))
+                .wait_timeout(active, Duration::from_millis(100).min(remaining))
                 .unwrap_or_else(|e| e.into_inner())
                 .0;
         }
         control::checkpoint()?;
+        deadline.remaining(Instant::now())?;
         if self.retiring.load(Ordering::Acquire) {
             return Err(io::Error::other("daemon retiring"));
         }
@@ -368,6 +387,9 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     )),
                 );
             }
+            if let Err(error) = super::build_admission::validate(&request) {
+                return protocol::send(&mut stream, &Reply::Rejected(error));
+            }
             if request.trace_path.is_some() {
                 return protocol::send(
                     &mut stream,
@@ -386,7 +408,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             let stream = Arc::new(Mutex::new(stream));
             let _output = super::output_binding(Arc::clone(&stream));
             let _binding = control::bind(token);
-            let mut host = match slot.lock_host() {
+            let admission = admission_deadline::AdmissionDeadline::new(Instant::now());
+            let mut host = match slot.lock_host_until(&admission) {
                 Ok(host) => host,
                 Err(error) => {
                     return protocol::send(
@@ -397,7 +420,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     )
                 }
             };
-            let _permit = match shared.acquire(request.workers) {
+            let _permit = match shared.acquire_until(request.workers, &admission) {
                 Ok(permit) => permit,
                 Err(error) => {
                     return protocol::send(

@@ -22,7 +22,7 @@ struct ResolvedOwner {
 pub(crate) struct RetainedNormalization {
     values: ObservedArtifactStore<ResolvedOwner, SourceQuery, SourceAnswer, SourceDomain>,
     hits: std::sync::atomic::AtomicUsize,
-    pub(crate) metadata: crate::owner_metadata::RetainedMetadata,
+    pub(crate) metadata: Arc<crate::owner_metadata::RetainedMetadata>,
     pub(crate) storage: crate::resolver::storage_inventory::RetainedStorage,
     pub(crate) callables: crate::owner_callable::RetainedCallableOwners,
     pub(crate) paths: crate::type_paths::RetainedTypePaths,
@@ -111,7 +111,7 @@ impl Default for RetainedNormalization {
         Self {
             values: ObservedArtifactStore::current_revision(),
             hits: std::sync::atomic::AtomicUsize::new(0),
-            metadata: crate::owner_metadata::RetainedMetadata::default(),
+            metadata: Arc::new(crate::owner_metadata::RetainedMetadata::default()),
             storage: crate::resolver::storage_inventory::RetainedStorage::default(),
             callables: crate::owner_callable::RetainedCallableOwners::default(),
             paths: crate::type_paths::RetainedTypePaths::default(),

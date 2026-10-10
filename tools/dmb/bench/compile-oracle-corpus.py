@@ -58,7 +58,7 @@ def main():
                "child_watchdog_seconds": 120, "outer_watchdog_seconds": 600, "cases": []}
     fixtures = Path(__file__).resolve().parents[1] / "fixtures" / "compile_oracle"
     try:
-        for case in ("hidden_markers", "absolute_parameter", "relative_parameter", "receiver_operations"):
+        for case in ("hidden_markers", "absolute_parameter", "relative_parameter", "receiver_operations", "prompt_matrix"):
             row = {"case": case}
             receipt["cases"].append(row)
             for mode in ("byond", "native"):

@@ -99,6 +99,7 @@ fn captured_matrix_headers_and_null_reset_match_full_projection_writer() {
         types: types.into(),
         fields: fields.into(),
         chains: Arc::from([]),
+        procedure_membership: Arc::from([]),
         procedure_declarations: Default::default(),
     };
     let tables = dm_link::LinkTables::build(inventory).unwrap();
