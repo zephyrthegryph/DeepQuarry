@@ -20,10 +20,7 @@
 /obj/item/reagent_containers/glass/beaker/vial/vaccine
 	max_transfer_amount = 15
 	volume = 15
-
-/obj/item/reagent_containers/glass/beaker/vial/vaccine/Initialize(mapload)
-	. = ..()
-	make_sellable(/datum/sellable/vaccine)
+	sellable_type = /datum/sellable/vaccine
 
 /obj/machinery/computer/pandemic/draw(datum/look/look)
 	..()

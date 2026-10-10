@@ -94,7 +94,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers)
 	icon_state = "water"
 	amount_per_transfer_from_this = 10
 
-
 CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
 	configure(reagents(add = list(REAGENT_ID_WATER = 1000)))
 	climb()
@@ -122,7 +121,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/watertank/high)
 	var/modded = 0
 	var/obj/item/assembly_holder/rig = null
 
-
 CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	owns_one(nameof(rig), /obj/item/assembly_holder)
 	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
@@ -147,7 +145,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank/high)
 	icon_state = "foam"
 	amount_per_transfer_from_this = 10
 
-
 CAPABILITIES(/obj/structure/reagent_dispensers/foam)
 	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 1000)))
 	climb()
@@ -158,7 +155,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/foam)
 	desc = "A Helium3 tank."
 	icon_state = "he3"
 	amount_per_transfer_from_this = 10
-
 
 CAPABILITIES(/obj/structure/reagent_dispensers/he3)
 	configure(reagents(starts = list(REAGENT_ID_HELIUM3 = 1000)))
@@ -252,7 +248,6 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
 		leak_fuel(amount_per_transfer_from_this)
 	return ITEM_INTERACT_SUCCESS
-
 
 /obj/structure/reagent_dispensers/fueltank/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -360,6 +355,7 @@ TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 	cups = 10
 
 CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
+	rotatable()
 	configure(reagents(add = list(REAGENT_ID_WATER = PROC_REF(bottle_water))))
 	climb()
 	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
@@ -372,10 +368,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 /// A cooler with its bottle starts full (reagents()).
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()
 	return bottle ? 2000 : 0
-
-/obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
-	. = ..()
-	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
 	. = ..()
@@ -496,7 +488,6 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	icon_state = "beertankTEMP"
 	amount_per_transfer_from_this = 10
 
-
 CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
 	configure(reagents(starts = list(REAGENT_ID_BEER = 1000)))
 	climb()
@@ -527,7 +518,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg/wine)
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "oiltank"
 	amount_per_transfer_from_this = 120
-
 
 CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
 	configure(reagents(starts = list(REAGENT_ID_COOKINGOIL = 5000)))
@@ -565,7 +555,6 @@ TYPE_TABLE_DECLARE(/obj/structure/reagent_dispensers/bloodbarrel, bloodbarrel_st
 /obj/structure/reagent_dispensers/bloodbarrel/proc/stock_blood_data()
 	var/list/stock = TYPE_TABLE_GET(src, bloodbarrel_stock_data)
 	return stock.Copy()
-
 
 /obj/structure/reagent_dispensers/space_cleaner
 	name = "Space Cleaner Dispenser"

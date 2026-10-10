@@ -27,6 +27,7 @@ MSG_DEF(crate/pack_attached, "You attach %I% to %T%.", "%U% attaches %I% to %T%.
 // rigged with a cable and an electropack so that whoever opens it is shocked, and has the closet's door, weld and bolts. It is opened and closed by hand even with
 // something in the way, and wirecutters work it as a hand does (they cut the rigging first).
 CAPABILITIES(/obj/structure/closet/crate)
+	rotatable()
 	climb()
 	extend("climb.climb", when(cond_not(nameof(opened))))
 	extend("climb.climb_menu", when(cond_not(nameof(opened))))
@@ -39,10 +40,6 @@ CAPABILITIES(/obj/structure/closet/crate)
 		then(PROC_REF(rigging_cut)), says(MSG(crate/unrigged)))
 	op("cutters_touch", tool(TOOL_WIRECUTTER), label("Open"), when(cond_not(nameof(rigged))), priority(OP_PRIORITY_PART), wait(0),
 		then(PROC_REF(touched_with_cutters)))
-
-/obj/structure/closet/crate/Initialize(mapload)
-	. = ..()
-	make_rotatable()
 
 /obj/structure/closet/crate/can_close()
 	return 1
@@ -455,7 +452,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	desc = "A crate painted with the markings of Moghes Imported Sissalik Jerky."
 	closet_appearance = /datum/decl/closet_appearance/crate/unathiimport
 
-
 // Secure Crates
 
 /obj/structure/closet/crate/secure/weapon
@@ -628,7 +624,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	icon = 'icons/obj/closets/bases/large_crate.dmi'
 	closet_appearance = /datum/decl/closet_appearance/large_crate/secure
 
-
 /obj/structure/closet/crate/secure/large/close()
 	. = ..()
 	if (.)//we can hold up to one large item
@@ -646,7 +641,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 					M.forceMove(src)
 					break
 	return
-
 
 /obj/structure/closet/crate/secure/large/reinforced
 	desc = "A hefty, reinforced metal crate with an electronic locking system."
@@ -684,7 +678,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	name = "hydroponics crate"
 	desc = "All you need to destroy those pesky weeds and pests."
 	closet_appearance = /datum/decl/closet_appearance/crate/hydroponics
-
 
 /obj/structure/closet/crate/hydroponics/prespawned
 	starts_with = list(
@@ -730,7 +723,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
 	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 	icon_state = ""
-
 
 /obj/structure/closet/crate/secure
 	var/tamper_proof = 0

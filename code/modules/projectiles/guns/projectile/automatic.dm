@@ -174,11 +174,7 @@
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
-	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung)
-
-/obj/item/gun/projectile/automatic/z8/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
+	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung, starts = /obj/item/gun/launcher/grenade/underslung)
 
 /// Old attackby.
 /obj/item/gun/projectile/automatic/z8/gun_item(datum/act/op/A)

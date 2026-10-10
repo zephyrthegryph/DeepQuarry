@@ -37,6 +37,7 @@ MSG_DEF_SELF(turbine/secured, "You secure the bolts holding it to the floor.")
 MSG_DEF_SELF(turbine/unsecured, "You unsecure the bolts holding it to the floor.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
+	rotatable()
 	climb()
 	owns_one(nameof(air_in), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(air_out), on_destroy = ON_DESTROY_PRIVATE_COPY)
@@ -62,8 +63,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 			initialize_directions = NORTH|SOUTH
 		if(WEST)
 			initialize_directions = NORTH|SOUTH
-
-	make_rotatable()
 
 /// Whether it has work: bolted, whole, and spinning or driven by a pressure head. Asleep, it watches its two sides.
 /obj/machinery/atmospherics/pipeturbine/proc/reconsider(datum/act/A)
@@ -260,6 +259,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 TRACKED(/obj/machinery/power/turbinemotor, converting)
 
 CAPABILITIES(/obj/machinery/power/turbinemotor)
+	rotatable()
 	climb()
 	after_init(0, then(PROC_REF(reconsider)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(motor_step)), when = nameof(converting))
@@ -268,7 +268,6 @@ CAPABILITIES(/obj/machinery/power/turbinemotor)
 /obj/machinery/power/turbinemotor/Initialize(mapload)
 	. = ..()
 	updateConnection()
-	make_rotatable()
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()
 	rel_clear(src, nameof(turbine))

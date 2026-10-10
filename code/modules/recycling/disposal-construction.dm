@@ -18,6 +18,7 @@
 	var/base_state = "pipe-s"
 
 CAPABILITIES(/obj/structure/disposalconstruct)
+	rotatable()
 	param(nameof(ptype), pos = 1)
 	param(nameof(dir), pos = 2)
 	param(nameof(flipped_at_make), pos = 3)
@@ -56,8 +57,6 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		do_a_flip()
 	else
 		update() // do_a_flip() calls update anyway, so, lazy way of catching unupdated pipe!
-
-	make_rotatable()
 
 // update iconstate and dpdir due to dir and type
 /obj/structure/disposalconstruct/proc/update()
@@ -198,8 +197,6 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		if(DISPOSAL_PIPE_TAGGER_PARTIAL)
 			return /obj/structure/disposalpipe/tagger/partial
 	return
-
-
 
 // attackby item
 // wrench: (un)anchor

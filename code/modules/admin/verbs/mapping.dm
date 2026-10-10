@@ -27,11 +27,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/debugging, REGISTRY_DEBUGGING_EFFECTS)
 /obj/effect/debugging/camera_range
 	icon = 'icons/480x480.dmi'
 	icon_state = "25percent"
-
-/obj/effect/debugging/camera_range/Initialize(mapload, ...)
-	. = ..()
-	src.pixel_x = -224
-	src.pixel_y = -224
+	pixel_x = -224
+	pixel_y = -224
 
 /obj/effect/debugging/marker
 	icon = 'icons/turf/areas.dmi'

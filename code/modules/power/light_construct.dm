@@ -136,10 +136,8 @@ CAPABILITIES(/obj/machinery/light_construct)
 	fixture_type = /obj/machinery/light/floortube
 	sheets_refunded = 2
 
-// ALLOW(init/INSTANCE_STATE): make_rotatable() grants this construct its rotation ops
-/obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
-	. = ..()
-	make_rotatable()
+CAPABILITIES(/obj/machinery/light_construct/floortube)
+	rotatable()
 
 /obj/machinery/light_construct/bigfloorlamp
 	name = "big floor light fixture frame"

@@ -31,6 +31,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	rotatable()
 	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
 	interface("ChemDispenser", observe = TRUE)
@@ -71,7 +72,6 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
 			add_cartridge(new type(src))
-	make_rotatable()
 
 /obj/machinery/chemical_dispenser/examine(mob/user)
 	. = ..()

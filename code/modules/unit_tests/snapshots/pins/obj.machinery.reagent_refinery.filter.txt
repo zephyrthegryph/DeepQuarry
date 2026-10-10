@@ -1,105 +1,144 @@
 human|none menu: Climb
 human|none menu: Flip Filter Direction
+human|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|none menu: Set Filter Chemical
 human|none menu: Set transfer amount
+human|none menu: Turn Around (refused: It is fastened to the floor!)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Flip Filter Direction
+robot|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+robot|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 robot|none menu: Set Filter Chemical
 robot|none menu: Set transfer amount
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Flip Filter Direction (refused: You can't reach that.)
+ghost|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+ghost|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 ghost|none menu: Set Filter Chemical (refused: You can't reach that.)
 ghost|none menu: Set transfer amount (refused: You can't reach that.)
+ghost|none menu: Turn Around (refused: It is fastened to the floor!)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver menu: Flip Filter Direction
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/tool/screwdriver menu: Set Filter Chemical
 human|/obj/item/tool/screwdriver menu: Set transfer amount
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Flip Filter Direction
 human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/tool/crowbar menu: Set Filter Chemical
 human|/obj/item/tool/crowbar menu: Set transfer amount
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Flip Filter Direction
 human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/tool/wrench menu: Secure
 human|/obj/item/tool/wrench menu: Set Filter Chemical
 human|/obj/item/tool/wrench menu: Set transfer amount
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Secure
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Flip Filter Direction
 human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/tool/wirecutters menu: Set Filter Chemical
 human|/obj/item/tool/wirecutters menu: Set transfer amount
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Flip Filter Direction
 human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/multitool menu: Set Filter Chemical
 human|/obj/item/multitool menu: Set transfer amount
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Flip Filter Direction
 human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/weldingtool menu: Set Filter Chemical
 human|/obj/item/weldingtool menu: Set transfer amount
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Flip Filter Direction
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/stack/cable_coil menu: Set Filter Chemical
 human|/obj/item/stack/cable_coil menu: Set transfer amount
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel menu: Flip Filter Direction
 human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/stack/material/steel menu: Set Filter Chemical
 human|/obj/item/stack/material/steel menu: Set transfer amount
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Flip Filter Direction
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/card/id menu: Set Filter Chemical
 human|/obj/item/card/id menu: Set transfer amount
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 human|/obj/item menu: Climb
 human|/obj/item menu: Flip Filter Direction
 human|/obj/item menu: Move To Top
+human|/obj/item menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item menu: Set Filter Chemical
 human|/obj/item menu: Set transfer amount
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
 human|/obj/item/reagent_containers/glass menu: Climb
@@ -107,9 +146,12 @@ human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there
 human|/obj/item/reagent_containers/glass menu: Flip Filter Direction
 human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
+human|/obj/item/reagent_containers/glass menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers/glass menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/glass menu: Set Filter Chemical
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/glass menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Drain
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Climb
@@ -117,9 +159,12 @@ human|/obj/item/reagent_containers/food/drinks/glass2 menu: Drain (refused: it's
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Flip Filter Direction
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Move To Top
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rename food
+human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Set Filter Chemical
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Set transfer amount
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/drinks/glass2 menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Use
 human|/obj/item/reagent_containers/food/drinks/glass2 click: Click: Drain
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Climb
@@ -127,10 +172,13 @@ human|/obj/item/reagent_containers/food/drinks/shaker menu: Drain (refused: it's
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Flip Filter Direction
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Move To Top
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Rename food
+human|/obj/item/reagent_containers/food/drinks/shaker menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers/food/drinks/shaker menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Set Filter Chemical
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/drinks/shaker menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Use
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
-keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_filter_flip, reagent_filter_set_filter, reagent_filter_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use_wrench
 
