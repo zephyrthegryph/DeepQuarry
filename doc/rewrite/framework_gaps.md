@@ -653,3 +653,15 @@ compartment's `passes()` ask (no stages, no pending waits); the empty `construct
 | SF4 (DONE) | `world_watch_when/changed`, `world_diagnostics`, rule hold timers | See IX-R2 (d). |
 | SF5 (DONE for everything outside machinery and power) | `ref_one` / `ref_many` (`by =`, new `target_key =` when the holder and the target keep the id in differently named vars: a pad's `map_pad_link_id` names its partner's `map_pad_id`), `links()`, `owns_one` | 43 `relations()` procs converted in 36 files (ten pairs became one `links()` line each, the `rel_key()` target lines went with the keyed `by =`). `relations()` is `banned_outside` for `code/engine/`, `code/game/machinery/`, `code/modules/power/`, `code/modules/unit_tests/` and `code/modules/shieldgen/shield_gen.dm` (its `rel_key(id)` is declared by the shield button in `door_control.dm`, which moves with machinery); the ban becomes hard when those are converted. |
 | SF6 (DONE) | Unit-test helpers `dq_test_ticks`, `dq_test_wait_for`, `dq_test_has_arrived`, `dq_test_all_woken`, `dq_wake_test`, `dq_wakes_pending`, `dq_settle`, `dq_wait_for_wake`, `dq_test_global_hit`, `dq_cf_global_hit` | Renamed from their `om_` names, the last `om_*(` procs in code; each old name is hard-banned. What still says `om_` are comments naming deleted procs and the `/datum/om/*` carriers (doc/rewrite/proposals/om_carriers.md). |
+
+## Init forms added by the ratchet-fw lane (2026-10-10)
+
+| Form | Replaces | Where |
+|---|---|---|
+| `keeps_if(PROC_REF(cond), warn =)` | an `Initialize()` that only returned `INITIALIZE_HINT_QDEL` on a failed check (stairs, moblight, hidden uplink, random spawns) | `code/engine/lifeforms/keeps_if.dm` |
+| `hose_sockets(list(types))` | `add_hose_connector()` calls after `..()` (26 sites) | `code/modules/reagents/hose/connector.dm` |
+| `reagents(data =, contents_from =, last =)`, computed amounts | `add_reagent()` in `Initialize()` with data, var-named ids, rolled recipes | `code/library/reagents/reagents.dm` |
+| `SYSTEM_ACCESSOR(..., type)` | typed reads of a system's object var (`ticker_mode()?.name`) | `tools/analyze/src/gens/system_accessors.rs` |
+
+`default_parts()` (existing) now also takes the `default_apply_parts()` calls that sat right after `..()`; the freezer and heater keep theirs, because
+their `RefreshParts()` reads state the pipe init makes after the capabilities' init.

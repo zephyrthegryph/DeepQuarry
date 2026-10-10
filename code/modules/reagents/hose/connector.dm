@@ -337,3 +337,21 @@ CAPABILITIES(/datum/hose_connector)
 /datum/hose_connector/input/fryer/connected_reagents()
 	var/obj/machinery/appliance/cooker/fryer/our_fryer = carrier
 	return our_fryer.oil
+
+// hose_sockets(list(connector types...)): the carrier's hose sockets, made when it initializes (on_holder_init), in order. It replaces the
+// Initialize() overrides that only called add_hose_connector() (doc/rewrite/framework_gaps.md, "hose_sockets()").
+//
+//	CAPABILITIES(/obj/machinery/pump)
+//		hose_sockets(list(/datum/hose_connector/output))
+CAPABILITY_TYPE(hose_sockets, CAP_HOSE_SOCKETS, /datum/capability/lib/hose_sockets, key = NONE, types = null)
+
+/datum/capability/lib/hose_sockets
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/lib/hose_sockets/on_holder_init(datum/act/eval/A)
+	var/atom/movable/carrier = A.holder
+	if(!istype(carrier))
+		stack_trace("hose_sockets(): [A.holder] ([A.holder?.type]) is not a movable atom")
+		return
+	for(var/connector_type in types)
+		carrier.add_hose_connector(connector_type)

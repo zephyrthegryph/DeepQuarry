@@ -203,7 +203,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 /obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	add_hose_connector(/datum/hose_connector/input)
 	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_hose)))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(datum/act/notice/A)
@@ -223,6 +222,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 
 // The dial is turned by an alt-click (1, 2, 3 streams of a heavy spray), and a control-click, held, switches between the light spray and the heavy one.
 CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
+	hose_sockets(list(/datum/hose_connector/input))
 	op("dial", hand(), answers(INTENT_TOGGLE), label("Turn dial"), then(PROC_REF(dial_turned)))
 	op("heavy", in_hand(), gesture(GESTURE_CTRL), label("Switch the spray"), then(PROC_REF(spray_switched)))
 

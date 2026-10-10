@@ -33,7 +33,6 @@
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
 
-
 MSG_DEF_SELF(fusion_core/field_on, "The fusion field must be shut down before opening the material cradle.")
 MSG_DEF_SELF(fusion_core/cradle_full, "The material cradle is already occupied.")
 MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment cradle.", "%U% secures %I% in %T%'s shielded treatment cradle.")
@@ -45,6 +44,8 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 TRACKED(/obj/machinery/power/fusion_core, id_tag)
 
 CAPABILITIES(/obj/machinery/power/fusion_core)
+	default_parts()
+	hose_sockets(list(/datum/hose_connector/output))
 	reagents(10000)
 	registry(REGISTRY_FUSION_CORES, key = nameof(id_tag))
 	owns_one(nameof(owned_field), /obj/effect/fusion_em_field)
@@ -59,11 +60,6 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 		asks(/datum/prompt/text, fields = list("title" = "Fusion Core", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
 	op("use", hand(), when(req_empty_hand()), label("Use"), ungated(), wait(0), then(PROC_REF(used)))
-
-/obj/machinery/power/fusion_core/Initialize(mapload)
-	. = ..()
-	add_hose_connector(/datum/hose_connector/output)
-	default_apply_parts()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(broken_now())
