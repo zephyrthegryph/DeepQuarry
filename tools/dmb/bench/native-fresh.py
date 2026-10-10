@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
+import hashlib
 import time
 import uuid
 
@@ -118,9 +120,47 @@ def preserve_telemetry(project, evidence, regular, sha):
     return rows
 
 
-def confirm_source(project, snapshot, sha):
-    if not source_matches(project, snapshot, sha):
+def require_absent_lock(project_root, manifest, snapshot):
+    relative = manifest.parent / ".dmbc" / "build.lock"
+    if relative.as_posix() in snapshot["files"]:
+        raise ValueError("captured source contains compiler lock")
+    lock = project_root / relative
+    if lock.exists() or lock.is_symlink():
+        raise ValueError("compiler lock existed before run")
+    return lock
+
+
+def confirm_source(project, snapshot, sha, generated_lock=None):
+    proof = None
+    admitted = snapshot
+    if generated_lock is not None:
+        lock = generated_lock
+        relative = lock.relative_to(project).as_posix()
+        if relative in snapshot["files"]:
+            raise ValueError("captured source contains compiler lock")
+        for item in (lock.parent, lock):
+            value = item.lstat()
+            if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & 0x400:
+                raise ValueError("generated lock is a reparse point")
+        value = lock.lstat()
+        if not stat.S_ISREG(value.st_mode) or value.st_size != 0 or value.st_nlink != 1:
+            raise ValueError("generated lock must be an independent empty regular file")
+        with lock.open("rb") as handle:
+            before = os.fstat(handle.fileno())
+            if handle.read(1) or os.fstat(handle.fileno()).st_size != 0 or before.st_size != 0:
+                raise ValueError("generated lock contents changed")
+        digest = sha(lock)
+        if digest != hashlib.sha256(b"").hexdigest():
+            raise ValueError("generated lock contents changed")
+        proof = {"path": str(lock), "relative": relative, "bytes": 0, "sha256": digest,
+                 "scope": "new exact compile_driver build.lock leaf; retained in place, not a source input"}
+        # Existing full-roster validator still checks every other name and byte.
+        # This one generated leaf is added only after producer-shape validation;
+        # the captured semantic source manifest is never mutated.
+        admitted = {**snapshot, "files": {**snapshot["files"], relative: digest}}
+    if not source_matches(project, admitted, sha):
         raise ValueError("isolated source differs from captured closure after compilation")
+    return proof
 
 
 def main():
@@ -176,6 +216,8 @@ def main():
         project_root = root / "project"
         receipt["isolated_files"] = h.isolate(h.safe_e(args.source), project_root)
         confirm_source(project_root, snapshot, h.sha)
+        generated_lock = require_absent_lock(project_root, manifest, snapshot)
+        receipt["build_lock_absent_before_run"] = True
         project = root / "artifacts" / manifest.name
         store = root / "store"
         result_path = root / "compile-result.json"
@@ -210,7 +252,7 @@ def main():
         # Hardlinks share input inodes: recheck captured bytes after all compiler
         # and acquisition work, before admitting output or successful timing.
         receipt["telemetry"] = preserve_telemetry(project_root / manifest, root / "telemetry", h.regular, h.sha)
-        confirm_source(project_root, snapshot, h.sha)
+        receipt["generated_build_lock"] = confirm_source(project_root, snapshot, h.sha, generated_lock)
         receipt["source_unchanged_after_compile"] = True
         memory.check()
         receipt.update(status="passed", admitted_output=True, outputs=outputs,

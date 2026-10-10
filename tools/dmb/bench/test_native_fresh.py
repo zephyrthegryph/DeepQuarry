@@ -39,6 +39,31 @@ class FreshAdmission(unittest.TestCase):
             with self.assertRaises(ValueError):
                 fresh.confirm_source(project, snapshot, sha)
 
+    def test_generated_empty_lock_exception_is_exact_and_never_removed(self):
+        with tempfile.TemporaryDirectory(prefix="native-fresh-lock-", dir="E:/dq-cache") as temp:
+            root = Path(temp)
+            source = root / "probe.dme"
+            source.write_bytes(b"source")
+            sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+            snapshot = {"files": {"probe.dme": sha(source)}}
+            lock = fresh.require_absent_lock(root, Path("probe.dme"), snapshot)
+            lock.parent.mkdir()
+            lock.write_bytes(b"")
+            proof = fresh.confirm_source(root, snapshot, sha, lock)
+            self.assertEqual(proof["bytes"], 0)
+            self.assertTrue(lock.exists())
+            with self.assertRaisesRegex(ValueError, "before run"):
+                fresh.require_absent_lock(root, Path("probe.dme"), snapshot)
+            lock.write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "empty"):
+                fresh.confirm_source(root, snapshot, sha, lock)
+            lock.write_bytes(b"")
+            (lock.parent / "other.lock").write_bytes(b"")
+            with self.assertRaisesRegex(ValueError, "captured closure"):
+                fresh.confirm_source(root, snapshot, sha, lock)
+            with self.assertRaisesRegex(ValueError, "captured source"):
+                fresh.require_absent_lock(root, Path("probe.dme"), {"files": {**snapshot["files"], ".dmbc/build.lock": sha(lock)}})
+
     def test_pair_admission_requires_actual_matching_artifacts_and_generation(self):
         with tempfile.TemporaryDirectory(prefix="native-fresh-fixture-", dir="E:/dq-cache") as temp:
             root = Path(temp)
