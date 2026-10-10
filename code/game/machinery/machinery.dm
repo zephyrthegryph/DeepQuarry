@@ -170,11 +170,11 @@ CAPABILITIES(/obj/machinery)
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
 	section(maintenance, "The panel, deconstruct, secure and weld repair that the type's maintenance_flags offer (machinery_maintenance.dm)")
 	op("machine_panel", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Open maintenance panel"),
-		when(req_bool(PROC_REF(maint_offers_panel))), when(cond_not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
+		when(PROC_REF(maint_offers_panel)), when(cond_not(nameof(panel_open))), says(MSG(interaction/maintenance_panel/open)), then(PROC_REF(toggle_maintenance_panel)))
 	op("machine_panel_close", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Close maintenance panel"),
 		// ALLOW(door_gates): the legacy machine panel is the panel_open var, not a capability space an op could be placed in
-		when(req_bool(PROC_REF(maint_offers_panel))), when(nameof(panel_open)), says(MSG(interaction/maintenance_panel/close)), then(PROC_REF(toggle_maintenance_panel)))
-	op("machine_deconstruct", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Deconstruct"), when(req_bool(PROC_REF(maint_offers_frame))),
+		when(PROC_REF(maint_offers_panel)), when(nameof(panel_open)), says(MSG(interaction/maintenance_panel/close)), then(PROC_REF(toggle_maintenance_panel)))
+	op("machine_deconstruct", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), label("Deconstruct"), when(PROC_REF(maint_offers_frame)),
 		needs(req_bool(PROC_REF(maintenance_panel_open), because = MSG(interaction/maintenance_panel/closed))), then(PROC_REF(maintenance_deconstruct)))
 	op("machine_anchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Secure"),
 		when(req_bool(PROC_REF(maint_offers_wrench))), when(cond_not(nameof(anchored))), needs(req_bool(PROC_REF(maintenance_panel_shut), because = MSG(interaction/maintenance_panel/opened))),
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/machinery)
 	op("machine_unanchor", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_wrench_wait)), label("Unsecure"),
 		when(req_bool(PROC_REF(maint_offers_wrench))), when(nameof(anchored)), needs(req_bool(PROC_REF(maintenance_panel_shut), because = MSG(interaction/maintenance_panel/opened))),
 		begins(MSG(start/interaction/machine_anchor/unsecure)), says(MSG(interaction/machine_anchor/unsecure)), then(PROC_REF(toggle_maintenance_anchor)))
-	op("machine_repair", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_weld_wait)), label("Repair"), when(req_bool(PROC_REF(maint_offers_repair))),
+	op("machine_repair", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT - 1), wait(PROC_REF(maintenance_weld_wait)), label("Repair"), when(PROC_REF(maint_offers_repair)),
 		needs(req_bool(PROC_REF(maintenance_is_damaged), because = MSG(interaction/machine_repair/intact))), says(MSG(interaction/machine_repair)), then(PROC_REF(maintenance_repair)))
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)

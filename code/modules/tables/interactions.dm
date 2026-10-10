@@ -59,7 +59,7 @@
 
 /// The held item is in the actor's hands (or a cyborg's module): not something mounted elsewhere.
 /obj/structure/table/proc/held_is_carried(datum/act/op/A)
-	return A.held.loc == A.actor // ALLOW(reads): where the held item is read when it is put down; the click asks again
+	return (A.held.loc == A.actor) ? null : MSG(table/not_in_hand) // ALLOW(reads): where the held item is read when it is put down; the click asks again
 
 /// A held item goes onto the table (a click): a cyborg's gripper sets down what it carries; anything else the actor lets go of, aligned to where they clicked.
 /obj/structure/table/proc/place_held(datum/act/op/A)
@@ -138,7 +138,7 @@
 /// The held thing is a grab on somebody, with the grabber at the table.
 /obj/structure/table/proc/person_grabbed(datum/act/op/A)
 	var/obj/item/grab/G = A.held
-	return get_dist(src, A.actor) < 2 && isliving(G?.grab_target())
+	return (get_dist(src, A.actor) < 2 && isliving(G?.grab_target())) ? null : /datum/msg/req_failed
 
 /// A grab that can put its person on the table: nothing in the way (the person must also be at the grabber's side: the effect asks).
 /obj/structure/table/proc/person_can_go_on(datum/act/op/A)
@@ -167,8 +167,8 @@
 	var/obj/item/grab/G = A.held
 	var/mob/living/M = G?.grab_target()
 	if(get_dist(src, A.actor) >= 2 || G.state >= 2) // ALLOW(reads): how firm a grab is is read when it is used; the click asks again
-		return FALSE
-	return isliving(M) && !can_climb_turf(src)
+		return /datum/msg/req_failed
+	return (isliving(M) && !can_climb_turf(src)) ? null : /datum/msg/req_failed
 
 /// A loosely grabbed person's face is slammed against the table (combat mode only).
 /obj/structure/table/proc/slam_face(datum/act/op/A)

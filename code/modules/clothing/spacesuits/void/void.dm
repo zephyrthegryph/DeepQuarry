@@ -64,7 +64,7 @@ MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 CAPABILITIES(/obj/item/clothing/suit/space/void)
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
-	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req_bool(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
+	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
 	op("void_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_is(nameof(hood), TRUE, because = MSG(void/no_helmet))), then(PROC_REF(void_toggle_helmet_verb)))
 	op("voidsuit_remove_component", tool(TOOL_SCREWDRIVER), label("Remove component"), needs(req_actor_kind(/mob/living), req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn)), req_bool(PROC_REF(has_removable_component), because = MSG(void/nothing_installed))), asks(/datum/prompt/choice, fields = list("question" = "What component would you like to remove?", "title" = "Remove Component", "choices" = computed(PROC_REF(removable_components)), "timeout" = 0), step = "component"), then(PROC_REF(remove_component)))
 	op("void_eject_tank_verb", menu(), label("Eject Voidsuit Tank/Cooler"), needs(carried(), any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(void_eject_tank_verb)))
@@ -201,7 +201,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 /// The install op is for anything but an accessory or a labeler: those go on to the clothing's own attach-an-accessory op.
 /obj/item/clothing/suit/space/void/proc/install_item_applies(datum/act/op/A)
-	return !istype(A.held, /obj/item/clothing/accessory) && !istype(A.held, /obj/item/hand_labeler)
+	return (!istype(A.held, /obj/item/clothing/accessory) && !istype(A.held, /obj/item/hand_labeler)) ? null : /datum/msg/req_failed
 
 /// Requirement: TRUE, or why the helmet can't be toggled (a suit nobody wears is ignored silently by the effect).
 /obj/item/clothing/suit/space/void/proc/can_toggle_helmet(mob/user, atom/target, obj/item/held)

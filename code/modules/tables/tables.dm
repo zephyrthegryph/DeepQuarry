@@ -81,24 +81,24 @@ CAPABILITIES(/obj/structure/table)
 	extend("construction.build:table_reinforced", priority(above("place_dragged")))
 	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(req_bool(PROC_REF(is_damaged))),
 		then(PROC_REF(repaired)), says(MSG(table/repaired)))
-	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req_bool(PROC_REF(can_carpet))),
+	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req(PROC_REF(can_carpet))),
 		then(PROC_REF(carpet_laid)), says(MSG(table/carpeted)))
 	op("uncarpet", tool(TOOL_CROWBAR), wait(0), label("Remove carpet"), when(nameof(carpeted)),
 		then(PROC_REF(carpet_lifted)), says(MSG(table/uncarpeted)))
-	op("flip", menu(), label("Flip table"), when(req_bool(PROC_REF(is_flippable))),
-		needs(req_bool(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), req_bool(PROC_REF(can_flip_away), because = MSG(table/wont_budge))),
+	op("flip", menu(), label("Flip table"), when(req(PROC_REF(is_flippable))),
+		needs(req(PROC_REF(actor_can_flip)), req(PROC_REF(can_flip_away))),
 		then(PROC_REF(flip_over)), says(MSG(table/flipped)))
-	op("put_back", menu(), label("Put table back"), when(req_bool(PROC_REF(is_flipped_up))),
+	op("put_back", menu(), label("Put table back"), when(req(PROC_REF(is_flipped_up))),
 		needs(req_bool(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), req_bool(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))),
 		then(PROC_REF(put_back)), says(MSG(table/put_back)))
 	op("slice_blade", item(/obj/item/melee/energy/blade), then(PROC_REF(sliced_apart)))
 	op("slice_arm_blade", item(/obj/item/melee/changeling/arm_blade), then(PROC_REF(sliced_apart)))
-	op("claw", hand(), when(req_bool(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart)))
-	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req_bool(PROC_REF(slam_applies))), then(PROC_REF(slam_face)))
-	op("put_on", item(/obj/item/grab), label("Put on table"), when(req_bool(PROC_REF(person_grabbed))),
+	op("claw", hand(), when(req(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart)))
+	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req(PROC_REF(slam_applies))), then(PROC_REF(slam_face)))
+	op("put_on", item(/obj/item/grab), label("Put on table"), when(req(PROC_REF(person_grabbed))),
 		needs(req_bool(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), then(PROC_REF(put_person_on)))
 	op("place", item(/obj/item), label("Place"), priority(OP_PRIORITY_NORMAL - 5), answers(INTENT_USE, INTENT_ATTACK),
-		needs(req_bool(PROC_REF(has_surface), because = MSG(table/needs_plating)), req_bool(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))),
+		needs(req(PROC_REF(has_surface)), req(PROC_REF(held_is_carried))),
 		then(PROC_REF(place_held)))
 	op("place_dragged", item(/obj/item), gesture(GESTURE_DRAG), label("Place"),
 		needs(req_bool(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), then(PROC_REF(place_dragged)))
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/structure/table)
 
 /// The table has a surface to put things on: a plated one, or a kind that never is.
 /obj/structure/table/proc/has_surface(datum/act/A)
-	return !can_plate || !!material()
+	return (!can_plate || !!material()) ? null : MSG(table/needs_plating)
 
 /// The strength of the table follows what it is made of.
 /obj/structure/table/proc/update_material()
@@ -221,7 +221,7 @@ CAPABILITIES(/obj/structure/table)
 // ---- the carpet and the repair ----
 
 /obj/structure/table/proc/can_carpet(datum/act/A)
-	return !carpeted && !!material()
+	return (!carpeted && !!material()) ? null : /datum/msg/req_failed
 
 /obj/structure/table/proc/carpet_laid(datum/act/op/A)
 	var/obj/item/stack/tile/carpet/C = A.held
@@ -292,7 +292,7 @@ CAPABILITIES(/obj/structure/table)
 /// A claw (a xenomorph's hand) tears the table apart.
 /obj/structure/table/proc/actor_is_xeno(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return istype(X) && istype(X.species, /datum/species/xenos)
+	return (istype(X) && istype(X.species, /datum/species/xenos)) ? null : /datum/msg/req_failed
 
 /obj/structure/table/proc/clawed_apart(datum/act/op/A)
 	attack_alien(A.actor)

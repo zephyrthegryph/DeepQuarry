@@ -167,7 +167,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 
 /// A requirement that never holds: the blocked click is refused without a word.
 /mob/living/bot/proc/never_allowed(datum/act/op/A)
-	return FALSE
+	return /datum/msg/req_failed
 
 /mob/living/bot/proc/remove_pai(datum/act/op/A)
 	ejectpai(A.actor)
@@ -695,7 +695,7 @@ CAPABILITIES(/mob/living/bot)
 	op("work", ai(), reach(REACH_ANY), wait(PROC_REF(work_time)), then(PROC_REF(work_finished)), on_interrupt(PROC_REF(work_broken)))
 	op("hold", ai(), wait(PROC_REF(work_time), keeps = 0), then(PROC_REF(hold_finished)), on_interrupt(PROC_REF(hold_broken)))
 	// the legacy crowbar_act refused a closed bot or one with no pAI and ended the click: the crowbar does not fall through to a hit
-	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req_bool(PROC_REF(never_allowed), silent = TRUE)))
+	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never_allowed), silent = TRUE)))
 	op("eject_pai", tool(TOOL_CROWBAR), label("Remove the pAI"), when(PROC_REF(pai_removable)), begins(MSG(bot/removing_pai)), wait(1 SECOND), then(PROC_REF(remove_pai)))
 	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
 /mob/living/bot/ownership()

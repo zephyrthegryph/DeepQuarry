@@ -188,8 +188,8 @@ CAPABILITIES(/obj/machinery/alarm)
 	op("mode", ui_act("mode", arg("mode", int(AALARM_MODE_SCRUBBING, AALARM_MODE_OFF))), then(PROC_REF(ui_set_mode)))
 	op("alarm", ui_act("alarm"), then(PROC_REF(ui_raise_alarm)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_reset_alarm)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
-	extend("ui_open", needs(req_bool(PROC_REF(controls_reachable), because = PROC_REF(controls_unreachable_reason))))
+	extend(TAG_UI, needs(req(PROC_REF(controls_unreachable_reason))))
+	extend("ui_open", needs(req(PROC_REF(controls_unreachable_reason))))
 	extend("rcon", drop = "lock")
 	extend("temperature", drop = "lock")
 
@@ -628,8 +628,6 @@ CAPABILITIES(/obj/machinery/alarm)
 	return operable()
 
 /// The window's buttons answer: the alarm is not shorted, a silicon's AI control is not cut, and a remote console lets the actor in.
-/obj/machinery/alarm/proc/controls_reachable(datum/act/op/A)
-	return isnull(controls_unreachable_reason(A))
 
 /obj/machinery/alarm/proc/controls_unreachable_reason(datum/act/op/A)
 	if(shorted)

@@ -126,7 +126,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
-	op("shieldgen_repair", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req_bool(PROC_REF(needs_repair_holds))), begins(MSG(shieldgen/rewiring)), wait(3 SECONDS), then(PROC_REF(rewire_done)))
+	op("shieldgen_repair", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_DEFAULT - 1), label("Repair wiring"), when(req(PROC_REF(needs_repair_holds))), begins(MSG(shieldgen/rewiring)), wait(3 SECONDS), then(PROC_REF(rewire_done)))
 	op("shieldgen_toggle_lock", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle lock"), then(PROC_REF(interaction_toggle_lock)))
 	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
 	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req_bool(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req_bool(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 /// Requirement (was REQ_* needs_repair): the legacy check answers TRUE to pass.
 /obj/machinery/shieldgen/proc/needs_repair_holds(datum/act/op/A)
 	var/answer = needs_repair(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
 
 /// Requirement (was REQ_* unlocked): the legacy check answers TRUE to pass.
 /obj/machinery/shieldgen/proc/unlocked_holds(datum/act/op/A)

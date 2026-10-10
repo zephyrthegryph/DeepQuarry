@@ -122,8 +122,8 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))
 	op("killbot", ui_act("killbot", arg("ref")), then(PROC_REF(ui_act_killbot)))
 	op("stopbot", ui_act("stopbot", arg("ref")), then(PROC_REF(ui_act_stopbot)))
-	op("hackbot", ui_act("hackbot", arg("ref")), needs(req_bool(PROC_REF(hack_possible), because = MSG(robotics/cannot_hack))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_authenticated), because = MSG(robotics/access_denied))))
+	op("hackbot", ui_act("hackbot", arg("ref")), needs(req(PROC_REF(hack_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Hack?", "question" = "Really hack this cyborg? This cannot be undone.")), then(PROC_REF(ui_act_hackbot)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_authenticated))))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("robotics_console_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(robotics_console_robot_use)))
 
@@ -160,7 +160,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 
 /// Every button needs the operator to be authenticated (the old window guard).
 /obj/machinery/computer/robotics/proc/ui_authenticated(datum/act/op/A)
-	return is_authenticated(A.actor)
+	return (is_authenticated(A.actor)) ? null : MSG(robotics/access_denied)
 
 /obj/machinery/computer/robotics/proc/ui_act_arm(datum/act/op/A)
 	safety = !safety
@@ -223,7 +223,7 @@ CAPABILITIES(/obj/machinery/computer/robotics)
 	return ui_ref(A.args["ref"], null, /mob/living/silicon/robot)
 
 /obj/machinery/computer/robotics/proc/hack_possible(datum/act/op/A)
-	return can_hack(A.actor, hack_target(A))
+	return (can_hack(A.actor, hack_target(A))) ? null : MSG(robotics/cannot_hack)
 
 /obj/machinery/computer/robotics/proc/ui_act_hackbot(datum/act/op/A, ref)
 	var/datum/prompt/answer = A.answer

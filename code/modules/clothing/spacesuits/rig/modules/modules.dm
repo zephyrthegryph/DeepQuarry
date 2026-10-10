@@ -58,10 +58,10 @@ TRACKED(/obj/item/rig_module, suit_overlay)
 
 CAPABILITIES(/obj/item/rig_module)
 	owns_many(nameof(stat_modules))
-	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req_bool(PROC_REF(damaged), because = MSG(rig_module/undamaged))),
+	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
 	op("mend_cable", item(/obj/item/stack/cable_coil), label("Mend with cable"),
-		needs(req_bool(PROC_REF(damaged), because = MSG(rig_module/undamaged)), req_bool(PROC_REF(mendable_with_cable), because = MSG(rig_module/crude))),
+		needs(req(PROC_REF(damaged)), req(PROC_REF(mendable_with_cable))),
 		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_cable)))
 
 MSG_DEF_SELF(rig_module/undamaged, "There is no damage to mend.")
@@ -70,11 +70,11 @@ MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%.
 
 /// Requirement: the module is damaged (its damage is fixed while the click is decided).
 /obj/item/rig_module/proc/damaged(datum/act/op/A)
-	return read_once(damage) != 0
+	return (read_once(damage) != 0) ? null : MSG(rig_module/undamaged)
 
 /// Requirement: it is not past what cable can mend (almost destroyed is the only state cable improves).
 /obj/item/rig_module/proc/mendable_with_cable(datum/act/op/A)
-	return read_once(damage) == 2
+	return (read_once(damage) == 2) ? null : MSG(rig_module/crude)
 
 /obj/item/rig_module/examine()
 	. = ..()

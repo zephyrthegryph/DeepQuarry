@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 		then(PROC_REF(interaction_set_light)))
 	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req_bool(PROC_REF(actor_can_act), because = MSG(hydroponics/not_by_this))), then(PROC_REF(interaction_toggle_lid_verb)))
 	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
-	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req_bool(PROC_REF(boltable))), then(PROC_REF(bolted)))
+	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
 	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
 		needs(req_bool(PROC_REF(is_anchored), because = MSG(hydroponics/anchor_first)), req_bool(PROC_REF(can_freeze), because = MSG(hydroponics/no_freezer))),
 		then(PROC_REF(freezer_toggled)))
@@ -684,7 +684,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
 /obj/machinery/portable_atmospherics/hydroponics/proc/boltable(datum/act/op/A)
-	return mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector) // ALLOW(reads): the port under the tray is looked for when the wrench is used
+	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed // ALLOW(reads): the port under the tray is looked for when the wrench is used
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
 	var/obj/item/tool = A.held

@@ -82,15 +82,15 @@ CAPABILITIES(/obj/machinery/door/blast)
 	without("weld_plasteel")
 	without("unreinforce")
 	emag(then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged))
-	op("force_xeno", hand(), label("Force"), when(req_bool(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)),
+	op("force_xeno", hand(), label("Force"), when(PROC_REF(claws_force)), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)),
 		needs(req_bool(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
-	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(req_bool(PROC_REF(prying_item))), priority(OP_PRIORITY_PART), wait(0),
+	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(PROC_REF(prying_item)), priority(OP_PRIORITY_PART), wait(0),
 		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req_bool(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
-	op("pry_broken", item(/obj/item), stance(I_HURT), when(req_bool(PROC_REF(prying_item))), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0),
+	op("pry_broken", item(/obj/item), stance(I_HURT), when(PROC_REF(prying_item)), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0),
 		needs(req_bool(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req_bool(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
 	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS),
-		needs(req_bool(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired))),
+		needs(req(PROC_REF(needs_mending))),
 		then(PROC_REF(mended)), says(MSG(blast_door/repaired)))
 
 /// Emag: the motors are subverted and the door throws twice as hard.
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 	return CEILING((max_integrity - get_integrity()) / 150, 1) // ALLOW(reads): a door's max_integrity is its type's constant
 
 /obj/machinery/door/blast/proc/needs_mending(datum/act/A)
-	return sheets_to_mend() > 0
+	return (sheets_to_mend() > 0) ? null : MSG(blast_door/already_repaired)
 
 /obj/machinery/door/blast/proc/mended(datum/act/op/A)
 	var/obj/item/stack/P = A.held
