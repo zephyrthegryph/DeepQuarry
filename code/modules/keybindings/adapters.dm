@@ -6,20 +6,20 @@
  * modifier actions (Inspect, Alternate, Pull, ...) go through handler_for(),
  * which names the mob proc that runs them; AI and borgs override those procs.
  *
- * Use and Alternate first ask the interaction resolver (I2,
- * code/datums/interactions/). When no interaction answers, they fall back to
- * today's handlers: attackby through resolve_attackby (whose tool_act path
- * reaches the resolver again for tool interactions), attack_hand through
- * UnarmedAttack, attack_ai, attack_robot, attack_ghost, attack_tk, click_alt.
- * allows_interaction() is where each kind of actor limits what it can do.
+ * Use and Alternate first ask the op engine (try_interaction(): the target's, the held item's and the
+ * actor's ops, code/engine/parts/resolve.dm). When no op answers, they fall back to today's handlers:
+ * attackby through resolve_attackby (whose tool_act path reaches the engine again for tool ops),
+ * attack_hand through UnarmedAttack, attack_ai, attack_robot, attack_ghost, attack_tk, click_alt.
+ * What each kind of actor may do is the op's own: its route (ROUTE_PHYSICAL hands, ROUTE_INTERFACE for a
+ * silicon, ROUTE_UI for a ghost, ROUTE_TK) and provider requirements, checked by the engine.
  *
  * I3: the AI, cyborg, ghost and telekinesis adapters produce the same actions
- * as hands, filtered through what the actor can do:
- * - AI: remote, no hands, needs camera sight. Only INTERACTION_TAG_REMOTE.
- * - Cyborg: its modules are its held items; everything but observer-only.
- * - Ghost: observer-only (INTERACTION_TAG_OBSERVER); Use opens UIs to view.
+ * as hands, through what the actor can do:
+ * - AI: remote, no hands; ops over the interface route, then silicon_use.
+ * - Cyborg: its modules are its held items.
+ * - Ghost: observes; Use opens UIs to view.
  * - Telekinesis: at range, no tools.
- * Their Use tries the resolver first, then the legacy proc. Where that legacy
+ * Their Use tries the op engine first, then the legacy proc. Where that legacy
  * proc only forwarded to the hand's (attack_ai -> attack_hand and friends), the
  * override is gone and the type sets `silicon_use` instead (SILICON_USE_*).
  */
@@ -85,20 +85,15 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	if(handler)
 		call(user, handler)(target, params)
 
-/// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
-/// Observer-only interactions are for ghosts alone.
-/datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_SILICON in interaction.tags) && !(INTERACTION_TAG_TELEKINESIS in interaction.tags)
-
-/// Use through the resolver with nothing in hand. TRUE if an interaction answered.
+/// Use through the op engine with nothing in hand. TRUE if an op answered.
 /datum/input_adapter/proc/use_interaction(mob/user, atom/target)
-	return try_interaction(user, target, null, INPUT_ACTION_USE, null, TRUE, src) ? TRUE : FALSE
+	return try_interaction(user, target, null, INPUT_ACTION_USE, null, TRUE) ? TRUE : FALSE
 
 /// The Use action.
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
 	return
 
-/// What this kind of actor's Use does when no interaction answers.
+/// What this kind of actor's Use does when no op answers.
 /datum/input_adapter/proc/default_use(mob/user, atom/target)
 	return FALSE
 
@@ -113,7 +108,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	return adapter.default_use(user, target)
 
 /// Use `target` as this kind of actor, for code that makes an actor use something directly
-/// (an AI hotkey, a pAI reaching through a cable): its interactions, then its default.
+/// (an AI hotkey, a pAI reaching through a cable): its ops, then its default.
 /datum/input_adapter/proc/use_as(mob/user, atom/target)
 	if(use_interaction(user, target))
 		return TRUE
@@ -138,10 +133,8 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return
 	input_submit(new /datum/input_event/drag(user, dragged, over, list(src_location, over_location, src_control, over_control, params)))
 
-/// The drag no op took: the gesture entries, then MouseDrop_T of the target.
+/// The drag no op took: MouseDrop_T of the target.
 /datum/input_adapter/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
-	if(try_gesture_drag(user, dragged, over))
-		return
 	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, legacy?[1], legacy?[2], legacy?[3], legacy?[4], legacy?[5]) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after
 
 /// A category key: the best interaction of that category on the target.
@@ -215,7 +208,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 
 	var/obj/item/W = user.get_active_hand()
 
-	// Empty-handed interactions (I2) come before the legacy attack_hand chain.
+	// Empty-handed ops come before the legacy attack_hand chain.
 	if(!currently_restrained && !W && try_interaction(user, A, null, INPUT_ACTION_USE, null, TRUE))
 		user.trigger_aiming(TARGET_CAN_CLICK)
 		return TRUE
@@ -301,14 +294,6 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 /datum/input_adapter/telekinesis
 	name = "telekinesis"
 
-/// Telekinesis reaches, but holds no tools: only tool-less interactions.
-/datum/input_adapter/telekinesis/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	if(interaction.tool)
-		return FALSE
-	if(INTERACTION_TAG_TELEKINESIS in interaction.tags)
-		return TRUE
-	return ..()
-
 /// Use at range: grab or poke the target telekinetically.
 /datum/input_adapter/telekinesis/use(mob/user, atom/target, list/modifiers, params)
 	if(get_dist(user, target) > TK_MAXRANGE)
@@ -321,7 +306,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	default_use(user, target)
 
 /**
- * A telekinetic Use no interaction answered: grab a loose object (an item on the floor,
+ * A telekinetic Use no op answered: grab a loose object (an item on the floor,
  * or anything unanchored) with a telekinetic grab; otherwise poke it as an unarmed hand
  * would. Mobs, carried items and objects with `tk_reach = FALSE` are left alone.
  */
@@ -349,18 +334,8 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 /datum/input_adapter/ghost
 	name = "ghost"
 
-/// Ghosts only observe: they get observer-only interactions and nothing else. An op is an observer's when it answers the
-/// observer profile's gesture (ACT_EXAMINE) over the observer route (ROUTE_UI, mob/observer/dead/op_route()): the old
-/// INTERACT_OBSERVER as cap_op(action = ACT_EXAMINE, via = ROUTE_UI, by = NONE).
-/datum/input_adapter/ghost/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	if(INTERACTION_TAG_OBSERVER in interaction.tags)
-		return TRUE
-	var/datum/interaction/capability/E = interaction
-	if(istype(E) && E.op && !E.op.legacy)
-		return E.op.action == ACT_EXAMINE && (E.op.via & ROUTE_UI) ? TRUE : FALSE
-	return FALSE
-
-/// Observer-only interactions first; then attack_ghost, which on /obj opens the
+/// Ghosts only observe: the op engine offers a ghost only the ops its origins reach (actor_gate_reason(): the
+/// actor's actor_acts_via()), then attack_ghost, which on /obj opens the
 /// UI to view (so types no longer override it just to call tgui_interact).
 /// Checking config.ghost_interaction is the responsibility of attack_ghost overrides.
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
@@ -368,7 +343,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return TRUE
 	default_use(user, target)
 
-/// A ghost's Use when no observer interaction answers: an object's UI, to view; an inquisitive ghost examines.
+/// A ghost's Use when no op answers: an object's UI, to view; an inquisitive ghost examines.
 /datum/input_adapter/ghost/default_use(mob/observer/dead/user, atom/target)
 	if(isobj(target))
 		target.tgui_interact(user)
@@ -413,17 +388,6 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 	list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING), \
 ))
 
-/// The AI has no hands: only tool-less interactions tagged remote, and ops that travel the interface route (the old
-/// INTERACT_SILICON as cap_control(), or cap_op(via = ROUTE_INTERFACE)), on what its cameras can see.
-/datum/input_adapter/ai/allows_interaction(mob/living/silicon/ai/user, atom/target, datum/interaction/interaction)
-	if(interaction.tool)
-		return FALSE
-	var/datum/interaction/capability/E = interaction
-	var/remote_op = istype(E) && E.op && !E.op.legacy && (E.op.via & ROUTE_INTERFACE)
-	if(!remote_op && !(INTERACTION_TAG_REMOTE in interaction.tags))
-		return FALSE
-	return istype(user) ? user.has_camera_sight(target) : TRUE
-
 /datum/input_adapter/ai/use(mob/living/silicon/ai/user, atom/target, list/modifiers, params)
 	var/obj/effect/overlay/aiholo/hologram = user.holo ? LAZYACCESS(user.holo.masters, user) : null
 	if(istype(hologram))
@@ -439,7 +403,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		return TRUE
 	default_use(user, target)
 
-/// The AI's Use when no silicon interaction answers: what the type's `silicon_use` says.
+/// The AI's Use when no op answers: what the type's `silicon_use` says.
 /datum/input_adapter/ai/default_use(mob/user, atom/target)
 	if(target.silicon_use & SILICON_USE_HAND)
 		return target.attack_hand(user)
@@ -453,7 +417,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 /datum/input_adapter/robot
 	name = "robot"
 
-/// A cyborg's empty-gripper Use when no interaction answers: a hand's Use where the type says so
+/// A cyborg's empty-gripper Use when no op answers: a hand's Use where the type says so
 /// (or on something with a mob buckled to it, so anti-robot valves can't be worked around it), else like the AI.
 /datum/input_adapter/robot/default_use(mob/user, atom/target)
 	if(target.silicon_use & ROBOT_USE_HAND)
@@ -465,10 +429,6 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		if(O.has_buckled_mobs())
 			return O.attack_hand(user)
 	return actor_use_default(/datum/input_adapter/ai, user, target)
-
-/// Cyborgs get everything but observer-only and telekinesis-only interactions, silicon-only ones included.
-/datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_TELEKINESIS in interaction.tags)
 
 /datum/input_adapter/robot/accept_click(mob/living/silicon/robot/user, atom/target, params)
 	if(!user.checkClickCooldown())

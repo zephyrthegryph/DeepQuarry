@@ -18,25 +18,16 @@
 	H.enable_godmode()
 	return H
 
-/// The menu row of `target` labelled `label` for `actor`, picked. An op is picked from the final menu; a legacy verb entry (which that menu does not list) is
-/// attempted by name, as the right-click verb did.
+/// The menu row of `target` labelled `label` for `actor`, picked from the final menu.
 /datum/unit_test/dq_fwg3/proc/menu_pick(mob/actor, atom/target, label)
 	for(var/list/row in action_options(actor, target, actor.get_active_hand()))
 		if(row["label"] == label)
 			return test_menu(actor, target, row["key"])
-	var/datum/interaction_resolution/L = interactions_for(actor, target, actor.get_active_hand(), null, null, null, null, TRUE, FALSE)
-	for(var/datum/interaction/I as anything in L.available)
-		if(I.name == label)
-			return I.attempt(actor, target, actor.get_active_hand())
 	TEST_FAIL("no menu row \"[label]\" on [target]")
 
 /datum/unit_test/dq_fwg3/proc/menu_has(mob/actor, atom/target, label)
 	for(var/list/row in action_options(actor, target, actor.get_active_hand()))
 		if(row["label"] == label)
-			return TRUE
-	var/datum/interaction_resolution/L = interactions_for(actor, target, actor.get_active_hand(), null, null, null, null, TRUE, FALSE)
-	for(var/datum/interaction/I as anything in L.available)
-		if(I.name == label)
 			return TRUE
 	return FALSE
 

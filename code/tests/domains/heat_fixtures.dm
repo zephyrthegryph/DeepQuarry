@@ -10,10 +10,10 @@
 TRACKED(/obj/machinery/heat_fixture, heat_on)
 
 /// Two cells of nitrogen it starts with (gas_store()).
-/obj/machinery/heat_fixture/capabilities()
-	. = ..()
-	. += gas_store(nameof(gas), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
-	. += gas_store(nameof(cold), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
+/obj/machinery/heat_fixture/declared_capabilities(list/into)
+	..()
+	into += gas_store(nameof(gas), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
+	into += gas_store(nameof(cold), CELL_VOLUME, T20C, list(GAS_N2 = ONE_ATMOSPHERE))
 
 /// Links its gas to the room's air while on.
 /obj/machinery/heat_fixture/plate

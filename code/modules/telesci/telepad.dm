@@ -42,7 +42,7 @@
  * Old attackby: fingerprinted on any item, then tried a part replacement,
  * falling through to the base attackby (the signal, etc.) otherwise. The
  * fingerprint applies even when the item isn't a part replacer, so this
- * can't reuse the shared /datum/interaction/machine_item/part_replacement.
+ * can't reuse the shared part_replacement() op.
  */
 /obj/machinery/telepad/proc/interaction_part_replacement_impl(datum/act/op/A)
 	add_fingerprint(A.actor)

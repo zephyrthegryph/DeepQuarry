@@ -13,7 +13,7 @@
 	var/tank_actor_ref
 	var/tank_calls = 0
 
-/obj/mecha/working/ripley/interim_air_forwarded_actor/toggle_internal_tank(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/working/ripley/interim_air_forwarded_actor/toggle_internal_tank(mob/user, obj/item/held)
 	tank_actor_ref = user ? REF(user) : null
 	tank_calls++
 	return ..()

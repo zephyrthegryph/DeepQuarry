@@ -620,7 +620,7 @@
 		SStgui.update_uis(src_object(), src)
 		if(isatom(src_object()) && !QDELETED(src_object()))
 			var/atom/A = src_object()
-			A.interaction_ran(user, null)
+			A.interaction_ran(user)
 
 /// The src_object this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/src_object() as /datum

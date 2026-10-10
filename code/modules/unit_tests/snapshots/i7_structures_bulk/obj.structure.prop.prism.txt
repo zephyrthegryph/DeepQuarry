@@ -1,5 +1,60 @@
-/obj/structure/prop/prism|human|none => |
-/obj/structure/prop/prism|robot|none => |
-/obj/structure/prop/prism|ai|none => |
-/obj/structure/prop/prism|ghost|none => |
+human|none menu: Rotate
+human|none click: Click: Rotate
+robot|none menu: Rotate
+robot|none click: Click: Rotate
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Rotate
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Rotate
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Rotate
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Rotate
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Rotate
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Rotate
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Rotate
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Rotate
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Rotate
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Rotate
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Rotate
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Rotate
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Rotate
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Rotate
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Rotate
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Rotate
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Rotate
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Rotate
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Rotate
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Rotate
+keys: drag_buckle, melee_hit, rotate
 

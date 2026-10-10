@@ -43,9 +43,9 @@
 /obj/cap_fixture/rxw_holder
 	var/ticks = 0
 
-/obj/cap_fixture/rxw_holder/capabilities()
-	. = ..()
-	. += dx_test_cap(/datum/capability/dx_test/rxw, "rxw")
+/obj/cap_fixture/rxw_holder/declared_capabilities(list/into)
+	..()
+	into += dx_test_cap(/datum/capability/dx_test/rxw, "rxw")
 
 /obj/cap_fixture/rxw_holder/reactions()
 	. = ..()

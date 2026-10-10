@@ -431,7 +431,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 MSG_DEF_SELF(req_wrong_stance, "Not like that.")
 
 /// The actor's input is in one of `stances` (I_HELP, I_DISARM, I_GRAB, I_HURT): an op declared for some stances
-/// (cap_op(stance = list(...))) offers this, so another stance falls through to the next op. The input layer's reading of
+/// (an op's stance list) offers this, so another stance falls through to the next op. The input layer's reading of
 /// the stance (mob/input_stance()), as the resolver's stance clauses read it.
 /datum/req/stance
 	reason = /datum/msg/req_wrong_stance

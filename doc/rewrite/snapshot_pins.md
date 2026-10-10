@@ -72,7 +72,8 @@ the type owns (not the library's) and for each row of the table above that appli
 ## The i7 interaction snapshots
 
 `dq_interaction_domain_snapshot/i7_bulk`, `i7_items_bulk` and `i7_structures_bulk` use the same file layout
-(`code/modules/unit_tests/snapshots/<name>/`), with id-keyed rows from the legacy resolver. Re-record after an
+(`code/modules/unit_tests/snapshots/<name>/`). Each is a native pin capture (`dq_conversion_pin`'s rows: menus, refusals,
+clicks, wires, op keys); the legacy resolver they once recorded is retired (ix-r2). Re-record after an
 intended change with `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`; add a type by
 adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`.
 

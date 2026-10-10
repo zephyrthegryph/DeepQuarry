@@ -61,7 +61,7 @@ TYPE_TABLE_DECLARE(/datum, ui_logged_actions, list())
 			continue
 		named[arg] = params[raw]
 	named["user"] = user
-	var/datum/dispatch_context/ctx = new(user, host, null, null, ui)
+	var/datum/dispatch_context/ctx = new(user, host, null, ui)
 	var/log_level
 	if(owner_cap)
 		named["holder"] = host

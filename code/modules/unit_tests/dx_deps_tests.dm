@@ -221,9 +221,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_DATUM_A)
 TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_DATUM_A)
 TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_DATUM_A)
 
-/obj/cap_fixture/dx_deps_cap/capabilities()
-	. = ..()
-	. += new /datum/capability/dx_deps_reads
+/obj/cap_fixture/dx_deps_cap/declared_capabilities(list/into)
+	..()
+	into += new /datum/capability/dx_deps_reads
 
 /// An empty runs_while() makes the type exact: only what it (or its capabilities) reads re-derives.
 /obj/cap_fixture/dx_deps_cap/derived()

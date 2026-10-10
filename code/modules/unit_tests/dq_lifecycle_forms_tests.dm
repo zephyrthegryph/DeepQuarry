@@ -119,17 +119,17 @@ CAPABILITIES(/obj/item/dq_forms_flask/distilling)
 	name = "forms tank"
 	var/datum/gas_mixture/air_contents
 
-/obj/item/dq_forms_tank/capabilities()
-	. = ..()
-	. += gas_store(nameof(air_contents), 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
+/obj/item/dq_forms_tank/declared_capabilities(list/into)
+	..()
+	into += gas_store(nameof(air_contents), 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
 
 /// membership(joins =): an ordinary and a conditional registry.
 /obj/item/dq_forms_member
 	name = "forms member"
 
-/obj/item/dq_forms_member/capabilities()
-	. = ..()
-	. += membership(joins = list(REGISTRY_DQ_FORMS_PLAIN, REGISTRY_DQ_FORMS_COND))
+/obj/item/dq_forms_member/declared_capabilities(list/into)
+	..()
+	into += membership(joins = list(REGISTRY_DQ_FORMS_PLAIN, REGISTRY_DQ_FORMS_COND))
 
 /// after_init(): a one-shot timer armed at init; the delay may be a holder var.
 /obj/item/dq_forms_timer
@@ -329,20 +329,6 @@ CAPABILITIES(/obj/item/dq_forms_timer)
 	var/obj/item/clothing/head/radiation/hood = allocate(/obj/item/clothing/head/radiation, dq_containment_floor())
 	TEST_ASSERT(has_trait(hood, TRAIT_RADIATION_PROTECTED_CLOTHING), "the actual hood also starts protected")
 	TEST_ASSERT(span_notice(RADIATION_CLOTHING_EXAMINE) in examine_collect(hood, H), "the hood retains its examine line")
-
-// ---- G12 ----
-
-/// Library constructors take requirements, not behind/blocked_by/locked_by: req_set / req_clear fold onto the
-/// entries' gate bits and keep their messages.
-/datum/unit_test/dq_forms_library_requirements/Run()
-	var/datum/capability/P = cap_gating(new /datum/capability, needs = req_clear(COVER))
-	TEST_ASSERT_EQUAL(P.blocked_by, COVER, "req_clear(COVER) folds onto blocked_by")
-	TEST_ASSERT_NULL(P.needs, "and leaves no requirement behind")
-	var/datum/capability/C = cap_gating(new /datum/capability, needs = req_clear(LOCK))
-	TEST_ASSERT_EQUAL(C.locked_by, LOCK, "req_clear(LOCK) folds onto locked_by (\"it's locked\")")
-	var/datum/capability/slot/S = cap_slot(nameof(/obj/item/dq_forms_holder::part), /obj/item, needs = list(req_set(COVER), GLOBAL_PROC_REF(cap_in_reach)))
-	TEST_ASSERT_EQUAL(S.behind, COVER, "req_set(COVER) folds onto behind")
-	TEST_ASSERT_EQUAL(S.needs, GLOBAL_PROC_REF(cap_in_reach), "the other needs stay")
 
 // ---- G14 ----
 

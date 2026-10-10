@@ -1,2 +1,2 @@
-/obj/structure/lattice => deleted itself on creation
+deleted itself on creation
 

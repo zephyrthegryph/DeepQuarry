@@ -1,11 +1,8 @@
 // cap_access(): access-gated operations without lock state, and the credential providers every access check shares
 // (doc/rewrite/migration_guide.md A4, archive/framework_fixes.md §9.5; operations_and_actions.md "Credentials").
 //
-//	/obj/machinery/computer/drone_control/capabilities()
-//		. = ..()
-//		. += cap_op("Open console", ..., key = "open_console")
-//		. += cap_access(ops = "open_console")              // the holder's req_access (a map may vary it per instance)
-//		. += cap_access(list(ACCESS_ENGINE), ops = OP_CONTROL)  // a type default, used while the holder sets none
+//	CAPABILITY(/obj/machinery/computer/drone_control, cap_access(ops = "open_console"))              // the holder's req_access (a map may vary it per instance)
+//	CAPABILITY(/obj/machinery/computer/drone_control, cap_access(list(ACCESS_ENGINE), ops = OP_CONTROL))  // a type default, used while the holder sets none
 //
 // cap_access() is a contract (a cap_require() subtype): every op it covers (`ops`: op keys and/or OP_* kinds; null:
 // every op) also needs a credential that grants the access. The access asked is the holder's own req_access /

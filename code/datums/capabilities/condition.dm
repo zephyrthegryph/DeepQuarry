@@ -51,29 +51,6 @@ CAPABILITY_DEF(held_condition, CAP_HELD_CONDITION, key = condition_type, conditi
 	/// Verbs hidden while the condition holds (a list of verb paths), or null.
 	var/list/hides_verbs
 
-/datum/capability/condition/gate(atom/holder, mob/user, datum/interaction/entry)
-	var/datum/interaction/capability/E = entry
-	if(!istype(E) || !E.cap || E.cap == src)
-		return null
-	if(istype(E.cap, /datum/capability/condition))
-		return null // conditions don't gate each other's entries
-	if(blocks != ALL_ENTRIES)
-		var/matched = FALSE
-		for(var/path in blocks)
-			if(istype(E.cap, path))
-				matched = TRUE
-				break
-		if(!matched)
-			return null
-	for(var/path in exempt)
-		if(istype(E.cap, path))
-			return null
-	return refusal(holder)
-
-/// The refusal text for holder. Override when it needs the holder's name; the default is else_say.
-/datum/capability/condition/proc/refusal(atom/holder)
-	return else_say
-
 /datum/capability/condition/draw(atom/holder, datum/look/look)
 	..()
 	look.part(layer_name || "[key]")

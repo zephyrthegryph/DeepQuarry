@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - qol: "The interaction menu lists what you can do to the target (and what you can't, with the reason), and runs the chosen action."
+  - rscdel: "Removed the Act command-bar verb, which no longer had anything to run."
+  - code_imp: "Retired the legacy interaction resolver and capability entry bridge; clicks go to the op engine only."

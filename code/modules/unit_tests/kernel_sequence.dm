@@ -178,9 +178,9 @@ SEQ_TEST_STEP(cy)
 	name = "sequence test atom"
 	var/list/log = list()
 
-/obj/seq_test_atom/capabilities()
-	. = ..()
-	. += cap_seq_test()
+/obj/seq_test_atom/declared_capabilities(list/into)
+	..()
+	into += cap_seq_test()
 
 /obj/seq_test_atom/proc/test_steps()
 	return list(seq_step(PROC_REF(own_step), after = "T_FIRST"))

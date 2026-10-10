@@ -28,15 +28,17 @@
 
 TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 
-/obj/cap_fixture/dx_review/capabilities()
-	. = ..()
-	. += dx_review_cap(/datum/capability/dx_review/a, "a")
-	. += dx_review_cap(/datum/capability/dx_review/b, "b", layer_order = 100, examine_order = -1)
-	. += dx_review_cap(/datum/capability/dx_review/c, "c")
+/obj/cap_fixture/dx_review/declared_capabilities(list/into)
+	..()
+	into += dx_review_cap(/datum/capability/dx_review/a, "a")
+	into += dx_review_cap(/datum/capability/dx_review/b, "b", layer_order = 100, examine_order = -1)
+	into += dx_review_cap(/datum/capability/dx_review/c, "c")
 
-/obj/cap_fixture/dx_review/replaced/capabilities()
-	. = ..()
-	. = replace(., /datum/capability/dx_review/a, dx_review_cap(/datum/capability/dx_review/a, "a2"))
+/obj/cap_fixture/dx_review/replaced/declared_capabilities(list/into)
+	..()
+	var/list/kept = replace(into, /datum/capability/dx_review/a, dx_review_cap(/datum/capability/dx_review/a, "a2"))
+	into.Cut()
+	into += kept
 
 /// replace() keeps the position; layer_order / examine_order reorder draw and examine only.
 /datum/unit_test/dx_review_order_and_replace/Run()
@@ -75,32 +77,6 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 	TEST_ASSERT(remove_capability(F, /datum/capability/dx_review/joining), "the extra detaches")
 	TEST_ASSERT(!(F in review_system.member_list()), "the holder left the system")
 	TEST_ASSERT(!("extra" in caps_examine(F, null)), "the examine line is gone")
-
-/obj/cap_fixture/dx_review_menu
-
-/obj/cap_fixture/dx_review_menu/capabilities()
-	. = ..()
-	. += cap_hand("Poke", PROC_REF(poke), works_unpowered = TRUE, applies = PROC_REF(pokeable))
-
-/obj/cap_fixture/dx_review_menu/var/can_poke = TRUE
-
-/obj/cap_fixture/dx_review_menu/proc/poke(mob/user)
-	return TRUE
-
-/obj/cap_fixture/dx_review_menu/proc/pokeable()
-	return can_poke
-
-/// The Menu runs a chosen capability entry by id; applies = hides it per instance.
-/datum/unit_test/dx_review_menu_ids_and_applies/Run()
-	var/obj/cap_fixture/dx_review_menu/F = allocate(/obj/cap_fixture/dx_review_menu)
-	var/list/entries = cap_interactions(F)
-	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
-	var/datum/interaction/capability/E = entries[1]
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(F))
-	TEST_ASSERT(run_chosen_interaction(H, F, E.id), "the Menu runs the capability entry by its id on this target")
-	TEST_ASSERT(E.applies_to(F), "offered while pokeable")
-	F.can_poke = FALSE
-	TEST_ASSERT(!E.applies_to(F), "not offered once applies says no")
 
 /// M5: a revert only fires while the var still holds what timed_set wrote. M6: VV uses the setter.
 /datum/unit_test/dx_review_timed_and_vv/Run()

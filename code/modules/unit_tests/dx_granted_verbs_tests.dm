@@ -10,9 +10,9 @@
 	var/grant_extra = FALSE
 	var/hide_extra = FALSE
 
-/obj/cap_fixture/dx_granted/capabilities()
-	. = ..()
-	. += new /datum/capability/dx_verbful
+/obj/cap_fixture/dx_granted/declared_capabilities(list/into)
+	..()
+	into += new /datum/capability/dx_verbful
 
 /obj/cap_fixture/dx_granted/granted_verbs()
 	. = ..()

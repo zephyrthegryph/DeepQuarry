@@ -193,12 +193,6 @@
 		M.set_grid_power(TRUE)
 		M.set_broken_condition(FALSE)
 	var/list/held_types = dq_pin_tools()
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
-		if(!interaction.held_type)
-			continue
-		var/path = islist(interaction.held_type) ? interaction.held_type[1] : interaction.held_type
-		if(ispath(path, /obj/item) && !ispath(path, /obj/item/grab))
-			held_types |= path
 	// ...and each item an op of the type binds (item(T), stack(T)), so a converted type is probed with what its legacy interactions asked for
 	var/datum/op_index/probe_index = op_index_of_table(table_of(target))
 	for(var/key in probe_index?.by_key)
@@ -227,15 +221,10 @@
 			welder?.set_welding(TRUE)
 		var/list/menu = list()
 		var/prefix = "[combination[1]]|[held_name] menu: "
-		// The engine's ops (op_menu) and, while the type is legacy, its interactions (what the Menu window lists).
+		// The engine's ops (op_menu): what the Menu window lists.
 		for(var/list/row as anything in op_menu(actor, target, held))
 			var/label = "[row["label"]]"
 			menu |= row["enabled"] ? "[prefix][label]" : "[prefix][label] (refused: [row["reason"]])"
-		var/datum/interaction_resolution/resolution = interactions_for(actor, target, held)
-		for(var/datum/interaction/interaction as anything in resolution.available)
-			menu |= "[prefix][interaction.display_name(actor, target)]"
-		for(var/datum/interaction/interaction as anything in resolution.blocked)
-			menu |= "[prefix][interaction.display_name(actor, target)] (refused: [resolution.blocked[interaction]])"
 		sortTim(menu, GLOBAL_PROC_REF(cmp_text_asc))
 		. += menu
 		. += "[combination[1]]|[held_name] click: [screentip_for(actor, target, held) || "nothing"]"
@@ -257,8 +246,6 @@
 		if(listed?.topic_key)
 			continue
 		keys += "[key]"
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
-		keys |= dq_snapshot_id(interaction.id)
 	if(length(keys))
 		sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc))
 		. += "keys: [jointext(keys, ", ")]"

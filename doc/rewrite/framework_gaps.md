@@ -623,17 +623,21 @@ config flag, so it is not name-banned). `om_mob_event_setup` on the overmap simp
 - **DONE** `om_world_diagnostics` (profiler, behaviours profiler, `_benchmark.dm`) and the test trace helpers: `world_diagnostics()`, `world_wake_trace()`, `world_wake_traced()`, `world_wake_untrace()` in the same file. `code/datums/om/world_watch.dm` is deleted; all of the names above are hard-banned.
 - `/datum/om/*` carriers are NOT removable yet: `/datum/om/scheduler` (kernel, measure, profilers), `/datum/om/relation/slot/*` (about 100 containment slot declarations, KR5), `/datum/om/edge`, `/datum/om/behaviour`, `/datum/om/check`, `/datum/om/type_table`, `global_owner`, `behaviour/internal/timers` are all live. See doc/rewrite/proposals/om_carriers.md.
 
-**IX-R2 follow-up: what of the bridge is still live (checked before deleting)**
+**IX-R2 follow-up: the bridge is deleted (rewrite/ix-r2, 2026-10-10)**
 
-Deleted: the six `/datum/interaction/entry_*` parent types in `code/datums/interactions/entries.dm` (no user anywhere; hard-banned). `dq_actor_can_act` stays: `guestpass.dm` and `food_replicator.dm` call it.
+Deleted: the six `/datum/interaction/entry_*` parent types (earlier), then the whole bridge: `resolver.dm` (`interactions_for()`), `interaction.dm`
+(`/datum/interaction`), `native_resolution_adapter.dm` (`op_legacy_candidates()`), `entries.dm`, `operations/actions.dm` (the legacy gesture router,
+bind profiles, the "Act" verb), `operations/cap_op.dm` (`cap_op()` and its presets; `/datum/op_def`, `cap_require()` and `req_reason_phrase()` moved to
+`op_ctx.dm`), `library/_library.dm` (`lib_op()`, `op_attach()`, `adopt_entry()`), `capabilities()` dispatch and the capability entry
+(`cap_interactions()`, `cap_dispatch()`, `cap_gate_reason()`, `/datum/capability/entry`), `item_entries.dm`, `slot.dm`, the legacy construction ladder
+(`construction.dm`, `construction_primitives.dm`, `frame_ladder.dm`) and `allows_interaction()`. No production type built an entry: the i7 snapshots
+recorded an empty resolver row for every type. Clicks go to the op engine (`try_interaction()` in `code/datums/interactions/clicks.dm`); the Menu lists
+`op_menu()` rows; the ghost, AI and telekinesis adapters rely on their op route. Every removed name is hard-banned (`[lint.legacy_forms.lists] banned`).
+`use_tool()` stays (live callers) without its interaction argument. Behaviour notes: `doc/rewrite/intended_changes.md`, "Interaction bridge retirement".
 
-Not deletable yet, each still on a live path:
-
-- `resolver.dm` / `interactions_for()`: the player interaction menu (`menu.dm`, `presentation.dm`, opened from `keybindings/adapters.dm`) and `native_resolution_adapter.dm` (`op_legacy_candidates`) both call it. The adapter is how entries built by `capabilities()` tables and library `lib_op` calls reach the op engine.
-- `/datum/interaction/capability` and subtypes (`use_at`, `slot_insert`, `slot_eject`, `toggle`, `construction_step`): the entry type for 30 production files using `cap_op` / `lib_op` / `cap_use_self` / `cap_use_at` (including `code/game/machinery/computer/medical.dm`) and 49 `capabilities()` tables; `actions.dm`, `cap_op.dm`, `op_ctx.dm` build on it.
-- `allows_interaction()` in `keybindings/adapters.dm`: called by the resolver and `actions.dm` (`action_entry_for`).
-- `use_tool()` in `tools.dm`: 51 production callers.
-- Deleting these needs the `capabilities()` tables and library capabilities converted to `op()` first; it is a wave, not a deletion.
+Still there, dead or engine-owned: the op engine's legacy-candidate hooks (`compatibility_candidates/menu/screentip/run` in
+`code/engine/parts/input_adapter.dm`, `C.legacy` in `resolve.dm` / `run.dm`) now always answer nothing; the engine's `refine()` support in
+`capability_tables.dm` has no constructor; `/datum/op_ctx`'s legacy stage pipeline is used only by the requirement tests and `cap_needs_reason()`.
 
 
 ## M. Small forms (rewrite/small-forms)

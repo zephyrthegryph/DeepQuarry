@@ -1,6 +1,6 @@
-// The DX framework core (code/datums/capabilities/): capabilities(), TRACKED, changed() and the
+// The DX framework core (code/datums/capabilities/): the capability list, TRACKED, changed() and the
 // refresh engine, the look builder, drift, periodic gating, hidden verbs, ui_<action> dispatch,
-// dispatch_call(), ask_* re-validation and forms, timed_set().
+// dispatch_call(), ask_* re-validation, timed_set().
 
 // ---------------------------------------------------------------- fixtures
 
@@ -23,19 +23,6 @@
 	C.layer_name = "[label]_layer"
 	return C
 
-/// A form field that answers without a prompt.
-/datum/form_field/dx_canned
-	var/answer
-
-/datum/form_field/dx_canned/ask(datum/dispatch_context/ctx)
-	return answer
-
-/proc/dx_canned_field(name, answer)
-	var/datum/form_field/dx_canned/F = new
-	F.name = name
-	F.answer = answer
-	return F
-
 /datum/dx_core_child
 	var/level = 0
 
@@ -52,7 +39,6 @@ TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_DATUM_A)
 	var/state_changes = 0
 	var/last_bits = 0
 	var/slept_done = FALSE
-	var/list/form_answers
 
 /obj/cap_fixture/dx_core/ownership()
 	. = ..()
@@ -60,11 +46,10 @@ TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_DATUM_A)
 
 TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_DATUM_A)
 
-/obj/cap_fixture/dx_core/capabilities()
-	. = ..()
-	. += dx_test_cap(/datum/capability/dx_test/a, "alpha")
-	. += dx_test_cap(/datum/capability/dx_test/b, "beta")
-	. += cap_hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
+/obj/cap_fixture/dx_core/declared_capabilities(list/into)
+	..()
+	into += dx_test_cap(/datum/capability/dx_test/a, "alpha")
+	into += dx_test_cap(/datum/capability/dx_test/b, "beta")
 
 /obj/cap_fixture/dx_core/draw(datum/look/look)
 	..()
@@ -86,27 +71,26 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_DATUM_A)
 	set name = "DX Secret"
 	set src in view(1)
 
-/obj/cap_fixture/dx_core/proc/dx_configure(mob/user, obj/item/held, mode, count)
-	form_answers = list("mode" = mode, "count" = count)
-
 /obj/cap_fixture/dx_core/proc/dx_sleepy(mob/user)
 	sleep(1)
 	slept_done = TRUE
 	return TRUE
 
-/obj/cap_fixture/dx_core/child/capabilities()
-	. = ..()
-	. = without(., /datum/capability/dx_test/a)
-	. += dx_test_cap(/datum/capability/dx_test/c, "gamma")
+/obj/cap_fixture/dx_core/child/declared_capabilities(list/into)
+	..()
+	var/list/kept = without(into, /datum/capability/dx_test/a)
+	into.Cut()
+	into += kept
+	into += dx_test_cap(/datum/capability/dx_test/c, "gamma")
 
 /// A capability that draws the holder's child (H2: the owner is marked for that child's changes).
 /datum/capability/dx_test/draws_child
 
-/obj/cap_fixture/dx_core/drawer/capabilities()
-	. = ..()
+/obj/cap_fixture/dx_core/drawer/declared_capabilities(list/into)
+	..()
 	var/datum/capability/dx_test/draws_child/C = dx_test_cap(/datum/capability/dx_test/draws_child, "drawer")
 	C.draws_var = nameof(/obj/cap_fixture/dx_core::child)
-	. += C
+	into += C
 
 /// Inherits the child's capabilities: a third type building the same entries.
 /obj/cap_fixture/dx_core/child/grand
@@ -167,20 +151,20 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	logged_calls++
 	return TRUE
 
-// ---------------------------------------------------------------- 1. capabilities()
+// ---------------------------------------------------------------- 1. the capability list
 
 /datum/unit_test/dx_core_capabilities_list/Run()
 	var/obj/cap_fixture/dx_core/A = allocate(/obj/cap_fixture/dx_core)
 	var/obj/cap_fixture/dx_core/B = allocate(/obj/cap_fixture/dx_core)
 	var/obj/cap_fixture/dx_core/child/C = allocate(/obj/cap_fixture/dx_core/child)
 	var/list/caps = caps_of(A)
-	TEST_ASSERT_EQUAL(length(caps), 3, "three capabilities")
+	TEST_ASSERT_EQUAL(length(caps), 2, "two capabilities")
 	TEST_ASSERT(istype(caps[1], /datum/capability/dx_test/a) && istype(caps[2], /datum/capability/dx_test/b), "declaration order kept")
 	TEST_ASSERT(caps_of(B) == caps, "caps_of is cached and shared per type")
 	TEST_ASSERT(caps_of(A) == caps, "caps_of returns the same list again")
 	var/list/child_caps = caps_of(C)
 	TEST_ASSERT_NULL(cap_of(C, /datum/capability/dx_test/a), "without() dropped the parent's entry by type")
-	TEST_ASSERT(istype(child_caps[1], /datum/capability/dx_test/b) && istype(child_caps[3], /datum/capability/dx_test/c), "without() keeps the order, . += appends")
+	TEST_ASSERT(istype(child_caps[1], /datum/capability/dx_test/b) && istype(child_caps[2], /datum/capability/dx_test/c), "without() keeps the order, . += appends")
 	TEST_ASSERT_EQUAL(jointext(caps_examine(A, null), ","), "alpha,beta", "examine follows list order")
 	TEST_ASSERT_EQUAL(jointext(caps_examine(C, null), ","), "beta,gamma", "the child's examine follows its list")
 
@@ -385,20 +369,6 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	qdel(F)
 	TEST_ASSERT(!ask_still_valid(ctx), "invalid once the target is deleted")
 
-/datum/unit_test/dx_core_form/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core, get_turf(user))
-	var/datum/interaction/capability/entry
-	for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-		if(E.name == "Configure")
-			entry = E
-	TEST_ASSERT_NOTNULL(entry, "the form entry exists")
-	var/datum/dispatch_context/ctx = new(user, F, null, entry)
-	cap_dispatch(ctx)
-	TEST_ASSERT_NOTNULL(F.form_answers, "the handler ran")
-	TEST_ASSERT_EQUAL(F.form_answers["mode"], "fast", "the choice answer arrived by name")
-	TEST_ASSERT_EQUAL(F.form_answers["count"], 3, "the number answer arrived by name")
-
 // ---------------------------------------------------------------- 11. timed_set
 
 /datum/unit_test/om/dx_core_timed_set
@@ -514,30 +484,6 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_DATUM_A)
 	ask_close(ctx)
 	TEST_ASSERT(ask_open(ctx), "it opens again once closed")
 	ask_close(ctx)
-
-/// Every type's capability entries resolve by id to that type's own entry (the Menu runs a chosen
-/// entry by id): three types building the same hand() entry must not share or overwrite an id.
-/datum/unit_test/dx_core_entry_ids_per_type/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	var/list/ids = list()
-	for(var/path in list(/obj/cap_fixture/dx_core, /obj/cap_fixture/dx_core/child, /obj/cap_fixture/dx_core/child/grand))
-		var/obj/cap_fixture/dx_core/F = allocate(path, get_turf(user))
-		var/datum/interaction/capability/entry
-		for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-			if(E.name == "Configure")
-				entry = E
-		TEST_ASSERT_NOTNULL(entry, "[path] has the entry")
-		ids |= entry.id
-	// Ids are unique per target, not globally: the three types share one (interned) entry and id.
-	TEST_ASSERT_EQUAL(length(ids), 1, "the inherited entry keeps one id across the subtypes")
-	for(var/path in list(/obj/cap_fixture/dx_core, /obj/cap_fixture/dx_core/child, /obj/cap_fixture/dx_core/child/grand))
-		var/obj/cap_fixture/dx_core/F = allocate(path, get_turf(user))
-		var/datum/interaction/capability/entry
-		for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-			if(E.name == "Configure")
-				entry = E
-		TEST_ASSERT(run_chosen_interaction(user, F, entry.id), "the Menu ran [path]'s entry by id")
-		TEST_ASSERT_NOTNULL(F.form_answers, "[path]'s handler ran")
 
 /// A tgui window on `host` for a test, interactive, with no client behind it.
 /proc/ui_test_window(datum/host)

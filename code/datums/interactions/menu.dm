@@ -1,7 +1,6 @@
 /**
  * The Menu action (doc/rewrite/interactions.md §7): a tgui context panel
- * listing what the player can do to a target, what they can't and why, and the
- * keys that reach each. It replaces BYOND's native right-click verb popup, so
+ * listing the target's ops: what the player can do, and what they can't and why. It replaces BYOND's native right-click verb popup, so
  * it also lists the target's legacy verbs and the basic mob actions the popup
  * used to offer (examine, pull, point).
  */
@@ -45,25 +44,27 @@ CAPABILITIES(/datum/interaction_menu)
 		return list("target" = null)
 	return interaction_menu_data(user, target)
 
-/// The Menu's contents for `user` looking at `target`. Split out so tests can read it.
+/// The Menu's contents for `user` looking at `target`: the target's ops (op_menu(): enabled ones as available, the rest
+/// as blocked with the reason), its legacy verbs and the basic mob actions. Split out so tests can read it.
 /proc/interaction_menu_data(mob/user, atom/target)
-	var/datum/interaction_resolution/resolution = interactions_for(user, target, user.get_active_hand())
+	var/obj/item/held = user.get_active_hand()
 	var/list/available = list()
-	for(var/datum/interaction/interaction as anything in resolution.available)
-		available += list(list(
-			"id" = interaction.id,
-			"name" = interaction.display_name(user, target),
-			"category" = interaction.category,
-			"keys" = interaction_keys(user.client, resolution, interaction),
-		))
 	var/list/blocked = list()
-	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		blocked += list(list(
-			"id" = interaction.id,
-			"name" = interaction.display_name(user, target),
-			"category" = interaction.category,
-			"reason" = resolution.blocked[interaction],
-		))
+	for(var/list/row as anything in op_menu(user, target, held))
+		if(row["enabled"])
+			available += list(list(
+				"id" = row["key"],
+				"name" = row["label"],
+				"category" = null,
+				"keys" = list(),
+			))
+		else
+			blocked += list(list(
+				"id" = row["key"],
+				"name" = row["label"],
+				"category" = null,
+				"reason" = row["reason"],
+			))
 	var/list/verb_names = list()
 	for(var/procpath/target_verb as anything in target.verbs)
 		if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
@@ -100,7 +101,7 @@ CAPABILITIES(/datum/interaction_menu)
 		return FALSE
 	var/atom/target = target()
 	ui.close()
-	run_chosen_interaction(user, target, id)
+	run_chosen_op(user, target, id)
 	return TRUE
 
 /datum/interaction_menu/proc/ui_act_action(datum/act/op/A, id)
@@ -141,6 +142,13 @@ CAPABILITIES(/datum/interaction_menu)
 		log_input("Input: [key_name(user)] used the verb [verb_name] on [target] ([target.type]) from the interaction menu.")
 		call(target, target_verb)()
 		return TRUE
+
+/// Runs the op `key` of `target` chosen in the Menu (ORIGIN_MENU), with what the user holds. TRUE when it ran or started.
+/proc/run_chosen_op(mob/user, atom/target, key)
+	if(!user || !target || !istext(key))
+		return FALSE
+	var/datum/op_result/result = perform_op(user, target, key, user.get_active_hand(), ORIGIN_MENU)
+	return result && result.outcome != ACT_REFUSED
 
 /// Whether a legacy verb on `target` can be run from the Menu: the popup offered verbs on things in reach.
 /proc/interaction_menu_can_reach(mob/user, atom/target)

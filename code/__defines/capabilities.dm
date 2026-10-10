@@ -66,9 +66,8 @@
 /**
  * One-line capability declaration: `CAPABILITY(/obj/item/reagent_containers/food/snacks/donut, reagents(20, starts =
  * list(REAGENT_ID_NUTRIMENT = 3)))`. Expands to a declared_capabilities() override that adds ENTRY after ..(),
- * collected into the type's capabilities table after its capabilities() list (caps_build()). Any capability
- * constructor, bundle or refine() works; several lines on one type add in file order. Use it for data-only
- * subtypes; a type with logic keeps a capabilities() override (both may coexist).
+ * collected into the type's capabilities table (caps_build()). Any capability constructor works; several lines on
+ * one type add in file order.
  */
 #define CAPABILITY(T, ENTRY) ##T/declared_capabilities(list/into) { ..(); into += ENTRY; }
 

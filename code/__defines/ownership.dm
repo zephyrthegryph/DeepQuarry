@@ -5,7 +5,7 @@
 // implicit plain relation, and a var typed as a registry type is implicitly shared (ownership.md §7).
 // Declare only the exceptions (a SPILL / CONTAINED / KEEP / conditional policy, pairs, keyed links,
 // hooks, protos, untyped shared vars, annotations) in two per-type list overrides, built once per
-// type like capabilities() (type_list()):
+// type (type_list()):
 //
 //	/obj/machinery/sleeper/ownership()
 //		. = ..()

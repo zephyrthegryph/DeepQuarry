@@ -1,18 +1,10 @@
 // The shared needs checks (code/datums/capabilities/library/checks.dm) and ask_* re-validation with needs.
 
-/obj/cap_fixture/chk_hand/capabilities()
-	. = ..()
-	. += cap_hand("Poke", PROC_REF(chk_poke), needs = list(GLOBAL_PROC_REF(chk_conscious), GLOBAL_PROC_REF(chk_adjacent)))
+/obj/cap_fixture/chk_hand
 
-/obj/cap_fixture/chk_hand/proc/chk_poke(mob/user)
-	return TRUE
-
-/// The interaction entry named `entry_name` on A, or null.
-/proc/chk_test_entry(atom/A, entry_name)
-	for(var/datum/interaction/capability/E as anything in cap_interactions(A))
-		if(E.name == entry_name)
-			return E
-	return null
+/// The needs the fixture's checks run: conscious, then adjacent.
+/proc/chk_test_needs()
+	return list(GLOBAL_PROC_REF(chk_conscious), GLOBAL_PROC_REF(chk_adjacent))
 
 /// A human whose restrained() the test flips.
 /mob/living/carbon/human/chk_bindable
@@ -62,29 +54,25 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/chk_hand/F = allocate(/obj/cap_fixture/chk_hand, T)
-	var/datum/interaction/capability/E = chk_test_entry(F, "Poke")
-	TEST_ASSERT_NOTNULL(E, "the entry exists")
-	TEST_ASSERT_NULL(cap_gate_reason(F, H, null, E), "global needs pass")
+	TEST_ASSERT_NULL(cap_needs_reason(F, H, null, chk_test_needs()), "global needs pass")
 	H.forceMove(run_loc_floor_top_right)
-	TEST_ASSERT_EQUAL(cap_gate_reason(F, H, null, E), "you are too far away", "the second check refuses with its text")
+	TEST_ASSERT_EQUAL(cap_needs_reason(F, H, null, chk_test_needs()), "you are too far away", "the second check refuses with its text")
 	H.forceMove(T)
 	H.set_stat(UNCONSCIOUS)
-	TEST_ASSERT_EQUAL(cap_gate_reason(F, H, null, E), "you are not conscious", "the first check refuses first")
+	TEST_ASSERT_EQUAL(cap_needs_reason(F, H, null, chk_test_needs()), "you are not conscious", "the first check refuses first")
 
 /datum/unit_test/dx_chk_ask_revalidation/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/chk_hand/F = allocate(/obj/cap_fixture/chk_hand, T)
-	var/datum/interaction/capability/E = chk_test_entry(F, "Poke")
-	var/datum/dispatch_context/ctx = new(H, F, null, E)
+	var/datum/dispatch_context/ctx = ask_context_needs(new /datum/dispatch_context(H, F), chk_test_needs())
 	TEST_ASSERT(ask_still_valid(ctx), "valid while every need holds")
 	H.forceMove(run_loc_floor_top_right)
-	TEST_ASSERT(!ask_still_valid(ctx), "the entry re-checks and refuses after moving away")
-	// Every capability entry requires interaction reach, which refuses before the entry's own needs.
-	TEST_ASSERT_EQUAL(ctx.invalid_reason(), "too far away", "with the reach check's text")
+	TEST_ASSERT(!ask_still_valid(ctx), "the needs re-check and refuse after moving away")
+	TEST_ASSERT_EQUAL(ctx.invalid_reason(), "you are too far away", "with the check's text")
 	H.forceMove(T)
 	H.set_stat(UNCONSCIOUS)
-	TEST_ASSERT(!ask_still_valid(ctx), "the entry's needs re-run on the answer")
+	TEST_ASSERT(!ask_still_valid(ctx), "the needs re-run on the answer")
 
 /datum/unit_test/dx_chk_ask_explicit_needs/Run()
 	var/turf/T = run_loc_floor_bottom_left

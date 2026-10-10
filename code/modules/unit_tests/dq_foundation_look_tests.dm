@@ -5,9 +5,9 @@
 /proc/dq_standard_parts_fixture()
 	return new /datum/capability/dq_standard_parts_fixture
 
-// The look naming convention (variants, parts, glows), the missing-parts check, the construction
-// primitives / joints / presets and their round-trip conservation, and the pooled base
-// (code/datums/capabilities/look.dm, construction_primitives.dm, code/datums/lifecycle/pool.dm).
+// The look naming convention (variants, parts, glows), the missing-parts check
+// and the pooled base
+// (code/datums/capabilities/look.dm, code/datums/lifecycle/pool.dm).
 
 // ---- look: variants, parts, glows ----
 
@@ -24,9 +24,7 @@
 	name = "look probe"
 	icon_state = "fix"
 
-/obj/cap_fixture/look_probe/capabilities()
-	. = ..()
-	. += dq_standard_parts_fixture()
+CAPABILITY(/obj/cap_fixture/look_probe, dq_standard_parts_fixture())
 
 /datum/unit_test/dq_look_convention
 
@@ -98,9 +96,7 @@
 	name = "lacking probe"
 	icon_state = "fix"
 
-/obj/cap_fixture/look_lacking/capabilities()
-	. = ..()
-	. += dq_standard_parts_fixture()
+CAPABILITY(/obj/cap_fixture/look_lacking, dq_standard_parts_fixture())
 
 /obj/cap_fixture/look_lacking/look_lacks()
 	return list(LOOK_BROKEN)
@@ -136,184 +132,6 @@
 		if(length(lacking))
 			failures["[M.type]"] = lacking
 	TEST_ASSERT(!length(failures), "checked types missing standard parts (of [checked]): [json_encode(failures)]")
-
-// ---- construction: primitives, joints, presets ----
-
-/obj/cap_fixture/prim_probe
-	name = "primitive probe"
-	icon_state = "prim_base"
-
-/obj/cap_fixture/prim_probe/capabilities()
-	. = ..()
-	// The bay its steps work at (ladder steps are ops, and an op at a bay the holder never declares fails closed).
-	. += legacy_compartment("test_bay")
-	. += cap_construction(
-		ladder_options(at = "test_bay", sprite = "prim_", undo_delay = 1 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WRENCH, becomes = /obj/item/stack/material/steel, amount = 2)),
-		stage("frame", desc = "A bare frame."),
-		build_insert(/obj/item/stock_parts/capacitor),
-		build_wire(3),
-		build_fasten(TOOL_SCREWDRIVER, name = "closed"),
-		build_plate(/obj/item/stack/material/steel, 2, name = "plated"),
-	)
-
-/obj/cap_fixture/prim_mech/capabilities()
-	. = ..()
-	. += cap_construction(mech_chassis(/obj/item/stack/material/steel, sprite = "chassis_", parts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/capacitor),
-		steps = list(build_weld(name = "reinforced"))))
-
-/obj/cap_fixture/prim_machine/capabilities()
-	. = ..()
-	. += cap_construction(machine_frame(/obj/item/circuitboard))
-
-/obj/cap_fixture/prim_computer/capabilities()
-	. = ..()
-	. += cap_construction(computer_frame(/obj/item/circuitboard))
-
-/obj/cap_fixture/prim_wall/capabilities()
-	. = ..()
-	. += cap_construction(wall_frame(/obj/item/circuitboard))
-
-/obj/cap_fixture/prim_girder/capabilities()
-	. = ..()
-	. += cap_construction(girder())
-
-/// The step of `ladder` from stage `from` to `to` (a stage name or LADDER_DONE).
-/datum/unit_test/proc/prim_step(datum/construction_ladder/ladder, from, destination)
-	for(var/datum/interaction/capability/construction_step/step as anything in ladder.edges)
-		if(step.from_state == from && step.to_state == destination)
-			return step
-	return null
-
-/datum/unit_test/dq_construction_primitives
-
-/datum/unit_test/dq_construction_primitives/Run()
-	var/turf/T = test_floor()
-	var/obj/cap_fixture/prim_probe/probe = allocate(/obj/cap_fixture/prim_probe, T)
-	var/datum/construction_ladder/ladder = ladder_of(probe)
-	var/list/problems = ladder.validate()
-	TEST_ASSERT(!length(problems), "valid: [jointext(problems, "; ")]")
-	TEST_ASSERT_EQUAL(jointext(ladder.states, ","), "frame,capacitor,wired,closed,plated", "stage names come from the parts and tools")
-	var/datum/ladder_stage/wired_stage = ladder.stage_named("wired")
-	var/datum/ladder_stage/plated_stage = ladder.stage_named("plated")
-	TEST_ASSERT_EQUAL(wired_stage.icon, "prim_3", "icons are the sprite prefix and the stage's position")
-	TEST_ASSERT_EQUAL(plated_stage.icon, "prim_5", "for every stage")
-
-	var/datum/interaction/capability/construction_step/unwire = prim_step(ladder, "wired", "capacitor")
-	TEST_ASSERT_EQUAL(unwire.tool, TOOL_WIRECUTTER, "build_wire() is undone with wirecutters")
-	TEST_ASSERT_EQUAL(unwire.duration, 1 SECONDS, "undo_delay overrides an undo's wait")
-	TEST_ASSERT_EQUAL(unwire.refund_amount, 3, "the refund is what the build consumed")
-	var/datum/interaction/capability/construction_step/screw = prim_step(ladder, "wired", "closed")
-	TEST_ASSERT_EQUAL(screw.tool, TOOL_SCREWDRIVER, "build_fasten() builds with its tool")
-	TEST_ASSERT_EQUAL(screw.duration, ladder_tool_delay(TOOL_SCREWDRIVER), "a build takes its tool's default delay")
-	TEST_ASSERT_EQUAL(screw.at, "test_bay", "ladder_options(at =) is stored on every step entry")
-	TEST_ASSERT_NULL(op_at_reason(probe, screw.at, null), "a holder that declares no such bay lets a context-less entry through")
-	TEST_ASSERT_EQUAL(screw.phrase, "screw %T% shut", "the message comes from the verb table")
-	var/datum/interaction/capability/construction_step/unscrew = prim_step(ladder, "closed", "wired")
-	TEST_ASSERT_EQUAL(unscrew.tool, TOOL_SCREWDRIVER, "the fastener table undoes a screw with a screwdriver")
-	var/datum/interaction/capability/construction_step/uninsert = prim_step(ladder, "capacitor", "frame")
-	TEST_ASSERT(uninsert.by_hand, "build_insert() is taken back out by hand")
-	var/datum/interaction/capability/construction_step/unplate = prim_step(ladder, "plated", "closed")
-	TEST_ASSERT_EQUAL(unplate.tool, TOOL_WELDER, "a plate is cut off with the welder")
-	TEST_ASSERT_EQUAL(unplate.refund_amount, 2, "and gives its sheets back")
-	TEST_ASSERT(prim_step(ladder, "frame", LADDER_DONE), "dismantle adds a branch out of the first stage")
-
-	TEST_ASSERT(!built_past(probe, "capacitor"), "on the first stage nothing is built past")
-	ladder_set_stage(probe, "closed")
-	TEST_ASSERT(built_past(probe, "wired"), "a later stage is built past an earlier one")
-	TEST_ASSERT(!built_past(probe, "closed"), "not past its own stage")
-	TEST_ASSERT(!built_past(probe, "plated"), "nor past a later one")
-	TEST_ASSERT(!built_past(probe, "no such stage"), "an unknown stage is never built past")
-	TEST_ASSERT(!built_past(T, "frame"), "a holder with no ladder is never built past")
-
-/datum/unit_test/dq_construction_presets
-
-/datum/unit_test/dq_construction_presets/Run()
-	var/turf/T = test_floor()
-	for(var/path in list(/obj/cap_fixture/prim_mech, /obj/cap_fixture/prim_machine, /obj/cap_fixture/prim_computer, /obj/cap_fixture/prim_wall, /obj/cap_fixture/prim_girder))
-		var/atom/A = allocate(path, T)
-		var/datum/construction_ladder/ladder = ladder_of(A)
-		TEST_ASSERT(ladder, "[path] has a ladder")
-		if(!ladder)
-			continue
-		var/list/problems = ladder.validate()
-		TEST_ASSERT(!length(problems), "[path] is valid: [jointext(problems, "; ")]")
-		TEST_ASSERT(length(ladder.states) >= 4, "[path] has its stages")
-	TEST_ASSERT_EQUAL(jointext(ladder_of(allocate(/obj/cap_fixture/prim_machine, T)).states, ","), "loose,anchored,board in,wired,closed", "machine frame stages")
-	var/atom/mech = allocate(/obj/cap_fixture/prim_mech, T)
-	var/datum/construction_ladder/chassis = ladder_of(mech)
-	TEST_ASSERT(chassis.stage_named("capacitor"), "the first like part keeps its plain name")
-	TEST_ASSERT(chassis.stage_named("capacitor 2"), "a second like part is numbered")
-	TEST_ASSERT(chassis.stage_named("reinforced"), "steps are placed before the final fastening")
-	TEST_ASSERT(prim_step(chassis, "finished", LADDER_DONE), "the chassis turns into its result")
-
-// ---- round trip conservation ----
-
-/// Every undo on every ladder alive gives back what its build took.
-/datum/unit_test/dq_construction_conservation
-
-/datum/unit_test/dq_construction_conservation/Run()
-	var/turf/T = test_floor()
-	for(var/path in list(/obj/cap_fixture/prim_probe, /obj/cap_fixture/prim_mech, /obj/cap_fixture/prim_machine, /obj/cap_fixture/prim_computer, /obj/cap_fixture/prim_wall, /obj/cap_fixture/prim_girder, /obj/cap_fixture/ladder_probe))
-		allocate(path, T)
-	var/list/ladders = list()
-	for(var/obj/O in world)
-		var/datum/construction_ladder/ladder = ladder_of(O)
-		if(ladder && !(ladder in ladders))
-			ladders += ladder
-	TEST_ASSERT(length(ladders) >= 7, "the ladders alive are found ([length(ladders)])")
-	for(var/datum/construction_ladder/ladder as anything in ladders)
-		for(var/datum/interaction/capability/construction_step/undo as anything in ladder.edges)
-			if(undo.forward || undo.refund_use == LADDER_ITEM_KEEP)
-				continue
-			var/datum/interaction/capability/construction_step/build = prim_step(ladder, undo.to_state, undo.from_state)
-			TEST_ASSERT(build, "[ladder.id]: the undo [undo.from_state] -> [undo.to_state] has a build")
-			if(!build)
-				continue
-			TEST_ASSERT_EQUAL(undo.refund_type, build.item_type, "[ladder.id]: [undo.from_state] gives back the type its build took")
-			TEST_ASSERT_EQUAL(undo.refund_amount, build.item_amount, "[ladder.id]: [undo.from_state] gives back the amount its build took")
-			TEST_ASSERT(build.item_use != LADDER_ITEM_KEEP, "[ladder.id]: [undo.from_state] refunds something its build consumed")
-
-/// Build and undo the primitives on a real holder: no sheet, cable or part is created or lost.
-/datum/unit_test/dq_construction_round_trip
-
-/datum/unit_test/dq_construction_round_trip/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/cap_fixture/prim_probe/probe = allocate(/obj/cap_fixture/prim_probe, T)
-	var/datum/construction_ladder/ladder = ladder_of(probe)
-	var/obj/item/stock_parts/capacitor/part = allocate(/obj/item/stock_parts/capacitor, T)
-	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T, 5)
-	var/obj/item/stack/material/steel/sheets = allocate(/obj/item/stack/material/steel, T, 5)
-	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
-	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
-	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
-
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "frame", "capacitor"), part), "the part goes in")
-	TEST_ASSERT_EQUAL(part.loc, probe, "held by the holder")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "capacitor", "wired"), coil), "cable goes on")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "wired", "closed"), screwdriver), "it is closed")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "closed", "plated"), sheets), "plated")
-	TEST_ASSERT_EQUAL(ladder.state_of(probe), "plated", "the ladder owns the stage")
-	TEST_ASSERT(built_past(probe, "wired"), "built_past reads the ladder")
-	TEST_ASSERT_EQUAL(sheets.get_amount(), 3, "two sheets were used")
-
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "plated", "closed"), welder), "the plate is cut off")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "closed", "wired"), screwdriver), "opened")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "wired", "capacitor"), cutters), "the cable is cut out")
-	TEST_ASSERT(ladder_walk(H, probe, prim_step(ladder, "capacitor", "frame"), null), "the part comes out by hand")
-	TEST_ASSERT_EQUAL(ladder.state_of(probe), "frame", "back on the first stage")
-	TEST_ASSERT_EQUAL(part.loc, T, "the part is back on the floor")
-	var/cable = coil.get_amount()
-	var/steel = sheets.get_amount()
-	for(var/obj/item/stack/cable_coil/other in T)
-		if(other != coil)
-			cable += other.get_amount()
-	for(var/obj/item/stack/material/steel/other in T)
-		if(other != sheets)
-			steel += other.get_amount()
-	TEST_ASSERT_EQUAL(cable, 5, "no cable was created or lost")
-	TEST_ASSERT_EQUAL(steel, 5, "no steel was created or lost")
-	own_turf_contents(T)
 
 // ---- pools ----
 
@@ -393,16 +211,6 @@
 	catch
 		crashed = TRUE
 	TEST_ASSERT(crashed, "using a released packet crashes")
-
-/// A stage named like one of stage()'s own named arguments keeps its name.
-/datum/unit_test/dq_construction_stage_named_anchored
-
-/datum/unit_test/dq_construction_stage_named_anchored/Run()
-	var/datum/ladder_stage/built = build_fasten(TOOL_WRENCH, name = "anchored", anchored = TRUE)
-	TEST_ASSERT_EQUAL(built.name, "anchored", "a stage named anchored, with anchored set, keeps its name")
-	TEST_ASSERT(built.anchored, "and its anchoring")
-	var/datum/ladder_stage/plain = build_insert(/obj/item/stock_parts/capacitor, name = "icon", icon = "x")
-	TEST_ASSERT_EQUAL(plain.name, "icon", "a part named like an argument keeps its name")
 
 /obj/dq_look_cache_empty/draw(look)
 	return ..()

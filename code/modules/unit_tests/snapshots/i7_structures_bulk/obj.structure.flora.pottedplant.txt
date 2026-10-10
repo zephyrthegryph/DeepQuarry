@@ -1,5 +1,70 @@
-/obj/structure/flora/pottedplant|human|none => |
-/obj/structure/flora/pottedplant|robot|none => |
-/obj/structure/flora/pottedplant|ai|none => |
-/obj/structure/flora/pottedplant|ghost|none => |
+human|none menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|none click: Click: Search
+robot|none menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+robot|none click: Click: Search
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hide item
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Hide item
+human|/obj/item/tool/crowbar menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Hide item
+human|/obj/item/tool/wrench menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Hide item
+human|/obj/item/tool/wirecutters menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Hide item
+human|/obj/item/multitool menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Hide item
+human|/obj/item/weldingtool menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Hide item
+human|/obj/item/stack/cable_coil menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Hide item
+human|/obj/item/stack/material/steel menu: Hide item (refused: That is too large to fit.)
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Hide item
+human|/obj/item/card/id menu: Hide item
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Hide item
+human|/obj/item menu: Hide item (refused: That is too large to fit.)
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Hide item
+keys: drag_buckle, hide, melee_hit, search
 

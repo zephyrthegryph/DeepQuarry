@@ -2,9 +2,7 @@
 // Replaces DECLARE_REGISTRY (code/__defines/lifecycle_decl.dm) and REGISTRY_MEMBERSHIP for a type that is always
 // a member; both stay until the codemod has moved their sites.
 //
-//	/obj/item/taperecorder/capabilities()
-//		. = ..()
-//		. += membership(joins = REGISTRY_LISTENING_OBJECTS)
+//	CAPABILITY(/obj/item/taperecorder, membership(joins = REGISTRY_LISTENING_OBJECTS))
 //
 // `joins` is one id or a list; each entry is either
 //   - a registry id (REGISTRY_*, code/__defines/registries.dm): the holder is in that registry while materialized

@@ -112,9 +112,6 @@
 /// The item material type was not accepted or other reasons
 #define MATERIAL_INSERT_ITEM_FAILURE 0
 
-/// Tag on every construction ladder step (code/datums/capabilities/construction.dm).
-#define INTERACTION_TAG_CONSTRUCTION "construction"
-
 // Exosuit maintenance states (/obj/mecha `state`, mecha_maintenance.dm).
 #define MECHA_OPERATING     0
 #define MECHA_BOLTS_SECURED 1

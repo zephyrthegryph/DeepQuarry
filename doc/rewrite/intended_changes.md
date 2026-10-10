@@ -4278,6 +4278,29 @@ The unused legacy capability-library leaves are retired in the same follow-up, w
 - The cryopod and medical kiosk lose master's interim `cryopod_load` and `medical_kiosk_scan` keys: the lane's native prompt ops replace the minimal timed-op conversion master made in parallel. The cryopod's `Put grabbed victim in` row is now listed (silently refused) for every probe without a grab, like the suit cycler's `Put in cycler`.
 - Boolean requirement callbacks master added after the lane forked (soap, multitool, detective scanner, animal hide, leash, glasses kit, nail polish and remover, nanopaste, straw, medical stacks, mecha bolts and passengers, bonfire dismantle) and the mecha wreckage salvage checks the lane missed now return null or a reason; behaviour is unchanged (the wreckage's cut rows were briefly refused in the merged tree before this fix).
 
+## Interaction bridge retirement (rewrite/ix-r2, 2026-10-10)
+
+The resolver (`interactions_for()`), `/datum/interaction` and every capability entry builder (`cap_op()` and its presets, `lib_op()`, `cap_use_self`,
+`cap_use_at`, `cap_slot`, the legacy construction ladder, `cap_deconstruct`) are deleted. No production type built a capability entry any more: the
+i7 item and structure snapshots recorded an empty resolver row for every type and actor, and the generated conversion pins (`dq_conversion_pin`,
+`i7_bulk`) read the same rows before and after, so clicks, menus and refusals of existing content are unchanged. What a player can still notice:
+
+* **The Menu window lists the target's ops.** Its available and blocked lists came from the resolver, which listed nothing for any type; they are now
+  the op engine's menu (`op_menu()`: enabled rows as available, the rest as blocked with the refusal), and a pick runs the op by key
+  (`perform_op(..., ORIGIN_MENU)`). The rows carry no key hints. Test: `dq_interaction_menu_lists_ops`.
+* **The examine "Interactions" section is gone.** It was the resolver's list, empty for every type.
+* **The screentip shows the hovered atom's name**, as it already did for every type (the resolver never had a Click or Alt-click row to add).
+* **The "Act" command-bar verb is deleted.** It ran capability entries by action or name; none existed, so it could only answer "Unknown action".
+* **A category key always answers "There is nothing to <category> on <target>."**: ops carry no interaction category; it said the same before, as no
+  type offered a categorised entry.
+* **The ghost, AI and telekinesis adapters no longer filter resolver entries** (`allows_interaction()` is deleted): what each may do is its op's route
+  and provider (ROUTE_UI for a ghost, ROUTE_INTERFACE for a silicon's empty click, ROUTE_TK), checked by the op engine as before.
+* The `i7_items_bulk` and `i7_structures_bulk` snapshots were re-recorded in the native pin format (their old rows were all empty resolver lines).
+* Deleted with their subject (the retired API): `dx_operations_tests` (all but the requirement and context tests, kept as `dx_op_ctx_tests.dm`),
+  `dx_op_resolution_tests`, `dq_capability_construction_tests`, `dq_cap_slot_tests`, `dx_cap_entries_tests`, `dx_cap_item_entries_tests`,
+  `dx_cap_library_api_tests`, the construction primitive tests of `dq_foundation_look_tests`, `dx_condition_blocks`, `dx_core_form`,
+  `dx_core_entry_ids_per_type`, `dx_review_menu_ids_and_applies`, `dq_forms_library_requirements` and `dq_sys_messages_interaction_feedback`.
+  The "Why Refused" admin verb walked resolver entries and is deleted too.
 ### ratchet-fw lane (2026-10-10)
 
 - **Silicon plain clicks are ops** (`silicon_hand()` / `silicon_ui()`, `code/library/mob/silicon.dm`): the 27 types that set `silicon_use` declare a `remote()` op instead. The interaction pins now list `Use` for the AI and cyborg rows (and `ai|none click: Click: Use`) where the old fallback lived outside the op system and the snapshots said `nothing`. A cyborg whose link is down (bolted, remote viewing) no longer reaches them.
