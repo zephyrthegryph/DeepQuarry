@@ -182,4 +182,4 @@
 // Compare this sweep's affected trees against their old-code snapshots.
 /datum/unit_test/dq_requirement_third_pin
 	parent_type = /datum/unit_test/dq_conversion_pin
-	capture_roots = list(/obj/item/airlock_electronics, /obj/machinery/computer/card, /obj/machinery/light/flamp, /obj/machinery/sleeper, /obj/machinery/vending, /obj/machinery/scan_consolenew, /obj/machinery/oxygen_pump, /obj/machinery/computer/aifixer, /obj/machinery/computer/communications, /obj/machinery/autolathe, /obj/machinery/camera, /obj/machinery/suit_cycler, /obj/structure/bed, /obj/structure/chair)
+	capture_roots = list(/obj/item/airlock_electronics, /obj/machinery/computer/card, /obj/machinery/light/flamp, /obj/machinery/sleeper, /obj/machinery/vending, /obj/machinery/computer/scan_consolenew, /obj/machinery/oxygen_pump, /obj/machinery/computer/aifixer, /obj/machinery/computer/communications, /obj/machinery/autolathe, /obj/machinery/camera, /obj/machinery/suit_cycler, /obj/structure/bed, /obj/structure/bed/chair)
