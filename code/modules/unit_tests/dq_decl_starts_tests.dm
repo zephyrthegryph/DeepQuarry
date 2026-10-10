@@ -128,7 +128,7 @@
 /datum/unit_test/dq_decl_gun_loads/Run()
 	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, dq_containment_floor())
 	var/obj/item/ammo_magazine/m9mm/M = allocate(/obj/item/ammo_magazine/m9mm, B)
-	TEST_ASSERT_EQUAL(length(M.stored_ammo), M.max_ammo, "a magazine made in a box holds real rounds, a full load")
+	TEST_ASSERT_EQUAL(length(M.stored_ammo) + M.latent_rounds, M.max_ammo, "a magazine starts with a full load, real or latent")
 	var/obj/item/gun/projectile/revolver/R = allocate(/obj/item/gun/projectile/revolver, B)
 	TEST_ASSERT_EQUAL(length(R.loaded), R.max_shells, "a revolver starts with a full cylinder")
 	var/obj/item/gun/projectile/artifact/G = allocate(/obj/item/gun/projectile/artifact, B)
