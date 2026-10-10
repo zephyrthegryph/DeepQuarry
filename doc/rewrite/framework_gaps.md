@@ -665,3 +665,11 @@ compartment's `passes()` ask (no stages, no pending waits); the empty `construct
 
 `default_parts()` (existing) now also takes the `default_apply_parts()` calls that sat right after `..()`; the freezer and heater keep theirs, because
 their `RefreshParts()` reads state the pipe init makes after the capabilities' init.
+
+**Child creation and light at init (ratchet-fw).** A `rel_set(src, nameof(v), new /T)` right in `Initialize()` whose type already declares
+`owns_one(nameof(v), /T)` becomes `owns_one(nameof(v), /T, starts = /T)` (datums, and atoms made in `src`). A constant `set_light()` at init is
+the type's static light vars with `light_on = TRUE`: `/atom/movable/on_materialize()` already calls `update_light()` for STATIC_LIGHT, so the
+commented-out auto-light in `/atom/Initialize()` is not needed for them (a flashlight, whose own init switches it, keeps its `set_light()`).
+Open gap found doing it: `owns_one(nameof(v), /datum/gas_mixture, starts = /datum/gas_mixture)` (algae farm, bomb tester, compressor) and the
+camera's `starts = /obj/item/camera_assembly` leave the holder undeletable in the i7 harness, or make the assembly late for the camera's own
+init, so those four keep their `rel_set()` in `Initialize()` until the starts= path handles a gas mixture and a part the type's init reads.
