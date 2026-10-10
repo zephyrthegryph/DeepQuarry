@@ -18,6 +18,34 @@ impl<Q, A, D> Default for ReceiptGroupPool<Q, A, D> {
     }
 }
 impl<Q: Ord + Clone, A: Eq, D: Eq> ReceiptGroupPool<Q, A, D> {
+    /// Producer-selected contiguous runs. Grouping changes physical ownership
+    /// only; canonical order, conflicting equal queries and negative answers stay
+    /// exact. The policy callback supplies no admission or equivalence authority.
+    pub fn intern_receipt(
+        &self,
+        reads: Vec<Observation<Q, A, D>>,
+        mut same_group: impl FnMut(&Observation<Q, A, D>, &Observation<Q, A, D>) -> bool,
+    ) -> Result<super::Receipt<Q, A, D>, &'static str> {
+        if reads.windows(2).any(|pair| pair[0].query > pair[1].query) {
+            return Err("receipt groups are not in canonical query order");
+        }
+        if reads.is_empty() {
+            return Ok(reads.into());
+        }
+        let mut groups = Vec::new();
+        let mut run = Vec::new();
+        for read in reads {
+            if run
+                .last()
+                .is_some_and(|previous| !same_group(previous, &read))
+            {
+                groups.push(self.intern(std::mem::take(&mut run)));
+            }
+            run.push(read);
+        }
+        groups.push(self.intern(run));
+        super::Receipt::from_groups(groups.into())
+    }
     /// Locators select candidates only. Query, domain and every answer must match.
     /// Empty leaves bypass the index. Callers preserve canonical group ordering.
     pub fn intern(&self, reads: Vec<Observation<Q, A, D>>) -> Arc<[Observation<Q, A, D>]> {

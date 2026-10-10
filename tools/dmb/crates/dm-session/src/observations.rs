@@ -1,8 +1,10 @@
 //! Generic exact observations shared by authored and resolved semantic queries.
 //! Ordering is canonical by query; absent answers are ordinary recorded values.
 mod receipt;
+mod receipt_admission;
 mod receipt_pool;
 pub use receipt::{Receipt, ReceiptIter, ReceiptStorageView};
+pub use receipt_admission::ReceiptAdmission;
 pub use receipt_pool::ReceiptGroupPool;
 use std::{
     collections::{BTreeMap, BTreeSet},

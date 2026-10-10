@@ -10,5 +10,6 @@ pub use reads::{matching_domains, RecordingResolver, ResolverRead};
 
 pub mod observations;
 pub use observations::{
-    Observation, ObservationHost, ObservationLedger, Receipt, ReceiptGroupPool, ReceiptStorageView,
+    Observation, ObservationHost, ObservationLedger, Receipt, ReceiptAdmission, ReceiptGroupPool,
+    ReceiptStorageView,
 };
