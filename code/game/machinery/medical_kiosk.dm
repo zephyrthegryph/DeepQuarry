@@ -54,6 +54,8 @@
 CAPABILITIES(/obj/machinery/medical_kiosk)
 	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_hand)))
 	op("medical_kiosk_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_item)))
+	// The scan the user picked, started when the service is chosen (service_chosen).
+	op("medical_kiosk_scan", ai(), takes("choice"), wait(5 SECONDS), on_interrupt(PROC_REF(scan_interrupted)), then(PROC_REF(scan_done)))
 
 /// Old attack_hand.
 /obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(datum/act/op/A)
@@ -107,20 +109,14 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
 	flick("kiosk_active", src)
-	task_start(/datum/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
+	perform_op(user, src, "medical_kiosk_scan", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("choice" = choice))
 	return TRUE
 
-/datum/task/timed/medical_kiosk_start_using
-	duration = 5 SECONDS
-	complete_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_done
-	cancel_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_failed
-	var/choice
-
-/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/task/timed/medical_kiosk_start_using/task)
-	var/mob/living/user = task.actor
-	var/choice = task.choice
+/obj/machinery/medical_kiosk/proc/scan_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/choice = A.arg("choice")
 	if(!operable())
-		return
+		return OP_REFUSED
 
 	// Service completes
 	switch(choice)
@@ -136,10 +132,11 @@ CAPABILITIES(/obj/machinery/medical_kiosk)
 
 	// Standby
 	suspend()
+	return OP_OK
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/task/timed/medical_kiosk_start_using/task)
+/// A user who walks off, or a kiosk lost mid-scan, puts the kiosk on standby.
+/obj/machinery/medical_kiosk/proc/scan_interrupted(datum/act/op/A)
 	suspend()
-	return
 
 /obj/machinery/medical_kiosk/proc/medical_scan(mob/living/user)
 	var/datum/diagnosis/diag = istype(user) ? user.diagnose(/datum/diagnostic_profile/automation/kiosk) : null

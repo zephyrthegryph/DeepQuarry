@@ -64,42 +64,37 @@
 			T.injure(INJURY_PIERCE, 39, affecting, src)
 
 	feedback_add_details("changeling_powers","A[stage]")
-	task_start(/datum/task/timed/changeling_absorb, src, T, grab = G, stage = stage)
-
-/// One stage of absorbing the target: 15 seconds holding it in a kill grab.
-/datum/task/timed/changeling_absorb
-	duration = 15 SECONDS
-	complete_proc = /mob/living/proc/changeling_absorb_stage_done
-	cancel_proc = /mob/living/proc/changeling_absorb_interrupted
-	var/obj/item/grab/grab
-	var/stage = 1
-
-/mob/living/proc/changeling_absorb_interrupted(datum/task/timed/changeling_absorb/task)
-	to_chat(src, span_warning("Our absorption of [task.target] has been interrupted!"))
 	var/datum/changeling/changeling = is_changeling(src)
-	if(changeling)
-		changeling.isabsorbing = FALSE
+	perform_op(src, changeling, "absorb_stage", G, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "stage" = stage))
 
-/mob/living/proc/changeling_absorb_stage_done(datum/task/timed/changeling_absorb/task)
-	var/mob/living/carbon/human/T = task.target
-	if(task.grab?.state != GRAB_KILL)
-		changeling_absorb_interrupted(task)
-		return
-	if(task.stage < 3)
-		changeling_absorb_stage(T, task.grab, task.stage + 1)
-		return
-	var/datum/changeling/changeling = is_changeling(src)
+/// A broken grip, a move or a death ends the absorption.
+/datum/changeling/proc/absorb_interrupted(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_warning("Our absorption of [A.arg("victim")] has been interrupted!"))
+	isabsorbing = FALSE
+
+/datum/changeling/proc/absorb_stage_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/T = A.arg("victim")
+	var/obj/item/grab/grab = A.held
+	var/stage = A.arg("stage")
+	if(QDELETED(T) || grab?.state != GRAB_KILL)
+		absorb_interrupted(A)
+		return OP_REFUSED
+	if(stage < 3)
+		user.changeling_absorb_stage(T, grab, stage + 1)
+		return OP_OK
 	var/datum/changeling/target_changeling = is_changeling(T)
-	to_chat(src, span_notice("We have absorbed [T]!"))
-	add_attack_logs(src,T,"Absorbed (changeling)")
-	act_message(src, T, others = span_danger("%U% sucks the fluids from %T%!"))
+	to_chat(user, span_notice("We have absorbed [T]!"))
+	add_attack_logs(user,T,"Absorbed (changeling)")
+	act_message(user, T, others = span_danger("%U% sucks the fluids from %T%!"))
 	to_chat(T, span_danger("You have been absorbed by the changeling!"))
-	changeling_obtain_dna(T, changeling, target_changeling)
+	user.changeling_obtain_dna(T, src, target_changeling)
 
-	changeling.isabsorbing = FALSE
+	isabsorbing = FALSE
 	T.death(FALSE)
 	T.Drain()
-	return 1
+	return OP_OK
 
 ///Proc that does the actual 'obtaining DNA' part for changelings. Has four arguments: Our victim, our changeling component, the target's changeling component, and if we drain the victim's nutrition or not.
 /mob/living/proc/changeling_obtain_dna(mob/living/carbon/human/victim, datum/changeling/changeling, datum/changeling/target_changeling, drain = TRUE)

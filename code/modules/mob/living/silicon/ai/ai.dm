@@ -106,6 +106,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 CAPABILITIES(/mob/living/silicon/ai)
 	op("ai_status_displays", ai(), label("AI Status"), needs(req_self()), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(status_display_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(ai_status_display_chosen)))
 	op("ai_silicon_camera_list", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Camera list"), then(PROC_REF(ai_silicon_camera_list)))
+	// A malfunctioning AI's scripted hack of another silicon: a lap per stage of the script (tree_interdiction.dm). Only the AI's own life keeps it going.
+	op("malf_hack_cyborg", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_cyborg_done)))
+	op("malf_hack_ai", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_ai_done)))
 	every(PROC_REF(track_interval), then(PROC_REF(ai_track_step)), when = nameof(cameraFollow))
 	immune_to(STAT_WEAKENED)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)

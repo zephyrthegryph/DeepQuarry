@@ -188,6 +188,9 @@ TRACKED(/obj/mecha, passenger_count)
 MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
+	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
+	op("climb_in", ai(), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(climb_in_interrupted)), then(PROC_REF(climb_in_done)))
+	op("mmi_install", ai(), takes("mmi"), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(mmi_install_interrupted)), then(PROC_REF(mmi_install_done)))
 	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
 	when(nameof(cabin_regulating), heat_pump(nameof(cabin_air), HEAT_AIR, MECHA_CABIN_REGULATOR_WATTS, T20C, HEAT_PUMP_BOTH, TRUE, power_draw = FALSE))
 	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
@@ -259,7 +262,7 @@ CAPABILITIES(/obj/mecha)
 	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
 	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
 	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers), because = MSG(mecha_passenger/none))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), then(PROC_REF(topic_remove_passenger)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers), because = MSG(mecha_passenger/none))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
@@ -1487,23 +1490,20 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 	act_message(user, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
 
-	var/started = task_start(/datum/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
-	return !istext(started)
+	var/datum/op_result/started = perform_op(user, src, "mmi_install", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("mmi" = mmi_as_oc))
+	return started?.outcome != ACT_REFUSED
 
-/datum/task/timed/mecha_mmi_install
-	duration = 4 SECONDS
-	flags = IGNORE_HELD_ITEM
-	complete_proc = /obj/mecha/proc/mmi_install_done
-	fail_message = "You stop attempting to install the brain."
-	var/obj/item/mmi/mmi_as_oc
+/obj/mecha/proc/mmi_install_interrupted(datum/act/op/A)
+	to_chat(A.actor, "You stop attempting to install the brain.")
 
-/obj/mecha/proc/mmi_install_done(datum/task/timed/mecha_mmi_install/task)
-	var/obj/item/mmi/mmi_as_oc = task.mmi_as_oc
-	var/mob/user = task.actor
+/obj/mecha/proc/mmi_install_done(datum/act/op/A)
+	var/obj/item/mmi/mmi_as_oc = A.arg("mmi")
+	var/mob/user = A.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		mmi_moved_inside(mmi_as_oc,user)
 	else
 		to_chat(user, "Occupant detected.")
+	return OP_OK
 
 /obj/mecha/proc/mmi_moved_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
 	if(mmi_as_oc && (user in range(1)))
@@ -1811,23 +1811,21 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			GrantActions(occupant, 1)
 	else
 		act_message(user, null, others = span_infoplain(span_bold("%U%") + " starts to climb into [src.name]"))
-		task_start(/datum/task/timed/mecha_climb_in, user, src, receiver = src)
+		perform_op(user, src, "climb_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return
 
-/datum/task/timed/mecha_climb_in
-	duration = 4 SECONDS
-	flags = IGNORE_HELD_ITEM
-	complete_proc = /obj/mecha/proc/climb_in_done
-	fail_message = "You stop entering the exosuit."
+/obj/mecha/proc/climb_in_interrupted(datum/act/op/A)
+	to_chat(A.actor, "You stop entering the exosuit.")
 
-/obj/mecha/proc/climb_in_done(datum/task/timed/mecha_climb_in/task)
-	var/mob/user = task.actor
+/obj/mecha/proc/climb_in_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		moved_inside(user)
 		if(ishuman(src?.slot_item(MECHA_SLOT_PILOT))) //Aeiou
 			GrantActions(src?.slot_item(MECHA_SLOT_PILOT), 1)
 	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
 		to_chat(user, "[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try better next time, loser.")
+	return OP_OK
 
 /obj/mecha/proc/reset_can_move()
 	can_move = 1
@@ -2674,18 +2672,24 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 			passengers["[P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)]"] = P
 	return passengers
 
+/// The hatch the maintenance panel's answer names.
+/obj/mecha/proc/chosen_passenger_bay(datum/act/op/A)
+	var/list/passengers = passenger_choices(A)
+	return passengers[A.step_value("passenger")]
+
+/obj/mecha/proc/remove_passenger_begins(datum/act/op/A)
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
+	return msg_text(span_notice("You begin opening the hatch on [P]..."), span_infoplain(span_bold("[A.actor]") + " begins opening the hatch on [P]..."))
+
 /obj/mecha/proc/topic_remove_passenger(datum/act/op/A)
 	var/mob/user = A.actor
-	var/list/passengers = passenger_choices(A)
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = passengers[A.step_value("passenger")]
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
 	if(!P)
 		log_world("MECHA: remove_passenger on [src] by [user]: the chosen passenger is gone")
-		return
+		return OP_REFUSED
 	var/mob/passenger_occupant = P.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
-	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins opening the hatch on %I%...")), \
-		item = P)
-	task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
+	P.forced_out(user, passenger_occupant)
+	return OP_OK
 
 /obj/mecha/proc/topic_finish_req_access(datum/act/op/A)
 	var/mob/user = A.actor

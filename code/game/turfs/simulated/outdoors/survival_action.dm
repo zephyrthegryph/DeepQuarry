@@ -2,6 +2,8 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
 CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 	op("newdirt_hand", hand(), ungated(), stance(I_HELP), label("Dig"), then(PROC_REF(newdirt_hand)))
+	op("loosen_rocks", ai(), wait(5 SECONDS), then(PROC_REF(loosen_rocks_done)))
+	op("pile_up", ai(), wait(5 SECONDS), then(PROC_REF(pile_done)))
 
 /// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Outside combat mode only (the interaction's stance); pulling or out of reach, the turf's own touch.
 /turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(datum/act/op/A)
@@ -12,7 +14,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 		return OP_DECLINE
 	if(icon_state in GLOB.has_rocks)
 		act_message(user, src, MSG_SELF("You loosen rocks from %T%..."), MSG_OTHERS("%U% loosens rocks from %T%..."))
-		task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
+		perform_op(user, src, "loosen_rocks", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return TRUE
 	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
@@ -36,19 +38,21 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 		return
 	var/mob/user = A.request.answerer
 	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
+	perform_op(user, src, "pile_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
+/turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done(datum/act/op/A)
 	if(!(icon_state in GLOB.has_rocks))
-		return
+		return OP_REFUSED
 	var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
 	R.pixel_x = rand(-6,6)
 	R.pixel_y = rand(-6,6)
 	icon_state = "dirt0"
+	return OP_OK
 
-/turf/simulated/floor/outdoors/newdirt/proc/pile_done()
+/turf/simulated/floor/outdoors/newdirt/proc/pile_done(datum/act/op/A)
 	if(!locate_on(src, /obj))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil(src)
+	return OP_OK
 
 /turf/simulated/floor/outdoors/newdirt/get_dig_loot_type(mob/user, obj/item/W)
 	if(prob(5))

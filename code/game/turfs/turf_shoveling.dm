@@ -38,12 +38,16 @@
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
 	var/delay = (5 SECONDS * our_shovel.toolspeed)
 	user.setClickCooldown(delay)
-	task_timed(user, delay, src, src, PROC_REF(grave_dug), list(user))
+	perform_op(user, src, "dig_grave", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("delay" = delay))
 
-/turf/proc/grave_dug(mob/user)
+/turf/proc/grave_time(datum/act/op/A)
+	return A.arg("delay")
+
+/turf/proc/grave_dug(datum/act/op/A)
 	if(!(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		new /obj/structure/closet/grave/dirthole(src)
-	to_chat(user, span_notice("You dug up a hole!"))
+	to_chat(A.actor, span_notice("You dug up a hole!"))
+	return OP_OK
 
 /// If a turf has any loot when dug with a shovel
 /turf/proc/get_dig_loot_type(mob/user, obj/item/W)

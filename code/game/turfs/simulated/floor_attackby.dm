@@ -1,14 +1,21 @@
 // Tool work on floors (removing coverings, welding and cutting plating) is the
 // floor construction graph: floor_construction.dm.
 
-/turf/simulated/floor/proc/lay_flooring(obj/item/stack/S, datum/decl/flooring/use_flooring)
-	if(!is_plating())
-		return
+/turf/simulated/floor/proc/lay_flooring_time(datum/act/op/A)
+	var/datum/decl/flooring/use_flooring = A.arg("flooring")
+	return use_flooring?.build_time || 0
+
+/turf/simulated/floor/proc/lay_flooring(datum/act/op/A)
+	var/obj/item/stack/S = A.held
+	var/datum/decl/flooring/use_flooring = A.arg("flooring")
+	if(!is_plating() || !S || !use_flooring)
+		return OP_REFUSED
 	if(S.use(use_flooring.build_cost))
 		install_flooring(use_flooring)
 		if(S.color)
 			color = S.color
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)
+	return OP_OK
 
 /turf/simulated/floor/proc/floor_item_help(datum/act/op/act)
 	return floor_item(act, I_HELP)
@@ -151,7 +158,7 @@
 				to_chat(user, span_warning("You require at least [use_flooring.build_cost] [S.name] to complete the [use_flooring.descriptor]."))
 				return OP_PASS
 			// Stay still and focus...
-			task_timed(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
+			perform_op(user, src, "lay_flooring", S, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("flooring" = use_flooring))
 			return OP_PASS
 	return OP_PASS
 

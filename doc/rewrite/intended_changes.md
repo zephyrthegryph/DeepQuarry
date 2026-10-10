@@ -4116,3 +4116,15 @@ The old rule (the click path in `code/modules/keybindings/adapters.dm`, `/datum/
 | Unconscious actor resisting | verb rule (`incapacitated(INCAPACITATION_KNOCKOUT)`) | Unchanged: refused, pinned. |
 
 Result: no `ungated()` or narrower gate was needed. The cases the audit worried about are system-origin escapes, outside the hand gate by construction; `escapes_are_not_hand_ops` fails if one of them is ever bound to `hand()`.
+
+## Timed actions round 3 (rewrite/timed3-A)
+
+Classes of behaviour that differ from the old `task_timed` / `task_start` forms. The sites are started from legacy hooks and use `ai()` ops entered with `perform_op(..., with = list(...))`.
+
+| Class | Sites | Difference |
+|---|---|---|
+| Target of the keep is the op's target | mecha clamp (firedoor, airlock), hardpoint actuator, ore scanner, floor flooring, crawl drag, grave, dirt rocks/pile | The old task watched the thing worked on (door, equipment, scanned turf); the op watches the object whose capability holds the op (the equipment, the turf). A door or equipment deleted during the wait is checked in `then()` and refuses. The crawl drag checks the dragged thing is still where it was picked up. |
+| Earlier interruption on death | malf hack of a cyborg or AI | The wait keeps `ALIVE`: an AI that dies stops the hack at once and the victim is told the message of the stage it never reached, instead of when that stage's wait would have ended. |
+| Start message order / shock | suit cycler grab insertion | A live machine that shocks the user ends the click with a `suit_cycler/shocked` line (the shock itself already printed its own); no wait starts. The "starts putting X into the cycler" line is the op's `begins()`. |
+| Passenger bay removal | mecha maintenance "remove passenger" | The hatch is looked up again when the four seconds end, instead of fixing the occupant at the start. |
+| New op keys | mecha (`climb_in`, `mmi_install`), floors (`lay_flooring`), turf (`crawl_drag`, `graffiti`, `dig_grave`), changeling (`absorb_stage`), AI (`malf_hack_cyborg`, `malf_hack_ai`), nanite pool, newdirt, tome, spells, kiosk, cryopod, component, clamp, actuator, ore scanner, passenger | Op key lists in `snapshots/pins/*.txt` for those types change and must be blessed. |

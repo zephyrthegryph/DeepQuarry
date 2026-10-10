@@ -44,6 +44,9 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 	ref_one(nameof(moblink), /mob/living)
 	ref_one(nameof(linkedsmes), /obj/machinery/power/smes)
 	op("nanites_hand", hand(), ungated(), label("Interface"), when(req(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))
+	// Taking the pool over (or letting go of it) is three seconds of the interfacing actor (nanite_interface_chosen).
+	op("nanites_interface_on", ai(), takes("choice"), wait(3 SECONDS), then(PROC_REF(nanites_interface_on_done)))
+	op("nanites_interface_off", ai(), wait(3 SECONDS), then(PROC_REF(nanites_interface_off_done)))
 	op("nanites_ai", remote(), label("Interface"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(req(PROC_REF(ai_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("from_ai" = TRUE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("from_ai" = TRUE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_ai_chosen)))
 
 /// Old attack_hand: a protean (a human with a NIF) may interface with the pool while nobody else holds it.
@@ -133,11 +136,19 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 			act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-			task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
+			perform_op(checker, src, "nanites_interface_on", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("choice" = targets))
 		if("Off")
 			if(active)
 				act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-				task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
+				perform_op(checker, src, "nanites_interface_off", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_interface_off_done(datum/act/op/A)
+	toggle_all(FALSE)
+	return OP_OK
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_interface_on_done(datum/act/op/A)
+	interface_on(A.actor, A.arg("choice"))
+	return OP_OK
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
 	rel_set(src, nameof(moblink), user)

@@ -14,6 +14,33 @@
 
 	return
 
+// The pilot's work on a door: the keeps drop HELD (the pilot holds nothing) and ADJACENT (the pilot rides inside the chassis).
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
+	op("pry_firedoor_blocked", ai(), takes("door"), wait(10 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_blocked_firedoor)))
+	op("pry_firedoor", ai(), takes("door"), wait(5 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_firedoor)))
+	op("pry_airlock", ai(), takes("door"), wait(15 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_airlock)))
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_blocked_firedoor(datum/act/op/A)
+	var/obj/machinery/door/firedoor/FD = A.arg("door")
+	if(QDELETED(FD))
+		return OP_REFUSED
+	pry_firedoor(FD, TRUE)
+	return OP_OK
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_firedoor(datum/act/op/A)
+	var/obj/machinery/door/firedoor/FD = A.arg("door")
+	if(QDELETED(FD))
+		return OP_REFUSED
+	pry_firedoor(FD, FALSE)
+	return OP_OK
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_airlock(datum/act/op/A)
+	var/obj/machinery/door/airlock/AD = A.arg("door")
+	if(QDELETED(AD))
+		return OP_REFUSED
+	pry_airlock(AD)
+	return OP_OK
+
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_firedoor(obj/machinery/door/firedoor/FD, unblock)
 	play_sfx(FD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	if(unblock)
@@ -58,10 +85,10 @@
 					var/obj/machinery/door/firedoor/FD = O
 					if(FD.blocked)
 						FD.visible_message(span_danger("\The [chassis] begins prying on \the [FD]!"))
-						task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 10 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, TRUE), IGNORE_HELD_ITEM)
+						perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_firedoor_blocked", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = FD))
 					else if(FD.density)
 						FD.visible_message(span_warning("\The [chassis] begins forcing \the [FD] open!"))
-						task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 5 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, FALSE), IGNORE_HELD_ITEM)
+						perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_firedoor", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = FD))
 					else
 						FD.visible_message(span_danger("\The [chassis] forces \the [FD] closed!"))
 						FD.close(1)
@@ -72,7 +99,7 @@
 					else if(!AD.operating)
 						if(is_welded(AD))
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
-							task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
+							perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_airlock", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = AD))
 						else
 							toggle_airlock(AD)
 				return
