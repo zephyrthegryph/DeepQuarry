@@ -62,7 +62,13 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/computer/drone_control/C = allocate(/obj/machinery/computer/drone_control, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	TEST_ASSERT_NOTNULL(test_op(H, C, "open_console"), "no credential: refused")
+	var/list/open_row
+	for(var/list/row as anything in op_menu(H, C, null))
+		if(row["key"] == "ui_open")
+			open_row = row
+	TEST_ASSERT_NOTNULL(open_row, "the real native ui_open menu row is present")
+	TEST_ASSERT_EQUAL(open_row?["enabled"], FALSE, "no credential: refused")
+	TEST_ASSERT_NOTNULL(open_row?["reason"], "the native row explains missing access")
 	TEST_ASSERT(!access_allowed(C, H), "access_allowed() agrees")
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	card.access = list(ACCESS_ENGINE_EQUIP)
@@ -70,9 +76,20 @@ CAPABILITIES(/obj/machinery/transportpod/dx_b2)
 	TEST_ASSERT(access_allowed(C, H, card), "access_allowed() takes the held card")
 	dq_test_wear_id(H, card)
 	TEST_ASSERT_EQUAL(access_credential(C, H, null, list(ACCESS_ENGINE_EQUIP), null, list(/obj/item/card/id)), H, "a worn ID makes the actor the provider")
-	TEST_ASSERT_NULL(test_op(H, C, "open_console"), "an empty hand with a worn ID opens it")
+	open_row = null
+	for(var/list/row as anything in op_menu(H, C, null))
+		if(row["key"] == "ui_open")
+			open_row = row
+	TEST_ASSERT_NOTNULL(open_row, "ui_open remains offered with a worn ID")
+	TEST_ASSERT_EQUAL(open_row?["enabled"], TRUE, "an empty hand with a worn ID opens it")
 	C.req_access = list(ACCESS_CAPTAIN)
-	TEST_ASSERT_NOTNULL(test_op(H, C, "open_console"), "the instance's own req_access wins")
+	open_row = null
+	for(var/list/row as anything in op_menu(H, C, null))
+		if(row["key"] == "ui_open")
+			open_row = row
+	TEST_ASSERT_NOTNULL(open_row, "changed access keeps the refusal row visible")
+	TEST_ASSERT_EQUAL(open_row?["enabled"], FALSE, "the instance's own req_access wins")
+	TEST_ASSERT_NOTNULL(open_row?["reason"], "the native row explains the new access requirement")
 	TEST_ASSERT_EQUAL(access_credential(C, H, null, null, null), H, "nothing required: the actor is the provider")
 
 /// The lock asks the same providers (cap_lock_credential() over access_credential()).

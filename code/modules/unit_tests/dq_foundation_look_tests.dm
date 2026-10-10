@@ -24,8 +24,9 @@
 	name = "look probe"
 	icon_state = "fix"
 
-CAPABILITIES(/obj/cap_fixture/look_probe)
-	dq_standard_parts_fixture()
+/obj/cap_fixture/look_probe/capabilities()
+	. = ..()
+	. += dq_standard_parts_fixture()
 
 /datum/unit_test/dq_look_convention
 
@@ -97,8 +98,9 @@ CAPABILITIES(/obj/cap_fixture/look_probe)
 	name = "lacking probe"
 	icon_state = "fix"
 
-CAPABILITIES(/obj/cap_fixture/look_lacking)
-	dq_standard_parts_fixture()
+/obj/cap_fixture/look_lacking/capabilities()
+	. = ..()
+	. += dq_standard_parts_fixture()
 
 /obj/cap_fixture/look_lacking/look_lacks()
 	return list(LOOK_BROKEN)
