@@ -1030,24 +1030,18 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	task_start(/datum/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
+	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("duration" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/datum/task/timed/living_climb_down
-	complete_proc = /mob/living/proc/climb_down_done
-	cancel_proc = /mob/living/proc/climb_down_interrupted
-	var/turf/front_of_us
-	var/turf/destination
-	var/turf/below_wall
-	var/fall_chance
-	var/nutrition_cost
-	var/fall_at
+/// The climb takes as long as the climber's skill and gear say (read once, when the climb starts).
+/mob/living/proc/climb_down_time(datum/act/op/A)
+	return A.arg("duration")
 
-/mob/living/proc/climb_down_done(datum/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/destination = task.destination
-	var/turf/below_wall = task.below_wall
-	var/fall_chance = task.fall_chance
-	var/nutrition_cost = task.nutrition_cost
+/mob/living/proc/climb_down_done(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/destination = A.arg("destination")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_chance = A.arg("fall_chance")
+	var/nutrition_cost = A.arg("nutrition_cost")
 	if(prob(fall_chance))
 		src.forceMove(front_of_us)
 		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \
@@ -1059,14 +1053,15 @@
 			self = span_notice("You successfully descended " + span_bold("%T%")),	\
 			blind = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
 	adjust_nutrition(-nutrition_cost)
+	return OP_OK
 
 /// Interrupted past the grace time: the climber falls.
-/mob/living/proc/climb_down_interrupted(datum/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/below_wall = task.below_wall
-	var/fall_at = task.fall_at
+/mob/living/proc/climb_down_interrupted(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_at = A.arg("fall_at")
 	if(ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
-		return
+		return OP_OK
 	src.forceMove(front_of_us)
 	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \
 		self = span_danger("You slipped off " + span_bold("%T%")), \

@@ -125,27 +125,27 @@
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
 	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 
-	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
-	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	task_start(/datum/task/timed/living_begin_melee_swing_living, src, src, duration = windup, target_arg = target, weapon = weapon, swing_tiles = swing_tiles, progress = FALSE, interaction_key = "melee_swing", hidden = TRUE)
+	// Wait out the windup: the "melee_swing" op cancels if WE move, drop the weapon, or get incapacitated. The op's holder is the swinger itself,
+	// so a dodging victim does NOT cancel it (they just leave the tiles).
+	var/datum/op_result/started = perform_op(src, src, "melee_swing", weapon, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("swing_target" = target, "windup" = windup, "swing_tiles" = swing_tiles))
+	if(!started || started.outcome == ACT_REFUSED)
+		is_swinging = FALSE
+		return FALSE
 	return TRUE
 
-/datum/task/timed/living_begin_melee_swing_living
-	complete_proc = /mob/living/proc/begin_melee_swing_living_done
-	cancel_proc = /mob/living/proc/begin_melee_swing_living_failed
-	var/mob/living/target_arg
-	var/obj/item/weapon
-	var/list/turf/swing_tiles
+/// The windup lasts as long as the weapon says (read once, when the swing starts).
+/mob/living/proc/melee_swing_time(datum/act/op/A)
+	return A.arg("windup")
 
-/mob/living/proc/begin_melee_swing_living_done(datum/task/timed/living_begin_melee_swing_living/task)
-	var/mob/living/target = task.target_arg
-	var/obj/item/weapon = task.weapon
-	var/list/turf/swing_tiles = task.swing_tiles
+/mob/living/proc/melee_swing_done(datum/act/op/A)
+	var/mob/living/target = A.arg("swing_target")
+	var/obj/item/weapon = A.held
+	var/list/turf/swing_tiles = A.arg("swing_tiles")
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
 		is_swinging = FALSE
-		return FALSE
+		return OP_FAILED
 
 	// The swing is committed: clear the gate and start recovery BEFORE resolving
 	// hits. weapon.attack() runs arbitrary downstream code — a runtime in there
@@ -174,8 +174,9 @@
 			weapon.attack(victim, src, zone, 1) // attack_modifier 1; null would zero the damage
 	melee_swing_resolving = FALSE
 
-	return TRUE
+	return OP_OK
 
-/mob/living/proc/begin_melee_swing_living_failed(datum/task/timed/living_begin_melee_swing_living/task)
+/// The windup was cut short (moved, dropped the weapon, incapacitated): the swing is off.
+/mob/living/proc/melee_swing_failed(datum/act/op/A)
 	is_swinging = FALSE
-	return FALSE
+	return OP_OK

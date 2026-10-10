@@ -178,21 +178,6 @@
 
 	return FALSE
 
-/datum/task/timed/living_beacon_insert
-	duration = 3 SECONDS
-	complete_proc = /mob/living/proc/beacon_insert_done
-	var/obj/item/I
-	var/obj/belly/B
-
-/mob/living/proc/beacon_insert_done(datum/task/timed/living_beacon_insert/task)
-	var/mob/user = task.actor
-	var/obj/item/I = task.I
-	var/obj/belly/B = task.B
-	if(user.get_active_hand() != I)
-		return
-	user.drop_item()
-	B.belly_insert(I, user)
-
 /// Feeding a beacon: confirmed, then the belly picked. Re-checked on each answer: the feeder is
 /// still next to the eater, able, and holding the beacon.
 /datum/prompt/choice/beacon_feed
@@ -247,7 +232,18 @@
 	var/obj/belly/B = A.request.value
 	act_message(src, user, MSG_SELF(span_warning("%T% is trying to stuff a beacon into you!")), \
 		MSG_OTHERS(span_warning("%T% is trying to stuff a beacon into %U%'s [B.get_belly_name()]!")))
-	task_start(/datum/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
+	perform_op(user, src, "beacon_insert", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = B))
+
+/// The beacon op runs on the one who eats it (src); the feeder is the actor and the beacon the held item.
+/mob/living/proc/beacon_insert_finished(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	var/obj/belly/B = A.arg("belly")
+	if(QDELETED(user) || QDELETED(I) || QDELETED(B) || user.get_active_hand() != I)
+		return OP_FAILED
+	user.drop_item()
+	B.belly_insert(I, user)
+	return OP_OK
 
 /// What to write on a limb. Re-checked on the answer: the writer is still next to the canvas,
 /// able, and the limb is still theirs.
@@ -285,30 +281,29 @@
 		MSG_OTHERS(span_notice("%U% starts writing on %T%'s [affecting.name].")))
 
 	// Progress bar for writing on someone for better consent check.
-	task_start(/datum/task/timed/living_body_writing, attacker, canvas_user, receiver = src, affecting = affecting, message = message, max_distance = 1)
+	perform_op(attacker, canvas_user, "body_writing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = affecting, "message" = message))
 
-/mob/living/proc/body_writing_stopped(datum/task/timed/living_body_writing/task)
-	var/mob/living/attacker = task.actor
+/// The writer stopped (moved off, looked away, was hurt): the writing is not made.
+/mob/living/proc/body_writing_stopped(datum/act/op/A)
+	var/mob/living/attacker = A.actor
 	to_chat(attacker, span_warning("You stop writing on [src]."))
+	return OP_OK
 
-/datum/task/timed/living_body_writing
-	duration = 3 SECONDS
-	complete_proc = /mob/living/proc/body_writing_done
-	cancel_proc = /mob/living/proc/body_writing_stopped
-	var/obj/item/organ/external/affecting
-	var/message
-
-/mob/living/proc/body_writing_done(datum/task/timed/living_body_writing/task)
-	var/mob/living/attacker = task.actor
-	var/obj/item/organ/external/affecting = task.affecting
-	var/message = task.message
+/// The writing op runs on the one written on (src); the writer is the actor.
+/mob/living/proc/body_writing_finished(datum/act/op/A)
+	var/mob/living/attacker = A.actor
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	var/message = A.arg("message")
 	var/mob/living/carbon/human/canvas_user = src
+	if(QDELETED(attacker) || QDELETED(affecting))
+		return OP_FAILED
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
 	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
 
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You finish writing on %T%'s [affecting.name].")), \
 		MSG_OTHERS(span_notice("%U% finishes writing on %T%'s [affecting.name].")))
+	return OP_OK
 
 //
 //	Verb for saving vore preferences to save file
@@ -1053,21 +1048,23 @@
 
 	handle_eat_minerals()
 
-/mob/living/proc/eat_minerals_interrupted(datum/task/timed/living_eat_minerals/task)
-	var/obj/item/I = task.I
+/// The eater was left alone mid-chew (the target moved off, or the feeder fell): the item stays whole.
+/mob/living/proc/eat_minerals_interrupted(datum/act/op/A)
+	var/obj/item/I = A.arg("item")
 	to_chat(src, span_notice("You were interrupted while gnawing on [I]!"))
+	return OP_OK
 
-/datum/task/timed/living_eat_minerals
-	flags = IGNORE_USER_LOC_CHANGE
-	complete_proc = /mob/living/proc/eat_minerals_done
-	cancel_proc = /mob/living/proc/eat_minerals_interrupted
-	var/obj/item/I
-	var/list/nom
+/// How long the chewing takes (worked out when the feeder started, from the material's hardness).
+/mob/living/proc/eat_minerals_time(datum/act/op/A)
+	return A.arg("chew_time")
 
-/mob/living/proc/eat_minerals_done(datum/task/timed/living_eat_minerals/task)
-	var/mob/living/feeder = task.actor
-	var/obj/item/I = task.I
-	var/list/nom = task.nom
+/// The chewing op runs on the eater (src); whoever fed them is the actor (the eater themselves for Eat Minerals).
+/mob/living/proc/eat_minerals_finished(datum/act/op/A)
+	var/mob/living/feeder = A.actor
+	var/obj/item/I = A.arg("item")
+	var/list/nom = A.arg("nom")
+	if(QDELETED(I) || !islist(nom))
+		return OP_FAILED
 	if(feeder != src)
 		to_chat(feeder, span_notice("You feed [I] to [src]."))
 		log_admin("VORE: [feeder] fed [src] [I].")
@@ -1184,7 +1181,7 @@
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
-		task_start(/datum/task/timed/living_eat_minerals, feeder, src, receiver = src, duration = T, I = I, nom = nom)
+		perform_op(feeder, src, "eat_minerals", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item" = I, "nom" = nom, "chew_time" = T))
 		return TRUE
 
 	else //Not the droids we're looking for.
