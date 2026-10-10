@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/multitool)
 /// treatment by the part's biology.
 /obj/item/multitool/proc/aimed_limb(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return H.get_organ(read_once(A.actor.zone_sel?.selecting))
+	return read_once(H.get_organ(read_once(A.actor.zone_sel?.selecting)))
 
 /// Requirement: the aimed limb exists and its biology responds to calibration.
 /obj/item/multitool/proc/calibratable(datum/act/op/A)

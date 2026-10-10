@@ -526,24 +526,27 @@
 		return TRUE
 
 	var/turf/T = get_turf(hit_atom)
-	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
-
-	T.add_overlay(target_image)
-	perform_op(user, src, "charge_shot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("aimed_at" = hit_atom, "marked" = T, "marker" = target_image))
+	var/obj/effect/overlay/spell_target/marker = new(T)
+	perform_op(user, src, "charge_shot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("aimed_at" = hit_atom, "marker" = marker))
 	return FALSE
+
+/// The mark on the tile a construct's shot is charging at.
+/obj/effect/overlay/spell_target
+	name = "target"
+	icon = 'icons/obj/spells.dmi'
+	icon_state = "target"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
 /// A construct's charged shot: the target turf is marked while it charges, then it fires.
 CAPABILITIES(/obj/item/spell/construct/projectile)
-	op("charge_shot", ai(), takes("aimed_at", "marked", "marker"), wait(PROC_REF(shot_time)), on_interrupt(PROC_REF(shot_unmark)), then(PROC_REF(shot_charged)))
+	op("charge_shot", ai(), takes("aimed_at", "marker"), wait(PROC_REF(shot_time)), on_interrupt(PROC_REF(shot_unmark)), then(PROC_REF(shot_charged)))
 
 /obj/item/spell/construct/projectile/proc/shot_time(datum/act/op/A)
 	return pre_shot_delay
 
 /obj/item/spell/construct/projectile/proc/shot_unmark(datum/act/op/A)
-	var/turf/marked = A.arg("marked")
-	marked?.cut_overlay(A.arg("marker"))
 	spent(A.arg("marker"))
 
 /obj/item/spell/construct/projectile/proc/shot_charged(datum/act/op/A)

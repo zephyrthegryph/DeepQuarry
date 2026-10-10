@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/ammo_casing)
 
 /// Another shell follows while the floor has one that fits and the box has room.
 /obj/item/ammo_magazine/proc/collect_more(datum/act/op/A)
-	return !!next_shell(A.arg("floor"))
+	return read_once(!!next_shell(A.arg("floor")))
 
 /// One shell collected per half second.
 /obj/item/ammo_magazine/proc/shell_collected(datum/act/op/A)

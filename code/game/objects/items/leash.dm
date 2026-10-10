@@ -158,7 +158,7 @@ TRACKED(/obj/item/leash, leashed)
 /// The click that reaches the op is a leashable pet (the attack() above says why the others are not).
 /obj/item/leash/proc/leashable_pet(datum/act/op/A)
 	var/mob/living/pet = A.target
-	if(read_once(pet.leash_item()) || !read_once(pet.mind) || pet == A.actor)
+	if(!read_once(pet.mind) || pet == A.actor)
 		return FALSE
 	return !istype(pet, /mob/living/carbon/human) || is_wearing_collar(pet)
 
@@ -170,12 +170,11 @@ TRACKED(/obj/item/leash, leashed)
 /obj/item/leash/proc/leash_started(datum/act/op/A)
 	var/mob/living/C = A.target
 	var/mob/living/user = A.actor
+	if(leash_refusal(user, C))
+		to_chat(user, span_notice("[C] has already been leashed."))
+		return MSG(req_silent)
 	act_message(C, null, MSG_SELF(span_danger("\The [user] tries to put a leash on you")), MSG_OTHERS(span_danger("\The [user] is attempting to put the leash on %U%!")))
 	add_attack_logs(user, C, "Leashed (attempt)")
-
-/// Null while the holder may still leash the pet, for the requirement.
-/obj/item/leash/proc/leash_allowed(datum/act/op/A)
-	return !leash_refusal(A.actor, A.target)
 
 /// Null while `holder` may leash `pet` with this leash, else why not.
 /obj/item/leash/proc/leash_refusal(mob/living/holder, mob/living/pet)
@@ -194,22 +193,20 @@ TRACKED(/obj/item/leash, leashed)
 	timeout = 0
 	ask_flags = ASK_FACE_TO_FACE
 
-/obj/item/leash/proc/leash_offer(datum/act/op/A)
+/// The pet is the one asked.
+/obj/item/leash/proc/leash_pet_of(datum/act/op/A)
+	return A.target
+
+/obj/item/leash/proc/leash_question(datum/act/op/A)
+	return "Would you like to be leashed by [A.actor]? You can OOC escape to escape"
+
+/obj/item/leash/proc/leash_accepted(datum/act/op/A)
 	var/mob/living/pet = A.target
 	var/mob/living/holder = A.actor
 	if(leash_refusal(holder, pet))
 		return OP_FAILED
-	open_request(src, /datum/prompt/yes_no/leash_offer, PROC_REF(leash_accepted), answerer = pet, asker = holder, question = "Would you like to be leashed by [holder]? You can OOC escape to escape")
-	return OP_OK
-
-/obj/item/leash/proc/leash_accepted(datum/act/request/A)
-	if(!A.answer?.value)
-		return
-	var/mob/living/pet = A.request.answerer
-	var/mob/living/holder = A.request.asker
-	if(leash_refusal(holder, pet))
-		return
 	attach(pet, holder)
+	return OP_OK
 
 /// Links the leash between `pet` and `holder`. This leash may still be on someone else: that one ends here.
 /obj/item/leash/proc/attach(mob/living/new_pet, mob/living/new_holder)
@@ -231,8 +228,9 @@ CAPABILITIES(/obj/item/leash)
 	ref_one(nameof(pet), /mob/living, on_unlink = PROC_REF(pet_ended))
 	ref_one(nameof(holder), /mob/living, on_unlink = PROC_REF(holder_ended))
 	op("tug", in_hand(), label("Tug leash"), then(PROC_REF(leash_tug_requested)))
-	op("leash_on", at_target(/mob/living), answers(INTENT_USE, INTENT_ATTACK), when(req(PROC_REF(leashable_pet))), needs(req_adjacent(), req(PROC_REF(leash_allowed), silent = TRUE)),
-		starts(PROC_REF(leash_started)), wait(PROC_REF(leash_time)), then(PROC_REF(leash_offer)))
+	op("leash_on", at_target(/mob/living), answers(INTENT_USE, INTENT_ATTACK), when(req(PROC_REF(leashable_pet))), needs(req_adjacent()),
+		starts(PROC_REF(leash_started)), wait(PROC_REF(leash_time)),
+		asks(/datum/prompt/yes_no/leash_offer, fields = list("question" = computed(PROC_REF(leash_question))), step = "consent", answerer = PROC_REF(leash_pet_of), ends_on_no = TRUE), then(PROC_REF(leash_accepted)))
 	// The pet unhooks itself, or the holder takes the leash off: the leash is the op's target, so walking away from it ends the work.
 	op("unhook", ai(), wait(3.5 SECONDS), then(PROC_REF(released)))
 	op("unleash", ai(), wait(1.5 SECONDS), then(PROC_REF(released)))

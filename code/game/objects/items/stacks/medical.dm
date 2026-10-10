@@ -516,7 +516,7 @@ CAPABILITIES(/obj/item/stack/medical/splint)
 					user.balloon_alert_visible("\the [user] successfully applies [src] to their [limb].", "successfully applied \the [src] to your [limb].", "You hear something being wrapped.")
 				return OP_OK
 			S.dropInto(src.loc) //didn't get applied, so just drop it
-	if(isrobot(user))
+	if(!ishuman(user))
 		var/obj/item/stack/medical/splint/B = src
 		if(B)
 			if(affecting.apply_splint(B))

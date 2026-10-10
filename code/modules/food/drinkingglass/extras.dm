@@ -108,7 +108,7 @@ MSG_DEF_SELF(straw/too_little, span_warning("There's not enough of %T% left to s
 	return null
 
 /obj/item/glass_extra/straw/proc/sip_reagent_known(datum/act/op/A)
-	return !isnull(sip_reagent_of(A.target))
+	return read_once(!isnull(sip_reagent_of(A.target)))
 
 /obj/item/glass_extra/straw/proc/sip_victim_whole(datum/act/op/A)
 	var/mob/living/victim = A.target

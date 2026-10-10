@@ -108,8 +108,9 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 /// The held item is one the wreck still needs.
 /obj/item/broken_gun/proc/repairs_with(datum/act/op/A)
 	var/obj/item/I = A.held
-	for(var/path in material_needs)
-		if(ispath(path) && istype(I, path) && material_needs[path] > 0)
+	var/list/needs = read_once(material_needs)
+	for(var/path in needs)
+		if(ispath(path) && istype(I, path) && needs[path] > 0)
 			return TRUE
 	return FALSE
 

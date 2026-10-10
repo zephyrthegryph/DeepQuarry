@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/implant/reagent_generator/egg)
 		perform_op(host, src, "cascade", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = host, "egg" = egg))
 
 /obj/item/implant/reagent_generator/egg/proc/cascade_more(datum/act/op/A)
-	return reagents.total_volume >= transfer_amount
+	return read_once(reagents.total_volume >= transfer_amount)
 
 /obj/item/implant/reagent_generator/egg/proc/cascade_lap(datum/act/op/A)
 	var/mob/living/carbon/human/host = A.arg("host")

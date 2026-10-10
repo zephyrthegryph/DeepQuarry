@@ -575,12 +575,12 @@ CAPABILITIES(/datum/personal_crafting)
 	tgui_interact(A.actor)
 
 /// The time is up: the item, or the text of why it failed.
-/datum/personal_crafting/proc/make_done(datum/act/op/A)
+/datum/personal_crafting/proc/make_done(datum/act/op/A, materialSlots, recipe)
 	var/mob/user = A.actor
 	var/datum/crafting_recipe/R = make_recipe(A)
 	if(!R)
 		return
-	make_finished(user, R, construct_item_checked(user, R, A.arg("materialSlots")))
+	make_finished(user, R, construct_item_checked(user, R, materialSlots))
 	tgui_interact(user)
 
 /// The end of a craft: the item, or the text of why it failed.

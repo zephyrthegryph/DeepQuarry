@@ -738,14 +738,14 @@ CAPABILITIES(/datum/prompt/yes_no/cryo_consent)
 	var/mob/M = A.arg("passenger")
 	var/mob/user = A.actor
 	if(QDELETED(M))
-		return OP_REFUSED
+		return OP_FAILED
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
-		return OP_REFUSED
+		return OP_FAILED
 	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]."))
-		return OP_REFUSED
+		return OP_FAILED
 	go_in_finish(M, user)
 	return OP_OK
 

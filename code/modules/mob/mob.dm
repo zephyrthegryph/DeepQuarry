@@ -920,7 +920,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			var/mob/living/carbon/human/human_user = U
 			human_user.bloody_hands(H)
 
-	else if(issilicon(src))
+	else if(istype(src, /mob/living/silicon/robot))
 		var/mob/living/silicon/robot/R = src
 		LAZYREMOVE(R.embedded, selection)
 		R.injure(INJURY_CUT, 5, null, selection)

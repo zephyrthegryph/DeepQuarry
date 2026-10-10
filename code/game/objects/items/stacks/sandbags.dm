@@ -151,7 +151,7 @@ CAPABILITIES(/obj/item/stack/emptysandbag)
 
 /// Another bag follows while there is a bag left and the ground is outdoors.
 /obj/item/stack/emptysandbag/proc/fill_more(datum/act/op/A)
-	return !QDELETED(src) && can_use(1) && istype(get_turf(src), /turf/simulated/floor/outdoors)
+	return read_once(!QDELETED(src) && can_use(1) && istype(get_turf(src), /turf/simulated/floor/outdoors))
 
 /// A bag filled: one used, one sandbag made where the pile lies.
 /obj/item/stack/emptysandbag/proc/fill_bag_done(datum/act/op/A)

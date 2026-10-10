@@ -543,7 +543,8 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 
 /// Another round follows while the handful's next one fits and there is room for it.
 /obj/item/gun/projectile/proc/feed_more(datum/act/op/A)
-	return can_feed_from(A.held)
+	var/obj/item/ammo_magazine/handful/H = A.held
+	return read_once(can_feed_from(H))
 
 /// One round fed per lap; re-validated after the wait, the handful may have shrunk or moved.
 /obj/item/gun/projectile/proc/feed_round(datum/act/op/A)

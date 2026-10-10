@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/self_repair_system)
 
 /// Another lap follows while something is damaged and the last payment went through.
 /obj/item/self_repair_system/proc/repair_more(datum/act/op/A)
-	return repair_powered
+	return read_once(repair_powered)
 
 /// One lap done: heal every damaged component, then pay for the next lap.
 /obj/item/self_repair_system/proc/repair_lap(datum/act/op/A)
