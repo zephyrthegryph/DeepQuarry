@@ -44,6 +44,7 @@ TRACKED(/obj/structure/toilet, cistern)
 TRACKED(/obj/structure/toilet, refilling)
 
 CAPABILITIES(/obj/structure/toilet)
+	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
 	owns_one(nameof(teleplumb_crystal), /obj/item)
 	ref_one(nameof(swirlie_mob), /mob/living)
@@ -70,7 +71,6 @@ CAPABILITIES(/obj/structure/toilet)
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
-	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
 		rel_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
@@ -567,7 +567,6 @@ MSG_DEF_SELF(shower/adjusting, span_notice("You begin to adjust the temperature.
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
 
-
 /// Washes its tile every machine step while running.
 MSG_DEF_SELF(toilet/replacing_lid, span_notice("You start to replace the lid on the cistern."))
 MSG_DEF_SELF(toilet/lifting_lid, span_notice("You start to lift the lid off the cistern."))
@@ -1053,11 +1052,6 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	desc = "A sink used for washing one's hands and face."
 	anchored = TRUE
 
-/obj/structure/sink/Initialize(mapload)
-	. = ..()
-	add_hose_connector(/datum/hose_connector/endless_source/water)
-	add_hose_connector(/datum/hose_connector/endless_drain)
-
 /// Old MouseDrop_T: an open container dragged onto the sink is tipped out into it.
 /obj/structure/sink/proc/interaction_drag(datum/act/op/A)
 	var/mob/user = A.actor
@@ -1075,6 +1069,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	return OP_PASS
 
 CAPABILITIES(/obj/structure/sink)
+	hose_sockets(list(/datum/hose_connector/endless_source/water, /datum/hose_connector/endless_drain))
 	// a wash claims the sink: nobody else washes in it meanwhile; a silicon has no hands to wash
 	op("wash", hand(), label("Wash hands"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
 		needs(req(PROC_REF(hand_usable))), claims(), begins(MSG(sink/washing_hands)), plays(SFX_EFFECTS_SINK_LONG, at_start = TRUE), wait(4 SECONDS), on_interrupt(PROC_REF(wash_hands_stopped)), then(PROC_REF(interaction_wash)))
@@ -1372,7 +1367,6 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 	B.digest_brute = 20
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
-
 
 /// Relation view: muffinmonster (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

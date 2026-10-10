@@ -17,6 +17,7 @@ MSG_DEF_SELF(fieldgen/online, "You are unable to turn off the field generator on
 MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 
 /obj/machinery/field_generator
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "Field Generator"
 	desc = "A large thermal battery that projects a high amount of energy when powered."
 	icon = 'icons/obj/machines/field_generator.dmi'
@@ -63,9 +64,6 @@ CAPABILITIES(/obj/machinery/field_generator)
 		needs(req_bool(PROC_REF(is_secured), because = MSG(fieldgen/unsecured)), req_bool(PROC_REF(is_off), because = MSG(fieldgen/online))),
 		says(MSG(fieldgen/activated)), then(PROC_REF(activated)))
 
-/obj/machinery/field_generator/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 /// Its fields stand (active 2) and must be paid for, or an admin quick-start is pending.
 /obj/machinery/field_generator/proc/fields_running(datum/act/A)

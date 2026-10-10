@@ -50,7 +50,6 @@
 // ALLOW(init/INSTANCE_STATE): takes its built parts and lists what they can make
 /obj/machinery/partslathe/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	update_recipe_list()
 
 /obj/machinery/partslathe/RefreshParts()
@@ -221,6 +220,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("PartsLathe")
 	op("queue", ui_act("queue", arg("queue")), then(PROC_REF(ui_act_queue)))
@@ -284,7 +284,6 @@ CAPABILITIES(/obj/machinery/partslathe)
 
 	data["panelOpen"] = panel_open
 	return data
-
 
 /obj/machinery/partslathe/proc/ui_act_queue(datum/act/op/A, queue)
 	var/mob/user = A.actor
@@ -379,7 +378,6 @@ CAPABILITIES(/obj/machinery/partslathe)
 
 /datum/category_item/partslathe/proc/build(loc)
 	return new path(loc)
-
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/partslathe/step_start_condition()

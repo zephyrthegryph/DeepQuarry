@@ -52,6 +52,7 @@ TRACKED(/obj/machinery/compressor, rpm_stage)
 // while it is started (compressor_step(); a starter motor brings it to 1000 rpm), and its turbine turns the compressor's rpm into power
 // (turbine_step(): ((rpm / TURBGENQ) ^ TURBGENG) * TURBGENQ * productivity W for the next power step) and vents the gas behind it.
 CAPABILITIES(/obj/machinery/compressor)
+	default_parts()
 	owns_one(nameof(gas_contained), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	ref_one(nameof(turbine), /obj/machinery/power/turbine)
 	ref_one(nameof(inturf), /turf/simulated)
@@ -81,7 +82,6 @@ CAPABILITIES(/obj/machinery/compressor)
 	var/generating_shown = FALSE
 
 TRACKED(/obj/machinery/power/turbine, generating_shown)
-
 
 /obj/machinery/computer/turbine_computer
 	name = "gas turbine control computer"
@@ -119,7 +119,6 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 
 /obj/machinery/compressor/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	rel_set(src, nameof(inturf), get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
@@ -193,7 +192,6 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 	if(rpm_stage)
 		look.overlay(image('icons/obj/pipes.dmi', "comp-o[rpm_stage]", FLY_LAYER))
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Turbine
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +205,6 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 
 /obj/machinery/power/turbine/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	// The outlet is pointed at the direction of the turbine component
 	rel_set(src, nameof(outturf), get_step(src, dir))
 	locate_machinery()
@@ -266,6 +263,7 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 		look.overlay(image('icons/obj/pipes.dmi', "turb-o", FLY_LAYER))
 
 CAPABILITIES(/obj/machinery/power/turbine)
+	default_parts()
 	ref_one(nameof(compressor), /obj/machinery/compressor)
 	ref_one(nameof(outturf), /turf/simulated)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = PROC_REF(running))
@@ -378,7 +376,6 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 #undef TURBPRES
 #undef TURBGENQ
 #undef TURBGENG
-
 
 /// the compressor this refers to: a relation view, null once that is deleted.
 /obj/machinery/computer/turbine_computer/proc/compressor() as /obj/machinery/compressor

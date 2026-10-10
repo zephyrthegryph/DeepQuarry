@@ -23,7 +23,6 @@ TRACKED(/obj/machinery/shield_diffuser, enabled)
 // ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on
 /obj/machinery/shield_diffuser/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 
 	var/turf/T = get_turf(src)
 	hide(!T.is_plating())
@@ -38,6 +37,7 @@ TRACKED(/obj/machinery/shield_diffuser, enabled)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
+	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

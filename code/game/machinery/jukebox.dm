@@ -29,6 +29,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
@@ -64,7 +65,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 // ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
@@ -425,7 +425,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
-
 
 /obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(datum/act/op/A)
 	if(track_duration_entered(A))

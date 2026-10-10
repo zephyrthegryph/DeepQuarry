@@ -35,6 +35,7 @@
 	light_color = "#FF0000"
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
+	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
@@ -61,7 +62,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 /// Watches its occupant (death, power loss) while it has one.
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
@@ -202,7 +202,6 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 	M.stop_pulling()
 	if(!move_into(src, OCCUPANT_SLOT_VR_POD, M))
 		return
-
 
 	if(M.has_brain_worms())
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
