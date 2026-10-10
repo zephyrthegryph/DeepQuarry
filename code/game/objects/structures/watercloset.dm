@@ -1255,11 +1255,10 @@ CAPABILITIES(/obj/structure/toilet/item)
 	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
 
 /obj/structure/biowaste_tank/Initialize(mapload)
-	rel_set(src, nameof(muffinmonster), new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
+	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
+	. = ..()
 	muffinmonster().name = "Activate Muffin Monster"
 	muffinmonster().init_vore(TRUE)
-	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
-	return ..()
 
 /obj/structure/biowaste_tank/AllowDrop()
 	return TRUE
@@ -1333,6 +1332,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 	return OP_OK
 
 CAPABILITIES(/obj/structure/biowaste_tank)
+	owns_one(nameof(muffinmonster), /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster, starts = /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("eject", hand(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("title" = "Item Retrieval Console", "question" = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "choices" = computed(PROC_REF(caught_items)), "timeout" = 0), when = PROC_REF(has_caught)),

@@ -171,7 +171,7 @@ TRACKED(/obj/item/ammo_magazine, latent_rounds)
 TRACKED(/obj/item/ammo_magazine, max_ammo)
 
 CAPABILITIES(/obj/item/ammo_magazine)
-	owns_many(nameof(stored_ammo))
+	owns_many(nameof(stored_ammo), starts = PROC_REF(make_stored_ammo))
 	param(nameof(forge_material), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	op("load", item(/obj/item), label("Load"), then(PROC_REF(magazine_interaction_item)))
@@ -189,17 +189,8 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	if(multiple_sprites)
 		initialize_magazine_icondata(src)
 
-	if(isnull(initial_ammo))
-		initial_ammo = max_ammo
-
-	if(initial_ammo)
-		// Lying on a turf or in a latent holder, the rounds are a count until
-		// something handles the magazine (C5). Forged rounds are always real.
-		if(!forge_material && (isturf(loc) || loc?.latent_contents_enabled()) && dq_latent_eligible(ammo_type))
-			set_latent_rounds(initial_ammo)
-		else
-			for(var/i in 1 to initial_ammo)
-				rel_add(src, nameof(stored_ammo), new ammo_type(src))
+	if(initial_ammo && starts_latent())
+		set_latent_rounds(initial_ammo)
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
@@ -207,6 +198,19 @@ CAPABILITIES(/obj/item/ammo_magazine)
 		var/datum/material/forged = get_material_by_name(forge_material)
 		if(forged)
 			set_forged_material(forged)
+
+/// Lying on a turf or in a latent holder, the rounds are a count until something handles the magazine (C5). Forged rounds are always real.
+/obj/item/ammo_magazine/proc/starts_latent()
+	return !forge_material && (isturf(loc) || loc?.latent_contents_enabled()) && dq_latent_eligible(ammo_type)
+
+/// The starting rounds (owns_many(starts =)): initial_ammo (a full magazine when unset) of real rounds, none for a magazine that starts latent.
+/obj/item/ammo_magazine/proc/make_stored_ammo(current)
+	if(isnull(initial_ammo))
+		initial_ammo = max_ammo
+	if(!initial_ammo || starts_latent())
+		return
+	. = list()
+	.[ammo_type] = initial_ammo
 
 /// Old attackby (both of its definitions: magazine-to-magazine loading ran first). It never
 /// called the base attackby: any item stops here, but afterattack still follows.

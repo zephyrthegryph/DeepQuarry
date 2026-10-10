@@ -17,10 +17,7 @@
 
 /obj/item/organ/internal/eyes/robot
 	name = "optical sensor"
-
-/obj/item/organ/internal/eyes/robot/Initialize(mapload, internal)
-	. = ..()
-	robotize()
+	starts_prosthetic = FBP_MECHANICAL
 
 /obj/item/organ/internal/eyes/grey
 	icon_state = "eyes_grey"

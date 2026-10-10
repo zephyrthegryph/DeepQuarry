@@ -29,15 +29,9 @@
 /////////////////////////////////
 
 /obj/item/organ/internal/voicebox/assist	// In the off chance we get a species that doesn't speak GalCom by default
-
-/obj/item/organ/internal/voicebox/assist/Initialize(mapload, internal)
-	. = ..()
-	mechassist()
+	starts_prosthetic = FBP_ASSISTED
 
 /obj/item/organ/internal/voicebox/robot
 	name = "vocal synthesizer"
 	will_assist_languages = list(LANGUAGE_GALCOM, LANGUAGE_EAL) // Synthetics spawn with this by default
-
-/obj/item/organ/internal/voicebox/robot/Initialize(mapload, internal)
-	. = ..()
-	robotize()
+	starts_prosthetic = FBP_MECHANICAL
