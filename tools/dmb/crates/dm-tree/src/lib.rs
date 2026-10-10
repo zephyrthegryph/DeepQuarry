@@ -107,7 +107,7 @@ pub struct TypeNode {
     pub synthetic: bool,
     pub members: Arc<[MemberId]>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemberNode {
     pub definition: DefinitionMode,
     pub owner: TypeId,
@@ -733,7 +733,10 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         node.members = ids.into();
     }
     tree.types = mutable_types.into();
-    tree.members = members.into();
+    tree.members = match normalization {
+        Some((declarations, retained)) => retained.publish_members(members, declarations),
+        None => members.into(),
+    };
     if rebuild_inventory {
         if let Some((index, retained)) = normalization {
             tree.rebuild_inventory_retained(index, &retained.storage, None);

@@ -93,6 +93,10 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
     });
     state.visit_normalization_storage(|view| match view {
+        NormalizationStorageView::PublicationIndex { entries } => {
+            census.observe_items("retained_normalization.publication_index", entries);
+            if entries != 0 { census.unknown("retained_normalization.publication_index", "private latest-publication BTree node backing excluded; key/chunk/offset descriptors and member owners counted through exposed buffers"); }
+        }
         NormalizationStorageView::Store { buckets, entries } => {
             census.owner("retained_normalization.index").observed_items += entries as u64;
             if buckets != 0 { census.unknown("retained_normalization.index", "private ArtifactStore BTree nodes and Arc control blocks excluded; all exposed payload backing is counted"); }

@@ -464,6 +464,7 @@ impl HeapCensus {
             for node in tree.types() {
                 self.slice(owner, &node.members, true);
             }
+            self.slice(owner, tree.members().chunk_offsets(), true);
             let chunks = tree.members().chunks();
             self.owner(owner).observed_items += chunks.len() as u64;
             self.buffer(

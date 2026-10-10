@@ -354,6 +354,7 @@ impl RetainedSemanticTree {
             // Body indexing follows this return and may fail. Do not keep the
             // previous tree rooted through its now-foreign callable roster.
             self.discard_foreign_callable_roster(&tree);
+            self.normalization.release_publication();
             self.metadata_updates += 1;
             return Ok(TreeSnapshot {
                 tree,

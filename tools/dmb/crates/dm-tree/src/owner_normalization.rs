@@ -7,8 +7,8 @@ use crate::{
 };
 use dm_session::{observations::ObservationLedger, ObservedArtifactStore};
 use std::collections::{HashMap, HashSet};
-mod shared;
 mod receipts;
+mod shared;
 #[cfg(test)]
 mod shared_tests;
 use shared::NormalizedValues;
@@ -27,6 +27,7 @@ struct ResolvedOwner {
 }
 pub(crate) struct RetainedNormalization {
     values: NormalizedValues,
+    publication: std::sync::Mutex<Option<crate::member_arena::MemberPublication>>,
     hits: std::sync::atomic::AtomicUsize,
     pub(crate) metadata: Arc<crate::owner_metadata::RetainedMetadata>,
     pub(crate) storage: crate::resolver::storage_inventory::RetainedStorage,
@@ -36,6 +37,9 @@ pub(crate) struct RetainedNormalization {
 }
 /// Explicit borrowed census; callbacks must not reenter the retained store.
 pub enum NormalizationStorageView<'a> {
+    PublicationIndex {
+        entries: usize,
+    },
     Store {
         buckets: usize,
         entries: usize,
@@ -57,6 +61,39 @@ pub enum NormalizationStorageView<'a> {
     },
 }
 impl RetainedNormalization {
+    /// Metadata updates publish their COW arena directly; do not keep the older
+    /// structural publication rooted until a later structural rebuild.
+    pub(crate) fn release_publication(&self) {
+        let old = self
+            .publication
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        drop(old);
+    }
+    pub(crate) fn publish_members(
+        &self,
+        members: Vec<MemberNode>,
+        declarations: &KeyedDeclarations,
+    ) -> MemberArena {
+        let mut current = self
+            .publication
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        let keys: Vec<_> = declarations
+            .ordered()
+            .filter_map(|row| matches!(row.skeleton, Skeleton::Member { .. }).then_some(row.key))
+            .collect();
+        if keys.len() != members.len() {
+            *current = None;
+            return members.into();
+        }
+        let published =
+            crate::member_arena::MemberPublication::publish(members, keys, current.as_ref());
+        let arena = published.arena().clone();
+        *current = Some(published);
+        arena
+    }
     pub(crate) fn with_shared(owner: Arc<SharedNormalizedDeclarations>) -> Self {
         Self {
             callables: crate::owner_callable::RetainedCallableOwners::with_shared(Arc::clone(
@@ -124,12 +161,34 @@ impl RetainedNormalization {
                 }
             }
         });
+        let publication = self
+            .publication
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if let Some(publication) = publication.as_ref() {
+            publication.visit_storage(|address, length, capacity| {
+                visit(NormalizationStorageView::Buffer {
+                    address,
+                    length,
+                    capacity,
+                })
+            });
+            for member in publication.arena() {
+                visit(NormalizationStorageView::Member {
+                    metadata: &member.metadata,
+                });
+            }
+            visit(NormalizationStorageView::PublicationIndex {
+                entries: publication.index_len(),
+            });
+        }
     }
 }
 impl Default for RetainedNormalization {
     fn default() -> Self {
         Self {
             values: NormalizedValues::Local(ObservedArtifactStore::current_revision()),
+            publication: std::sync::Mutex::new(None),
             hits: std::sync::atomic::AtomicUsize::new(0),
             metadata: Arc::new(crate::owner_metadata::RetainedMetadata::default()),
             storage: crate::resolver::storage_inventory::RetainedStorage::default(),

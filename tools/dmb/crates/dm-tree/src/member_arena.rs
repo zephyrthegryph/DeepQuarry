@@ -4,11 +4,15 @@ use std::{
     ops::{Index, IndexMut},
     sync::Arc,
 };
-const CHUNK: usize = 128;
+pub(crate) const CHUNK: usize = 128;
+mod publication;
+pub(crate) use publication::MemberPublication;
 #[derive(Clone, Debug, Default)]
 pub struct MemberArena {
     chunks: Vec<Arc<[MemberNode]>>,
     len: usize,
+    offsets: Arc<[usize]>,
+    fixed: bool,
 }
 impl MemberArena {
     pub fn len(&self) -> usize {
@@ -21,10 +25,21 @@ impl MemberArena {
         if index >= self.len {
             return None;
         }
-        self.chunks.get(index / CHUNK)?.get(index % CHUNK)
+        let chunk = self.chunk_at(index);
+        self.chunks.get(chunk)?.get(index - self.offsets[chunk])
     }
-    pub fn iter(&self) -> impl ExactSizeIterator<Item = &MemberNode> + DoubleEndedIterator + Clone {
-        (0..self.len).map(|index| &self[index])
+    pub fn iter(&self) -> MemberIter<'_> {
+        self.into_iter()
+    }
+    fn chunk_at(&self, index: usize) -> usize {
+        if self.fixed {
+            index / CHUNK
+        } else {
+            self.offsets.partition_point(|&start| start <= index) - 1
+        }
+    }
+    pub fn chunk_offsets(&self) -> &Arc<[usize]> {
+        &self.offsets
     }
     /// Exact immutable backing for diagnostic owner census; no materialization.
     pub fn chunks(&self) -> &[Arc<[MemberNode]>] {
@@ -43,7 +58,16 @@ impl From<Vec<MemberNode>> for MemberArena {
             let chunk: Vec<_> = nodes.by_ref().take(CHUNK).collect();
             chunks.push(chunk.into());
         }
-        Self { chunks, len }
+        let offsets = (0..chunks.len())
+            .map(|index| index * CHUNK)
+            .collect::<Vec<_>>()
+            .into();
+        Self {
+            chunks,
+            len,
+            offsets,
+            fixed: true,
+        }
     }
 }
 impl Index<usize> for MemberArena {
@@ -56,7 +80,8 @@ impl Index<usize> for MemberArena {
 impl IndexMut<usize> for MemberArena {
     fn index_mut(&mut self, index: usize) -> &mut MemberNode {
         assert!(index < self.len, "semantic member index out of bounds");
-        &mut Arc::make_mut(&mut self.chunks[index / CHUNK])[index % CHUNK]
+        let chunk = self.chunk_at(index);
+        &mut Arc::make_mut(&mut self.chunks[chunk])[index - self.offsets[chunk]]
     }
 }
 impl<'a> IntoIterator for &'a MemberArena {
@@ -67,13 +92,18 @@ impl<'a> IntoIterator for &'a MemberArena {
             arena: self,
             front: 0,
             back: self.len,
+            front_chunk: 0,
+            back_chunk: self.chunks.len().saturating_sub(1),
         }
     }
 }
+#[derive(Clone)]
 pub struct MemberIter<'a> {
     arena: &'a MemberArena,
     front: usize,
     back: usize,
+    front_chunk: usize,
+    back_chunk: usize,
 }
 impl<'a> Iterator for MemberIter<'a> {
     type Item = &'a MemberNode;
@@ -83,7 +113,12 @@ impl<'a> Iterator for MemberIter<'a> {
         }
         let index = self.front;
         self.front += 1;
-        Some(&self.arena[index])
+        while self.front_chunk + 1 < self.arena.chunks.len()
+            && index >= self.arena.offsets[self.front_chunk + 1]
+        {
+            self.front_chunk += 1;
+        }
+        Some(&self.arena.chunks[self.front_chunk][index - self.arena.offsets[self.front_chunk]])
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         let n = self.back - self.front;
@@ -96,7 +131,10 @@ impl DoubleEndedIterator for MemberIter<'_> {
             return None;
         }
         self.back -= 1;
-        Some(&self.arena[self.back])
+        while self.back < self.arena.offsets[self.back_chunk] {
+            self.back_chunk -= 1;
+        }
+        Some(&self.arena.chunks[self.back_chunk][self.back - self.arena.offsets[self.back_chunk]])
     }
 }
 impl ExactSizeIterator for MemberIter<'_> {}
