@@ -78,31 +78,31 @@
 /mob/living/silicon/pai	9b80893712afd633	*
 /mob/living/silicon/pai/flipper	7c6ce8c055ae8273	*
 /mob/living/silicon/pai/infomorph	fcdb46852a07f71a	*
-/mob/living/silicon/robot	9ded7def7bb01d4b	*
-/mob/living/silicon/robot/ai_shell	92815908a64abf1d	*
-/mob/living/silicon/robot/drone	0f84680e40606638	*
-/mob/living/silicon/robot/drone/construction	90df4770e2e8aebb	*
-/mob/living/silicon/robot/drone/jan	fb367e0c40751ca7	*
-/mob/living/silicon/robot/drone/min	fb09fd5338192857	*
-/mob/living/silicon/robot/drone/mining	b74862d43f4f708a	*
-/mob/living/silicon/robot/drone/sec	06c58711148b59f0	*
-/mob/living/silicon/robot/drone/swarm	a807fee673640b25	*
-/mob/living/silicon/robot/drone/swarm/gunner	853f3b69e2efd94f	*
-/mob/living/silicon/robot/drone/swarm/melee	1c411750e9c08052	*
-/mob/living/silicon/robot/malf	226c0b051e6426f7	*
-/mob/living/silicon/robot/malf/gravekeeper	648eacb9b344d4cd	*
-/mob/living/silicon/robot/malf/lost	16f39dde3da936e7	*
-/mob/living/silicon/robot/malf/lost/randomlaws	e21349fdbe2ba05f	*
-/mob/living/silicon/robot/malf/lost/randomlaws/mixed	1ce67a1faaf797cd	*
-/mob/living/silicon/robot/malf/lost/randomlaws/vore	2325de6d6a9082d2	*
-/mob/living/silicon/robot/platform	43ad18b09e6ffed3	*
-/mob/living/silicon/robot/platform/cargo	1efd60b843265b78	*
-/mob/living/silicon/robot/platform/explorer	564020a334418bde	*
-/mob/living/silicon/robot/syndicate	40e8f0a896020884	*
-/mob/living/silicon/robot/syndicate/combat_medic	f933e2f04ff03c53	*
-/mob/living/silicon/robot/syndicate/mechanist	c5afd0363c414cff	*
-/mob/living/silicon/robot/syndicate/ninja	ef4b0844c39be7be	*
-/mob/living/silicon/robot/syndicate/protector	81b312247a9f6ddb	*
+/mob/living/silicon/robot	803db279540bf21c	*
+/mob/living/silicon/robot/ai_shell	4eff930fea93fd2c	*
+/mob/living/silicon/robot/drone	0f177e0cc59fff0d	*
+/mob/living/silicon/robot/drone/construction	7b304818b6bd2a4e	*
+/mob/living/silicon/robot/drone/jan	837eff7b14975ffc	*
+/mob/living/silicon/robot/drone/min	12129f373ff98dbb	*
+/mob/living/silicon/robot/drone/mining	1a761e481be2fb84	*
+/mob/living/silicon/robot/drone/sec	8d933e454cb21369	*
+/mob/living/silicon/robot/drone/swarm	6240ac3f94b138fb	*
+/mob/living/silicon/robot/drone/swarm/gunner	540a3cf91f0d31fc	*
+/mob/living/silicon/robot/drone/swarm/melee	e205795fcf8c1d44	*
+/mob/living/silicon/robot/malf	bc1505f63fb168d0	*
+/mob/living/silicon/robot/malf/gravekeeper	14c0693350d4642f	*
+/mob/living/silicon/robot/malf/lost	532f9c7bccf4d96e	*
+/mob/living/silicon/robot/malf/lost/randomlaws	8a69f9be07542f40	*
+/mob/living/silicon/robot/malf/lost/randomlaws/mixed	9f09e3914bd57930	*
+/mob/living/silicon/robot/malf/lost/randomlaws/vore	c810938dae8d30db	*
+/mob/living/silicon/robot/platform	6937d4377c1f5246	*
+/mob/living/silicon/robot/platform/cargo	aa0df10f6580371a	*
+/mob/living/silicon/robot/platform/explorer	d6fcfea1f982b657	*
+/mob/living/silicon/robot/syndicate	9a50d79c7f24d400	*
+/mob/living/silicon/robot/syndicate/combat_medic	b72f9219976212af	*
+/mob/living/silicon/robot/syndicate/mechanist	b5a87e6fce9d5025	*
+/mob/living/silicon/robot/syndicate/ninja	21a6eb5f97dc8ee1	*
+/mob/living/silicon/robot/syndicate/protector	c10ce890be95a763	*
 /mob/living/simple_mob	32e6ddeb476842c8	*
 /mob/living/simple_mob/animal	d9b722c1354b64f0	*
 /mob/living/simple_mob/animal/borer	0b54261d65cf5ffe	*
@@ -1327,12 +1327,12 @@
 /obj/effect/anomaly/hallucination/decoy	c5b136cc636ee69d	*
 /obj/effect/anomaly/hallucination/supermatter	571d0d0d30406e5e	*
 /obj/effect/anomaly/pyro	3d72a9ef43362bc0	anomaly_core,countdown,drops_core,immortal,lifespan,move_chance,releasedelay,stats,ticks
-/obj/effect/anomaly/weather	f0dbc1ee333415ac	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/ashstorm	37e58a39597154d5	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/bloodrain	1d1c4b55b89a480c	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/hail	41788f07096749c8	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/rain	ab00ded799bdebab	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
-/obj/effect/anomaly/weather/storm	2911d6a7e78a913c	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats
+/obj/effect/anomaly/weather	7a7d05cb3d572d45	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
+/obj/effect/anomaly/weather/ashstorm	cc734ffca604adea	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
+/obj/effect/anomaly/weather/bloodrain	af45c626f26e5e2f	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
+/obj/effect/anomaly/weather/hail	2c16940c2dcfdc21	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
+/obj/effect/anomaly/weather/rain	8049811d78782324	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
+/obj/effect/anomaly/weather/storm	944cea89c1849275	affected_areas,affected_turfs,anomaly_core,countdown,drops_core,immortal,is_raining,lifespan,move_chance,selected_weather,stats,telegraph_delay
 /obj/effect/ant_structure	44a72861a756f773	
 /obj/effect/ant_structure/trap	4699d07c224579df	
 /obj/effect/ant_structure/trap/burn	71bee56ec1c6269f	
@@ -1381,40 +1381,40 @@
 /obj/effect/decal	886206f25ee141b8	
 /obj/effect/decal/cleanable	eea378238004d1d7	age,hud_variant,random_icon_states,viruses
 /obj/effect/decal/cleanable/ash	31eb2424e1663698	age,hud_variant,random_icon_states,viruses
-/obj/effect/decal/cleanable/blood	ca6f7dbfa83fb3ad	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/drip	e95c0ced44345ff3	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs	8cbf3097a43c797a	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/body	36ffa83c86cc4a2f	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/core	5103102b7c66c51e	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/down	4f1aad88e75cf819	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/limb	12ed94ba62314bda	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/robot	6db62605780cfb80	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/robot/down	01a6e15d7f463873	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/robot/limb	5d298cb79771bddb	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/robot/up	b6e650e36aa1bbcd	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/up	e67322a1681eb9e5	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno	9d0813ec5e1fac36	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno/body	6747398ef5e35849	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno/core	2416bfbbd70e085f	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno/down	ba1a33fa41462596	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno/limb	d2264700d96bf379	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/gibs/xeno/up	a04e1b68a1ae4af0	age,base_icon,basecolor,dried,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/oil	c2bee6bd1e9d1f9e	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/oil/streak	fc010cfad83b748f	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/old	783c7bddaaf7d64f	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/reagent	87863d328e6af775	age,amount,basecolor,ckey_source,ckey_spawner,custombasecolor,custombasedesc,custombasename,dried,drydesc,dryname,hud_variant,random_icon_states,spill_color,spill_name,spill_reagentid,synthblood,viruses
-/obj/effect/decal/cleanable/blood/splatter	f916dcd4311b7782	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/splatter/animated	aaf46fadcad82e17	age,basecolor,dried,drydesc,dryname,hud_variant,loc_last_process,random_icon_states,synthblood,target_turf,viruses
-/obj/effect/decal/cleanable/blood/tracks	3d661ee3eb9b79b1	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/claw	3570453ddd578926	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/footprints	a6c97cdd3c55cbb7	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/paw	8a548171e97c46d6	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/snake	bf05fd345d4d2456	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/suspicious	6d140493acc54783	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/tracks/wheels	0e0c8ec71195f6a2	age,basecolor,coming_state,dried,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
-/obj/effect/decal/cleanable/blood/writing	bab7b8b4cf94a2d3	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/xeno	6820980e112df82c	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
-/obj/effect/decal/cleanable/blood/xtracks	00ad3ba5e59cc71e	age,basecolor,dried,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood	3a82a6c9f54987b2	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/drip	a22eb65104b62da3	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs	b4a006b7b86ec17d	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/body	a5f5c0b4ecebc355	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/core	17a778cc5ddaccb0	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/down	a0caf7b3aefcd160	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/limb	6d980367427d2f21	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/robot	6309954cba48a702	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/robot/down	2aa949367aac36be	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/robot/limb	fbfc82ded0f309b4	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/robot/up	2d55ebe40db8e9ac	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/up	4fd51ec7c73c0008	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno	14e663bf7f7ee99f	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno/body	e1cf7fbce6526cb4	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno/core	29b3bdee7d484f79	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno/down	1ac6eb11e4eafd2a	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno/limb	fa7a44507ad0c9f0	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/gibs/xeno/up	7240998b89ed1274	age,amount,base_icon,basecolor,dried,dry_delay,drydesc,dryname,fleshcolor,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/oil	e4870011b362f43a	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/oil/streak	48bb9065a3639062	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/old	d093b906b2263cef	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/reagent	aa60f650d1faadca	age,amount,basecolor,ckey_source,ckey_spawner,custombasecolor,custombasedesc,custombasename,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,spill_color,spill_name,spill_reagentid,synthblood,viruses
+/obj/effect/decal/cleanable/blood/splatter	d6643fef660c9951	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/splatter/animated	97a6d5a121f35f3f	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,loc_last_process,random_icon_states,synthblood,target_turf,viruses
+/obj/effect/decal/cleanable/blood/tracks	2b871a9596d5dc7a	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/claw	f0884779c9de9ba8	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/footprints	e6c33d85b0a4017c	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/paw	58f638875316be3b	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/snake	f76102a4c6b1ecb2	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/suspicious	73255298ed68649a	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/tracks/wheels	c6bb530ded3766ec	age,amount,basecolor,coming_state,dried,dry_delay,drydesc,dryname,going_state,hud_variant,random_icon_states,stack,synthblood,viruses
+/obj/effect/decal/cleanable/blood/writing	2a07e2f95b7ac02d	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/xeno	b297564fa0fb726e	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
+/obj/effect/decal/cleanable/blood/xtracks	8c30845eaac85926	age,amount,basecolor,dried,dry_delay,drydesc,dryname,hud_variant,random_icon_states,synthblood,viruses
 /obj/effect/decal/cleanable/bug_remains	121d0bf90760d76c	age,hud_variant,random_icon_states,viruses
 /obj/effect/decal/cleanable/chemcoating	3b83d5bdca9d2605	age,hud_variant,random_icon_states,viruses
 /obj/effect/decal/cleanable/cobweb	4bbaf48688612204	age,hud_variant,random_icon_states,viruses
@@ -1513,8 +1513,8 @@
 /obj/effect/ebeam/reactive/electric	ed30ab34529d75d2	shock_amount
 /obj/effect/effect	24bd0b6b005e9fb9	
 /obj/effect/effect/confetti	35502e9eea1977b3	
-/obj/effect/effect/foam	3e978e1c5c87a862	dries,metal
-/obj/effect/effect/foam/firefighting	a007d236b1aabc18	dries,lifetime,metal
+/obj/effect/effect/foam	ba9233361f31a2de	*
+/obj/effect/effect/foam/firefighting	1b9162eda7cc078e	*
 /obj/effect/effect/ion_trails	ff806cc47c92f18d	
 /obj/effect/effect/smoke	d2f11b0752b089e1	
 /obj/effect/effect/smoke/bad	8f0dd1e2eb08e613	
@@ -2225,69 +2225,69 @@
 /obj/effect/instantboom/mininuke	1fba18dc66876170	devastation,flash,heavyboom,lightboom
 /obj/effect/instantboom/small	7c8941825a1785cf	devastation,flash,heavyboom,lightboom
 /obj/effect/instantboom/small/wide	25031c6003921c36	devastation,flash,heavyboom,lightboom
-/obj/effect/landmark	e3416ce1a8c4d4cc	
-/obj/effect/landmark/ai_multicam_room	05f9a51d8686476c	
-/obj/effect/landmark/costume	922ade857f37bfb3	
-/obj/effect/landmark/costume/butler	8e8989091461346a	
-/obj/effect/landmark/costume/chicken	c5ea6a8c5d17a5c2	
-/obj/effect/landmark/costume/commie	9a72887d65c60113	
-/obj/effect/landmark/costume/cutewitch	7ba9225115484e51	
-/obj/effect/landmark/costume/elpresidente	3705a289756b36fe	
-/obj/effect/landmark/costume/fakewizard	f988eeb6162077ac	
-/obj/effect/landmark/costume/gladiator	cb80a787c6d121de	
-/obj/effect/landmark/costume/highlander	d5637eb007b226b4	
-/obj/effect/landmark/costume/holiday_priest	85cfcb3741ed6468	
-/obj/effect/landmark/costume/imperium_monk	81798e981d8f39a7	
-/obj/effect/landmark/costume/madscientist	9004b40b4a14c002	
-/obj/effect/landmark/costume/maid	d7670372a1c07912	
-/obj/effect/landmark/costume/marisawizard	8e3b724311dfc541	
-/obj/effect/landmark/costume/marisawizard/fake	69814e7a887daf3a	
-/obj/effect/landmark/costume/nightowl	369088862da0444e	
-/obj/effect/landmark/costume/nyangirl	8be48fa052a55007	
-/obj/effect/landmark/costume/pirate	66565d7a75986d55	
-/obj/effect/landmark/costume/plaguedoctor	ed05692bbdd44132	
-/obj/effect/landmark/costume/prig	cccdf68a81a94319	
-/obj/effect/landmark/costume/scratch	a8774f60db34c96a	
-/obj/effect/landmark/costume/sexyclown	0724e3aa628f0e4f	
-/obj/effect/landmark/costume/sexymime	b0ad5c61e55a57f5	
-/obj/effect/landmark/costume/waiter	3bf8b1422a273dcf	
-/obj/effect/landmark/engine_loader	9aefd5ee45ee5cb4	
-/obj/effect/landmark/event_trigger	553eb60f837589f0	
-/obj/effect/landmark/event_trigger/auto_narrate	9ee8ec2731e81465	
-/obj/effect/landmark/free_ai_shell	e4746224861c7b01	
-/obj/effect/landmark/generated_station_department_core	1e329d86da38acf0	
-/obj/effect/landmark/generated_station_entry	026900e7a42dbab7	
-/obj/effect/landmark/generated_station_service	b2b8179b3c885695	
-/obj/effect/landmark/generated_station_service_route	c2429296bd17c94b	
-/obj/effect/landmark/looking_glass	251f94bde54ddc47	
-/obj/effect/landmark/map_data	23f3767b9da034be	height
-/obj/effect/landmark/mobcorpse	929d166837d33efa	
-/obj/effect/landmark/mobcorpse/pirate	329fabd49aa6e54a	
-/obj/effect/landmark/mobcorpse/pirate/ranged	09e33d0010ec1985	
-/obj/effect/landmark/mobcorpse/russian	6207eceeac5e3830	
-/obj/effect/landmark/mobcorpse/russian/ranged	a8ca3a25319fcb3c	
-/obj/effect/landmark/mobcorpse/solarpeacekeeper	4a55a9222dec122b	
-/obj/effect/landmark/mobcorpse/syndicatecommando	7b5b1d516965e9c8	
-/obj/effect/landmark/mobcorpse/syndicatesoldier	867aac2064d26e00	
-/obj/effect/landmark/mobcorpse/vox	061a7ccdeb818ebd	
-/obj/effect/landmark/mobcorpse/vox/boarder_m	a7af80775375bbaa	
-/obj/effect/landmark/mobcorpse/vox/boarder_r	3a8b01beacb8f660	
-/obj/effect/landmark/mobcorpse/vox/boarder_t	f31797e629b04e9a	
-/obj/effect/landmark/mobcorpse/vox/captain	17bdb2e8f38de8a9	
-/obj/effect/landmark/mobcorpse/vox/pirate	a6d9b33a3fff3c0a	
-/obj/effect/landmark/mobcorpse/vox/suppressor	9422f9082b6ea03a	
-/obj/effect/landmark/poi_loader	9bbb90f0d43ab7c7	
-/obj/effect/landmark/robot_platform	bbe3d7b687ae5ae2	
-/obj/effect/landmark/robot_platform/cargo	9fe19ca9e544f68f	
-/obj/effect/landmark/stardog	0d52562f6fbe64ff	
-/obj/effect/landmark/start	33caf4bde68c138c	
-/obj/effect/landmark/start/pf	adc21612ea8fd68d	
-/obj/effect/landmark/teleplumb_exit	554b7624a1f62d29	
-/obj/effect/landmark/teleport_mark	ec49eb826b0b1c00	
-/obj/effect/landmark/unit_test_bottom_left	15ee1e9362544b54	
-/obj/effect/landmark/unit_test_top_right	a899297aa5323b0b	
-/obj/effect/landmark/virtual_reality	b9322e622ba23ff3	
-/obj/effect/landmark/wildlife	dbfcf4244a3faa49	
+/obj/effect/landmark	c11429f7c6508b40	
+/obj/effect/landmark/ai_multicam_room	af1c13aaacc1ec7e	
+/obj/effect/landmark/costume	67e3b838fbc71c2b	
+/obj/effect/landmark/costume/butler	e393e6981628d754	
+/obj/effect/landmark/costume/chicken	1533f04e379cb8b8	
+/obj/effect/landmark/costume/commie	90ab79b57e1c4b38	
+/obj/effect/landmark/costume/cutewitch	5b57ddea841f3428	
+/obj/effect/landmark/costume/elpresidente	5eae6d58fbc375d2	
+/obj/effect/landmark/costume/fakewizard	7cdd6f4e0a0c3ca4	
+/obj/effect/landmark/costume/gladiator	67a7c2f4cf74396a	
+/obj/effect/landmark/costume/highlander	6a215b42a5f6c680	
+/obj/effect/landmark/costume/holiday_priest	51a8dce8bc960c27	
+/obj/effect/landmark/costume/imperium_monk	a3c082c4eecb34ad	
+/obj/effect/landmark/costume/madscientist	81534a1e5b252f2a	
+/obj/effect/landmark/costume/maid	ecb8e3d9cd862eba	
+/obj/effect/landmark/costume/marisawizard	4e1f3944941604e5	
+/obj/effect/landmark/costume/marisawizard/fake	6bcdb577f0aba999	
+/obj/effect/landmark/costume/nightowl	368d4b056d7c7bf0	
+/obj/effect/landmark/costume/nyangirl	22fe88211b813860	
+/obj/effect/landmark/costume/pirate	b953efe445e77a1b	
+/obj/effect/landmark/costume/plaguedoctor	825695805c9b2355	
+/obj/effect/landmark/costume/prig	e6c744997a74f203	
+/obj/effect/landmark/costume/scratch	da8a107bc7d91051	
+/obj/effect/landmark/costume/sexyclown	289b7804b98ae0e8	
+/obj/effect/landmark/costume/sexymime	4fe103698ff46a34	
+/obj/effect/landmark/costume/waiter	1ab17eb75dca42d1	
+/obj/effect/landmark/engine_loader	487e994163a6badb	
+/obj/effect/landmark/event_trigger	0d57bc6b15136b32	
+/obj/effect/landmark/event_trigger/auto_narrate	06de45a32678de77	
+/obj/effect/landmark/free_ai_shell	cef1c58f93836782	
+/obj/effect/landmark/generated_station_department_core	f95c5af1a7bea789	
+/obj/effect/landmark/generated_station_entry	bb92694009c1e8cc	
+/obj/effect/landmark/generated_station_service	672399405da7c2b6	
+/obj/effect/landmark/generated_station_service_route	7aa58b79462ae94f	
+/obj/effect/landmark/looking_glass	772efac1fdd84c77	
+/obj/effect/landmark/map_data	735b95c0bca6e531	height
+/obj/effect/landmark/mobcorpse	b3d9881fe16491dc	
+/obj/effect/landmark/mobcorpse/pirate	54d7256d99c78be4	
+/obj/effect/landmark/mobcorpse/pirate/ranged	1769ffac865b393c	
+/obj/effect/landmark/mobcorpse/russian	a0446aa4acd8ed48	
+/obj/effect/landmark/mobcorpse/russian/ranged	b0decd84002de696	
+/obj/effect/landmark/mobcorpse/solarpeacekeeper	3a0a6091ec1a1381	
+/obj/effect/landmark/mobcorpse/syndicatecommando	30707b46f3562b8c	
+/obj/effect/landmark/mobcorpse/syndicatesoldier	e1d909da46d106b3	
+/obj/effect/landmark/mobcorpse/vox	38d6411e86ea8d78	
+/obj/effect/landmark/mobcorpse/vox/boarder_m	c20fdcc475562119	
+/obj/effect/landmark/mobcorpse/vox/boarder_r	5797dd1eb6924edf	
+/obj/effect/landmark/mobcorpse/vox/boarder_t	2ab4f405ca809a76	
+/obj/effect/landmark/mobcorpse/vox/captain	4be0fb02842723ca	
+/obj/effect/landmark/mobcorpse/vox/pirate	ac52694eaab68872	
+/obj/effect/landmark/mobcorpse/vox/suppressor	9989307899f5c549	
+/obj/effect/landmark/poi_loader	9dcbd027268ba8f6	
+/obj/effect/landmark/robot_platform	800fc53ca3e32b03	
+/obj/effect/landmark/robot_platform/cargo	7c7b877ea4a1928e	
+/obj/effect/landmark/stardog	cdd7e4b2d35c0eb8	
+/obj/effect/landmark/start	9caaa7ab4ac601bc	
+/obj/effect/landmark/start/pf	834d4d050ecbbd2a	
+/obj/effect/landmark/teleplumb_exit	871d9e2d2702e64f	
+/obj/effect/landmark/teleport_mark	54c461a06713c389	
+/obj/effect/landmark/unit_test_bottom_left	da1f461dbc62e26c	
+/obj/effect/landmark/unit_test_top_right	8b156bb7e358bbb4	
+/obj/effect/landmark/virtual_reality	35a2f8c6d30f4ab3	
+/obj/effect/landmark/wildlife	d832585d2f8fa384	
 /obj/effect/laser	3474cd106c4a434e	
 /obj/effect/low_wall_spawner	d86603f189dc2182	grille_type,low_wall_type,window_type
 /obj/effect/low_wall_spawner/bay	881884d2a4e3b78a	grille_type,low_wall_type,window_type
@@ -2851,9 +2851,9 @@
 /obj/effect/temporary_effect/cleave_attack	9ed1698fff7a6bfc	
 /obj/effect/temporary_effect/darkness	9b02f15999408809	
 /obj/effect/temporary_effect/destablize	977f4254088540fa	
-/obj/effect/temporary_effect/eruption	fe60e110634cacf8	extra_time
-/obj/effect/temporary_effect/eruption/flamestrike	5626a92ee1ce5aa7	extra_time
-/obj/effect/temporary_effect/eruption/test	a8d0819b4e36212e	extra_time
+/obj/effect/temporary_effect/eruption	d952dc866587daf5	eruption_delay,extra_time
+/obj/effect/temporary_effect/eruption/flamestrike	c9454eedd3a3cab6	eruption_delay,extra_time
+/obj/effect/temporary_effect/eruption/test	4b083027f15e9618	eruption_delay,extra_time
 /obj/effect/temporary_effect/fire_blast	c3ea308ae29928d3	
 /obj/effect/temporary_effect/item_pickup_ghost	3fe431d3b0b65c36	
 /obj/effect/temporary_effect/lightning_strike	c19cd942b40e50d3	
@@ -3620,7 +3620,7 @@
 /obj/item/assembly/signaler/anomaly/choice	11a28a7050d493e8	*
 /obj/item/assembly/signaler/anomaly/dimensional	91b7b34b13df76f3	*
 /obj/item/assembly/signaler/anomaly/dust	b815cd8bd18cfadb	*
-/obj/item/assembly/signaler/anomaly/flux	ebe911a8ab99006f	*
+/obj/item/assembly/signaler/anomaly/flux	690dfcdd62f62723	*
 /obj/item/assembly/signaler/anomaly/grav	5915452500fec18b	*
 /obj/item/assembly/signaler/anomaly/hallucination	fececa28921ce712	*
 /obj/item/assembly/signaler/anomaly/pyro	be59e15931c45de5	*
@@ -13769,11 +13769,11 @@
 /obj/item/remote_scene_tool/tally_necklace	b6acc9816d030b92	carried_afflictions,economic_adoption,icon_root,identity,linked,mind_host,partner_live,partner_wearer,possessed_voice,worn_mob
 /obj/item/remote_scene_tool/voodoo_doll	6760f987dfd75899	*
 /obj/item/remote_scene_tool/voodoo_necklace	c3c91da270cb7975	carried_afflictions,economic_adoption,icon_root,identity,linked,mind_host,partner_live,partner_wearer,possessed_voice,worn_mob
-/obj/item/research_sample	87477ca3d473fe01	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/research_sample/bluespace	570d21ca86f81c7c	carried_afflictions,economic_adoption,identity,lightcolor,mind_host,possessed_voice
-/obj/item/research_sample/common	99c751164ecd8875	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/research_sample/rare	d0499e7fa3dcec80	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
-/obj/item/research_sample/uncommon	a5c9bdd2b8c8ba55	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
+/obj/item/research_sample	fae325d762a3b5b4	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
+/obj/item/research_sample/bluespace	89ede7ccd3d1ca2c	carried_afflictions,economic_adoption,fixed_name,identity,lightcolor,mind_host,possessed_voice
+/obj/item/research_sample/common	7872ab4444cdf574	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
+/obj/item/research_sample/rare	6432ee58c69d9307	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
+/obj/item/research_sample/uncommon	cf2379c7cf6fbfef	carried_afflictions,economic_adoption,fixed_name,identity,mind_host,possessed_voice
 /obj/item/resonator	58a44019134693c7	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/resonator/upgraded	8b9a4eac6de34a6d	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/retail_scanner	1363f18286eefdc6	account_to_connect,carried_afflictions,economic_adoption,identity,linked_account,machine_id,mind_host,possessed_voice
@@ -14350,7 +14350,7 @@
 /obj/item/spell/aura/biomed	1ad774e09efa0d5c	carried_afflictions,core,coreless,economic_adoption,heal_allies_only,identity,mind_host,owner,possessed_voice,regen_tick,toggled
 /obj/item/spell/aura/fire	521895bc3665dda9	*
 /obj/item/spell/aura/frost	e4219541d43ce81d	*
-/obj/item/spell/aura/shock	7660491dbd446daa	*
+/obj/item/spell/aura/shock	320d184bbc3eb97c	*
 /obj/item/spell/aura/unstable	d3c6366553d88047	*
 /obj/item/spell/blink	7e2163358df5085c	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/chroma	c8a3743528e66bb1	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
@@ -16910,164 +16910,164 @@
 /obj/machinery/dna_scannernew	0c03f050e927b8b5	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/dnaforensics	7ecf5aa7a985a7b5	active_power_usage,bloodsamp,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,scanning,use_power
 /obj/machinery/door	0e8e2df8680563b8	*
-/obj/machinery/door/airlock	301c47c7b8ee0612	*
-/obj/machinery/door/airlock/alarmlock	b986a2e21e314c6b	*
-/obj/machinery/door/airlock/alien	fdc7c3c0f10146b1	*
-/obj/machinery/door/airlock/alien/blue	e0ceb9845cf5e2ac	*
-/obj/machinery/door/airlock/alien/blue/locked	553009154f25ac56	*
-/obj/machinery/door/airlock/alien/blue/public	1de4d77a60a2f348	*
-/obj/machinery/door/airlock/alien/locked	681ece03f2f4a24e	*
-/obj/machinery/door/airlock/alien/public	42fa8b4469187da4	*
-/obj/machinery/door/airlock/angled_bay	6f12458380b9df4f	*
-/obj/machinery/door/airlock/angled_bay/ascent	3d48b61c15f0dffe	*
-/obj/machinery/door/airlock/angled_bay/centcomm	13eaf4ac6b10ecd5	*
-/obj/machinery/door/airlock/angled_bay/double	0d0c25efb2b1864e	*
-/obj/machinery/door/airlock/angled_bay/double/color	1b4636c998268a50	*
-/obj/machinery/door/airlock/angled_bay/double/glass	09fc676ec3c9fab9	*
-/obj/machinery/door/airlock/angled_bay/double/glass/atmos	39294baa80ac0d4d	*
-/obj/machinery/door/airlock/angled_bay/double/glass/chaplain	c6bf56bcd76bb0d3	*
-/obj/machinery/door/airlock/angled_bay/double/glass/command	14436eca7bb50986	*
-/obj/machinery/door/airlock/angled_bay/double/glass/common	8519c19c0489f5ac	*
-/obj/machinery/door/airlock/angled_bay/double/glass/engineering	7da74e1889acc055	*
-/obj/machinery/door/airlock/angled_bay/double/glass/explo	89f252eed8a15906	*
-/obj/machinery/door/airlock/angled_bay/double/glass/medical	bdd277a27949b754	*
-/obj/machinery/door/airlock/angled_bay/double/glass/research	68a3a1199aba42e2	*
-/obj/machinery/door/airlock/angled_bay/double/glass/security	59d879cfc9879c3a	*
-/obj/machinery/door/airlock/angled_bay/elevator	c84d3b57f5d3cd6c	*
-/obj/machinery/door/airlock/angled_bay/elevator/glass	499a0ab58a1b6d10	*
-/obj/machinery/door/airlock/angled_bay/external	c0eb9708e9701ac9	*
-/obj/machinery/door/airlock/angled_bay/external/color	105d7b42e7594f16	*
-/obj/machinery/door/airlock/angled_bay/external/glass	61df554e4737cb9b	*
-/obj/machinery/door/airlock/angled_bay/external/glass/red	1f45b0cd76119bba	*
-/obj/machinery/door/airlock/angled_bay/external/red	73ce8d265cc56259	*
-/obj/machinery/door/airlock/angled_bay/hatch	3f878d7b69d8ddd1	*
-/obj/machinery/door/airlock/angled_bay/hatch/atmos	d49e328da7b0a77b	*
-/obj/machinery/door/airlock/angled_bay/hatch/command	d7ede19dfa2f2532	*
-/obj/machinery/door/airlock/angled_bay/hatch/common	30006137f61b3d20	*
-/obj/machinery/door/airlock/angled_bay/hatch/engineering	e2a36951623d24e8	*
-/obj/machinery/door/airlock/angled_bay/hatch/explo	3c7124fe3a2b2082	*
-/obj/machinery/door/airlock/angled_bay/hatch/medical	4ea6211533fc16ab	*
-/obj/machinery/door/airlock/angled_bay/hatch/research	219f30bc6e23f03c	*
-/obj/machinery/door/airlock/angled_bay/hatch/security	b80ef9ee3c4108bd	*
-/obj/machinery/door/airlock/angled_bay/hazard	9e02c08e70552c2a	*
-/obj/machinery/door/airlock/angled_bay/secure	56e5b62ce01ca810	*
-/obj/machinery/door/airlock/angled_bay/standard	e7bb80ac5a77c34c	*
-/obj/machinery/door/airlock/angled_bay/standard/color	ffa8a60285c152d7	*
-/obj/machinery/door/airlock/angled_bay/standard/color/atmos	560ff09449f90a3b	*
-/obj/machinery/door/airlock/angled_bay/standard/color/cargo	96ace1be57f9b218	*
-/obj/machinery/door/airlock/angled_bay/standard/color/chaplain	114ece4cdff07e03	*
-/obj/machinery/door/airlock/angled_bay/standard/color/command	78bc1bd9ae6d9fc5	*
-/obj/machinery/door/airlock/angled_bay/standard/color/common	f8dcfe41158368d2	*
-/obj/machinery/door/airlock/angled_bay/standard/color/engineering	f1d191661a1f3386	*
-/obj/machinery/door/airlock/angled_bay/standard/color/explo	d4c2cc745e8c890b	*
-/obj/machinery/door/airlock/angled_bay/standard/color/medical	2604b4e67f5cfa0d	*
-/obj/machinery/door/airlock/angled_bay/standard/color/research	e1d05748a56f62a2	*
-/obj/machinery/door/airlock/angled_bay/standard/color/security	7141310dceeb1294	*
-/obj/machinery/door/airlock/angled_bay/standard/color/silver	105362400507d201	*
-/obj/machinery/door/airlock/angled_bay/standard/freezer	8b4befcc6cde3f7c	*
-/obj/machinery/door/airlock/angled_bay/standard/glass	99496941b0efe99e	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/atmos	ee72e4333d3fcd91	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/chaplain	2192b4887aeae997	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/command	1064929c924b8674	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/common	90ce89d02becd59b	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/engineering	0889d1146610a222	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/explo	d0cdb8872adbca9f	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/medical	81ccabdf71ec6f9f	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/research	5bbf4d63476caddd	*
-/obj/machinery/door/airlock/angled_bay/standard/glass/security	8cdc878e66da9161	*
-/obj/machinery/door/airlock/angled_bay/vault	8136a44122999fc0	*
-/obj/machinery/door/airlock/angled_tgmc	c9b6498ad0b287f1	*
-/obj/machinery/door/airlock/angled_tgmc/cell	e82d45e89fedb7be	*
-/obj/machinery/door/airlock/angled_tgmc/command	52f3501962c46039	*
-/obj/machinery/door/airlock/angled_tgmc/dropship1_pilot	e07f6795065b7a80	*
-/obj/machinery/door/airlock/angled_tgmc/dropship2_pilot	2fb8b9a2104ef0bd	*
-/obj/machinery/door/airlock/angled_tgmc/engineering	8d11ac616098d276	*
-/obj/machinery/door/airlock/angled_tgmc/maintenance	0683d5bbc506bddb	*
-/obj/machinery/door/airlock/angled_tgmc/medical	ef4900d5201fe9d9	*
-/obj/machinery/door/airlock/angled_tgmc/medical_glass	fa4a18b73ca5f685	*
-/obj/machinery/door/airlock/angled_tgmc/personal	188671c0fed60c07	*
-/obj/machinery/door/airlock/angled_tgmc/pod	bd39e7206073ff85	*
-/obj/machinery/door/airlock/angled_tgmc/prep	0c027ff3f34907ba	*
-/obj/machinery/door/airlock/angled_tgmc/prep/prep_alpha	e2f4817931980b3b	*
-/obj/machinery/door/airlock/angled_tgmc/prep/prep_bravo	8d7516a9580ac7bb	*
-/obj/machinery/door/airlock/angled_tgmc/prep/prep_charlie	49617b5d62831cc4	*
-/obj/machinery/door/airlock/angled_tgmc/prep/prep_delta	7b41ed942b31875e	*
-/obj/machinery/door/airlock/angled_tgmc/secure	d851bc0efe3990c3	*
-/obj/machinery/door/airlock/angled_tgmc/security	0849ed08bdef0c0f	*
-/obj/machinery/door/airlock/angled_tgmc/security_glass	47922309464a8738	*
-/obj/machinery/door/airlock/angled_tgmc/wide	e95451e8a1285526	*
-/obj/machinery/door/airlock/angled_tgmc/wide/command	5aba2cd31d14b3f6	*
-/obj/machinery/door/airlock/angled_tgmc/wide/dropship1	1610e970636f6d22	*
-/obj/machinery/door/airlock/angled_tgmc/wide/dropship2	5c85021541f76b2d	*
-/obj/machinery/door/airlock/angled_tgmc/wide/generic	c6e5f4bad3745d50	*
-/obj/machinery/door/airlock/angled_tgmc/wide/generic_steel	a88cae69da85de5c	*
-/obj/machinery/door/airlock/angled_tgmc/wide/medical	1968a57ad24d5bb6	*
-/obj/machinery/door/airlock/angled_tgmc/wide/security	cb9d321b96f15400	*
-/obj/machinery/door/airlock/atmos	f3b6d542abda01e2	*
-/obj/machinery/door/airlock/centcom	5c43b8c79d4fa0a4	*
-/obj/machinery/door/airlock/command	9b5af05378b7a876	*
-/obj/machinery/door/airlock/diamond	01538ae46780bd55	*
-/obj/machinery/door/airlock/engineering	60e6ef59b1dc5f50	*
-/obj/machinery/door/airlock/engineeringatmos	ad679fd040337741	*
-/obj/machinery/door/airlock/external	04b218f27d56dd27	*
-/obj/machinery/door/airlock/external/bolted	dcb9cd1d0175dfe5	*
-/obj/machinery/door/airlock/external/bolted/cycling	3c5987e33b534eb6	*
-/obj/machinery/door/airlock/freezer	e75db0124ecac1d6	*
-/obj/machinery/door/airlock/generated_station_exterior	d736d0e4a81fcf2f	*
-/obj/machinery/door/airlock/glass	0d90a8878cc05735	*
-/obj/machinery/door/airlock/glass_atmos	486d5b09ec1a1d5c	*
-/obj/machinery/door/airlock/glass_centcom	58a01d0a33fe4ffa	*
-/obj/machinery/door/airlock/glass_command	bf1ad5b51e95d136	*
-/obj/machinery/door/airlock/glass_command/polarized	82ef66b6f70b0cee	*
-/obj/machinery/door/airlock/glass_engineering	1b396834522bcd97	*
-/obj/machinery/door/airlock/glass_engineeringatmos	f3aec5e2fe16ba65	*
-/obj/machinery/door/airlock/glass_external	e647246e42872f38	*
-/obj/machinery/door/airlock/glass_external/public	a9f75418fbb47478	*
-/obj/machinery/door/airlock/glass_medical	83035941122bf3ef	*
-/obj/machinery/door/airlock/glass_medical/polarized	5dfbe34d3dbd7865	*
-/obj/machinery/door/airlock/glass_mining	4bf26de3aa6878c6	*
-/obj/machinery/door/airlock/glass_research	c8a291e430d44956	*
-/obj/machinery/door/airlock/glass_science	d450631fe695af18	*
-/obj/machinery/door/airlock/glass_security	546b6d977b866429	*
-/obj/machinery/door/airlock/glass_security/polarized	68ab4132a71a41b6	*
-/obj/machinery/door/airlock/gold	57da9a9d2ac9d9a7	*
-/obj/machinery/door/airlock/hatch	bce19492692d9846	*
-/obj/machinery/door/airlock/highsecurity	23dd87c0612da95d	*
-/obj/machinery/door/airlock/lift	cdb9c3b3bc353200	*
-/obj/machinery/door/airlock/maintenance	e6cc44c365ed2b93	*
-/obj/machinery/door/airlock/maintenance/cargo	98882d15738f6e3e	*
-/obj/machinery/door/airlock/maintenance/command	9dd1619f71b450f9	*
-/obj/machinery/door/airlock/maintenance/common	f1536a7d71a4175b	*
-/obj/machinery/door/airlock/maintenance/engi	0c8039ef1611f368	*
-/obj/machinery/door/airlock/maintenance/generated_station	1648e2f3b26bb670	*
-/obj/machinery/door/airlock/maintenance/int	c7a84516dab99301	*
-/obj/machinery/door/airlock/maintenance/medical	940bff7aa88d663f	*
-/obj/machinery/door/airlock/maintenance/rnd	9f31ce0319b1d9bf	*
-/obj/machinery/door/airlock/maintenance/sec	c699b6802f791425	*
-/obj/machinery/door/airlock/maintenance_hatch	f33992ab8b0b4f42	*
-/obj/machinery/door/airlock/medical	b5727b13b22a2bdd	*
-/obj/machinery/door/airlock/mining	65a8eaaecff97614	*
-/obj/machinery/door/airlock/multi_tile	1efc9ea72d840374	*
-/obj/machinery/door/airlock/multi_tile/glass	bfd93f0acee652f2	*
-/obj/machinery/door/airlock/multi_tile/glass/polarized	59f6d64f9442e81d	*
-/obj/machinery/door/airlock/multi_tile/metal	f94d6d914c59e2c9	*
-/obj/machinery/door/airlock/multi_tile/metal/mait	aaa98ee0914c630a	*
-/obj/machinery/door/airlock/phoron	7817c53ac7982d41	*
-/obj/machinery/door/airlock/research	09033a8ed35c0a33	*
-/obj/machinery/door/airlock/sandstone	c7205154a92dddaf	*
-/obj/machinery/door/airlock/science	08758a45bb12214a	*
-/obj/machinery/door/airlock/scp	4ff5c0f5a126f36e	*
-/obj/machinery/door/airlock/security	4813f3fe80079460	*
-/obj/machinery/door/airlock/security/armory	073aec1fb7903e38	*
-/obj/machinery/door/airlock/silver	587f8f11bda9afb6	*
-/obj/machinery/door/airlock/uranium	e55a8f65aab46a5f	*
-/obj/machinery/door/airlock/uranium_appearance	d21c75cdcb019358	*
-/obj/machinery/door/airlock/vault	44fa1d3a0a0882e3	*
-/obj/machinery/door/airlock/vault/bolted	ff67ed47fc2792ca	*
-/obj/machinery/door/airlock/voidcraft	efa6cd9cc8312700	*
-/obj/machinery/door/airlock/voidcraft/survival_pod	b32af27c571132b6	*
-/obj/machinery/door/airlock/voidcraft/survival_pod/vertical	61d1472063e4d7eb	*
-/obj/machinery/door/airlock/voidcraft/vertical	b2ac51f9efbe04b8	*
+/obj/machinery/door/airlock	4e75316113e1c826	*
+/obj/machinery/door/airlock/alarmlock	23afcfc157e14138	*
+/obj/machinery/door/airlock/alien	f92734ccc7cf0083	*
+/obj/machinery/door/airlock/alien/blue	f6e4eb3fcf126470	*
+/obj/machinery/door/airlock/alien/blue/locked	b1e9ee53e33eb13e	*
+/obj/machinery/door/airlock/alien/blue/public	0bd2062deb3b33f9	*
+/obj/machinery/door/airlock/alien/locked	a7033e5cb34a9f5f	*
+/obj/machinery/door/airlock/alien/public	7b11716acad8de8d	*
+/obj/machinery/door/airlock/angled_bay	d8fe6af49711a359	*
+/obj/machinery/door/airlock/angled_bay/ascent	1eb983cab498ddcb	*
+/obj/machinery/door/airlock/angled_bay/centcomm	a224633c40388dcd	*
+/obj/machinery/door/airlock/angled_bay/double	6b07c604304623a8	*
+/obj/machinery/door/airlock/angled_bay/double/color	bc7fffe0129d23ce	*
+/obj/machinery/door/airlock/angled_bay/double/glass	ecd2156f0d6870d2	*
+/obj/machinery/door/airlock/angled_bay/double/glass/atmos	1c0b41b46c747ea3	*
+/obj/machinery/door/airlock/angled_bay/double/glass/chaplain	11e71de9ceaa2a36	*
+/obj/machinery/door/airlock/angled_bay/double/glass/command	ab1b1f8bb153d1d7	*
+/obj/machinery/door/airlock/angled_bay/double/glass/common	0aa1ed6dee32af28	*
+/obj/machinery/door/airlock/angled_bay/double/glass/engineering	315ae14ef5a376a9	*
+/obj/machinery/door/airlock/angled_bay/double/glass/explo	3394eec6014971f0	*
+/obj/machinery/door/airlock/angled_bay/double/glass/medical	ff54fe57e8233ddc	*
+/obj/machinery/door/airlock/angled_bay/double/glass/research	07c621050480d753	*
+/obj/machinery/door/airlock/angled_bay/double/glass/security	c8a038ae6ce0fb59	*
+/obj/machinery/door/airlock/angled_bay/elevator	479beeaf2235d88a	*
+/obj/machinery/door/airlock/angled_bay/elevator/glass	d6b475ada670ed33	*
+/obj/machinery/door/airlock/angled_bay/external	bf1730d9bdf3989f	*
+/obj/machinery/door/airlock/angled_bay/external/color	8dc4aea332a52825	*
+/obj/machinery/door/airlock/angled_bay/external/glass	4c6b3edf7d908bf8	*
+/obj/machinery/door/airlock/angled_bay/external/glass/red	9379fa3376495682	*
+/obj/machinery/door/airlock/angled_bay/external/red	9878924511519158	*
+/obj/machinery/door/airlock/angled_bay/hatch	52026f2d568731d8	*
+/obj/machinery/door/airlock/angled_bay/hatch/atmos	9a7f285ca9e267ab	*
+/obj/machinery/door/airlock/angled_bay/hatch/command	653795852a4e1b25	*
+/obj/machinery/door/airlock/angled_bay/hatch/common	bdcbb2c903b925f7	*
+/obj/machinery/door/airlock/angled_bay/hatch/engineering	f740318400e4a541	*
+/obj/machinery/door/airlock/angled_bay/hatch/explo	deb7283c8d12fc34	*
+/obj/machinery/door/airlock/angled_bay/hatch/medical	6392d65ab1d66b4e	*
+/obj/machinery/door/airlock/angled_bay/hatch/research	d0bf49cc73ff1836	*
+/obj/machinery/door/airlock/angled_bay/hatch/security	b3db0c43fee62a94	*
+/obj/machinery/door/airlock/angled_bay/hazard	f59e6f7b991d467f	*
+/obj/machinery/door/airlock/angled_bay/secure	7ca5607cdeafda90	*
+/obj/machinery/door/airlock/angled_bay/standard	5c2dccef96360a6d	*
+/obj/machinery/door/airlock/angled_bay/standard/color	58b1a745ced8416e	*
+/obj/machinery/door/airlock/angled_bay/standard/color/atmos	e3037aa4b0c75666	*
+/obj/machinery/door/airlock/angled_bay/standard/color/cargo	d7ab4574b16f56d8	*
+/obj/machinery/door/airlock/angled_bay/standard/color/chaplain	e3d028f1dd58bffe	*
+/obj/machinery/door/airlock/angled_bay/standard/color/command	ca7b8cada703ed5d	*
+/obj/machinery/door/airlock/angled_bay/standard/color/common	f689f3cb84486987	*
+/obj/machinery/door/airlock/angled_bay/standard/color/engineering	f1bbb516d194bc0d	*
+/obj/machinery/door/airlock/angled_bay/standard/color/explo	87651a6f2e07bae0	*
+/obj/machinery/door/airlock/angled_bay/standard/color/medical	6b7ecc5f8414a19b	*
+/obj/machinery/door/airlock/angled_bay/standard/color/research	e3a3b0190422b76f	*
+/obj/machinery/door/airlock/angled_bay/standard/color/security	9c5635dc3e187aaa	*
+/obj/machinery/door/airlock/angled_bay/standard/color/silver	a8fb08c22db315fa	*
+/obj/machinery/door/airlock/angled_bay/standard/freezer	32b9877fda9885ed	*
+/obj/machinery/door/airlock/angled_bay/standard/glass	bbc1f6e2f7f12be7	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/atmos	0a760e95e7dc38af	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/chaplain	a67fd8a1166c318e	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/command	e71388b139c6e9e1	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/common	cad981f656f4005c	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/engineering	0ea34939acb0017b	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/explo	3b8fcb9473d5d777	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/medical	f24c2dc64bb73239	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/research	2533b43f98fac65f	*
+/obj/machinery/door/airlock/angled_bay/standard/glass/security	2e2997849c3a9b57	*
+/obj/machinery/door/airlock/angled_bay/vault	e59a1bfa40b63498	*
+/obj/machinery/door/airlock/angled_tgmc	dfa174a50910ff91	*
+/obj/machinery/door/airlock/angled_tgmc/cell	bd8522e4423d6d2d	*
+/obj/machinery/door/airlock/angled_tgmc/command	359f87466f5acb18	*
+/obj/machinery/door/airlock/angled_tgmc/dropship1_pilot	48b3dc739fba8462	*
+/obj/machinery/door/airlock/angled_tgmc/dropship2_pilot	712651b3d9820f3f	*
+/obj/machinery/door/airlock/angled_tgmc/engineering	27165c5539f09885	*
+/obj/machinery/door/airlock/angled_tgmc/maintenance	1263918b47671d22	*
+/obj/machinery/door/airlock/angled_tgmc/medical	d486c044aa1766cc	*
+/obj/machinery/door/airlock/angled_tgmc/medical_glass	b8a6bd4bd18dda4a	*
+/obj/machinery/door/airlock/angled_tgmc/personal	63b3039d66e79ebf	*
+/obj/machinery/door/airlock/angled_tgmc/pod	226e83e135732c39	*
+/obj/machinery/door/airlock/angled_tgmc/prep	f334c63966bb3c48	*
+/obj/machinery/door/airlock/angled_tgmc/prep/prep_alpha	8bce67d0a7feb3bc	*
+/obj/machinery/door/airlock/angled_tgmc/prep/prep_bravo	c1e0594a109dba84	*
+/obj/machinery/door/airlock/angled_tgmc/prep/prep_charlie	d8bdc82a7da7734a	*
+/obj/machinery/door/airlock/angled_tgmc/prep/prep_delta	06e82b739d383716	*
+/obj/machinery/door/airlock/angled_tgmc/secure	e97e6a63838d6e37	*
+/obj/machinery/door/airlock/angled_tgmc/security	922145737fab16a9	*
+/obj/machinery/door/airlock/angled_tgmc/security_glass	c771e0eecec609b7	*
+/obj/machinery/door/airlock/angled_tgmc/wide	42688b38ad1533a5	*
+/obj/machinery/door/airlock/angled_tgmc/wide/command	d03663f3e1dba7b5	*
+/obj/machinery/door/airlock/angled_tgmc/wide/dropship1	b35e035f559c1034	*
+/obj/machinery/door/airlock/angled_tgmc/wide/dropship2	d7e85edf495aaa7a	*
+/obj/machinery/door/airlock/angled_tgmc/wide/generic	80b57009c9ac7348	*
+/obj/machinery/door/airlock/angled_tgmc/wide/generic_steel	fd1e2cb3c9039637	*
+/obj/machinery/door/airlock/angled_tgmc/wide/medical	61a5073491f188a9	*
+/obj/machinery/door/airlock/angled_tgmc/wide/security	cff7ec555109b152	*
+/obj/machinery/door/airlock/atmos	7503b4388b18dede	*
+/obj/machinery/door/airlock/centcom	6034e8f8459278b7	*
+/obj/machinery/door/airlock/command	71a41c2c42020d15	*
+/obj/machinery/door/airlock/diamond	5bd601efd1e58851	*
+/obj/machinery/door/airlock/engineering	41be6fd5c10e1c05	*
+/obj/machinery/door/airlock/engineeringatmos	920349d25aa74073	*
+/obj/machinery/door/airlock/external	7c64ce23f379362b	*
+/obj/machinery/door/airlock/external/bolted	60b0ad84698baed3	*
+/obj/machinery/door/airlock/external/bolted/cycling	250f7bf3a649ccef	*
+/obj/machinery/door/airlock/freezer	e743ecb9a166b005	*
+/obj/machinery/door/airlock/generated_station_exterior	ed16745730a41624	*
+/obj/machinery/door/airlock/glass	038110445b9dc4d7	*
+/obj/machinery/door/airlock/glass_atmos	db3682a0b3a3cff3	*
+/obj/machinery/door/airlock/glass_centcom	31a85f11817f07a1	*
+/obj/machinery/door/airlock/glass_command	59daab543573bd5d	*
+/obj/machinery/door/airlock/glass_command/polarized	4cdda675b50f8041	*
+/obj/machinery/door/airlock/glass_engineering	67718cc94a868cbc	*
+/obj/machinery/door/airlock/glass_engineeringatmos	8b1cae082151a7a1	*
+/obj/machinery/door/airlock/glass_external	5e4b3cb0835831a8	*
+/obj/machinery/door/airlock/glass_external/public	80c9ece4ade53f55	*
+/obj/machinery/door/airlock/glass_medical	9d31613b9931b6fc	*
+/obj/machinery/door/airlock/glass_medical/polarized	0519066f5a86b0f5	*
+/obj/machinery/door/airlock/glass_mining	698edc6cbd0d2392	*
+/obj/machinery/door/airlock/glass_research	1bd119fce8467a09	*
+/obj/machinery/door/airlock/glass_science	b41d5848340e21a1	*
+/obj/machinery/door/airlock/glass_security	7c7cb84f296e1cd2	*
+/obj/machinery/door/airlock/glass_security/polarized	38a482f02ab5f9aa	*
+/obj/machinery/door/airlock/gold	d0fb9056e6929b70	*
+/obj/machinery/door/airlock/hatch	560de30ed7dbd71f	*
+/obj/machinery/door/airlock/highsecurity	5607b71d2a9a1c5c	*
+/obj/machinery/door/airlock/lift	bb1477086f319841	*
+/obj/machinery/door/airlock/maintenance	288e6f41daeac21a	*
+/obj/machinery/door/airlock/maintenance/cargo	924937d339476489	*
+/obj/machinery/door/airlock/maintenance/command	b294ef172014be20	*
+/obj/machinery/door/airlock/maintenance/common	8b368b06999c9648	*
+/obj/machinery/door/airlock/maintenance/engi	f1cbb6e83066445a	*
+/obj/machinery/door/airlock/maintenance/generated_station	f3550090ea23319c	*
+/obj/machinery/door/airlock/maintenance/int	243d43229aeb5f16	*
+/obj/machinery/door/airlock/maintenance/medical	b2c4b88c306baedd	*
+/obj/machinery/door/airlock/maintenance/rnd	9d522dbcef58829a	*
+/obj/machinery/door/airlock/maintenance/sec	023e9f405de147a4	*
+/obj/machinery/door/airlock/maintenance_hatch	dfcea2c69e68b1fc	*
+/obj/machinery/door/airlock/medical	c3020e99ee285ff7	*
+/obj/machinery/door/airlock/mining	d2109b9d6c8a5de1	*
+/obj/machinery/door/airlock/multi_tile	3d66f4768ec5a14a	*
+/obj/machinery/door/airlock/multi_tile/glass	7c53a2c78d87c206	*
+/obj/machinery/door/airlock/multi_tile/glass/polarized	c74ca726a1cfbdee	*
+/obj/machinery/door/airlock/multi_tile/metal	808aea8a2aa642e9	*
+/obj/machinery/door/airlock/multi_tile/metal/mait	166823d9f3f87b20	*
+/obj/machinery/door/airlock/phoron	e63b79e2e1da4771	*
+/obj/machinery/door/airlock/research	69273d21c41d02ab	*
+/obj/machinery/door/airlock/sandstone	f159e0e3848375ee	*
+/obj/machinery/door/airlock/science	fec2117154f70cfc	*
+/obj/machinery/door/airlock/scp	f5d989072c2c377b	*
+/obj/machinery/door/airlock/security	ec570ec146c803cc	*
+/obj/machinery/door/airlock/security/armory	9c7d81c1f465b188	*
+/obj/machinery/door/airlock/silver	353fef5d655857e6	*
+/obj/machinery/door/airlock/uranium	bcf09584f78ac444	*
+/obj/machinery/door/airlock/uranium_appearance	0747c59cca663487	*
+/obj/machinery/door/airlock/vault	5d73d39d4fd19af6	*
+/obj/machinery/door/airlock/vault/bolted	e77ffc1b12b208be	*
+/obj/machinery/door/airlock/voidcraft	5bf91e5246e2ace4	*
+/obj/machinery/door/airlock/voidcraft/survival_pod	2ceb7c104bedab6f	*
+/obj/machinery/door/airlock/voidcraft/survival_pod/vertical	a34657ae135ad2bb	*
+/obj/machinery/door/airlock/voidcraft/vertical	fabef39c14093061	*
 /obj/machinery/door/blast	dfd2e0d5c8044394	*
 /obj/machinery/door/blast/angled	81e59e6f1068153f	*
 /obj/machinery/door/blast/angled/open	dd61e9587271b1a7	*
@@ -17336,10 +17336,10 @@
 /obj/machinery/mecha_part_fabricator_tg	a2c6576627cb6931	*
 /obj/machinery/mecha_part_fabricator_tg/prosthetics	721825432f4fcf45	*
 /obj/machinery/media	e885abaa09cac9f3	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/media/jukebox	63c1de732b5ae849	*
-/obj/machinery/media/jukebox/casinojukebox	89ebca9be2d8b3c5	*
-/obj/machinery/media/jukebox/ghost	b526eaf20ecf2565	*
-/obj/machinery/media/jukebox/hacked	3a3dc69582c6c6d8	*
+/obj/machinery/media/jukebox	108e1d176c6adf63	*
+/obj/machinery/media/jukebox/casinojukebox	1fbc4e5788e60e04	*
+/obj/machinery/media/jukebox/ghost	dc214a8d4d43fed0	*
+/obj/machinery/media/jukebox/hacked	bce8f27cc0b6ca59	*
 /obj/machinery/medical_kiosk	8d36153970fe5f41	active_power_usage,active_user,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,use_power
 /obj/machinery/message_server	9f5861fcacf07fe0	active,active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,pda_msgs,power_area,power_channel,power_forced,rc_msgs,soundloop,use_power
 /obj/machinery/meter	a91de841fac29f49	active_power_usage,circuit,component_parts,dir_at_make,id,idle_power_usage,maintenance_flags,needle,open,panel_open,power_area,power_channel,power_forced,use_power,watched_air
@@ -17698,40 +17698,40 @@
 /obj/machinery/sleeper/survival_pod	b2824b8c2775f8e3	active_power_usage,auto_eject_dead,beaker,circuit,component_parts,console,controls_inside,dir_at_make,filtering,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,pumping,stasis_choices,stasis_rate,use_power
 /obj/machinery/slot_machine	e41bdb136294841c	active_power_usage,circuit,component_parts,confetti_spread,dir_at_make,idle_power_usage,isbroken,ispowered,maintenance_flags,panel_open,power_area,power_channel,power_forced,slot_phase,use_power
 /obj/machinery/smart_centrifuge	c2788075be7a377d	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,separate_delay,separate_force_bottle,separate_force_canister,use_power,working
-/obj/machinery/smartfridge	350d2f25e0c3644d	*
-/obj/machinery/smartfridge/chef	fcf94d70c2afcb01	*
-/obj/machinery/smartfridge/chemistry	69ad72721d5335d7	*
-/obj/machinery/smartfridge/chemistry/chemvator	be32e432ac36218c	*
-/obj/machinery/smartfridge/chemistry/chemvator/down	e2df9ba47454e9e6	*
-/obj/machinery/smartfridge/drinks	58ef753437263ea4	*
-/obj/machinery/smartfridge/drinks/showcase	ed2009650c83342c	*
-/obj/machinery/smartfridge/drying_rack	ececd22db083c9f1	*
-/obj/machinery/smartfridge/medbay	613e54c9e36aa3e5	*
-/obj/machinery/smartfridge/produce	132194f976cf21a9	*
-/obj/machinery/smartfridge/produce/persistent	2e9bd4dddc9ea315	*
-/obj/machinery/smartfridge/produce/persistent_lossy	83c2cb46e96512ba	*
-/obj/machinery/smartfridge/secure	ec32e98df261bf53	*
-/obj/machinery/smartfridge/secure/chemistry	bb2d57a3e01095c4	*
-/obj/machinery/smartfridge/secure/extract	42da3589899391d6	*
-/obj/machinery/smartfridge/secure/medbay	6167b4a0180e3957	*
-/obj/machinery/smartfridge/secure/virology	6108a9f98f525576	*
-/obj/machinery/smartfridge/seeds	8e1590ad44bcadc7	*
-/obj/machinery/smartfridge/sheets	6ef42a5bddf6f94f	*
-/obj/machinery/smartfridge/sheets/mining	b40728079cfb8c9f	*
-/obj/machinery/smartfridge/sheets/mining/persistent	26a6d7731bd976a8	*
-/obj/machinery/smartfridge/sheets/mining/persistent_lossy	a20cbce52e6e2d52	*
-/obj/machinery/smartfridge/sheets/persistent	bf132dbd47766343	*
-/obj/machinery/smartfridge/sheets/persistent_lossy	87c6f3839805b5a6	*
-/obj/machinery/smartfridge/survival_pod	d4365172e47d4412	*
-/obj/machinery/smartfridge/survival_pod/abductor	62a151529e07715a	*
-/obj/machinery/smartfridge/survival_pod/boxes	da16a9c8b7b5b07d	*
-/obj/machinery/smartfridge/survival_pod/casino	e48e0b61168f7d8f	*
-/obj/machinery/smartfridge/survival_pod/dispenser1	840432f272eb0037	*
-/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier	3171abaf0184a82a	*
-/obj/machinery/smartfridge/survival_pod/empty	9a92c4a6446d01ae	*
-/obj/machinery/smartfridge/survival_pod/scifridge	0fb26bcb5f511167	*
-/obj/machinery/smartfridge/tcrystal	56dd964c0f6bd72f	*
-/obj/machinery/smartfridge/virology	d025c85af72ee6d9	*
+/obj/machinery/smartfridge	d5d8623c94e0d0e9	*
+/obj/machinery/smartfridge/chef	a2b0d6667e3167a0	*
+/obj/machinery/smartfridge/chemistry	12fa150126ba4303	*
+/obj/machinery/smartfridge/chemistry/chemvator	9b42de961701994e	*
+/obj/machinery/smartfridge/chemistry/chemvator/down	6320579587e3dbf1	*
+/obj/machinery/smartfridge/drinks	6d43ac5fb39c1bda	*
+/obj/machinery/smartfridge/drinks/showcase	f17e3a326f6b0527	*
+/obj/machinery/smartfridge/drying_rack	06815aff663bddee	*
+/obj/machinery/smartfridge/medbay	a2e9317464c23af9	*
+/obj/machinery/smartfridge/produce	2f5463f9ec2d92b7	*
+/obj/machinery/smartfridge/produce/persistent	5aa9d679276c3fcd	*
+/obj/machinery/smartfridge/produce/persistent_lossy	73bc60543c393a04	*
+/obj/machinery/smartfridge/secure	6f9b319c2512061d	*
+/obj/machinery/smartfridge/secure/chemistry	4a173e5e6afa8a12	*
+/obj/machinery/smartfridge/secure/extract	fbad7dba2bb9401e	*
+/obj/machinery/smartfridge/secure/medbay	9a051060387eae70	*
+/obj/machinery/smartfridge/secure/virology	59937da6bc53f4c5	*
+/obj/machinery/smartfridge/seeds	89d8d8423b638680	*
+/obj/machinery/smartfridge/sheets	6509715d18af870e	*
+/obj/machinery/smartfridge/sheets/mining	cf1c246f1e82ced6	*
+/obj/machinery/smartfridge/sheets/mining/persistent	699337aedcb18210	*
+/obj/machinery/smartfridge/sheets/mining/persistent_lossy	abe513c868d1b1b4	*
+/obj/machinery/smartfridge/sheets/persistent	9fd1aa8ac75ef485	*
+/obj/machinery/smartfridge/sheets/persistent_lossy	ca51e66b63471085	*
+/obj/machinery/smartfridge/survival_pod	222bdefcaff6edad	*
+/obj/machinery/smartfridge/survival_pod/abductor	c7327c385c7250e5	*
+/obj/machinery/smartfridge/survival_pod/boxes	b2d50da93e1cc333	*
+/obj/machinery/smartfridge/survival_pod/casino	697f92bfac60f38e	*
+/obj/machinery/smartfridge/survival_pod/dispenser1	99fa926bfc6c4c6f	*
+/obj/machinery/smartfridge/survival_pod/dispenser1/garmentier	06e1fcbd9e557728	*
+/obj/machinery/smartfridge/survival_pod/empty	08c5987c863ac1fc	*
+/obj/machinery/smartfridge/survival_pod/scifridge	9f3315f3fc32fb9d	*
+/obj/machinery/smartfridge/tcrystal	fa4d3035c5fbf9ba	*
+/obj/machinery/smartfridge/virology	aca92988d91fc4ec	*
 /obj/machinery/space_heater	d10fd70fa0282d78	active_power_usage,cell,cell_type,circuit,component_parts,dir_at_make,heating_power,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,pumping,regulator_carnot_fraction,regulator_max_cop,set_temperature,state,use_power
 /obj/machinery/sparker	25f4ee211d6fb5f1	active_power_usage,base_state,circuit,component_parts,dir_at_make,disable,id,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,spark_cooldown,use_power
 /obj/machinery/station_map	6e995e6e83d1f69a	active_power_usage,bogus,circuit,component_parts,dir_at_make,holomap_datum,idle_power_usage,maintenance_flags,offsets_settled_flag,original_zLevel,panel,panel_open,power_area,power_channel,power_forced,use_power,watching_mob
@@ -17739,29 +17739,29 @@
 /obj/machinery/status_display	b3df25b71908214b	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,picture,picture_state,power_area,power_channel,power_forced,use_power
 /obj/machinery/status_display/shuttle_display	b700389ae16b381d	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,picture,picture_state,power_area,power_channel,power_forced,use_power
 /obj/machinery/status_display/supply_display	a2d5daf42fbc6c88	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,picture,picture_state,power_area,power_channel,power_forced,use_power
-/obj/machinery/suit_cycler	45c2c16cacb5793c	*
-/obj/machinery/suit_cycler/captain	cc6a28191c06005c	*
-/obj/machinery/suit_cycler/engineering	5eca69158258c45a	*
-/obj/machinery/suit_cycler/exploration	7a201592328e6551	*
-/obj/machinery/suit_cycler/medical	4a2a1a7a1833b5b8	*
-/obj/machinery/suit_cycler/mining	f2a0fe44912bc290	*
-/obj/machinery/suit_cycler/pilot	5163b100320d04dd	*
-/obj/machinery/suit_cycler/prototype	eb64d4cec5d6991f	*
-/obj/machinery/suit_cycler/refit_only	b3db9749f052f5b2	*
-/obj/machinery/suit_cycler/security	fa6fbed0db4ae415	*
-/obj/machinery/suit_cycler/syndicate	e5c69f0d609ac917	*
-/obj/machinery/suit_cycler/vintage	9b0c758383a5655e	*
-/obj/machinery/suit_cycler/vintage/medsci	2ce345b8e0974aaa	*
-/obj/machinery/suit_cycler/vintage/omni	dc94ab37801f7b18	*
-/obj/machinery/suit_cycler/vintage/pilot	7a9133a7dcd7e439	*
-/obj/machinery/suit_cycler/vintage/rugged	4d0178a086639380	*
-/obj/machinery/suit_cycler/vintage/tcaptain	4a1ecdd1b9c60146	*
-/obj/machinery/suit_cycler/vintage/tcrew	25c5593721547be6	*
-/obj/machinery/suit_cycler/vintage/tengi	4564e29e3c290795	*
-/obj/machinery/suit_cycler/vintage/tguard	cb12e9272328d1be	*
-/obj/machinery/suit_cycler/vintage/tmedic	16d1d7521d17cfa9	*
-/obj/machinery/suit_cycler/vintage/tminer	42327fda7147debe	*
-/obj/machinery/suit_cycler/vintage/tpilot	21a0a98de3d8f91f	*
+/obj/machinery/suit_cycler	8bab495a3c25deae	*
+/obj/machinery/suit_cycler/captain	7876ce06ab679cb4	*
+/obj/machinery/suit_cycler/engineering	687e2c1b64f3e388	*
+/obj/machinery/suit_cycler/exploration	2b69579a944f8703	*
+/obj/machinery/suit_cycler/medical	800f3b855842228f	*
+/obj/machinery/suit_cycler/mining	9433d8e20b272054	*
+/obj/machinery/suit_cycler/pilot	81e6557d8fbe24e1	*
+/obj/machinery/suit_cycler/prototype	0704a0a744f20bb8	*
+/obj/machinery/suit_cycler/refit_only	2d07b9ac39b6f607	*
+/obj/machinery/suit_cycler/security	41c3b51006d237e7	*
+/obj/machinery/suit_cycler/syndicate	8d3cdac40b4ef9fa	*
+/obj/machinery/suit_cycler/vintage	e049dae2cb4aab1a	*
+/obj/machinery/suit_cycler/vintage/medsci	a921bf4b8ff1deaf	*
+/obj/machinery/suit_cycler/vintage/omni	c96d9f8e9074a08b	*
+/obj/machinery/suit_cycler/vintage/pilot	db83e16fa247b720	*
+/obj/machinery/suit_cycler/vintage/rugged	0dbf1b0f005eec0e	*
+/obj/machinery/suit_cycler/vintage/tcaptain	5e4b375eaafb1f7a	*
+/obj/machinery/suit_cycler/vintage/tcrew	48e85b8d5241073b	*
+/obj/machinery/suit_cycler/vintage/tengi	2074d672cc0ff8d5	*
+/obj/machinery/suit_cycler/vintage/tguard	d852a5f12cc754c4	*
+/obj/machinery/suit_cycler/vintage/tmedic	775115b5569e3de9	*
+/obj/machinery/suit_cycler/vintage/tminer	c2e1cd79f620d14f	*
+/obj/machinery/suit_cycler/vintage/tpilot	47e30cf0385bc5c8	*
 /obj/machinery/suit_storage_unit	f6ddea4cb33e2d7c	HELMET,MASK,SUIT,active_power_usage,circuit,component_parts,dir_at_make,helmet_type,idle_power_usage,isUV,isbroken,islocked,isopen,ispowered,issuperUV,maintenance_flags,mask_type,panel_open,power_area,power_channel,power_forced,suit_type,use_power
 /obj/machinery/suit_storage_unit/empty	88a06a61fcd507f4	HELMET,MASK,SUIT,active_power_usage,circuit,component_parts,dir_at_make,helmet_type,idle_power_usage,isUV,isbroken,islocked,isopen,ispowered,issuperUV,maintenance_flags,mask_type,panel_open,power_area,power_channel,power_forced,suit_type,use_power
 /obj/machinery/suit_storage_unit/emt	2a4667559da705a6	HELMET,MASK,SUIT,active_power_usage,circuit,component_parts,dir_at_make,helmet_type,idle_power_usage,isUV,isbroken,islocked,isopen,ispowered,issuperUV,maintenance_flags,mask_type,panel_open,power_area,power_channel,power_forced,suit_type,use_power
@@ -17856,123 +17856,123 @@
 /obj/machinery/turretid/lethal	ae1968e976619ad5	*
 /obj/machinery/turretid/stun	259a603169ce2e09	*
 /obj/machinery/v_garbosystem	f9834354b0d1dc56	active_power_usage,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,operating,panel_open,power_area,power_channel,power_forced,use_power
-/obj/machinery/vending	9d8dcb4c88139bca	*
-/obj/machinery/vending/abductor	e5cad7a8acefd428	*
-/obj/machinery/vending/altevian	7756fecd2574df43	*
-/obj/machinery/vending/assist	59556f298bc0693e	*
-/obj/machinery/vending/bepis	a382758e7dd38c74	*
-/obj/machinery/vending/blood	6eb4ce1e9685dd1f	*
-/obj/machinery/vending/boozeomat	601134d60c70f5ba	*
-/obj/machinery/vending/boozeomat/virgin	2d2294234e1e139d	*
-/obj/machinery/vending/cart	e485d8d341a57dfa	*
-/obj/machinery/vending/cigarette	fee6020104fbb3ad	*
-/obj/machinery/vending/coffee	32f796d956cd957b	*
-/obj/machinery/vending/cola	08269fce53f9f5a7	*
-/obj/machinery/vending/cola/soft	ee7efdeb713b28f1	*
-/obj/machinery/vending/deathmatch	54ac8fcecb7f8556	*
-/obj/machinery/vending/deathmatch/red	26c5f1ab2383ede9	*
-/obj/machinery/vending/deluxe_boozeomat	c08013cde08443fd	*
-/obj/machinery/vending/deluxe_boozeomat/open	357d8a7e1d6b5e47	*
-/obj/machinery/vending/deluxe_cigs	ce1a40e8edec5af5	*
-/obj/machinery/vending/deluxe_cigs/open	71833e4834e82d3f	*
-/obj/machinery/vending/deluxe_dinner	be8bb897c093d252	*
-/obj/machinery/vending/deluxe_dinner/open	01fa7af586cbc702	*
-/obj/machinery/vending/desatti	83c5c5a3e22ea376	*
-/obj/machinery/vending/dinnerware	2cd516839977ca13	*
-/obj/machinery/vending/donksoft	482974fd254680a3	*
-/obj/machinery/vending/emergencyfood	eb496278d9d26c41	*
-/obj/machinery/vending/emergencyfood/filled	98c843891f80abf4	*
-/obj/machinery/vending/engineering	461090f1499a1bf3	*
-/obj/machinery/vending/engivend	5d37863f0bda713f	*
-/obj/machinery/vending/entertainer	4c3569b12b260c03	*
-/obj/machinery/vending/event	a60cfe510fd4b183	*
-/obj/machinery/vending/event/accessory	64f8fa9c50faec39	*
-/obj/machinery/vending/event/clothing	6c715ed1fec164c5	*
-/obj/machinery/vending/event/costume	405bb420a55b77d6	*
-/obj/machinery/vending/event/food	265c6470dc3e7c3c	*
-/obj/machinery/vending/event/food/ingredients	274b7c2a12b82369	*
-/obj/machinery/vending/event/food/safe	eba02c4e7c3a6564	*
-/obj/machinery/vending/event/gadget	225689721bb0cc21	*
-/obj/machinery/vending/event/loadout_misc	b60608ba428ba6be	*
-/obj/machinery/vending/event/overwear	effbc9a9635b8747	*
-/obj/machinery/vending/event/uniform	6bcd2f30d156ce69	*
-/obj/machinery/vending/exploration_armor	b6f75c82765775a0	*
-/obj/machinery/vending/exploration_fieldmedic	906eaebdd9ed149f	*
-/obj/machinery/vending/exploration_misc	2655734619a9fa86	*
-/obj/machinery/vending/exploration_pilot	0a13487ef2961080	*
-/obj/machinery/vending/exploration_weapons	bf5eafb5dfa11518	*
-/obj/machinery/vending/fishing	1c9b6bcfcb884d0f	*
-/obj/machinery/vending/fitness	57c74b785d9846e7	*
-/obj/machinery/vending/food	156ec0fcb1fcb6f5	*
-/obj/machinery/vending/food/arojoan	7a39de5e51c51c74	*
-/obj/machinery/vending/food/prison	5324886f548e99f1	*
-/obj/machinery/vending/foodasian	07db539c174f2135	*
-/obj/machinery/vending/fooddessert	bb3e23d97df7626f	*
-/obj/machinery/vending/foodfast	a5ed36faadca4349	*
-/obj/machinery/vending/foodfish	3250b75fdb19f1ca	*
-/obj/machinery/vending/fooditalian	78f1f326e9700151	*
-/obj/machinery/vending/foodmeat	8e906c44b86aaf21	*
-/obj/machinery/vending/foodstuffing	97c88ee77ff396b3	*
-/obj/machinery/vending/foodveggie	083be0a51baaf564	*
-/obj/machinery/vending/giftvendor	7eb469bb15eb9775	*
-/obj/machinery/vending/hotfood	773a95be6d405498	*
-/obj/machinery/vending/hydronutrients	07781fef705e6202	*
-/obj/machinery/vending/hydronutrients/brig	39405cca6b0dab33	*
-/obj/machinery/vending/hydroseeds	1012817d30ac5bee	*
-/obj/machinery/vending/loadout	dd33386682540468	*
-/obj/machinery/vending/loadout/accessory	fcd11038cf7dd115	*
-/obj/machinery/vending/loadout/clothing	6dc4026086010640	*
-/obj/machinery/vending/loadout/costume	fac21cc9d52c342c	*
-/obj/machinery/vending/loadout/gadget	05dd554859c10d2e	*
-/obj/machinery/vending/loadout/loadout_misc	bcf4d08423bbf218	*
-/obj/machinery/vending/loadout/overwear	fd6dcad3ce45ff01	*
-/obj/machinery/vending/loadout/uniform	f52b98a6ecb9b4c9	*
-/obj/machinery/vending/magivend	a06da42ba92ce996	*
-/obj/machinery/vending/medical	05944418ad6da9bd	*
-/obj/machinery/vending/nifsoft_shop	3d2457caaea7f658	*
-/obj/machinery/vending/nukie	db76db9b7bdcbb96	*
-/obj/machinery/vending/phoronresearch	be5ff1b6550286f8	*
-/obj/machinery/vending/radren	00cc1d3dd8cbf2cd	*
-/obj/machinery/vending/robotics	9a4be8b164776b01	*
-/obj/machinery/vending/security	d15f9ef94634c953	*
-/obj/machinery/vending/security/yw	28ee65d7522c497a	*
-/obj/machinery/vending/security_armor	3291a69415c62afe	*
-/obj/machinery/vending/security_armory_armor	56cafffe77e4f4b2	*
-/obj/machinery/vending/snack	688909514bcb353b	*
-/obj/machinery/vending/snix	d15464e0f6d54b29	*
-/obj/machinery/vending/snlvend	32b29d3f4d280ae7	*
-/obj/machinery/vending/sol	25e8de385a2e91dc	*
-/obj/machinery/vending/sovietsoda	3a884ee135ca0028	*
-/obj/machinery/vending/sovietvend	3f9b9bd40ce269ee	*
-/obj/machinery/vending/starhunter_farmer	062983bffcf31916	*
-/obj/machinery/vending/starhunter_miner	eed7025b246d8a28	*
-/obj/machinery/vending/tool	6d4fc763e635ff13	*
-/obj/machinery/vending/virtual_autodrobe	7062bc58014f4366	*
-/obj/machinery/vending/wallmed1	9e3f8b0cade600eb	*
-/obj/machinery/vending/wallmed1/public	0a7dd07a6d70d8a4	*
-/obj/machinery/vending/wallmed2	ba8f5d5007775acd	*
-/obj/machinery/vending/wallmed_airlock	c31ddd1669109d12	*
-/obj/machinery/vending/wardrobe	0c8a64c2f445d192	*
-/obj/machinery/vending/wardrobe/atmosdrobe	df6d77f3ad475d12	*
-/obj/machinery/vending/wardrobe/bardrobe	ec329a850993d475	*
-/obj/machinery/vending/wardrobe/cargodrobe	1663e75762b943f2	*
-/obj/machinery/vending/wardrobe/chapdrobe	76941019e204e68f	*
-/obj/machinery/vending/wardrobe/chefdrobe	82d78d8dff63f76c	*
-/obj/machinery/vending/wardrobe/chemdrobe	8fb2c41cd019f60c	*
-/obj/machinery/vending/wardrobe/clowndrobe	1681e6c3804996e5	*
-/obj/machinery/vending/wardrobe/detdrobe	b9e764416823ce51	*
-/obj/machinery/vending/wardrobe/engidrobe	28845269acee28fb	*
-/obj/machinery/vending/wardrobe/genedrobe	e525b523f8ed63de	*
-/obj/machinery/vending/wardrobe/hydrobe	f7c33bec9301b07d	*
-/obj/machinery/vending/wardrobe/janidrobe	16a0b8de69ae645c	*
-/obj/machinery/vending/wardrobe/lawdrobe	10bbe00ceeab252c	*
-/obj/machinery/vending/wardrobe/medidrobe	f1591a3f2c3fd2af	*
-/obj/machinery/vending/wardrobe/mimedrobe	f50266e575f5699b	*
-/obj/machinery/vending/wardrobe/robodrobe	c52f270bdffb7102	*
-/obj/machinery/vending/wardrobe/scidrobe	39306f942c6c0b51	*
-/obj/machinery/vending/wardrobe/secdrobe	5651564274d14939	*
-/obj/machinery/vending/wardrobe/virodrobe	c35db7b403af5304	*
-/obj/machinery/vending/weeb	ed6fc4d45298879e	*
+/obj/machinery/vending	b9659f6b3e7b5efe	*
+/obj/machinery/vending/abductor	0790cc7ec9e619e2	*
+/obj/machinery/vending/altevian	26782f2f3bce2f8b	*
+/obj/machinery/vending/assist	ae298c3543614fe3	*
+/obj/machinery/vending/bepis	ca1d307a32f49b5b	*
+/obj/machinery/vending/blood	9f71c6c3486c5de1	*
+/obj/machinery/vending/boozeomat	32cc8bef80ce9a9f	*
+/obj/machinery/vending/boozeomat/virgin	e613b9e7651b0f14	*
+/obj/machinery/vending/cart	caf7fa7a4d1041eb	*
+/obj/machinery/vending/cigarette	604231d3c865cdb1	*
+/obj/machinery/vending/coffee	b8d0d07b5b4a85a2	*
+/obj/machinery/vending/cola	39bbf224b7c5fc11	*
+/obj/machinery/vending/cola/soft	78e19e6d29de1a88	*
+/obj/machinery/vending/deathmatch	6e7acb01e0ab54a8	*
+/obj/machinery/vending/deathmatch/red	ad2fd69904d6dd7a	*
+/obj/machinery/vending/deluxe_boozeomat	ee62655d8b665d21	*
+/obj/machinery/vending/deluxe_boozeomat/open	3bde51f3443d85d0	*
+/obj/machinery/vending/deluxe_cigs	9a8a5c4e1b4f825a	*
+/obj/machinery/vending/deluxe_cigs/open	6f2db9fec23a90cb	*
+/obj/machinery/vending/deluxe_dinner	d29990e564d35bb2	*
+/obj/machinery/vending/deluxe_dinner/open	59b5a9942fae7865	*
+/obj/machinery/vending/desatti	39bde470babc1336	*
+/obj/machinery/vending/dinnerware	73f5d31262cd6f42	*
+/obj/machinery/vending/donksoft	b7db1e98cb7b31c1	*
+/obj/machinery/vending/emergencyfood	80fe17ffcd64584a	*
+/obj/machinery/vending/emergencyfood/filled	db43bd01dbe8d7f4	*
+/obj/machinery/vending/engineering	39ad02b8768af058	*
+/obj/machinery/vending/engivend	0690b9d0fc88505c	*
+/obj/machinery/vending/entertainer	a411f1826a33e786	*
+/obj/machinery/vending/event	186c90c972d722ba	*
+/obj/machinery/vending/event/accessory	1a46ae902c29c415	*
+/obj/machinery/vending/event/clothing	d8ffc0e9a7916141	*
+/obj/machinery/vending/event/costume	35a2a91cfa5d6b4e	*
+/obj/machinery/vending/event/food	8e78f4712406387c	*
+/obj/machinery/vending/event/food/ingredients	36e704e0f7cbcacd	*
+/obj/machinery/vending/event/food/safe	72edcac3c2331725	*
+/obj/machinery/vending/event/gadget	98454c8210a98191	*
+/obj/machinery/vending/event/loadout_misc	7c975a74856f9603	*
+/obj/machinery/vending/event/overwear	b6f14a47f53a88b1	*
+/obj/machinery/vending/event/uniform	74b7674f253f81b0	*
+/obj/machinery/vending/exploration_armor	9a773be23bfa59a0	*
+/obj/machinery/vending/exploration_fieldmedic	2ea2c620ada8a432	*
+/obj/machinery/vending/exploration_misc	c7f95192afc19255	*
+/obj/machinery/vending/exploration_pilot	3c5502da2a65a3ed	*
+/obj/machinery/vending/exploration_weapons	d985e54ae92e7895	*
+/obj/machinery/vending/fishing	369a30a29d781391	*
+/obj/machinery/vending/fitness	905cb30106f89425	*
+/obj/machinery/vending/food	6d6eac1480ffdbf7	*
+/obj/machinery/vending/food/arojoan	ff5eac0bd3f10275	*
+/obj/machinery/vending/food/prison	289a904bf0d4afef	*
+/obj/machinery/vending/foodasian	d1f3900e0fd5895a	*
+/obj/machinery/vending/fooddessert	21b8bae14377f625	*
+/obj/machinery/vending/foodfast	24667082f53451cd	*
+/obj/machinery/vending/foodfish	1efe91dcbfbc51a9	*
+/obj/machinery/vending/fooditalian	7cbd42eb5a64b231	*
+/obj/machinery/vending/foodmeat	bfd769e58e4fa0d0	*
+/obj/machinery/vending/foodstuffing	d8679f9304250553	*
+/obj/machinery/vending/foodveggie	6c6ecbd9b1b2b4fc	*
+/obj/machinery/vending/giftvendor	5daeea46b0a91122	*
+/obj/machinery/vending/hotfood	4a370ee508388473	*
+/obj/machinery/vending/hydronutrients	15bf945e10fb5476	*
+/obj/machinery/vending/hydronutrients/brig	871b97290cda6f4c	*
+/obj/machinery/vending/hydroseeds	700a46eda6d49432	*
+/obj/machinery/vending/loadout	9961728b84f7c657	*
+/obj/machinery/vending/loadout/accessory	92ffa7e1aa246442	*
+/obj/machinery/vending/loadout/clothing	36d5bc8e255cefc1	*
+/obj/machinery/vending/loadout/costume	17b7833314b398ca	*
+/obj/machinery/vending/loadout/gadget	fd5ddbd883227670	*
+/obj/machinery/vending/loadout/loadout_misc	a1b0f422f001276c	*
+/obj/machinery/vending/loadout/overwear	e69598d968fb619e	*
+/obj/machinery/vending/loadout/uniform	1392e2aee8b32b81	*
+/obj/machinery/vending/magivend	21667bf0194998b1	*
+/obj/machinery/vending/medical	8543c93a6b27e8d8	*
+/obj/machinery/vending/nifsoft_shop	a9b4a4f08a503eed	*
+/obj/machinery/vending/nukie	3ee90be8bacff923	*
+/obj/machinery/vending/phoronresearch	f49ba78b339582bf	*
+/obj/machinery/vending/radren	3d87cb0508fa8c4b	*
+/obj/machinery/vending/robotics	78696561ad982caf	*
+/obj/machinery/vending/security	0c26478584045ade	*
+/obj/machinery/vending/security/yw	2c0a5ca40239c924	*
+/obj/machinery/vending/security_armor	87981c593675a0eb	*
+/obj/machinery/vending/security_armory_armor	f726ac0492c23dec	*
+/obj/machinery/vending/snack	5af39d40531ace49	*
+/obj/machinery/vending/snix	71e4ea8533cc8b25	*
+/obj/machinery/vending/snlvend	d75ac2242742209c	*
+/obj/machinery/vending/sol	90d76f1c38137c63	*
+/obj/machinery/vending/sovietsoda	fc99f993fd361a4b	*
+/obj/machinery/vending/sovietvend	65a3ebcfce65a90f	*
+/obj/machinery/vending/starhunter_farmer	ac2b806f2058eb2e	*
+/obj/machinery/vending/starhunter_miner	cfe6c53a70d6a186	*
+/obj/machinery/vending/tool	edbfa4a6ae6064c9	*
+/obj/machinery/vending/virtual_autodrobe	2f383a3cd7935bf2	*
+/obj/machinery/vending/wallmed1	16b1440f3616f2be	*
+/obj/machinery/vending/wallmed1/public	90df673864b0cdf4	*
+/obj/machinery/vending/wallmed2	98330efdfd22dc23	*
+/obj/machinery/vending/wallmed_airlock	2c9be64795e67017	*
+/obj/machinery/vending/wardrobe	13afec570582fc5a	*
+/obj/machinery/vending/wardrobe/atmosdrobe	1cf1147d4f83fc98	*
+/obj/machinery/vending/wardrobe/bardrobe	da7e2e7d92ee2b54	*
+/obj/machinery/vending/wardrobe/cargodrobe	cdadaa2e751c85dc	*
+/obj/machinery/vending/wardrobe/chapdrobe	df8d60159a794fda	*
+/obj/machinery/vending/wardrobe/chefdrobe	f85265a2327ca06e	*
+/obj/machinery/vending/wardrobe/chemdrobe	36a24e823328edf6	*
+/obj/machinery/vending/wardrobe/clowndrobe	d852c703ecd747dc	*
+/obj/machinery/vending/wardrobe/detdrobe	96bc774c393990d2	*
+/obj/machinery/vending/wardrobe/engidrobe	af4e1a30354dba0f	*
+/obj/machinery/vending/wardrobe/genedrobe	ce0777c6bb2bb443	*
+/obj/machinery/vending/wardrobe/hydrobe	0796185b4e445276	*
+/obj/machinery/vending/wardrobe/janidrobe	cabeb7e7e2cd4a0e	*
+/obj/machinery/vending/wardrobe/lawdrobe	600186e1105c66de	*
+/obj/machinery/vending/wardrobe/medidrobe	f01478df80f98fb1	*
+/obj/machinery/vending/wardrobe/mimedrobe	f7c7bca7f7c307c4	*
+/obj/machinery/vending/wardrobe/robodrobe	3eb56c0577531dd5	*
+/obj/machinery/vending/wardrobe/scidrobe	e76a4e96279fdc3e	*
+/obj/machinery/vending/wardrobe/secdrobe	13ecf68b8d521fb3	*
+/obj/machinery/vending/wardrobe/virodrobe	2a5f91721427db97	*
+/obj/machinery/vending/weeb	0ceeecabd689bdfd	*
 /obj/machinery/vitals_monitor	586681f57b0e5864	*
 /obj/machinery/vr_sleeper	3bd65236868c2a1c	active_power_usage,avatar,base_state,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,smoke,use_power
 /obj/machinery/vr_sleeper/alien	3c728941f69bd50e	active_power_usage,avatar,base_state,circuit,component_parts,dir_at_make,idle_power_usage,maintenance_flags,panel_open,power_area,power_channel,power_forced,smoke,use_power
@@ -18370,10 +18370,10 @@
 /obj/sc_away_spawner	50d6db53ad943b1d	
 /obj/shuttle_connector	12297107c8885b21	
 /obj/singularity	010706773956de38	allowed_size,chained,consume_range,current_size,dissipate,dissipate_delay,dissipate_strength,dissipate_track,energy,event_chance,grav_pull,last_failed_movement,move_self,target
-/obj/singularity/energy_ball	a44a8f57893cf708	*
+/obj/singularity/energy_ball	928ce220bdc5c0f0	*
 /obj/singularity/narsie	6809df6b9ed53bab	allowed_size,chained,consume_range,current_size,dissipate,dissipate_delay,dissipate_strength,dissipate_track,energy,event_chance,grav_pull,last_failed_movement,move_self,target
-/obj/singularity/narsie/large	5b2a8496c6305ae5	allowed_size,cause_hell,chained,consume_range,current_size,dissipate,dissipate_delay,dissipate_strength,dissipate_track,energy,event_chance,grav_pull,last_failed_movement,move_self,target
-/obj/singularity/narsie/large/exit	a363d9c8b9e37088	*
+/obj/singularity/narsie/large	19049a341782c808	allowed_size,calls_evac,cause_hell,chained,consume_range,current_size,dissipate,dissipate_delay,dissipate_strength,dissipate_track,energy,event_chance,grav_pull,last_failed_movement,move_self,target
+/obj/singularity/narsie/large/exit	26bab6b0101f2b20	*
 /obj/singularity/narsie/wizard	495425c95fe4b891	allowed_size,chained,consume_range,current_size,dissipate,dissipate_delay,dissipate_strength,dissipate_track,energy,event_chance,grav_pull,last_failed_movement,move_self,target
 /obj/skeleton	2ed5b46bf0037820	
 /obj/soulgem	6d86566764bb344e	brainmobs
@@ -18585,35 +18585,35 @@
 /obj/structure/bigDelivery	bbb6dc99339a78d3	examtext,nameset,sortTag
 /obj/structure/biowaste_tank	dad4dc8e6497cd1d	
 /obj/structure/blob	62422e9dc163fd9a	base_name,look_tint,look_title,overmind
-/obj/structure/blob/core	576d1b9579eb8fa8	*
-/obj/structure/blob/core/blazing_oil	40ed62e368fc62b7	*
-/obj/structure/blob/core/classic	b4a8e6cb71208178	*
-/obj/structure/blob/core/cryogenic_goo	519869093aa020c1	*
-/obj/structure/blob/core/ectoplasmic_horror	776c1874db10d121	*
-/obj/structure/blob/core/electromagnetic_web	d20f47b868d938da	*
-/obj/structure/blob/core/energized_jelly	9d1ef769caea6cae	*
-/obj/structure/blob/core/explosive_lattice	51de577c373f0653	*
-/obj/structure/blob/core/fabrication_swarm	5001761ddbfbe990	*
-/obj/structure/blob/core/fulminant_organism	7ff907893bedf570	*
-/obj/structure/blob/core/fungal_bloom	47d3241103aa118a	*
-/obj/structure/blob/core/grey_goo	67f2f3be7c07c0bd	*
-/obj/structure/blob/core/living_agate	aa03c352c3784dff	*
-/obj/structure/blob/core/player	2020881980b4d127	*
-/obj/structure/blob/core/pressurized_slime	2a02841bfa460d68	*
-/obj/structure/blob/core/radioactive_ooze	c7c455977ab79da3	*
-/obj/structure/blob/core/random_easy	a3d8a203fb13684e	*
-/obj/structure/blob/core/random_hard	6ea769d78359b13d	*
-/obj/structure/blob/core/random_medium	da7bbf18008b7fa9	*
-/obj/structure/blob/core/ravenous_macrophage	10d746f356135ebe	*
-/obj/structure/blob/core/reactive_spines	e9dcd1b90865d061	*
-/obj/structure/blob/core/roiling_mold	47c949d61f64e19f	*
-/obj/structure/blob/core/shifting_fragments	7629647b15fd1a38	*
-/obj/structure/blob/core/synchronous_mesh	843ef58e5785ca20	*
-/obj/structure/blob/core/volatile_alluvium	d0e1c296588e5674	*
+/obj/structure/blob/core	f9e58da707a0e13f	*
+/obj/structure/blob/core/blazing_oil	0b7cf4d303db3e23	*
+/obj/structure/blob/core/classic	3137f798d931ea22	*
+/obj/structure/blob/core/cryogenic_goo	067b741c27a7c4d4	*
+/obj/structure/blob/core/ectoplasmic_horror	af9c032e75642c04	*
+/obj/structure/blob/core/electromagnetic_web	3dfcbc41285b6b3b	*
+/obj/structure/blob/core/energized_jelly	d9789e1ef99ebd8e	*
+/obj/structure/blob/core/explosive_lattice	969f6d386f8a7237	*
+/obj/structure/blob/core/fabrication_swarm	4c41e0ef5249e14b	*
+/obj/structure/blob/core/fulminant_organism	3289e91569ba15fd	*
+/obj/structure/blob/core/fungal_bloom	6035916201ad4e1e	*
+/obj/structure/blob/core/grey_goo	b0123ce31bcf7886	*
+/obj/structure/blob/core/living_agate	7c2c140fa7db52b8	*
+/obj/structure/blob/core/player	52d8e170c0297819	*
+/obj/structure/blob/core/pressurized_slime	eb8394263bfd9cf4	*
+/obj/structure/blob/core/radioactive_ooze	1544b3aa5741944f	*
+/obj/structure/blob/core/random_easy	7132eb25592c85b9	*
+/obj/structure/blob/core/random_hard	ea12597b27666392	*
+/obj/structure/blob/core/random_medium	40514451ac2bb483	*
+/obj/structure/blob/core/ravenous_macrophage	25d73b51522544f8	*
+/obj/structure/blob/core/reactive_spines	ce01c2c0e8c80c3c	*
+/obj/structure/blob/core/roiling_mold	2aa6a71d3ea9daba	*
+/obj/structure/blob/core/shifting_fragments	a59f724ea0479de2	*
+/obj/structure/blob/core/synchronous_mesh	83505f33b9080e6c	*
+/obj/structure/blob/core/volatile_alluvium	febb8d54fc234608	*
 /obj/structure/blob/factory	99a90e5dc96becca	base_name,look_tint,look_title,overmind
 /obj/structure/blob/factory/sluggish	1bf5582876a7ba86	base_name,look_tint,look_title,overmind
 /obj/structure/blob/factory/turret	31e6f07fc8c69ed4	base_name,look_tint,look_title,overmind
-/obj/structure/blob/node	95f5bdb5ebebda88	*
+/obj/structure/blob/node	a560092bb566af63	*
 /obj/structure/blob/normal	c6205b5499b81892	base_name,look_tint,look_title,overmind
 /obj/structure/blob/resource	c394745a90db29bb	base_name,look_tint,look_title,overmind
 /obj/structure/blob/resource/sluggish	4386b64c8c51d26a	base_name,look_tint,look_title,overmind
@@ -18695,128 +18695,128 @@
 /obj/structure/closet/cabinet	68b8a3230fde778c	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/chefcloset	396c1c8d3336ecbe	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/coffin	16d4a5a1f7dabb83	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
-/obj/structure/closet/crate	5e601f4cd92d95db	*
-/obj/structure/closet/crate/aether	68c7b36f4cbe76d7	*
-/obj/structure/closet/crate/allico	e2b5434b50a9addf	*
-/obj/structure/closet/crate/bin	775bce86d6dc7fcc	*
-/obj/structure/closet/crate/carp	cac6176d73b101ef	*
-/obj/structure/closet/crate/centauri	23c9aa2b07f7b9cd	*
-/obj/structure/closet/crate/chest	ef9c652c9338dff5	*
-/obj/structure/closet/crate/cooper	e709ef2d2d737507	*
-/obj/structure/closet/crate/coyote_salvage	176af30e8ae492b0	*
-/obj/structure/closet/crate/critter	2b66fbc96ee5c979	*
-/obj/structure/closet/crate/desatti	bb18f757cbad2a5b	*
-/obj/structure/closet/crate/einstein	28e0fae9b94c5f3c	*
-/obj/structure/closet/crate/engineering	a55ba6e0de12727d	*
-/obj/structure/closet/crate/engineering/electrical	c5e81c9ee277767f	*
-/obj/structure/closet/crate/fennec	2859ff97678529fd	*
-/obj/structure/closet/crate/focalpoint	739d0d2483d95827	*
-/obj/structure/closet/crate/freezer	10a46a6faf466e8a	*
-/obj/structure/closet/crate/freezer/centauri	2bbfa0584d8c5408	*
-/obj/structure/closet/crate/freezer/nanotrasen	3f7abb1086da65f1	*
-/obj/structure/closet/crate/freezer/rations	9c2649f8d1544e61	*
-/obj/structure/closet/crate/freezer/veymed	dd336c0aace818ba	*
-/obj/structure/closet/crate/freezer/zenghu	504371ffa429f77a	*
-/obj/structure/closet/crate/galaksi	0787f3e548049fc3	*
-/obj/structure/closet/crate/gilthari	9239902fc0ab875d	*
-/obj/structure/closet/crate/grayson	85076fce5d70c983	*
-/obj/structure/closet/crate/hedberg	0a0141c5c7930a74	*
-/obj/structure/closet/crate/heph	99f0622d7ea0e65e	*
-/obj/structure/closet/crate/hydroponics	c3d03a817625e6ee	*
-/obj/structure/closet/crate/hydroponics/exotic	9b19e26c17aa7050	*
-/obj/structure/closet/crate/hydroponics/prespawned	8cc9b58eb9434d86	*
-/obj/structure/closet/crate/internals	26f6adf12a0fd02b	*
-/obj/structure/closet/crate/large	f586eeba47d2f932	*
-/obj/structure/closet/crate/large/aether	279e0f0d659c6ca6	*
-/obj/structure/closet/crate/large/critter	960117008f90667f	*
-/obj/structure/closet/crate/large/einstein	be50b7e8ae87375e	*
-/obj/structure/closet/crate/large/nanotrasen	4ac36d8d6f209972	*
-/obj/structure/closet/crate/large/secure	b96b4788a24e75c2	*
-/obj/structure/closet/crate/large/secure/heph	b12f83e279a3f583	*
-/obj/structure/closet/crate/large/secure/xion	352dba1553aa2076	*
-/obj/structure/closet/crate/large/xion	1e6fafda3c064a4c	*
-/obj/structure/closet/crate/laundry	c3b0d99eb126c41f	*
-/obj/structure/closet/crate/mail	ccb86f4f22af1126	*
-/obj/structure/closet/crate/mail/full	f0cb5c85d4ee3050	*
-/obj/structure/closet/crate/medical	3c83ba81a5449476	*
-/obj/structure/closet/crate/medical/blood	873e4ac493c90405	*
-/obj/structure/closet/crate/mimic	eff4457c3a549115	*
-/obj/structure/closet/crate/mimic/airlock	adba744c74559c88	*
-/obj/structure/closet/crate/mimic/airlock/cointoss	54a4c0ffa004369f	*
-/obj/structure/closet/crate/mimic/airlock/dangerous	e3187579818be361	*
-/obj/structure/closet/crate/mimic/airlock/guaranteed	5144e0700f94553a	*
-/obj/structure/closet/crate/mimic/airlock/safe	cb71c4f64722d7db	*
-/obj/structure/closet/crate/mimic/closet	80f7573f4aac0d3d	*
-/obj/structure/closet/crate/mimic/closet/cointoss	5a1cf2e378317ad9	*
-/obj/structure/closet/crate/mimic/closet/dangerous	d5406c2dd27a4221	*
-/obj/structure/closet/crate/mimic/closet/guaranteed	83d534bea34ead68	*
-/obj/structure/closet/crate/mimic/closet/safe	d9cf35bd6d246631	*
-/obj/structure/closet/crate/mimic/cointoss	8bbe6e2aa7122313	*
-/obj/structure/closet/crate/mimic/dangerous	89ae77ee2987199a	*
-/obj/structure/closet/crate/mimic/guaranteed	10f9726e8683e618	*
-/obj/structure/closet/crate/mimic/guaranteed/chest	b20b461380489611	*
-/obj/structure/closet/crate/mimic/safe	2834173b655e5209	*
-/obj/structure/closet/crate/miningcar	cd2f3751338720ca	*
-/obj/structure/closet/crate/morpheus	35b81fd086cfcb79	*
-/obj/structure/closet/crate/nanomed	17065d6588c39787	*
-/obj/structure/closet/crate/nanothreads	1fde2bb8679631cb	*
-/obj/structure/closet/crate/nanotrasen	4a8d2cff69b2fe37	*
-/obj/structure/closet/crate/nukies	d9d5f46b7b250fff	*
-/obj/structure/closet/crate/oculum	39988fae1e8b7d80	*
-/obj/structure/closet/crate/oldreactor	04550fbfd1db7075	*
-/obj/structure/closet/crate/plastic	13cc06e3129913f0	*
-/obj/structure/closet/crate/radiation	4f0cb8a5a5544b5f	*
-/obj/structure/closet/crate/rcd	d804faf2362825a9	*
-/obj/structure/closet/crate/science	723ae9a5e438f6d0	*
-/obj/structure/closet/crate/secure	53ffaddf4f571c1a	*
-/obj/structure/closet/crate/secure/aether	a1f0207132221d26	*
-/obj/structure/closet/crate/secure/bin	2a6c6844d48052c3	*
-/obj/structure/closet/crate/secure/bishop	9fc5a9c64a242aca	*
-/obj/structure/closet/crate/secure/cybersolutions	ede65ee52cb8cfc0	*
-/obj/structure/closet/crate/secure/einstein	b13180ac950b5837	*
-/obj/structure/closet/crate/secure/engineering	fc50793e69e7104a	*
-/obj/structure/closet/crate/secure/focalpoint	c571a1269cede8b8	*
-/obj/structure/closet/crate/secure/gear	8f56028391945323	*
-/obj/structure/closet/crate/secure/gilthari	0b9dc0d36bc8d7aa	*
-/obj/structure/closet/crate/secure/grayson	cbb82c8461afdac7	*
-/obj/structure/closet/crate/secure/hedberg	7d6700f20dc82a6d	*
-/obj/structure/closet/crate/secure/heph	1bd09c8a7a396a5d	*
-/obj/structure/closet/crate/secure/hydrosec	cf55b23981d4a67d	*
-/obj/structure/closet/crate/secure/large	4eb4a8a92baeb7cf	*
-/obj/structure/closet/crate/secure/large/aether	a7a4d0cd289ba7a4	*
-/obj/structure/closet/crate/secure/large/einstein	a5a54810d0f72c6f	*
-/obj/structure/closet/crate/secure/large/nanotrasen	bfed117ea86ec215	*
-/obj/structure/closet/crate/secure/large/reinforced	a5104739ce89c21b	*
-/obj/structure/closet/crate/secure/lawson	d87eb8985a54bd8e	*
-/obj/structure/closet/crate/secure/loot	13f9254ccb8795ae	*
-/obj/structure/closet/crate/secure/lootsafe	edec9df7aa06631c	*
-/obj/structure/closet/crate/secure/lootsafe/devillock	1f54cf6235b2b2c2	*
-/obj/structure/closet/crate/secure/lootsafe/numberlock	848d08e957b8625b	*
-/obj/structure/closet/crate/secure/lootsafe/numberlock/extraguard	d2056da6c1fc6d9d	*
-/obj/structure/closet/crate/secure/lootsafe/numberlock/weak	a5b20cfbe9be314e	*
-/obj/structure/closet/crate/secure/morpheus	be64a6caff579524	*
-/obj/structure/closet/crate/secure/nanomed	79efbcd75763b7bd	*
-/obj/structure/closet/crate/secure/nanotrasen	ea6a9513f64c90ae	*
-/obj/structure/closet/crate/secure/phoron	6def355d1a8f2326	*
-/obj/structure/closet/crate/secure/saare	c9b6ed97616958e2	*
-/obj/structure/closet/crate/secure/scg	722d4192e28dfb43	*
-/obj/structure/closet/crate/secure/science	c6f6c956c9ec889e	*
-/obj/structure/closet/crate/secure/veymed	57ea6278573049f4	*
-/obj/structure/closet/crate/secure/ward	ed1b4ed511f48fb5	*
-/obj/structure/closet/crate/secure/weapon	53d84897e32a37d6	*
-/obj/structure/closet/crate/secure/xion	d70e94dae8591f6a	*
-/obj/structure/closet/crate/secure/zenghu	9e170a3976dd6b8e	*
-/obj/structure/closet/crate/solar	3670a113d92774e6	*
-/obj/structure/closet/crate/thinktronic	7ecdf044d6fc365a	*
-/obj/structure/closet/crate/trashcart	5e38d64f8957f54b	*
-/obj/structure/closet/crate/ummarcar	54077c866dca7808	*
-/obj/structure/closet/crate/unathi	70c02fd3fe525117	*
-/obj/structure/closet/crate/veymed	80b00b2d0c232d50	*
-/obj/structure/closet/crate/ward	97e5e0da2bacbe59	*
-/obj/structure/closet/crate/weapon	cddba7c77aeb6a2e	*
-/obj/structure/closet/crate/wooden	6f75567dd9fe05d8	*
-/obj/structure/closet/crate/xion	3aa4a1552f7010a4	*
-/obj/structure/closet/crate/zenghu	5a5faa09843e84ed	*
+/obj/structure/closet/crate	d61ec3fc25f85196	*
+/obj/structure/closet/crate/aether	e9195c69170a2ca8	*
+/obj/structure/closet/crate/allico	dbf741420636a08a	*
+/obj/structure/closet/crate/bin	9e43629201404120	*
+/obj/structure/closet/crate/carp	83115f57a01a624e	*
+/obj/structure/closet/crate/centauri	84c3db3d7318171f	*
+/obj/structure/closet/crate/chest	2b59ade15c6f754e	*
+/obj/structure/closet/crate/cooper	6ace59529e7d9c61	*
+/obj/structure/closet/crate/coyote_salvage	8a7137c1d04541b0	*
+/obj/structure/closet/crate/critter	ec2082fc516a8245	*
+/obj/structure/closet/crate/desatti	78224571c707120d	*
+/obj/structure/closet/crate/einstein	e48b9a67d3744841	*
+/obj/structure/closet/crate/engineering	91efada6cc72fb81	*
+/obj/structure/closet/crate/engineering/electrical	a868af511506ff29	*
+/obj/structure/closet/crate/fennec	128363d4bf40966a	*
+/obj/structure/closet/crate/focalpoint	ac71947b8225325e	*
+/obj/structure/closet/crate/freezer	675477fdddd8a08c	*
+/obj/structure/closet/crate/freezer/centauri	ac61ec9ad8ceaa2b	*
+/obj/structure/closet/crate/freezer/nanotrasen	30a2b88158b4b64a	*
+/obj/structure/closet/crate/freezer/rations	3e1ac60f987d866b	*
+/obj/structure/closet/crate/freezer/veymed	637f0427c31fda8c	*
+/obj/structure/closet/crate/freezer/zenghu	04e46a20035536d0	*
+/obj/structure/closet/crate/galaksi	c384c451676203bf	*
+/obj/structure/closet/crate/gilthari	9d383507ee1007b3	*
+/obj/structure/closet/crate/grayson	622607bb7461d8bd	*
+/obj/structure/closet/crate/hedberg	e0cf687680164499	*
+/obj/structure/closet/crate/heph	6d780e471024ecac	*
+/obj/structure/closet/crate/hydroponics	fb1b0597f8b2d4f5	*
+/obj/structure/closet/crate/hydroponics/exotic	e2cadb75527de7cc	*
+/obj/structure/closet/crate/hydroponics/prespawned	4d72c34b90cb3610	*
+/obj/structure/closet/crate/internals	ca4d879d0666efd1	*
+/obj/structure/closet/crate/large	6988e10475bfdace	*
+/obj/structure/closet/crate/large/aether	45bf1ef4575706cc	*
+/obj/structure/closet/crate/large/critter	af951e8e6426a402	*
+/obj/structure/closet/crate/large/einstein	a547e90ef8e56d5a	*
+/obj/structure/closet/crate/large/nanotrasen	ea02e70e52354860	*
+/obj/structure/closet/crate/large/secure	c38d2abb1a8e66bf	*
+/obj/structure/closet/crate/large/secure/heph	e6e3352e31cef889	*
+/obj/structure/closet/crate/large/secure/xion	aa261b5410821855	*
+/obj/structure/closet/crate/large/xion	a400232e555d57c0	*
+/obj/structure/closet/crate/laundry	1921b9d156e6e45a	*
+/obj/structure/closet/crate/mail	c36b8938e603562e	*
+/obj/structure/closet/crate/mail/full	4b1d7a423bad760a	*
+/obj/structure/closet/crate/medical	df506e27df910615	*
+/obj/structure/closet/crate/medical/blood	2f1c5c0e870c98f9	*
+/obj/structure/closet/crate/mimic	588129039e3b0414	*
+/obj/structure/closet/crate/mimic/airlock	d40dc16917d72f48	*
+/obj/structure/closet/crate/mimic/airlock/cointoss	cbe3556d340138bc	*
+/obj/structure/closet/crate/mimic/airlock/dangerous	3524d5bf31bf6be5	*
+/obj/structure/closet/crate/mimic/airlock/guaranteed	fe1cf4b0c1532a38	*
+/obj/structure/closet/crate/mimic/airlock/safe	bad965cda8cfac08	*
+/obj/structure/closet/crate/mimic/closet	c550aecf686602fa	*
+/obj/structure/closet/crate/mimic/closet/cointoss	9f8c1257b1300612	*
+/obj/structure/closet/crate/mimic/closet/dangerous	e5d480b4965a1081	*
+/obj/structure/closet/crate/mimic/closet/guaranteed	9ddbc75294bab59f	*
+/obj/structure/closet/crate/mimic/closet/safe	ae5b889a1c8622da	*
+/obj/structure/closet/crate/mimic/cointoss	88ff5c863d013843	*
+/obj/structure/closet/crate/mimic/dangerous	9d98198bdae6451c	*
+/obj/structure/closet/crate/mimic/guaranteed	06acbb46ef5a3ca1	*
+/obj/structure/closet/crate/mimic/guaranteed/chest	d5dd8e1fdd76ac56	*
+/obj/structure/closet/crate/mimic/safe	163202581e4f92fa	*
+/obj/structure/closet/crate/miningcar	988c03416e166ccf	*
+/obj/structure/closet/crate/morpheus	5d5ac4d3338aaf04	*
+/obj/structure/closet/crate/nanomed	55ef5d84af5b515e	*
+/obj/structure/closet/crate/nanothreads	f5be4fac5cb1431a	*
+/obj/structure/closet/crate/nanotrasen	ecf613168758ab95	*
+/obj/structure/closet/crate/nukies	6ca7cb671dc6457c	*
+/obj/structure/closet/crate/oculum	861587d450516d07	*
+/obj/structure/closet/crate/oldreactor	62934c75c182ce19	*
+/obj/structure/closet/crate/plastic	27bdeb33825d8763	*
+/obj/structure/closet/crate/radiation	b74a1191d61440cd	*
+/obj/structure/closet/crate/rcd	6a249bbece0f8e5a	*
+/obj/structure/closet/crate/science	9029d624185f9d24	*
+/obj/structure/closet/crate/secure	5562fc4c8763a9ad	*
+/obj/structure/closet/crate/secure/aether	b842ef55dfa8b600	*
+/obj/structure/closet/crate/secure/bin	19377971363e0732	*
+/obj/structure/closet/crate/secure/bishop	1d23e5edf31ebc28	*
+/obj/structure/closet/crate/secure/cybersolutions	a858aceaedbcff32	*
+/obj/structure/closet/crate/secure/einstein	687ab97763f20016	*
+/obj/structure/closet/crate/secure/engineering	63ff002467b5874c	*
+/obj/structure/closet/crate/secure/focalpoint	ed8fa41f3aa6aa8e	*
+/obj/structure/closet/crate/secure/gear	0f513fec607fcc5c	*
+/obj/structure/closet/crate/secure/gilthari	6082fa221bea8b5b	*
+/obj/structure/closet/crate/secure/grayson	2407698f9b00656d	*
+/obj/structure/closet/crate/secure/hedberg	7a515ec369707283	*
+/obj/structure/closet/crate/secure/heph	4a9507c1fa4ea2dd	*
+/obj/structure/closet/crate/secure/hydrosec	32e9a3a02f92864d	*
+/obj/structure/closet/crate/secure/large	9767ffabdbcfb8a6	*
+/obj/structure/closet/crate/secure/large/aether	0c08ed2a769b653f	*
+/obj/structure/closet/crate/secure/large/einstein	b390f6f2a8588ff2	*
+/obj/structure/closet/crate/secure/large/nanotrasen	50709f636ee8a75d	*
+/obj/structure/closet/crate/secure/large/reinforced	81bd95f1db4f7299	*
+/obj/structure/closet/crate/secure/lawson	2d5f2d23351621fe	*
+/obj/structure/closet/crate/secure/loot	60b25361249aac9d	*
+/obj/structure/closet/crate/secure/lootsafe	ae51b89d0d01c35a	*
+/obj/structure/closet/crate/secure/lootsafe/devillock	62fa1802e742f65b	*
+/obj/structure/closet/crate/secure/lootsafe/numberlock	788fe451bdae2514	*
+/obj/structure/closet/crate/secure/lootsafe/numberlock/extraguard	d71e8adc7a90f5dc	*
+/obj/structure/closet/crate/secure/lootsafe/numberlock/weak	1be66de6b17b47dc	*
+/obj/structure/closet/crate/secure/morpheus	4c30247223700182	*
+/obj/structure/closet/crate/secure/nanomed	bb7a9edf3f074b5d	*
+/obj/structure/closet/crate/secure/nanotrasen	7e320fbea9156846	*
+/obj/structure/closet/crate/secure/phoron	e03ceca772027a57	*
+/obj/structure/closet/crate/secure/saare	e70dca4a5e7ef853	*
+/obj/structure/closet/crate/secure/scg	29bc595f458b6a5a	*
+/obj/structure/closet/crate/secure/science	455d5d8b0e6cc9b5	*
+/obj/structure/closet/crate/secure/veymed	463cc57cd63c7b60	*
+/obj/structure/closet/crate/secure/ward	76e966b26aa5bde0	*
+/obj/structure/closet/crate/secure/weapon	eb3126b4963e412d	*
+/obj/structure/closet/crate/secure/xion	67c671cded299887	*
+/obj/structure/closet/crate/secure/zenghu	e7f4bacac45ddc79	*
+/obj/structure/closet/crate/solar	d0ab5f21fa30dca3	*
+/obj/structure/closet/crate/thinktronic	f1e34336f0940717	*
+/obj/structure/closet/crate/trashcart	0f9b9c415b13999c	*
+/obj/structure/closet/crate/ummarcar	b564f828770b8754	*
+/obj/structure/closet/crate/unathi	471037385f6e5371	*
+/obj/structure/closet/crate/veymed	135f8a9b8ad9d43b	*
+/obj/structure/closet/crate/ward	25718c10f5f936f9	*
+/obj/structure/closet/crate/weapon	f7ebe9b7571a3155	*
+/obj/structure/closet/crate/wooden	f9dc9817a7b6d59b	*
+/obj/structure/closet/crate/xion	5c1124657d503a6d	*
+/obj/structure/closet/crate/zenghu	30092d28fdf3f2b5	*
 /obj/structure/closet/debug	f4369e4238acb6e2	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/emcloset	fd5ff10dfae40609	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/emcloset/legacy	d91712d626415568	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
@@ -18949,7 +18949,7 @@
 /obj/structure/closet/secure_closet/warden/snowfield	ef9d1f4977c3edc3	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/secure_closet/xenoarchaeologist	37573e9595be35a7	bluespace_exit_points,broken,closet_appearance,collects_in_play,door_obj,is_animating_door,locked,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/shuttleemerg	c97aeeccf2377612	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
-/obj/structure/closet/statue	c3df60a9e3adab5e	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,starts_with,statue_of,statue_shape,storage_capacity,storage_cost,timer
+/obj/structure/closet/statue	324dcc836e62cd95	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,original_int,release_delay,starts_with,statue_of,statue_shape,storage_capacity,storage_cost,timer
 /obj/structure/closet/syndicate	f3e2d407556182b1	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/nuclear	cb98b0185be750c5	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
 /obj/structure/closet/syndicate/personal	f94a36d013668e10	bluespace_exit_points,closet_appearance,collects_in_play,door_obj,is_animating_door,open_sound,opened,starts_with,storage_capacity,storage_cost
@@ -19171,7 +19171,7 @@
 /obj/structure/door_assembly/multi_tile	8b2b25ca1a53f260	base_icon_state,base_name,created_name,electronics,glass
 /obj/structure/drop_pod	5813b19496d55f18	air,auto_open,cargo_at_make
 /obj/structure/drop_pod/polite	2a0ea8f5e3db3762	air,auto_open,cargo_at_make
-/obj/structure/droppod_door	25c3399194be1a11	*
+/obj/structure/droppod_door	1e2d700b61c525a7	*
 /obj/structure/dummystairs	5792d9ca98e70ae8	
 /obj/structure/dummystairs/bronzeledge	fc8f077ab093d06b	
 /obj/structure/dummystairs/greyledge	7dc6838a3672d73d	
@@ -19198,30 +19198,30 @@
 /obj/structure/fans/hardlight/colorable	3601efc4e4170111	
 /obj/structure/fans/hardlight/colorable/abductor	302490bbca02aeb6	
 /obj/structure/fans/tiny	8709fdb8df9d6011	
-/obj/structure/fence	9607aca29c37e487	*
-/obj/structure/fence/corner	9dd24ce66932e029	*
-/obj/structure/fence/corner/electric	8f42bb09baf80ddf	*
-/obj/structure/fence/cut	007b4513e3b22fa6	*
-/obj/structure/fence/cut/large	9abd596a1f9bb8d2	*
-/obj/structure/fence/cut/large/electric	0ed94b6d21153cda	*
-/obj/structure/fence/cut/medium	fcb508a90db4f29d	*
-/obj/structure/fence/cut/medium/electric	ec0f7c57fd4c4c81	*
-/obj/structure/fence/door	bbdf1c86c9110172	*
-/obj/structure/fence/door/electric	9bf2d6d225ad1c84	*
-/obj/structure/fence/door/locked	b1f835c5cdba865d	*
-/obj/structure/fence/door/opened	0b298edb561a0fbe	*
-/obj/structure/fence/electric	443c6e3ebf18a021	*
-/obj/structure/fence/electric_sign	2279317dea1a486d	*
-/obj/structure/fence/end	ac49582d78bc032a	*
-/obj/structure/fence/end/electric	9d1af872bdd5b4ec	*
-/obj/structure/fence/hedge	111fe6b74bad951b	*
-/obj/structure/fence/hedge/corner	02a3581101564c19	*
-/obj/structure/fence/hedge/end	0fc0fb072aa348af	*
-/obj/structure/fence/post	f7b2d0f10e9e9eac	*
-/obj/structure/fence/post/electric	87f668f69c2ff4bc	*
-/obj/structure/fence/wood	f1be8110b5f5b702	*
-/obj/structure/fence/wood/corner	36536798447a6366	*
-/obj/structure/fence/wood/end	b3c302378258c3a9	*
+/obj/structure/fence	d66574e7975618df	*
+/obj/structure/fence/corner	6a6209743852815a	*
+/obj/structure/fence/corner/electric	1925e6b2c32b720d	*
+/obj/structure/fence/cut	113804ef7d994410	*
+/obj/structure/fence/cut/large	3c9cc7ec1b261e81	*
+/obj/structure/fence/cut/large/electric	a444bb046e4b0ce1	*
+/obj/structure/fence/cut/medium	033b47630024b876	*
+/obj/structure/fence/cut/medium/electric	b64b579a90bd9531	*
+/obj/structure/fence/door	cd2eb42e52b8de53	*
+/obj/structure/fence/door/electric	573e7ca7b3b4e257	*
+/obj/structure/fence/door/locked	fbb39860c5aa090b	*
+/obj/structure/fence/door/opened	e8953b54f12eb6c6	*
+/obj/structure/fence/electric	b546aa57b7dd66ca	*
+/obj/structure/fence/electric_sign	94c828791f835e97	*
+/obj/structure/fence/end	aff89ab9700796be	*
+/obj/structure/fence/end/electric	cdcc89725578d4e1	*
+/obj/structure/fence/hedge	1b40d3e9059c7d01	*
+/obj/structure/fence/hedge/corner	aa5e5622a53803cc	*
+/obj/structure/fence/hedge/end	35c8db7e16166e20	*
+/obj/structure/fence/post	9dfd97b95a24df29	*
+/obj/structure/fence/post/electric	87bcb21ddb8fc53a	*
+/obj/structure/fence/wood	c75145c7a0cd2edd	*
+/obj/structure/fence/wood/corner	5bb3456d0bae8b58	*
+/obj/structure/fence/wood/end	261c3ffd14681fdd	*
 /obj/structure/filingcabinet	be0ef1b75ee4be4f	
 /obj/structure/filingcabinet/chestdrawer	9cd7f6af41f28427	
 /obj/structure/filingcabinet/filingcabinet	60296812bcd37e11	
@@ -19425,13 +19425,13 @@
 /obj/structure/glamour_ring	74877268ff32d1e3	
 /obj/structure/gootrap	65b245f12685a691	basecolor
 /obj/structure/gravemarker	72d49e14ee1704a8	epitaph,marker_material
-/obj/structure/grille	60446dcfae34fc50	*
-/obj/structure/grille/bay	6568446545dbc082	*
-/obj/structure/grille/broken	ff6b7c8020737b5f	*
-/obj/structure/grille/broken/cult	2087e398c8970731	*
-/obj/structure/grille/broken/rustic	a8902e56ba3e7b7c	*
-/obj/structure/grille/cult	bad751596d22fceb	*
-/obj/structure/grille/rustic	7f22729fe5e1c62a	*
+/obj/structure/grille	a2a3aedbb5883374	*
+/obj/structure/grille/bay	572930a707d35017	*
+/obj/structure/grille/broken	00cc1b0df897f6e2	*
+/obj/structure/grille/broken/cult	9daf97cda51cc08d	*
+/obj/structure/grille/broken/rustic	175dc411bd52189f	*
+/obj/structure/grille/cult	12b5a29d40eb4024	*
+/obj/structure/grille/rustic	641d39866953e2b5	*
 /obj/structure/handrail	477c4bc5bff53b30	
 /obj/structure/hoist	1b99e280adf48a1c	broken,hoistee,source_hook
 /obj/structure/holohoop	92c9df9159763d9f	
@@ -19454,9 +19454,9 @@
 /obj/structure/inflatable/door	94280ad73c08440b	*
 /obj/structure/janitorialcart	671ed436a957d406	mybag,mybucket,mymop,myreplacer,myspray,signs,tgui_icons
 /obj/structure/kitchenspike	21eb68bde984aa2a	occupied
-/obj/structure/ladder	a364c131265a90d6	*
-/obj/structure/ladder/up	f64f8f5c8c400522	*
-/obj/structure/ladder/updown	112b2ec9d8f3c9f5	*
+/obj/structure/ladder	5f0329c11a3a3dc5	*
+/obj/structure/ladder/up	39647889431514d9	*
+/obj/structure/ladder/updown	276b9e40890e6d1f	*
 /obj/structure/ladder_assembly	9f3979b226076d3d	created_name
 /obj/structure/largecrate	1f939509f20714e7	
 /obj/structure/largecrate/animal	0a37c9c3a869374c	
@@ -19508,9 +19508,9 @@
 /obj/structure/ledge/ledge_nub	bb628a4b44a6dcdc	
 /obj/structure/ledge/ledge_stairs	87cb7204f3ed90b9	
 /obj/structure/ledge_corner	272a3416aabc4dbd	
-/obj/structure/lift	f9be75ebf0e7bf3d	*
-/obj/structure/lift/button	b9953172d7d2fada	*
-/obj/structure/lift/panel	0251a607d62f0617	*
+/obj/structure/lift	a7a0a58442b2b0d1	*
+/obj/structure/lift/button	31631fa42110e721	*
+/obj/structure/lift/panel	b58d75f59c81bf1e	*
 /obj/structure/lightpost	ade3a436c583cdfd	festive,lit
 /obj/structure/lightpost/festive	ef302a7f0af37b53	festive,lit
 /obj/structure/lightpost/festive/unlit	e8557680e802d375	festive,lit
