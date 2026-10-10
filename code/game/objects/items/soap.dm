@@ -17,10 +17,6 @@
 	var/bites = 0
 
 
-CAPABILITIES(/obj/item/soap)
-	reagents(5)
-	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
-
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/soap/proc/roll_icon_state(datum/roller/R)
 	return randomize && R.chance(square_chance) ? "[icon_state]-alt" : icon_state
@@ -38,14 +34,50 @@ CAPABILITIES(/obj/item/soap)
 		var/mob/living/M =	AM
 		M.slip("\the [src.name]",3)
 
+MSG_DEF_SELF(soap/bite_begin, span_warning("You raise the soap to your mouth and prepare to take a bite..."))
+MSG_DEF(soap/scrub_begin, span_warning("You begin to scrub %T% out with %I%..."), "%U% begins to scrub %T% out with %I%.")
+MSG_DEF(soap/clean_begin, span_notice("You begin to clean %T% with %I%..."), "%U% begins to clean %T% with %I%...")
+
+/// Soap used on something close by: a bite of itself, a decal scrubbed out, a dry floor scrubbed, anything else cleaned.
+CAPABILITIES(/obj/item/soap)
+	reagents(5)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	op("bite", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART + 3), answers(INTENT_USE, INTENT_ATTACK), label("Take a bite"), when(req(PROC_REF(bites_own_mouth))),
+		begins(MSG(soap/bite_begin)), wait(0.5 SECONDS), then(PROC_REF(bite_done)))
+	op("scrub_decal", at_target(/obj/effect/decal/cleanable), priority(OP_PRIORITY_PART + 2), answers(INTENT_USE, INTENT_ATTACK), label("Scrub out"), when(req(PROC_REF(plain_click))), needs(req_adjacent()),
+		begins(MSG(soap/scrub_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(scrub_decal_done)))
+	op("scrub_floor", at_target(/turf), priority(OP_PRIORITY_PART + 1), answers(INTENT_USE, INTENT_ATTACK), label("Scrub the floor"), when(req(PROC_REF(plain_click))), when(req(PROC_REF(floor_is_dry))), needs(req_adjacent()),
+		begins(MSG(soap/scrub_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(scrub_floor_done)))
+	op("clean", at_target(/atom), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Clean"), when(req(PROC_REF(plain_click))), when(req(PROC_REF(not_decal_or_turf))), needs(req_adjacent()),
+		begins(MSG(soap/clean_begin)), wait(PROC_REF(clean_time)), then(PROC_REF(clean_done)))
+
+/// The click aims at a human's mouth.
+/obj/item/soap/proc/mouth_aimed(datum/act/op/A)
+	return ishuman(A.target) && read_once(A.actor.zone_sel?.selecting) == O_MOUTH
+
+/obj/item/soap/proc/bites_own_mouth(datum/act/op/A)
+	return mouth_aimed(A) && A.target == A.actor
+
+/// A click that is neither the mouth nor something worn (what afterattack() says about those it answers itself).
+/obj/item/soap/proc/plain_click(datum/act/op/A)
+	if(mouth_aimed(A))
+		return FALSE
+	return !read_once(A.actor.client && (A.target in A.actor.client.screen))
+
+/obj/item/soap/proc/floor_is_dry(datum/act/op/A)
+	return !read_once(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1))
+
+/obj/item/soap/proc/not_decal_or_turf(datum/act/op/A)
+	return !istype(A.target, /obj/effect/decal/cleanable) && !isturf(A.target)
+
+/obj/item/soap/proc/clean_time(datum/act/op/A)
+	return cleanspeed
+
 /obj/item/soap/afterattack(atom/target, mob/user as mob, proximity)
 	. = ..()
 	if(ishuman(target) && user.zone_sel.selecting == O_MOUTH)
-		if(target == user)
-			to_chat(user, span_warning("You raise the soap to your mouth and prepare to take a bite..."))
-			task_timed(user, 0.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
-		else
-			act_message(user, src, others = span_danger("%U% washes \the [target]'s mouth out with %T%!"))
+		if(target != user)
+			act_message(user, src, others = span_danger("%U% washes 	he [target]'s mouth out with %T%!"))
 			//Add pieface cleaning here if that ever gets ported.
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 		return
@@ -55,25 +87,16 @@ CAPABILITIES(/obj/item/soap)
 	//So this is a workaround. This also makes more sense from an IC standpoint. ~Carn
 	if(user.client && (target in user.client.screen))
 		to_chat(user, span_warning("You need to take that [target] off before cleaning it."))
-	else if(istype(target,/obj/effect/decal/cleanable))
-		act_message(user, src, MSG_SELF(span_warning("You begin to scrub \the [target] out with %T%...")), MSG_OTHERS("%U% begins to scrub \the [target] out with %T%."))
-		task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(target, user))
-	else
-		if(istype(target,/turf))
-			if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
-				act_message(user, src, MSG_SELF(span_notice("You effortlessly scrub \the [target]")), MSG_OTHERS("%U% effortlessly scrubs \the [target] out with wet [src]"))
-				var/turf/T = target
-				T.wash(CLEAN_SCRUB)
-				reagents.trans_to_turf(T, 1, 10)
-				return
-			act_message(user, src, MSG_SELF(span_warning("You begin to scrub \the [target] out with %T%...")), MSG_OTHERS("%U% begins to scrub \the [target] out with %T%."))
-			task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(target, user))
-			return
-		act_message(user, src, MSG_SELF(span_notice("You begin to clean \the [target.name] with %T%...")), MSG_OTHERS("%U% begins to clean \the [target.name] with %T%..."))
-		task_timed(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(target))
+	else if(istype(target,/turf))
+		if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
+			act_message(user, src, MSG_SELF(span_notice("You effortlessly scrub 	he [target]")), MSG_OTHERS("%U% effortlessly scrubs 	he [target] out with wet [src]"))
+			var/turf/T = target
+			T.wash(CLEAN_SCRUB)
+			reagents.trans_to_turf(T, 1, 10)
 	return
 
-/obj/item/soap/proc/afterattack_timed_done(mob/user)
+/obj/item/soap/proc/bite_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You gnaw on %T%! This can't be good for you...")), MSG_OTHERS(span_notice("%U% takes a bite out of %T%!")))
 	var/mob/living/carbon/C = user
 	play_sfx(get_turf(C), SFX_ITEMS_EATFOOD, volume = 25, vary = FALSE)
@@ -83,16 +106,25 @@ CAPABILITIES(/obj/item/soap)
 	bites++
 	if(bites >= 5)
 		consume(src, user)
-/obj/item/soap/proc/afterattack_timed_done2(atom/target, mob/user)
-	user.balloon_alert(user, "you scrub \the [target] out.")
+	return OP_OK
+
+/obj/item/soap/proc/scrub_decal_done(datum/act/op/A)
+	var/atom/target = A.target
+	A.actor.balloon_alert(A.actor, "you scrub 	he [target] out.")
 	consumed(target, src)
-/obj/item/soap/proc/afterattack_timed_done3(atom/target, mob/user)
-	user.balloon_alert(user, "you scrub \the [target] clean.")
-	var/turf/T = target
+	return OP_OK
+
+/obj/item/soap/proc/scrub_floor_done(datum/act/op/A)
+	var/turf/T = A.target
+	A.actor.balloon_alert(A.actor, "you scrub 	he [T] clean.")
 	T.wash(CLEAN_SCRUB)
 	reagents.trans_to_turf(T, 1, 10)
-/obj/item/soap/proc/afterattack_timed_done4(atom/target)
+	return OP_OK
+
+/obj/item/soap/proc/clean_done(datum/act/op/A)
+	var/atom/target = A.target
 	target.wash(CLEAN_SCRUB)
+	return OP_OK
 
 /obj/item/soap/nanotrasen
 	name = "Soap (Nanotrasen)"

@@ -30,6 +30,8 @@
 
 CAPABILITIES(/obj/item/bork_medigun/linked)
 	op("cancel_healing", in_hand(), then(PROC_REF(healing_cancelled)))
+	// One beam cycle a second; each cycle asks process_medigun() for the next. The user may walk while it runs; the wait draws nothing (the old task was hidden).
+	op("medigun_cycle", ai(), takes("patient", "filter", "ishealing"), silent_wait(), wait(1 SECOND, keeps = HELD | ALIVE), then(PROC_REF(process_medigun_timed_done)))
 
 /// Preserve the linked device's existing two-hand update and cancellation state.
 /obj/item/bork_medigun/linked/proc/healing_cancelled(datum/act/op/A)
@@ -147,32 +149,25 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	task_start(/datum/task/timed/linked_process_medigun, user, user, receiver = src, H = H, filter = filter, ishealing = ishealing, hidden = TRUE)
-
-
-/datum/task/timed/linked_process_medigun
-	duration = 1 SECOND
-	flags = IGNORE_USER_LOC_CHANGE
-	complete_proc = /obj/item/bork_medigun/linked/proc/process_medigun_timed_done
-	var/mob/living/carbon/human/H
-	var/filter
-	var/ishealing
+	perform_op(user, src, "medigun_cycle", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "filter" = filter, "ishealing" = ishealing))
 
 /// One beam cycle, decided by automated triage: every tag mended is one the patient's
 /// treatment demand asks for.
-/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/task/timed/linked_process_medigun/task)
-	var/mob/living/carbon/human/H = task.H
-	var/mob/user = task.actor
-	var/filter = task.filter
-	var/ishealing = task.ishealing
+/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/filter = A.arg("filter")
+	var/ishealing = A.arg("ishealing")
+	if(QDELETED(H))
+		return OP_FAILED
 	var/washealing = ishealing // Did we heal last cycle
 	ishealing = FALSE // The default is 'we didn't heal this cycle'
 	if(!checked_use(5))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-		return
+		return OP_FAILED
 	if(H.stat == DEAD)
 		process_medigun(H, user, filter)
-		return
+		return OP_OK
 	var/lastier = medigun_base_unit().slaser.get_rating()
 	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 	if(lastier >= 2)
@@ -189,7 +184,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(demand?[TREAT_OXYGENATION])
 		if(!checked_use(min(10, 10 * lastier)))
 			to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-			return
+			return OP_FAILED
 		if(H.mend(TREAT_OXYGENATION, 10 * lastier))
 			ishealing = TRUE
 
@@ -213,6 +208,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 			H.filters -= filter
 
 	process_medigun(H, user, filter, ishealing)
+	return OP_OK
 
 /// Relation view: medigun base unit (reads null once it is gone).
 /obj/item/bork_medigun/linked/proc/medigun_base_unit() as /obj/item/medigun_backpack

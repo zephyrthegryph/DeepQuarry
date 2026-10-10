@@ -49,6 +49,8 @@ CAPABILITIES(/obj/item/uav)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
+	// packing or unpacking it takes ten seconds beside it (chosen from the handle radial below)
+	op("repack", ai(), wait(10 SECONDS), then(PROC_REF(repacked)))
 	// the old attack_hand: on the floor, a radial of what to do with it (elsewhere the click declines to the ordinary hand)
 	op("handle", hand(), label("Handle"),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(handle_options)), "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), when = PROC_REF(uav_on_floor)),
@@ -124,7 +126,7 @@ CAPABILITIES(/obj/item/uav)
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
 				act_message(user, src, MSG_SELF(span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src].")))
-				task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+				perform_op(user, src, "repack", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
@@ -135,8 +137,9 @@ CAPABILITIES(/obj/item/uav)
 				toggle_pairing(user)
 	return OP_OK
 
-/obj/item/uav/proc/attack_hand_timed_done(mob/user)
-	return toggle_packed(user)
+/obj/item/uav/proc/repacked(datum/act/op/A)
+	toggle_packed(A.actor)
+	return OP_OK
 
 /// Old attackby.
 /obj/item/uav/proc/interaction_item(datum/act/op/A)

@@ -82,24 +82,22 @@ TRACKED(/obj/item/rms, stored_charge)
 		to_chat(user, span_notice("The battery has no charge."))
 	else
 		play_sfx(get_turf(src), SFX_MACHINES_CLICK)
-		task_start(/datum/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
+		perform_op(user, src, "drain", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cell" = C, "charge_needed" = charge_needed))
 	set_stored_charge(CLAMP(stored_charge, 0, max_charge))
 
-/datum/task/timed/rms_drain_battery
-	duration = 2
-	complete_proc = /obj/item/rms/proc/drain_battery_timed_done
-	var/charge_needed
-
-/obj/item/rms/proc/drain_battery_timed_done(datum/task/timed/rms_drain_battery/task)
-	var/user = task.actor
-	var/obj/item/cell/C = task.target
-	var/charge_needed = task.charge_needed
+/obj/item/rms/proc/drain_battery_timed_done(datum/act/op/A)
+	var/user = A.actor
+	var/obj/item/cell/C = A.arg("cell")
+	var/charge_needed = A.arg("charge_needed")
+	if(QDELETED(C))
+		return OP_FAILED
 	set_stored_charge(stored_charge + C.charge)
 	if(C.charge > charge_needed) //We only drain what we need!
 		C.use(charge_needed)
 	else
 		C.use(C.charge)
 	to_chat(user, span_notice("You drain [C]."))
+	return OP_OK
 
 /obj/item/rms/proc/consume_resources(amount)
 	set_stored_charge(stored_charge - amount)
@@ -122,17 +120,14 @@ TRACKED(/obj/item/rms, stored_charge)
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
 	play_sfx(src.loc, SFX_MACHINES_CLICK)
-	task_start(/datum/task/timed/rms_use_rms, user, A, receiver = src, product = product)
+	perform_op(user, src, "synthesize", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 
-/datum/task/timed/rms_use_rms
-	duration = 5
-	complete_proc = /obj/item/rms/proc/use_rms_timed_done
+/obj/item/rms/proc/use_rms_timed_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/living/user = op_act.actor
 	var/obj/product
-
-/obj/item/rms/proc/use_rms_timed_done(datum/task/timed/rms_use_rms/task)
-	var/atom/A = task.target
-	var/mob/living/user = task.actor
-	var/obj/product = task.product
+	if(QDELETED(A))
+		return OP_FAILED
 	// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
 	if(overcharge)
 		consume_resources(charge_cost * overcharge_modifier)
@@ -149,6 +144,7 @@ TRACKED(/obj/item/rms, stored_charge)
 
 	fx_sparks(src, 5, FALSE)
 	product.forceMove(get_turf(A))
+	return OP_OK
 
 /obj/item/rms/proc/choose_overcharge(mob/living/user)
 	var/final_product
@@ -251,6 +247,9 @@ CAPABILITIES(/obj/item/rms)
 	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),
 		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	// A battery is drained in two tenths of a second, a sheet is made in half a second; both are started from the click that reached the synthesizer.
+	op("drain", ai(), takes("cell", "charge_needed"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(drain_battery_timed_done)))
+	op("synthesize", ai(), takes("target"), wait(0.5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(use_rms_timed_done)))
 
 /obj/item/rms/proc/operator_living(datum/act/op/A)
 	return isliving(A.actor)

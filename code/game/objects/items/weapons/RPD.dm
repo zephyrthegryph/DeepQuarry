@@ -62,6 +62,12 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	op("pipe_type", ui_act("pipe_type", arg("category", schema_text(4096)), arg("pipe_type", num())), then(PROC_REF(ui_act_pipe_type)))
 	op("setdir", ui_act("setdir", arg("dir", schema_text(4096)), arg("flipped", num())), then(PROC_REF(ui_act_setdir)))
 	op("mode", ui_act("mode", arg("mode", num())), then(PROC_REF(ui_act_mode)))
+	// What a click builds or breaks takes a fraction of a second beside the target; afterattack() picks the one that fits the mode and starts it.
+	op("destroy", ai(), takes("target"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(destroy_pipe_done)))
+	op("build_meter", ai(), takes("target", "layer"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_meter_done)))
+	op("build_sensor", ai(), takes("target"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_sensor_done)))
+	op("build_pipe", ai(), takes("target", "layer", "dir", "flipped", "recipe"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_pipe_done)))
+	op("build_disposal", ai(), takes("target", "dir", "flipped", "recipe"), wait(0.4 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_disposal_done)))
 
 /obj/item/pipe_dispenser/proc/rpd_controls_opened(datum/act/op/A)
 	tgui_interact(A.actor)
@@ -210,7 +216,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
 		play_sfx(src, SFX_MACHINES_CLICK)
-		task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
+		perform_op(user, src, "destroy", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
@@ -229,14 +235,14 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 				play_sfx(src, SFX_MACHINES_CLICK)
 				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					task_start(/datum/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
+					perform_op(user, src, "build_meter", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "layer" = queued_piping_layer))
 				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
-					task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
+					perform_op(user, src, "build_sensor", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 				else if(istype(recipe(), /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))
-					task_start(/datum/task/timed/pipe_dispenser_afterattack2, user, A, queued_piping_layer = queued_piping_layer, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+					perform_op(user, src, "build_pipe", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "layer" = queued_piping_layer, "dir" = queued_p_dir, "flipped" = queued_p_flipped, "recipe" = R))
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe()
@@ -248,48 +254,51 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				play_sfx(src, SFX_MACHINES_CLICK)
-				task_start(/datum/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+				perform_op(user, src, "build_disposal", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "dir" = queued_p_dir, "flipped" = queued_p_flipped, "recipe" = R))
 
 			else
 				return ..()
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done(atom/A)
+/obj/item/pipe_dispenser/proc/destroy_pipe_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	animate_deletion(A)
-/datum/task/timed/pipe_dispenser_afterattack
-	duration = 2
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done2
-	var/queued_piping_layer
+	animate_deletion(target)
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done2(datum/task/timed/pipe_dispenser_afterattack/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_piping_layer = task.queued_piping_layer
+/obj/item/pipe_dispenser/proc/build_meter_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	var/mob/user = A.actor
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(A))
-	PM.setAttachLayer(queued_piping_layer)
+	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(target))
+	PM.setAttachLayer(A.arg("layer"))
 	if(mode & WRENCH_MODE)
 		do_wrench(PM, user)
-/obj/item/pipe_dispenser/proc/afterattack_timed_done3(atom/A, mob/user)
+	return OP_OK
+
+/obj/item/pipe_dispenser/proc/build_sensor_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	var/mob/user = A.actor
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
+	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(target))
 	if(mode & WRENCH_MODE)
 		do_wrench(GS, user)
-/datum/task/timed/pipe_dispenser_afterattack2
-	duration = 2
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done4
-	var/queued_piping_layer
-	var/queued_p_dir
-	var/queued_p_flipped
-	var/datum/pipe_recipe/pipe/R
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done4(datum/task/timed/pipe_dispenser_afterattack2/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_piping_layer = task.queued_piping_layer
-	var/queued_p_dir = task.queued_p_dir
-	var/queued_p_flipped = task.queued_p_flipped
-	var/datum/pipe_recipe/pipe/R = task.R
+/obj/item/pipe_dispenser/proc/build_pipe_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/user = op_act.actor
+	var/queued_piping_layer = op_act.arg("layer")
+	var/queued_p_dir = op_act.arg("dir")
+	var/queued_p_flipped = op_act.arg("flipped")
+	var/datum/pipe_recipe/pipe/R = op_act.arg("recipe")
+	if(QDELETED(A))
+		return OP_FAILED
 	activate()
 	var/obj/machinery/atmospherics/path = R.pipe_type
 	var/pipe_item_type = initial(path.construction_type) || /obj/item/pipe
@@ -306,25 +315,22 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 		do_wrench(P, user)
 	else
 		build_effect(P)
-/datum/task/timed/pipe_dispenser_afterattack3
-	duration = 4
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done5
-	var/queued_p_dir
-	var/queued_p_flipped
-	var/datum/pipe_recipe/disposal/R
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done5(datum/task/timed/pipe_dispenser_afterattack3/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_p_dir = task.queued_p_dir
-	var/queued_p_flipped = task.queued_p_flipped
-	var/datum/pipe_recipe/disposal/R = task.R
+/obj/item/pipe_dispenser/proc/build_disposal_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/user = op_act.actor
+	var/queued_p_dir = op_act.arg("dir")
+	var/queued_p_flipped = op_act.arg("flipped")
+	var/datum/pipe_recipe/disposal/R = op_act.arg("recipe")
+	if(QDELETED(A))
+		return OP_FAILED
 	var/obj/structure/disposalconstruct/C = new(A, R.pipe_type, queued_p_dir, queued_p_flipped, R.subtype)
 
 	if(!C.can_place())
 		to_chat(user, span_warning("There's not enough room to build that here!"))
 		consume(C)
-		return
+		return OP_FAILED
 
 	activate()
 
@@ -333,6 +339,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 		do_wrench(C, user)
 	else
 		build_effect(C)
+	return OP_OK
 
 /obj/item/pipe_dispenser/proc/build_effect(obj/P, time = 1.5)
 	P.filters += filter(type = "angular_blur", size = 30)
