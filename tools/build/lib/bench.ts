@@ -835,6 +835,8 @@ export type TestRun = RunIdentity & {
   label: string | null;
   defines: string[];
   compilation: CompilerProvenance | null;
+  compiler_receipt?: string;
+  compiler_receipts?: string[];
   clean: boolean;
   duration_seconds: number;
   counts: { passed: number; failed: number; skipped: number };

@@ -312,6 +312,8 @@ type DDOptions = {
   dmbFile: string;
   /** Exact successful native pair, or explicit conventional fallback output. */
   compiledOutput?: CompiledOutput;
+  /** After exact acquisition, before runtime preparation or spawn. Failure stops hosting. */
+  onPreparedOutput?: (dmbFile: string) => void;
   namedDmVersion?: string | null;
   /**
    * Watchdog for runs that terminate themselves (e.g. the unit-test boot, which
@@ -546,6 +548,7 @@ export async function DreamDaemon(
 ): Promise<DDResult> {
   const output = options.compiledOutput ?? currentCompiledOutput(options.dmbFile, compilerMode() === 'native');
   return withCompiledOutput(output, Juke.exec, async dmbFile => {
+    options.onPreparedOutput?.(dmbFile);
     const hosted = { ...options, dmbFile };
     try { return await runHostedWorld(hosted, args); }
     finally {

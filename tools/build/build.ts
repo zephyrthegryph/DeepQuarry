@@ -64,7 +64,7 @@ import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './
 import { prependDefines } from './lib/tgs';
 import { compilerMode } from './lib/compiler_selection';
 import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
-import type { CompilerProvenance } from './lib/compiler_provenance';
+import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
@@ -556,6 +556,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
 
 type WorldRun = {
   compilation: CompilerProvenance | null;
+  compilerReceipt: string;
   clean: boolean;
   cleanText: string | null;
   results: Record<string, UnitTestEntry> | null;
@@ -582,6 +583,8 @@ async function runTestWorld(
   sample: boolean,
 ): Promise<WorldRun> {
   const compiled = currentCompiledOutput(dmbFile, compilerMode() === 'native');
+  const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
+  Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   Juke.rm('data/logs/ci', { recursive: true });
   Juke.rm('data/unit_tests.json');
   Juke.rm('data/bench/process.json');
@@ -591,6 +594,7 @@ async function runTestWorld(
   const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
+  let runtimeError: string | null = null;
   try {
     const result = await DreamDaemon(
       {
@@ -598,6 +602,7 @@ async function runTestWorld(
         namedDmVersion: dmVersion,
         watchdogFile: 'data/unit_tests.json',
         onSpawn: (pid) => sampler?.start(pid),
+        onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
       },
       '-close',
       ddSecurityFlag(),
@@ -610,7 +615,14 @@ async function runTestWorld(
     );
     killedByWatchdog = !!result.killedByWatchdog;
   } catch (error) {
-    if (error instanceof NativeAcquisitionError) throw error;
+    runtimeError = String(error);
+    if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) {
+      try { compilerReceipt.finalize({ resultsAvailable: false, killedByWatchdog, error: runtimeError }); }
+      catch (finalizationError) {
+        Juke.logger.error(`Compiler attempt finalization failed; primary failure preserved: ${finalizationError}`);
+      }
+      throw error;
+    }
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
   }
   const processSummary = sampler ? sampler.stop() : null;
@@ -626,8 +638,10 @@ async function runTestWorld(
   } catch {
     // the world died before finishing
   }
+  compilerReceipt.finalize({ resultsAvailable: results !== null, killedByWatchdog, error: runtimeError });
   return {
     compilation: compiled.provenance ?? null,
+    compilerReceipt: compilerReceipt.file,
     clean: cleanText !== null,
     cleanText,
     results,
@@ -748,11 +762,15 @@ async function runIsolatedTestWorld(
   options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
+  const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
+  Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
   const runBase = `${base}.${slot.tag}`;
   const logDir = `data/logs/${slot.tag}`;
   const resultsFile = `${slot.dir}/unit_tests.json`;
+  const receiptOutcome = { resultsAvailable: false, killedByWatchdog: false, error: null as string | null };
+  let escapedFailure = false;
   try {
     fs.rmSync(logDir, { recursive: true, force: true });
     // DreamDaemon keeps icons made at runtime in <world>.dyn.rsc beside the
@@ -802,6 +820,7 @@ async function runIsolatedTestWorld(
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
+          onPreparedOutput: (dmb) => compilerReceipt.prepared(dmb),
         },
         String(port),
         '-close',
@@ -811,8 +830,10 @@ async function runIsolatedTestWorld(
         new URLSearchParams(params).toString(),
       );
       killedByWatchdog = !!result.killedByWatchdog;
+      receiptOutcome.killedByWatchdog = killedByWatchdog;
     } catch (error) {
-      if (error instanceof NativeAcquisitionError) throw error;
+      receiptOutcome.error = String(error);
+      if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) throw error;
       // DreamDaemon exits non-zero even on clean runs; the files below decide.
     }
     let cleanText: string | null = null;
@@ -827,9 +848,11 @@ async function runIsolatedTestWorld(
     } catch {
       // the world died before finishing
     }
+    receiptOutcome.resultsAvailable = results !== null;
     const processSummary = options.sampler ? options.sampler.stop() : null;
     return {
       compilation: compiled.provenance ?? null,
+      compilerReceipt: compilerReceipt.file,
       clean: cleanText !== null,
       cleanText,
       results,
@@ -839,11 +862,24 @@ async function runIsolatedTestWorld(
       killedByWatchdog,
       logDir,
     };
+  } catch (error) {
+    escapedFailure = true;
+    receiptOutcome.error = String(error);
+    throw error;
   } finally {
-    await removeDerivedArtifacts(`${runBase}.dmb`);
-    await removeDerivedArtifacts(`${runBase}.rsc`);
-    await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
-    slot.release();
+    try {
+      try { compilerReceipt.finalize(receiptOutcome); }
+      catch (error) {
+        if (!escapedFailure) throw error;
+        Juke.logger.error(`Compiler attempt finalization failed; primary failure preserved: ${error}`);
+      }
+    } finally {
+      try {
+        await removeDerivedArtifacts(`${runBase}.dmb`);
+        await removeDerivedArtifacts(`${runBase}.rsc`);
+        await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
+      } finally { slot.release(); }
+    }
   }
 }
 
@@ -922,6 +958,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
   }
   recordSweepHashes(run.results);
   const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation);
+  record.compiler_receipt = run.compilerReceipt;
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
     `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
@@ -1544,6 +1581,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     results,
     compiledOutput.provenance ?? null,
   );
+  record.compiler_receipts = runs.map((run) => run.compilerReceipt);
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
   // A shard that wrote no results lost every test assigned to it: say so in
