@@ -29,7 +29,7 @@
 
 CAPABILITIES(/obj/machinery/shield_gen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
-	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
+	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator, starts = /datum/looping_sound/shield_generator)
 	owns_many(nameof(field))
 	climb()
 	interface("ShieldGenerator")
@@ -65,7 +65,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				rel_set(cap, nameof(cap.owned_gen), src)
-	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).

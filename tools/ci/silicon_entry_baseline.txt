@@ -1,12 +1,3 @@
 # silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.
 # Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.
 siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
-legacy_entry	code/ATMOSPHERICS/components/tvalve.dm	silicon_use = NONE
-legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = NONE
-legacy_entry	code/game/machinery/doors/airlock.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/game/machinery/jukebox.dm	silicon_use = NONE // silicons can't use it
-legacy_entry	code/game/machinery/machinery.dm	silicon_use = SILICON_USE_HAND
-legacy_entry	code/game/machinery/syndicatebeacon.dm	silicon_use = NONE // silicons can't use it
-legacy_entry	code/game/turfs/turf.dm	silicon_use = ROBOT_USE_HAND
-legacy_entry	code/modules/holomap/station_holomap.dm	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).
-legacy_entry	code/modules/keybindings/adapters.dm	var/silicon_use = NONE

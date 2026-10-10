@@ -4,8 +4,10 @@ human|none click: Click: Toggle
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Set temperature
 robot|none menu: Toggle
+robot|none menu: Use
 robot|none click: Click: Toggle
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Set temperature
@@ -65,5 +67,5 @@ human|/obj/item/analyzer menu: Set temperature
 human|/obj/item/analyzer menu: Toggle
 human|/obj/item/analyzer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/analyzer click: Click: Check water temperature
-keys: analyze, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, set_temperature, toggle
+keys: analyze, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, set_temperature, silicon_hand, toggle
 

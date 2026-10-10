@@ -22,8 +22,8 @@
 	ore_key = M.name
 	if(M.reagent)
 		ore_reagent = M.reagent
-	icon_state = "rock_[ore_key]"
 	layer = min_turf.layer+0.1
+	changed(src)
 
 /obj/effect/mineral/proc/get_scan_overlay()
 	if(!scanner_image)
@@ -34,3 +34,8 @@
 			to_chat(world, "No ore data for [src]!")
 	return scanner_image
 
+/// The deposit shows its ore.
+/obj/effect/mineral/draw(datum/look/look)
+	..()
+	if(ore_key)
+		look.state("rock_[ore_key]")

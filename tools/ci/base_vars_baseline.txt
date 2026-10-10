@@ -346,7 +346,6 @@ base_var	code/modules/heat/heat_objects.dm	var/tmp/datum/heat_fire_turf
 base_var	code/modules/heat/heat_objects.dm	var/heat_output = 0
 base_var	code/modules/heat/heat_objects.dm	var/heat_dissipation
 base_var	code/modules/heat/heat_objects.dm	var/tmp/heat_output_now = 0
-base_var	code/modules/keybindings/adapters.dm	var/silicon_use = NONE
 base_var	code/modules/keybindings/hover.dm	/mob/var/tmp/atom/hovered_atom_view
 base_var	code/modules/lighting/lighting_atom.dm	var/light_system = STATIC_LIGHT
 base_var	code/modules/lighting/lighting_atom.dm	var/light_range = 0

@@ -15,19 +15,15 @@
  *
  * I3: the AI, cyborg, ghost and telekinesis adapters produce the same actions
  * as hands, through what the actor can do:
- * - AI: remote, no hands; ops over the interface route, then silicon_use.
+ * - AI: remote, no hands; ops over the interface route (a type's plain silicon Use is its silicon_hand()/silicon_ui() op).
  * - Cyborg: its modules are its held items.
  * - Ghost: observes; Use opens UIs to view.
  * - Telekinesis: at range, no tools.
  * Their Use tries the op engine first, then the legacy proc. Where that legacy
  * proc only forwarded to the hand's (attack_ai -> attack_hand and friends), the
- * override is gone and the type sets `silicon_use` instead (SILICON_USE_*).
+ * override is gone and the type declares silicon_hand() or silicon_ui() (code/library/mob/silicon.dm).
  */
 
-/atom
-	/// SILICON_USE_* / ROBOT_USE_*: what the AI's and cyborgs' plain Use does when
-	/// the type doesn't override attack_ai or attack_robot. A type var: no per-instance cost.
-	var/silicon_use = NONE
 /// This mob's capability adapter.
 /mob/input_adapter()
 	return INPUT_ADAPTER(hands)
@@ -403,12 +399,8 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		return TRUE
 	default_use(user, target)
 
-/// The AI's Use when no op answers: what the type's `silicon_use` says.
+/// The AI's Use when no op answers: nothing (a type's silicon Use is its silicon_hand()/silicon_ui() op).
 /datum/input_adapter/ai/default_use(mob/user, atom/target)
-	if(target.silicon_use & SILICON_USE_HAND)
-		return target.attack_hand(user)
-	if(target.silicon_use & SILICON_USE_UI)
-		return target.tgui_interact(user)
 	return FALSE
 
 // ---------------------------------------------------------------------------
@@ -417,13 +409,9 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 /datum/input_adapter/robot
 	name = "robot"
 
-/// A cyborg's empty-gripper Use when no op answers: a hand's Use where the type says so
-/// (or on something with a mob buckled to it, so anti-robot valves can't be worked around it), else like the AI.
+/// A cyborg's empty-gripper Use when no op answers: a hand's Use on something with a mob buckled to it
+/// (so anti-robot valves can't be worked around it), else like the AI.
 /datum/input_adapter/robot/default_use(mob/user, atom/target)
-	if(target.silicon_use & ROBOT_USE_HAND)
-		return target.attack_hand(user)
-	if(target.silicon_use & ROBOT_USE_HAND_ADJACENT)
-		return target.Adjacent(user) ? target.attack_hand(user) : FALSE
 	if(isobj(target) && target.Adjacent(user))
 		var/obj/O = target
 		if(O.has_buckled_mobs())

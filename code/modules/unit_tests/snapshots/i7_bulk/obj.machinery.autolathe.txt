@@ -2,8 +2,10 @@ human|none menu: Ui open
 human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -69,5 +71,5 @@ human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/disk menu: Ui open
 human|/obj/item/disk click: Click: Put it in
 wires: Disable, Electrification, Hack
-keys: construction.dismantle, drag_buckle, fabricator.drop_here, fabricator.print, fabricator.reset_drop, fabricator.store, load_disk, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, touch, ui_open, wires.cut, wires.open, wires.pulse
+keys: construction.dismantle, drag_buckle, fabricator.drop_here, fabricator.print, fabricator.reset_drop, fabricator.store, load_disk, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, silicon_hand, touch, ui_open, wires.cut, wires.open, wires.pulse
 

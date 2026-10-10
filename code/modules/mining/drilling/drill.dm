@@ -98,7 +98,7 @@ TRACKED(/obj/machinery/mining/drill, supported)
 CAPABILITIES(/obj/machinery/mining/drill)
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
-	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
+	owns_one(nameof(faultreporter), /obj/item/radio/intercom, starts = PROC_REF(make_faultreporter))
 	climb()
 	op("label", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Assign ID number"), needs(req_bool(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)),
 		asks(/datum/prompt/text/drill_label), then(PROC_REF(label_entered)))
@@ -127,9 +127,9 @@ CAPABILITIES(/obj/machinery/mining/drill)
 		if(capacity && current_capacity)
 			. += "The drill currently has [current_capacity] capacity taken up and can fit [capacity - current_capacity] more ore."
 
-/obj/machinery/mining/drill/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
+/// The fault reporter (owns_one(starts =)): a Supply intercom in nullspace.
+/obj/machinery/mining/drill/proc/make_faultreporter(current)
+	return new /obj/item/radio/intercom{channels=list("Supply")}(null)
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)

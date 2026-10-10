@@ -4,8 +4,10 @@ human|none click: Click: Start
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Processor
 robot|none menu: Start
+robot|none menu: Use
 robot|none click: Click: Start
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject Processor (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Processor
@@ -70,5 +72,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Start
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Start
-keys: drag_buckle, eject, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, start
+keys: drag_buckle, eject, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, start
 

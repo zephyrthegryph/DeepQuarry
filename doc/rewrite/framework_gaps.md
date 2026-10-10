@@ -666,6 +666,14 @@ compartment's `passes()` ask (no stages, no pending waits); the empty `construct
 `default_parts()` (existing) now also takes the `default_apply_parts()` calls that sat right after `..()`; the freezer and heater keep theirs, because
 their `RefreshParts()` reads state the pipe init makes after the capabilities' init.
 
+## N. Decl burn-down forms (rewrite/rf-decl, 2026-10-10)
+
+| ID | Form | Change |
+|---|---|---|
+| DC1 (DONE) | `starts_args = NO_LOC` / `list(NO_LOC, args...)` (`code/__defines/engine/lifeforms.dm`, `starts_construct()` in `code/engine/declare/lifecycle.dm`) | A starting occupant was always made as `new type(holder, args...)`. A datum whose first constructor argument is not a location (a gas mixture's volume, a screen object made in nullspace, a tgui module's host plus null) could not be declared. `NO_LOC` first in `starts_args` drops the holder: `owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)` is `new /datum/gas_mixture`. |
+| DC2 (DONE) | `gas_store(..., pressure =)` (`code/datums/capabilities/library/gas_store.dm`) | The gases are fractions of `pressure` (kPa, or `nameof()` a holder var), so a type whose subtypes fill to another `start_pressure` (the pressure tanks and their `/full` variants) declares one line. |
+| DC3 (DONE) | `/datum/looping_sound/New()` takes one atom as well as a list | A sound loop is a starting occupant (`owns_one(nameof(soundloop), /datum/looping_sound/x, starts = /datum/looping_sound/x)`): `new type(holder)` passes the holder, which the loop now wraps into its output list. |
+| DC4 (open) | A per-instance random roll on a field a `starts =` reads (a blood decal's random virus, a mouse's diseases, `rand()` in constructor args) | `starts = PROC_REF(make_x)` covers it (the proc builds the instance), but the roll then draws from the world RNG; a `starts_args` form reading a rolled var is the clean answer. |
 **Child creation and light at init (ratchet-fw).** A `rel_set(src, nameof(v), new /T)` right in `Initialize()` whose type already declares
 `owns_one(nameof(v), /T)` becomes `owns_one(nameof(v), /T, starts = /T)` (datums, and atoms made in `src`). A constant `set_light()` at init is
 the type's static light vars with `light_on = TRUE`: `/atom/movable/on_materialize()` already calls `update_light()` for STATIC_LIGHT, so the

@@ -4,8 +4,10 @@ human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Replace parts (refused: needs a rapid part exchange device)
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Replace parts (refused: needs a rapid part exchange device)
 ghost|none click: nothing
@@ -70,5 +72,5 @@ human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: Yo
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer click: Click: Ui open
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement_impl, robot_remote_blocked, ui_open
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement_impl, robot_remote_blocked, silicon_hand, ui_open
 

@@ -4307,3 +4307,31 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **Random reagent fills are rolled** (`rolls()` + `reagents(contents_from =)`): the chaos donut, mystery soup, organ, mystery truffle, old food, chaos cake slice, Boda-Plyus and the exceptional plump pie and biscuit draw from their seeded stream, so the `reagents_start` rows of those types show a different (same-distribution) realisation. The minor random-virus culture no longer stacks its parent's disease (20 -> 10 units of blood).
 - **Rotation is a menu op** on the types whose `Initialize()` only granted the rotation verbs (crate, frame, circulator, pipe turbine and motor, TEG, chemical dispenser, water cooler, floor-tube frame, disposal construct, refinery machines): `rotatable()` replaces `make_rotatable()`, so the pins list Rotate Clockwise / Counter Clockwise / Turn Around (refused while fastened) for those types. Types with their own rotation rules (window, windoor assembly, railing, pipe, bed, bedsheet, smole track) keep the verbs.
 - **Bot settings panels** refuse a locked panel's buttons through `needs(settings_unlocked)` (silently, as before: the op is not a candidate); a silicon is let in by its link (`A.authority & AUTH_REMOTE_ACCESS`) rather than by its type, so a bolted cyborg no longer changes a locked bot.
+
+### rf-silicon lane (2026-10-10)
+
+- **`silicon_use` is deleted; every machine and turf has a silicon op.** `/obj/machinery` declares `silicon_hand(tier = OP_PRIORITY_DEFAULT - 100)`
+  (the old `SILICON_USE_HAND`), `/turf` declares `silicon_hand(robots = TRUE, ...)` (the old `ROBOT_USE_HAND`), and the types that set
+  `silicon_use = NONE` (manual valve and T-valve, ghost jukebox, singularity beacon, station holomap) and the airlock (whose silicon click is
+  its window, `ui_open`) take it away with `without("silicon_hand")`. The adapters' fallback (`default_use()`) no longer reads a type var:
+  the AI's does nothing, a cyborg's keeps only the buckled-mob hand use. Because the fallback is now an op, the interaction snapshots and
+  conversion pins gain a `Use` row for the AI and cyborg on every machine (and the cyborg on turfs) where they said `nothing`; no other row
+  changes. A cyborg whose link is down (bolted, looking through a camera) no longer reaches a machine's hand use, as for the 27 types before.
+  `legacy_entry` (`silicon_use =`, `INTERACT_SILICON(`) is banned at 0.
+- **Actor-kind checks in handlers are declared** (`handler_actor_check` banned at 0): the robotics console's lockdown refuses a cyborg with
+  "Access denied." (was "Access Denied."), the communications console's alert level refuses the AI and cyborgs through
+  `needs(req_actor_kind(...))` with the old firewall text, the alarm monitor's camera jump, the crew monitor's tracking, the pAI software
+  buttons, the message monitor's hack and the compact shotgun's stock toggle are not candidates for the wrong actor (silently, as before);
+  the food rename and table flip / put back name the actor kinds with `extend(..., needs(req_actor_kind(...)))`. A cyborg's mounted modules
+  are asked through `lets_go_of_held()` (storage, closets, tables). The message monitor's and communications console's "AI view" flags read
+  the viewer's authority (`A.authority & AUTH_REMOTE_ACCESS`), so a cyborg whose link is down sees the crew view.
+
+### rf-decl lane (2026-10-10): the decl ratchet burn-down
+
+- **Random looks are rolled** (`rolls()`, seeded): flora variants (`/obj/structure/flora` numbered variants, Australian bushes, grass, mushrooms, every tree's `choose_icon_state()`), the personal terminal, mouse nests, alien floor tiles, entrepreneur crystals, nuggets (with their description), loot piles, overmap events, crackers, paper crowns and the random hawaiian and tropical shirts. Same distributions; the realisation follows the round seed and map position.
+- **Starting children are made in the base init** (`owns_one` / `owns_many` with `starts =`), during `..()` rather than at the point in the subtype's `Initialize()` where the old `new` stood. Sound loops, the camera assembly, the security console's camera view, the station alert monitor, the request console's announcement, the exosuit shield and power tools, the ore silo's material store, the mapper's extras, the recycler's hatch and screen and similar children exist slightly earlier; the code that configures them now runs after `..()`. The exonet node, message server, transmitter and lava turf start their sound after `..()` too.
+- **Static overlays are drawn** (`draw()`): the teleporter station's wires, the electric chair's overlay, the master R&D server's stripes, the FBP backup cell's charge, the beach water, the security train engine and the void "heck" helmet glass, the big trees' top half and the algae farm's pipe stubs. Where the type already had a `draw()` (the algae farm, cargo engine, open space) the old `add_overlay()` was being replaced by the builder; the algae farm's pipe stubs now show.
+- **Noticeboard memos carry their stamps as stamp marks** (`add_stamp_mark()`), so the stamp is drawn by the paper's look and survives a redraw (the raw overlay was dropped by the first redraw).
+- **after_init() timers** replace `after(src, ...)` in `Initialize()` for foam hardening, an always-on shield projector and the integrated signaler's retune: a map-loaded instance counts the delay from the close of its map-load frame instead of from its own `Initialize()`.
+- **Declared destroy messages** (`DESTROY_EFFECTS`): the crystal, micro tunnel and artifact blade show their destruction message in phase 6, after `on_destroy()` (the blade's message now follows its lightning strike instead of preceding it).
+- The frost grenade's beakers are typed fills (`grenade_fill_frost_a/b`) made by `owns_many(starts =)`, like every other premade chem grenade.

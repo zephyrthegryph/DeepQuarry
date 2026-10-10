@@ -18,7 +18,7 @@
 	var/datum/looping_sound/lava/soundloop
 
 CAPABILITIES(/turf/simulated/floor/lava)
-	owns_one(nameof(soundloop), /datum/looping_sound/lava)
+	owns_one(nameof(soundloop), /datum/looping_sound/lava, starts = /datum/looping_sound/lava)
 	every(2 SECONDS, then(PROC_REF(lava_step)), when = nameof(burning))
 
 /turf/simulated/floor/lava/outdoors
@@ -29,9 +29,8 @@ CAPABILITIES(/turf/simulated/floor/lava)
 	if(!is_outdoors())
 		name = "magma"
 	update_light()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
+	. = ..()
 	soundloop.start()
-	return ..()
 
 
 /turf/simulated/floor/lava/make_outdoors()

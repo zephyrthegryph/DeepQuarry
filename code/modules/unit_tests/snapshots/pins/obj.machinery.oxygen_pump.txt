@@ -86,5 +86,5 @@ human|/obj/item menu: Show Tank Settings
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item click: Click: Oxygen pump item
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, oxygen_place, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, robot_remote_blocked, silicon_ui, ui_open, use_screwdriver
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, oxygen_place, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, robot_remote_blocked, silicon_hand, silicon_ui, ui_open, use_screwdriver
 

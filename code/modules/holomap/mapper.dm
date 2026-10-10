@@ -45,8 +45,8 @@
 
 CAPABILITIES(/obj/item/mapping_unit)
 	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
-	owns_one(nameof(cell), /obj/item/cell)
-	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder)
+	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(make_cell))
+	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder, starts = /atom/movable/screen/mapper/extras_holder, starts_args = NO_LOC)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
@@ -96,7 +96,6 @@ CAPABILITIES(/obj/item/mapping_unit)
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	rel_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
@@ -111,8 +110,6 @@ CAPABILITIES(/obj/item/mapping_unit)
 	tmp.icon = canvas
 	rel_add(src, nameof(map_image_cache), tmp, "bad")
 
-	if(uses_power && cell_type)
-		rel_set(src, nameof(cell), new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -477,3 +474,8 @@ CAPABILITIES(/obj/item/holomap_beacon)
 #undef HOLOMAP_YOU
 #undef HOLOMAP_OTHER
 #undef HOLOMAP_DEAD
+
+/// The starting cell (owns_one(starts =)) of a powered mapper.
+/obj/item/mapping_unit/proc/make_cell(current)
+	if(uses_power && cell_type)
+		return cell_type

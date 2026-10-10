@@ -61,8 +61,6 @@
 
 /obj/vehicle/train/security/engine/Initialize(mapload)
 	. = ..()
-	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
-	add_overlay(I)
 	turn_off()	//so engine verbs are correctly set
 
 /obj/vehicle/train/security/engine/Move(atom/newloc, direct = 0, movetime)
@@ -363,3 +361,7 @@ CAPABILITIES(/obj/vehicle/train/security/engine)
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/security/engine/proc/pred_security_engine_has_key(mob/actor, atom/target, obj/item/held)
 	return !!key
+
+/obj/vehicle/train/security/engine/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs

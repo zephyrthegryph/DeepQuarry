@@ -5,7 +5,8 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
@@ -79,5 +80,5 @@ human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/disk menu: Use
 human|/obj/item/disk menu: Use item
 human|/obj/item/disk click: Click: Use item
-keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, researchNode, robot_remote_blocked, toggleLock, uploadDisk, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, researchNode, robot_remote_blocked, silicon_hand, toggleLock, uploadDisk, use_gripper, use_item
 

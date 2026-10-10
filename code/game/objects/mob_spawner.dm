@@ -131,11 +131,11 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 CAPABILITIES(/obj/structure/mob_spawner/scanner)
 	every(2 SECONDS, then(PROC_REF(scanner_spawn_step)))
-	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner)
+	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner, starts = PROC_REF(make_prox))
 
-/obj/structure/mob_spawner/scanner/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
+/// The starting proximity monitor (owns_one(starts =)): it watches `range` tiles.
+/obj/structure/mob_spawner/scanner/proc/make_prox(current)
+	return new /datum/proximity_monitor/mobspawner(src, range)
 
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))

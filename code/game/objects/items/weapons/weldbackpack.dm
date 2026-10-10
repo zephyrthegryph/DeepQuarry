@@ -13,7 +13,7 @@
 	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 CAPABILITIES(/obj/item/weldpack)
-	owns_one(nameof(nozzle), /obj/item)
+	owns_one(nameof(nozzle), /obj/item, starts = nameof(nozzle_type))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(mousedrop_input))
@@ -24,7 +24,6 @@ CAPABILITIES(/obj/item/weldpack)
 	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	rel_set(src, nameof(nozzle), new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
 	nozzle_attached = 1
 
 

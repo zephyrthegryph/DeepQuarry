@@ -1,7 +1,9 @@
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
@@ -54,5 +56,5 @@ human|/obj/item/card/emag click: Click: Use
 human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material click: nothing
-keys: add_fuel, anchor.toggle, cable_place, drag_buckle, eject, emag.subvert, emag.use, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, toggle_power, ui_open, use_crowbar, use_screwdriver
+keys: add_fuel, anchor.toggle, cable_place, drag_buckle, eject, emag.subvert, emag.use, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, toggle_power, ui_open, use_crowbar, use_screwdriver
 

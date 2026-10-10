@@ -319,7 +319,6 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
 	bitesize = 1
-	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
 	seed = pit.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)
@@ -360,4 +359,4 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/ownership()
 	. = ..()
-	. += owns(nameof(pit), policy = OWN_CONTAINED)
+	. += owns(nameof(pit), policy = OWN_CONTAINED, starts = /obj/item/seeds/pitcherseed)

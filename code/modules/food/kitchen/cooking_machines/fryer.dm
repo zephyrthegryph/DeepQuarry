@@ -38,8 +38,8 @@
 
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 	hose_sockets(list(/datum/hose_connector/input/fryer))
-	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer)
-	owns_one(nameof(oil), /datum/reagents/oil_reagents)
+	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)
+	owns_one(nameof(oil), /datum/reagents/oil_reagents, starts = PROC_REF(make_oil))
 	op("fryer_interaction_oil", item(/obj/item), then(PROC_REF(fryer_interaction_oil)))
 	// A grabbed mob shoved in: the victim has to stay in reach of the user for the two seconds.
 	op("fry_mob", ai(), takes("victim"), wait(2 SECONDS), on_interrupt(PROC_REF(cook_mob_stopped)), then(PROC_REF(cook_mob_done)))
@@ -50,17 +50,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 /obj/machinery/appliance/cooker/fryer/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
 
-	rel_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
-	oil.optimal_oil = optimal_oil
-	var/variance = rand()*0.15
-	// Fryer is always a little below full, but its usually negligible
-
-	if(prob(20))
-		// Sometimes the fryer will start with much less than full oil, significantly impacting efficiency until filled
-		variance = rand()*0.5
-	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
 	. = ..()
@@ -297,3 +287,15 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 			return TRUE
 	//If neither of the above returned, then call parent as normal
 	return OP_DECLINE
+
+/// The fryer's oil (owns_one(starts =)): a tank a quarter over its optimal fill, filled a little short of it.
+/obj/machinery/appliance/cooker/fryer/proc/make_oil(current)
+	var/datum/reagents/oil_reagents/fill = new(optimal_oil * 1.25, src)
+	fill.optimal_oil = optimal_oil
+	var/variance = rand()*0.15
+	// Fryer is always a little below full, but its usually negligible
+	if(prob(20))
+		// Sometimes the fryer will start with much less than full oil, significantly impacting efficiency until filled
+		variance = rand()*0.5
+	fill.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
+	return fill

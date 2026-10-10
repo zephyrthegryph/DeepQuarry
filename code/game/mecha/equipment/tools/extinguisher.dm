@@ -11,11 +11,9 @@
 	var/spray_amount = 5	//units of liquid per particle. 5 is enough to wet the floor - it's a big fire extinguisher, so should be fine
 	var/max_water = 1000
 
-/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/Initialize(mapload)
-	. = ..()
-	create_reagents(max_water)
-	rel_set(reagents, nameof(reagents.my_atom), src)
-	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher)
+	reagents(nameof(max_water), starts = list(REAGENT_ID_FIREFOAM = nameof(max_water)))
+
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher/action(atom/target, params, mob/user = null) //copypasted from extinguisher. TODO: Rewrite from scratch.
 	if(!action_checks(target) || get_dist(chassis, target)>3) return

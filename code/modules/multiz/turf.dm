@@ -63,7 +63,6 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 /turf/simulated/open/Initialize(mapload)
 	. = ..()
 	ASSERT(HasBelow(z))
-	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 
 /turf/simulated/open/runtime_after_init()
 	return TRUE

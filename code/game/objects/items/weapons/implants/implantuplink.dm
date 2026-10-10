@@ -3,9 +3,13 @@
 	desc = "Summon things."
 	var/activation_emote = "chuckle"
 
+/// It carries a hidden uplink from the start.
+/obj/item/implant/uplink/ownership()
+	. = ..()
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
+
 /obj/item/implant/uplink/Initialize(mapload)
 	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 	//hidden_uplink.uses = 5
 	//Code currently uses a mind var for telecrystals, balancing is currently an issue. Will investigate.
 	. = ..()

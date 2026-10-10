@@ -123,6 +123,10 @@ impl KeyIndex {
         for engine_op in ["construction.build", "construction.undo", "construction.dismantle", "ui_open", "ui_observe"] {
             k.ops.insert(engine_op.to_string());
         }
+        // Ops a library proc makes (code/library/mob/silicon.dm): a silicon's plain click, which every machine and turf declares and a type takes away with without().
+        for library_op in ["silicon_hand", "silicon_ui"] {
+            k.ops.insert(library_op.to_string());
+        }
         k
     }
 

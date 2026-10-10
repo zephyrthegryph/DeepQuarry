@@ -6,6 +6,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -77,5 +78,5 @@ human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer menu: Use
 human|/obj/item/storage/part_replacer click: Click: Ui open
 wires: AI Control, Contraband, Primary Power, Shield Controls
-keys: begin_shutdown, cable_place, drag_buckle, emergency_shutdown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, set_input_cap, set_range, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open, use, use_crowbar, use_multitool, use_screwdriver, use_wirecutter
+keys: begin_shutdown, cable_place, drag_buckle, emergency_shutdown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, set_input_cap, set_range, silicon_hand, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open, use, use_crowbar, use_multitool, use_screwdriver, use_wirecutter
 

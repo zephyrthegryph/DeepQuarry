@@ -4,8 +4,10 @@ human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
@@ -74,5 +76,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
 human|/obj/item/gripper deleted itself on creation
-keys: add_c, cleartemp, clear_department_allocation, climb.climb, climb.climb_menu, contract_accept, contract_decline, contract_finalize_outcome, contract_negotiate, contract_print_case_forms, contract_print_case_revocation, contract_print_trial_packet, contract_print_trial_report, contract_print_trial_revocation, contract_reissue_trial_packet, contract_resupply_trial, del_all, del_c, del_r, disconnect, drag_buckle, d_rec, edit, edit_notes, insert_id, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, new, print_p, refresh, robot_remote_blocked, scan, screen, set_allocation_policy, set_department_allocation_percent, set_department_wages, set_service_subsidy, sync_r, transfer_department_funds, ui_open, use_gripper, use_item
+keys: add_c, cleartemp, clear_department_allocation, climb.climb, climb.climb_menu, contract_accept, contract_decline, contract_finalize_outcome, contract_negotiate, contract_print_case_forms, contract_print_case_revocation, contract_print_trial_packet, contract_print_trial_report, contract_print_trial_revocation, contract_reissue_trial_packet, contract_resupply_trial, del_all, del_c, del_r, disconnect, drag_buckle, d_rec, edit, edit_notes, insert_id, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, new, print_p, refresh, robot_remote_blocked, scan, screen, set_allocation_policy, set_department_allocation_percent, set_department_wages, set_service_subsidy, silicon_hand, sync_r, transfer_department_funds, ui_open, use_gripper, use_item
 

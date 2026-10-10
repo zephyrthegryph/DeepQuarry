@@ -11,7 +11,8 @@ robot|none menu: Rotate Counter Clockwise
 robot|none menu: Turn Around
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Rotate Clockwise
 ghost|none menu: Rotate Counter Clockwise
@@ -109,5 +110,5 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Turn Around
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: charge_rate, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle, use, use_wrench
+keys: charge_rate, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, toggle, use, use_wrench
 

@@ -44,7 +44,7 @@
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
-	owns_one(nameof(oven_loop), /datum/looping_sound/oven)
+	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
@@ -52,7 +52,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
 
 
 /obj/machinery/appliance/cooker/oven/ui_data(datum/act/eval/A)

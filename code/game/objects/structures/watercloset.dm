@@ -46,7 +46,7 @@ TRACKED(/obj/structure/toilet, refilling)
 CAPABILITIES(/obj/structure/toilet)
 	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
-	owns_one(nameof(teleplumb_crystal), /obj/item)
+	owns_one(nameof(teleplumb_crystal), /obj/item, starts = PROC_REF(make_teleplumb_crystal))
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
 	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req_bool(PROC_REF(cistern_open), silent = TRUE), req_bool(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
@@ -73,7 +73,6 @@ CAPABILITIES(/obj/structure/toilet)
 	. = ..()
 
 	if(teleplumb_crystal)
-		rel_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
@@ -555,7 +554,7 @@ CAPABILITIES(/obj/structure/urinal)
 CAPABILITIES(/obj/machinery/shower)
 	reagents(nameof(reaction_volume), starts_from = list(nameof(reagent_id) = nameof(reaction_volume)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
-	owns_one(nameof(soundloop), /datum/looping_sound/showering)
+	owns_one(nameof(soundloop), /datum/looping_sound/showering, starts = /datum/looping_sound/showering)
 	op("toggle", hand(), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("analyze", item(/obj/item/analyzer), label("Check water temperature"), then(PROC_REF(interaction_analyze)))
 	op("set_temperature", hand(), ungated(), gesture(GESTURE_ALT), label("Set temperature"), passes(),
@@ -566,7 +565,6 @@ MSG_DEF_SELF(shower/adjusting, span_notice("You begin to adjust the temperature.
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
 /// Washes its tile every machine step while running.
 MSG_DEF_SELF(toilet/replacing_lid, span_notice("You start to replace the lid on the cistern."))
@@ -1376,3 +1374,8 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 /// Relation view: crusher (reads null once it is gone).
 /obj/structure/biowaste_tank/proc/crusher() as /obj/machinery/recycling/crusher
 	return crusher
+
+/// A bluespace toilet (teleplumb_crystal set true on the map) starts with its crystal (owns_one(starts =)).
+/obj/structure/toilet/proc/make_teleplumb_crystal(current)
+	if(current)
+		return /obj/item/bluespace_crystal

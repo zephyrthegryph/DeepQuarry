@@ -1,7 +1,9 @@
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Respawn
 ghost|none click: Click: Respawn
 human|/obj/item/tool/screwdriver menu: Autoresleever interaction item
@@ -46,5 +48,5 @@ human|/obj/item menu: Autoresleever interaction item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Autoresleever interaction item
-keys: autoresleever_interaction_ghost, autoresleever_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: autoresleever_interaction_ghost, autoresleever_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
 

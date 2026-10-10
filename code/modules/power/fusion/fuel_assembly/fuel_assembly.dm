@@ -62,10 +62,7 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		name = "[fuel_type] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
 
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = fuel_colour
-	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
+	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 
 // Mapper shorthand.
@@ -97,10 +94,8 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	desc = "An extremely unstable, raw rod of compressed supermatter and phoron. This seems like a terrible idea."
 	fuel_colour = "#FCE300"
 	fuel_type = "blitzu"
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = "#FCE300"
-	overlays += list(I, image(icon, "fuel_assembly_bracket"),image(icon,"glow"))
+	rod_glows = TRUE
+	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
 		source = src,
@@ -185,9 +180,18 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 	desc = "A highly unstable, and highly explosive supermatter and phoron fuel rod with a lead shell, created by someone of questionable sanity. This thing has to violate at least a few intergalactic regulations."
 	fuel_colour = "#76888F"
 	fuel_type = "blitz"
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = "#76888F"
-	overlays += list(I, image(icon, "fuel_assembly_bracket"),image(icon,"glow"))
+	rod_glows = TRUE
+	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 	set_light(2, 2, "#FCE300")
+
+/// Whether the rod glows (the blitz rods).
+/obj/item/fuel_assembly/var/rod_glows = FALSE
+
+/// The rod in its fuel's colour, its bracket and, for a blitz rod, its glow.
+/obj/item/fuel_assembly/draw(datum/look/look)
+	..()
+	look.state("blank")
+	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
+	look.overlay(look_image(icon, "fuel_assembly_bracket"))
+	look.overlay(look_image(icon, "glow"), when = rod_glows)

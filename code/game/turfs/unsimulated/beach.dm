@@ -20,7 +20,6 @@
 
 /turf/unsimulated/beach/water/Initialize(mapload)
 	. = ..()
-	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
 
 /turf/simulated/floor/beach
 	name = "Beach"
@@ -80,7 +79,6 @@ CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
 
 /turf/simulated/floor/beach/water/Initialize(mapload)
 	. = ..()
-	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
 
 /datum/decl/flooring/water/beach/deep // We're custom-defining a 'deep' water turf for the beach.
 	name = "deep water"
@@ -88,3 +86,10 @@ CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
 	icon = 'icons/misc/beach.dmi'
 	icon_base = "seadeep"
 
+/turf/unsimulated/beach/water/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/misc/beach.dmi', "water2", layer = MOB_LAYER + 0.1))
+
+/turf/simulated/floor/beach/water/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/misc/beach.dmi', "water5", layer = MOB_LAYER + 0.1))

@@ -193,7 +193,6 @@
 
 /obj/item/tool/screwdriver/test_driver/Initialize(mapload)
 	. = ..()
-	icon_state = "screwdriver"
 	add_reactive_icon(directions = list(NORTH, EAST, SOUTH, WEST, SOUTHWEST, SOUTHEAST, NORTHEAST, NORTHWEST), range = 3)
 
 /datum/reactive_icon_update/proc/mob_check(mob/triggering_mob)
@@ -205,3 +204,7 @@
 
 CAPABILITIES(/datum/reactive_icon_update)
 	ref_many(nameof(watched_containers))
+
+/obj/item/tool/screwdriver/test_driver/draw(datum/look/look)
+	..()
+	look.state("screwdriver")

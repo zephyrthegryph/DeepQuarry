@@ -4,8 +4,10 @@ human|none click: Click: Launch
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Firework Star
 robot|none menu: Launch (refused: there is no firework star loaded in the firework launcher)
+robot|none menu: Use
 robot|none click: Click: Launch
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject Firework Star (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Firework Star
@@ -77,5 +79,5 @@ human|/obj/item/firework_star menu: Launch (refused: there is no firework star l
 human|/obj/item/firework_star menu: Move To Top
 human|/obj/item/firework_star menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/firework_star click: Click: Insert firework star
-keys: drag_buckle, eject, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked
+keys: drag_buckle, eject, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, silicon_hand
 

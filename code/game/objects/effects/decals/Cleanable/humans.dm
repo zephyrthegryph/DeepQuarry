@@ -194,14 +194,13 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood)
 	amount = 0
 	var/message
 
-/obj/effect/decal/cleanable/blood/writing/Initialize(mapload)
-	. = ..()
-	if(length(random_icon_states))
-		for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
-			LAZYREMOVE(random_icon_states, W.icon_state)
-		icon_state = DEFAULTPICK(random_icon_states, null)
-	else
-		icon_state = "writing1"
+/// Rolled before init: a writing sprite no other writing on the tile shows yet (all taken: the first).
+/obj/effect/decal/cleanable/blood/writing/roll_icon_state(datum/roller/R)
+	var/list/free = random_icon_states.Copy()
+	for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
+		if(W != src)
+			free -= W.icon_state
+	return length(free) ? R.choose(free) : "writing1"
 
 /obj/effect/decal/cleanable/blood/writing/examine(mob/user)
 	. = ..()

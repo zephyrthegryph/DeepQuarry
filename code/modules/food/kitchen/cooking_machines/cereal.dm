@@ -15,13 +15,12 @@
 	)
 
 CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
-	owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker)
+	owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker, starts = /datum/looping_sound/cerealmaker)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 /obj/machinery/appliance/mixer/cereal/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
 /// The cereal maker hums while it is on, beside the mixer's own sound.

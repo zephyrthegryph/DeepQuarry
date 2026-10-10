@@ -29,12 +29,11 @@
 	tgui_id = "CookingGrill"
 
 CAPABILITIES(/obj/machinery/appliance/cooker/grill)
-	owns_one(nameof(grill_loop), /datum/looping_sound/grill)
+	owns_one(nameof(grill_loop), /datum/looping_sound/grill, starts = /datum/looping_sound/grill)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 /obj/machinery/appliance/cooker/grill/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
 
 
 /// A grill shows no status light, only whether it is on. // TODO: Cooking icon

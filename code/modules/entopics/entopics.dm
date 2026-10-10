@@ -115,11 +115,11 @@
 	var/datum/entopic/ent_debug
 
 CAPABILITIES(/obj/item/entopic_debug)
-	owns_one(nameof(ent_debug), /datum/entopic)
+	owns_one(nameof(ent_debug), /datum/entopic, starts = PROC_REF(make_ent_debug))
 
-/obj/item/entopic_debug/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(ent_debug), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
+/// The starting entopic (owns_one(starts =)).
+/obj/item/entopic_debug/proc/make_ent_debug(current)
+	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin")
 
 /proc/entopic_icon_helper(atom/A,holo = TRUE)
 	ASSERT(A)

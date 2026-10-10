@@ -1,6 +1,7 @@
 human|none menu: Touch
 human|none click: Click: Touch
 robot|none menu: Touch
+robot|none menu: Use
 robot|none click: Click: Touch
 ai|none click: nothing
 ghost|none click: nothing
@@ -76,5 +77,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Build
-keys: crawl_drag, dig_grave, graffiti, space_build, turf_crawl, turf_item, turf_touch
+keys: crawl_drag, dig_grave, graffiti, silicon_hand, space_build, turf_crawl, turf_item, turf_touch
 

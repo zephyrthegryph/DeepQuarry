@@ -3,9 +3,11 @@ human|none menu: Use (refused: it must be screwed down first)
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Smash
+robot|none menu: Use
 robot|none menu: Use (refused: it must be screwed down first)
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -71,5 +73,5 @@ human|/obj/item menu: Smash
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use (refused: it must be screwed down first)
 human|/obj/item click: Click: Use
-keys: drag_buckle, floor_light_harm, floor_light_smash, floor_light_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_screwdriver, use_welder
+keys: drag_buckle, floor_light_harm, floor_light_smash, floor_light_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_screwdriver, use_welder
 
