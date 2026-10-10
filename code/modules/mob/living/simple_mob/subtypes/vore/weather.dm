@@ -140,7 +140,7 @@
 
 /// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
 /mob/living/simple_mob/vore/boss_jellyfish/var/chain_number = 0
-TRACKED_BRIDGED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /// Who the chained attacks go at (a relation view).
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 

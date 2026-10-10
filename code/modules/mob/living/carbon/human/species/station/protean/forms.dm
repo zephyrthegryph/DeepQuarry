@@ -271,7 +271,7 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 
 /// Life: form upkeep, a step the forms datum contributes while attached. set_form() and stat changes wake it.
 /datum/forms/proc/life_steps()
-	return list(seq_step(PROC_REF(life_trait_forms), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_forms", 		reads = CHANGE_MOB_STAT | CHANGE_EXPLICIT, should_run = PROC_REF(life_trait_forms_due), woken_by = "set_form(); set_stat()"))
+	return list(seq_step(PROC_REF(life_trait_forms), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_forms", should_run = PROC_REF(life_trait_forms_due), woken_by = "set_form(); set_stat()"))
 
 /datum/forms/proc/life_trait_forms(mob/living/carbon/human/H, datum/seq_frame/life/F)
 	H.character_forms?.on_life(H)

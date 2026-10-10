@@ -1452,7 +1452,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		hunger_rate = initial(hunger_rate)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
-	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	old_species?.remove_components(src, species)
 	if(replaced)

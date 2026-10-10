@@ -26,7 +26,6 @@
 	if(new_stage == shock_stage)
 		return shock_stage
 	shock_stage = new_stage
-	changed(src, CHANGE_MOB_HEALTH)
 	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 	return shock_stage
 

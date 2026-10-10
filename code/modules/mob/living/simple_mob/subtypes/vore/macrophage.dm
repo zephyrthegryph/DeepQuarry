@@ -101,7 +101,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 /// Burst from a host: it dies within 3 minutes unless it is holding a human. A field: the check
 /// repeats while it is set.
 /mob/living/simple_mob/vore/aggressive/macrophage/var/deathwatch = FALSE
-TRACKED_BRIDGED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
 /// Every 3 minutes while deathwatch is set (its every() in the type's CAPABILITIES).
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck(datum/act/A)

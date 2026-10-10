@@ -33,7 +33,7 @@ APPEARANCE_NONE(/obj/machinery/dq_appearance_probe/bare)
 /obj/structure/dq_appearance_provider
 	var/count = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
+DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_DATUM_A))
 /obj/structure/dq_appearance_provider/appearance_overlays()
 	. = list()
 	for(var/i in 1 to count)
@@ -200,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot2"), 0, "overlays the provider no longer returns are cut")
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1"), 1, "a kept overlay is drawn once, not stacked")
 	P.count = 3
-	changed(P, CHANGE_NEIGHBOURS)
+	changed(P, CHANGE_DATUM_A)
 	TEST_ASSERT(P.appearance_queued, "a declared channel queues the provider")
 	appearance_flush()
 	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot3"), 1, "the queued refresh re-ran the provider")

@@ -264,7 +264,6 @@ dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(eyecon
 dx_raw_overlays	code/modules/body/organs/subtypes/standard.dm	add_overlay(get_hair_icon())
 dx_raw_overlays	code/modules/clothing/accessories/accessory.dm	has_suit().add_overlay(get_inv_overlay())
 dx_raw_overlays	code/modules/clothing/accessories/accessory.dm	old_suit.cut_overlay(get_inv_overlay())
-dx_raw_overlays	code/modules/clothing/clothing.dm	cut_overlay("[icon_state]_knife")
 dx_raw_overlays	code/modules/clothing/clothing.dm	standing.add_overlay(I)
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(A.get_mob_overlay())
 dx_raw_overlays	code/modules/clothing/clothing_icons.dm	standing.add_overlay(bloodsies)

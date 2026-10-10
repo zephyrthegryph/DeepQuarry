@@ -137,7 +137,7 @@
 /mob/living/var/mob/living/cameraFollow = null // ALLOW(base_vars): was an OM_FIELD_VIEW on this type; moved, not added
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
-TRACKED_BRIDGED(/mob/living, hand, CHANGE_MOB_HANDS)
+TRACKED(/mob/living, hand)
 TRACKED(/mob/living, tiredness)
 TRACKED(/mob/living, fear)
 TRACKED(/mob/living, on_fire)

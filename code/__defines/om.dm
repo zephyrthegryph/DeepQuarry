@@ -26,26 +26,14 @@
 #define CHANGE_EXPLICIT (1<<0)
 #define CHANGE_RELATION_ADDED (1<<1)
 #define CHANGE_RELATION_REMOVED (1<<2)
-#define CHANGE_EFFECTS (1<<3)
-#define CHANGE_RELEVANCE (1<<5)
 #define CHANGE_CONTENTS (1<<6)
 /// A related entity (relation forwarding or a watch) changed; delivered to the observer.
 #define CHANGE_RELATED (1<<7)
 
 // Mob family.
-#define CHANGE_MOB_STAT (1<<8)
-#define CHANGE_MOB_HEALTH (1<<9)
-#define CHANGE_MOB_LOC (1<<10)
-#define CHANGE_MOB_HANDS (1<<11)
-#define CHANGE_MOB_EQUIPMENT (1<<12)
-#define CHANGE_MOB_CLIENT (1<<13)
-#define CHANGE_MOB_STATUS (1<<15)
 #define CHANGE_MOB_CAN_MOVE (1<<17)
-/// Modifiers, instability, diseases: the long-running conditions the upkeep systems follow.
-#define CHANGE_MOB_CONDITIONS (1<<18)
 
 // Item family.
-#define CHANGE_ITEM_LOC (1<<8)
 #define CHANGE_ITEM_CHARGE (1<<11)
 
 // Machine family.
@@ -255,8 +243,6 @@
 // Bits 22 and 23 are the last two a DM bitfield holds (24-bit bitwise operators).
 /// Any atom: its integrity changed (update_integrity()); the get_integrity derived field.
 #define CHANGE_INTEGRITY (1<<23)
-/// Any atom: what a neighbour shows it changed (appearance_notify_neighbours(), smoothing providers).
-#define CHANGE_NEIGHBOURS (1<<22)
 /// Power machine family, raised on every machine bound to a power region
 /// (code/modules/power/power_grid.dm): the region's supply or load moved; its
 /// brownout or monitor warning changed; a machine joined or left it.
@@ -266,9 +252,6 @@
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2
-/// A mob entered, left or moved in a chunk (/datum/mob_chunk, code/modules/mob/mob_chunks.dm).
-#define CHANGE_CHUNK_ANY_MOB CHANGE_DATUM_A
-#define CHANGE_CHUNK_PLAYER CHANGE_DATUM_B
 // ---- Task steps (object_model_core.md §4.11): what a step proc returns. ----
 /// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define OM_CALLEE_SLEPT "__om_callee_slept"
@@ -286,9 +269,9 @@
 
 /// A derived (read-only) field: `T/proc/F()` computes it from its declared INPUTS, a list of the
 /// declared fields it reads (by name) and of raw channels for inputs that are not fields (an item's
-/// location: CHANGE_ITEM_LOC). Its channel is the union of the inputs' channels, resolved once per
+/// charge). Its channel is the union of the inputs' channels, resolved once per
 /// type (scheduler_field_field_table()), so every input setter raises it: nothing refreshes a derived field by
-/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_ITEM_LOC))`
+/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_ITEM_CHARGE))`
 #define OM_DERIVE_FIELD(T, F, INPUTS) /datum/om/field_def##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
 // ---------------------------------------------------------------- om_prompt requires (prompt.dm)

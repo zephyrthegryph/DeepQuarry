@@ -402,7 +402,7 @@ CAPABILITIES(/datum/own_test_child)
 /datum/own_test_watch_target
 	var/power_level = 0
 	var/label = "x"
-TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_DATUM_A)
 
 /datum/own_test_watch_holder
 	var/datum/own_test_watch_target/watched

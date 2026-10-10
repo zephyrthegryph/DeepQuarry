@@ -224,7 +224,7 @@
 /datum/unit_test/dq_om_wake_player_chunk_keys/Run()
 	var/turf/T = test_floor()
 	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
-	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
 	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
 	var/mob/living/npc = allocate(/mob/living, T)
@@ -232,7 +232,7 @@
 	TEST_ASSERT_EQUAL(length(players.wakes), 0, "a mob without a client woke a player chunk subscriber")
 	publish_player_chunk(T)
 	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "a player in the chunk woke the subscriber")
-	unwatch_mob_chunks(players, tokens, CHANGE_CHUNK_PLAYER)
+	unwatch_mob_chunks(players, tokens, MOB_CHUNK_WATCH_PLAYER)
 
 #endif
 

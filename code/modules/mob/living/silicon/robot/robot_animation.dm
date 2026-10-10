@@ -16,7 +16,7 @@
 
 /// Transform animation in progress: drill sounds still to play, plus one for the end of the lockdown.
 /mob/living/silicon/robot/var/transform_sounds_left = 0
-TRACKED_BRIDGED(/mob/living/silicon/robot, transform_sounds_left, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living/silicon/robot, transform_sounds_left)
 /// The lockdown state from before the transform animation, restored when it ends.
 /mob/living/silicon/robot/var/transform_prev_lockcharge
 

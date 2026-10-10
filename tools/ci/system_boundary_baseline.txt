@@ -27,7 +27,6 @@ B1:code/datums/managed_browsers/feedback_viewer.dm:SSsqlite 2
 B1:code/datums/mind.dm:SSticker 3
 B1:code/datums/ownership/registry_types.dm:SStranscore 1
 B1:code/datums/state/collapse.dm:SSgarbage 2
-B1:code/datums/sys/appearance.dm:SSatoms 1
 B1:code/engine/io/jobs.dm:SSdbcore 1
 B1:code/game/antagonist/antag_service.dm:SSjob 1
 B1:code/game/antagonist/antagonist.dm:SSticker 1

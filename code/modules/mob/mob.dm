@@ -994,15 +994,14 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return 0
 
 // Please always use this proc, never just set the var directly.
-/// A mob's stat: set_stat() is its setter and raises CHANGE_MOB_STAT on a real change.
+/// A mob's stat: set_stat() is its setter and publishes the stat key on a real change.
 SETTER(/mob, stat)
 
 /mob/proc/set_stat(new_stat)
 	. = (stat != new_stat)
 	stat = new_stat
 	if(.)
-		state_changed(src, CHANGE_MOB_STAT, nameof(stat))
-		PUBLISH_CHANGE(src, nameof(stat))
+		tracked_changed(src, nameof(stat))
 
 /mob/verb/face_direction()
 

@@ -17,8 +17,8 @@
 	var/draw_calls = 0
 
 TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_ITEM_CHARGE)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
@@ -41,7 +41,7 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
 	var/tier = 0
 	var/draw_calls = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_legacy/draw(datum/look/look)
 	..()
@@ -53,8 +53,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
 	var/glow = FALSE
 	var/other = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_DATUM_A)
 
 /// draw() reads the source's glow through the declared REL view `source`.
 /obj/cap_fixture/dx_deps_watcher
@@ -107,8 +107,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
 /obj/cap_fixture/dx_deps_derive/relations()
 	. = ..()
 	. += rel_one(nameof(feed))
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -157,8 +157,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
 	var/tier = 0
 	var/lie = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_writer/derived()
 	. = ..()
@@ -175,8 +175,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
 	var/shade = 0
 	var/other = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_sloppy/derived()
 	. = ..()
@@ -193,9 +193,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
 	var/noise = 0
 	var/pushes = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_pusher/derived()
 	. = ..()
@@ -218,8 +218,8 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
 	var/gadget = FALSE
 	var/spare = 0
 
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_EFFECTS)
-TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_DATUM_A)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_DATUM_A)
 
 /obj/cap_fixture/dx_deps_cap/capabilities()
 	. = ..()

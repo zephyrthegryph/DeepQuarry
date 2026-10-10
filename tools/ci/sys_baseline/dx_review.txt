@@ -136,33 +136,14 @@ manual_push	code/datums/capabilities/library/stamp_target.dm	changed(A, CHANGE_C
 manual_push	code/datums/capabilities/library/writable.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/library/writable.dm	changed(A, CHANGE_CAPABILITY)
 manual_push	code/datums/capabilities/timed.dm	changed(D, CHANGE_EXPLICIT, var_name)
-manual_push	code/datums/sys/appearance.dm	changed(T, CHANGE_NEIGHBOURS)
-manual_push	code/datums/sys/appearance.dm	changed(A, CHANGE_NEIGHBOURS)
 manual_push	code/game/atom/atom_defense.dm	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 manual_push	code/game/machinery/doors/airlock.dm	changed(src, CHANGE_MACHINE_MODE)
 manual_push	code/game/machinery/machinery_power.dm	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
-manual_push	code/game/objects/items.dm	changed(user, CHANGE_MOB_HANDS)
-manual_push	code/game/objects/items.dm	changed(user, CHANGE_MOB_HANDS)
 manual_push	code/modules/asset_cache/asset_list.dm	changed(src, CHANGE_EXPLICIT)
 manual_push	code/modules/asset_cache/asset_list.dm	changed(src, CHANGE_EXPLICIT)
-manual_push	code/modules/body/body.dm	changed(owner, CHANGE_MOB_HEALTH)
-manual_push	code/modules/body/body_effects.dm	changed(src, CHANGE_MOB_CONDITIONS)
-manual_push	code/modules/body/body_effects.dm	changed(src, CHANGE_MOB_CONDITIONS)
-manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
-manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
-manual_push	code/modules/body/injury.dm	changed(src, CHANGE_MOB_HEALTH)
-manual_push	code/modules/medical/stabilisation/stasis.dm	changed(src, CHANGE_MOB_CONDITIONS)
-manual_push	code/modules/mob/living/carbon/brain/MMI.dm	changed(occupant, CHANGE_MOB_HEALTH) // wake the status stage to work off the interference
-manual_push	code/modules/mob/living/carbon/human/human.dm	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 manual_push	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
 manual_push	code/modules/mob/living/carbon/human/species/station/traits/trait.dm	changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 manual_push	code/modules/mob/living/carbon/human/species/station/traits/trait.dm	changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
-manual_push	code/modules/mob/living/carbon/shock.dm	changed(src, CHANGE_MOB_HEALTH)
-manual_push	code/modules/mob/living/life/life_om.dm	changed(src, CHANGE_MOB_CLIENT)
-manual_push	code/modules/mob/living/life/life_om.dm	changed(src, CHANGE_MOB_EQUIPMENT)
-manual_push	code/modules/mob/living/living_movement.dm	changed(src, CHANGE_MOB_LOC)
-manual_push	code/modules/mob/mutations.dm	changed(src, CHANGE_MOB_CONDITIONS)
-manual_push	code/modules/mob/mutations.dm	changed(src, CHANGE_MOB_CONDITIONS)
 manual_push	code/modules/overmap/overmap_object.dm	changed(src, CHANGE_EXPLICIT)
 manual_push	code/modules/power/apc.dm	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 manual_push	code/modules/reagents/holder/holder.dm	changed(my_atom, CHANGE_CONTENTS)

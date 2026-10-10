@@ -329,9 +329,9 @@
 	if(blocks_light)
 		light_blocking_moved(old_loc)
 	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
-	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
-	if(om_listen && !ismob(src))
-		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
+	// Mobs publish MOB_KEY_LOC themselves (living_movement.dm).
+	if(om_listen && !ismob(src) && !isitem(src))
+		changed(src, CHANGE_EXPLICIT)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)

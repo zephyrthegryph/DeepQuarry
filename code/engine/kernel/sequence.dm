@@ -49,6 +49,8 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	var/min_relevance = RELEVANCE_NONE
 	/// Change channels that wake every step (state_changed()).
 	var/wake_all = 0
+	/// Change keys (PUBLISH_CHANGE, tracked var names) that wake every step.
+	var/list/wake_keys
 	/// The proc name (PROC_REF) of the table proc, on the entity and on contributors: returns seq_step()s.
 	var/table_proc
 	var/frame_type = /datum/seq_frame
@@ -684,15 +686,13 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /proc/seq_listen(datum/E)
 	E.om_listen |= seq_listen_mask(E)
 
-/// The channels E's sequences listen to: what their steps read, wake_all, and relevance.
+/// The channels E's sequences listen to: what their steps read, and wake_all.
 /proc/seq_listen_mask(datum/E)
 	. = 0
 	for(var/datum/seq_state/state as anything in E.seq_states)
 		if(!state)
 			continue
 		. |= state.table.chan_union | state.seq.wake_all
-		if(state.seq.min_relevance)
-			. |= CHANGE_RELEVANCE
 
 /// Adds `contributor` (a datum defining the sequence's table proc: a trait state, a component) to E's table on
 /// `path`: its steps run on it with (entity, frame). One contributor per type. Every step wakes (a new table).
@@ -778,7 +778,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	if(GLOB.seq_trace)
 		log_runtime("SEQ_PARK: [state.seq.name] [E] ([E.type]) unparked by [reason || "a wake"] after [DisplayTimeText(world.time - state.parked_at)]")
 
-/// Relevance state_changed (CHANGE_RELEVANCE): in or out of the sweep.
+/// The member's relevance moved (SEQ_KEY_RELEVANCE): in or out of the sweep.
 /proc/seq_relevance_check(datum/E, datum/seq_state/state)
 	var/now_relevant = state.seq.relevant(E)
 	if(now_relevant == state.relevant)
@@ -842,6 +842,10 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /// publish_change() hook: `key` of `E` changed. Wakes every step of E's sequences that reads it.
 /proc/seq_publish(datum/E, key)
 	for(var/datum/seq_state/state as anything in E.seq_states)
+		if(key == SEQ_KEY_RELEVANCE)
+			if(state?.seq.min_relevance)
+				seq_relevance_check(E, state)
+			continue
 		// Mid-frame the count is the frame's own: a step that fell asleep this frame is only in the bits.
 		if(!state || (!state.asleep && !state.running))
 			continue
@@ -858,14 +862,11 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 			seq_woke(E, state, "[key]")
 
 /// state_changed() / entity_dispatch_change() hook: channels `bits` of `E` changed. Wakes every step of E's sequences that
-/// reads one of them, and follows relevance.
+/// reads one of them,.
 /proc/seq_channels(datum/E, bits)
 	for(var/datum/seq_state/state as anything in E.seq_states)
 		if(!state)
 			continue
-		var/datum/sequence/seq = state.seq
-		if((bits & CHANGE_RELEVANCE) && seq.min_relevance)
-			seq_relevance_check(E, state)
 		if((!state.asleep && !state.running) || !(bits & state.table.chan_union))
 			continue
 		var/woke = FALSE

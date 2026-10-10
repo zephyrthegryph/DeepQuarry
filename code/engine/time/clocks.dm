@@ -90,14 +90,14 @@
 // ---------------------------------------------------------------- relevance and suspension
 
 /// STAT_RELEVANCE of `E` moved to `level`: the OM record's behaviours pick their cadence by it (rec.relevance) and the Rust side mirrors
-/// it; CHANGE_RELEVANCE wakes the sequences sweeping E (seq_channels(), through the dispatch).
+/// it; SEQ_KEY_RELEVANCE puts E in or out of the sequences sweeping it (seq_publish()).
 /proc/relevance_changed(datum/E, level)
 	var/datum/scheduler_record/rec = E.om_rec
 	if(rec)
 		rec.relevance = level
 		entity_sync_all(rec)
 	entity_native_relevance(E, level)
-	state_changed(E, CHANGE_RELEVANCE) // the stat changed; its channel readers (the sequence sweep, OM cadences) still listen by channel
+	engine_key_changed(E, SEQ_KEY_RELEVANCE)
 
 /// STAT_SUSPENDED of `E` flipped: the OM record's cadences and own-clock timers stop or resume with it.
 /proc/suspended_changed(datum/E)

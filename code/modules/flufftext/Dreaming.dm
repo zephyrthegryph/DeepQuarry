@@ -56,7 +56,7 @@
 /// The dream fragments still to show, in order. dream_sequence() shows one every `dream_wait` while set (its every() in
 /// CAPABILITIES(/mob/living/carbon)).
 /mob/living/carbon/var/tmp/list/dream_fragments = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
-TRACKED_BRIDGED(/mob/living/carbon, dream_fragments, CHANGE_MOB_CONDITIONS)
+TRACKED(/mob/living/carbon, dream_fragments)
 /// The dream datum of the current dream.
 /mob/living/carbon/var/tmp/datum/dream/current_dream
 /// Dreams are GLOB.dreams singletons: a mob's current_dream is shared, never owned.
