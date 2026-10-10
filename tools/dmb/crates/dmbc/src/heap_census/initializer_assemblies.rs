@@ -5,6 +5,10 @@ use dm_session::ObservedArtifactStorageView as View;
 
 pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_initializer_assemblies");
+    inspect_into(&mut census, store);
+    census.finish()
+}
+pub(super) fn inspect_into(mut census: &mut HeapCensus, store: &InitializerAssemblies) {
     store.visit_storage(|view| match view {
         View::Store { buckets, entries } => {
             census.owner("initializer_assemblies.index").observed_items += entries as u64;
@@ -34,7 +38,6 @@ pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
             }
         }
     });
-    census.finish()
 }
 
 impl HeapCensus {

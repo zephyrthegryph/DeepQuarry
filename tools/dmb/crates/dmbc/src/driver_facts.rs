@@ -564,8 +564,12 @@ fn prepare_source_abi_mode_on_executor(
             for (ordinal, result) in wave {
                 remaining[ordinal] = false;
                 match result {
-                    Ok(unit) => {
+                    Ok(mut unit) => {
                         unit.require_production_abi()?;
+                        // ABI preparation already validated this executable body. Final
+                        // lowering consumes its independently authenticated current body;
+                        // retaining this temporary copy would duplicate every cold unit.
+                        unit.executable_body = Vec::new();
                         let abi = Arc::clone(unit.abi.as_ref().expect("validated production ABI"));
                         layouts.insert(frontend.bodies[ordinal].member, abi);
                         results[ordinal] = Some(unit);
@@ -870,3 +874,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         })
     }
 }
+
+#[cfg(test)]
+#[path = "driver_facts/abi_body_release_tests.rs"]
+mod abi_body_release_tests;

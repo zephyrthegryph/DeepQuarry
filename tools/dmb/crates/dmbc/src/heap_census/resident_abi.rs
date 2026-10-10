@@ -11,35 +11,10 @@ pub(crate) fn weight(
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
-    // Exhaustive destructuring makes a newly owned input field require an audit.
-    let ProcedureInputs {
-        procedure_identity: _,
-        current_proc_path,
-        current_type_path,
-        parameters,
-        parameter_type_flags,
-        parameter_value_sources,
-        parameter_defaults,
-        parameter_types,
-        readonly_parameters,
-        resource_search_context: _,
-    } = inputs;
+    let parameter_types = &inputs.parameter_types;
+    let readonly_parameters = &inputs.readonly_parameters;
     let mut census = HeapCensus::new("resident_abi_admission");
-    let owner = "resident_abi.inputs";
-    for path in [current_proc_path, current_type_path].into_iter().flatten() {
-        census.string(owner, path);
-    }
-    census.strings(owner, parameters);
-    census.vec_payload(owner, parameter_type_flags);
-    census.vec_payload(owner, parameter_value_sources);
-    census.vec_payload(owner, parameter_defaults);
-    for default in parameter_defaults.iter().flatten() {
-        census.string(owner, default);
-    }
-    for (name, path) in parameter_types {
-        census.string(owner, name);
-        census.string(owner, path);
-    }
+    census.procedure_inputs(inputs);
     // std exposes usable HashMap capacity, not its private bucket allocation.
     // The bucket upper bound and deliberately loose BTree node allowance are
     // admission charges, never presented as exact census payload measurements.

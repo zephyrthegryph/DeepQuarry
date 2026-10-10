@@ -380,6 +380,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         memo,
         executor,
         bodies,
+        Some(&prepared.prepared),
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -459,6 +460,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         memo,
         executor,
         bodies,
+        None,
     )?
     .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
 }
@@ -478,6 +480,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     executor: &dm_exec::BuildExecutor,
     bodies: dm_tree::frontend::BodyArena<'_>,
+    prepared_abi: Option<&crate::driver_facts::PreparedSourceAbi>,
 ) -> Result<PreparedCold, ColdError> {
     startup
         .validate_for(frontend)
@@ -594,6 +597,18 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         census.frontend(frontend);
         census.startup(startup);
         census.initializer_ledger(&initialization.classified);
+        census.body_arena(&bodies);
+        census.current_projection(&projection);
+        census.current_initializer_units(&initialization.units);
+        census.current_map_initializers(&map_initializers);
+        if let Some(prepared) = prepared_abi {
+            census.prepared_source_abi(prepared);
+        } else {
+            census.boundary_opaque_abi_policy();
+        }
+        if let Some(memo) = memo {
+            census.cold_retained_owners(memo);
+        }
         if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
             if census.arc_object("initializer_classification.owner", store) {
                 census.initializer_artifacts(store);

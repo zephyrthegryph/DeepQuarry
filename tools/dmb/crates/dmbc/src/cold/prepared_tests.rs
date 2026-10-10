@@ -155,6 +155,7 @@ fn prepared_seal_releases_source_before_byte_identical_composition() {
             Some(&memo),
             &executor,
             bodies,
+            None,
         )
         .unwrap();
         assert!(memo.symbolic.as_ref().unwrap().retention_stats().records > 0);

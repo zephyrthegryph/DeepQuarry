@@ -47,6 +47,13 @@ pub(super) fn source_error_message(field: &FieldProjection) -> Option<String> {
     Some(format!("{number}: {reason}"))
 }
 impl FieldPlacements {
+    /// Borrow diagnostic backing without constructing a current origins roster.
+    pub(crate) fn visit_storage(
+        &self,
+        visit: impl FnOnce(&Vec<(usize, OccurrenceId)>, &BTreeMap<usize, SourceLocation>),
+    ) {
+        visit(&self.candidates, &self.locations);
+    }
     pub(super) fn push(
         &mut self,
         field_index: usize,

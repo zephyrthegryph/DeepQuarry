@@ -68,6 +68,13 @@ pub(crate) fn weight(
 /// Diagnostic accounting separates real backing from private index uncertainty.
 pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_owner_projection");
+    inspect_into(&mut census, store);
+    census.finish()
+}
+pub(super) fn inspect_into(
+    mut census: &mut HeapCensus,
+    store: &crate::class_projection::ClassProjections,
+) {
     store.visit_storage(|view| match view {
         dm_session::ArtifactStorageView::Store { buckets, entries } => {
             census.owner("owner_projection.index").observed_items += entries as u64;
@@ -157,7 +164,6 @@ pub(crate) fn inspect(store: &crate::class_projection::ClassProjections) -> Heap
         "owner_projection.types_index",
         "private observed-store BTree nodes and allocator metadata excluded",
     );
-    census.finish()
 }
 
 #[cfg(test)]
