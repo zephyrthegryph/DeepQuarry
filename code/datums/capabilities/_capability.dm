@@ -1,22 +1,13 @@
 // Capabilities (doc/rewrite/dx_conventions.md §2). A capability is a complete feature of an atom:
-// its interactions, state, examine lines, appearance layers, UI data, gating of other entries,
-// refusals, logging and verbs.
+// its state, examine lines, appearance layers, UI data, logging and verbs.
 //
-//	/obj/machinery/power/apc/capabilities()
-//		. = ..()
-//		. += wall_machine(board = /obj/item/circuitboard/apc)
-//		. += slot(nameof(cell), /obj/item/cell, behind = COVER)
+//	CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/projectile/beam), 100))
 //
-// capabilities() is built once per type (type_list) and the datums in it are SHARED by every
+// A type's capability list is built once per type (type_list) and the datums in it are SHARED by every
 // instance of the type: configuration lives in the datum's vars (set by its constructor proc),
 // per-instance state lives on the holder, in the `cap_state` bitfield (one CAP_* bit per boolean)
 // or in a lazily created datum from cap_data(holder, capability). List order is the order of the
 // menu, of examine lines and of appearance layers.
-
-/// The interactions this capability offers on holder: /datum/interaction flyweights, built once
-/// per (type, capability) and cached. Each carries its gating (behind/locked_by/needs/works_*).
-/datum/capability/proc/interactions(atom/holder)
-	return null
 
 /// Examine lines for user, in list order.
 /datum/capability/proc/examine(atom/holder, mob/user)
@@ -41,12 +32,6 @@
 		return layer_name
 	return "[key]"
 
-/// Gates ANOTHER entry: null lets it through, text refuses with that reason. The cover gates
-/// every entry whose `behind` includes COVER while it is closed; the lock does the same for
-/// `locked_by`.
-/datum/capability/proc/gate(atom/holder, mob/user, datum/interaction/entry)
-	return null
-
 /// Verbs to hide on holder right now (re-evaluated on change).
 
 /// Native verbs this capability gives its holder: the holder has them while it has the capability
@@ -54,13 +39,7 @@
 
 /// Ownership entries (owns(...)) this capability contributes to its holder type's ownership table
 /// (doc/rewrite/ownership.md §1.2): a slot owns its var, so the type declares nothing for it. Per
-/// type and pure, like capabilities(): read only the capability's own settings.
-/// An entry of holder (this capability's or another's) is about to run its handler for user:
-/// TRUE stops it there (this capability already told the user why, e.g. an electrified door
-/// zapped them). Side effects are allowed: it runs once per dispatch, never while resolving.
-/datum/capability/proc/before_entry(atom/holder, mob/user, obj/item/held, datum/interaction/capability/entry)
-	return FALSE
-
+/// type and pure: read only the capability's own settings.
 /// refine(key, ...) on this capability (not an op): a new capability with `overrides` (refine()'s named fields,
 /// field -> value) applied, or null when it has nothing refinable. The default refuses (a stack_trace names the key).
 /// Init / teardown hooks for per-instance state (default children, lazily created data).

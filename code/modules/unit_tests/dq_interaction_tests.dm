@@ -2,7 +2,7 @@
 
 // ---- Fixtures ----
 
-/// A plain object other tests build probes on (dx_operations_tests.dm adds ops to a subtype).
+/// A plain object other tests build probes on.
 /obj/dq_interaction_probe
 	name = "interaction probe"
 
@@ -13,16 +13,6 @@
 	if(suffix.Find(id))
 		return suffix.group[1]
 	return id
-
-/// The ids in a resolution, as "available|blocked:reason,...".
-/proc/dq_resolution_text(datum/interaction_resolution/resolution)
-	var/list/available = list()
-	for(var/datum/interaction/interaction as anything in resolution.available)
-		available += dq_snapshot_id(interaction.id)
-	var/list/blocked = list()
-	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		blocked += "[dq_snapshot_id(interaction.id)]:[resolution.blocked[interaction]]"
-	return "[jointext(available, ",")]|[jointext(blocked, ",")]"
 
 // ---- Tests ----
 
@@ -146,3 +136,22 @@
 	TEST_ASSERT(!(R.crowbar_act(H, crowbar) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)), "combat mode: no op answers the crowbar, so it goes on to strike")
 	TEST_ASSERT(!R.opened, "combat mode: the cover stays shut")
 	H.set_use_stance(I_HELP)
+
+/// The Menu lists the target's ops (op_menu()): what the actor can do as available, the rest as blocked with the reason, keyed by op key.
+/datum/unit_test/dq_interaction_menu_lists_ops
+
+/datum/unit_test/dq_interaction_menu_lists_ops/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
+	var/list/rows = op_menu(H, C, null)
+	TEST_ASSERT(length(rows), "a closet has ops for a human")
+	var/list/data = interaction_menu_data(H, C)
+	var/list/listed = list()
+	for(var/list/entry as anything in data["available"])
+		listed[entry["id"]] = "ok"
+	for(var/list/entry as anything in data["blocked"])
+		listed[entry["id"]] = entry["reason"]
+	TEST_ASSERT_EQUAL(length(listed), length(rows), "every op row is listed once: [json_encode(listed)]")
+	for(var/list/row as anything in rows)
+		TEST_ASSERT_EQUAL(listed[row["key"]], row["enabled"] ? "ok" : row["reason"], "[row["key"]] is listed as the op menu says")

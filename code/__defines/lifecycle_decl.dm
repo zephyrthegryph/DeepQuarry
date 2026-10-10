@@ -28,7 +28,7 @@
 /// Adds one entry to PATH's declaration table. Internal: use the named macros below.
 #define _LIFECYCLE_DECL(PATH, CALL) ##PATH/declare_lifecycle(datum/lifecycle_decls/decls) { ..(); decls.##CALL; }
 
-/// 1. LEGACY: the foundation form is `gas_store(nameof(var), volume, temp, gases)` in capabilities()
+/// 1. LEGACY: the foundation form is `gas_store(nameof(var), volume, temp, gases)` in a CAPABILITY() line
 /// (code/datums/capabilities/library/gas_store.dm; doc/rewrite/lifecycle.md section 9).
 /// A gas mixture created at init in VAR (declare VAR OWNED). VOLUME: litres, or a var name.
 /// GASES: list(GAS_O2 = kPa, ...) at TEMP kelvin (moles = P*V / (R*T)).
@@ -54,7 +54,7 @@
 /// The fallback row key.
 #define APPEARANCE_ANY "*"
 
-/// 5. LEGACY: the foundation form is `membership(joins = REGISTRY_X)` in capabilities()
+/// 5. LEGACY: the foundation form is `membership(joins = REGISTRY_X)` in a CAPABILITY() line
 /// (code/datums/capabilities/library/membership.dm).
 /// Registry membership (code/__defines/registries.dm). The same as REGISTRY_MEMBERSHIP() for an
 /// ordinary registry; for a conditional one it also joins at materialize (was an unconditional

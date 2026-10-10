@@ -1,5 +1,76 @@
-/obj/structure/closet/grave|human|none => |
-/obj/structure/closet/grave|robot|none => |
-/obj/structure/closet/grave|ai|none => |
-/obj/structure/closet/grave|ghost|none => |
+human|none menu: Climb in
+human|none click: Click: Climb in
+robot|none menu: Climb in
+robot|none click: Click: Climb in
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb in
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Put down (refused: You can't put that down there.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Climb in
+human|/obj/item/tool/crowbar menu: Climb in
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Put down (refused: You can't put that down there.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Climb in
+human|/obj/item/tool/wrench menu: Climb in
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Put down (refused: You can't put that down there.)
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Climb in
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Put down (refused: You can't put that down there.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Climb in
+human|/obj/item/multitool menu: Climb in
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Put down (refused: You can't put that down there.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Climb in
+human|/obj/item/weldingtool menu: Climb in
+human|/obj/item/weldingtool menu: Cut apart
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Put down (refused: You can't put that down there.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Cut apart
+human|/obj/item/stack/cable_coil menu: Climb in
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Put down (refused: You can't put that down there.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Climb in
+human|/obj/item/stack/material/steel menu: Climb in
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Put down (refused: You can't put that down there.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Climb in
+human|/obj/item/card/id menu: Climb in
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Put down (refused: You can't put that down there.)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Climb in
+human|/obj/item/storage/laundry_basket menu: Climb in
+human|/obj/item/storage/laundry_basket menu: Empty contents
+human|/obj/item/storage/laundry_basket menu: Empty into
+human|/obj/item/storage/laundry_basket menu: Move To Top
+human|/obj/item/storage/laundry_basket menu: Put down (refused: You can't put that down there.)
+human|/obj/item/storage/laundry_basket menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/laundry_basket menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage/laundry_basket click: Click: Empty into
+human|/obj/item menu: Climb in
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Put down (refused: You can't put that down there.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Climb in
+human|/obj/item/shovel menu: Climb in
+human|/obj/item/shovel menu: Fill in
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Put down (refused: You can't put that down there.)
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel click: Click: Fill in
+keys: anchor.toggle, break_out, climb_in, cut_apart, drag_buckle, empty_basket, fill, set_down, smooth_over, stuff_grab, unearth
 

@@ -59,8 +59,8 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 /// The default of stage()'s undo =: "derive the way back from the input part". An explicit undo = NO_UNDO means no way back.
 #define UNDO_DERIVED "\[derived undo]"
 
-/// stage(STAGE_X, parts..., from =, undo =, key =): an edge into a stage. A name (text) first argument is the legacy stage() of a
-/// construction ladder (code/datums/capabilities/construction.dm), which keeps its own shape through legacy_stage().
+/// stage(STAGE_X, parts..., from =, undo =, key =): an edge into a stage. A name (text) first argument is the retired ladder stage() shape:
+/// the construction stage provider is asked for it (it builds none).
 /proc/stage(name, p1, p2, p3, p4, p5, p6, from = null, undo = UNDO_DERIVED, key = null, uses, needs, else_say, undo_needs, undo_else_say, when, undo_when, say, undo_say, desc, icon, anchored, on_enter, on_leave, list/also, refund, priority, quiet, sfx, done_sfx, build)
 	if(!isnum(name))
 		// The legacy ladder stage: name, build, undo positionally or by name, and its own options (null means "not given").

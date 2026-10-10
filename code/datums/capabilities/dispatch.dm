@@ -1,31 +1,29 @@
-// Central dispatch (doc/rewrite/dx_conventions.md §7): every player-triggered handler (capability
-// entries, ui_<action> procs, forms, prompt answers) runs through dispatch_call(), which:
+// Central dispatch (doc/rewrite/dx_conventions.md §7): every player-triggered handler (ui_<action> procs,
+// prompt answers) runs through dispatch_call(), which:
 //   - records the action's context so ask_*() can re-validate it when the answer arrives;
 //   - runs the handler asynchronously if it sleeps (a prompt), so no handler writes INVOKE_ASYNC;
 //   - afterwards marks the target changed, adds the user's fingerprint and writes the declared log.
 // Handlers never call add_fingerprint(), log_game(), log_admin() or message_admins() for this.
 
 /// What ask_*() re-checks when an answer arrives: who acted, on what, with what, through which
-/// entry (an interaction's requirements) or window (a tgui state).
+/// window (a tgui state).
 /datum/dispatch_context
 	var/mob/user
 	var/datum/target
 	var/obj/item/held
-	var/datum/interaction/entry
 	var/datum/tgui/ui
-	/// Extra `needs` (ask_*(needs =)): re-run on the answer, like an entry's, against the target.
+	/// Extra `needs` (ask_*(needs =)): re-run on the answer against the target.
 	var/list/ask_needs
 	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
 	var/returned = FALSE
 	/// A target was given (a null target means "none", never "deleted").
 	var/had_target = FALSE
 
-/datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/interaction/entry, datum/tgui/ui)
+/datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/tgui/ui)
 	src.user = user // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 	src.target = target // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 	had_target = !isnull(target)
 	src.held = held // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
-	src.entry = entry // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 	src.ui = ui // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 
 /// Null when the action is still valid for its user, else the reason (told to the player by ask_*()).
@@ -45,13 +43,7 @@
 		if(ui.status != STATUS_INTERACTIVE)
 			return "you can't use it from here any more"
 		return null
-	if(entry && isatom(target))
-		if(held && QDELETED(held))
-			return "what you were holding is gone"
-		var/reason = entry.why_not(user, target, held)
-		if(reason)
-			return reason
-	else if(isatom(target) && !dq_interaction_reach(user, target, held))
+	if(isatom(target) && !dq_interaction_reach(user, target, held))
 		return "you moved too far away"
 	return null
 
@@ -108,8 +100,6 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	changed(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
-		if(istype(ctx.entry, /datum/interaction/capability) && isatom(target))
-			cap_entry_cooldown_start(target, ctx.entry)
 	return result
 
 /// Handler failures this round (the dispatch tests read them).

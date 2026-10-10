@@ -42,7 +42,7 @@ GLOBAL_LIST_EMPTY(asks_open)
 
 /// The key of ctx's action for the one-open-prompt rule.
 /proc/ask_key(datum/dispatch_context/ctx)
-	var/action = ctx.entry ? ctx.entry.id : (ctx.ui ? "ui" : "direct")
+	var/action = ctx.ui ? "ui" : "direct"
 	return "[ctx.user ? SHARED_CACHE_UID(ctx.user) : "-"]|[ctx.target ? SHARED_CACHE_UID(ctx.target) : "-"]|[action]"
 
 /// Claims the prompt slot of ctx's action for its user. FALSE (and a message) when one is already open.
@@ -130,65 +130,3 @@ GLOBAL_LIST_EMPTY(asks_open)
 		return null
 	var/mob/M = by_name[choice]
 	return QDELETED(M) ? null : M
-
-// ---- forms: form = list(choice_field(), text_field(), number_field()) on a capability entry ----
-
-/datum/form_field
-	/// The handler's argument name.
-	var/name
-	var/message
-	var/title
-
-/// Asks this field in ctx; null cancels the form.
-/datum/form_field/proc/ask(datum/dispatch_context/ctx)
-	return null
-
-/datum/form_field/choice
-	/// A list, or a PROC_REF on the target returning one ((mob/user) -> list).
-	var/choices
-
-/datum/form_field/choice/ask(datum/dispatch_context/ctx)
-	var/list/L = istext(choices) ? holder_call(ctx.target, choices, list(ctx.user)) : choices
-	return ask_list(ctx.user, message || "Choose [name]:", L, title, context = ctx)
-
-/datum/form_field/text
-	var/max_length = MAX_MESSAGE_LEN
-	var/default
-
-/datum/form_field/text/ask(datum/dispatch_context/ctx)
-	return ask_text(ctx.user, message || "Enter [name]:", title, default, max_length, context = ctx)
-
-/datum/form_field/number
-	var/min_value = 0
-	var/max_value = INFINITY
-	var/default = 0
-
-/datum/form_field/number/ask(datum/dispatch_context/ctx)
-	return ask_number(ctx.user, message || "Enter [name]:", min_value, max_value, title, default, context = ctx)
-
-/proc/choice_field(name, choices, message, title)
-	var/datum/form_field/choice/F = new
-	F.name = name
-	F.choices = choices
-	F.message = message
-	F.title = title
-	return F
-
-/proc/text_field(name, max_length = MAX_MESSAGE_LEN, message, title, default)
-	var/datum/form_field/text/F = new
-	F.name = name
-	F.max_length = max_length
-	F.message = message
-	F.title = title
-	F.default = default
-	return F
-
-/proc/number_field(name, min_value = 0, max_value = INFINITY, message, title, default = 0)
-	var/datum/form_field/number/F = new
-	F.name = name
-	F.min_value = min_value
-	F.max_value = max_value
-	F.message = message
-	F.title = title
-	F.default = default
-	return F

@@ -36,25 +36,6 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 	act_message_t(box, box, /datum/msg/unit_test/pry)
 	act_message_t(box, box, null)
 
-/// Every interaction's feedback / start_feedback names a /datum/msg type with some text.
-/datum/unit_test/dq_sys_messages_interaction_feedback
-
-/datum/unit_test/dq_sys_messages_interaction_feedback/Run()
-	for(var/path in subtypesof(/datum/interaction))
-		var/datum/interaction/proto = path
-		for(var/msg_type in list(initial(proto.feedback), initial(proto.start_feedback)))
-			if(isnull(msg_type))
-				continue
-			if(!ispath(msg_type, /datum/msg))
-				TEST_FAIL("[path] has feedback [msg_type], not a /datum/msg type")
-				continue
-			var/datum/msg/def = msg_def(msg_type)
-			if(!def.self && !def.others && !def.blind)
-				TEST_FAIL("[path]: template [msg_type] has no text")
-			for(var/text in list(def.self, def.others))
-				if(text && (findtext(text, "%ACTOR%") || findtext(text, "%TARGET%")))
-					TEST_FAIL("[path]: template [msg_type] still uses the old %ACTOR%/%TARGET% tokens")
-
 /// Player text is literal: a "%U%" typed into an emote, a label or a character name is shown as
 /// typed, never filled.
 /datum/unit_test/dq_sys_messages_literal

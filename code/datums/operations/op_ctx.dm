@@ -11,24 +11,20 @@
 //   2 route              the op accepts this route, the target is reachable that way, the bay's
 //                        compartment lets the route through
 //   3 actor state        conscious and capable (OP_EMERGENCY: alive); skipped for legacy presets
-//   4 target contract    the target's own gating (behind/locked/broken/powered/needs/cooldown)
 //   5 capability         every cap_require() of the target that names this op or its kind
 //     contracts
 //   6 op needs           the op's own needs (requirements)
-// The same check() runs before the wait, again when the wait ends and again at commit (the
-// interaction machinery calls it through why_not()), so a wait never commits a stale answer.
+// The same check() runs before the wait, again when the wait ends and again at commit, so a wait never commits a
+// stale answer.
 // A pending (waiting) operation also watches the reads of its requirements and cancels early when
 // one is published (op_reads_changed()).
-//
-// Reactions: op_before(ctx) runs just before the commit and returns a refusal reason (or null); op_after(ctx)
-// runs right after. They call the target's before_op / after_op reactions (reactions/delivery.dm).
+
 
 GLOBAL_VAR_INIT(op_ctx_seq, 0)
 
 /datum/op_ctx
 	parent_type = /datum/operation_context
 	var/datum/op_def/op
-	var/datum/interaction/capability/entry
 	var/datum/relation_definition/slot/provider
 
 /// A pooled context for one attempt (a /datum/pooled: released fields return to their initial values).
@@ -94,10 +90,6 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 		why = stage_actor()
 		if(why)
 			return fail(why, OP_STAGE_ACTOR)
-	if(upto >= OP_STAGE_TARGET)
-		why = stage_target()
-		if(why)
-			return fail(why, OP_STAGE_TARGET)
 	if(upto >= OP_STAGE_CAPS)
 		why = stage_caps()
 		if(why)
@@ -166,15 +158,6 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	if(actor.stat != CONSCIOUS || actor.incapacitated())
 		return /datum/msg/req_not_capable
 	return null
-
-/datum/op_ctx/proc/stage_target()
-	if(!entry || !isatom(target))
-		return null
-	var/why = cap_gate_reason(target, actor, held, entry)
-	if(!why)
-		return null
-	detail = why
-	return /datum/msg/req_refused
 
 /datum/op_ctx/proc/stage_caps()
 	if(!isatom(target))
@@ -334,53 +317,6 @@ GLOBAL_LIST_EMPTY(op_watchers)
 /// Test builds read this: "[op key]|[reason type]" per early cancel.
 GLOBAL_LIST_EMPTY(op_cancelled_log)
 
-/// The wait timer fired for pending context `id`.
-/proc/op_wait_done(id)
-	var/datum/op_ctx/ctx = GLOB.op_pending["[id]"]
-	if(!ctx || ctx.released)
-		return
-	var/datum/interaction/capability/E = ctx.entry
-	var/mob/actor = ctx.actor
-	var/datum/target = ctx.target
-	var/obj/item/held = ctx.held
-	var/route = ctx.route
-	ctx.release()
-	if(!E || QDELETED(actor) || QDELETED(target))
-		return
-	// The wait is over: the requirements are checked again inside cost_paid() -> finish_attempt(),
-	// over the route the attempt started with.
-	var/saved = GLOB.op_route_now
-	GLOB.op_route_now = route
-	E.cost_paid(actor, target, held)
-	GLOB.op_route_now = saved
-
-/// The capability type that owns the context's op (what before_op / after_op reactions of a capability
-/// type match): the capability that built its entry, else null (a key match still works).
-/datum/op_ctx/proc/capability_type()
-	return entry?.cap?.type
-
-/**
- * The reactions' hook points. op_before(ctx) runs just before an operation commits: the target's
- * before_op reactions (by op key, then by capability type) and its observers. Returns null to proceed, or the
- * first non-null answer, a reason (a /datum/msg type or text), which stops the commit. op_after(ctx)
- * runs right after it committed.
- */
-/proc/op_before(datum/op_ctx/ctx)
-	if(!ctx.op || !ctx.target)
-		return null
-	return rx_before_op(ctx.target, ctx.op.key, ctx.capability_type(), ctx)
-
-/proc/op_after(datum/op_ctx/ctx)
-	if(!ctx.op || !ctx.target || QDELETED(ctx.target))
-		return
-	rx_after_op(ctx.target, ctx.op.key, ctx.capability_type(), ctx)
-
-/// Tells the actor why a before_op reaction stopped the operation (`reason`: a /datum/msg type or text).
-/proc/op_refusal_told(datum/op_ctx/ctx, reason)
-	var/text = ispath(reason) ? req_reason_text(reason, ctx) : "[reason]"
-	if(text && ctx.actor)
-		to_chat(ctx.actor, span_warning(text))
-
 /datum/op_ctx/forget_wait()
 	op_pending_forget(src)
 
@@ -391,3 +327,82 @@ GLOBAL_LIST_EMPTY(op_cancelled_log)
 
 /datum/op_ctx/cancel_deleted()
 	op_cancel(src, /datum/msg/req_cancelled)
+
+// ---- the op definition ----
+
+/// The definition of one operation a context checks: who can do it, with what, how, and what it needs.
+/datum/op_def
+	/// Unique per type: cap_require(ops =) names it.
+	var/key
+	var/name
+	/// OP_CONTROL / OP_STRUCTURAL / OP_EMERGENCY.
+	var/kind = OP_CONTROL
+	/// ACT_*: the action this op answers.
+	var/action = ACT_USE
+	/// Higher first among the ops answering one action (OP_PRIORITY_*).
+	var/priority = 0
+	/// The stances (I_* values) the op answers, or null for any.
+	var/list/stances
+	/// What it is used with: null (bare hand), a TOOL_* quality, an item type (or list), or a /datum/req.
+	var/using
+	/// AFF_* bits the actor's provider slot must give (NONE for none).
+	var/by = NONE
+	/// ROUTE_* bits this op accepts.
+	var/via = ROUTE_PHYSICAL
+	/// BAY_*: the compartment of the target this op works through, or null.
+	var/at
+	/// Deciseconds it takes.
+	var/delay = 0
+	/// Tool resource (fuel, charge) it uses.
+	var/cost = 0
+	/// A /datum/msg shown when a timed op starts.
+	var/start_msg
+	/// PROC_REF on the holder.
+	var/handler
+	/// The op's own requirements (a list of /datum/req), the last stage.
+	var/list/needs
+	/// What makes the op meant at all: while one fails the input falls through, as if the op were not there.
+	var/list/offered
+	/// Gating requirements (behind, blocked_by, locked_by): reads for early cancel.
+	var/list/gating
+	/// Item types (a list) that a plain click must hold to reach this op. Null: no such rule.
+	var/list/click_with
+	/// Skips the actor-state stage.
+	var/legacy = FALSE
+
+// ---- cap_require ----
+
+/// An additive contract on the operations of its holder: every op it covers (by key or by kind,
+/// or all ops when `ops` is null) also needs these requirements, checked in the capability stage.
+/datum/capability/require
+	/// Op keys and OP_* kinds it covers; null covers every op.
+	var/list/ops
+	var/list/reqs
+
+/datum/capability/require/proc/covers(datum/op_def/op)
+	if(!length(ops))
+		return TRUE
+	return (op.key in ops) || (op.kind in ops)
+
+/// ops: an op key, an OP_* kind, a list of either, or null (every op). needs: a requirement or list.
+/proc/cap_require(ops, needs)
+	var/datum/capability/require/C = new
+	if(!isnull(ops))
+		C.ops = islist(ops) ? ops : list(ops)
+	C.reqs = req_list(needs)
+	C.key = "require:[md5(datum_signature(list(C.ops, C.reqs)))]"
+	return C
+
+/// The route the current check reaches the target by (a context-less requirement check reads it).
+GLOBAL_VAR_INIT(op_route_now, ROUTE_PHYSICAL)
+
+/// Whether a phrase from a reason type reads inside "Name: <reason>.".
+/proc/req_reason_phrase(reason_type, datum/op_ctx/ctx)
+	var/text = req_reason_text(reason_type, ctx)
+	if(!text)
+		return text
+	if(copytext(text, length(text)) == ".")
+		text = copytext(text, 1, length(text))
+	if(reason_type != /datum/msg/req_refused && length(text) > 1)
+		text = lowertext(copytext(text, 1, 2)) + copytext(text, 2)
+	return text

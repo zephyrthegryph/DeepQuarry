@@ -72,14 +72,6 @@
 /proc/cap_of_all(atom/A, key)
 	return cap_of(A, key)
 
-/// The interaction entries of A's extras (the resolver adds them to the type's candidates).
-/proc/cap_extra_interactions(atom/A)
-	if(!capability_extras(A))
-		return list()
-	. = list()
-	for(var/datum/capability/C as anything in capability_extras(A))
-		. += cap_built_entries(C, A)
-
 // ---- system membership (section 6) ----
 
 // A capability's `joins` names /datum/system types (controllers/kernel/system.dm): membership is the kernel's

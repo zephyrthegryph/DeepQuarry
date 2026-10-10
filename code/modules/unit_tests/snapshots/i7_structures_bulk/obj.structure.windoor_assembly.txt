@@ -1,5 +1,74 @@
-/obj/structure/windoor_assembly|human|none => |
-/obj/structure/windoor_assembly|robot|none => |
-/obj/structure/windoor_assembly|ai|none => |
-/obj/structure/windoor_assembly|ghost|none => |
+human|none menu: Flip Windoor Assembly
+human|none click: nothing
+robot|none menu: Flip Windoor Assembly
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Flip Windoor Assembly
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Flip Windoor Assembly
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Flip Windoor Assembly
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Build assembly secured
+human|/obj/item/tool/wrench menu: Flip Windoor Assembly
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Build assembly secured
+human|/obj/item/tool/wirecutters menu: Flip Windoor Assembly
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Flip Windoor Assembly
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Dismantle
+human|/obj/item/weldingtool menu: Flip Windoor Assembly
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Dismantle
+human|/obj/item/stack/cable_coil menu: Flip Windoor Assembly
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Flip Windoor Assembly
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Flip Windoor Assembly
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Flip Windoor Assembly
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+human|/obj/item/airlock_electronics menu: Flip Windoor Assembly
+human|/obj/item/airlock_electronics menu: Hit
+human|/obj/item/airlock_electronics menu: Move To Top
+human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/airlock_electronics click: nothing
+human|/obj/item/pen menu: Flip Windoor Assembly
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Rename
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Rename
+keys: construction.build:windoor_assembly_boarded, construction.build:windoor_assembly_finished, construction.build:windoor_assembly_secured, construction.build:windoor_assembly_wired, construction.dismantle, construction.undo:windoor_assembly_boarded, construction.undo:windoor_assembly_secured, construction.undo:windoor_assembly_wired, drag_buckle, flip, melee_hit, rename, rename_robot
 

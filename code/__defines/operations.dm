@@ -31,7 +31,7 @@
 #define ROUTE_TK (1<<7)
 #define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
-// ---- operation kinds (cap_op(kind =)); also what cap_require(ops =) can name ----
+// ---- operation kinds (op_def.kind); also what cap_require(ops =) can name ----
 /// An ordinary use: needs a capable actor.
 #define OP_CONTROL "control"
 /// Changes what the thing is (dismantle, rewire): needs a capable actor.
@@ -39,7 +39,7 @@
 /// A last resort anyone alive can try (an emergency release): the actor-state stage only refuses the dead.
 #define OP_EMERGENCY "emergency"
 
-/// cap_op(using = EMPTY_HAND): the op is meant only with nothing in hand (the input falls through to the item's own
+/// using = EMPTY_HAND: the op is meant only with nothing in hand (the input falls through to the item's own
 /// interactions otherwise), and the hand is checked again at commit.
 #define EMPTY_HAND req_empty_hand()
 
@@ -95,8 +95,7 @@
 #define OP_STAGE_NEEDS 6
 #define OP_STAGE_ALL OP_STAGE_NEEDS
 
-// ---- op priorities (cap_op(priority =)): gesture resolution is the bind profile's action list, then this, then
-// declaration order (doc/rewrite/operations_and_actions.md §5) ----
+// ---- op priorities: higher first among the ops one input reaches (doc/rewrite/operations_and_actions.md §5) ----
 /// What a type does when nothing more specific it offers answers (an item's pickup, a mob being hit): the old
 /// INTERACT_*_DEFAULT shapes. The same scale as the resolver's INTERACTION_DEFAULT_PRIORITY.
 #define OP_PRIORITY_DEFAULT -2000

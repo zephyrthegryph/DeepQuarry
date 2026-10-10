@@ -518,22 +518,19 @@ TRACKED_BRIDGED(/datum/own_test_watch_target, power_level, CHANGE_DATUM_A)
 	TEST_ASSERT(isnull(owner_of(C)), "OWN_KEEP: the value is released at teardown")
 	qdel(C)
 
-/// A slot capability owns its var: the type declares nothing in ownership().
+/// A capability owns its var: the type declares nothing in ownership().
 /obj/cap_fixture/own_slot_holder
-	var/obj/item/cell/cell
+	var/datum/gas_mixture/air_contents
 
-/obj/cap_fixture/own_slot_holder/capabilities()
-	. = ..()
-	. += cap_slot(nameof(cell), /obj/item/cell)
+CAPABILITY(/obj/cap_fixture/own_slot_holder, gas_store(nameof(air_contents), 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE)))
 
 /datum/unit_test/ownership_capability_owned
 
 /datum/unit_test/ownership_capability_owned/Run()
 	var/obj/cap_fixture/own_slot_holder/H = allocate(/obj/cap_fixture/own_slot_holder)
-	var/list/entry = own_table_of(H).entries[nameof(H.cell)]
-	TEST_ASSERT_NOTNULL(entry, "the slot capability's owned() declares its var in the holder's table")
-	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the slot var is owned")
-	TEST_ASSERT_EQUAL(entry[OWNE_ARG], OWN_CONTAINED, "the slot var is owned CONTAINED")
+	var/list/entry = own_table_of(H).entries[nameof(H.air_contents)]
+	TEST_ASSERT_NOTNULL(entry, "the gas store capability's owned() declares its var in the holder's table")
+	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the store var is owned")
 
 /// A chem smoke system is thrown away after start(): no timer of its clouds keeps it alive as an unreferenced datum (the audit's
 /// "dropped with a rec" finding), and its reagent holder ends with it.
