@@ -34,7 +34,7 @@
 
 /// Another cut while there is meat left.
 /mob/living/proc/harvest_more(datum/act/op/A)
-	return meat_amount > 0
+	return read_once(meat_amount > 0)
 
 /// One cut done: the meat, the blood, one less cut to make.
 /mob/living/proc/harvest_cut_done(datum/act/op/A)

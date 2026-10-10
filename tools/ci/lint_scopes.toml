@@ -623,7 +623,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 22
-admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 105
+admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 104
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 0
 objects_ratchet_on_tool_act_overrides = 0
