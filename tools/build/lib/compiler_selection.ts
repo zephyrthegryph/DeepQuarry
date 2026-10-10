@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Juke from '../juke/index.js';
 import { classifyResourceReport } from './shadow_resources';
-import type { ByondCompilationResult, DreamMakerOptions } from './byond';
+import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
 type CompilerMode = 'byond' | 'native' | 'shadow';
@@ -120,7 +120,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     } catch (error) { Juke.logger.warn(`Native result cleanup preserved ${owned}: ${error}`); }
   }
 }
-export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec): Promise<CompiledOutput> {
+export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>): Promise<CompiledOutput> {
   const mode = compilerMode();
   if (mode === 'byond') { await byond(); return conventionalOutput(dme); }
   if (mode === 'native') {
@@ -134,6 +134,9 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     await byond();
     return conventionalOutput(dme);
   }
+  // Validate native option admission before any BYOND version/preparation child.
+  nativeCommand(dme, options);
+  const preparedByond = prepareByond ? await prepareByond() : undefined;
   const root = path.resolve(process.env.DQ_SHADOW_ROOT ?? 'E:/dq-cache/dmb-shadow');
   fs.mkdirSync(root, { recursive: true });
   const artifacts = fs.mkdtempSync(path.join(root, 'shadow-'));
@@ -143,7 +146,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   try {
     const native = await nativeCompile(dme, options, execute, artifacts);
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
-    const byondResult = await byond();
+    const byondResult = await byond(undefined, preparedByond);
     if (native.code !== 0) {
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
@@ -172,7 +175,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       // Invocation metadata is useful evidence but cannot issue snapshot authority.
       // Even a supplied future receipt needs an authenticated producer/consumer
       // protocol before admission; no callback boolean or cast is trusted here.
-      fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
+      fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, preparedByondCompiler: preparedByond ?? null, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
       const inspected = await execute(inspector, ['structural-diff', expected, acquiredDmb, report, snapshot], { throw: false });
       if (inspected.code !== 0) {
         Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);

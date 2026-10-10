@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
@@ -141,8 +142,71 @@ export type AuthenticatedByondSnapshot = {
   };
   readonly outputSha256: { readonly dmb: string; readonly rsc: string };
 };
+export type DreamMakerIdentity =
+  | { readonly status: 'observed'; readonly executable: string; readonly sha256: string }
+  | { readonly status: 'unknown'; readonly executable: string; readonly reason: string };
+export type PreparedDreamMaker = {
+  readonly executable: string; readonly identity: DreamMakerIdentity;
+  readonly version: number; readonly build: number;
+  readonly defines: readonly string[]; readonly namedDmVersion: string | null;
+};
+/** A bare command uses process search rules; never hash a similarly named cwd file. */
+export function observeDreamMakerIdentity(executable: string): DreamMakerIdentity {
+  if (!path.isAbsolute(executable) && !/[\\/]/.test(executable)) {
+    return { status: 'unknown', executable, reason: 'executable resolved by process PATH search; exact file identity unavailable' };
+  }
+  const resolved = fs.realpathSync.native(path.resolve(executable));
+  if (!fs.statSync(resolved).isFile()) throw new Error('DreamMaker executable is not a regular file.');
+  return { status: 'observed', executable: resolved, sha256: createHash('sha256').update(fs.readFileSync(resolved)).digest('hex') };
+}
+function checkDreamMakerIdentity(prepared: PreparedDreamMaker): void {
+  if (prepared.identity.status === 'observed') {
+    const current = observeDreamMakerIdentity(prepared.executable);
+    if (current.status !== 'observed' || current.sha256 !== prepared.identity.sha256 || current.executable !== prepared.identity.executable) {
+      throw new Error('DreamMaker executable changed after preparation.');
+    }
+  }
+}
+export async function prepareDreamMaker(options: DreamMakerOptions): Promise<PreparedDreamMaker> {
+  const identity = observeDreamMakerIdentity(await getDmPath(options.namedDmVersion));
+  const version = await testDmVersion(identity.executable);
+  const prepared = Object.freeze({ executable: identity.executable, identity: Object.freeze(identity), ...version,
+    defines: Object.freeze([...(options.defines ?? [])]), namedDmVersion: options.namedDmVersion ?? null });
+  checkDreamMakerIdentity(prepared);
+  return prepared;
+}
+async function testDmVersion(dmPath: string) {
+  const execReturn = await Juke.exec(dmPath, [], {
+    silent: true,
+    throw: false,
+  });
+  const version = execReturn.combined.match(
+    `DM compiler version (\\d+)\\.(\\d+)`,
+  );
+  if (version == null) {
+    Juke.logger.error(
+      `Unexpected DreamMaker return, ensure "${dmPath}" is correct DM path.`,
+    );
+    throw new Juke.ExitCode(1);
+  }
+  const requiredMajorVersion = 515;
+  const requiredMinorVersion = 1597; // First with -D switch functionality
+  const major = Number(version[1]);
+  const minor = Number(version[2]);
+  if (
+    major < requiredMajorVersion ||
+    (major === requiredMajorVersion && minor < requiredMinorVersion)
+  ) {
+    Juke.logger.error(
+      `${requiredMajorVersion}.${requiredMinorVersion} or later DM version required. Version ${major}.${minor} found at: ${dmPath}`,
+    );
+    throw new Juke.ExitCode(1);
+  }
+  return { version: major, build: minor };
+}
+
 export type ByondCompilationResult = {
-  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number };
+  readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number; readonly compilerIdentity?: DreamMakerIdentity; readonly orderedDefines?: readonly string[] };
   readonly snapshot?: AuthenticatedByondSnapshot;
 };
 
@@ -152,7 +216,7 @@ export async function DreamMaker(
 ): Promise<CompiledOutput> {
   // A future core-issued closed snapshot can route both backends through the
   // same owned project. Until that issuer exists, selection passes no override.
-  const output = await selectedCompiler(dmeFile, options, capturedProject => compileByond(capturedProject ?? dmeFile, options));
+  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared) => compileByond(capturedProject ?? dmeFile, options, prepared), Juke.exec, () => prepareDreamMaker(options));
   rememberCompiledOutput(dmeFile, output);
   return output;
 }
@@ -160,11 +224,17 @@ export async function DreamMaker(
 async function compileByond(
   dmeFile: string,
   options: DreamMakerOptions,
+  prepared?: PreparedDreamMaker,
 ): Promise<ByondCompilationResult> {
   if (options.namedDmVersion !== null) {
     Juke.logger.info('Using named byond version:', options.namedDmVersion);
   }
-  const dmPath = await getDmPath(options.namedDmVersion);
+  const compiler = prepared ?? await prepareDreamMaker(options);
+  if (compiler.namedDmVersion !== (options.namedDmVersion ?? null) || JSON.stringify(compiler.defines) !== JSON.stringify(options.defines ?? [])) {
+    throw new Error('Prepared DreamMaker configuration differs from compilation request.');
+  }
+  checkDreamMakerIdentity(compiler);
+  const dmPath = compiler.executable;
   // Get project basename
   const dmeBaseName = dmeFile.replace(/\.dme$/, '');
   // Make sure output files are writable
@@ -189,37 +259,6 @@ async function compileByond(
     }
   };
 
-  const testDmVersion = async (dmPath: string) => {
-    const execReturn = await Juke.exec(dmPath, [], {
-      silent: true,
-      throw: false,
-    });
-    const version = execReturn.combined.match(
-      `DM compiler version (\\d+)\\.(\\d+)`,
-    );
-    if (version == null) {
-      Juke.logger.error(
-        `Unexpected DreamMaker return, ensure "${dmPath}" is correct DM path.`,
-      );
-      throw new Juke.ExitCode(1);
-    }
-    const requiredMajorVersion = 515;
-    const requiredMinorVersion = 1597; // First with -D switch functionality
-    const major = Number(version[1]);
-    const minor = Number(version[2]);
-    if (
-      major < requiredMajorVersion ||
-      (major === requiredMajorVersion && minor < requiredMinorVersion)
-    ) {
-      Juke.logger.error(
-        `${requiredMajorVersion}.${requiredMinorVersion} or later DM version required. Version ${major}.${minor} found at: ${dmPath}`,
-      );
-      throw new Juke.ExitCode(1);
-    }
-    return { version: major, build: minor };
-  };
-
-  const version = await testDmVersion(dmPath);
   testOutputFile(`${dmeBaseName}.dmb`);
   testOutputFile(`${dmeBaseName}.rsc`);
 
@@ -258,7 +297,9 @@ async function compileByond(
     ...defines.map((def) => `-D${def}`),
     dmeFile,
   ]);
-  return { invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], ...version } };
+  checkDreamMakerIdentity(compiler);
+  return { invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], version: compiler.version, build: compiler.build,
+    compilerIdentity: compiler.identity, orderedDefines: compiler.defines } };
 }
 
 type DDOptions = {
@@ -514,7 +555,12 @@ export async function DreamDaemon(
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
   checkVerdigrisAbi();
   await approveWorldDlls(options.dmbFile);
-  const dmPath = await getDmPath(options.namedDmVersion);
+  const compiler = prepared ?? await prepareDreamMaker(options);
+  if (compiler.namedDmVersion !== (options.namedDmVersion ?? null) || JSON.stringify(compiler.defines) !== JSON.stringify(options.defines ?? [])) {
+    throw new Error('Prepared DreamMaker configuration differs from compilation request.');
+  }
+  checkDreamMakerIdentity(compiler);
+  const dmPath = compiler.executable;
   const baseDir = path.dirname(dmPath);
   const ddExeName =
     process.platform === 'win32' ? 'dreamdaemon.exe' : 'DreamDaemon';

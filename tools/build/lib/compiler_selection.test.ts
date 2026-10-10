@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
+import { observeDreamMakerIdentity, type PreparedDreamMaker } from './byond';
 import fs from 'node:fs';
 import path from 'node:path';
 const originalEnvironment = { ...process.env };
@@ -218,11 +219,16 @@ test('shadow inspects acquired generation through both children and still reject
   process.env.DQ_NATIVE_RUN_ROOT = path.join(ownedRoot, 'run');
   const project = path.join(ownedRoot, 'probe.dme');
   fs.writeFileSync(project, '// fixture');
+  const order: string[] = [];
+  const prepared: PreparedDreamMaker = { executable: 'dm.exe',
+    identity: { status: 'unknown', executable: 'dm.exe', reason: 'test PATH fallback' },
+    version: 516, build: 1687, defines: [], namedDmVersion: null };
   let slot = '';
   let inspected = 0;
   let acquisition = 0;
   const execute = async (_executable: string, args: string[]) => {
     if (args[0] === 'compile') {
+      order.push('native');
       const artifacts = args[args.indexOf('--artifact-directory') + 1];
       // These mutable conventional files deliberately differ from the acquired pair.
       fs.writeFileSync(path.join(artifacts, 'probe.dmb'), 'mutable');
@@ -260,10 +266,13 @@ test('shadow inspects acquired generation through both children and still reject
     return { code: 0, combined: '' };
   };
   try {
-    await expect(selectedCompiler(project, {}, async () => {
+    await expect(selectedCompiler(project, {}, async (_captured, compiler) => {
+      order.push('byond');
+      expect(compiler).toBe(prepared);
       fs.writeFileSync(project.replace(/\.dme$/, '.dmb'), 'D');
       fs.writeFileSync(project.replace(/\.dme$/, '.rsc'), 'RS');
-    }, execute)).rejects.toBeInstanceOf(Juke.ExitCode);
+    }, execute, async () => { order.push('prepare'); return prepared; })).rejects.toBeInstanceOf(Juke.ExitCode);
+    expect(order).toEqual(['prepare', 'native', 'byond']);
     expect(acquisition).toBe(1);
     expect(inspected).toBe(2);
     expect(fs.existsSync(slot)).toBe(false);
@@ -275,4 +284,42 @@ test('shadow inspects acquired generation through both children and still reject
   } finally {
     fs.rmSync(ownedRoot, { recursive: true, force: true });
   }
+});
+
+test('DreamMaker identity hashes only an explicit resolved executable and marks PATH lookup unknown', () => {
+  fs.mkdirSync('E:/dq-cache', { recursive: true });
+  const owned = fs.mkdtempSync('E:/dq-cache/byond-identity-fixture-');
+  try {
+    const executable = path.join(owned, 'dm.exe');
+    fs.writeFileSync(executable, 'actual binary bytes');
+    const first = observeDreamMakerIdentity(executable);
+    expect(first.status).toBe('observed');
+    if (first.status !== 'observed') throw new Error('expected observed explicit path');
+    expect(first.executable).toBe(fs.realpathSync.native(executable));
+    expect(first.sha256).toMatch(/^[a-f0-9]{64}$/);
+    fs.writeFileSync(executable, 'replaced binary');
+    const changed = observeDreamMakerIdentity(executable);
+    expect(changed.status).toBe('observed');
+    if (changed.status === 'observed') expect(changed.sha256).not.toBe(first.sha256);
+    const unresolved = observeDreamMakerIdentity('dm.exe');
+    expect(unresolved.status).toBe('unknown');
+    expect('sha256' in unresolved).toBe(false);
+    expect(() => observeDreamMakerIdentity(path.join(owned, 'missing.exe'))).toThrow();
+  } finally { fs.rmSync(owned, { recursive: true, force: true }); }
+});
+
+test('shadow unsupported policy rejects before prepared DreamMaker callback', async () => {
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let prepared = 0;
+  let executed = 0;
+  await expect(selectedCompiler('project.dme', { warningsAsErrors: true }, async () => {
+    throw new Error('must not compile BYOND');
+  }, async () => { executed++; return { code: 0, combined: '' }; }, async () => {
+    prepared++;
+    throw new Error('must not prepare BYOND');
+  })).rejects.toThrow('Native compiler does not support requested DreamMaker options:');
+  expect(prepared).toBe(0);
+  expect(executed).toBe(0);
 });
