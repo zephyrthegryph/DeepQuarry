@@ -2,6 +2,36 @@
 use super::*;
 
 #[test]
+fn repeated_local_declarations_are_source_errors_at_current_typed_headers() {
+    for source in [
+        "/proc/shadow_probe()\n    var/value = 7\n    if(1)\n        var/value = 9\n    return value\n",
+        "/proc/shadow_probe()\n    var/value = 7\n    var/value = 9\n    return value\n",
+    ] {
+        let parsed = dm_syntax::parse(source);
+        let body = dm_syntax::parse_body_items(&parsed.items[0].children);
+        assert!(body.diagnostics.is_empty());
+        let expected = source.rfind("var/value = 9").unwrap();
+        let errors = compile_simple_proc(&parsed.items[0].children).unwrap_err();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
+        assert_eq!(errors[0].reason, "value: duplicate definition");
+        assert_eq!(errors[0].span.unwrap().start, expected);
+    }
+}
+
+#[test]
+fn independent_sibling_local_declarations_and_outer_assignment_remain_accepted() {
+    for source in [
+        "/proc/shadow_probe()\n    var/result = 0\n    if(1)\n        var/value = 7\n        result += value\n    if(1)\n        var/value = 9\n        result += value\n    return result\n",
+        "/proc/shadow_probe()\n    var/value = 7\n    if(1)\n        value = 9\n    return value\n",
+    ] {
+        let parsed = dm_syntax::parse(source);
+        let compiled = compile_simple_proc(&parsed.items[0].children).unwrap();
+        assert!(link_proc(&compiled.code, &Ledger::default()).is_ok());
+    }
+}
+
+#[test]
 fn duplicate_label_is_source_error_at_exact_header_span() {
     let parsed =
         dm_syntax::parse("/proc/p()\n    repeat:\n        return\n    repeat:\n        return\n");

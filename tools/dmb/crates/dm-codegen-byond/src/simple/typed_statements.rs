@@ -181,11 +181,22 @@ impl Compiler<'_> {
                     let name = local_name(declaration).ok_or_else(|| {
                         error(&statement.raw_header, "unsupported local declaration")
                     })?;
-                    if name.is_empty() || self.local_slots.contains_key(name) {
+                    if name.is_empty() {
                         return Err(error(
                             &statement.raw_header,
-                            "unsupported or repeated local declaration",
+                            "unsupported local declaration",
                         ));
+                    }
+                    if self.local_slots.contains_key(name) {
+                        let mut failure = error(
+                            &statement.raw_header,
+                            &format!("{name}: duplicate definition"),
+                        );
+                        failure.kind = LowerErrorKind::SourceError;
+                        return Err(failure.at(Some(LowerSpan {
+                            start: statement.header_span.start,
+                            end: statement.header_span.end,
+                        })));
                     }
                     let slot = self.locals.len() as u32;
                     self.locals.push(name.into());
