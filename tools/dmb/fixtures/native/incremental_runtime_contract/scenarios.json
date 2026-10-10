@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "scope": "explicit standalone runtime expectations, not full DM test acceptance",
+  "steps": [
+    {"name": "initial", "expected": [3, 18, 15, 9, 11, 21, 22, 0]},
+    {"name": "unchanged", "expected": [3, 18, 15, 9, 11, 21, 22, 0]},
+    {"name": "body", "before": "return ..(delta) + 10", "after": "return ..(delta) + 30", "expected": [3, 38, 35, 9, 11, 21, 22, 0]},
+    {"name": "inherited_default", "before": "var/inherited_value = 3", "after": "var/inherited_value = 9", "expected": [9, 44, 41, 9, 11, 21, 22, 0]},
+    {"name": "argument_default", "before": "child/measure(delta = 5)", "after": "child/measure(delta = 6)", "expected": [9, 45, 41, 9, 11, 21, 22, 0]},
+    {"name": "procedure_static", "before": "var/static/counter = 20", "after": "var/static/counter = 40", "expected": [9, 45, 41, 9, 11, 41, 42, 0]},
+    {"name": "global_default", "before": "runtime_contract_global = 11", "after": "runtime_contract_global = 17", "expected": [9, 45, 41, 9, 17, 41, 42, 0]},
+    {"name": "structural_add", "before": "/datum/runtime_contract/base/child/proc/extra()\n    return 0", "after": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()", "expected": [9, 45, 41, 9, 17, 41, 42, 13]},
+    {"name": "structural_delete", "before": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()", "after": "/datum/runtime_contract/base/child/proc/extra()\n    return 0", "expected": [9, 45, 41, 9, 17, 41, 42, 0]}
+  ]
+}

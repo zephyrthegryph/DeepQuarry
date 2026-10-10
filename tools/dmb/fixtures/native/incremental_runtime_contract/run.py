@@ -1,0 +1,271 @@
+"""Bounded explicit runtime contract across actual retained and fresh compilers."""
+import argparse
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import time
+import uuid
+
+HERE = Path(__file__).resolve().parent
+BENCH = HERE.parents[2] / "bench"
+sys.path.insert(0, str(BENCH))
+from iteration_memory import OwnedMemory
+from watchdog import record_daemon_cleanup, terminate_owned
+
+LABELS = ("inherited", "parent_default", "parent_explicit", "argument_defaults",
+          "global", "static_first", "static_second", "structural")
+
+
+def load(name, file):
+    spec = importlib.util.spec_from_file_location(name, file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def read_text(file):
+    if file.stat().st_size > 1024 * 1024:
+        raise ValueError("standalone evidence exceeds 1MiB")
+    raw = file.read_bytes()
+    return raw.decode("utf-16" if raw.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig")
+
+
+def expected_markers(values):
+    if not isinstance(values, list) or len(values) != len(LABELS) or any(type(value) is not int for value in values):
+        raise ValueError("scenario must declare all eight integer expectations")
+    return [f"DQ_CONTRACT {name} {value}" for name, value in zip(LABELS, values)] + ["DQ_CONTRACT finished"]
+
+
+def observations(file, expected):
+    text = read_text(file)
+    markers = [line[line.index("DQ_CONTRACT "):] for line in text.splitlines() if "DQ_CONTRACT " in line]
+    errors = [line for line in text.splitlines()
+              if re.search(r"runtime error:|Runtime in .+?\.dm,\d+:", line, re.IGNORECASE)]
+    result = {"markers": markers, "runtime_errors": errors, "expected": expected,
+              "matches_expected": markers == expected and not errors}
+    # Missing/extra/reordered values fail even when both compilers agree.
+    return result
+
+
+def apply_step(source, step):
+    if "before" not in step and "after" not in step:
+        return source
+    before, after = step.get("before"), step.get("after")
+    if not isinstance(before, str) or not before or not isinstance(after, str) or source.count(before) != 1:
+        raise ValueError("edit does not identify one exact source site")
+    return source.replace(before, after, 1)
+
+
+def read_steps(file):
+    if file.stat().st_size > 64 * 1024:
+        raise ValueError("scenario descriptor exceeds 64KiB")
+    descriptor = json.loads(file.read_text(encoding="utf-8"))
+    steps = descriptor.get("steps")
+    if descriptor.get("schema") != 1 or not isinstance(steps, list) or not 1 <= len(steps) <= 16:
+        raise ValueError("unsupported bounded scenario descriptor")
+    names = set()
+    for step in steps:
+        name = step.get("name")
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z_]+", name) or name in names:
+            raise ValueError("scenario names must be unique safe path components")
+        names.add(name)
+        expected_markers(step.get("expected"))
+    return steps
+
+
+def compile_arguments(project, output, template, retained):
+    arguments = ["compile", str(project), "--workers", "2", "--engine-template", str(template),
+                 "--bootstrap-catalog", "--exact-inputs", "--artifact-directory", str(output / "artifacts"),
+                 "--output-store", str(output / "store"), "--compile-result-file", str(output / "compile-result.json")]
+    if not retained:
+        arguments.extend(["--no-daemon", "--no-cache"])
+    return arguments
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("native", "template", "dm", "dd"):
+        parser.add_argument("--" + name, type=Path, required=True)
+        parser.add_argument("--" + name + "-sha256", required=True)
+    parser.add_argument("--output-root", type=Path, default=Path("E:/dq-cache/dmb-incremental-runtime-contract"))
+    args = parser.parse_args()
+    if os.name != "nt":
+        raise ValueError("the pinned daemon/runtime route requires Windows")
+    h = load("contract_iteration", BENCH / "native-iteration.py")
+    fresh = load("contract_fresh", BENCH / "native-fresh.py")
+    retirement = load("contract_retirement", HERE.parent / "power_retirement_runtime/run.py")
+    h.safe_e(args.output_root)
+    args.output_root.mkdir(parents=True, exist_ok=True)
+    root = args.output_root / uuid.uuid4().hex
+    root.mkdir()
+    receipt = {"schema": 1, "scope": "eight explicit standalone semantic observations across nine compilation revisions",
+               "acceptance_profile": False, "complete": False, "matches": False,
+               "root": str(root), "steps": [], "executions": {}}
+    receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme", "scenarios.json")}
+    daemon = None
+    memory = None
+    previous_memory = h._owned_memory
+    status = 1
+    deadline = time.monotonic() + 300  # Includes owned daemon lifetime, all compiles/acquires/runtimes.
+    try:
+        for name in ("native", "template", "dm", "dd"):
+            file = getattr(args, name).resolve(strict=True)
+            h.regular(file)
+            expected = getattr(args, name + "_sha256")
+            if not re.fullmatch("[0-9a-f]{64}", expected) or h.sha(file) != expected:
+                raise ValueError("pinned input SHA mismatch: " + name)
+            setattr(args, name, file)
+            retirement.record_pin(receipt, name, file, expected)
+        steps = read_steps(HERE / "scenarios.json")
+        source = (HERE / "probe.dm").read_text(encoding="utf-8")
+        native_source, byond_source = root / "native-source", root / "byond-source"
+        for directory in (native_source, byond_source):
+            directory.mkdir()
+            shutil.copyfile(HERE / "probe.dme", directory / "probe.dme")
+        cache = root / "cache"
+        endpoint = h.Endpoint()
+        endpoint.probe()  # Fail before launching if any foreign daemon occupies this account endpoint.
+        memory = OwnedMemory(4_000_000_000)
+        h._owned_memory = memory
+        memory.start()
+
+        def run(label, executable, arguments, seconds, retained=False, runtime=False):
+            child_deadline = min(deadline, time.monotonic() + seconds)
+            def launch():
+                return h.run_child(executable, arguments, root / label, child_deadline,
+                                   require_owned=retained, cache_directory=cache)
+            # Apply to all owned launches, including compilation, not only DD.
+            with retirement.hidden_error_mode():
+                result = launch()
+            receipt["executions"][label] = result
+            if result["exit"] != 0:
+                raise ValueError(label + " failed; owned child evidence preserved")
+
+        environment = os.environ.copy()
+        environment["DMB_CACHE_DIR"] = str(cache)
+        with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
+            with retirement.hidden_error_mode():
+                daemon = subprocess.Popen([str(args.native), "--serve-daemon"], stdout=out, stderr=err,
+                                          env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
+        receipt["owned_daemon_pid"] = daemon.pid
+        memory.register(daemon)
+        ready_deadline = min(deadline, time.monotonic() + 20)
+        while not endpoint.probe(daemon):
+            memory.check()
+            if daemon.poll() is not None or time.monotonic() >= ready_deadline:
+                raise RuntimeError("owned daemon did not become ready within 20 seconds")
+            time.sleep(0.05)
+
+        for index, step in enumerate(steps):
+            source = apply_step(source, step)
+            expected = expected_markers(step["expected"])
+            label = f"{index:02d}-{step['name']}"
+            row = {"name": step["name"], "status": "pending", "expected": expected}
+            receipt["steps"].append(row)
+            for directory in (native_source, byond_source):
+                target = directory / "probe.dm"
+                temporary = directory / "probe.next"
+                temporary.write_text(source, encoding="utf-8", newline="\n")
+                os.replace(temporary, target)
+            row["source_sha256"] = h.sha(native_source / "probe.dm")
+            if h.sha(byond_source / "probe.dm") != row["source_sha256"]:
+                raise ValueError("compiler fixture source copies differ")
+
+            run(label + "/byond-compile", args.dm, [str(byond_source / "probe.dme")], 30)
+            if not re.search(r"\b516\.1687\b", read_text(root / label / "byond-compile/stdout.log")):
+                raise ValueError("successful DreamMaker compile did not report pinned 516.1687")
+            # Give each revision an independent runtime log/output namespace;
+            # DD's -logself must not append an earlier revision's observations.
+            byond_runtime = root / label / "byond-owned"
+            byond_runtime.mkdir()
+            row["byond_outputs"] = {}
+            for extension in ("dmb", "rsc"):
+                original = byond_source / ("probe." + extension)
+                if extension == "rsc" and not original.exists():
+                    # This resource-free corpus does not require BYOND to emit an archive.
+                    row["byond_outputs"][extension] = {"present": False}
+                    continue
+                h.regular(original)
+                shutil.copyfile(original, byond_runtime / original.name)
+                row["byond_outputs"][extension] = {"present": True, "sha256": h.sha(original), "bytes": original.stat().st_size}
+            run(label + "/byond-runtime", args.dd,
+                [str(byond_runtime / "probe.dmb"), "-close", "-trusted", "-invisible", "-logself"], 30, runtime=True)
+            row["byond"] = observations(byond_runtime / "probe.log", expected)
+            if not row["byond"]["matches_expected"]:
+                raise ValueError("BYOND does not match the declared runtime expectation: " + step["name"])
+
+            for mode in ("retained", "fresh"):
+                output = root / label / mode
+                output.mkdir(parents=True)
+                if daemon.poll() is not None or not endpoint.probe(daemon):
+                    raise RuntimeError("owned daemon missing before compilation")
+                run(label + "/" + mode + "-compile", args.native,
+                    compile_arguments(native_source / "probe.dme", output, args.template, mode == "retained"),
+                    300, retained=mode == "retained")
+                if daemon.poll() is not None or not endpoint.probe(daemon):
+                    raise RuntimeError("owned daemon changed during compilation; replacement left untouched")
+                result = fresh.read_json(output / "compile-result.json", 65536)
+                slots = output / "slots"
+                acquired_file = output / "acquired.json"
+                run(label + "/" + mode + "-acquire", args.native,
+                    ["acquire", "--output-store", str(output / "store"), "--pair-id", result["pair_id"],
+                     "--slots", str(slots), "--result-file", str(acquired_file)], 30)
+                acquired = fresh.read_json(acquired_file, 65536)
+                hashes = fresh.admit_pair(result, acquired, output / "artifacts/probe.dme",
+                                         output / "store", slots, h.regular, h.sha)
+                row[mode + "_pair"] = {"published": result, "acquired": acquired, "outputs": hashes}
+                dmb = Path(acquired["dmb"])
+                run(label + "/" + mode + "-runtime", args.dd,
+                    [str(dmb), "-close", "-trusted", "-invisible", "-logself"], 30, runtime=True)
+                row[mode] = observations(dmb.with_suffix(".log"), expected)
+                if not row[mode]["matches_expected"]:
+                    raise ValueError(mode + " does not match declared expectations: " + step["name"])
+                for extension in ("dmb", "rsc"):
+                    if h.sha(Path(acquired[extension])) != hashes[extension]["sha256"]:
+                        raise ValueError("acquired runtime input changed: " + mode + " " + extension)
+            # admit_pair returns location-bearing evidence. Compare the actual artifact bytes explicitly.
+            row["fresh_byte_oracle"] = {extension: {
+                mode: h.sha(root / label / mode / "artifacts" / ("probe." + extension))
+                for mode in ("retained", "fresh")} for extension in ("dmb", "rsc")}
+            if any(answer["retained"] != answer["fresh"] for answer in row["fresh_byte_oracle"].values()):
+                raise ValueError("retained/fresh native output bytes differ: " + step["name"])
+            for directory in (native_source, byond_source):
+                if h.sha(directory / "probe.dm") != row["source_sha256"] or h.sha(directory / "probe.dme") != receipt["fixture_sources"]["probe.dme"]:
+                    raise ValueError("current fixture input changed during a request")
+            row["status"] = "passed"
+        for name in receipt["fixture_sources"]:
+            if h.sha(HERE / name) != receipt["fixture_sources"][name]:
+                raise ValueError("committed fixture changed during the cohort")
+        for name in ("native", "template", "dm", "dd"):
+            if h.sha(getattr(args, name)) != getattr(args, name + "_sha256"):
+                raise ValueError("pinned input changed during cohort: " + name)
+        receipt.update(complete=True, matches=True)
+        status = 0
+    except Exception as error:
+        receipt["error"] = str(error)
+    finally:
+        if daemon is not None:
+            record_daemon_cleanup(receipt, terminate_owned(daemon))
+            if receipt.get("status") == "failed":
+                receipt.update(complete=False, matches=False)
+                status = 1
+        if memory is not None:
+            receipt["memory"] = memory.finish()
+            receipt["memory"]["scope"] = "registered owned daemon/compile/acquire/runtime handles, 200ms samples; not strict peak or descendant proof"
+            if receipt["memory"]["status"] == "failed":
+                receipt.update(complete=False, matches=False)
+                status = 1
+        h._owned_memory = previous_memory
+        # All acquired outputs and logs remain under this new owned E: root for review.
+        (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+        print(root / "receipt.json")
+    return status
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
