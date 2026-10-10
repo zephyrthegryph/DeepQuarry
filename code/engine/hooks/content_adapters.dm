@@ -1,11 +1,10 @@
-// Engine-declared interfaces for downstream presentation, construction and native delivery.
+// Engine-declared interfaces for downstream presentation and native delivery.
 
 /// Establish the stateless framework interfaces at boot, after globals are available.
 /// Getters remain safe for earlier callers and retain any provider they already created.
 /proc/engine_prepare_interfaces()
 	materialization_host()
 	native_watch_provider()
-	construction_stage_provider()
 	transfer_feedback_provider()
 	time_scheduler_factory()
 	operation_compatibility()
@@ -48,17 +47,6 @@ GLOBAL_DATUM(native_watch_provider, /datum/native_watch_provider)
 
 /atom/movable/proc/place_starting_occupant(atom/holder)
 	return FALSE
-
-/datum/construction_stage_provider
-
-GLOBAL_DATUM(construction_stage_provider, /datum/construction_stage_provider)
-
-/proc/construction_stage_provider()
-	RETURN_TYPE(/datum/construction_stage_provider)
-	if(!GLOB.construction_stage_provider)
-		GLOB.construction_stage_provider = new /datum/construction_stage_provider
-	return GLOB.construction_stage_provider
-
 
 /datum/transfer_feedback_provider
 

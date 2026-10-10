@@ -31,18 +31,6 @@
 #define ROUTE_TK (1<<7)
 #define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
-// ---- operation kinds (op_def.kind); also what cap_require(ops =) can name ----
-/// An ordinary use: needs a capable actor.
-#define OP_CONTROL "control"
-/// Changes what the thing is (dismantle, rewire): needs a capable actor.
-#define OP_STRUCTURAL "structural"
-/// A last resort anyone alive can try (an emergency release): the actor-state stage only refuses the dead.
-#define OP_EMERGENCY "emergency"
-
-/// using = EMPTY_HAND: the op is meant only with nothing in hand (the input falls through to the item's own
-/// interactions otherwise), and the hand is checked again at commit.
-#define EMPTY_HAND req_empty_hand()
-
 // ---- requirement subjects (req(of =)) ----
 #define OP_ACTOR "actor"
 #define OP_TARGET "target"
@@ -78,22 +66,13 @@
 #define ENTRY_LATCH "latch"
 #define ENTRY_PROTRUSION "protrusion"
 
-// ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
-/// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
+// ---- op keys of the library's lock and emag ops ----
+/// The emag op of a hatch.
 #define LEGACY_CAP_EMAG "emag"
 /// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
 #define LEGACY_CAP_LOCK "toggle_lock"
 /// The key of claw_op(): a shredder tearing at a breakable machine.
 #define CAP_CLAW "claw"
-
-// ---- op_ctx check stages, in the order they run ----
-#define OP_STAGE_PROVIDER 1
-#define OP_STAGE_ROUTE 2
-#define OP_STAGE_ACTOR 3
-#define OP_STAGE_TARGET 4
-#define OP_STAGE_CAPS 5
-#define OP_STAGE_NEEDS 6
-#define OP_STAGE_ALL OP_STAGE_NEEDS
 
 // ---- op priorities: higher first among the ops one input reaches (doc/rewrite/operations_and_actions.md §5) ----
 /// What a type does when nothing more specific it offers answers (an item's pickup, a mob being hit): the old

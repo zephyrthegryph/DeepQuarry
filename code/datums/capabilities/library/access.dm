@@ -1,37 +1,9 @@
-// cap_access(): access-gated operations without lock state, and the credential providers every access check shares
-// (doc/rewrite/migration_guide.md A4, archive/framework_fixes.md §9.5; operations_and_actions.md "Credentials").
-//
-//	CAPABILITY(/obj/machinery/computer/drone_control, cap_access(ops = "open_console"))              // the holder's req_access (a map may vary it per instance)
-//	CAPABILITY(/obj/machinery/computer/drone_control, cap_access(list(ACCESS_ENGINE), ops = OP_CONTROL))  // a type default, used while the holder sets none
-//
-// cap_access() is a contract (a cap_require() subtype): every op it covers (`ops`: op keys and/or OP_* kinds; null:
-// every op) also needs a credential that grants the access. The access asked is the holder's own req_access /
-// req_one_access when either is set (map edits, design review H1), else the capability's type default; with neither,
-// nothing is asked. A credential is a PROVIDER, found the way a hand is (access_credential()): the card held in the
-// active hand (when it is one of `id_types`), then what the actor carries (a worn ID or PDA, through GetAccess()), then
-// the actor themself (a silicon's own access). The lock (cap_lock()) asks the same providers; it only adds lock state.
-// The authority route (map spawn, admin) is never asked.
-
-/datum/capability/require/access
-	/// Type default: every one required (has_access()).
-	var/list/req_access
-	/// Type default: at least one required.
-	var/list/req_one_access
-	/// Cards a held item may be to count as the credential in hand.
-	var/list/id_types
-
-/// Ops `ops` (keys and/or OP_* kinds, null: all) need a credential granting the holder's access (its own req_access /
-/// req_one_access, else `access` / `req_one_access` here).
-/proc/cap_access(list/access, list/req_one_access, ops = OP_CONTROL, list/id_types = list(/obj/item/card/id, /obj/item/pda))
-	var/datum/capability/require/access/C = new
-	C.req_access = access
-	C.req_one_access = req_one_access
-	C.id_types = id_types
-	if(!isnull(ops))
-		C.ops = islist(ops) ? ops : list(ops)
-	C.reqs = list(req_credential(access, req_one_access, id_types))
-	C.key = "access:[md5(datum_signature(list(C.ops, access, req_one_access, id_types)))]"
-	return C
+// The credential providers every access check shares (doc/rewrite/migration_guide.md A4, archive/framework_fixes.md §9.5;
+// operations_and_actions.md "Credentials"). The access asked is the holder's own req_access / req_one_access when either is
+// set (map edits, design review H1), else a caller's default; with neither, nothing is asked. A credential is a PROVIDER,
+// found the way a hand is (access_credential()): the card held in the active hand (when it is one of `id_types`), then what
+// the actor carries (a worn ID or PDA, through GetAccess()), then the actor themself (a silicon's own access). The lock
+// (code/library/access/lock.dm) asks the same providers. The authority route (map spawn, admin) is never asked.
 
 // ---- what is required ----
 
@@ -95,9 +67,8 @@
 	R.id_types = id_types
 	return req_intern(R)
 
-/// Whether `actor` (with `held` in hand) has a credential for holder's cap_access() contract (any covering op). From
-/// code that asks outside an op (a UI's status, a button).
+/// Whether `actor` (with `held` in hand) has a credential for holder's own access. From code that asks outside an op
+/// (a UI's status, a button).
 /proc/access_allowed(atom/holder, mob/actor, obj/item/held)
-	var/datum/capability/require/access/C = cap_of(holder, /datum/capability/require/access)
-	var/list/needs = access_needs(holder, C?.req_access, C?.req_one_access)
-	return !!access_credential(holder, actor, held, needs[1], needs[2], C?.id_types)
+	var/list/needs = access_needs(holder, null, null)
+	return !!access_credential(holder, actor, held, needs[1], needs[2], null)

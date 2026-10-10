@@ -637,9 +637,10 @@ recorded an empty resolver row for every type. Clicks go to the op engine (`try_
 
 Then the engine's side of the bridge (same lane, second batch): the legacy-candidate protocol (`compatibility_candidates/menu/screentip/run`,
 `op_run_compatibility()`, `op_cand.legacy`, `op_resolve(include_legacy)`), the text-route shapes of `action_options()`, `screentip_for()` and
-`perform_op()`, `operation_compatibility().named()/perform()` and the text-named ladder `stage()` (now a declaration error). Still there: the
-engine's `refine()` support in `capability_tables.dm` has no constructor, and `/datum/op_ctx`'s stage pipeline is used only by the requirement
-tests and `cap_needs_reason()`.
+`perform_op()`, `operation_compatibility().named()/perform()` and the text-named ladder `stage()` (now a declaration error). Then the dead
+leftovers: the entry form fields in `ask.dm`, the engine's `refine()` handling (`/datum/capability/refine`, `operation_conflicts/key/refined`),
+`/datum/op_def`, `cap_require()`/`cap_access()` and `op_at_reason()`; `/datum/op_ctx` is now only the requirement context `cap_needs_reason()` and a
+compartment's `passes()` ask (no stages, no pending waits); the empty `construction_stage_provider` interface is gone. All hard-banned.
 
 
 ## M. Small forms (rewrite/small-forms)
