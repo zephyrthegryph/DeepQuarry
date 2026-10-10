@@ -29,7 +29,7 @@ TRACKED(/obj/machinery/rnd/destructive_analyzer, busy)
 	set_busy(FALSE)
 
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
-	owns_one(nameof(rmat), /datum/remote_materials)
+	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
 	interface("DestructiveAnalyzer")
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	extend("part_replacement.replace", needs(req_bool(PROC_REF(idle), because = MSG(analyzer/busy))))
@@ -40,13 +40,11 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	op("recycle", item(/obj/item/storage/part_replacer), gesture(GESTURE_DRAG), label("Recycle parts"), then(PROC_REF(interaction_recycle)))
 	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
 
-/obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	rel_set(src, nameof(rmat), new /datum/remote_materials( \
-		src, \
-		mapload, \
-		mat_container_flags = MATCONTAINER_NO_INSERT \
-	))
+/// Its link to the ore silo (owns_one(starts =)): it takes nothing in through it.
+/obj/machinery/rnd/destructive_analyzer/proc/make_rmat(current, mapload)
+	return new /datum/remote_materials(src, mapload, mat_container_flags = MATCONTAINER_NO_INSERT)
 
+/obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
 	//Destructive analysis
 	var/static/list/destructive_events = list(
 		/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),

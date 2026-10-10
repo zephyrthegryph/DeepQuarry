@@ -27,16 +27,15 @@ CAPABILITIES(/obj/structure/AIcore)
 	op("add_cables", stack(/obj/item/stack/cable_coil, 5), when(req_is(nameof(state), 2)), needs(req_is(nameof(state), 2, because = MSG(ai_core/board_unfastened))), begins(MSG(ai_core/wiring_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done)))
 	op("add_panel", stack(/obj/item/stack/material, 2), when(req_is(nameof(state), 3)), when(req(PROC_REF(reinforced_panel))), needs(req_is(nameof(state), 3, because = MSG(ai_core/not_wired)), req(PROC_REF(reinforced_panel))), begins(MSG(ai_core/glass_start)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(attackby_timed_done2)))
 	op("ai_core_install", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
-	owns_one(nameof(laws), /datum/ai_laws)
+	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(make_laws))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
-// ALLOW(init/INSTANCE_STATE): a map-placed core starts with the map's default law set
-/obj/structure/AIcore/Initialize(mapload)
-	. = ..()
+/// A map-placed core starts with the map's default law set (owns_one(starts =)); a built one gets its laws from its board.
+/obj/structure/AIcore/proc/make_laws(current, mapload)
 	if(mapload)
-		rel_set(src, nameof(laws), new using_map.default_law_type)
+		return new using_map.default_law_type
 
 
 
