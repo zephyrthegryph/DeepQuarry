@@ -111,7 +111,19 @@ fn presence_survives_current_symbolic_admission_and_links_end_only() {
         resolver: host,
         symbols: plan.symbols.as_ref(),
     };
-    let lowered = lower(&frontend, plan, &evaluator, host, None).unwrap();
+    let mut lowered = lower(&frontend, plan, &evaluator, host, None).unwrap();
+    crate::class_initialization::admit_lowered(plan, &lowered.classified, &lowered.units)
+        .unwrap();
+    let index = lowered.units.iter().position(|unit| {
+        unit.scope == InitializerScope::Instance(SymbolId::of("/datum/empty_only"))
+    }).unwrap();
+    let original_index = lowered.units[index].declaration_presence.as_ref().unwrap()
+        .classified_ordinal;
+    lowered.units[index].declaration_presence.as_mut().unwrap().classified_ordinal = usize::MAX;
+    assert!(crate::class_initialization::admit_lowered(
+        plan, &lowered.classified, &lowered.units
+    ).is_err(), "presence must point to its exact current classified record");
+    lowered.units[index].declaration_presence.as_mut().unwrap().classified_ordinal = original_index;
     let unit = lowered
         .units
         .into_iter()

@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "scope": "focused migration checks; not full runtime parity or performance acceptance",
+  "parent": "f3b0b48c09e3050972b23ee2d89d554bbb1968c1",
+  "rust_checks": 64,
+  "receipts_root": "E:\\dq-cache\\dmb-native-v2\\integration-gates",
+  "receipts": [
+    {
+      "receipt": "20261010-061030-ada46e3e-focused.json",
+      "binary_sha256": "baa9e160bf07b10ef2bdc2687a23a14a337120cfff7cf9ea61d003a3ea1dc391",
+      "checks": [
+        {
+          "filter": "lowering::tests::initializer_instance_calls",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "driver_facts::evaluator::qualified_initial_tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "lowering::source_identity::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "lowering::tests::incomplete_expression",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "initializer_lowering::presence_tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "runner_host::callable_failure_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "runner_host::callable_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "initializer_policy::classification::artifact::bind_text_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "startup::artifacts::callable_index::tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "lowering_memo_wire::borrowed_wire_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "lowering_memo_compact::tests",
+          "selected": 6,
+          "exit": 0
+        },
+        {
+          "filter": "lowering_memo_selection::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "map_memo::wire::borrowed_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "map_memo::tests",
+          "selected": 8,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "20261010-055919-67728c47-focused.json",
+      "binary_sha256": "c9aecabb37424c39f9ede6feef85344c31634ca4e0314b1105f75f94e91b825f",
+      "checks": [
+        {
+          "filter": "frontend::grammar_roster::tests",
+          "selected": 6,
+          "exit": 0
+        },
+        {
+          "filter": "frontend::semantic_state::callable_lifecycle_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "frontend::relative_declarations::arena::tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "frontend::relative_declarations::tests",
+          "selected": 6,
+          "exit": 0
+        },
+        {
+          "filter": "frontend::callable_roster::tests",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "20261010-055126-8fcfbb53-focused.json",
+      "binary_sha256": "2c9257985f9989cd55fb3342a6cecb48c90949a26cb29656d7ef227463de638c",
+      "checks": [
+        {
+          "filter": "initializer::codec_tests",
+          "selected": 6,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "20261010-055238-94bf8760-focused.json",
+      "binary_sha256": "29ffe471c2411a68e6aca35b9f9b6b67c4398941ae8d2b2eaaa91bfe6860d0b3",
+      "checks": [
+        {
+          "filter": "initializer::receiver_tests",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "initializer::assignment_group::tests",
+          "selected": 3,
+          "exit": 0
+        },
+        {
+          "filter": "initializer::borrowed_tests",
+          "selected": 2,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "20261010-055126-78d8193d-focused.json",
+      "binary_sha256": "23676ad3de95e9f7caa2cb6824a536784c5d20dd1852bcaadbd254b497ef94b2",
+      "checks": [
+        {
+          "filter": "regions::region_memo::shared_receipt_tests",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "regions::region_memo::retained_size_tests",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "20261010-060054-ef0e4e25-focused.json",
+      "binary_sha256": "7b3cab57137d4c80a990ef984dc4039b84f796fa24f1875bd15b7ddee6865393",
+      "checks": [
+        {
+          "filter": "expression_parser::incomplete_tests",
+          "selected": 2,
+          "exit": 0
+        }
+      ]
+    }
+  ],
+  "python_synthetic_checks": 7,
+  "rust_full_suite_run": false,
+  "dreamdaemon_run": false,
+  "whole_program_byond_parity_closed": false,
+  "performance_budgets_closed": false,
+  "failed_attempts_preserved": [
+    "20261010-055348-95b3a5d7.json",
+    "20261010-060553-b9bdb3bc-focused.json"
+  ],
+  "benchmark": "pending new pinned executable"
+}

@@ -8,14 +8,14 @@ pub(super) struct ScanResult {
     pub(super) scanned_bytes: usize,
 }
 fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usize)> {
-    let records = old.records()?;
+    let records = old.pieces()?;
     let old_len = records
         .iter()
-        .try_fold(0usize, |sum, value| sum.checked_add(value.text().len()))?;
+        .try_fold(0usize, |sum, value| sum.checked_add(value.len()))?;
     let mut prefix = 0usize;
     for record in records.iter() {
         let current = source.as_bytes().get(prefix..)?;
-        let bytes = record.text().as_bytes();
+        let bytes = record.as_bytes();
         if current.get(..bytes.len()) == Some(bytes) {
             prefix += bytes.len();
             continue;
@@ -33,7 +33,7 @@ fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usiz
     let maximum = (source.len() - prefix).min(old_len - prefix);
     let mut suffix = 0usize;
     for record in records.iter().rev() {
-        let bytes = record.text().as_bytes();
+        let bytes = record.as_bytes();
         let limit = bytes.len().min(maximum - suffix);
         let end = source.len() - suffix;
         let current = &source.as_bytes()[end - limit..end];
@@ -49,7 +49,7 @@ fn common_bytes(source: &str, old: &GrammarAnswer) -> Option<(usize, usize, usiz
                 .count()
         };
         suffix += count;
-        if suffix == maximum || count != record.text().len() {
+        if suffix == maximum || count != record.len() {
             break;
         }
     }

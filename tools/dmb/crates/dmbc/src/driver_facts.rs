@@ -199,33 +199,23 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
 /// Exact source occurrence index built once, independently of source encounter
 /// scheduling. Distinct formal/reopen identities cannot alias one prepared ABI.
 pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, MemberId>, AbiError> {
-    let tree = &frontend.snapshot.tree;
+    let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let mut result = BTreeMap::new();
-    for body in frontend.bodies.iter() {
-        let node = tree
-            .member(body.member)
-            .ok_or_else(|| AbiError::unsupported("body member missing"))?;
-        let owner = tree
-            .type_node(node.owner)
-            .ok_or_else(|| AbiError::unsupported("body owner missing"))?
-            .path;
-        let namespace = match node.kind {
-            MemberKind::Proc => Namespace::Proc,
-            MemberKind::Verb => Namespace::Verb,
-            MemberKind::Var => {
-                return Err(AbiError::unsupported("variable body in procedure index"))
-            }
+    for (ordinal, member) in roster.members().iter().enumerate() {
+        let identity = roster
+            .identity(ordinal)
+            .ok_or_else(|| AbiError::invariant("callable identity missing"))?;
+        let unit = UnitIdentity {
+            owner: identity.owner,
+            name: identity.name,
+            namespace: if identity.verb {
+                Namespace::Verb
+            } else {
+                Namespace::Proc
+            },
+            occurrence: identity.occurrence,
         };
-        let occurrence = tree
-            .member_occurrence(body.member)
-            .ok_or_else(|| AbiError::unsupported("empty procedure chain"))?;
-        let identity = UnitIdentity {
-            owner,
-            name: node.name,
-            namespace,
-            occurrence,
-        };
-        if result.insert(identity, body.member).is_some() {
+        if result.insert(unit, *member).is_some() {
             return Err(AbiError::unsupported(
                 "ambiguous current procedure occurrence",
             ));
@@ -470,34 +460,14 @@ fn prepare_source_abi_mode_on_executor(
             &owned_index
         }
     };
-    let identities: HashMap<_, _> = index.iter().map(|(key, id)| (*id, *key)).collect();
+    let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
     let mut layouts = HashMap::new();
     let mut remaining = vec![true; frontend.bodies.len()];
     let mut results: Vec<Option<crate::procedure_policy::PreparedUnit>> =
         (0..remaining.len()).map(|_| None).collect();
     let mut failures = BTreeMap::new();
-    let body_ordinals: HashMap<_, _> = frontend
-        .bodies
-        .iter()
-        .enumerate()
-        .map(|(ordinal, body)| (body.member, ordinal))
-        .collect();
-    let mut dependents = vec![Vec::new(); frontend.bodies.len()];
-    let mut ready = Vec::new();
-    for (ordinal, body) in frontend.bodies.iter().enumerate() {
-        let node = tree
-            .member(body.member)
-            .ok_or_else(|| AbiError::unsupported("body member missing"))?;
-        match node.previous {
-            None => ready.push(ordinal),
-            Some(previous) => {
-                if let Some(predecessor) = body_ordinals.get(&previous) {
-                    dependents[*predecessor].push(ordinal);
-                }
-            }
-        }
-    }
+    let mut ready = roster.ready().to_vec();
     // The build executor survives every dependency wave and every other stage.
     if !ready.is_empty() {
         while !ready.is_empty() {
@@ -545,7 +515,24 @@ fn prepare_source_abi_mode_on_executor(
                                                 ))
                                             })?;
                                         let context = AbiContext {
-                                            identity: identities[&body.member],
+                                            identity: {
+                                                let identity =
+                                                    roster.identity(*ordinal).ok_or_else(|| {
+                                                        AbiError::invariant(
+                                                            "callable identity missing",
+                                                        )
+                                                    })?;
+                                                UnitIdentity {
+                                                    owner: identity.owner,
+                                                    name: identity.name,
+                                                    namespace: if identity.verb {
+                                                        Namespace::Verb
+                                                    } else {
+                                                        Namespace::Proc
+                                                    },
+                                                    occurrence: identity.occurrence,
+                                                }
+                                            },
                                             symbols: evaluator.symbols,
                                             origin: &body.source,
                                             resolver: evaluator.resolver,
@@ -582,7 +569,7 @@ fn prepare_source_abi_mode_on_executor(
                         let abi = Arc::clone(unit.abi.as_ref().expect("validated production ABI"));
                         layouts.insert(frontend.bodies[ordinal].member, abi);
                         results[ordinal] = Some(unit);
-                        ready.extend(dependents[ordinal].iter().copied());
+                        ready.extend(roster.dependents(ordinal).iter().copied());
                     }
                     Err(error) => {
                         failures.insert(ordinal, error);
@@ -603,8 +590,8 @@ fn prepare_source_abi_mode_on_executor(
             let mut inherited_kind = None;
             for _ in 0..frontend.bodies.len() {
                 let Some(member) = previous else { break };
-                if let Some(index) = body_ordinals.get(&member) {
-                    if let Some(error) = failures.get(index) {
+                if let Some(index) = roster.ordinal(member) {
+                    if let Some(error) = failures.get(&index) {
                         inherited_kind = Some(error.kind);
                         break;
                     }
@@ -643,7 +630,7 @@ pub struct FrozenPreparedPolicy<'a> {
     prepared: &'a PreparedSourceAbi,
     by_identity: BTreeMap<UnitIdentity, usize>,
     members: Arc<BTreeMap<UnitIdentity, MemberId>>,
-    body_ordinals: HashMap<MemberId, usize>,
+    roster: &'a dm_tree::frontend::CallableRoster,
 }
 impl<'a> FrozenPreparedPolicy<'a> {
     pub fn new(
@@ -668,17 +655,34 @@ impl<'a> FrozenPreparedPolicy<'a> {
                 "cannot lower a failed ABI preparation batch",
             ));
         }
-        let inverse: HashMap<_, _> = members
-            .iter()
-            .map(|(identity, member)| (*member, *identity))
-            .collect();
+        let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
+        if members.len() != roster.members().len() {
+            return Err(AbiError::unsupported(
+                "issued callable index differs from frontend",
+            ));
+        }
         let mut by_identity = BTreeMap::new();
         for (index, (member, unit)) in prepared.units.iter().enumerate() {
             unit.require_production_abi()?;
-            let identity = inverse.get(member).ok_or_else(|| {
+            let issued = roster.identity_for_member(*member).ok_or_else(|| {
                 AbiError::unsupported("prepared member belongs to another frontend")
             })?;
-            if by_identity.insert(*identity, index).is_some() {
+            let identity = UnitIdentity {
+                owner: issued.owner,
+                name: issued.name,
+                namespace: if issued.verb {
+                    Namespace::Verb
+                } else {
+                    Namespace::Proc
+                },
+                occurrence: issued.occurrence,
+            };
+            if members.get(&identity) != Some(member) {
+                return Err(AbiError::unsupported(
+                    "issued callable index differs from frontend",
+                ));
+            }
+            if by_identity.insert(identity, index).is_some() {
                 return Err(AbiError::unsupported("duplicate prepared member"));
             }
         }
@@ -687,18 +691,12 @@ impl<'a> FrozenPreparedPolicy<'a> {
                 "prepared ABI batch does not cover all bodies",
             ));
         }
-        let body_ordinals = frontend
-            .bodies
-            .iter()
-            .enumerate()
-            .map(|(ordinal, body)| (body.member, ordinal))
-            .collect();
         Ok(Self {
             frontend,
             prepared,
             by_identity,
             members,
-            body_ordinals,
+            roster,
         })
     }
     fn unit(
@@ -734,10 +732,10 @@ impl<'a> FrozenPreparedPolicy<'a> {
             return Err("prepared ABI metadata changed".into());
         }
         let ordinal = self
-            .body_ordinals
-            .get(member)
+            .roster
+            .ordinal(*member)
             .ok_or("prepared body missing")?;
-        let body = &self.frontend.bodies[*ordinal];
+        let body = &self.frontend.bodies[ordinal];
         let source = &body.source;
         let macros_equal = source.macro_expansions.len() == origin.macro_expansions.len()
             && source

@@ -399,7 +399,7 @@ mod tests {
         );
         let a = first.syntax.items().next().unwrap();
         let b = shifted.syntax.items().next().unwrap();
-        assert!(std::ptr::eq(a.relative_item(), b.relative_item()));
+        assert!(a.same_relative_node(b));
         assert_eq!(b.span().start, a.span().start + 80);
         let catalog = store
             .current_catalog(&[Arc::clone(&first.value)], None)
@@ -451,7 +451,7 @@ mod tests {
         assert_eq!(restored.facts.origins, facts.origins);
         assert_eq!(restored.skeletons.as_ref(), &facts.skeletons);
         assert_eq!(
-            restored.syntax.relative_items().as_ref(),
+            restored.syntax.materialize_relative_items().as_slice(),
             ast.items.as_slice()
         );
         assert!(contribution.rebind(text, usize::MAX).is_none());
@@ -536,7 +536,8 @@ impl Contribution {
     ) -> Option<Self> {
         items_spans(&mut items, text, offset, 0)?;
         let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
-        let syntax = Arc::new(RelativeSyntax::capture(items, text).ok()?);
+        let source: Arc<str> = Arc::from(text);
+        let syntax = Arc::new(RelativeSyntax::capture_shared(items, Arc::clone(&source)).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts
@@ -546,7 +547,7 @@ impl Contribution {
             .max()
             .unwrap_or(0);
         Some(Self {
-            source: Arc::from(text),
+            source,
             facts: Arc::new(facts),
             ledger,
             event_leaf,
@@ -574,7 +575,7 @@ impl Contribution {
         if self.source.as_ref() != text {
             return None;
         }
-        let mut items = self.syntax.relative_items().to_vec();
+        let mut items = self.syntax.materialize_relative_items();
         let mut facts = self.facts.as_ref().clone();
         facts.skeletons = self.skeletons.as_ref().clone();
         items_spans(&mut items, text, 0, offset)?;

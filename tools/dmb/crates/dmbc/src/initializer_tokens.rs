@@ -298,6 +298,7 @@ mod tests {
         ]
         .into_iter()
         .map(|(name, source)| InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: dm_ir::InitializerTarget::Shared {
                 slot: SymbolId::of(name),
                 owner,
@@ -433,7 +434,8 @@ mod tests {
         let writes: Vec<_> = sources
             .iter()
             .map(|source| InitializerWrite {
-                target: dm_ir::InitializerTarget::Instance {
+                source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Instance {
                     declaring_owner: dm_ir::SymbolId::of("/obj"),
                     receiver_owner: dm_ir::SymbolId::of("/obj"),
                     name: dm_ir::SymbolId::of("value"),
@@ -511,7 +513,8 @@ mod tests {
                         "/obj/first"
                     });
                     InitializerWrite {
-                        target: if *name == "global_one" {
+                        source_site: dm_ir::InitializerSite::Declaration,
+            target: if *name == "global_one" {
                             dm_ir::InitializerTarget::Shared {
                                 slot: dm_ir::SymbolId::of(name),
                                 owner,
@@ -606,7 +609,8 @@ mod tests {
         let mut ids = Vec::new();
         for value in expressions {
             let write = InitializerWrite {
-                target: dm_ir::InitializerTarget::Shared {
+                source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Shared {
                     slot: dm_ir::SymbolId::of("slot"),
                     owner: dm_ir::SymbolId::of("/"),
                     name: dm_ir::SymbolId::of("value"),
@@ -656,6 +660,7 @@ mod tests {
         assert_eq!((record.kind, record.value), (0, 0));
         let mut symbols = SymbolTable::default();
         let write = InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: dm_ir::InitializerTarget::Shared {
                 slot: dm_ir::SymbolId::of("slot"),
                 owner: dm_ir::SymbolId::of("/"),
@@ -704,7 +709,8 @@ mod tests {
             let mut symbols = SymbolTable::default();
             symbols.intern(&format!("/{family}")).unwrap();
             let writes: Vec<_> = expressions.iter().map(|source| InitializerWrite {
-                target: dm_ir::InitializerTarget::Shared { slot: dm_ir::SymbolId::of("slot"), owner: dm_ir::SymbolId::of("/"), name: dm_ir::SymbolId::of("value") },
+                source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Shared { slot: dm_ir::SymbolId::of("slot"), owner: dm_ir::SymbolId::of("/"), name: dm_ir::SymbolId::of("value") },
                 lexical_owner: dm_ir::SymbolId::of("/"), lexical_procedure: None,
                 value: dm_ir::InitializerValue::Expression(expression(source, &mut symbols)),
                 declared_array: None, declaration_flags: Some(8),
@@ -732,7 +738,8 @@ mod tests {
             let mut symbols = SymbolTable::default();
             let value = expression(source, &mut symbols);
             let write = InitializerWrite {
-                target: dm_ir::InitializerTarget::Shared {
+                source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Shared {
                     slot: dm_ir::SymbolId::of("slot"),
                     owner: dm_ir::SymbolId::of("/"),
                     name: dm_ir::SymbolId::of("value"),

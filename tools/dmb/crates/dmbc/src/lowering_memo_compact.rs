@@ -173,12 +173,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for BoundedVec<T> {
         deserializer.deserialize_seq(Visitor(std::marker::PhantomData))
     }
 }
-#[derive(Serialize, Deserialize)]
-pub(crate) struct ReadWire<'a> {
-    pub(crate) query: ResolveQuery,
-    #[serde(borrow)]
-    pub(crate) answer: Cow<'a, [u8]>,
-}
+use crate::lowering_memo_wire::read_wire::ReadWire;
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Payload<'a> {
     #[serde(borrow)]

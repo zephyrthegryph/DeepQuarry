@@ -64,19 +64,22 @@ impl ExpansionRecord {
         visit(ExpansionStorageView::Source(&self.source));
         visit(slice_storage(&self.control));
         visit(ExpansionStorageView::Source(&self.text));
+        visit(arc_storage(&self.reads));
         visit(vector_storage(&self.reads));
-        for read in &self.reads {
+        for read in self.reads.iter() {
             visit(ExpansionStorageView::Text(&read.name));
             if let Some(definition) = &read.definition {
                 visit(ExpansionStorageView::Macro(definition));
             }
         }
+        visit(arc_storage(&self.locations));
         visit(vector_storage(&self.locations));
-        for (_, _, location) in &self.locations {
+        for (_, _, location) in self.locations.iter() {
             visit(string_storage(location));
         }
+        visit(arc_storage(&self.lines));
         visit(vector_storage(&self.lines));
-        for line in &self.lines {
+        for line in self.lines.iter() {
             visit(vector_storage(&line.traces));
             for trace in &line.traces {
                 visit(string_storage(&trace.name));
@@ -86,8 +89,9 @@ impl ExpansionRecord {
                 }
             }
         }
+        visit(arc_storage(&self.diagnostics));
         visit(vector_storage(&self.diagnostics));
-        for diagnostic in &self.diagnostics {
+        for diagnostic in self.diagnostics.iter() {
             visit(string_storage(&diagnostic.message));
         }
         visit(vector_storage(&self.fragments));
@@ -117,9 +121,9 @@ mod tests {
             source: crate::SourceText::from(String::from("input")),
             control: Arc::from([0u8]),
             text: crate::SourceText::from(String::from("output")),
-            reads: vec![],
-            locations: vec![(0, false, String::from("location"))],
-            lines: vec![Line {
+            reads: Arc::new(vec![]),
+            locations: Arc::new(vec![(0, false, String::from("location"))]),
+            lines: Arc::new(vec![Line {
                 output: Span::new(0, 6),
                 input: 0,
                 traces: vec![Trace {
@@ -127,12 +131,12 @@ mod tests {
                     invocation_span: Span::new(0, 1),
                     replacement_chain: chain,
                 }],
-            }],
-            diagnostics: vec![Error {
+            }]),
+            diagnostics: Arc::new(vec![Error {
                 input: 0,
                 kind: DiagnosticKind::UserError,
                 message,
-            }],
+            }]),
             fragments: vec![ParseFragment {
                 schema: 0,
                 span: Span::new(0, 1),

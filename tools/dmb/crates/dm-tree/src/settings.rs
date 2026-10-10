@@ -69,17 +69,59 @@ pub fn extract_settings(
     symbols: &mut SymbolTable,
 ) -> Result<Arc<[ProcedureSettingNode]>, String> {
     let mut result = Vec::new();
-    for item in items {
-        if keyword(&item.header, "set") {
-            if !item.children.is_empty() {
-                return Err("setting has nested children".into());
+    fn walk(
+        items: &[Item],
+        symbols: &mut SymbolTable,
+        result: &mut Vec<ProcedureSettingNode>,
+    ) -> Result<(), String> {
+        for item in items {
+            if append_setting(&item.header, !item.children.is_empty(), symbols, result)? {
+                continue;
             }
-            result.push(ProcedureSettingNode::Setting(
-                super::procedure::parse_setting(item.header.trim(), symbols)?,
-            ));
-        } else {
-            result.extend(extract_settings(&item.children, symbols)?.iter().cloned());
+            walk(&item.children, symbols, result)?;
         }
+        Ok(())
+    }
+    walk(items, symbols, &mut result)?;
+    Ok(result.into())
+}
+fn append_setting(
+    header: &str,
+    has_children: bool,
+    symbols: &mut SymbolTable,
+    result: &mut Vec<ProcedureSettingNode>,
+) -> Result<bool, String> {
+    if !keyword(header, "set") {
+        return Ok(false);
+    }
+    if has_children {
+        return Err("setting has nested children".into());
+    }
+    result.push(ProcedureSettingNode::Setting(
+        super::procedure::parse_setting(header.trim(), symbols)?,
+    ));
+    Ok(true)
+}
+/// The same lexical setting producer over current source-backed node views.
+pub fn extract_settings_view(
+    body: crate::frontend::ItemView<'_>,
+    symbols: &mut SymbolTable,
+) -> Result<Arc<[ProcedureSettingNode]>, String> {
+    fn walk(
+        item: crate::frontend::ItemView<'_>,
+        symbols: &mut SymbolTable,
+        result: &mut Vec<ProcedureSettingNode>,
+    ) -> Result<(), String> {
+        if !append_setting(item.header(), item.children().len() != 0, symbols, result)? {
+            for child in item.children() {
+                walk(child, symbols, result)?;
+            }
+        }
+        Ok(())
+    }
+    let mut result = Vec::new();
+    for child in body.children() {
+        walk(child, symbols, &mut result)?;
     }
     Ok(result.into())
 }

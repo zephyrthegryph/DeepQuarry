@@ -14,7 +14,8 @@ fn initializer_instance_storage_requires_exact_receiver_and_declaring_tuple() {
     let receiver = SymbolId::of("/obj/subtype");
     let name = SymbolId::of("density");
     let write = dm_ir::InitializerWrite {
-        target: dm_ir::InitializerTarget::Instance {
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Instance {
             declaring_owner: owner,
             receiver_owner: receiver,
             name,
@@ -207,7 +208,8 @@ fn startup_evaluation_respects_procedure_static_shadowing() {
         panic!("expression");
     };
     let write = dm_ir::InitializerWrite {
-        target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
         lexical_owner: procedure.owner,
         lexical_procedure: Some(procedure),
         value: value.initializer.clone(),
@@ -684,6 +686,7 @@ fn lexical_type_intrinsic_keeps_declaring_context_and_records_type_dependency() 
         }),
     ] {
         let write = dm_ir::InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target,
             lexical_owner: owner,
             lexical_procedure: Some(procedure),
@@ -768,7 +771,8 @@ fn authored_static_lexical_and_global_type_names_shadow_intrinsic() {
         panic!("expression")
     };
     let write = dm_ir::InitializerWrite {
-        target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
         lexical_owner: procedure.owner,
         lexical_procedure: Some(procedure),
         value: value.initializer.clone(),

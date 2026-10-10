@@ -12,6 +12,7 @@ use std::fmt;
 pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 
 mod builtin_catalog;
+pub use builtin_catalog::is_intrinsic_named_call;
 pub mod encoder;
 pub use encoder::{freeze_proc, FreezeError, FrozenProc, OperandEncoding, OperandSite};
 pub mod initializer;

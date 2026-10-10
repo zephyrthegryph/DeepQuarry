@@ -612,7 +612,16 @@ fn compile_with_lookup_mode(
                     target,
                     value,
                     occurrence,
-                } => compiler.typed_assignment(target, value, occurrence),
+                    double_receiver,
+                } => {
+                    let result = compiler.typed_assignment(target, value, occurrence);
+                    if result.is_ok() && double_receiver
+                        && !crate::initializer::finish::double_assignment_receiver(&mut compiler.result.code.items)
+                    {
+                        return Err(vec![error("initializer assignment", "declared instance target receiver could not be certified")]);
+                    }
+                    result
+                },
             };
             if result.is_err() {
                 break;

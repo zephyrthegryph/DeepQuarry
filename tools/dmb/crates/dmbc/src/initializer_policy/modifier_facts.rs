@@ -118,6 +118,7 @@ fn collect<'a>(
         match produce(write, ordinal) {
             Ok(fact) => facts.push(fact),
             Err(reason) => issues.push(ClassificationIssue {
+                kind: ClassificationIssueKind::Unsupported,
                 source_ordinal: ordinal,
                 reason,
             }),

@@ -117,3 +117,100 @@ fn qualified_initial_values_match_captured_byond_and_record_current_dependencies
         .unwrap_err()
         .contains("cycle"));
 }
+
+#[test]
+fn authored_calls_are_rejected_only_in_instance_defaults_including_nested_arguments() {
+    // Domain evidence: user-proc-initializer-domains-20261010-root and
+    // user-proc-instance-overrides-20261010-root pinned BYOND 516.1687 receipts.
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("probe.dme"),
+        &Source("/proc/receiver_amount()\n    return 7\n/datum/probe\n    var/amount\n"),
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let (pinned, _scalar) =
+        crate::request_runner::runner_facts::prepare(&frontend, &engine).unwrap();
+    let tree = frontend.snapshot.tree.as_ref();
+    let owner = SymbolId::of("/datum/probe");
+    let mut symbols = tree.symbols().clone();
+    for text in [
+        "receiver_amount()",
+        "list(receiver_amount())",
+        "new/datum/probe(receiver_amount())",
+    ] {
+        let expression = expression(text, &mut symbols);
+        for site in [
+            dm_ir::InitializerSite::Declaration,
+            dm_ir::InitializerSite::Assignment,
+        ] {
+            let recorder = dm_session::RecordingResolver::new(&pinned);
+            let evaluator = DriverEvaluator {
+                pure_calls: None,
+                resource_search_context: None,
+                resolver: &recorder,
+                symbols: &symbols,
+            };
+            let mut write = dm_ir::InitializerWrite {
+                source_site: site,
+                target: dm_ir::InitializerTarget::Instance {
+                    declaring_owner: owner,
+                    receiver_owner: owner,
+                    name: SymbolId::of("amount"),
+                },
+                lexical_owner: owner,
+                lexical_procedure: None,
+                value: dm_ir::InitializerValue::Expression(expression.clone()),
+                declared_array: None,
+                declaration_flags: Some(0),
+            };
+            assert!(
+                matches!(
+                    evaluator.evaluate_write(&write, &expression).unwrap(),
+                    Evaluation::SourceError(_)
+                ),
+                "{text}"
+            );
+            write.target = dm_ir::InitializerTarget::Shared {
+                slot: SymbolId::of("amount"),
+                owner,
+                name: SymbolId::of("amount"),
+            };
+            assert!(!matches!(
+                evaluator.evaluate_write(&write, &expression).unwrap(),
+                Evaluation::SourceError(_)
+            ));
+        }
+    }
+    let evaluator = DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: &pinned,
+        symbols: &symbols,
+    };
+    let ast = dm_syntax::parse_expression("list(1)").expr.unwrap();
+    let write = dm_ir::InitializerWrite {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: dm_ir::InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: owner,
+            name: SymbolId::of("amount"),
+        },
+        lexical_owner: owner,
+        lexical_procedure: None,
+        value: dm_ir::InitializerValue::NoAuthoredValue,
+        declared_array: None,
+        declaration_flags: Some(0),
+    };
+    assert!(evaluator.instance_call_error(&write, &ast).is_none());
+}

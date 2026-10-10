@@ -2,7 +2,9 @@
 use super::ExpandedRegions;
 #[path = "frontend_grammar_convergence.rs"]
 mod convergence;
+#[cfg(test)]
 use dm_preprocess::regions::ExpansionRecord;
+use dm_preprocess::SourceText;
 use dm_session::{ObservationHost, ObservationLedger, ObservedArtifactStore};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -13,17 +15,12 @@ pub enum GrammarQuery {
     OrderedPieces,
 }
 #[derive(Clone, Debug)]
-pub struct GrammarAnswer(Option<Arc<[Arc<ExpansionRecord>]>>);
+pub struct GrammarAnswer(Option<Arc<[SourceText]>>);
 impl PartialEq for GrammarAnswer {
     fn eq(&self, other: &Self) -> bool {
         match (&self.0, &other.0) {
             (None, None) => true,
-            (Some(a), Some(b)) => {
-                a.len() == b.len()
-                    && a.iter()
-                        .zip(b.iter())
-                        .all(|(a, b)| Arc::ptr_eq(a, b) || a.text() == b.text())
-            }
+            (Some(a), Some(b)) => a.len() == b.len() && a.iter().zip(b.iter()).all(|(a, b)| a == b),
             _ => false,
         }
     }
@@ -43,7 +40,7 @@ impl CurrentPieces {
                 return None;
             }
             cursor = span.end;
-            records.push(Arc::clone(receipt.record()));
+            records.push(receipt.record().shared_output_text());
         }
         if cursor != expanded.text.len() {
             return None;
@@ -210,7 +207,7 @@ impl RetainedGrammar {
     }
 }
 impl GrammarAnswer {
-    pub fn records(&self) -> Option<&Arc<[Arc<ExpansionRecord>]>> {
+    pub fn pieces(&self) -> Option<&Arc<[SourceText]>> {
         self.0.as_ref()
     }
 }
@@ -256,6 +253,34 @@ mod tests {
         );
         assert!(plan.diagnostics.is_empty());
         dm_preprocess::regions::expand_regions_text_with_memo(&plan, 1, &Memo)
+    }
+    #[test]
+    fn grammar_keeps_output_bytes_without_retaining_expansion_records() {
+        let first = expand(1);
+        let records: Vec<_> = first
+            .receipts
+            .iter()
+            .map(|receipt| Arc::downgrade(receipt.record()))
+            .collect();
+        let outputs: Vec<_> = first
+            .receipts
+            .iter()
+            .map(|receipt| receipt.record().shared_output_text().downgrade())
+            .collect();
+        assert!(!records.is_empty());
+        let grammar = RetainedGrammar::default();
+        let expected = scan(&first);
+        grammar.insert(&first, expected.clone());
+        drop(first);
+        assert!(records.iter().all(|record| record.upgrade().is_none()));
+        assert!(outputs.iter().all(|output| output.upgrade().is_some()));
+        let current = expand(1);
+        assert_eq!(grammar.lookup(&current).unwrap().spans, expected);
+        let changed = expand(2);
+        assert_eq!(changed.text.len(), current.text.len());
+        assert!(grammar.lookup(&changed).is_none());
+        grammar.clear();
+        assert!(outputs.iter().all(|output| output.upgrade().is_none()));
     }
     fn scan(expanded: &ExpandedRegions) -> Vec<(usize, usize)> {
         let mut spans = Vec::new();
@@ -334,7 +359,7 @@ mod tests {
         );
         let old = parsed.syntax.items().next().unwrap();
         let new = replay.syntax.items().next().unwrap();
-        assert!(std::ptr::eq(old.relative_item(), new.relative_item()));
+        assert!(old.same_relative_node(new));
         let changed = expand(2);
         let updated = super::super::declaration_parse::parse_declarations_with_state(
             &changed,
@@ -442,8 +467,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            GrammarAnswer(Some(vec![record].into())),
-            GrammarAnswer(Some(vec![Arc::new(altered)].into()))
+            GrammarAnswer(Some(vec![record.shared_output_text()].into())),
+            GrammarAnswer(Some(vec![altered.shared_output_text()].into()))
         );
     }
 }

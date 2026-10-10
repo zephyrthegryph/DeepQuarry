@@ -8,7 +8,11 @@ use std::sync::{
     Arc,
 };
 
+#[path = "startup_callable_index.rs"]
+mod callable_index;
+
 pub struct StartupArtifacts {
+    callables: callable_index::CallableIndex,
     values: dm_session::ObservedArtifactStore<
         Artifact,
         ProcedureIdentity,
@@ -22,6 +26,7 @@ pub struct StartupArtifacts {
 impl Default for StartupArtifacts {
     fn default() -> Self {
         Self {
+            callables: Default::default(),
             values: dm_session::ObservedArtifactStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
@@ -60,6 +65,39 @@ pub(super) fn key(identity: ProcedureIdentity, source: &str) -> Vec<u8> {
     key
 }
 impl StartupArtifacts {
+    /// Drop only the source-neutral callable index's strong semantic root.
+    /// Stored static syntax/layout payloads do not own the semantic tree.
+    pub(crate) fn clear_callable_index(&self) {
+        self.callables.clear();
+    }
+
+    pub(crate) fn retain_callable_tree(&self, tree: Option<&Arc<dm_tree::SemanticTree>>) {
+        self.callables.retain_tree(tree);
+    }
+    pub(super) fn unit_members(
+        &self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+    ) -> Result<
+        Arc<std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>>,
+        String,
+    > {
+        self.callables.get(frontend)
+    }
+    pub(crate) fn visit_callable_storage(
+        &self,
+        visitor: impl FnMut(
+            dm_session::ObservedArtifactStorageView<
+                '_,
+                Arc<std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>>,
+                (),
+                Arc<dm_tree::frontend::CallableRoster>,
+                (),
+            >,
+        ),
+    ) {
+        self.callables.visit_storage(visitor);
+    }
+
     pub(super) fn retain_keys<'a>(
         &self,
         keys: impl IntoIterator<Item = &'a [u8]>,

@@ -202,10 +202,10 @@ pub struct ExpansionRecord {
     control: Arc<[u8]>,
     #[serde(with = "source_wire")]
     text: crate::SourceText,
-    reads: Vec<MacroRead>,
-    locations: Vec<(usize, bool, String)>,
-    lines: Vec<Line>,
-    diagnostics: Vec<Error>,
+    reads: Arc<Vec<MacroRead>>,
+    locations: Arc<Vec<(usize, bool, String)>>,
+    lines: Arc<Vec<Line>>,
+    diagnostics: Arc<Vec<Error>>,
     #[serde(default)]
     fragments: Vec<ParseFragment>,
 }
@@ -217,6 +217,10 @@ impl ExpansionRecord {
             .saturating_add(source_wire::retained_size(&self.source))
             .saturating_add(slice::<u8>(self.control.len()))
             .saturating_add(source_wire::retained_size(&self.text))
+            .saturating_add(record::<Vec<MacroRead>>())
+            .saturating_add(record::<Vec<(usize, bool, String)>>())
+            .saturating_add(record::<Vec<Line>>())
+            .saturating_add(record::<Vec<Error>>())
             .saturating_add(vector(&self.reads, |read| {
                 slice::<u8>(read.name.len()).saturating_add(
                     read.definition
@@ -323,6 +327,10 @@ impl ExpansionRecord {
     }
     pub fn text(&self) -> &str {
         &self.text
+    }
+    /// Shares output bytes only; callers must separately authenticate current receipts.
+    pub fn shared_output_text(&self) -> crate::SourceText {
+        self.text.clone()
     }
 }
 type RecordedMacroReads = BTreeMap<(usize, String), Option<Arc<Macro>>>;
@@ -526,10 +534,10 @@ pub(super) fn expand(
         source,
         control,
         text: output.text.clone(),
-        reads,
-        locations,
-        lines,
-        diagnostics,
+        reads: Arc::new(reads),
+        locations: Arc::new(locations),
+        lines: Arc::new(lines),
+        diagnostics: Arc::new(diagnostics),
         fragments: Vec::new(),
     });
     if let Some(admissions) = memo.input_admissions() {
@@ -558,7 +566,7 @@ fn hydrate(
     let mut trace_arena = super::trace_arena::TraceArena::default();
     let mut lines =
         super::expansion::output_lines::OutputLineBuilder::with_capacity(record.lines.len());
-    for line in &record.lines {
+    for line in record.lines.iter() {
         let (segment, current) = input[line.input];
         let traces = line
             .traces
@@ -581,7 +589,7 @@ fn hydrate(
         ));
     }
     output.lines = lines.finish();
-    for error in &record.diagnostics {
+    for error in record.diagnostics.iter() {
         output.diagnostics.push(Diagnostic {
             path: path.clone(),
             line: input[error.input].1.source_line,
@@ -894,3 +902,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "region_memo/shared_receipt_tests.rs"]
+mod shared_receipt_tests;

@@ -10,7 +10,7 @@ use dm_ir::{
     SymRef, SymbolTable,
 };
 mod assignment_group;
-mod finish;
+pub(crate) mod finish;
 mod fragments;
 use finish::finish_initializer;
 #[cfg(test)]
@@ -84,7 +84,17 @@ pub fn lower_write<R: Resolver>(
     let value = parsed
         .expr
         .ok_or_else(|| InitializerError::Invalid("initializer expression missing".into()))?;
-    let code = lower_assignment(&write.target, write.lexical_owner, &value, context, host)?;
+    let code = lower_assignment_views(
+        &[AssignmentView {
+            source_site: write.source_site,
+            target: &write.target,
+            lexical_owner: write.lexical_owner,
+            value: &value,
+            occurrence: value.span,
+        }],
+        context,
+        host,
+    )?;
     Ok(Some(InitializerProcedure {
         write: write.clone(),
         code,
@@ -107,6 +117,7 @@ pub fn lower_assignment<R: Resolver>(
     }
     lower_assignment_views(
         &[AssignmentView {
+            source_site: dm_ir::InitializerSite::Assignment,
             target,
             lexical_owner,
             value,
@@ -145,6 +156,7 @@ pub fn lower_assignments<R: Resolver>(
 /// instance writes still require one exact receiver. No procedure concatenation.
 #[derive(Clone, Copy)]
 pub struct AssignmentView<'a> {
+    pub source_site: dm_ir::InitializerSite,
     pub target: &'a InitializerTarget,
     pub lexical_owner: dm_ir::SymbolId,
     pub value: &'a dm_syntax::Expr,
@@ -158,6 +170,7 @@ pub fn lower_scoped_assignments<R: Resolver>(
     let views = assignments
         .iter()
         .map(|(target, owner, value)| AssignmentView {
+            source_site: dm_ir::InitializerSite::Declaration,
             target,
             lexical_owner: *owner,
             value,
@@ -697,6 +710,7 @@ mod tests {
         symbols.intern("/").unwrap();
         symbols.intern("counter").unwrap();
         let write = InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: InitializerTarget::Shared {
                 slot: SymbolId::of("exact-slot"),
                 owner: SymbolId::of("/"),
@@ -764,6 +778,7 @@ mod tests {
         let owner = symbols.intern("/datum/item").unwrap();
         let name = symbols.intern("amount").unwrap();
         let write = InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: InitializerTarget::Instance {
                 declaring_owner: owner,
                 receiver_owner: owner,
@@ -845,6 +860,7 @@ mod tests {
         let mut symbols = SymbolTable::default();
         let value = InitializerValue::Expression(expression("7", &mut symbols));
         let mut write = InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: InitializerTarget::Shared {
                 slot: SymbolId::of("s"),
                 owner: SymbolId::of("/"),

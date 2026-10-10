@@ -61,6 +61,7 @@ fn canonical_sinks_match_fixed_format_field_fixture_including_adjacency_and_arra
         name: SymbolId::of("long_local_name"),
     };
     let write = InitializerWrite {
+        source_site: crate::InitializerSite::Declaration,
         target: InitializerTarget::ProcedureStatic(identity),
         lexical_owner: element,
         lexical_procedure: Some(procedure),
@@ -74,7 +75,8 @@ fn canonical_sinks_match_fixed_format_field_fixture_including_adjacency_and_arra
     identity_bytes.push(1);
     identity_bytes.extend_from_slice(&7u32.to_le_bytes());
     identity_bytes.extend_from_slice(&identity.name.bits().to_le_bytes());
-    let mut expected = b"dm-initializer-write-v2\0".to_vec();
+    let mut expected = b"dm-initializer-write-v3\0".to_vec();
+    expected.push(1);
     expected.push(2);
     framed(&mut expected, &identity_bytes);
     expected.extend_from_slice(&element.bits().to_le_bytes());
@@ -146,3 +148,23 @@ fn structural_lengths_equal_emitted_bytes_for_all_dimension_shapes() {
 
 #[path = "initializer_codec_absent_tests.rs"]
 mod absent_tests;
+
+#[test]
+fn captured_source_site_separates_declaration_and_assignment_receipts() {
+    let mut write = InitializerWrite {
+        source_site: crate::InitializerSite::Declaration,
+        target: InitializerTarget::Instance {
+            declaring_owner: SymbolId::of("/datum/probe"),
+            receiver_owner: SymbolId::of("/datum/probe"),
+            name: SymbolId::of("values"),
+        },
+        lexical_owner: SymbolId::of("/datum/probe"),
+        lexical_procedure: None,
+        value: InitializerValue::NoAuthoredValue,
+        declared_array: None,
+        declaration_flags: Some(0),
+    };
+    let declared = write.canonical_bytes();
+    write.source_site = crate::InitializerSite::Assignment;
+    assert_ne!(declared, write.canonical_bytes());
+}

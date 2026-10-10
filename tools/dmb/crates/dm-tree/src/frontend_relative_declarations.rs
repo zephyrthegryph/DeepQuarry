@@ -2,6 +2,8 @@
 //! Exact source-key admission remains the responsibility of the owning store.
 use dm_syntax::{Item, ItemKind, Span};
 use std::sync::Arc;
+#[path = "frontend_relative_arena.rs"]
+mod arena;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BindingError {
     InvalidRelativeSpan,
@@ -10,7 +12,7 @@ pub enum BindingError {
 }
 #[derive(Debug)]
 pub struct RelativeSyntax {
-    items: Arc<[Item]>,
+    items: arena::Arena,
     source_len: usize,
     max_end: usize,
     bodies: Vec<RelativeBody>,
@@ -76,7 +78,11 @@ impl CurrentBodyRecipe<'_> {
 }
 impl RelativeSyntax {
     /// Mint once from root-relative parser output, validating every byte span.
+    #[cfg(test)]
     pub(crate) fn capture(items: Vec<Item>, source: &str) -> Result<Self, BindingError> {
+        Self::capture_shared(items, Arc::from(source))
+    }
+    pub(crate) fn capture_shared(items: Vec<Item>, source: Arc<str>) -> Result<Self, BindingError> {
         let mut max_end = 0;
         let mut pending: Vec<_> = items.iter().collect();
         while let Some(item) = pending.pop() {
@@ -89,16 +95,31 @@ impl RelativeSyntax {
             pending.extend(&item.children);
         }
         let mut bodies = Vec::new();
-        capture_bodies(&items, source, &mut Vec::new(), &mut bodies);
+        capture_bodies(&items, &source, &mut Vec::new(), &mut bodies);
+        let source_len = source.len();
         Ok(Self {
-            items: items.into(),
-            source_len: source.len(),
+            items: arena::Arena::capture(items, source),
+            source_len,
             max_end,
             bodies,
         })
     }
-    pub fn relative_items(&self) -> &Arc<[Item]> {
-        &self.items
+    /// Compatibility materialization for a demanded standalone consumer.
+    pub fn materialize_relative_items(&self) -> Vec<Item> {
+        self.items
+            .roots()
+            .map(|item| ItemView { item, offset: 0 }.materialize())
+            .collect()
+    }
+    /// Overflow fallback backing, exposed only for borrowed storage accounting.
+    pub fn wide_relative_items(&self) -> Option<&Arc<[Item]>> {
+        self.items.wide_items()
+    }
+    pub fn shared_source(&self) -> Option<&Arc<str>> {
+        self.items.source()
+    }
+    pub fn visit_item_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        self.items.visit_storage(visit);
     }
     pub fn visit_body_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         visit(
@@ -156,86 +177,93 @@ impl CurrentSyntaxChunk {
         self.offset
     }
     pub fn len(&self) -> usize {
-        self.relative.items.len()
+        self.relative.items.roots().len()
     }
     pub fn is_empty(&self) -> bool {
-        self.relative.items.is_empty()
+        self.relative.items.roots().len() == 0
     }
     pub fn items(&self) -> impl ExactSizeIterator<Item = ItemView<'_>> + DoubleEndedIterator {
-        self.relative.items.iter().map(|item| ItemView {
+        self.relative.items.roots().map(|item| ItemView {
             item,
             offset: self.offset,
         })
     }
     fn item(&self, index: usize) -> Option<ItemView<'_>> {
-        self.relative.items.get(index).map(|item| ItemView {
+        self.relative.items.roots().nth(index).map(|item| ItemView {
             item,
             offset: self.offset,
         })
     }
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug)]
 pub struct ItemView<'a> {
-    item: &'a Item,
+    item: arena::Ref<'a>,
     offset: usize,
 }
-impl<'a> ItemView<'a> {
-    pub fn relative_item(self) -> &'a Item {
-        self.item
+impl PartialEq for ItemView<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind() == other.kind()
+            && self.header() == other.header()
+            && self.span() == other.span()
+            && self.header_span() == other.header_span()
+            && self.item.indent() == other.item.indent()
+            && self.children().eq(other.children())
     }
+}
+impl Eq for ItemView<'_> {}
+impl<'a> ItemView<'a> {
     pub fn offset(self) -> usize {
         self.offset
     }
     pub fn same_node(self, other: ItemView<'_>) -> bool {
-        std::ptr::eq(self.item, other.item) && self.offset == other.offset
+        self.item.same(other.item) && self.offset == other.offset
     }
-
+    pub fn same_relative_node(self, other: ItemView<'_>) -> bool {
+        self.item.same(other.item)
+    }
     pub fn kind(self) -> ItemKind {
-        self.item.kind
+        self.item.kind()
     }
     pub fn header(self) -> &'a str {
-        &self.item.header
+        self.item.header()
+    }
+    pub fn relative_span(self) -> Span {
+        self.item.span()
     }
     pub fn span(self) -> Span {
-        Span::new(
-            self.item.span.start + self.offset,
-            self.item.span.end + self.offset,
-        )
+        let span = self.item.span();
+        Span::new(span.start + self.offset, span.end + self.offset)
     }
     pub fn header_span(self) -> Span {
-        Span::new(
-            self.item.header_span.start + self.offset,
-            self.item.header_span.end + self.offset,
-        )
+        let span = self.item.header_span();
+        Span::new(span.start + self.offset, span.end + self.offset)
     }
     pub fn children(self) -> impl ExactSizeIterator<Item = ItemView<'a>> + DoubleEndedIterator {
-        self.item.children.iter().map(move |item| ItemView {
+        self.item.children().map(move |item| ItemView {
             item,
             offset: self.offset,
         })
     }
     pub fn child(self, index: usize) -> Option<Self> {
-        self.item.children.get(index).map(|item| Self {
+        self.item.children().nth(index).map(|item| Self {
             item,
             offset: self.offset,
         })
     }
-    /// Compatibility for a single requested body/custom policy, never whole-roster
-    /// materialization. The same immutable nodes serve borrowed analysis.
+    /// Materialize only this requested subtree; ordinary traversal stays borrowed.
     pub fn materialize(self) -> Item {
-        let mut item = self.item.clone();
-        fn shift(item: &mut Item, offset: usize) {
-            item.span = Span::new(item.span.start + offset, item.span.end + offset);
-            item.header_span = Span::new(
-                item.header_span.start + offset,
-                item.header_span.end + offset,
-            );
-            for child in &mut item.children {
-                shift(child, offset);
-            }
+        Item {
+            kind: self.kind(),
+            header: self.header().to_owned(),
+            span: self.span(),
+            header_span: self.header_span(),
+            indent: self.item.indent(),
+            children: self.children().map(Self::materialize).collect(),
         }
-        shift(&mut item, self.offset);
-        item
+    }
+    /// Standalone ABI adapters historically receive root-relative coordinates.
+    pub fn materialize_relative(self) -> Item {
+        Self { offset: 0, ..self }.materialize()
     }
 }
 #[derive(Clone, Debug)]
@@ -360,6 +388,26 @@ impl ExactSizeIterator for DeclarationItems<'_> {}
 mod tests {
     use super::*;
     #[test]
+    fn compact_views_preserve_setting_values_errors_and_current_coordinates() {
+        for source in [
+            "/proc/run()\n    if(1)\n        set waitfor = 0\n    else\n        set name = \"alternate\"\n",
+            "/proc/run()\n    set waitfor = 0\n        return 1\n",
+        ] {
+            let parsed=dm_syntax::parse(source);
+            let old=parsed.items.clone();
+            let relative=Arc::new(RelativeSyntax::capture(parsed.items,source).unwrap());
+            let current=relative.bind(source.len(),37).unwrap();
+            let body=current.items().next().unwrap();
+            let mut before=dm_ir::SymbolTable::default();
+            let mut after=dm_ir::SymbolTable::default();
+            assert_eq!(crate::settings::extract_settings(&old[0].children,&mut before),crate::settings::extract_settings_view(body,&mut after));
+            assert_eq!(before.ordered(),after.ordered());
+            assert_eq!(body.materialize_relative(),old[0]);
+            assert_eq!(body.span().start,old[0].span.start+37);
+            assert_eq!(body.header_span().start,old[0].header_span.start+37);
+        }
+    }
+    #[test]
     fn borrowed_chunks_translate_nested_spans_and_keep_relative_nodes_shared() {
         let source = "/datum/example\n    var/value = 1\n    proc/read()\n        return value\n";
         let parsed = dm_syntax::parse(source);
@@ -383,7 +431,7 @@ mod tests {
             child.materialize().children[0].span.start,
             original[0].children[1].children[0].span.start + 107
         );
-        assert_eq!(relative.relative_items().as_ref(), original.as_slice());
+        assert_eq!(relative.materialize_relative_items(), original);
         assert!(syntax.item(2).is_none());
         assert!(syntax.item_path(&[1, 100]).is_none());
         let mut items = syntax.items();

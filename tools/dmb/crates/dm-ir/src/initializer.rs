@@ -26,8 +26,15 @@ pub enum InitializerValue {
     /// No authored initializer/allocation. This is not an invented null value.
     NoAuthoredValue,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InitializerSite {
+    Declaration,
+    Assignment,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InitializerWrite {
+    pub source_site: InitializerSite,
     pub target: InitializerTarget,
     /// Declaration/assignment scope for name and type resolution.
     pub lexical_owner: SymbolId,
@@ -69,7 +76,11 @@ impl InitializerWrite {
         length
     }
     pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
-        write(b"dm-initializer-write-v2\0");
+        write(b"dm-initializer-write-v3\0");
+        byte(
+            &mut write,
+            u8::from(self.source_site == InitializerSite::Declaration),
+        );
         match self.target {
             InitializerTarget::ProcedureStatic(identity) => {
                 byte(&mut write, 2);

@@ -26,6 +26,58 @@ fn scalar_constant(value: SemanticValue, symbols: &dm_ir::SymbolTable) -> Option
     })
 }
 impl DriverEvaluator<'_> {
+    fn instance_call_error(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        ast: &dm_syntax::Expr,
+    ) -> Option<String> {
+        if !matches!(write.target, dm_ir::InitializerTarget::Instance { .. })
+            || write.lexical_procedure.is_some()
+        {
+            return None;
+        }
+        fn authored(
+            evaluator: &DriverEvaluator<'_>,
+            owner: SymbolId,
+            node: &dm_syntax::Expr,
+        ) -> bool {
+            if let dm_syntax::ExprKind::Call { callee, .. } = &node.kind {
+                if let dm_syntax::ExprKind::Ident(name) = &callee.kind {
+                    if !dm_codegen_byond::is_intrinsic_named_call(name) {
+                        let name = SymbolId::of(name);
+                        let member = evaluator.resolver.resolve(ResolveQuery::Proc {
+                            owner,
+                            name,
+                            verb: false,
+                        });
+                        if matches!(member, ResolvedMeaning::Member { ref data, .. } if data.procedure.is_some())
+                        {
+                            return true;
+                        }
+                        // Missing is the only proof that member precedence permits
+                        // selecting the global declaration. Opaque answers decline.
+                        if matches!(member, ResolvedMeaning::Missing)
+                            && matches!(evaluator.resolver.resolve(ResolveQuery::GlobalProc(name)), ResolvedMeaning::Member { ref data, .. } if data.procedure.is_some())
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            let mut found = false;
+            dm_syntax::for_each_expression_child(node, |_, child| {
+                if !found {
+                    found = authored(evaluator, owner, child);
+                }
+            });
+            found
+        }
+        authored(self, write.lexical_owner, ast).then(|| match write.source_site {
+            dm_ir::InitializerSite::Declaration => "=: expected a constant expression".to_owned(),
+            dm_ir::InitializerSite::Assignment => ": expected a constant expression".to_owned(),
+        })
+    }
+
     fn declaration_scalar(
         &self,
         owner: SymbolId,
@@ -482,7 +534,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a904)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a905)
     }
     fn with_recording_evaluator(
         &self,
@@ -667,6 +719,9 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
             return Ok((Evaluation::Runtime, None));
         };
         let ast = prepared.ast();
+        if let Some(reason) = self.instance_call_error(write, ast) {
+            return Ok((Evaluation::SourceError(reason), Some(prepared)));
+        }
         let evaluation = self
             .scalar_ast_in(
                 write.lexical_owner,
@@ -684,6 +739,9 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         _source: &str,
         _symbols: &dm_ir::SymbolTable,
     ) -> Result<Evaluation, String> {
+        if let Some(reason) = self.instance_call_error(write, ast) {
+            return Ok(Evaluation::SourceError(reason));
+        }
         Ok(self
             .scalar_ast_in(
                 write.lexical_owner,

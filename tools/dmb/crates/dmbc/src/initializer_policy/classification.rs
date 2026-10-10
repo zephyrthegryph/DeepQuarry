@@ -13,7 +13,7 @@ fn classify_pending<'a>(
     evaluator: &dyn CapturedInitializerEvaluator,
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
-) -> Result<Vec<PendingWrite>, String> {
+) -> Result<Vec<PendingWrite>, ClassificationFailure> {
     let mut classified = Vec::with_capacity(writes.len());
     for (ordinal, original) in writes.enumerate() {
         *source_ordinal = ordinal;
@@ -31,22 +31,17 @@ fn classify_pending<'a>(
             };
             let label = domain.label();
             if original.lexical_owner != receiver_owner || original.lexical_procedure.is_some() {
-                return Err(format!(
-                    "{label} header lexical owner differs from receiver"
-                ));
+                return Err(format!("{label} header lexical owner differs from receiver").into());
             }
             if original.declared_array.is_some() {
-                return Err(format!("{label} header property cannot allocate an array"));
+                return Err(format!("{label} header property cannot allocate an array").into());
             }
             let InitializerValue::Expression(value) = &original.value else {
-                return Err(format!(
-                    "{label} header property requires an authored value"
-                ));
+                return Err(format!("{label} header property requires an authored value").into());
             };
-            let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)? else {
-                return Err(format!(
-                    "{label} header property requires a captured scalar"
-                ));
+            let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)?.checked()?
+            else {
+                return Err(format!("{label} header property requires a captured scalar").into());
             };
             let name = symbols
                 .text(name)
@@ -84,7 +79,7 @@ fn classify_pending<'a>(
                 for dimension in array.dimensions.iter() {
                     let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
                     let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-                        evaluator.evaluate_write(&write, dimension)?
+                        evaluator.evaluate_write(&write, dimension)?.checked()?
                     else {
                         return Err("array dimension must be a constant integer".into());
                     };
@@ -128,7 +123,7 @@ fn classify_pending<'a>(
             }
             InitializerValue::Expression(value) => {
                 let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
-                match evaluation {
+                match evaluation.checked()? {
                     Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
                         (DefaultValue::Scalar(value), None)
                     }
@@ -252,6 +247,7 @@ fn finish_pending(
         // Inherited arrays have no declared_array receipt on the current write.
         let empty_instance_initializer =
             matches!(write.write.target, InitializerTarget::Instance { .. })
+                && write.write.source_site == dm_ir::InitializerSite::Declaration
                 && matches!(write.write.value, InitializerValue::NoAuthoredValue)
                 && write.write.declared_array.as_ref().is_some_and(|array| {
                     array.dimensions.len() == 1 && array.dimensions[0].is_none()
@@ -304,12 +300,13 @@ pub(super) fn classify_from_facts(
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
     debug_defined: bool,
-) -> Result<ClassifiedInitializers, String> {
+) -> Result<ClassifiedInitializers, ClassificationFailure> {
     finish_pending(
         classify_pending(writes.iter(), symbols, evaluator, facts, source_ordinal)?.into_iter(),
         debug_defined,
         source_ordinal,
     )
+    .map_err(Into::into)
 }
 
 pub(super) mod artifact;

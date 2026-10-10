@@ -9,6 +9,7 @@ pub(crate) struct AssignmentScope<'a> {
     pub target: &'a Expr,
     pub value: &'a Expr,
     pub occurrence: Span,
+    pub double_receiver: bool,
 }
 #[derive(Clone, Copy)]
 pub(crate) enum ScopeBody<'a> {
@@ -17,6 +18,7 @@ pub(crate) enum ScopeBody<'a> {
         target: &'a Expr,
         value: &'a Expr,
         occurrence: Span,
+        double_receiver: bool,
     },
 }
 
@@ -51,6 +53,7 @@ pub(crate) fn prepare_assignments<'a>(
                 target: scope.target,
                 value: scope.value,
                 occurrence: scope.occurrence,
+                double_receiver: scope.double_receiver,
             },
         )
     }))

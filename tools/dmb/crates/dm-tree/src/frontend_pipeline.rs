@@ -68,7 +68,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
-    semantic_state: Option<&mut RetainedSemanticTree>,
+    mut semantic_state: Option<&mut RetainedSemanticTree>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
@@ -350,7 +350,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 config.engine.is_some(),
             ));
         };
-    let snapshot = match semantic_state {
+    let snapshot = match semantic_state.as_deref_mut() {
         Some(state) => state.resolve(adapted, config.engine, on_error, executor),
         None => adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor),
     }
@@ -392,6 +392,12 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .collect();
     let mut bodies = Vec::new();
     collect_bodies(&syntax, &declarations_by_start, &mapping, &mut bodies)?;
+    let callable_roster = match semantic_state {
+        Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
+        None => CallableRoster::issue(&snapshot.tree, &bodies),
+    }
+    .map_err(|message| vec![internal(&message)])?;
+
     let mut ranks = vec![0; plan.regions.len()];
     for (rank, region) in expanded.emission_regions.iter().enumerate() {
         ranks[*region] = rank;
@@ -410,6 +416,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     timings.total = total_start.elapsed();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
     Ok(ColdFrontend {
+        callable_roster,
         timings,
         engine: config.engine.map(|seed| EngineModelStatus {
             identity: seed.identity,

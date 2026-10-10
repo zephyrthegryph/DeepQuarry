@@ -181,7 +181,8 @@ fn mutable_instance_knowledge_retains_opaque_modifiers() {
     let child = symbols.intern("/obj/example").unwrap();
     let name = symbols.intern("name").unwrap();
     let write = InitializerWrite {
-        target: InitializerTarget::Instance {
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: InitializerTarget::Instance {
             declaring_owner: atom,
             receiver_owner: child,
             name,
@@ -214,7 +215,8 @@ impl CapturedInitializerEvaluator for Evaluator {
 }
 fn write(owner: SymbolId, name: SymbolId, value: InitializerValue) -> InitializerWrite {
     InitializerWrite {
-        target: InitializerTarget::Shared {
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: InitializerTarget::Shared {
             slot: SymbolId::of("slot"),
             owner,
             name,
@@ -236,7 +238,8 @@ fn indexed_receiver_groups_preserve_interleaved_owner_and_global_order() {
     let runtime = InitializerValue::Expression(expression("run()", &mut symbols).unwrap());
     let literal = InitializerValue::Expression(expression("list(2)", &mut symbols).unwrap());
     let instance = |owner, value| InitializerWrite {
-        target: InitializerTarget::Instance {
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: InitializerTarget::Instance {
             declaring_owner: owner,
             receiver_owner: owner,
             name,

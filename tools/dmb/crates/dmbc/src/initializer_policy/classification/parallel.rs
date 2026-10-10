@@ -47,6 +47,7 @@ fn map_buckets<T: Send>(
     }))
     .map_err(|_| ClassificationError {
         issues: vec![ClassificationIssue {
+            kind: ClassificationIssueKind::Unsupported,
             source_ordinal: 0,
             reason: "initializer classification worker panicked".into(),
         }],
@@ -187,9 +188,10 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 &mut ordinal,
             )
         };
-        result.map_err(|reason| ClassificationIssue {
+        result.map_err(|failure| ClassificationIssue {
+            kind: failure.kind,
             source_ordinal: bucket.ordinals[ordinal],
-            reason,
+            reason: failure.reason,
         })
     })?;
     let mut ordered: Vec<Option<PendingWrite>> = (0..writes.len()).map(|_| None).collect();
@@ -225,6 +227,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     };
     result.map_err(|reason| ClassificationError {
         issues: vec![ClassificationIssue {
+            kind: ClassificationIssueKind::Unsupported,
             source_ordinal,
             reason,
         }],

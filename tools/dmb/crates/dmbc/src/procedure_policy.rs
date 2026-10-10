@@ -103,13 +103,37 @@ impl CapturedProcedurePolicy<'_> {
         parsed: dm_tree::frontend::ItemView<'_>,
         context: &AbiContext<'_>,
     ) -> Result<PreparedUnit, AbiError> {
-        self.prepare(metadata, parsed.relative_item(), context)
+        self.prepare_parts(
+            metadata,
+            context,
+            |symbols| dm_tree::settings::extract_settings_view(parsed, symbols),
+            || {
+                parsed
+                    .children()
+                    .map(|child| child.materialize_relative())
+                    .collect()
+            },
+        )
     }
     pub fn prepare(
         &self,
         metadata: &ProcedureMetadata,
         parsed: &Item,
         context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, AbiError> {
+        self.prepare_parts(
+            metadata,
+            context,
+            |symbols| dm_tree::settings::extract_settings(&parsed.children, symbols),
+            || parsed.children.clone(),
+        )
+    }
+    fn prepare_parts(
+        &self,
+        metadata: &ProcedureMetadata,
+        context: &AbiContext<'_>,
+        settings: impl FnOnce(&mut SymbolTable) -> Result<Arc<[dm_ir::ProcedureSettingNode]>, String>,
+        body: impl FnOnce() -> Vec<Item>,
     ) -> Result<PreparedUnit, AbiError> {
         let inherited = self.inherited.inherited(context)?;
         let inherited = match &inherited {
@@ -120,14 +144,13 @@ impl CapturedProcedurePolicy<'_> {
         // Parse only this unit's setting context into a fresh token symbol table.
         // No complete project symbol table or binding map is cloned.
         let mut setting_symbols = SymbolTable::default();
-        let actual = dm_tree::settings::extract_settings(&parsed.children, &mut setting_symbols)
-            .map_err(AbiError::unsupported)?;
+        let actual = settings(&mut setting_symbols).map_err(AbiError::unsupported)?;
         if actual.as_ref() != metadata.settings.as_ref() {
             return Err(AbiError::unsupported(
                 "captured procedure setting tree differs from actual body",
             ));
         }
-        let executable = dm_tree::settings::strip_setting_items(parsed.children.clone());
+        let executable = dm_tree::settings::strip_setting_items(body());
         let prepared = procedure_abi::prepare_verified_procedure(
             metadata,
             context.symbols,

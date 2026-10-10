@@ -21,6 +21,7 @@ fn assert_write(write: &InitializerWrite, expected: &[u8]) {
 }
 fn omitted_write(target: InitializerTarget, owner: SymbolId) -> InitializerWrite {
     InitializerWrite {
+        source_site: crate::InitializerSite::Declaration,
         target,
         lexical_owner: owner,
         lexical_procedure: None,
@@ -60,7 +61,8 @@ fn shared_and_instance_targets_preserve_omitted_metadata_legacy_bytes() {
         ),
     ] {
         let write = omitted_write(target, lexical);
-        let mut expected = b"dm-initializer-write-v2\0".to_vec();
+        let mut expected = b"dm-initializer-write-v3\0".to_vec();
+        expected.push(1);
         expected.push(tag);
         for symbol in [first, second, name, lexical] {
             append_symbol(&mut expected, symbol);
@@ -106,7 +108,8 @@ fn authored_zero_flags_and_unsized_array_are_distinct_from_absent_fields() {
     let mut write = omitted_write(InitializerTarget::Shared { slot, owner, name }, owner);
     write.declaration_flags = Some(0);
     write.value = InitializerValue::ArrayAllocation(array);
-    let mut expected = b"dm-initializer-write-v2\0".to_vec();
+    let mut expected = b"dm-initializer-write-v3\0".to_vec();
+    expected.push(1);
     expected.push(0);
     for symbol in [slot, owner, name, owner] {
         append_symbol(&mut expected, symbol);

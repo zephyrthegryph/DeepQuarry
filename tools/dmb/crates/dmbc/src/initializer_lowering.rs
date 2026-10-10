@@ -41,6 +41,7 @@ pub type InitializerObserver<'a> = crate::stage_measurements::Observer<'a, Initi
 pub struct DeclarationPresence {
     owner: dm_ir::SymbolId,
     source_ordinal: usize,
+    classified_ordinal: usize,
 }
 impl DeclarationPresence {
     pub(crate) fn owner(&self) -> dm_ir::SymbolId {
@@ -48,6 +49,9 @@ impl DeclarationPresence {
     }
     pub(crate) fn source_ordinal(&self) -> usize {
         self.source_ordinal
+    }
+    pub(crate) fn classified_ordinal(&self) -> usize {
+        self.classified_ordinal
     }
 }
 pub struct LoweredInitializerUnit {
@@ -312,9 +316,25 @@ fn lower_plan<R: Resolver>(
                 .into_iter()
                 .enumerate()
                 .map(|(local, issue)| dm_codegen_byond::LowerError {
-                    statement: "initializer classification".into(),
+                    // Certified source text already has its language-level
+                    // wording; internal stage context belongs to unsupported errors.
+                    statement: match issue.kind {
+                        crate::initializer_policy::ClassificationIssueKind::SourceError => {
+                            String::new()
+                        }
+                        crate::initializer_policy::ClassificationIssueKind::Unsupported => {
+                            "initializer classification".into()
+                        }
+                    },
                     reason: issue.reason,
-                    kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+                    kind: match issue.kind {
+                        crate::initializer_policy::ClassificationIssueKind::SourceError => {
+                            dm_codegen_byond::LowerErrorKind::SourceError
+                        }
+                        crate::initializer_policy::ClassificationIssueKind::Unsupported => {
+                            dm_codegen_byond::LowerErrorKind::UnsupportedModel
+                        }
+                    },
                     span: Some(dm_codegen_byond::LowerSpan {
                         start: local,
                         end: local,
@@ -480,6 +500,7 @@ fn lower_group<R: Resolver>(
                 return Err("declaration presence is not an instance field".into());
             };
             if Some(receiver_owner) != group.receiver
+                || write.write.source_site != dm_ir::InitializerSite::Declaration
                 || write.phase.is_some()
                 || !matches!(write.write.value, dm_ir::InitializerValue::NoAuthoredValue)
                 || !write.write.declared_array.as_ref().is_some_and(|array| {
@@ -495,6 +516,7 @@ fn lower_group<R: Resolver>(
             declaration_presence = Some(DeclarationPresence {
                 owner: receiver_owner,
                 source_ordinal: write.source_ordinal,
+                classified_ordinal: write_index,
             });
             continue;
         }
@@ -589,6 +611,7 @@ fn lower_group<R: Resolver>(
         .enumerate()
         .map(|(index, (target, lexical_owner, value))| {
             dm_codegen_byond::initializer::AssignmentView {
+                source_site: classified.writes[group.writes[index]].write.source_site,
                 target,
                 lexical_owner: *lexical_owner,
                 value: value.as_ref(),

@@ -510,6 +510,17 @@ impl ExprParser {
                     })
                 {
                     self.take();
+                    if self.peek().is_none() && self.diagnostics.is_empty() {
+                        self.diagnostics.push(Diagnostic {
+                            span,
+                            kind: DiagnosticKind::IncompleteExpression,
+                            message: format!(
+                                "missing operand for prefix {}{}",
+                                token.text, token.text
+                            ),
+                        });
+                        return None;
+                    }
                     let value = self.expression(26)?;
                     return Some(Expr {
                         span: Span::new(span.start, value.span.end),
@@ -522,6 +533,14 @@ impl ExprParser {
                             value: Box::new(value),
                         },
                     });
+                }
+                if self.peek().is_none() && self.diagnostics.is_empty() {
+                    self.diagnostics.push(Diagnostic {
+                        span,
+                        kind: DiagnosticKind::IncompleteExpression,
+                        message: format!("missing operand for unary {}", token.text),
+                    });
+                    return None;
                 }
                 let value = self.expression(26)?;
                 Some(Expr {
@@ -711,8 +730,36 @@ impl ExprParser {
 mod incomplete_tests {
     use super::*;
     #[test]
+    fn unary_eof_certificates_survive_statement_parsing_at_exact_operand_spans() {
+        for (operator, message) in [
+            ("!", "missing operand for unary !"),
+            ("~", "missing operand for unary ~"),
+            ("++", "missing operand for prefix ++"),
+        ] {
+            let source = format!("// shifted\n/proc/probe()\n    return {operator}\n");
+            let ast = crate::parse(&source);
+            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+            let parsed = crate::parse_body_items(&ast.items[0].children);
+            let diagnostic = parsed
+                .diagnostics
+                .iter()
+                .find(|diagnostic| diagnostic.kind == DiagnosticKind::IncompleteExpression)
+                .expect("statement parser must preserve typed EOF certificate");
+            assert_eq!(diagnostic.message, message);
+            assert_eq!(diagnostic.span.start, source.rfind(operator).unwrap());
+        }
+        for value in ["!1", "~1", "++value", "!@"] {
+            let ast = crate::parse(&format!("/proc/probe()\n    return {value}\n"));
+            let parsed = crate::parse_body_items(&ast.items[0].children);
+            assert!(!parsed
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.kind == DiagnosticKind::IncompleteExpression));
+        }
+    }
+    #[test]
     fn only_recognized_eof_failures_are_certified() {
-        for source in ["1 +", "(1 +", "(1"] {
+        for source in ["1 +", "(1 +", "(1", "!", "~", "+", "-", "++", "--"] {
             assert!(
                 parse_expression(source)
                     .diagnostics
@@ -727,6 +774,13 @@ mod incomplete_tests {
             "1 + @",
             "(1 @",
             "list(1,)",
+            "!1",
+            "~1",
+            "+1",
+            "-1",
+            "++value",
+            "--value",
+            "!@",
         ] {
             assert!(
                 !parse_expression(source)

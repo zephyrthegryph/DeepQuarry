@@ -18,13 +18,22 @@ import subprocess
 import time
 import uuid
 
-from watchdog import terminate_owned
+from watchdog import terminate_owned, record_daemon_cleanup
 from iteration_structural import Comparison, source_matches, authenticate_source_snapshot
 import semantic_configuration
 from iteration_history import EditHistory
 import host_context
 import worktree_authority
 import build_receipt
+from iteration_memory import OwnedMemory, request_concurrency
+
+_owned_memory = None
+
+
+def write_receipt(root, receipt):
+    temporary = root / "receipt.pending.json"
+    temporary.write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+    os.replace(temporary, root / "receipt.json")
 
 
 DEFAULT = Path("E:/dmb-native-v2-phase0/review-power-focus")
@@ -197,10 +206,24 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
             environment["DMB_CACHE_DIR"] = str(cache_directory)
         if require_owned:
             environment["DMB_DAEMON_AUTOSTART"] = "0"
+        if _owned_memory is not None:
+            _owned_memory.check()
         child = subprocess.Popen([str(executable), *arguments], stdout=out, stderr=err, env=environment,
                                  creationflags=subprocess.CREATE_NO_WINDOW)
         try:
-            code = child.wait(timeout=remaining)
+            if _owned_memory is not None:
+                _owned_memory.register(child)
+            while True:
+                if _owned_memory is not None:
+                    _owned_memory.check()
+                left = remaining - (time.monotonic() - started)
+                if left <= 0:
+                    raise subprocess.TimeoutExpired(str(executable), remaining)
+                try:
+                    code = child.wait(timeout=min(0.2, left))
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
         except subprocess.TimeoutExpired:
             cleanup = terminate_owned(child)
             (directory / "timeout.json").write_text(json.dumps({
@@ -210,6 +233,15 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
                 "admitted_output": False,
             }, indent=2), encoding="utf-8")
             raise TimeoutError(f"compiler child exceeded {remaining:.1f}s")
+        except Exception:
+            cleanup = terminate_owned(child)
+            (directory / "owned-stop.json").write_text(json.dumps({
+                "cleanup": cleanup, "admitted_output": False,
+                "reason": "request interrupted or sampled owned memory gate failed"}, indent=2), encoding="utf-8")
+            raise
+        finally:
+            if _owned_memory is not None:
+                _owned_memory.unregister(child)
     result = {"exit": code, "wall_s": time.monotonic() - started,
               "wall_scope": "client launch through reap; daemon work included for retained requests"}
     (directory / "child.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -289,6 +321,10 @@ def main():
     parser.add_argument("--edits", required=True,
                         help='JSON ordered list: {kind:"body"|"structural",path,before,after}')
     parser.add_argument("--workers", type=int, choices=(2, 8), default=2)
+    parser.add_argument("--owned-memory-budget-bytes", type=int, default=4_000_000_000,
+                        help="six-worktree sampled owned-process stop budget (default 4GB; not strict peak proof)")
+    parser.add_argument("--sample-owned-memory", action="store_true",
+                        help="also enable owned memory sampling for a single session")
     parser.add_argument("--output-root", default="E:/dq-cache/dmb-native-iterations")
     parser.add_argument("--overall-seconds", type=int, default=1800)
     parser.add_argument("--minimum-free-gib", type=int, default=16,
@@ -299,6 +335,10 @@ def main():
     parser.add_argument("--one-shot-requests", action="store_true",
                         help="six concurrent cache-enabled one-shot builds; retained daemon state is not exercised")
     args = parser.parse_args()
+    if not 1 <= args.owned_memory_budget_bytes <= 4_000_000_000:
+        parser.error("owned memory sample budget must be 1..4000000000 bytes")
+    if args.worktree_sources and not args.one_shot_requests and not args.require_owned_daemon:
+        parser.error("six retained worktrees require --require-owned-daemon and a compiler supporting no-autostart")
     if os.name != "nt":
         parser.error("owned daemon lifecycle requires Windows")
     if not 1 <= args.overall_seconds <= 3600:
@@ -397,8 +437,14 @@ def main():
                "inspector_sha256": structural.inspector_sha,
                "scope": "real-source daemon iteration wall telemetry plus fresh native DMB/RSC byte oracle; not runtime or r6 acceptance",
                "rows": []}
+    receipt["harness_sha256"] = sha(Path(__file__))
+    receipt["memory_helper_sha256"] = sha(Path(__file__).with_name("iteration_memory.py"))
+    receipt["preparation"] = {"status": "isolating_source", "completed_roots": 0, "measured": False}
+    write_receipt(root, receipt)
     endpoint = Endpoint()
     daemon = None
+    global _owned_memory
+    _owned_memory = OwnedMemory(args.owned_memory_budget_bytes) if args.worktree_sources or args.sample_owned_memory else None
     started = time.monotonic()
     deadline = started + args.overall_seconds
     try:
@@ -408,6 +454,8 @@ def main():
         for source, project in zip(sources, projects):
             receipt["isolated_source_files"].append(isolate(source, project, detached))
             regular(project / manifest)
+            receipt["preparation"]["completed_roots"] += 1
+            write_receipt(root, receipt)
         baseline_sources = [source_matches(project, source_snapshot, sha) for project in projects]
         receipt["source_identical_to_captured_baseline"] = baseline_sources
         receipt["private_edit_paths"] = [str(path) for path in sorted(detached)]
@@ -418,13 +466,20 @@ def main():
             daemon = subprocess.Popen([str(executable), "--serve-daemon"], stdout=out, stderr=err, env=daemon_environment,
                                       creationflags=subprocess.CREATE_NO_WINDOW)
         receipt["owned_daemon_pid"] = daemon.pid
+        if _owned_memory is not None:
+            _owned_memory.register(daemon)
+            _owned_memory.start()
         ready_deadline = min(deadline, time.monotonic() + 20)
         while not endpoint.probe(daemon):
+            if _owned_memory is not None:
+                _owned_memory.check()
             if daemon.poll() is not None or time.monotonic() >= ready_deadline:
                 raise RuntimeError("owned daemon did not become ready within 20 seconds")
             time.sleep(0.05)
         # Initial population, unchanged request, then each real ordered edit.
         edit_history = EditHistory(len(projects))
+        receipt["preparation"]["status"] = "complete"
+        write_receipt(root, receipt)
         steps = [("initial", None), ("unchanged", None)] + [(edit["kind"], edit) for edit in edits]
         for ordinal, (kind, edit) in enumerate(steps):
             if daemon.poll() is not None or not endpoint.probe(daemon):
@@ -445,7 +500,11 @@ def main():
                 return root / str(ordinal) / mode if len(projects) == 1 else root / str(ordinal) / f"session-{index}" / mode
             row["host_context_before_retained"] = host_context.sample()
             burst_started = time.monotonic()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(projects)) as executor:
+            concurrency = request_concurrency(len(projects), args.workers, args.one_shot_requests)
+            row["client_concurrency"] = concurrency
+            row["active_worker_budget"] = 8
+            row["worker_budget_scope"] = "one-shot launch bound" if args.one_shot_requests else "daemon admission and physical inventory; six clients may queue"
+            with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
                 futures = [executor.submit(compile_one, executable, project, manifest,
                     args.workers, semantic, destination(index, "retained"), logs(index, "retained"),
                     "retained", deadline, args.require_owned_daemon, endpoint, daemon, cache_directory)
@@ -486,7 +545,9 @@ def main():
             row["end_to_end_s"] = time.monotonic() - row_started
             row["fresh_native_byte_oracle"] = True
             receipt["rows"].append(row)
-            (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+            if _owned_memory is not None:
+                _owned_memory.check()
+            write_receipt(root, receipt)
         receipt["status"] = "passed"
         receipt["BYOND_baseline_gate"] = "passed" if all(
             session["BYOND_structural"]["baseline_admission"] == "passed"
@@ -496,9 +557,15 @@ def main():
         receipt["error"] = str(error)
     finally:
         if daemon is not None:
-            receipt["daemon_cleanup"] = terminate_owned(daemon)
+            record_daemon_cleanup(receipt, terminate_owned(daemon))
+        if _owned_memory is not None:
+            receipt["owned_memory"] = _owned_memory.finish()
+            if _owned_memory.failed.is_set():
+                receipt["status"] = "failed"
+                receipt.setdefault("error", _owned_memory.reason)
+            _owned_memory = None
         receipt["total_end_to_end_s"] = time.monotonic() - started
-        (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
+        write_receipt(root, receipt)
         print(json.dumps({"receipt": str(root / "receipt.json"), "status": receipt["status"]}))
     return 0 if receipt["status"] == "passed" else 1
 

@@ -7,6 +7,7 @@ use dm_ir::{ExpressionToken, ResolveQuery, SymbolId, SymbolTable, SymbolicExpres
 use dm_syntax::{Span, TokenKind};
 use dm_tree::maps::{AssignmentOrigin, BlockOrigin, TemplateOrigin};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 type Bounds = [usize; 2];
 const MAGIC: &[u8; 8] = b"DMBCMAP2";
@@ -61,9 +62,10 @@ struct Block {
     cells_span: Bounds,
 }
 #[derive(Serialize, Deserialize)]
-struct Parse {
+struct Parse<'a> {
     version: u32,
-    source: String,
+    #[serde(borrow)]
+    source: Cow<'a, str>,
     semantic: u128,
     symbols: Vec<(SymbolId, String)>,
     templates: Vec<Template>,
@@ -168,7 +170,7 @@ pub(super) fn encode_parse(key: &[u8], plan: &MapPlan) -> Option<Vec<u8>> {
         .collect();
     let payload = Parse {
         version: 1,
-        source: plan.captured.source.to_string(),
+        source: Cow::Borrowed(&plan.captured.source),
         semantic: plan.semantic_identity,
         symbols: plan
             .symbols
@@ -191,8 +193,8 @@ pub(super) fn encode_parse(key: &[u8], plan: &MapPlan) -> Option<Vec<u8>> {
     };
     encode(key, &payload)
 }
-fn parsed(payload: Parse, captured: CapturedMap) -> Option<MapPlan> {
-    if payload.version != 1 || payload.source.as_str() != captured.source.as_ref() {
+fn parsed(payload: Parse<'_>, captured: CapturedMap) -> Option<MapPlan> {
+    if payload.version != 1 || payload.source.as_ref() != captured.source.as_ref() {
         return None;
     }
     let mut symbols = SymbolTable::default();
@@ -334,11 +336,11 @@ fn parsed(payload: Parse, captured: CapturedMap) -> Option<MapPlan> {
 }
 pub(super) fn validate_parse(bytes: &[u8]) -> Result<(), String> {
     let (_, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Parse = dm_wire::decode(1, json, json.len())?;
+    let payload: Parse<'_> = dm_wire::decode_borrowed(1, json, json.len())?;
     let captured = CapturedMap {
         path: Arc::new(std::path::PathBuf::new()),
         include_occurrence: 0,
-        source: Arc::from(payload.source.as_str()),
+        source: Arc::from(payload.source.as_ref()),
     };
     parsed(payload, captured).ok_or_else(invalid).map(|_| ())
 }
@@ -348,8 +350,8 @@ pub(super) fn admit_parse(
     captured: CapturedMap,
 ) -> Result<Option<MapPlan>, String> {
     let (stored, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Parse = dm_wire::decode(1, json, json.len())?;
-    if stored == key && payload.source.as_str() == captured.source.as_ref() {
+    let payload: Parse<'_> = dm_wire::decode_borrowed(1, json, json.len())?;
+    if stored == key && payload.source.as_ref() == captured.source.as_ref() {
         return parsed(payload, captured).ok_or_else(invalid).map(Some);
     }
     // A hash collision/current-source mismatch is a miss, but the old record
@@ -357,7 +359,7 @@ pub(super) fn admit_parse(
     let original = CapturedMap {
         path: Arc::new(std::path::PathBuf::new()),
         include_occurrence: 0,
-        source: Arc::from(payload.source.as_str()),
+        source: Arc::from(payload.source.as_ref()),
     };
     parsed(payload, original).ok_or_else(invalid).map(|_| None)
 }
@@ -601,3 +603,7 @@ fn replay_geometry<R: Resolver>(
         reads,
     ))
 }
+
+#[cfg(test)]
+#[path = "map_memo_borrowed_wire_tests.rs"]
+mod borrowed_tests;

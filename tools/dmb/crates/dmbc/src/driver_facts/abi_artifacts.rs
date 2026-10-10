@@ -122,7 +122,7 @@ pub(super) fn prepare(
 ) -> Result<PreparedUnit, AbiError> {
     // Always authenticate the current issued header/settings before accepting old answers.
     let mut symbols = dm_ir::SymbolTable::default();
-    if dm_tree::settings::extract_settings(&parsed.relative_item().children, &mut symbols)
+    if dm_tree::settings::extract_settings_view(parsed, &mut symbols)
         .map_err(AbiError::unsupported)?
         .as_ref()
         != metadata.settings.as_ref()

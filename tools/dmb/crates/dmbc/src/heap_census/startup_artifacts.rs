@@ -21,7 +21,10 @@ fn declarations(census: &mut HeapCensus, rows: &Arc<[Arc<dm_ir::ProcedureStaticD
         }
     }
 }
+#[path = "startup_callable_census.rs"]
+mod callable;
 pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
+    callable::inspect(census, store);
     store.visit_storage(|view| match view {
         View::Store { entries, .. } => {
             census.observe_items("startup.artifact_store", entries);

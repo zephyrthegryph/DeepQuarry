@@ -27,18 +27,14 @@ impl HeapCensus {
         relative.visit_body_storage(|address, logical, capacity| {
             self.buffer(owner, address, logical, capacity);
         });
-        let roots = relative.relative_items();
-        if !self.slice(owner, roots, true) {
-            return;
+        if let Some(source) = relative.shared_source() {
+            self.arc_text(owner, source);
         }
-        // Nested children remain ordinary owned Vecs; no expanded roster or
-        // shifted AST is allocated to traverse their exact owners.
-        let mut pending: Vec<_> = roots.iter().collect();
-        while let Some(item) = pending.pop() {
-            self.string(owner, &item.header);
-            if self.vec_payload(owner, &item.children) {
-                pending.extend(item.children.iter());
-            }
+        if let Some(items) = relative.wide_relative_items() {
+            self.slice(owner, items, true);
         }
+        relative.visit_item_storage(|address, logical, capacity| {
+            self.buffer(owner, address, logical, capacity);
+        });
     }
 }

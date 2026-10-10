@@ -120,48 +120,9 @@ pub struct SourceUnitIdentity {
     pub identity: UnitIdentity,
     pub effective: bool,
 }
-pub fn source_unit_identity(
-    frontend: &ColdFrontend,
-    body: &BodyOccurrence,
-) -> Result<SourceUnitIdentity, String> {
-    frontend.body_input(body).map_err(|error| error.message)?;
-    let tree = &frontend.snapshot.tree;
-    let node = tree
-        .member(body.member)
-        .ok_or("body member missing from immutable tree")?;
-    let owner = tree
-        .type_node(node.owner)
-        .ok_or("body owner missing from immutable tree")?
-        .path;
-    let namespace = match node.kind {
-        MemberKind::Proc => Namespace::Proc,
-        MemberKind::Verb => Namespace::Verb,
-        MemberKind::Var => return Err("variable cannot own a procedure body".into()),
-    };
-    let occurrence = tree
-        .override_chain(body.member)
-        .into_iter()
-        .filter(|id| {
-            tree.member(*id).is_some_and(|previous| {
-                previous.owner == node.owner
-                    && previous.kind == node.kind
-                    && previous.name == node.name
-            })
-        })
-        .count()
-        .checked_sub(1)
-        .ok_or("procedure occurrence chain is empty")?;
-    Ok(SourceUnitIdentity {
-        identity: UnitIdentity {
-            owner,
-            name: node.name,
-            namespace,
-            occurrence: u32::try_from(occurrence)
-                .map_err(|_| "procedure occurrence exceeds u32")?,
-        },
-        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
-    })
-}
+#[path = "lowering_source_identity.rs"]
+mod source_identity;
+pub use source_identity::source_unit_identity;
 /// Same authored ordering as the completion scheduler, without lowering bodies.
 pub fn source_unit_roster(
     frontend: &ColdFrontend,

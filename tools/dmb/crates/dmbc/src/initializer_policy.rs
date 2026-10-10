@@ -9,6 +9,8 @@ use std::sync::Arc;
 pub enum Evaluation {
     Scalar(SemanticValue),
     Runtime,
+    /// Definitive invalid source certified by the current evaluator domain.
+    SourceError(String),
 }
 /// Request-local syntax prepared by the evaluator's existing admission path.
 /// It contains no cached resolution result or independent dependency domain.
@@ -483,8 +485,54 @@ fn scalar_literal(
     })
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClassificationIssueKind {
+    Unsupported,
+    SourceError,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ClassificationFailure {
+    kind: ClassificationIssueKind,
+    reason: String,
+}
+impl From<String> for ClassificationFailure {
+    fn from(reason: String) -> Self {
+        Self {
+            kind: ClassificationIssueKind::Unsupported,
+            reason,
+        }
+    }
+}
+impl From<&str> for ClassificationFailure {
+    fn from(reason: &str) -> Self {
+        reason.to_owned().into()
+    }
+}
+impl std::fmt::Display for ClassificationFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.reason.fmt(f)
+    }
+}
+impl std::ops::Deref for ClassificationFailure {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.reason
+    }
+}
+impl Evaluation {
+    fn checked(self) -> Result<Self, ClassificationFailure> {
+        match self {
+            Self::SourceError(reason) => Err(ClassificationFailure {
+                kind: ClassificationIssueKind::SourceError,
+                reason,
+            }),
+            other => Ok(other),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassificationIssue {
+    pub kind: ClassificationIssueKind,
     pub source_ordinal: usize,
     pub reason: String,
 }
@@ -569,10 +617,11 @@ pub fn classify_with_token_mode(
         &mut source_ordinal,
         debug_defined,
     )
-    .map_err(|reason| ClassificationError {
+    .map_err(|failure| ClassificationError {
         issues: vec![ClassificationIssue {
+            kind: failure.kind,
             source_ordinal,
-            reason,
+            reason: failure.reason,
         }],
     })
 }

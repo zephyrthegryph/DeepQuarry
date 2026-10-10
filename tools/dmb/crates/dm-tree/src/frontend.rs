@@ -2,8 +2,11 @@
 //! participates in this path. Directive planning freezes expansion environments;
 //! the combined encounter AST supplies scope before the resolved tree is built.
 
+#[path = "frontend_callable_roster.rs"]
+mod callable_roster;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
+pub use callable_roster::{CallableRoster, CallableRosterStorage};
 #[path = "parserwire.rs"]
 mod parserwire;
 
@@ -206,6 +209,7 @@ pub struct ColdFrontend {
     pub files: Arc<[SourceFile]>,
     source_by_path: Arc<HashMap<PathBuf, FileId>>,
     pub bodies: Arc<[BodyOccurrence]>,
+    callable_roster: Arc<CallableRoster>,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
     issued_syntax: Arc<DeclarationSyntax>,
@@ -216,6 +220,16 @@ pub struct ColdFrontend {
 }
 
 impl ColdFrontend {
+    /// Borrow only the exact issued source-neutral roster beside current bodies.
+    pub fn callable_roster(&self) -> Result<&Arc<CallableRoster>, String> {
+        if !Arc::ptr_eq(&self.bodies, &self.issued_bodies)
+            || !self.callable_roster.authenticates_tree(&self.snapshot.tree)
+        {
+            return Err("callable roster differs from current frontend issuance".into());
+        }
+        Ok(&self.callable_roster)
+    }
+
     /// Borrow the issuer's declaration/settings projection without parsing an
     /// executable body. Occurrence and syntax addresses are checked together;
     /// unsupported setting ancestors and their original spans remain intact.

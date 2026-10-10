@@ -1,6 +1,5 @@
 //! Captured procedure-static declarations interleaved with authored field writes.
 //! Executable body capture is current-source authority, separate from tree identity.
-use dm_ir::ProcedureIdentity;
 use dm_tree::{
     frontend::ColdFrontend, initializers::InitializerPlan, procedure_statics::StaticPlan,
     OccurrenceId,
@@ -131,23 +130,13 @@ fn capture_impl_with_bodies_and_artifacts(
     prefilter: bool,
     artifacts: Option<&StartupArtifacts>,
 ) -> Result<StartupFacts, String> {
-    let units = std::sync::Arc::new(
-        crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?,
-    );
-    let identities = units
-        .iter()
-        .map(|(unit, member)| {
-            (
-                *member,
-                ProcedureIdentity {
-                    owner: unit.owner,
-                    name: unit.name,
-                    verb: unit.namespace == crate::lowering::Namespace::Verb,
-                    occurrence: unit.occurrence,
-                },
-            )
-        })
-        .collect::<std::collections::HashMap<_, _>>();
+    let units = match artifacts {
+        Some(artifacts) => artifacts.unit_members(frontend)?,
+        None => std::sync::Arc::new(
+            crate::driver_facts::unit_members(frontend).map_err(|error| error.to_string())?,
+        ),
+    };
+    let roster = frontend.callable_roster()?;
     let mut keys = std::collections::HashMap::new();
     if let Some(artifacts) = artifacts {
         for body in frontend.bodies.iter() {
@@ -157,8 +146,8 @@ fn capture_impl_with_bodies_and_artifacts(
                     .map_err(|e| format!("startup body: {e:?}"))?;
                 let source = input.source();
                 if !prefilter || input.may_contain_stored_declarations() {
-                    let identity = *identities
-                        .get(&body.member)
+                    let identity = roster
+                        .identity_for_member(body.member)
                         .ok_or("startup procedure identity missing")?;
                     Ok(Some(artifacts::key(identity, source)))
                 } else {
@@ -170,12 +159,15 @@ fn capture_impl_with_bodies_and_artifacts(
         artifacts.retain_keys(
             keys.values()
                 .filter_map(|result| result.as_ref().ok()?.as_deref()),
-            identities.values().copied(),
+            roster
+                .members()
+                .iter()
+                .filter_map(|member| roster.identity_for_member(*member)),
         );
     }
     let capture_body = |body: &dm_tree::frontend::BodyOccurrence| {
-        let identity = *identities
-            .get(&body.member)
+        let identity = roster
+            .identity_for_member(body.member)
             .ok_or("startup procedure identity missing")?;
         let input = frontend
             .body_input(body)

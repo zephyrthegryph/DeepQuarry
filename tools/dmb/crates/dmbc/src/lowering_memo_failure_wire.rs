@@ -31,7 +31,8 @@ pub(super) struct FailurePayload<'a> {
     #[serde(borrow)]
     pub(super) key: Cow<'a, [u8]>,
     pub(super) identity: Option<ProcedureIdentity>,
-    pub(super) reads: Vec<(ResolveQuery, Vec<u8>)>,
+    #[serde(borrow)]
+    pub(super) reads: Vec<ReadWire<'a>>,
     pub(super) versions: Vec<(dm_ir::ReadDomain, u128)>,
     #[serde(borrow)]
     pub(super) errors: Vec<ErrorWire<'a>>,

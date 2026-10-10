@@ -67,7 +67,8 @@ fn write(symbols: &mut SymbolTable) -> InitializerWrite {
     let owner = symbols.intern("/").unwrap();
     let name = symbols.intern("output").unwrap();
     InitializerWrite {
-        target: InitializerTarget::Shared {
+        source_site: dm_ir::InitializerSite::Declaration,
+            target: InitializerTarget::Shared {
             slot: SymbolId::of("output.slot"),
             owner,
             name,

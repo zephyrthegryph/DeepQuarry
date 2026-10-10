@@ -1,6 +1,7 @@
 //! Query-only disk result; no executable IR or process-local source issuer.
 use crate::lowering_memo::ResolverRead;
-use crate::lowering_memo_compact::{BoundedVec, ReadWire};
+use crate::lowering_memo_compact::BoundedVec;
+use crate::lowering_memo_wire::read_wire::ReadWire;
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SelectedMeaning, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;

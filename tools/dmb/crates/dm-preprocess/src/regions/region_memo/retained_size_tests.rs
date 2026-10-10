@@ -12,14 +12,14 @@ fn retained_records_charge_owned_capacity_and_duplicate_shared_backings() {
         source: "source".to_owned().into(),
         control: Arc::from([1u8]),
         text: "expanded".to_owned().into(),
-        reads: Vec::new(),
-        locations: Vec::new(),
-        lines: Vec::new(),
-        diagnostics: Vec::new(),
+        reads: Arc::new(Vec::new()),
+        locations: Arc::new(Vec::new()),
+        lines: Arc::new(Vec::new()),
+        diagnostics: Arc::new(Vec::new()),
         fragments: Vec::new(),
     };
     let before = value.retained_size_bytes();
-    value.reads.reserve_exact(2);
+    Arc::make_mut(&mut value.reads).reserve_exact(2);
     let storage = value.reads.capacity() * std::mem::size_of::<MacroRead>();
     assert_eq!(value.retained_size_bytes() - before, storage);
     let read = MacroRead {
@@ -28,8 +28,8 @@ fn retained_records_charge_owned_capacity_and_duplicate_shared_backings() {
         definition: Some(definition),
     };
     let backing = slice::<u8>(read.name.len()) + shared_macro(read.definition.as_ref().unwrap());
-    value.reads.push(read.clone());
-    value.reads.push(read);
+    Arc::make_mut(&mut value.reads).push(read.clone());
+    Arc::make_mut(&mut value.reads).push(read);
     assert_eq!(value.retained_size_bytes() - before, storage + 2 * backing);
     let fragment = FragmentRecord::new(1, "src", Arc::from([1u8, 2, 3])).unwrap();
     assert_eq!(

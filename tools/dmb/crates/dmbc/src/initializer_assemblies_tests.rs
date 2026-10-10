@@ -47,7 +47,8 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
     let mut root = dm_syntax::parse_expression("'asset.dat'").expr.unwrap();
     let first = Host(11);
     let roots = [AssignmentView {
-        target: &target,
+        source_site: dm_ir::InitializerSite::Declaration,
+                target: &target,
         lexical_owner: SymbolId::of("/"),
         value: &root,
         occurrence: dm_syntax::Span::new(0, 0),
@@ -80,7 +81,8 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
         .is_none());
     root.span = dm_syntax::Span::new(500, 511);
     let current = [AssignmentView {
-        target: &target,
+        source_site: dm_ir::InitializerSite::Declaration,
+                target: &target,
         lexical_owner: SymbolId::of("/"),
         value: &root,
         occurrence: dm_syntax::Span::new(0, 0),
@@ -126,6 +128,7 @@ fn ordered_group_and_current_token_roster_answers_are_exact_key_inputs() {
     let write = |ordinal, name: &str| ClassifiedWrite {
         source_ordinal: ordinal,
         write: dm_ir::InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: InitializerTarget::Shared {
                 slot: SymbolId::of(name),
                 owner,

@@ -34,3 +34,11 @@ def terminate_owned(process, grace=5):
             receipt["wait_error"] = str(error)
             receipt["returncode"] = process.returncode
     return receipt
+
+
+def record_daemon_cleanup(receipt, cleanup):
+    """Output admission cannot outlive unsuccessful owned daemon reaping."""
+    receipt["daemon_cleanup"] = cleanup
+    if cleanup.get("reaped") is not True or cleanup.get("wait_error"):
+        receipt["status"] = "failed"
+        receipt.setdefault("error", "owned daemon cleanup did not establish successful reap")

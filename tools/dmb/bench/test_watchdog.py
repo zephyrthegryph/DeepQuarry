@@ -61,3 +61,28 @@ class WatchdogTests(unittest.TestCase):
         self.assertTrue(timed_out)
         self.assertTrue(receipt["reaped"])
         self.assertIsNotNone(receipt["tree_error"])
+
+
+class CleanupAdmissionTests(unittest.TestCase):
+    def test_successful_rows_fail_when_owned_daemon_cannot_be_reaped(self):
+        cleanup = {"reaped": False, "wait_error": "bounded wait expired", "pid": 123}
+        receipt = {"status": "passed", "rows": [{"fresh_native_byte_oracle": True}]}
+        watchdog.record_daemon_cleanup(receipt, cleanup)
+        self.assertEqual(receipt["status"], "failed")
+        self.assertIs(receipt["daemon_cleanup"], cleanup)
+        self.assertEqual(len(receipt["rows"]), 1)
+        self.assertIn("successful reap", receipt["error"])
+
+    def test_cleanup_failure_keeps_primary_error_and_actual_evidence(self):
+        cleanup = {"reaped": False, "wait_error": "bounded wait expired"}
+        receipt = {"status": "failed", "error": "source admission failed"}
+        watchdog.record_daemon_cleanup(receipt, cleanup)
+        self.assertEqual(receipt["error"], "source admission failed")
+        self.assertIs(receipt["daemon_cleanup"], cleanup)
+
+    def test_successful_fallback_reap_keeps_tree_failure_evidence(self):
+        cleanup = {"reaped": True, "wait_error": None, "tree_error": "taskkill timed out"}
+        receipt = {"status": "passed"}
+        watchdog.record_daemon_cleanup(receipt, cleanup)
+        self.assertEqual(receipt["status"], "passed")
+        self.assertIs(receipt["daemon_cleanup"], cleanup)

@@ -215,6 +215,14 @@ pub fn capture_declaration_draft<'a>(
             InitializerValue::NoAuthoredValue
         };
         writes.push(InitializerWrite {
+            source_site: if matches!(
+                member.definition,
+                DefinitionMode::Declare | DefinitionMode::Implicit
+            ) {
+                dm_ir::InitializerSite::Declaration
+            } else {
+                dm_ir::InitializerSite::Assignment
+            },
             target,
             lexical_owner,
             lexical_procedure: None,
@@ -373,6 +381,7 @@ fn assemble_procedure_rows<'a>(
                     return Err("static declaration belongs to another procedure".into());
                 }
                 writes.push(InitializerWrite {
+                    source_site: dm_ir::InitializerSite::Declaration,
                     target: InitializerTarget::ProcedureStatic(identity),
                     lexical_owner: owner,
                     lexical_procedure: Some(identity.procedure),

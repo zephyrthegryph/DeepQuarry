@@ -2,31 +2,8 @@ use super::*;
 
 pub(super) fn finish_initializer(
     code: &mut ResolverProc,
-    instance: bool,
+    _instance: bool,
 ) -> Result<(), InitializerError> {
-    // Match the initializer VM receiver convention used by the existing
-    // producer. This is an initializer entry, not an ordinary returning proc.
-    if instance {
-        for item in &mut code.procedure.code.items {
-            if let crate::Item::Instruction(instruction) = item {
-                if instruction.opcode == opcode::SET_VAR {
-                    if let [crate::Word::Variable(variable)] = instruction.operands.as_slice() {
-                        let Some(field) = instance_field(variable) else {
-                            continue;
-                        };
-                        instruction.operands =
-                            vec![crate::Word::Variable(crate::VariableWord::SetCache(
-                                Box::new(crate::VariableWord::Src),
-                                Box::new(crate::VariableWord::SetCache(
-                                    Box::new(crate::VariableWord::Src),
-                                    Box::new(crate::VariableWord::Field(field)),
-                                )),
-                            ))];
-                    }
-                }
-            }
-        }
-    }
     let items = &mut code.procedure.code.items;
     if items.len() >= 3
         && matches!(&items[items.len()-3], crate::Item::Instruction(ins)
@@ -81,4 +58,27 @@ mod tests {
         assert_eq!(instance_field(&cache(Src, cache(Src, Field(field)))), None);
         assert_eq!(instance_field(&cache(Src, cache(Usr, Field(field)))), None);
     }
+}
+
+/// Only the final target store belongs to this admitted assignment. Expression
+/// side effects and writes in other assignments retain their own receiver.
+pub(crate) fn double_assignment_receiver(items: &mut [crate::Item]) -> bool {
+    let Some(crate::Item::Instruction(instruction)) = items.last_mut() else {
+        return false;
+    };
+    if instruction.opcode != opcode::SET_VAR {
+        return false;
+    }
+    let [crate::Word::Variable(variable)] = instruction.operands.as_slice() else {
+        return false;
+    };
+    let Some(field) = instance_field(variable) else {
+        return false;
+    };
+    use crate::VariableWord::{Field, SetCache, Src};
+    instruction.operands = vec![crate::Word::Variable(SetCache(
+        Box::new(Src),
+        Box::new(SetCache(Box::new(Src), Box::new(Field(field)))),
+    ))];
+    true
 }

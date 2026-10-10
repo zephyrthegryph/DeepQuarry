@@ -29,6 +29,6 @@ fn process_local_owner_versions_are_omitted_from_disk_but_queries_remain() {
     let payload: FailurePayload<'_> =
         dm_wire::decode_borrowed(FAILURE_SCHEMA, &bytes, bytes.len()).unwrap();
     assert_eq!(payload.versions, vec![(dm_ir::ReadDomain::Tree, 19)]);
-    assert_eq!(payload.reads[0].0, query);
+    assert_eq!(payload.reads[0].query, query);
     assert!(validate_versions(&versions).is_err());
 }

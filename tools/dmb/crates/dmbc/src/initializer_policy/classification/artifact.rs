@@ -237,9 +237,10 @@ impl SemanticClassification {
     ) -> Option<PendingWrite> {
         // Canonical keys intentionally omit source offsets. Validate current
         // token issuance/spelling before accepting scalar hits as well as ASTs.
-        if let InitializerValue::Expression(value) = &write.value {
-            value.source_text(symbols)?;
-        }
+        let current_expression = match &write.value {
+            InitializerValue::Expression(value) => Some(value.source_text(symbols)?),
+            _ => None,
+        };
         if let Some(array) = &write.declared_array {
             for value in array.dimensions.iter().flatten() {
                 value.source_text(symbols)?;
@@ -250,13 +251,9 @@ impl SemanticClassification {
             Some(RuntimeRecipe::SizedArray(dimensions)) => {
                 Some(RuntimeValue::SizedArray(Arc::clone(dimensions)))
             }
-            Some(RuntimeRecipe::Expression(syntax)) => {
-                let InitializerValue::Expression(value) = &write.value else {
-                    return None;
-                };
-                let text = value.source_text(symbols)?;
-                Some(RuntimeValue::Expression(syntax.bind(&text)?))
-            }
+            Some(RuntimeRecipe::Expression(syntax)) => Some(RuntimeValue::Expression(
+                syntax.bind(current_expression.as_deref()?)?,
+            )),
         };
         Some(PendingWrite {
             write: ClassifiedWrite {
@@ -281,7 +278,7 @@ pub(super) fn classify_one(
     ordinal: usize,
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
-) -> Result<PendingWrite, String> {
+) -> Result<PendingWrite, ClassificationFailure> {
     let prepared = factory
         .factory
         .recording_policy_identity()
@@ -307,7 +304,7 @@ pub(super) fn classify_one_keyed(
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
     prepared_key: Option<&Arc<[u8]>>,
-) -> Result<PendingWrite, String> {
+) -> Result<PendingWrite, ClassificationFailure> {
     let Some(_) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
@@ -444,3 +441,7 @@ pub(super) fn classify_one_keyed(
     }
     Ok(pending)
 }
+
+#[cfg(test)]
+#[path = "bind_text_tests.rs"]
+mod bind_text_tests;

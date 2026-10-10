@@ -41,12 +41,13 @@ fn validate_presence(
         .get(presence.source_ordinal())
         .ok_or("declaration presence source absent")?;
     if !matches!(write.target, InitializerTarget::Instance { receiver_owner, .. } if receiver_owner == presence.owner())
+        || write.source_site != dm_ir::InitializerSite::Declaration
         || !matches!(write.value, dm_ir::InitializerValue::NoAuthoredValue)
         || !write
             .declared_array
             .as_ref()
             .is_some_and(|array| array.dimensions.len() == 1 && array.dimensions[0].is_none())
-        || !classified.writes.iter().any(|fact| {
+        || !classified.writes.get(presence.classified_ordinal()).is_some_and(|fact| {
             fact.source_ordinal == presence.source_ordinal()
                 && fact.write == *write
                 && fact.phase.is_none()

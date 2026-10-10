@@ -437,7 +437,19 @@ impl BuildHost {
         Some(memo)
     }
 
+    pub(crate) fn prune_foreign_callable_index(&self) {
+        if let Some((_, startup)) = &self.startup {
+            startup.retain_callable_tree(
+                self.semantic
+                    .as_ref()
+                    .and_then(|state| state.snapshot_tree()),
+            );
+        }
+    }
     pub(crate) fn clear_regions(&mut self) {
+        if let Some((_, startup)) = &self.startup {
+            startup.clear_callable_index();
+        }
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
@@ -787,3 +799,11 @@ mod tests {
         assert!(BuildHost::one_shot().generation(1).is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "runner_host_callable_tests.rs"]
+mod callable_tests;
+
+#[cfg(test)]
+#[path = "runner_host_callable_failure_tests.rs"]
+mod callable_failure_tests;

@@ -11,6 +11,9 @@ const EXECUTABLE_SCHEMA: u32 = 0x0206_0005;
 const FAILURE_SCHEMA: u32 = 0x0206_0002;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
+#[path = "lowering_memo_read_wire.rs"]
+pub(crate) mod read_wire;
+use read_wire::{CanonicalRead, ReadWire};
 #[path = "lowering_memo_private.rs"]
 mod private;
 #[path = "lowering_memo_selected_wire.rs"]
@@ -281,15 +284,17 @@ pub(crate) fn validate_versions(versions: &[(dm_ir::ReadDomain, u128)]) -> Resul
     }
     Ok(())
 }
-fn read_mismatch<R: Resolver>(
-    reads: &[(ResolveQuery, Vec<u8>)],
+fn read_mismatch<R: Resolver, T: CanonicalRead>(
+    reads: &[T],
     versions: &[(dm_ir::ReadDomain, u128)],
     host: &R,
 ) -> Option<ResolveQuery> {
     let matching = crate::lowering_memo::matching_domains(versions, host);
-    reads.iter().find_map(|(query, answer)| {
-        (!matching.contains(&query.domain()) && host.resolve(*query).canonical_bytes() != *answer)
-            .then_some(*query)
+    reads.iter().find_map(|read| {
+        let query = read.query();
+        (!matching.contains(&query.domain())
+            && host.resolve(query).canonical_bytes().as_slice() != read.answer())
+        .then_some(query)
     })
 }
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
@@ -352,7 +357,10 @@ pub(crate) fn encode_failure(
             .collect(),
         reads: reads
             .iter()
-            .map(|read| (read.query, read.answer.canonical_bytes()))
+            .map(|read| ReadWire {
+                query: read.query,
+                answer: Cow::Owned(read.answer.canonical_bytes()),
+            })
             .collect(),
         errors: errors.iter().map(ErrorWire::capture).collect(),
     };
@@ -794,16 +802,21 @@ impl Candidates<'_> {
                 }
                 continue;
             }
-            let (candidate, owner, reads, versions) = match &value {
-                Candidate::Executable(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
-                Candidate::Failure(v) => (v.key.as_ref(), v.identity, &v.reads, &v.versions),
+            let (candidate, owner) = match &value {
+                Candidate::Executable(v) => (v.key.as_ref(), v.identity),
+                Candidate::Failure(v) => (v.key.as_ref(), v.identity),
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
             if candidate != key || owner != Some(identity) {
                 continue;
             }
             result.miss = Some(crate::lowering_memo::MemoMissReason::NoExactVariant);
-            if let Some(query) = read_mismatch(reads, versions, host) {
+            let changed = match &value {
+                Candidate::Executable(v) => read_mismatch(&v.reads, &v.versions, host),
+                Candidate::Failure(v) => read_mismatch(&v.reads, &v.versions, host),
+                Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
+            };
+            if let Some(query) = changed {
                 result.changed_query.get_or_insert(query);
                 continue;
             }

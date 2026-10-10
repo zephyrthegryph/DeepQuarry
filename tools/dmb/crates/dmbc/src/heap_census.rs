@@ -32,6 +32,7 @@ mod expansion_inputs;
 mod latest_images;
 mod resident_maps;
 pub(crate) use expansion_inputs::inspect as expansion_input_census;
+mod callable_roster;
 mod resident_startup;
 pub(crate) mod startup_artifacts;
 pub(crate) use resident_maps::{
@@ -275,6 +276,9 @@ impl HeapCensus {
         self.vec_payload(owner, bytes);
     }
     pub fn frontend(&mut self, frontend: &dm_tree::frontend::ColdFrontend) {
+        if let Ok(roster) = frontend.callable_roster() {
+            self.callable_roster(roster);
+        }
         let owner = "frontend.source_text";
         for (path, text) in &frontend.plan.source_texts {
             self.path(owner, path);

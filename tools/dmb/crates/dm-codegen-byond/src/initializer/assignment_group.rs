@@ -49,6 +49,8 @@ impl<'a> PreparedAssignmentGroup<'a> {
                     target,
                     value: assignment.value,
                     occurrence: assignment.occurrence,
+                    double_receiver: self.instance
+                        && assignment.source_site == dm_ir::InitializerSite::Declaration,
                 },
             )
             .collect::<Vec<_>>();
@@ -89,6 +91,8 @@ impl<'a> PreparedAssignmentGroup<'a> {
                 target: &self.targets[index],
                 value: assignment.value,
                 occurrence: dm_syntax::Span::new(0, 0),
+                double_receiver: self.instance
+                    && assignment.source_site == dm_ir::InitializerSite::Declaration,
             },
             self.context.symbols,
             host,
@@ -112,7 +116,7 @@ impl<'a> PreparedAssignmentGroup<'a> {
         self.finish(code)
     }
     fn finish(self, mut code: ResolverProc) -> Result<ResolverProc, InitializerError> {
-        finish_initializer(&mut code, self.instance)?;
+        finish_initializer(&mut code, false)?;
         attach_target_slots(&mut code, self.slots)?;
         Ok(code)
     }

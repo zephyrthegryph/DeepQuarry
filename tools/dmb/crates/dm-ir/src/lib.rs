@@ -18,7 +18,7 @@ pub use declarations::{
 };
 mod initializer;
 pub use initializer::{
-    InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
+    InitializerSite, InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
 };
 pub mod map;
 mod modified_instance;

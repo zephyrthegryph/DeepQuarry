@@ -62,3 +62,6 @@ mod reference_capture;
 
 #[path = "lowering_tests/incomplete_expression.rs"]
 mod incomplete_expression;
+
+#[path = "lowering_tests/initializer_instance_calls.rs"]
+mod initializer_instance_calls;

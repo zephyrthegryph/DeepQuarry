@@ -60,7 +60,8 @@ mod tests {
             writes: vec![ClassifiedWrite {
                 source_ordinal: 0,
                 write: dm_ir::InitializerWrite {
-                    target: dm_ir::InitializerTarget::Shared {
+                    source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Shared {
                         owner: dm_ir::SymbolId::of("/"),
                         name: dm_ir::SymbolId::of("value"),
                         slot: dm_ir::SymbolId::of("/value"),

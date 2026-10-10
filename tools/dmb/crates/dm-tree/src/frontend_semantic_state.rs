@@ -7,6 +7,7 @@ use std::sync::Arc;
 pub struct RetainedSemanticTree {
     pub(super) declarations: super::declaration_state::RetainedDeclarations,
     entry: Option<Entry>,
+    callable_roster: Option<Arc<super::CallableRoster>>,
     normalization: crate::owner_normalization::RetainedNormalization,
     hits: u64,
     rebuilds: u64,
@@ -22,6 +23,30 @@ struct Entry {
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    fn discard_foreign_callable_roster(&mut self, tree: &Arc<SemanticTree>) {
+        if self
+            .callable_roster
+            .as_ref()
+            .is_some_and(|roster| !roster.authenticates_tree(tree))
+        {
+            self.callable_roster = None;
+        }
+    }
+    pub(super) fn bind_callable_roster(
+        &mut self,
+        tree: &Arc<SemanticTree>,
+        bodies: &[super::BodyOccurrence],
+    ) -> Result<Arc<super::CallableRoster>, String> {
+        if let Some(roster) = &self.callable_roster {
+            if roster.matches(tree, bodies) {
+                return Ok(Arc::clone(roster));
+            }
+        }
+        let roster = super::CallableRoster::issue(tree, bodies)?;
+        self.callable_roster = Some(Arc::clone(&roster));
+        Ok(roster)
+    }
+
     /// Immutable semantic authority only; no source occurrence or body issuance is retained.
     pub fn snapshot_tree(&self) -> Option<&Arc<SemanticTree>> {
         self.entry.as_ref().map(|entry| &entry.tree)
@@ -179,6 +204,7 @@ impl RetainedSemanticTree {
     }
     pub fn clear(&mut self) {
         self.entry = None;
+        self.callable_roster = None;
         self.normalization = self.normalization.fresh();
         self.declarations.clear();
     }
@@ -321,6 +347,9 @@ impl RetainedSemanticTree {
                 .into_iter()
                 .map(|(id, text)| (id, text.to_owned()))
                 .collect();
+            // Body indexing follows this return and may fail. Do not keep the
+            // previous tree rooted through its now-foreign callable roster.
+            self.discard_foreign_callable_roster(&tree);
             self.metadata_updates += 1;
             return Ok(TreeSnapshot {
                 tree,
@@ -340,6 +369,7 @@ impl RetainedSemanticTree {
             executor,
             index.as_ref().map(|index| (index, &self.normalization)),
         )?;
+        self.discard_foreign_callable_roster(&snapshot.tree);
         self.entry = index.map(|index| {
             let metadata_dependencies =
                 crate::metadata_update::MetadataDependencies::capture(&snapshot.tree, &index);
@@ -373,3 +403,7 @@ fn same_engine(previous: Option<&EngineSeed>, current: Option<&EngineSeed>) -> b
 #[cfg(test)]
 #[path = "frontend_semantic_state_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "frontend_callable_lifecycle_tests.rs"]
+mod callable_lifecycle_tests;

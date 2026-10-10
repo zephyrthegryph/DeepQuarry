@@ -419,7 +419,7 @@ fn run_build_attempt(
             .as_ref()
             .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
     )?;
-    execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    let execution_result = execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     dmbc::daemon::control::checkpoint()?;
     let input_preparation_seconds;
     let frontend_result = {
@@ -980,7 +980,10 @@ fn run_build_attempt(
         body_rows: counts.body_rows,
         seconds: total.elapsed().as_secs_f64(),
     })
-    })?
+    });
+    drop(frontend_memo);
+    host.prune_foreign_callable_index();
+    execution_result?
 }
 
 fn capture_output_digest(

@@ -169,9 +169,9 @@ fn nested_settings_lexical_identity_and_include_origins_survive_body_compaction(
         origins.iter().map(|origin| origin.line).collect::<Vec<_>>(),
         vec![1, 2, 4, 5]
     );
-    let compact = &first.syntax.item(0).unwrap().relative_item().children;
-    assert_eq!(compact.len(), 2);
-    assert_eq!(compact[0].children.len(), 1);
+    let compact = first.syntax.item(0).unwrap();
+    assert_eq!(compact.children().len(), 2);
+    assert_eq!(compact.child(0).unwrap().children().len(), 1);
 }
 
 #[test]

@@ -71,6 +71,7 @@ mod tests {
     }
     fn target() -> InitializerWrite {
         InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
             target: InitializerTarget::Instance {
                 declaring_owner: SymbolId::of("/atom"),
                 receiver_owner: SymbolId::of("/obj/probe"),

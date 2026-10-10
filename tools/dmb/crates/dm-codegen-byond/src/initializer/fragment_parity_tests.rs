@@ -61,7 +61,8 @@ fn modified_instance_fragments_are_fresh_only_and_keep_current_first_origin() {
         .iter()
         .enumerate()
         .map(|(index, target)| AssignmentView {
-            target,
+            source_site: dm_ir::InitializerSite::Declaration,
+                target,
             lexical_owner: SymbolId::of("/"),
             value: &value,
             occurrence: dm_syntax::Span::new(index, index),
@@ -127,6 +128,7 @@ fn shared_fragments_match_whole_scope_code_rosters_sidecars_and_debug() {
             .zip(&expressions)
             .enumerate()
             .map(|(index, (target, value))| AssignmentView {
+                source_site: dm_ir::InitializerSite::Declaration,
                 target,
                 lexical_owner: SymbolId::of("/"),
                 value,
@@ -173,7 +175,8 @@ fn every_target_is_admitted_before_any_fragment_expression() {
         .zip(&expressions)
         .enumerate()
         .map(|(index, (target, value))| AssignmentView {
-            target,
+            source_site: dm_ir::InitializerSite::Declaration,
+                target,
             lexical_owner: SymbolId::of("/"),
             value,
             occurrence: dm_syntax::Span::new(index, index),
