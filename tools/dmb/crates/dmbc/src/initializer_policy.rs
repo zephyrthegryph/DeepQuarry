@@ -5,6 +5,7 @@ use dm_ir::{
     SymbolId, SymbolTable, SymbolicExpression,
 };
 use std::sync::Arc;
+pub mod warnings;
 
 pub enum Evaluation {
     Scalar(SemanticValue),

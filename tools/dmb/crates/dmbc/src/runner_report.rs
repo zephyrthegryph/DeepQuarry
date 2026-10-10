@@ -1,5 +1,13 @@
 //! Small owned telemetry snapshots independent of compiler source owners.
 use crate as dmbc;
+pub(super) fn replay_warnings(warnings: &[String]) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut output = dmbc::daemon::stderr_writer();
+    for warning in warnings {
+        output.write_all(warning.as_bytes())?;
+    }
+    Ok(())
+}
 pub(super) fn memo_statistics(
     memo: &dmbc::lowering_memo::ProcedureMemo,
     retention_status: &serde_json::Value,

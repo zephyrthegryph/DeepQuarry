@@ -5,6 +5,7 @@ use std::sync::Arc;
 /// Complete linked source preparation. Its private fields cannot be fabricated
 /// or deserialized into a source-validation certificate.
 pub struct PreparedCold {
+    pub(super) warnings: Vec<crate::initializer_policy::warnings::InitializerWarning>,
     pub(super) frozen: crate::symbolic::FrozenBatch,
     pub(super) projection: crate::class_projection::ClassProjection,
     pub(super) modified: Vec<(
@@ -20,6 +21,7 @@ pub struct PreparedCold {
 /// Source-validated output work. No frontend, resolver or startup owner survives
 /// this boundary; the existing composer still performs its downstream checks.
 pub struct PreparedComposition {
+    warnings: Vec<crate::initializer_policy::warnings::InitializerWarning>,
     composition: crate::composition::ValidatedComposition,
     timings: ColdTimings,
     started: Instant,
@@ -63,6 +65,7 @@ impl PreparedCold {
         // held by StartupFacts before composition begins.
         drop(self.startup);
         Ok(PreparedComposition {
+            warnings: self.warnings,
             composition,
             timings: self.timings,
             started: self.started,
@@ -101,6 +104,7 @@ impl PreparedCold {
         timings.composition = started.elapsed();
         timings.total = self.started.elapsed();
         Ok(ColdOutput {
+            warnings: self.warnings,
             dmb,
             timings,
             startup: self.startup,
@@ -133,6 +137,7 @@ impl PreparedComposition {
         timings.composition = started.elapsed();
         timings.total = self.started.elapsed();
         Ok(ColdOutput {
+            warnings: self.warnings,
             dmb,
             timings,
             startup: None,

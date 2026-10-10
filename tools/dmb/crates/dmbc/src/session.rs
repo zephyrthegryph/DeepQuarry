@@ -9,9 +9,9 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-// Schema 3 carries exact generated-output membership-proof policy. Older
+// Schema 4 also carries successful diagnostic bytes for unchanged replay. Older
 // immutable records remain on disk and are rejected as disposable cache hints.
-const SCHEMA: u32 = 3;
+const SCHEMA: u32 = 4;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -58,6 +58,8 @@ impl Configuration {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Record {
+    /// Successful diagnostics bound to this exact compiler/configuration/input record.
+    pub warnings: Vec<String>,
     pub inputs: InputSnapshot,
     /// Content identity of the immutable published DMB/RSC pair. Acquisition
     /// still authenticates that pair through PairStore (fully in exact mode).
@@ -538,6 +540,7 @@ mod tests {
             .unwrap();
         let id = session
             .store(Record {
+                warnings: vec!["project.dm:2:warning (list_double_init): value: list doubly initialized\n".into()],
                 inputs,
                 pair: 7,
                 outputs: None,
@@ -548,6 +551,7 @@ mod tests {
             .validate(id, &host, true, 20_000_000_000)
             .unwrap()
             .unwrap();
+        assert_eq!(valid.record.warnings, ["project.dm:2:warning (list_double_init): value: list doubly initialized\n"]);
         assert_eq!(valid.record().pair, 7);
         assert!(!valid.outputs_match(&host, true, 20_000_000_000).unwrap());
         let changed = Host {
@@ -590,6 +594,7 @@ mod tests {
             .unwrap();
         let id = request
             .store(Record {
+                warnings: Vec::new(),
                 inputs,
                 pair: 7,
                 outputs: None,

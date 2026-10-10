@@ -58,6 +58,7 @@ pub struct ColdTimings {
 pub struct ColdOutput {
     pub dmb: byond_dmb::dmb::EncodedDmb,
     pub timings: ColdTimings,
+    pub warnings: Vec<crate::initializer_policy::warnings::InitializerWarning>,
     /// Owned exact startup stage output, available to resident hosts. The global
     /// fixture path has no captured declaration/static startup stage.
     pub startup: Option<std::sync::Arc<crate::startup::StartupFacts>>,
@@ -155,6 +156,7 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
         crate::composition::compose_global_program_encoded(links.engine_bytes, &frozen, frontend)
             .map_err(ColdError::Composition)?;
     Ok(ColdOutput {
+        warnings: Vec::new(),
         dmb,
         startup: None,
         timings: ColdTimings {
@@ -621,6 +623,8 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     // exactly as before; this capture performs no resolver/evaluator operations.
     let pending_modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
+    let warnings = crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
+        .map_err(initializer_lowering_error)?;
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.
@@ -823,6 +827,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     // The descriptor wrapper borrowed these fields through required-type admission.
     // No source/ABI/evaluator owner escapes the preparation stage.
     Ok(PreparedCold {
+        warnings,
         frozen,
         projection,
         modified: modified.descriptors,

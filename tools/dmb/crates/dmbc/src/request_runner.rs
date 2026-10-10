@@ -1,10 +1,7 @@
 //! Shared request execution; the CLI and future hosts use this exact pipeline.
 use crate as dmbc;
 use crate::request::{BuildCommand, BuildOutcome, BuildRequest, Command, CommandOutcome};
-use std::io::{self, Write};
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Instant;
+use std::{io::{self, Write}, path::PathBuf, sync::Arc, time::Instant};
 #[path = "runner_facts.rs"]
 pub(crate) mod runner_facts;
 #[path = "runner_report.rs"]
@@ -283,6 +280,7 @@ fn run_build_attempt(
                             exact_inputs,
                         )?;
                     }
+                    runner_report::replay_warnings(&validated.record().warnings)?;
                     if progress_enabled {
                         let timing = &validated.timings;
                         dmbc::daemon_eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
@@ -876,7 +874,7 @@ fn run_build_attempt(
                 }
                 if let Some(session) = &session {
                     session.store(dmbc::session::Record { inputs, pair: pair.id,
-                        outputs: Some(outputs), resource_manifest: Some((*resource_manifest).clone()) })?;
+                        outputs: Some(outputs), warnings: dmbc::initializer_policy::warnings::render(&output.warnings)?, resource_manifest: Some((*resource_manifest).clone()) })?;
                 }
             } else {
                 dmbc::daemon_eprintln!("native session not saved: inputs changed during compilation");
@@ -933,6 +931,7 @@ fn run_build_attempt(
             output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
             output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
+        dmbc::initializer_policy::warnings::write_warnings(&mut dmbc::daemon::stderr_writer(), &output.warnings)?;
         query_attempt.finish_published(&pair);
         return Ok(BuildOutcome::Published {
             pair,

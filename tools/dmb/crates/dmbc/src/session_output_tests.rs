@@ -37,6 +37,7 @@ fn captured(project: &Path) -> InputSnapshot {
 fn validated(outputs: InputSnapshot) -> ValidatedRecord {
     ValidatedRecord {
         record: Record {
+            warnings: Vec::new(),
             inputs: InputSnapshot::new(0),
             pair: 7,
             outputs: Some(outputs),
