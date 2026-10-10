@@ -407,7 +407,6 @@ dx_raw_overlays	code/modules/overmap/overmap_planet.dm	skybox_image.add_overlay(
 dx_raw_overlays	code/modules/overmap/overmap_planet.dm	skybox_image.add_overlay(rings)
 dx_raw_overlays	code/modules/overmap/sectors.dm	add_overlay(I)
 dx_raw_overlays	code/modules/overmap/ships/engines/ion_thruster.dm	add_overlay(i)
-dx_raw_overlays	code/modules/overmap/turfs.dm	add_overlay(I)
 dx_raw_overlays	code/modules/pda/app.dm	pda().add_overlay("pda-r")
 dx_raw_overlays	code/modules/pda/app.dm	pda().cut_overlay("pda-r")
 dx_raw_overlays	code/modules/pda/pda.dm	add_overlay("pda-pen")

@@ -197,7 +197,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
  * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
  * list(path = count). Children are created with `new type(D)` and adopted through rel_set() / rel_add().
  */
-/proc/own_init_starts(datum/D, datum/own_table/T)
+/proc/own_init_starts(datum/D, datum/own_table/T, mapload = FALSE)
 	if(!T)
 		T = own_table_of(D)
 	var/list/starts = T.start_vars
@@ -215,9 +215,10 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			if(default in D.vars)
 				default = D.vars[default] // a var holding the type
 			else
-				// A PROC_REF decides everything: it is called with the var's current value and returns what the var starts with (a type, a
-				// list of types, instances it made, or key = instance for an associative owns_many), which replaces that value.
-				own_start_from_proc(D, var_name, call(D, default)(current))
+				// A PROC_REF decides everything: it is called with the var's current value (and whether the holder is map-loaded) and returns
+				// what the var starts with (a type, a list of types, instances it made, or key = instance for an associative owns_many), which
+				// replaces that value.
+				own_start_from_proc(D, var_name, call(D, default)(current, mapload))
 				continue
 		if(islist(current) || (isnull(current) && islist(default)))
 			var/list/spec = islist(current) ? current : default
