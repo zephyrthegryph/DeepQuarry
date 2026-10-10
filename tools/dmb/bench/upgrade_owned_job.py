@@ -13,7 +13,9 @@ class Extended(ctypes.Structure):
     _fields_ = [("basic", Limits), ("io", Io), ("process_memory", ctypes.c_size_t),
         ("job_memory", ctypes.c_size_t), ("peak_process", ctypes.c_size_t), ("peak_job", ctypes.c_size_t)]
 class OwnedJob:
-    def __init__(self):
+    def __init__(self, memory_bytes=4096 * 1024 * 1024):
+        if not 1 <= memory_bytes <= 32768 * 1024 * 1024:
+            raise ValueError("owned job memory limit must be positive and at most 32 GiB")
         self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
         k = self.kernel
         k.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]; k.CreateJobObjectW.restype = wintypes.HANDLE
@@ -27,7 +29,7 @@ class OwnedJob:
         k.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
         self.handle = k.CreateJobObjectW(None, None)
         if not self.handle: raise ctypes.WinError(ctypes.get_last_error())
-        limits = Extended(); limits.basic.flags = 0x2000 | 0x200; limits.job_memory = 4_000_000_000
+        limits = Extended(); limits.basic.flags = 0x2000 | 0x200; limits.job_memory = memory_bytes
         if not k.SetInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits)):
             self.close(); raise ctypes.WinError(ctypes.get_last_error())
     def add(self, child):
@@ -73,10 +75,20 @@ class OwnedJob:
                 raise ctypes.WinError(ctypes.get_last_error())
             return name.value
         finally: self.kernel.CloseHandle(handle)
+    def memory(self):
+        limits = Extended()
+        if not self.kernel.QueryInformationJobObject(self.handle, 9, ctypes.byref(limits), ctypes.sizeof(limits), None):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return {"configured_job_memory_bytes": int(limits.job_memory),
+                "peak_job_commit_bytes": int(limits.peak_job),
+                "peak_process_commit_bytes": int(limits.peak_process),
+                "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"}
     def close(self):
         receipt = {"reaped": False, "error": None}
         if not self.handle: return {"reaped": True, "error": None}
         try:
+            try: receipt["memory"] = self.memory()
+            except Exception as error: receipt["memory_error"] = str(error)
             if not self.kernel.TerminateJobObject(self.handle, 1): raise ctypes.WinError(ctypes.get_last_error())
             # JOBOBJECT_BASIC_ACCOUNTING_INFORMATION: four 64-bit time counters,
             # then page faults, total processes, active processes and terminated.

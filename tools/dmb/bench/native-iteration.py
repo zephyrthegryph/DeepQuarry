@@ -26,8 +26,12 @@ import host_context
 import worktree_authority
 import build_receipt
 from iteration_memory import OwnedMemory, request_concurrency
+from upgrade_owned_job import OwnedJob
+from session_acceptance import required_edit_coverage, bounded_policy
 
 _owned_memory = None
+_owned_job = None
+_daemon_namespace = None
 
 
 def write_receipt(root, receipt):
@@ -151,12 +155,14 @@ def replace_edit(project, edit):
 
 
 class Endpoint:
-    def __init__(self):
+    def __init__(self, namespace=None):
         sid = subprocess.check_output(
             ["powershell", "-NoProfile", "-Command",
              "[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value"],
             text=True, timeout=10, creationflags=subprocess.CREATE_NO_WINDOW).strip()
         self.name = "\\\\.\\pipe\\dmbd-" + sid
+        if namespace:
+            self.name += "-" + namespace
         self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
         self.kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD,
             wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p]
@@ -207,6 +213,8 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
     (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     with (directory / "stdout.log").open("xb") as out, (directory / "stderr.log").open("xb") as err:
         environment = os.environ.copy()
+        if _daemon_namespace is not None:
+            environment["DMB_DAEMON_NAMESPACE"] = _daemon_namespace
         if cache_directory is not None:
             environment["DMB_CACHE_DIR"] = str(cache_directory)
         if require_owned:
@@ -220,7 +228,10 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
                 raise
         try:
             child = subprocess.Popen([str(executable), *arguments], stdout=out, stderr=err, env=environment,
-                                     creationflags=subprocess.CREATE_NO_WINDOW)
+                                     creationflags=subprocess.CREATE_NO_WINDOW | (0x4 if _owned_job is not None else 0))
+            if _owned_job is not None:
+                _owned_job.add(child)
+                _owned_job.resume(child)
         except Exception as error:
             evidence.update(status="launch_failed", error=str(error), wall_s=time.monotonic() - started)
             (directory / "child.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
@@ -344,6 +355,8 @@ def main():
     parser.add_argument("--edits", required=True,
                         help='JSON ordered list: {kind:"body"|"structural",path,before,after}')
     parser.add_argument("--workers", type=int, choices=(2, 8), default=2)
+    parser.add_argument("--total-workers", type=int, default=2, help="total simultaneously active request workers (1..8; default 2)")
+    parser.add_argument("--job-memory-mib", type=int, default=4096, help="owned process-tree commit cap in MiB (default 4096; daemon soft limit unchanged)")
     parser.add_argument("--owned-memory-budget-bytes", type=int, default=4_000_000_000,
                         help="six-worktree sampled owned-process stop budget (default 4GB; not strict peak proof)")
     parser.add_argument("--sample-owned-memory", action="store_true",
@@ -355,11 +368,15 @@ def main():
     parser.add_argument("--require-owned-daemon", action="store_true",
                         help="opt in only for binaries implementing DMB_DAEMON_AUTOSTART=0")
     parser.add_argument("--worktree-sources", help="JSON array of exactly six distinct real E: Git worktree roots")
+    parser.add_argument("--byte-oracles-only", action="store_true",
+                        help="skip BYOND structural comparison; retain exact fresh DMB/RSC byte oracles")
     parser.add_argument("--one-shot-requests", action="store_true",
                         help="six concurrent cache-enabled one-shot builds; retained daemon state is not exercised")
     args = parser.parse_args()
-    if not 1 <= args.owned_memory_budget_bytes <= 4_000_000_000:
-        parser.error("owned memory sample budget must be 1..4000000000 bytes")
+    try:
+        job_bytes = bounded_policy(args.total_workers, args.workers, args.job_memory_mib, args.owned_memory_budget_bytes)
+    except ValueError as error:
+        parser.error(str(error))
     if args.worktree_sources and not args.one_shot_requests and not args.require_owned_daemon:
         parser.error("six retained worktrees require --require-owned-daemon and a compiler supporting no-autostart")
     if os.name != "nt":
@@ -428,6 +445,7 @@ def main():
     edits = json.loads(Path(args.edits).read_text(encoding="utf-8"))
     if not edits or len(edits) > 8 or any(edit["kind"] not in ("body", "structural") for edit in edits):
         raise ValueError("requires 1..8 explicit body/structural edits")
+    coverage = required_edit_coverage(edits) if args.worktree_sources else None
     detached = set()
     for edit in edits:
         path = Path(edit["path"])
@@ -451,6 +469,8 @@ def main():
                "scenario_sha256": sha(scenario_path), "workers": args.workers,
                "require_owned_daemon": args.require_owned_daemon,
                "worktree_authority": worktree_proof,
+               "required_edit_coverage": coverage,
+               "structural_comparison_enabled": not args.byte_oracles_only,
                "source_roots": [str(source) for source in sources], "session_count": len(sources),
                "request_mode": "one-shot" if args.one_shot_requests else "daemon",
                "isolated_compiler_cache": str(root / "compiler-cache"),
@@ -464,13 +484,17 @@ def main():
     receipt["memory_helper_sha256"] = sha(Path(__file__).with_name("iteration_memory.py"))
     receipt["preparation"] = {"status": "isolating_source", "completed_roots": 0, "measured": False}
     write_receipt(root, receipt)
-    endpoint = Endpoint()
+    global _owned_memory, _owned_job, _daemon_namespace
+    _daemon_namespace = "iteration-" + uuid.uuid4().hex
+    endpoint = Endpoint(_daemon_namespace)
+    receipt["daemon_namespace"] = _daemon_namespace
     daemon = None
-    global _owned_memory
     _owned_memory = OwnedMemory(args.owned_memory_budget_bytes) if args.worktree_sources or args.sample_owned_memory else None
     started = time.monotonic()
     deadline = started + args.overall_seconds
     try:
+        _owned_job = OwnedJob(job_bytes)
+        receipt["owned_job_memory_limit_bytes"] = job_bytes
         endpoint.probe()
         projects = [root / ("project" if len(sources) == 1 else f"project-{index}") for index in range(len(sources))]
         receipt["isolated_source_files"] = []
@@ -485,9 +509,12 @@ def main():
         cache_directory = root / "compiler-cache"
         daemon_environment = os.environ.copy()
         daemon_environment["DMB_CACHE_DIR"] = str(cache_directory)
+        daemon_environment["DMB_DAEMON_NAMESPACE"] = _daemon_namespace
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(executable), "--serve-daemon"], stdout=out, stderr=err, env=daemon_environment,
-                                      creationflags=subprocess.CREATE_NO_WINDOW)
+                                      creationflags=subprocess.CREATE_NO_WINDOW | 0x4)
+        _owned_job.add(daemon)
+        _owned_job.resume(daemon)
         receipt["owned_daemon_pid"] = daemon.pid
         if _owned_memory is not None:
             _owned_memory.register(daemon)
@@ -524,10 +551,10 @@ def main():
                 return root / str(ordinal) / mode if len(projects) == 1 else root / str(ordinal) / f"session-{index}" / mode
             row["host_context_before_retained"] = host_context.sample()
             burst_started = time.monotonic()
-            concurrency = request_concurrency(len(projects), args.workers, args.one_shot_requests)
+            concurrency = min(request_concurrency(len(projects), args.workers, args.one_shot_requests), args.total_workers // args.workers)
             row["client_concurrency"] = concurrency
-            row["active_worker_budget"] = 8
-            row["worker_budget_scope"] = "one-shot launch bound" if args.one_shot_requests else "daemon admission and physical inventory; six clients may queue"
+            row["active_worker_budget"] = args.total_workers
+            row["worker_budget_scope"] = "one-shot launch bound" if args.one_shot_requests else "harness launch bound; daemon independently caps eight workers"
             with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
                 futures = [executor.submit(compile_one, executable, project, manifest,
                     args.workers, semantic, destination(index, "retained"), logs(index, "retained"),
@@ -563,7 +590,8 @@ def main():
                     "native_pair": session["output_hashes"],
                     "edits": edit_history.snapshot(index),
                     "configuration_sha256": structural.configuration_sha}
-                session["BYOND_structural"] = structural.compare(
+                session["BYOND_structural"] = {"status": "not_run", "baseline_admission": "open",
+                    "scope": "byte-oracle-only request; no BYOND structural claim"} if args.byte_oracles_only else structural.compare(
                     destination(index, "retained") / "artifacts" / manifest.with_suffix(".dmb").name,
                     root / str(ordinal) / f"session-{index}" / "structural",
                     source_context, baseline_sources[index] and ordinal < 2,
@@ -596,6 +624,12 @@ def main():
             if not any(item is interrupted for item in failures):
                 failures.append(interrupted)
     finally:
+        if _owned_job is not None:
+            receipt["owned_job_cleanup"] = _owned_job.close()
+            if not receipt["owned_job_cleanup"]["reaped"]:
+                receipt.update(status="failed", error="owned job descendants not reaped")
+            _owned_job = None
+        _daemon_namespace = None
         if daemon is not None:
             record_daemon_cleanup(receipt, terminate_owned(daemon))
         if _owned_memory is not None:
