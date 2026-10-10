@@ -70,7 +70,7 @@ CAPABILITIES(/obj/item/storage)
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
 /obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
-	return holds_good_bulb() && !isrobot(A.actor)
+	return holds_good_bulb() && A.actor.lets_go_of_held()
 
 /// Whether it holds a bulb or tube that still works.
 /obj/item/storage/proc/holds_good_bulb()

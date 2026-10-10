@@ -549,7 +549,7 @@ CAPABILITIES(/datum/tgui_module/ship/fullmonty)
 
 /datum/tgui_module/ship/fullmonty/proc/ui_act_viewing(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user && !isAI(user))
+	if(user && !istype(user, /mob/living/silicon/ai))
 		viewing_overmap(user) ? unlook(user) : look(user)
 	. = TRUE
 // END SENSORS

@@ -235,7 +235,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /// A held item is a candidate for the storage: it is not the storage itself, and it is not a silicon's hand (a robot's grippers have their own).
 /datum/capability/lib/storage/proc/offered(datum/act/op/A)
 	var/obj/item/W = A.held
-	return istype(W) && W != A.holder && !isrobot(A.actor)
+	return istype(W) && W != A.holder && A.actor.lets_go_of_held()
 
 /// The held item would go in.
 /datum/capability/lib/storage/proc/takes_it(datum/act/op/A)
@@ -280,7 +280,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 /// A held storage that picks things up, clicked on a storage: it gathers (a bag in hand clicks the tile's contents into itself).
 /datum/capability/lib/storage/proc/gathers_here(datum/act/op/A)
 	var/obj/item/storage/bag = A.held
-	return istype(bag) && bag != A.holder && !isrobot(A.actor) && bag.use_to_pickup
+	return istype(bag) && bag != A.holder && A.actor.lets_go_of_held() && bag.use_to_pickup
 
 /datum/capability/lib/storage/proc/gather_here(datum/act/op/A)
 	var/obj/item/storage/bag = A.held
