@@ -1,6 +1,7 @@
 human|none menu: Climb in
 human|none click: Click: Climb in
 robot|none menu: Climb in
+robot|none menu: Use
 robot|none click: Click: Climb in
 ai|none click: nothing
 ghost|none click: nothing
@@ -72,5 +73,5 @@ human|/obj/item/shovel menu: Move To Top
 human|/obj/item/shovel menu: Put down (refused: You can't put that down there.)
 human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/shovel click: Click: Fill in
-keys: anchor.toggle, break_out, climb_in, cut_apart, drag_buckle, empty_basket, fill, set_down, smooth_over, stuff_grab, unearth
+keys: anchor.toggle, break_out, climb_in, cut_apart, drag_buckle, empty_basket, fill, set_down, silicon_hand, smooth_over, stuff_grab, unearth
 

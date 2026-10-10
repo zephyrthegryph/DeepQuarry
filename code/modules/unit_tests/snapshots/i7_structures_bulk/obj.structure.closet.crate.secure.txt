@@ -3,6 +3,7 @@ human|none menu: Toggle Lock
 human|none click: Click: Toggle Lock
 robot|none menu: Climb
 robot|none menu: Toggle Lock
+robot|none menu: Use
 robot|none click: Click: Toggle Lock
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
@@ -106,5 +107,5 @@ human|/obj/item/melee/energy/blade menu: Slice open
 human|/obj/item/melee/energy/blade menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/melee/energy/blade menu: Toggle Lock
 human|/obj/item/melee/energy/blade click: Click: Slice open
-keys: anchor.toggle, attach_pack, break_out, climb.climb, climb.climb_menu, cutters_touch, cut_apart, cut_rigging, devour, door, drag_buckle, emag.subvert, emag.use, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, rig, set_down, slice, stuff, stuff_grab, weld_shut.toggle
+keys: anchor.toggle, attach_pack, break_out, climb.climb, climb.climb_menu, cutters_touch, cut_apart, cut_rigging, devour, door, drag_buckle, emag.subvert, emag.use, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, rig, set_down, silicon_hand, slice, stuff, stuff_grab, weld_shut.toggle
 

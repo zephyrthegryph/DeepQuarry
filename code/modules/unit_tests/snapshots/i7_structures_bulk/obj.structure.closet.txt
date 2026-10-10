@@ -1,6 +1,7 @@
 human|none menu: Toggle Open
 human|none click: Click: Toggle Open
 robot|none menu: Toggle Open
+robot|none menu: Use
 robot|none click: Click: Toggle Open
 ai|none click: nothing
 ghost|none menu: Toggle Open
@@ -66,5 +67,5 @@ human|/obj/item/storage/laundry_basket menu: Switch gathering method (refused: Y
 human|/obj/item/storage/laundry_basket menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/laundry_basket menu: Toggle Open
 human|/obj/item/storage/laundry_basket click: Click: Empty into
-keys: anchor.toggle, break_out, cut_apart, devour, door, drag_buckle, empty_basket, melee_hit, set_down, stuff, stuff_grab, weld_shut.toggle
+keys: anchor.toggle, break_out, cut_apart, devour, door, drag_buckle, empty_basket, melee_hit, set_down, silicon_hand, stuff, stuff_grab, weld_shut.toggle
 

@@ -1,6 +1,7 @@
 human|none menu: Push in
 human|none click: Click: Push in
 robot|none menu: Push in
+robot|none menu: Use
 robot|none click: Click: Push in
 ai|none click: nothing
 ghost|none click: nothing
@@ -66,5 +67,5 @@ human|/obj/item menu: Place on tray
 human|/obj/item menu: Push in
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Push in
-keys: drag_buckle, melee_hit, place, push_in
+keys: drag_buckle, melee_hit, place, push_in, silicon_hand
 
