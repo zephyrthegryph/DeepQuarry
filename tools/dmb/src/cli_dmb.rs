@@ -63,11 +63,18 @@ fn structural_diff(args: &[String]) -> io::Result<()> {
     let expected = load_dmb(&args[2])?;
     let actual = load_dmb(&args[3])?;
     let report = byond_dmb::compare::structural_report(&expected, &actual, &args[5]);
-    let file = std::fs::File::create(&args[4])?;
-    serde_json::to_writer_pretty(file, &report).map_err(io::Error::other)?;
+    // Large structural reports contain millions of short JSON fragments. Buffer
+    // them instead of issuing a filesystem write for each serializer fragment.
+    let mut file = std::io::BufWriter::with_capacity(
+        64 * 1024,
+        std::fs::File::create(&args[4])?,
+    );
+    serde_json::to_writer_pretty(&mut file, &report).map_err(io::Error::other)?;
+    std::io::Write::flush(&mut file)?;
     let summary_path = format!("{}.summary.json", args[4]);
-    let summary_file = std::fs::File::create(summary_path)?;
-    serde_json::to_writer_pretty(summary_file, &report.summary()).map_err(io::Error::other)?;
+    let mut summary_file = std::io::BufWriter::new(std::fs::File::create(summary_path)?);
+    serde_json::to_writer_pretty(&mut summary_file, &report.summary()).map_err(io::Error::other)?;
+    std::io::Write::flush(&mut summary_file)?;
     Ok(())
 }
 

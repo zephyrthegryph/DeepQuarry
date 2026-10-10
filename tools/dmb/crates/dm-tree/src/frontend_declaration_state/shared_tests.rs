@@ -38,6 +38,12 @@ fn shared_contribution_replays_exact_bytes_rebinds_offsets_and_releases_independ
     assert_ne!(first.offset, shifted.offset);
     assert!(b.get_shared(&key, &text.replace("1", "2"), 80).is_none());
     assert!(b.get_shared(&key, text, usize::MAX).is_none());
+    // Failed current binding cannot leak the prior callback's accepted owner.
+    let rebound = b.get_shared(&key, text, 91).unwrap();
+    assert!(Arc::ptr_eq(&rebound.value, &first.value));
+    assert_eq!(rebound.offset, 91);
+    drop(rebound);
+
     let weak = Arc::downgrade(&first.value);
     a.clear();
     assert!(b.get_shared(&key, text, 90).is_some());

@@ -47,17 +47,23 @@ impl DeclarationValues {
         }
     }
     pub(super) fn get(&self, key: &[u8], text: &str, offset: usize) -> Option<CurrentContribution> {
-        let value = match self {
-            Self::Local(store) => store.lookup(key, &NoReads)?,
-            Self::Shared(lease) => {
-                lease
-                    .visit_explained(key, &Host(text), &mut |value| {
-                        CurrentContribution::bind(Arc::clone(value), text, offset).is_some()
-                    })
-                    .0?
+        match self {
+            Self::Local(store) => {
+                CurrentContribution::bind(store.lookup(key, &NoReads)?, text, offset)
             }
-        };
-        CurrentContribution::bind(value, text, offset)
+            Self::Shared(lease) => {
+                let mut bound = None;
+                let admitted = lease
+                    .visit_explained(key, &Host(text), &mut |value| {
+                        bound = CurrentContribution::bind(Arc::clone(value), text, offset);
+                        bound.is_some()
+                    })
+                    .0?;
+                // The generic source replay and coordinate binding both succeeded
+                // for this exact admitted owner; do not bind the same leaf twice.
+                bound.filter(|current| Arc::ptr_eq(&current.value, &admitted))
+            }
+        }
     }
     pub(super) fn publish(&self, key: &[u8], current: &mut CurrentContribution) -> Option<()> {
         let value = match self {

@@ -59,6 +59,26 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     };
     let first = parse_declarations(&expanded, config, Some(&memo)).unwrap();
     assert!(!memo.1.lock().unwrap().is_empty());
+    // Both independently keyed and contained-region sidecars own the same
+    // immutable canonical payload produced by the real parser/facts codec.
+    {
+        let independent = memo.1.lock().unwrap();
+        let regions = memo.0.lock().unwrap();
+        let payload = independent.values().flatten().next().unwrap().payload();
+        let contained = regions
+            .values()
+            .flatten()
+            .find_map(|record| {
+                record.fragment(
+                    parserwire::VERSION,
+                    dm_syntax::Span::new(0, record.text().len()),
+                )
+            })
+            .unwrap();
+        assert_eq!(payload, contained);
+        assert_eq!(payload.as_ptr(), contained.as_ptr());
+    }
+
     // A fresh expansion with no matching region memo still consumes the exact
     // chunk's independent facts. Its current global offset/provenance are fresh.
     memo.0.lock().unwrap().clear();

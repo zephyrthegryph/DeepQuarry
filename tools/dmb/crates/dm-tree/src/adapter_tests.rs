@@ -1,6 +1,59 @@
 use super::*;
 use crate::{build, MemberKind, OccurrenceTable};
 #[test]
+fn variable_input_annotations_are_not_initializer_tokens() {
+    // Exact declaration spellings from the captured quantum/hyper pad sources.
+    let source = "/datum/pad\n    var/map_pad_id = \"\" as text\n    var/map_pad_link_id = \"\" as text\n    var/control = list(\" as text\", list(\"as\")) as anything\n    var/plain = \" as text\"\n";
+    let adapted = adapt(source);
+    let values: Vec<_> = adapted
+        .skeletons
+        .iter()
+        .filter_map(|row| match row {
+            Skeleton::Member { name, metadata, .. } => Some((
+                adapted.symbols.text(*name).unwrap(),
+                metadata
+                    .initializer
+                    .as_ref()
+                    .unwrap()
+                    .tokens
+                    .iter()
+                    .map(|token| adapted.symbols.text(token.text).unwrap())
+                    .collect::<Vec<_>>(),
+            )),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        values,
+        vec![
+            ("map_pad_id", vec!["\"\""]),
+            ("map_pad_link_id", vec!["\"\""]),
+            (
+                "control",
+                vec![
+                    "list",
+                    "(",
+                    "\" as text\"",
+                    ",",
+                    "list",
+                    "(",
+                    "\"as\"",
+                    ")",
+                    ")"
+                ]
+            ),
+            ("plain", vec!["\" as text\""]),
+        ]
+    );
+    for row in &adapted.skeletons {
+        if let Skeleton::Member { metadata, .. } = row {
+            let expression = metadata.initializer.as_ref().unwrap();
+            let first = &expression.tokens[0];
+            assert_eq!(first.relative_span.start, 0);
+        }
+    }
+}
+#[test]
 fn bare_nested_type_does_not_capture_following_sibling_defaults() {
     // Matches the captured clown declaration shape: the bare child and the
     // parent's defaults have equal indentation.

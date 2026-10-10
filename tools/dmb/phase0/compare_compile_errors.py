@@ -94,6 +94,80 @@ def template_admission(receipt, actual):
     return {"status": "passed", "actual_sha256": actual, "expected_sha256": expected.pop()}
 
 
+def corpus_cases(descriptor, compiler_sha):
+    raw = descriptor.read_bytes()
+    value = json.loads(raw)
+    if value.get("schema") != 1 or not isinstance(value.get("cases"), list) or not 1 <= len(value["cases"]) <= 32:
+        raise ValueError("invalid bounded diagnostic corpus")
+    cases = []
+    for entry in value["cases"]:
+        name = entry["name"]
+        if Path(name).name != name or name in [case["name"] for case in cases]:
+            raise ValueError("invalid/duplicate corpus case")
+        root = (descriptor.parent / entry["root"]).resolve()
+        capture = root / entry["capture"]
+        if sha(capture) != entry["capture_sha256"]:
+            raise ValueError("corpus capture changed")
+        receipt = json.loads(capture.read_text(encoding="utf-8-sig"))
+        if receipt["compiler_sha256"] != compiler_sha:
+            raise ValueError("corpus compiler differs from pinned executable")
+        files = entry["files"]
+        if not isinstance(files, dict) or not 1 <= len(files) <= 32:
+            raise ValueError("invalid corpus file roster")
+        for file, digest in files.items():
+            if Path(file).is_absolute() or ".." in Path(file).parts or sha(root / file) != digest:
+                raise ValueError("corpus source/manifest changed")
+        if entry["manifest"] not in files:
+            raise ValueError("manifest missing from exact corpus roster")
+        captured = receipt
+        for component in entry.get("source_receipt_path", []):
+            captured = captured[component]
+        if captured["source_sha256"] != files[entry["source"]]:
+            raise ValueError("source differs from captured compiler input")
+        cases.append(dict(entry, root=root, receipt=receipt))
+    if descriptor.read_bytes() != raw:
+        raise ValueError("corpus descriptor changed during admission")
+    return cases
+
+
+def compare_corpus(args, identities):
+    results = []
+    cases = corpus_cases(args.corpus, identities["byond"])
+    if args.case:
+        requested = set(args.case)
+        available = {entry["name"] for entry in cases}
+        if len(requested) != len(args.case) or requested - available:
+            raise ValueError("duplicate or unknown requested corpus case")
+        cases = [entry for entry in cases if entry["name"] in requested]
+    for entry in cases:
+        if args.define != entry.get("defines", []):
+            raise ValueError("defines differ from captured corpus configuration")
+        directory = args.output / entry["name"]
+        directory.mkdir()
+        for file in entry["files"]:
+            destination = directory / file
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((entry["root"] / file).read_bytes())
+        source = directory / entry["manifest"]
+        defines = [f"-D{define}" for define in args.define]
+        reference = run([str(args.byond), *defines, str(source)], directory, directory / "byond.log", args.timeout)
+        candidate = run([str(args.native), "compile", "--no-daemon", "--no-cache", str(source), "--workers", "1",
+                         "--engine-template", str(args.engine_template), "--bootstrap-catalog",
+                         "--output-store", str(directory / "native-store"),
+                         "--artifact-directory", str(directory / "native-artifacts"), *defines],
+                        directory, directory / "native.log", args.timeout)
+        unchanged = (sha(entry["root"] / entry["capture"]) == entry["capture_sha256"] and
+                     all(sha(directory / file) == digest and sha(entry["root"] / file) == digest
+                         for file, digest in entry["files"].items()))
+        proof = template_admission(entry["receipt"], identities["engine_template"])
+        results.append({"case": entry["name"], "files": entry["files"], "defines": args.define,
+                        "source_unchanged": unchanged, "template_admission": proof,
+                        "passed": matches(reference, candidate, unchanged), "byond": reference, "native": candidate})
+    return {"schema": 1, "compiler_sha256": identities, "corpus_sha256": sha(args.corpus),
+            "results": results, "passed": bool(results) and all(result["passed"] and
+            result["template_admission"]["status"] == "passed" for result in results)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--byond", type=Path, required=True)
@@ -103,6 +177,7 @@ def main():
                         "fixtures/phase1/native_modified_instances")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--case", action="append")
+    parser.add_argument("--corpus", type=Path, help="bounded source/manifest/capture descriptor")
     parser.add_argument("--define", action="append", default=[])
     parser.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args()
@@ -113,6 +188,14 @@ def main():
     if args.output.drive.casefold() != "e:":
         raise ValueError("owned diagnostic outputs must reside on E:")
     args.output.mkdir(parents=True, exist_ok=False)
+    if args.corpus:
+        args.corpus = args.corpus.resolve()
+        identities = {"byond": sha(args.byond), "native": sha(args.native), "engine_template": sha(args.engine_template)}
+        report = compare_corpus(args, identities)
+        if identities != {"byond": sha(args.byond), "native": sha(args.native), "engine_template": sha(args.engine_template)}:
+            raise ValueError("compiler/template changed during corpus")
+        (args.output / "comparison.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        return 0 if report["passed"] else 1
     fixture_receipt = json.loads((args.fixtures / "receipt.json").read_text(encoding="utf-8-sig"))
     compiler_identities = {"byond": sha(args.byond), "native": sha(args.native),
                            "engine_template": sha(args.engine_template)}

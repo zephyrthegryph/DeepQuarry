@@ -265,7 +265,7 @@ pub(super) fn parse_declarations_with_state(
                                             )
                                         });
                                     match payload {
-                                        Ok(bytes) => Some(bytes),
+                                        Ok(bytes) => Some(Arc::<[u8]>::from(bytes)),
                                         Err(message) => {
                                             facts = Err(vec![crate::AdapterError {
                                                 span: dm_ir::Span {
@@ -290,7 +290,7 @@ pub(super) fn parse_declarations_with_state(
                                             dm_preprocess::regions::FragmentRecord::new(
                                                 parserwire::VERSION,
                                                 text,
-                                                Arc::from(bytes.as_slice()),
+                                                Arc::clone(bytes),
                                             )
                                         {
                                             memo.insert_fragment(Arc::new(record));
@@ -395,7 +395,7 @@ pub(super) fn parse_declarations_with_state(
             let record = updated
                 .entry(index)
                 .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
-            record.append_fragment(parserwire::VERSION, span, bytes.into());
+            record.append_fragment(parserwire::VERSION, span, bytes);
         }
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }

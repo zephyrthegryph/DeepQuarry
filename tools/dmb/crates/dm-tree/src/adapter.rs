@@ -195,6 +195,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .map_or((header, None), |index| {
                             (header[..index].trim(), Some(header[index + 1..].trim()))
                         });
+                    let initializer = initializer
+                        .map(crate::procedure::variable_initializer)
+                        .transpose()?;
                     let separator = declaration
                         .match_indices("var/")
                         .find(|(index, _)| *index == 0 || declaration.as_bytes()[index - 1] == b'/')

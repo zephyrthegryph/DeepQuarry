@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "name": "raw_quoted_newline",
+      "root": "../fixtures/native_compiler/line_continuation_strings",
+      "capture": "capture.json",
+      "capture_sha256": "4a4602892c2a19d2688488e8b094a23ea073f996e891d04eda14a1feb8f90ac6",
+      "source": "raw_newline.dm",
+      "manifest": "raw_newline.dme",
+      "source_receipt_path": [
+        "raw_newline"
+      ],
+      "defines": [],
+      "files": {
+        "raw_newline.dm": "e45ad390460a86505730e4584f6f54aed497e2aa5e3498092576d5a76a3e1b77",
+        "raw_newline.dme": "7cbeff95e63cb6c2606ed97d21cd76b53292701d175ce99764deec60346b2967"
+      }
+    }
+  ]
+}

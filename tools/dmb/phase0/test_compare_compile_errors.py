@@ -1,10 +1,49 @@
 import copy
 from pathlib import Path
 import unittest
-from compare_compile_errors import matches, normalize, template_admission
+import tempfile
+import json
+import hashlib
+from types import SimpleNamespace
+from unittest.mock import patch
+from compare_compile_errors import matches, normalize, template_admission, corpus_cases, compare_corpus
 
 
 class CompileErrorTests(unittest.TestCase):
+    def test_requested_corpus_coverage_cannot_silently_drop_unknown_cases(self):
+        admitted = [{"name": "known"}]
+        for requested in (["known", "missing"], ["known", "known"]):
+            args = SimpleNamespace(corpus=Path("unused"), case=requested)
+            with patch("compare_compile_errors.corpus_cases", return_value=admitted), \
+                    patch("compare_compile_errors.run") as launch:
+                with self.assertRaisesRegex(ValueError, "requested corpus case"):
+                    compare_corpus(args, {"byond": "a" * 64})
+                launch.assert_not_called()
+
+    def test_corpus_authenticates_source_manifest_capture_and_compiler(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = b'var/value = "bad\ntext"\n'
+            manifest = b'#include "source.dm"\n'
+            digest = lambda data: hashlib.sha256(data).hexdigest()
+            capture = json.dumps({"compiler_sha256": "a" * 64, "source_sha256": digest(source)}).encode()
+            for name, data in [("source.dm", source), ("probe.dme", manifest), ("capture.json", capture)]:
+                (root / name).write_bytes(data)
+            entry = {"name": "quoted", "root": ".", "source": "source.dm", "manifest": "probe.dme",
+                     "capture": "capture.json", "capture_sha256": digest(capture),
+                     "files": {"source.dm": digest(source), "probe.dme": digest(manifest)}}
+            descriptor = root / "corpus.json"
+            descriptor.write_text(json.dumps({"schema": 1, "cases": [entry]}))
+            self.assertEqual(corpus_cases(descriptor, "a" * 64)[0]["name"], "quoted")
+            with self.assertRaises(ValueError):
+                corpus_cases(descriptor, "b" * 64)
+            (root / "probe.dme").write_bytes(b'#include "other.dm"')
+            with self.assertRaises(ValueError):
+                corpus_cases(descriptor, "a" * 64)
+            (root / "probe.dme").write_bytes(manifest)
+            (root / "source.dm").write_bytes(b"changed")
+            with self.assertRaises(ValueError):
+                corpus_cases(descriptor, "a" * 64)
     def result(self, code):
         return {"exit_code": code, "timed_out": False, "diagnostics": [
             {"file": "probe.dme", "line": 7, "severity": "error", "message": "value: undefined var"}

@@ -19,6 +19,21 @@ pub(crate) fn expression(
     }
     expression_view(lexed.view(), symbols)
 }
+/// A variable input annotation follows its initializer, but is not part of it.
+/// Use the shared lexer so quoted or nested `as` text remains expression text.
+pub(crate) fn variable_initializer(text: &str) -> Result<&str, String> {
+    let lexed = LexedHeader::new(text);
+    if !lexed.valid() {
+        return Err("invalid variable initializer tokens".into());
+    }
+    let end = lexed
+        .view()
+        .top_level()
+        .into_iter()
+        .find(|(token, _)| *token == "as")
+        .map_or(text.len(), |(_, span)| span.start);
+    Ok(text[..end].trim_end())
+}
 fn expression_view(
     view: HeaderView<'_>,
     symbols: &mut SymbolTable,
