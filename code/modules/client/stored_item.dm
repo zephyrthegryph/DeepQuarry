@@ -54,6 +54,9 @@ TRACKED(/obj/machinery/item_bank, busy_bank)
 		return persist_name
 
 CAPABILITIES(/obj/machinery/item_bank)
+	// Ten seconds at the bank once the questions are answered: the retrieval (the item type comes with the call) and the storing (the held item is the one stored).
+	op("retrieve_wait", ai(), takes("item_type"), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(retrieve_finished)))
+	op("store_wait", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(store_finished)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds), because = PROC_REF(can_store_refusal))), then(PROC_REF(interaction_store)))
 
@@ -119,7 +122,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 			return
 		set_busy_bank(TRUE)
 		icon_state = "item_bank_o"
-		task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(retrieve_done), done_args = list(user, I), on_fail = PROC_REF(bank_interrupted))
+		perform_op(user, src, "retrieve_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item_type" = I))
 		return
 	else if(choice == "Info")
 		to_chat(user, span_notice("\The [src] can store a single item for you between shifts! Anything that has been retrieved from the bank cannot be stored again in the same shift. Anyone can withdraw from the bank one time per shift. Some items are not able to be accepted by the bank."))
@@ -166,6 +169,21 @@ CAPABILITIES(/obj/machinery/item_bank)
 /obj/machinery/item_bank/proc/bank_interrupted()
 	set_busy_bank(FALSE)
 	icon_state = "item_bank"
+
+/// The wait ended without its work: the bank is free again.
+/obj/machinery/item_bank/proc/bank_wait_interrupted(datum/act/op/A)
+	bank_interrupted()
+
+/obj/machinery/item_bank/proc/retrieve_finished(datum/act/op/A)
+	retrieve_done(A.actor, A.arg("item_type"))
+	return OP_OK
+
+/obj/machinery/item_bank/proc/store_finished(datum/act/op/A)
+	if(QDELETED(A.held))
+		bank_interrupted()
+		return OP_REFUSED
+	store_done(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/item_bank/proc/retrieve_done(mob/living/user, I)
 	if(!operable())
@@ -226,7 +244,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 		set_busy_bank(TRUE)
 		act_message(user, src, MSG_SELF(span_notice("You begin storing %I% in %T%.")), MSG_OTHERS(span_notice("%U% begins storing %I% in %T%.")), item = O)
 		icon_state = "item_bank_o"
-		task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(store_done), done_args = list(user, O), on_fail = PROC_REF(bank_interrupted))
+		perform_op(user, src, "store_wait", O, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return OP_OK
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))

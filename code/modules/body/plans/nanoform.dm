@@ -326,37 +326,38 @@
 			if(!paddles.can_use(user))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			task_start(/datum/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
-			return
-	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
+	perform_op(user, src, "repair_step", W, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("site" = site, "step" = step))
 
-/datum/task/timed/core_dormancy_paddles_charge
-	duration = 5 SECONDS
-	complete_proc = /datum/affliction/core_dormancy/proc/paddles_charge
-	var/obj/item/W
-	var/step
+// One revival step is five seconds with the tool in hand; the paddles first charge for those five and then discharge for one more second.
+CAPABILITIES(/datum/affliction/core_dormancy)
+	op("repair_step", ai(), takes("site", "step"), wait(PROC_REF(repair_wait), repeats = PROC_REF(repair_more), after_step = PROC_REF(repair_lap)), then(PROC_REF(repair_step_done)))
 
-/datum/affliction/core_dormancy/proc/paddles_charge(datum/task/timed/core_dormancy_paddles_charge/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
-	play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
-	task_start(/datum/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
+/// The paddles' second lap is the discharge, one second; every other lap is five.
+/datum/affliction/core_dormancy/proc/repair_wait(datum/act/op/A)
+	if(A.arg("step") == DORMANCY_PASTED && A.laps())
+		return 1 SECOND
+	return 5 SECONDS
 
-/datum/task/timed/core_dormancy_repair_step
-	complete_proc = /datum/affliction/core_dormancy/proc/repair_step_done
-	var/obj/item/W
-	var/step
+/// Only the paddles take a second lap.
+/datum/affliction/core_dormancy/proc/repair_more(datum/act/op/A)
+	return A.arg("step") == DORMANCY_PASTED && A.laps() < 2
 
-/datum/affliction/core_dormancy/proc/repair_step_done(datum/task/timed/core_dormancy_repair_step/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
+/// The paddles' charge is done.
+/datum/affliction/core_dormancy/proc/repair_lap(datum/act/op/A)
+	var/atom/site = A.arg("site")
+	if(A.arg("step") == DORMANCY_PASTED && A.laps() == 1 && !QDELETED(site))
+		play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
+
+/datum/affliction/core_dormancy/proc/repair_step_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/living/user = A.actor
+	var/atom/site = A.arg("site")
+	var/step = A.arg("step")
+	if(QDELETED(site))
+		return OP_REFUSED
 	var/mob/living/patient = held_mob
 	if(!patient || revival_step != step)
-		return
+		return OP_OK
 	switch(step)
 		if(DORMANCY_SEALED)
 			to_chat(user, span_notice("You unscrew the maintenance panel on [site]."))
@@ -378,6 +379,7 @@
 				gibs(get_turf(site), null, /obj/effect/gibspawner/robot)
 				site.atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
 	log_game("NANOFORM: [key_name(user)] worked on [key_name(patient)]'s dormant core with [W] via [site]; step [step] -> [revival_step].")
+	return OP_OK
 
 /// Each revival mechanism advances exactly one step, in order.
 /datum/affliction/core_dormancy/receive_tagged_treatment(tag, amount, continuous = FALSE)

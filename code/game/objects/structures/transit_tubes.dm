@@ -245,41 +245,30 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	task_start(/datum/task/transit_pod, src, null, tube_h = entity_handle(current_tube))
+	travel_next("exit", entity_handle(current_tube), 0, null, 1 TICKS)
 
-/// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
-/// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
-/datum/task/transit_pod
-	name = "transit pod travel"
-	steps = list(/obj/structure/transit_tube_pod/proc/travel_step = 0)
-	complete_proc = /obj/structure/transit_tube_pod/proc/travel_ended
-	cancel_proc = /obj/structure/transit_tube_pod/proc/travel_ended
-	/// The tube the pod is in: a handle, since the pod leaves it (a deleted tube is not a failure).
-	var/tube_h
-	var/phase = "exit"
-	var/last_delay = 0
-	var/next_dir
+/// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its enter delay, hop in; out of the tubes,
+/// coast in a line until slowed to a halt. Each stage is a timer on the pod carrying the journey's state (the tube the pod is in as a
+/// handle, since the pod leaves it and a deleted tube is not a failure), and the next stage is armed by the one that ran.
+/obj/structure/transit_tube_pod/proc/travel_next(phase, tube_h, last_delay, next_dir, delay)
+	after(src, max(delay, 1 TICKS), PROC_REF(travel_step), with = list(phase, tube_h, last_delay, next_dir))
 
-/obj/structure/transit_tube_pod/proc/travel_ended(datum/task/T)
+/obj/structure/transit_tube_pod/proc/travel_ended()
 	set_density(TRUE)
 	moving = 0
 
-/obj/structure/transit_tube_pod/proc/travel_step(datum/task/transit_pod/T)
-	switch(T.phase)
+/obj/structure/transit_tube_pod/proc/travel_step(phase, tube_h, last_delay, next_dir)
+	switch(phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = resolve_handle(T.tube_h)
+			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
 			if(!tube)
-				return travel_coast(T)
-			var/next_dir = tube.get_exit(dir)
-			if(!next_dir)
-				return STEP_DONE
+				return travel_coast(last_delay)
+			var/next_exit = tube.get_exit(dir)
+			if(!next_exit)
+				return travel_ended()
 			var/exit_delay = tube.exit_delay(src, dir)
-			T.last_delay += exit_delay
-			T.next_dir = next_dir
-			T.phase = "leave"
-			return STEP_REPEAT(exit_delay)
+			return travel_next("leave", tube_h, last_delay + exit_delay, next_exit, exit_delay)
 		if("leave")
-			var/next_dir = T.next_dir
 			var/turf/next_loc = get_step(loc, next_dir)
 			var/obj/structure/transit_tube/next_tube = null
 			for(var/obj/structure/transit_tube/tube in next_loc)
@@ -289,42 +278,38 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 			if(!next_tube)
 				set_dir(next_dir)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
-				return travel_coast(T)
-			T.tube_h = entity_handle(next_tube)
-			T.last_delay = next_tube.enter_delay(src, next_dir)
-			T.phase = "enter"
-			return STEP_REPEAT(T.last_delay)
+				return travel_coast(last_delay)
+			var/enter_delay = next_tube.enter_delay(src, next_dir)
+			return travel_next("enter", entity_handle(next_tube), enter_delay, next_dir, enter_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = resolve_handle(T.tube_h)
+			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
 			if(!tube)
-				return travel_coast(T)
-			set_dir(T.next_dir)
+				return travel_coast(last_delay)
+			set_dir(next_dir)
 			forceMove(tube.loc) // When moving from one tube to another, skip collision and such.
 			set_density(tube.density)
-			if(tube.should_stop_pod(src, T.next_dir))
+			if(tube.should_stop_pod(src, next_dir))
 				tube.pod_stopped(src, dir)
-				return STEP_DONE
-			T.phase = "exit"
-			return travel_step(T)
+				return travel_ended()
+			return travel_step("exit", tube_h, last_delay, next_dir)
 		if("coast")
 			if(!istype(loc, /turf/space))
-				T.last_delay++
-			if(T.last_delay > 10)
-				return STEP_DONE
+				last_delay++
+			if(last_delay > 10)
+				return travel_ended()
 			if(isturf(loc) && Move(get_step(loc, dir)))
-				return STEP_REPEAT(T.last_delay)
-			return STEP_DONE
-	return STEP_DONE
+				return travel_next("coast", tube_h, last_delay, next_dir, last_delay)
+			return travel_ended()
+	return travel_ended()
 
 // If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
 //  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
 //  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
-/obj/structure/transit_tube_pod/proc/travel_coast(datum/task/transit_pod/T)
+/obj/structure/transit_tube_pod/proc/travel_coast(last_delay)
 	set_density(TRUE)
-	if(T.last_delay > 10)
-		return STEP_DONE
-	T.phase = "coast"
-	return STEP_REPEAT(T.last_delay)
+	if(last_delay > 10)
+		return travel_ended()
+	return travel_next("coast", null, last_delay, null, last_delay)
 
 /obj/structure/transit_tube_pod/return_air()
 	return air_contents

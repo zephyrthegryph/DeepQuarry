@@ -228,16 +228,25 @@
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-/obj/item/laserdome_flag/proc/flag_return_failed(mob/user)
+/obj/item/laserdome_flag/proc/flag_return_failed(datum/act/op/A)
+	var/mob/user = A.actor
 	user?.drop_from_inventory(src)
 
-/obj/item/laserdome_flag/proc/flag_returned(mob/user)
+/// How long the channelled return takes.
+/obj/item/laserdome_flag/proc/flag_return_wait(datum/act/op/A)
+	return flag_return_delay
+
+/obj/item/laserdome_flag/proc/flag_returned(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_from_inventory(src)
 	src.forceMove(src.start_pos)
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
+	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
+	// The owning team channels a return with the flag in hand; moving, dropping it or being tagged drops it where they stand.
+	op("return_flag", ai(), wait(PROC_REF(flag_return_wait), keeps = HELD | STAY | ALIVE), on_interrupt(PROC_REF(flag_return_failed)), then(PROC_REF(flag_returned)))
 
 /// Picking the flag up: the other team is told who has it.
 /obj/item/laserdome_flag/proc/flag_pick_up(datum/act/op/A)
@@ -263,7 +272,7 @@ CAPABILITIES(/obj/item/laserdome_flag)
 	if(grabbing_team == laser_team)
 		act_message(user, src, others = span_warning("%U% is returning %T%!"))
 		//channel return, rather than instant; if they fail the channel (e.g. because they got tagged!) then drop it
-		task_timed(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
+		perform_op(user, src, "return_flag", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 	else
 		act_message(user, src, others = span_warning("%U% has taken %T%!"))

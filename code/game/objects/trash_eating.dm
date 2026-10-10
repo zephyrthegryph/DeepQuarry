@@ -59,15 +59,17 @@
 
 // PDA
 /// The ten-second threat is over: down it goes.
-/obj/item/proc/threat_eaten(mob/living/user)
+/obj/item/proc/threat_eaten(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, others = span_warning("%U% successfully makes %T% disappear!"))
 	user.swallow_trash(src)
+	return OP_OK
 
 /obj/item/pda/proc/eat_risk_confirmed(datum/act/request/A)
 	if(!A.answer || !A.answer.value)
 		return
 	var/mob/living/user = A.request.answerer
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+	perform_op(user, src, "threaten_eat", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /obj/item/pda/on_trash_eaten(mob/living/user)
 	if(!..())
@@ -85,7 +87,7 @@
 			if(id)
 				open_request(src, /datum/prompt/yes_no, PROC_REF(eat_risk_confirmed), answerer = user, title = "Confirmation", question = "The PDA you're holding contains a vulnerable ID card. Will you risk it?", yes_text = "Definitely", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 				return FALSE
-			task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			perform_op(user, src, "threaten_eat", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 			return FALSE
 	return TRUE
 
@@ -109,7 +111,7 @@
 			return FALSE
 		else
 			act_message(user, src, others = span_warning("%U% is threatening to make %T% disappear!"))
-			task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(threat_eaten), done_args = list(user))
+			perform_op(user, src, "threaten_eat", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 			return FALSE
 	return TRUE
 

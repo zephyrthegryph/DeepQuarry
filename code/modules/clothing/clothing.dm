@@ -473,6 +473,7 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	op("head_robot_pick_up_wait", ai(), wait(3 SECONDS), then(PROC_REF(robot_hat_done)))
 	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
 	op("head_robot_pick_up", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Pick up hat"), then(PROC_REF(head_robot_pick_up)))
 	op("head_silicon_wear", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Wear hat"), then(PROC_REF(head_silicon_wear)))
@@ -646,6 +647,9 @@ CAPABILITIES(/obj/item/clothing/head)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	// A micro climbing out of shoes that are not worn (five seconds), and out of ones a macro wears or carries (the macro's pinning ends it; the time comes with the call).
+	op("shoes_climb_out", ai(), wait(5 SECONDS), then(PROC_REF(micro_climbed_out)))
+	op("shoes_escape_macro", ai(), takes("macro", "escape_time"), wait(PROC_REF(escape_time)), on_interrupt(PROC_REF(micro_pinned)), then(PROC_REF(micro_escaped_macro)))
 	owns_one(nameof(shoes), /obj/item/clothing/shoes)
 	owns_one(nameof(squeak), /datum/squeak)
 	owns_one(nameof(holding), /obj/item)
@@ -865,7 +869,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		return
 	if(!istype(macro))
 		to_chat(micro, span_notice("You start to climb out of [src]!"))
-		task_timed(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
+		perform_op(micro, src, "shoes_climb_out", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
 	var/escape_message_micro = "You start to climb out of [src]!"
@@ -878,28 +882,31 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	task_start(/datum/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
+	perform_op(micro, src, "shoes_escape_macro", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("macro" = macro, "escape_time" = escape_time))
 
-/obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
+/obj/item/clothing/shoes/proc/micro_climbed_out(datum/act/op/A)
+	var/mob/living/micro = A.actor
 	to_chat(micro, span_notice("You climb out of [src]!"))
 	micro.forceMove(loc)
+	return OP_OK
 
-/obj/item/clothing/shoes/proc/micro_pinned(datum/task/timed/shoes_micro_escaped_macro/task)
-	var/mob/living/micro = task.actor
-	var/mob/living/carbon/human/macro = task.target
+/// How long the escape from a macro's shoes takes.
+/obj/item/clothing/shoes/proc/escape_time(datum/act/op/A)
+	return A.arg("escape_time")
+
+/obj/item/clothing/shoes/proc/micro_pinned(datum/act/op/A)
+	var/mob/living/micro = A.actor
+	var/mob/living/carbon/human/macro = A.arg("macro")
 	to_chat(micro, span_danger("You're pinned underfoot!"))
 	to_chat(macro, span_danger("You pin the escapee underfoot!"))
 
-/datum/task/timed/shoes_micro_escaped_macro
-	complete_proc = /obj/item/clothing/shoes/proc/micro_escaped_macro
-	cancel_proc = /obj/item/clothing/shoes/proc/micro_pinned
-
-/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/task/timed/shoes_micro_escaped_macro/task)
-	var/mob/living/micro = task.actor
-	var/mob/living/carbon/human/macro = task.target
+/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/act/op/A)
+	var/mob/living/micro = A.actor
+	var/mob/living/carbon/human/macro = A.arg("macro")
 	to_chat(micro, span_notice("You manage to escape [src]!"))
 	to_chat(macro, span_danger("Someone has climbed out of your [src]!"))
 	micro.forceMove(macro.loc)
+	return OP_OK
 
 ///////////////////////////////////////////////////////////////////////
 //Suit
@@ -1526,14 +1533,16 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		return OP_OK
 
 	balloon_alert(user, "picking up hat...")
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
+	perform_op(user, src, "head_robot_pick_up_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return OP_OK
 
-/obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)
+/obj/item/clothing/head/proc/robot_hat_done(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
 	if(!Adjacent(user) || user.incapacitated())
-		return
+		return OP_REFUSED
 	user.place_on_head(src)
 	balloon_alert(user, "picked up hat")
+	return OP_OK
 
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)

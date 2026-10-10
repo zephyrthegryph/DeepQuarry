@@ -698,65 +698,43 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 	icon_state = "modkit"
 	var/scrip_loaded = 0
 
-/obj/item/glasses_kit/afterattack(target, mob/living/carbon/human/user, proximity)
-	if(!proximity)
-		return
-	if(!istype(user))
-		return
+TRACKED(/obj/item/glasses_kit, scrip_loaded)
 
-	//Too difficult
-	if(target == user)
-		to_chat(user, span_warning("You can't use this on yourself. Get someone to help you."))
-		return
+// Five seconds with the kit on someone's eyes (it builds a prescription) or on a pair of glasses (it applies it). Used on yourself it does nothing.
+CAPABILITIES(/obj/item/glasses_kit)
+	op("prescribe", at_target(/obj/item/clothing/glasses), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply prescription"),
+		needs(req_adjacent(), req_is(nameof(scrip_loaded), 1, because = MSG(glasses_kit/no_prescription))), wait(5 SECONDS), then(PROC_REF(prescribed)))
+	op("measure", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Measure eyes"),
+		needs(req_adjacent(), req(PROC_REF(not_the_user), because = MSG(glasses_kit/on_self))), starts(PROC_REF(measuring_started)), wait(5 SECONDS), then(PROC_REF(measured)))
 
-	//We're applying a prescription
-	if(istype(target,/obj/item/clothing/glasses))
-		var/obj/item/clothing/glasses/G = target
-		if(!scrip_loaded)
-			to_chat(user, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
-			return
+MSG_DEF_SELF(glasses_kit/on_self, span_warning("You can't use this on yourself. Get someone to help you."))
+MSG_DEF_SELF(glasses_kit/no_prescription, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
+MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be covered!"))
 
-		task_start(/datum/task/timed/glasses_kit/prescribe, user, G, kit = src)
+/obj/item/glasses_kit/proc/not_the_user(datum/act/op/A)
+	return A.target != A.actor
 
-	//We're getting a prescription
-	else if(ishuman(target))
-		var/mob/living/carbon/human/T = target
-		if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && T.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES))
-			to_chat(user, span_warning("The person's eyes can't be covered!"))
-			return
+/// The measuring is refused (and nothing starts) while the person's eyes are covered; otherwise the person and the room are told.
+/obj/item/glasses_kit/proc/measuring_started(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && T.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES))
+		return /datum/msg/glasses_kit/eyes_covered
+	act_message(T, A.actor, MSG_SELF("%T% begins measuring your eyes. Hold still!"), MSG_OTHERS("%T% begins making measurements for prescription lenses for [T]."))
 
-		act_message(T, user, MSG_SELF("%T% begins measuring your eyes. Hold still!"), \
-			MSG_OTHERS("%T% begins making measurements for prescription lenses for [target]."))
-		task_start(/datum/task/timed/glasses_kit/measure, user, T, kit = src)
+/obj/item/glasses_kit/proc/prescribed(datum/act/op/A)
+	var/obj/item/clothing/glasses/G = A.target
+	if(!scrip_loaded)
+		return OP_REFUSED
+	G.prescribe(A.actor)
+	set_scrip_loaded(0)
+	return OP_OK
 
-	else
-		..()
-
-/// Five seconds with the kit on someone's eyes or on their glasses. The done procs are the
-/// task's own: they read the state (kit, actor, target) as their own vars.
-/datum/task/timed/glasses_kit
-	abstract_type = /datum/task/timed/glasses_kit
-	duration = 5 SECONDS
-	var/obj/item/glasses_kit/kit
-
-/datum/task/timed/glasses_kit/prescribe
-	complete_proc = /datum/task/timed/glasses_kit/prescribe/proc/done
-
-/datum/task/timed/glasses_kit/prescribe/proc/done()
-	var/obj/item/clothing/glasses/G = target
-	if(!kit.scrip_loaded)
-		return
-	G.prescribe(actor)
-	kit.scrip_loaded = 0
-
-/datum/task/timed/glasses_kit/measure
-	complete_proc = /datum/task/timed/glasses_kit/measure/proc/done
-
-/datum/task/timed/glasses_kit/measure/proc/done()
-	var/mob/living/carbon/human/T = target
+/obj/item/glasses_kit/proc/measured(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
 	T.flash_eyes()
-	kit.scrip_loaded = 1
-	act_message(T, null, MSG_SELF(span_warning("Gah, that's bright!")), MSG_OTHERS("[actor] finishes making prescription lenses for %U%."))
+	set_scrip_loaded(1)
+	act_message(T, null, MSG_SELF(span_warning("Gah, that's bright!")), MSG_OTHERS("[A.actor] finishes making prescription lenses for %U%."))
+	return OP_OK
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical
 	item_flags = AIRTIGHT

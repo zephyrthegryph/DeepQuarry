@@ -1,8 +1,14 @@
-/obj/item/rig/proc/install_module_done(mob/living/user, obj/item/rig_module/mod)
+/// Four seconds with the module in the hand (rig_item() starts it once the suit has passed its checks).
+/obj/item/rig/proc/install_module_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/rig_module/mod = A.held
+	if(QDELETED(mod))
+		return OP_REFUSED
 	to_chat(user, "You install \the [mod] into \the [src].")
 	if(!move_into(src, nameof(src.installed_modules), mod, user))
-		return
+		return OP_OK
 	mod.installed(src)
+	return OP_OK
 
 /// Old attackby: lock, install a tank, module or cell, or hand the item to a module.
 /obj/item/rig/proc/rig_item(datum/act/op/A)
@@ -69,7 +75,7 @@
 
 			var/obj/item/rig_module/mod = W
 			to_chat(user, "You begin installing \the [mod] into \the [src].")
-			task_timed(user, 4 SECONDS, src, src, PROC_REF(install_module_done), list(user, mod))
+			perform_op(user, src, "install_module", mod, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 			return OP_OK
 
 		else if(!cell && istype(W,/obj/item/cell))
