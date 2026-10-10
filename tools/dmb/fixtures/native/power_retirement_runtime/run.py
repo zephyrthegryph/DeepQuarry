@@ -41,6 +41,10 @@ def load(name, file):
     return module
 
 
+def record_pin(receipt, name, file, sha256):
+    receipt.setdefault("pinned_inputs", {})[name] = {"path": str(file), "sha256": sha256}
+
+
 def observations(file):
     if file.stat().st_size > 1024 * 1024:
         raise ValueError("tiny runtime log exceeds 1MiB")
@@ -84,7 +88,7 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 1, "scope": "four deterministic retirement decoder cases only",
+    receipt = {"schema": 2, "scope": "four deterministic retirement decoder cases only",
                "complete": False, "root": str(root), "executions": {}}
     receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme")}
     memory = None
@@ -98,7 +102,7 @@ def main():
             if not re.fullmatch("[0-9a-f]{64}", expected) or h.sha(file) != expected:
                 raise ValueError("pinned input SHA mismatch: " + name)
             setattr(args, name, file)
-            receipt[name] = {"path": str(file), "sha256": expected}
+            record_pin(receipt, name, file, expected)
         memory = OwnedMemory(4_000_000_000)
         h._owned_memory = memory
         memory.start()
