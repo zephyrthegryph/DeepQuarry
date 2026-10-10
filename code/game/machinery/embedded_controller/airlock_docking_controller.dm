@@ -138,5 +138,10 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 		..(target)
 
 /// The running program (owns_one(starts =)): docking over the airlock program the map set.
+/// `program` is declared on the base type, so its starting occupant is made before airlock_program's: make the airlock program here first
+/// (own_init_starts() then leaves the filled var alone).
 /obj/machinery/embedded_controller/radio/airlock/docking_port/proc/make_docking_program(current)
+	if(!isdatum(airlock_program))
+		var/airlock_type = ispath(airlock_program) ? airlock_program : /datum/embedded_program/airlock/docking
+		rel_set(src, nameof(airlock_program), new airlock_type(src))
 	return new /datum/embedded_program/docking/airlock(src, airlock_program)
