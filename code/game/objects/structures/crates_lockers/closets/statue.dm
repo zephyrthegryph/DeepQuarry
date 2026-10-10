@@ -19,6 +19,9 @@
 /// The sprite of the encased mob's shape ("human_female", "monkey", "corgi"), or null for the mapped one.
 /obj/structure/closet/statue/var/statue_shape
 
+/// How long after init the petrification wears off (after_init()).
+/obj/structure/closet/statue/var/release_delay = 0
+
 /// The mob turned to stone (its constructor param, dropped after init).
 /obj/structure/closet/statue/var/tmp/mob/living/statue_of
 
@@ -56,10 +59,10 @@
 	if(statue_shape)
 		changed(src)
 
-	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
+	release_delay = timer * 2 SECONDS // the old countdown: one per 2 s step (after_init())
 
 /// The petrification wears off (its timer): the statue frees whoever is inside.
-/obj/structure/closet/statue/proc/release()
+/obj/structure/closet/statue/proc/release(datum/act/A)
 	if(QDELETED(src))
 		return
 	timer = 0
@@ -117,6 +120,7 @@
 
 // A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
 CAPABILITIES(/obj/structure/closet/statue)
+	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
 	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
 	without("door")
 	without("stuff")
