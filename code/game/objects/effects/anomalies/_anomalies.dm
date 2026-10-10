@@ -27,8 +27,9 @@
 	proximity_tracked = TRUE
 
 CAPABILITIES(/obj/effect/anomaly)
+	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
 	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
-	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly)
+	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly, starts = PROC_REF(make_core))
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
@@ -53,11 +54,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
 
-	if(!drops_core)
-		rel_clear(src, nameof(anomaly_core)) // still the type path here, or a core made early
-
 	if(anomaly_core)
-		rel_set(src, nameof(anomaly_core), new anomaly_core(src))
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
@@ -70,10 +67,9 @@ CAPABILITIES(/obj/effect/anomaly)
 	if(immortal)
 		return
 	countdown.start()
-	after(src, lifespan, PROC_REF(lifespan_over))
 
 /// The anomaly's lifespan ended (its timer): it detonates whether or not anyone is near.
-/obj/effect/anomaly/proc/lifespan_over()
+/obj/effect/anomaly/proc/lifespan_over(datum/act/A)
 	if(immortal || QDELETED(src))
 		return
 	if(loc)
@@ -202,3 +198,8 @@ CAPABILITIES(/obj/effect/anomaly)
 /// The impact area (an area: a plain var).
 /obj/effect/anomaly/proc/impact_area() as /area
 	return impact_area
+
+/// The core (owns_one(starts =)): the type in anomaly_core, made only when the anomaly drops one.
+/obj/effect/anomaly/proc/make_core(current)
+	if(drops_core && ispath(current))
+		return current

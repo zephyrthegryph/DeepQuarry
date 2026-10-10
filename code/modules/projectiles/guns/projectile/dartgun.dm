@@ -65,16 +65,16 @@ CAPABILITIES(/obj/item/projectile/bullet/chemdart)
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
 /obj/item/gun/projectile/dartgun/ownership()
 	. = ..()
-	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE)
+	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE, starts = PROC_REF(make_beakers))
 
 
-/obj/item/gun/projectile/dartgun/Initialize(mapload)
-	. = ..()
-	if(starting_chems)
-		for(var/chem in starting_chems)
-			var/obj/B = new container_type(src)
-			B.reagents.add_reagent(chem, 60)
-			rel_add(src, nameof(beakers), B)
+/// The starting beakers (owns(starts =)): one of each starting chem.
+/obj/item/gun/projectile/dartgun/proc/make_beakers(current)
+	. = list()
+	for(var/chem in starting_chems)
+		var/obj/B = new container_type(src)
+		B.reagents.add_reagent(chem, 60)
+		. += B
 
 /// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.
 /obj/item/gun/projectile/dartgun/proc/appearance_suffix()

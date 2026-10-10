@@ -10,7 +10,7 @@
 
 
 CAPABILITIES(/obj/item/grown)
-	reagents(50)
+	reagents(50, contents_from = PROC_REF(seed_contents))
 	param(nameof(planttype_at_make), pos = 1)
 
 /// The plant an inedible harvest is made from (its constructor param).
@@ -29,12 +29,19 @@ CAPABILITIES(/obj/item/grown)
 
 		potency = S.get_trait(TRAIT_POTENCY)
 
-		for(var/rid in S.chems)
-			var/list/reagent_data = S.chems[rid]
-			var/rtotal = reagent_data[1]
-			if(reagent_data.len > 1 && potency > 0)
-				rtotal += round(potency/reagent_data[2])
-			reagents.add_reagent(rid,max(1,rtotal))
+/// The plant's chemicals at its potency (reagents(contents_from =)), or null for a harvest made from no plant.
+/obj/item/grown/proc/seed_contents()
+	var/datum/seed/S = planttype_at_make ? SSplants.seeds[planttype_at_make] : null
+	if(!S || !S.chems)
+		return
+	var/plant_potency = S.get_trait(TRAIT_POTENCY)
+	. = list()
+	for(var/rid in S.chems)
+		var/list/reagent_data = S.chems[rid]
+		var/rtotal = reagent_data[1]
+		if(reagent_data.len > 1 && plant_potency > 0)
+			rtotal += round(plant_potency/reagent_data[2])
+		.[rid] = max(1, rtotal)
 
 /obj/item/corncob
 	name = "corn cob"

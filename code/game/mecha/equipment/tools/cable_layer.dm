@@ -11,7 +11,6 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
 	sync_cable_length()
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/MoveAction()
@@ -142,7 +141,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/ownership()
 	. = ..()
-	. += owns(nameof(cable), policy = OWN_CONTAINED)
+	. += owns(nameof(cable), policy = OWN_CONTAINED, starts = PROC_REF(make_cable))
 
 /// old turf
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf
@@ -172,3 +171,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
 	if(subject && QDELETED(subject))
 		return "gone"
 	return null
+
+/// The starting coil (owns(starts =)): empty until loaded.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/make_cable(current)
+	return new /obj/item/stack/cable_coil(src, 0)

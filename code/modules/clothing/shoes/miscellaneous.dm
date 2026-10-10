@@ -225,7 +225,6 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	. = ..()
 	if(icon_state == "ranger_boots")
 		name = "[bootcolor] ranger boots"
-		icon_state = "[bootcolor]_ranger_boots"
 
 /obj/item/clothing/shoes/boots/ranger/black
 	bootcolor = "black"
@@ -452,3 +451,9 @@ CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
 		T.wet_floor_finish()
 	if(B)
 		B.dry()
+
+/// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
+/obj/item/clothing/shoes/boots/ranger/draw(datum/look/look)
+	..()
+	if(look.state_so_far(src) == "ranger_boots")
+		look.state("[bootcolor]_ranger_boots")

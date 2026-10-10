@@ -36,8 +36,6 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
 
-	add_overlay("glass")
-
 	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	vis_contents += bpinboard
@@ -129,3 +127,7 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
 		stop_showing()
 	else if(enabled)
 		bradio?.on = TRUE
+
+/obj/machinery/computer/security/telescreen/bodycamera/draw(datum/look/look)
+	..()
+	look.overlay("glass")

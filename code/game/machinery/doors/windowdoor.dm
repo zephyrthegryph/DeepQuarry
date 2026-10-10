@@ -20,7 +20,6 @@
 	. = ..()
 	update_nearby_tiles()
 	if(LAZYLEN(req_access))
-		icon_state = "[icon_state]"
 		base_state = icon_state
 
 /// The look: its base state ("left", "right", ...), with "open" after it while it stands open.

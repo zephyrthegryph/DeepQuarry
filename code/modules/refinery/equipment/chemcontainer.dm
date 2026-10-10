@@ -22,13 +22,22 @@
 
 /obj/item/reagent_containers/chem_canister
 
+CAPABILITIES(/obj/item/reagent_containers/chem_canister)
+	configure(reagents(contents_from = PROC_REF(loaded_contents)))
+
+/// A canister loaded with a reagent starts full of it (reagents(contents_from =)).
+/obj/item/reagent_containers/chem_canister/proc/loaded_contents()
+	if(loaded_reagent && SSchemistry.ready().chemical_reagents[loaded_reagent])
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
+		. = list()
+		.[R.id] = volume
+
 /obj/item/reagent_containers/chem_canister/Initialize(mapload)
 	. = ..()
 	if(loaded_reagent)
 		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
-			reagents.add_reagent(R.id, volume)
 
 /obj/item/reagent_containers/chem_canister/examine(mob/user)
 	. = ..()
