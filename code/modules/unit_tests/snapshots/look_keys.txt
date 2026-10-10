@@ -19414,7 +19414,7 @@
 /obj/structure/ghost_pod/manual/survivor	82527e72ca131e4d	Q,confirm_before_open,opening_actor,used
 /obj/structure/girder	a2be2fa67860aa97	cover,default_material,displaced_health,girder_material,material_processing,reinf_material,reinforcing,state
 /obj/structure/girder/bay	d9f5402a6ce341b2	cover,default_material,displaced_health,girder_material,material_processing,reinf_material,reinforcing,state
-/obj/structure/girder/cult	d56c5d6b2c7f4309	*
+/obj/structure/girder/cult	1459a4d5d1f89fdd	*
 /obj/structure/girder/displaced	85c64d10e35eee3e	cover,default_material,displaced_health,girder_material,material_processing,reinf_material,reinforcing,state
 /obj/structure/girder/eris	9f092a9c6b1d60d3	cover,default_material,displaced_health,girder_material,material_processing,reinf_material,reinforcing,state
 /obj/structure/girder/reinforced	1ba7ceeb65526210	cover,default_material,displaced_health,girder_material,material_processing,reinf_material,reinforcing,state
