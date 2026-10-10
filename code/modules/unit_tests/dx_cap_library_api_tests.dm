@@ -31,7 +31,7 @@
 	refresh_flush()
 	var/datum/look/L = allocate(/datum/look)
 	A.draw(L)
-	var/shows_cell = LOOK_CELL in L.overlays
+	var/shows_cell = (LOOK_CELL in L.overlays)
 	for(var/list/part in L.parts)
 		if(part[1] == LOOK_CELL || (!isnull(part[2]) && "[part[1]]-[part[2]]" == LOOK_CELL))
 			shows_cell = TRUE
