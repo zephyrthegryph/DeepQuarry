@@ -60,16 +60,11 @@ GLOBAL_VAR_INIT(stage_defs_built, FALSE)
 #define UNDO_DERIVED "\[derived undo]"
 
 /// stage(STAGE_X, parts..., from =, undo =, key =): an edge into a stage. A name (text) first argument is the retired ladder stage() shape:
-/// the construction stage provider is asked for it (it builds none).
-/proc/stage(name, p1, p2, p3, p4, p5, p6, from = null, undo = UNDO_DERIVED, key = null, uses, needs, else_say, undo_needs, undo_else_say, when, undo_when, say, undo_say, desc, icon, anchored, on_enter, on_leave, list/also, refund, priority, quiet, sfx, done_sfx, build)
+/// a declaration error.
+/proc/stage(name, p1, p2, p3, p4, p5, p6, from = null, undo = UNDO_DERIVED, key = null)
 	if(!isnum(name))
-		// The legacy ladder stage: name, build, undo positionally or by name, and its own options (null means "not given").
-		var/list/legacy = list("name" = name, "build" = build || p1, "undo" = (undo != UNDO_DERIVED ? undo : p2))
-		var/list/given = list("uses" = uses, "needs" = needs, "else_say" = else_say, "undo_needs" = undo_needs, "undo_else_say" = undo_else_say, "when" = when, "undo_when" = undo_when, "say" = say, "undo_say" = undo_say, "desc" = desc, "icon" = icon, "anchored" = anchored, "on_enter" = on_enter, "on_leave" = on_leave, "also" = also, "refund" = refund, "priority" = priority, "quiet" = quiet, "sfx" = sfx, "done_sfx" = done_sfx)
-		for(var/option in given)
-			if(!isnull(given[option]))
-				legacy[option] = given[option]
-		return construction_stage_provider().build_legacy(legacy)
+		declare_report("stage([name]): a stage is a STAGE_X id (the text-named ladder stage was retired with the legacy construction ladder)")
+		return null
 	var/list/named = list("stage" = name, "key" = key, "from" = from)
 	if(undo != UNDO_DERIVED)
 		named["has_undo"] = TRUE

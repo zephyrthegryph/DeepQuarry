@@ -1,11 +1,7 @@
 GLOBAL_DATUM(operation_compatibility, /datum/operation_compatibility)
 
-/// Optional legacy operation transport; input ordering remains owned by the operation engine.
+/// Library hooks the engine's op resolution asks (item ranking); input ordering remains owned by the operation engine.
 /datum/operation_compatibility
-/datum/operation_compatibility/proc/named(mob/actor, datum/target, key)
-	return null
-/datum/operation_compatibility/proc/perform(mob/actor, datum/target, key, route, obj/held)
-	return null
 /proc/operation_compatibility()
 	RETURN_TYPE(/datum/operation_compatibility)
 	if(!GLOB.operation_compatibility)

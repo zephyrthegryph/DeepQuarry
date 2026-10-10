@@ -209,7 +209,7 @@
 	var/obj/item/e2_bench_key9/key9 = allocate(/obj/item/e2_bench_key9)
 	var/datum/type_table/T = table_of(S)
 	var/before = length(T.op_row_cache)
-	var/datum/op_resolution/R7 = op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)
+	var/datum/op_resolution/R7 = op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
 	var/datum/op_cand/winner = op_resolution_winner(R7)
 	var/after_first = length(T.op_row_cache)
 	// the stack's own thirty-one ops: the base types of the stack and the actor bring candidates of their own that this index does not prune
@@ -217,9 +217,9 @@
 	for(var/datum/op_cand/stack_cand as anything in R7.all)
 		if(stack_cand.holder == S && (stack_cand.oplan.key == "hand_use" || copytext(stack_cand.oplan.key, 1, 4) == "key"))
 			candidates_with_key7++
-	op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)
+	op_resolve(M, S, key7, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
 	var/after_same_shape = length(T.op_row_cache)
-	var/datum/op_resolution/R9 = op_resolve(M, S, key9, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null, FALSE)
+	var/datum/op_resolution/R9 = op_resolve(M, S, key9, ORIGIN_CLICK, AUTH_PHYSICAL, GESTURE_CLICK, null)
 	var/after_other_type = length(T.op_row_cache)
 	var/datum/op_cand/winner9 = op_resolution_winner(R9)
 	TEST_ASSERT_EQUAL(winner?.oplan?.key, "key7", "a key7 click resolves to its own op")
@@ -367,7 +367,7 @@
 	var/spread = get_dist(C, far)
 	var/hand_reaches = e0_menu_has(action_options(far, C, null), "cover.open")
 	var/datum/activation/tk = grant(far, telekinesis(), source = src)
-	var/datum/op_resolution/R = op_resolve(far, C, null, ORIGIN_MENU, AUTH_PHYSICAL, null, "cover.open", FALSE, TRUE)
+	var/datum/op_resolution/R = op_resolve(far, C, null, ORIGIN_MENU, AUTH_PHYSICAL, null, "cover.open", TRUE)
 	var/explained = jointext(op_explain_lines(R), "\n") + "\nspread [spread], line clear [reach_line_clear(far, C)], providers [length(providers_for(far, null))], world.view [world.view]"
 	var/tk_reaches = e0_menu_has(action_options(far, C, null), "cover.open")
 	var/datum/op_result/far_open = perform_op(far, C, "cover.open", origin = ORIGIN_MENU)

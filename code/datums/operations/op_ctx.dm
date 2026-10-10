@@ -10,7 +10,7 @@
 //   1 provider           the actor has a slot providing the affordance (op.by)
 //   2 route              the op accepts this route, the target is reachable that way, the bay's
 //                        compartment lets the route through
-//   3 actor state        conscious and capable (OP_EMERGENCY: alive); skipped for legacy presets
+//   3 actor state        conscious and capable (OP_EMERGENCY: alive)
 //   5 capability         every cap_require() of the target that names this op or its kind
 //     contracts
 //   6 op needs           the op's own needs (requirements)
@@ -145,7 +145,7 @@ GLOBAL_VAR_INIT(op_ctx_seq, 0)
 	return !actor.is_remote_viewing()
 
 /datum/op_ctx/proc/stage_actor()
-	if(op.legacy || route == ROUTE_AUTHORITY || !ismob(actor))
+	if(route == ROUTE_AUTHORITY || !ismob(actor))
 		return null
 	// An observer is never alive or capable: what it may do its route and its adapter already limit (ROUTE_UI, the ghost
 	// adapter's observer ops).
@@ -367,8 +367,6 @@ GLOBAL_LIST_EMPTY(op_cancelled_log)
 	var/list/gating
 	/// Item types (a list) that a plain click must hold to reach this op. Null: no such rule.
 	var/list/click_with
-	/// Skips the actor-state stage.
-	var/legacy = FALSE
 
 // ---- cap_require ----
 
