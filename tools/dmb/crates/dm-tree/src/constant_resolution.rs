@@ -110,253 +110,12 @@ impl ScalarSnapshot {
     }
 }
 
-#[derive(Default)]
-struct Memo {
-    values: BTreeMap<ScalarQuery, ScalarOutcome>,
-    active: Vec<ScalarQuery>,
-    edges: BTreeMap<ScalarQuery, BTreeSet<ScalarQuery>>,
-    predefined: BTreeMap<SymbolId, PredefinedOutcome>,
-}
-struct Pass<'a> {
-    tree: &'a SemanticTree,
-    backend: &'a ScalarBackend<'a>,
-    memo: RefCell<Memo>,
-    predefined: Option<&'a dyn Resolver>,
-    calls: Option<&'a dyn PureCalls>,
-}
-impl Pass<'_> {
-    fn member(&self, owner: SymbolId, name: SymbolId) -> Option<MemberId> {
-        self.tree
-            .lookup_type(owner)
-            .and_then(|owner| self.tree.resolve(owner, name, MemberKind::Var))
-    }
-    fn query(&self, query: ScalarQuery) -> ScalarOutcome {
-        {
-            let memo = self.memo.borrow();
-            if let Some(value) = memo.values.get(&query) {
-                return value.clone();
-            }
-            if let Some(index) = memo.active.iter().position(|active| *active == query) {
-                let mut cycle = memo.active[index..].to_vec();
-                let first = cycle
-                    .iter()
-                    .enumerate()
-                    .min_by_key(|(_, key)| **key)
-                    .map_or(0, |(index, _)| index);
-                cycle.rotate_left(first);
-                return ScalarOutcome::Cycle(cycle.into());
-            }
-        }
-        self.memo.borrow_mut().active.push(query);
-        let value = self.evaluate(query);
-        let mut memo = self.memo.borrow_mut();
-        memo.active.pop();
-        memo.values.insert(query, value.clone());
-        value
-    }
-    fn evaluate(&self, query: ScalarQuery) -> ScalarOutcome {
-        let (_, owner, name) = query.parts();
-        let Some(id) = self.member(owner, name) else {
-            return ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration);
-        };
-        let node = self
-            .tree
-            .member(id)
-            .expect("resolved member belongs to tree");
-        let metadata = &node.metadata;
-        if metadata.inherited_opaque.is_some()
-            && !matches!(query, ScalarQuery::EffectiveDefault { .. })
-        {
-            return ScalarOutcome::Unsupported(UnsupportedReason::OpaqueInheritedMetadata);
-        }
-        if matches!(query, ScalarQuery::Const { .. }) && metadata.flags & 2 == 0 {
-            return ScalarOutcome::Unsupported(UnsupportedReason::NotConst);
-        }
-        let (expression, scope) = match query {
-            ScalarQuery::DeclaredDefault { .. } => {
-                let declaration = self.tree.override_chain(id).into_iter().rev().find(|id| {
-                    self.tree
-                        .member(*id)
-                        .is_some_and(|node| node.definition == DefinitionMode::Declare)
-                });
-                let owner = declaration
-                    .and_then(|id| self.tree.member(id))
-                    .map_or(node.owner, |node| node.owner);
-                (metadata.declared_initializer.as_ref(), owner)
-            }
-            _ => (metadata.initializer.as_ref(), node.owner),
-        };
-        let Some(expression) = expression else {
-            return ScalarOutcome::Unsupported(UnsupportedReason::MissingInitializer);
-        };
-        let Some(text) = expression.source_text(self.tree.symbols()) else {
-            return ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression);
-        };
-        let failure = RefCell::new(None);
-        let result = evaluate_with_resources_and_calls(
-            &text,
-            |name| {
-                // The intrinsic is lexical, but authored fields/globals retain
-                // ordinary identifier shadowing precedence.
-                if name == "__TYPE__" {
-                    let lexical_owner = self.tree.type_node(scope)?.path;
-                    let symbol = SymbolId::of(name);
-                    if self.member(lexical_owner, symbol).is_none()
-                        && self.member(SymbolId::of("/"), symbol).is_none()
-                    {
-                        if lexical_owner == SymbolId::of("/") {
-                            return Some(Constant::Null);
-                        }
-                        if !matches!(Resolver::resolve(self.tree, ResolveQuery::Type(lexical_owner)),
-                            ResolvedMeaning::Symbol(found) if found == lexical_owner)
-                        {
-                            *failure.borrow_mut() =
-                                Some(ScalarOutcome::Unsupported(UnsupportedReason::UnknownType));
-                            return None;
-                        }
-                        return self
-                            .tree
-                            .symbols()
-                            .text(lexical_owner)
-                            .map(|path| Constant::TypePath(path.into()));
-                    }
-                }
-                let dependency = if let Some((path, name)) = name.rsplit_once("::") {
-                    ScalarQuery::Const {
-                        owner: SymbolId::of(path),
-                        name: SymbolId::of(name),
-                    }
-                } else {
-                    let owner = self.tree.type_node(scope)?.path;
-                    let name = SymbolId::of(name);
-                    let owner = if self.member(owner, name).is_some() {
-                        owner
-                    } else {
-                        SymbolId::of("/")
-                    };
-                    ScalarQuery::Const { owner, name }
-                };
-                self.memo
-                    .borrow_mut()
-                    .edges
-                    .entry(query)
-                    .or_default()
-                    .insert(dependency);
-                match self.query(dependency) {
-                    ScalarOutcome::Value(value) => to_constant(&value, self.tree),
-                    ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration)
-                        if !name.contains("::") && self.predefined.is_some() =>
-                    {
-                        let symbol = SymbolId::of(name);
-                        let outcome = match self
-                            .predefined
-                            .unwrap()
-                            .resolve(ResolveQuery::PredefinedConstant(symbol))
-                        {
-                            ResolvedMeaning::Value(value) => PredefinedOutcome::Value(value),
-                            ResolvedMeaning::Missing => PredefinedOutcome::Missing,
-                            _ => PredefinedOutcome::Unsupported,
-                        };
-                        self.memo
-                            .borrow_mut()
-                            .predefined
-                            .insert(symbol, outcome.clone());
-                        match outcome {
-                            PredefinedOutcome::Value(value) => to_constant(&value, self.tree),
-                            _ => {
-                                *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
-                                    UnsupportedReason::MissingDeclaration,
-                                ));
-                                None
-                            }
-                        }
-                    }
-                    unsupported => {
-                        if failure.borrow().is_none() {
-                            *failure.borrow_mut() = Some(unsupported);
-                        }
-                        None
-                    }
-                }
-            },
-            |raw| {
-                let result = (self.backend.decode_string)(raw);
-                if result.is_none() && failure.borrow().is_none() {
-                    *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
-                        UnsupportedReason::BackendInterpretation,
-                    ));
-                }
-                result
-            },
-            |expression| {
-                let result = (self.backend.nameof)(expression);
-                if result.is_none() && failure.borrow().is_none() {
-                    *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
-                        UnsupportedReason::BackendInterpretation,
-                    ));
-                }
-                result
-            },
-            |_| None,
-            self.calls,
-        );
-        match result {
-            Err(error) => failure
-                .into_inner()
-                .unwrap_or(ScalarOutcome::RejectedPureCall(error)),
-            Ok(Some(value)) => to_semantic(value, self.tree).map_or(
-                ScalarOutcome::Unsupported(UnsupportedReason::UnknownType),
-                ScalarOutcome::Value,
-            ),
-            Ok(None) => failure.into_inner().unwrap_or(ScalarOutcome::Unsupported(
-                UnsupportedReason::RuntimeOrUnsupportedExpression,
-            )),
-        }
-    }
-}
-
-fn to_constant(value: &SemanticValue, tree: &SemanticTree) -> Option<Constant> {
-    Some(match value {
-        SemanticValue::Null => Constant::Null,
-        SemanticValue::NumberBits(bits) => Constant::Number(f32::from_bits(*bits)),
-        SemanticValue::Text(bytes) => match String::from_utf8(bytes.to_vec()) {
-            Ok(text) => Constant::Text(text),
-            Err(error) => Constant::EncodedText(error.into_bytes()),
-        },
-        SemanticValue::Type(path) => Constant::TypePath(tree.symbols().text(*path)?.into()),
-        SemanticValue::Procedure(procedure) => Constant::Procedure(*procedure),
-        SemanticValue::ModifiedInstance(instance) => Constant::ModifiedInstance(instance.clone()),
-        SemanticValue::Resource(path) => Constant::Resource(*path),
-        SemanticValue::List(_) => return None,
-    })
-}
-fn to_semantic(value: Constant, tree: &SemanticTree) -> Option<SemanticValue> {
-    Some(match value {
-        Constant::Null => SemanticValue::Null,
-        Constant::Resource(path) => SemanticValue::Resource(path),
-        Constant::Procedure(procedure) => SemanticValue::Procedure(procedure),
-        Constant::ModifiedInstance(instance) => SemanticValue::ModifiedInstance(instance),
-        Constant::Number(value) => SemanticValue::NumberBits(value.to_bits()),
-        Constant::Text(text) => SemanticValue::Text(Arc::from(text.as_bytes())),
-        Constant::EncodedText(bytes) => SemanticValue::Text(bytes.into()),
-        Constant::TypePath(path) => {
-            if let Some(query) = crate::constants::procedure_literal_query(&path) {
-                return match dm_ir::Resolver::resolve(tree, query) {
-                    dm_ir::ResolvedMeaning::Value(value @ SemanticValue::Procedure(_)) => {
-                        Some(value)
-                    }
-                    _ => None,
-                };
-            }
-            let symbol = SymbolId::of(&path);
-            tree.lookup_type(symbol)?;
-            if tree.symbols().text(symbol) != Some(path.as_str()) {
-                return None;
-            }
-            SemanticValue::Type(symbol)
-        }
-    })
-}
+#[path = "constant_resolution_pass.rs"]
+mod pass;
+use pass::{Memo, Pass};
+#[path = "constant_resolution_artifacts.rs"]
+mod artifacts;
+pub use artifacts::{ScalarArtifact, ScalarArtifacts, ScalarReadAnswer, ScalarReadQuery};
 
 /// Only selected declarations and transitively reached consts are evaluated.
 /// Unsupported/cyclic outcomes are data, not user syntax diagnostics.
@@ -386,6 +145,49 @@ pub fn resolve_with_predefined_and_calls(
     predefined: Option<&dyn Resolver>,
     calls: Option<&dyn PureCalls>,
 ) -> ScalarSnapshot {
+    resolve_with_artifacts(snapshot, requests, backend, predefined, calls, None)
+}
+
+/// Retention requires an artifact provider that certifies the concrete immutable
+/// decoder/nameof function pair. Opaque closure backends use the ordinary API.
+#[allow(clippy::too_many_arguments)]
+pub fn resolve_pinned_with_artifacts(
+    snapshot: &TreeSnapshot,
+    requests: &[ScalarQuery],
+    identity: u128,
+    decode: fn(&str) -> Option<Vec<u8>>,
+    nameof: fn(&Expr) -> Option<String>,
+    predefined: Option<&dyn Resolver>,
+    calls: Option<&dyn PureCalls>,
+    artifacts: Option<&dyn ScalarArtifacts>,
+) -> ScalarSnapshot {
+    let artifacts = artifacts.filter(|owner| owner.accept_policy(decode, nameof));
+    resolve_with_artifacts(
+        snapshot,
+        requests,
+        &ScalarBackend {
+            identity,
+            decode_string: &decode,
+            nameof: &nameof,
+        },
+        predefined,
+        calls,
+        artifacts,
+    )
+}
+
+/// Explicit retained evaluator boundary. The artifact provider must bind the exact
+/// decoder, nameof and engine owners; ordinary/custom backend APIs never opt in.
+fn resolve_with_artifacts(
+    snapshot: &TreeSnapshot,
+    requests: &[ScalarQuery],
+    backend: &ScalarBackend<'_>,
+    predefined: Option<&dyn Resolver>,
+    calls: Option<&dyn PureCalls>,
+    artifacts: Option<&dyn ScalarArtifacts>,
+) -> ScalarSnapshot {
+    let artifacts =
+        artifacts.filter(|_| calls.is_none_or(|calls| calls.immutable_policy_identity().is_some()));
     let mut policy = backend.identity.to_le_bytes().to_vec();
     policy.push(u8::from(calls.is_some()));
     if let Some(calls) = calls {
@@ -399,11 +201,22 @@ pub fn resolve_with_predefined_and_calls(
         memo: RefCell::new(Memo::default()),
         predefined,
         calls,
+        artifacts,
     };
     for query in &requested {
         pass.query(*query);
     }
     let memo = pass.memo.into_inner();
+    if let Some(artifacts) = artifacts {
+        artifacts.finish(
+            &memo
+                .values
+                .keys()
+                .filter(|query| !memo.cyclic.contains(query))
+                .copied()
+                .collect::<Vec<_>>(),
+        );
+    }
     let dependencies: BTreeMap<_, Arc<[ScalarQuery]>> = memo
         .edges
         .into_iter()
@@ -950,3 +763,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "constant_resolution_artifact_tests.rs"]
+mod artifact_tests;

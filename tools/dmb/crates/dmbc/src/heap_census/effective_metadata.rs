@@ -57,11 +57,45 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
                 answer(census, &read.answer);
             }
         }
+        MetadataStorageView::Selection(value) => selection(census,value),
         MetadataStorageView::Values(values) => {
             census.slice("retained_effective_metadata.members", values, true);
             for (_, value) in values.iter() { metadata(census, value); }
         }
     });
+}
+
+fn selection(census: &mut HeapCensus, value: &Arc<dm_tree::HostDeclarationSelection>) {
+    if census.arc_object("host.declaration_selection", value) {
+        census.slice(
+            "host.declaration_selection.callables",
+            &value.callable_names,
+            true,
+        );
+        census.slice(
+            "host.declaration_selection.variables",
+            &value.declared_variable_names,
+            true,
+        );
+        census.slice(
+            "host.declaration_selection.scalars",
+            &value.scalar_requests,
+            true,
+        );
+    }
+}
+pub(super) fn selections(census: &mut HeapCensus, tree: &dm_tree::SemanticTree) {
+    let owners = tree.host_declaration_selection_storage();
+    if census.arc_object("host.declaration_selection.index", owners) {
+        census.observe_items("host.declaration_selection.index", owners.len());
+        census.unknown(
+            "host.declaration_selection.index",
+            "private BTree node backing excluded",
+        );
+        for value in owners.values() {
+            selection(census, value);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -340,6 +340,7 @@ impl MetadataDependencies {
         let names: std::collections::HashSet<_> =
             dirty.iter().map(|id| members[id.index()].name).collect();
         tree.members = members;
+        tree.refresh_host_selections(&dirty);
         tree.rebuild_inventory_selectors(&names, executor);
         Some(tree)
     }

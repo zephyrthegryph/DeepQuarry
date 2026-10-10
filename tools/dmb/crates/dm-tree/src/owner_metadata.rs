@@ -35,6 +35,7 @@ impl MetadataQuery {
     }
 }
 struct EffectiveOwner {
+    selection: Arc<crate::HostDeclarationSelection>,
     values: Arc<[(DeclarationKey, Arc<MemberMetadata>)]>,
 }
 type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
@@ -94,6 +95,7 @@ pub enum MetadataStorageView<'a> {
         size: usize,
     },
     Values(&'a Arc<[(DeclarationKey, Arc<MemberMetadata>)]>),
+    Selection(&'a Arc<crate::HostDeclarationSelection>),
 }
 impl RetainedMetadata {
     pub(crate) fn hits(&self) -> usize {
@@ -127,6 +129,7 @@ impl RetainedMetadata {
                     size: std::mem::size_of::<EffectiveOwner>(),
                 });
                 visit(MetadataStorageView::Values(&value.values));
+                visit(MetadataStorageView::Selection(&value.selection));
             }
         });
     }
@@ -136,7 +139,8 @@ impl RetainedMetadata {
         members: &mut M,
         normalized: &OwnerContributions,
         order: &[MemberId],
-    ) {
+    ) -> crate::host_declaration_selection::Selections {
+        let mut selections = crate::host_declaration_selection::Selections::new();
         let mut projection = BTreeMap::new();
         let mut keys_by_id = std::collections::HashMap::new();
         // Current projection is certified by the successful namespace phase;
@@ -156,7 +160,11 @@ impl RetainedMetadata {
             ids.sort_unstable_by_key(|id| id.index());
             if ids.len() != source.len() {
                 crate::metadata_update::resolve_metadata(tree, members, order);
-                return;
+                return crate::host_declaration_selection::collect(
+                    tree,
+                    members,
+                    order.iter().copied(),
+                );
             }
             for (input, id) in source.iter().zip(ids) {
                 projection.insert(input.key, id);
@@ -165,7 +173,11 @@ impl RetainedMetadata {
         }
         if projection.len() != order.len() {
             crate::metadata_update::resolve_metadata(tree, members, order);
-            return;
+            return crate::host_declaration_selection::collect(
+                tree,
+                members,
+                order.iter().copied(),
+            );
         }
         let keys: Vec<_> = normalized.keys().map(|&owner| key(owner)).collect();
         self.store
@@ -207,6 +219,7 @@ impl RetainedMetadata {
             };
             if let Some(value) = accepted {
                 self.hits.fetch_add(1, Ordering::Relaxed);
+                selections.insert(owner, Arc::clone(&value.selection));
                 for (key, metadata) in value.values.iter() {
                     members[projection[key].index()].metadata = Arc::clone(metadata);
                 }
@@ -219,9 +232,16 @@ impl RetainedMetadata {
                     .into();
                 // Full-current-roster retention has no fabricated byte weight;
                 // exact retained owners are exposed to the diagnostic census.
+                let selection =
+                    crate::host_declaration_selection::select(owner, members, ids.iter().copied());
+                selections.insert(owner, Arc::clone(&selection));
                 self.store
-                    .insert_with(key(owner), reads, versions, 0, || EffectiveOwner { values });
+                    .insert_with(key(owner), reads, versions, 0, || EffectiveOwner {
+                        values,
+                        selection,
+                    });
             }
         }
+        selections
     }
 }

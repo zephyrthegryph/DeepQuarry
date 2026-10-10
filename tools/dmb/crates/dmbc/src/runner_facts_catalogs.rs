@@ -1,7 +1,7 @@
 //! Stage-local catalog production on the host's shared observation store.
 use super::*;
-const CONSTANTS_KEY: &[u8] = b"dmbc-native-host-constants-v1";
-const RUNTIME_KEY: &[u8] = b"dmbc-native-host-runtime-types-v1";
+pub(super) const CONSTANTS_KEY: &[u8] = b"dmbc-native-host-constants-v1";
+pub(super) const RUNTIME_KEY: &[u8] = b"dmbc-native-host-runtime-types-v1";
 pub(super) struct Constants {
     pub catalog: ConstantCatalog,
     pub spellings: dm_ir::SymbolTable,
@@ -70,8 +70,16 @@ impl RetainedHostFacts {
         Ok(())
     }
     pub(super) fn retain_catalog_stages(&self) {
+        let mut keys = Vec::new();
+        self.values.visit_storage(|view| {
+            if let dm_session::ObservedArtifactStorageView::Entry { key, .. } = view {
+                if key.as_ref() != KEY {
+                    keys.push(Arc::clone(key));
+                }
+            }
+        });
         self.values
-            .retain_current_keys([CONSTANTS_KEY, RUNTIME_KEY]);
+            .retain_current_keys(keys.iter().map(|key| key.as_ref()));
     }
 }
 

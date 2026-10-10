@@ -13,6 +13,11 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     capture_references: bool,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
+    if symbolic && capture_references {
+        if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
+            store.capture_excluded();
+        }
+    }
     let symbolic = symbolic && !capture_references;
     let Some(memo) = memo else {
         return lower_one(

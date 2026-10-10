@@ -154,3 +154,33 @@ test('shadow rejects malformed, contradictory and unrelated receipts', () => {
   expect(classifyShadowReport({ ...structuralReport(), complete: false }, 'current').status).toBe('invalid_report');
   expect(classifyShadowReport({ ...structuralReport(), uncovered: { opaque_value: { occurrence_count: 1 } } }, 'current').status).toBe('invalid_report');
 });
+
+
+test('native internal status 70 falls back once and propagates BYOND failure', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let calls = 0;
+  const expected = new Juke.ExitCode(37);
+  const failure = await selectedCompiler('project.dme', {}, async () => {
+    calls++;
+    throw expected;
+  }, async () => ({ code: 70, combined: 'native unsupported' })).then(() => null, error => error);
+  expect(calls).toBe(1);
+  expect(failure).toBe(expected);
+  expect(failure.code).toBe(37);
+});
+
+test('typed and unknown native statuses preserve exact exit and never fall back', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  for (const code of [2, 75, 3, 42, 124]) {
+    let calls = 0;
+    const failure = await selectedCompiler('project.dme', {}, async () => { calls++; },
+      async () => ({ code, combined: 'native diagnostic' })).then(() => null, error => error);
+    expect(failure).toBeInstanceOf(Juke.ExitCode);
+    expect(failure.code).toBe(code);
+    expect(calls).toBe(0);
+  }
+});

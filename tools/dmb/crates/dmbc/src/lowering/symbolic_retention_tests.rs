@@ -16,6 +16,39 @@ impl Resolver for Host {
     }
 }
 struct Policy;
+#[test]
+fn replay_meaning_fast_equality_preserves_canonical_fallback_and_rejection() {
+    let data = Arc::new(dm_ir::DeclarationMeaning {
+        inherited_opaque: None,
+        declared_type: None,
+        list_element_type: None,
+        display_name: None,
+        flags: 0,
+        procedure: None,
+        array: None,
+        initializer: None,
+        declared_initializer: None,
+        resolved_constant: None,
+        canonical: Arc::from([]),
+    });
+    let previous = ResolvedMeaning::Member {
+        owner: dm_ir::SymbolId::of("/probe"),
+        name: dm_ir::SymbolId::of("value"),
+        fingerprint: 1,
+        data: Arc::clone(&data),
+    };
+    assert!(super::super::same_meaning(&previous, &previous));
+    let mut current = previous.clone();
+    if let ResolvedMeaning::Member { fingerprint, .. } = &mut current {
+        *fingerprint = 2;
+    }
+    assert_ne!(current, previous);
+    assert!(super::super::same_meaning(&current, &previous));
+    if let ResolvedMeaning::Member { data, .. } = &mut current {
+        Arc::make_mut(data).flags = 2;
+    }
+    assert!(!super::super::same_meaning(&current, &previous));
+}
 impl AbiPolicy for Policy {
     fn inputs(
         &self,

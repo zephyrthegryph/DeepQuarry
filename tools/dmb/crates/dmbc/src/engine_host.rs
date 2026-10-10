@@ -1,12 +1,14 @@
 //! Immutable compiler configuration resolver; no output tables or legacy bindings.
 #[path = "engine_constants.rs"]
 mod constants;
+mod engine_providers;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
 mod pinned_facts;
 use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };
+pub(crate) use engine_providers::PinnedEngineProviders;
 pub use pinned_facts::{PinnedHostFacts, PinnedSource};
 use std::{
     collections::{BTreeMap, BTreeSet, HashSet},
@@ -193,170 +195,95 @@ impl<R: Resolver> EngineResolverHost<R> {
     /// pinned intrinsic exclusion catalog. This does not certify arbitrary
     /// absent names, variable fields, or layouts of intrinsic callbacks.
     pub fn with_pinned_callables(
-        mut self,
+        self,
         engine: &crate::engine::EngineSnapshot,
         frontend: &dm_tree::frontend::ColdFrontend,
     ) -> Result<Self, String> {
-        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)?;
-        if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
-            return Err("callable coverage belongs to another engine capture".into());
-        }
+        check_provider_source(engine, frontend)?;
+        self.bind_callables(
+            frontend,
+            &engine_providers::CallableProviders::capture(engine)?,
+        )
+    }
+    fn bind_callables(
+        mut self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &engine_providers::CallableProviders,
+    ) -> Result<Self, String> {
+        let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+        symbols
+            .merge_from(&providers.spellings)
+            .map_err(|error| format!("native symbol {error:?}"))?;
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.retained_methods = Some(Arc::new(
-            crate::engine::procedure_abi::RetainedMethods::capture(
-                engine,
+            crate::engine::procedure_abi::RetainedMethods::from_entries(
                 Arc::clone(&frontend.snapshot.tree),
-            )?,
+                providers.engine,
+                Arc::clone(&providers.retained),
+            ),
         ));
-        let catalog: serde_json::Value = serde_json::from_slice(include_bytes!(
-            "../../../fixtures/native_template_nativebuiltins_5161687.json"
-        ))
-        .map_err(|error| error.to_string())?;
-        self.intrinsic_methods = Some(Arc::new(intrinsic_methods::IntrinsicMethods::capture(
+        self.intrinsic_methods = Some(Arc::new(intrinsic_methods::IntrinsicMethods::from_payload(
             Arc::clone(&frontend.snapshot.tree),
-            &catalog,
-        )?));
-        let intrinsic = catalog["Procs"]
-            .as_array()
-            .ok_or("native callable catalog absent")?
-            .iter()
-            .map(|proc| {
-                proc["Name"]
-                    .as_str()
-                    .map(SymbolId::of)
-                    .ok_or("native callable name absent")
-            })
-            .collect::<Result<BTreeSet<_>, _>>()?;
+            Arc::clone(&providers.methods),
+        )));
         self.callable_absence = Some(Arc::new(
             frontend
                 .snapshot
                 .tree
-                .members()
-                .iter()
-                .filter(|member| {
-                    matches!(
-                        member.kind,
-                        dm_tree::MemberKind::Proc | dm_tree::MemberKind::Verb
-                    )
-                })
-                .map(|member| member.name)
-                .filter(|name| !intrinsic.contains(name))
+                .host_declaration_selections()
+                .flat_map(|(_, selection)| selection.callable_names.iter().copied())
+                .filter(|name| !providers.intrinsic.contains(name))
                 .collect(),
         ));
         Ok(self)
     }
-    /// Name exclusion is limited to authored declarations and the proven lexical
-    /// __TYPE__ intrinsic under one pinned engine schema. Unknown names and
-    /// physical catalog intrinsics remain unsupported.
     pub fn with_pinned_variables(
-        mut self,
+        self,
         engine: &crate::engine::EngineSnapshot,
         frontend: &dm_tree::frontend::ColdFrontend,
     ) -> Result<Self, String> {
-        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)?;
-        if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
-            return Err("variable coverage belongs to another engine capture".into());
-        }
-        const CATALOG: &[u8] =
-            include_bytes!("../../../fixtures/native_template_nativebuiltins_5161687.json");
-        let catalog: serde_json::Value =
-            serde_json::from_slice(CATALOG).map_err(|error| error.to_string())?;
-        let mut intrinsic = BTreeSet::new();
-        for owner in catalog["Types"]
-            .as_array()
-            .ok_or("native variable catalog absent")?
-        {
-            for domain in ["Variables", "GlobalVariables"] {
-                if domain == "GlobalVariables" && owner["Path"].as_str() == Some("/") {
-                    continue;
-                }
-                if let Some(values) = owner.get(domain) {
-                    for name in values
-                        .as_object()
-                        .ok_or("native variable domain malformed")?
-                        .keys()
-                    {
-                        intrinsic.insert(SymbolId::of(name));
-                    }
-                }
-            }
-            if let Some(values) = owner.get("ConstVariables") {
-                for name in values
-                    .as_array()
-                    .ok_or("native const variable catalog malformed")?
-                {
-                    intrinsic.insert(SymbolId::of(
-                        name.as_str()
-                            .ok_or("native const variable name malformed")?,
-                    ));
-                }
-            }
-        }
-        let mut catalog_symbols = SymbolTable::default();
-        for field in crate::engine::catalog::fields(&mut catalog_symbols)
-            .map_err(|error| error.to_string())?
-        {
-            intrinsic.insert(field.name);
-        }
-        verify_lexical_type_namespace(&catalog, &intrinsic)?;
+        check_provider_source(engine, frontend)?;
+        self.bind_variables(
+            frontend,
+            &engine_providers::VariableProviders::capture(engine)?,
+        )
+    }
+    fn bind_variables(
+        mut self,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        providers: &engine_providers::VariableProviders,
+    ) -> Result<Self, String> {
+        let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+        symbols
+            .merge_from(&providers.spellings)
+            .map_err(|error| format!("native variable symbol {error:?}"))?;
         let mut names: HashSet<_> = frontend
             .snapshot
             .tree
-            .members()
-            .iter()
-            .filter(|member| {
-                member.kind == dm_tree::MemberKind::Var
-                    && member.definition == dm_tree::DefinitionMode::Declare
-            })
-            .map(|member| member.name)
-            .filter(|name| !intrinsic.contains(name))
+            .host_declaration_selections()
+            .flat_map(|(_, selection)| selection.declared_variable_names.iter().copied())
+            .filter(|name| !providers.intrinsic.contains(name))
             .collect();
-        // __TYPE__ is a lexical expression intrinsic, not physical storage.
-        // The exact pinned template/catalog exclude it in every variable
-        // namespace, including root globals. Resolution below still checks
-        // captured source positives first and requires an ordinary known owner.
         names.insert(SymbolId::of("__TYPE__"));
-        // Positive compiler constants are a separate semantic domain from root
-        // runtime globals. Only exact pinned values may certify lexical absence.
-        let pinned_constants = ConstantCatalog::native_516_1687(&mut catalog_symbols)
-            .map_err(|error| format!("pinned constants {error:?}"))?;
-        for (name, value) in pinned_constants.values.iter() {
-            if !intrinsic.contains(name) && self.constants.values.get(name) == Some(value) {
+        for (name, value) in providers.constants.values.iter() {
+            if !providers.intrinsic.contains(name) && self.constants.values.get(name) == Some(value)
+            {
                 names.insert(*name);
             }
         }
-        // TRUE/FALSE also survive native #undef as actual pinned const globals.
-        // Require physical const metadata and the exact observed catalog value;
-        // neither an arbitrary engine field nor a caller supplied constant qualifies.
-        let mut positive_constants = BTreeMap::new();
-        for spelling in ["TRUE", "FALSE"] {
-            let name = SymbolId::of(spelling);
-            let value = pinned_constants.values.get(&name);
-            let physically_const = engine
-                .declaration_modifiers(SymbolId::of("/"), name)
-                .map_err(|error| format!("pinned constant metadata {error:?}"))?
-                .is_some_and(|flags| flags & 2 != 0);
-            if let Some(value) = value.filter(|value| {
-                physically_const && self.constants.values.get(&name) == Some(*value)
-            }) {
-                positive_constants.insert(name, value.clone());
-            }
-        }
-        let mut bytes =
-            b"pinned-authored-variable-absence-v4;physical-boolean-constants;captured-slot-uniqueness;lexical-type-full-namespace-exclusion".to_vec();
-        bytes.extend_from_slice(&engine.identity().to_le_bytes());
-        bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
-        bytes.extend_from_slice(CATALOG);
-        for name in &intrinsic {
-            bytes.extend_from_slice(&name.bits().to_le_bytes());
-        }
+        let positive_constants = providers
+            .positive_constants
+            .iter()
+            .filter(|(name, value)| self.constants.values.get(*name) == Some(*value))
+            .map(|(name, value)| (*name, value.clone()))
+            .collect();
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.variable_absence = Some(Arc::new(VariableAbsence {
             names,
             positive_constants,
-            identity: xxhash_rust::xxh3::xxh3_128(&bytes),
+            identity: providers.identity,
             source: Arc::clone(&frontend.snapshot.tree),
         }));
         Ok(self)
@@ -558,6 +485,17 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
 /// Verify the finite lexical intrinsic against every physical variable domain.
 /// Root globals must participate even though general authored-name exclusion
 /// treats pinned compiler constants separately.
+fn check_provider_source(
+    engine: &crate::engine::EngineSnapshot,
+    frontend: &dm_tree::frontend::ColdFrontend,
+) -> Result<(), String> {
+    crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)?;
+    if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
+        return Err("host coverage belongs to another engine capture".into());
+    }
+    Ok(())
+}
+
 fn verify_lexical_type_namespace(
     catalog: &serde_json::Value,
     physical_names: &BTreeSet<SymbolId>,

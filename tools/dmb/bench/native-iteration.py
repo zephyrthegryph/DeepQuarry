@@ -207,7 +207,28 @@ def compile_one(executable, project, manifest, workers, semantic, artifacts, log
     for name, path in (("compiler_stats", stats),
                        ("last_run", stats.with_name(manifest.stem + ".last-run.json"))):
         if path.exists():
-            result[name] = json.loads(path.read_text(encoding="utf-8"))
+            # The next request overwrites the project-side files. Preserve the
+            # complete evidence here, while keeping the cohort receipt bounded.
+            raw = path.read_bytes()
+            evidence = logs / (name + ".json")
+            with evidence.open("xb") as output:
+                output.write(raw)
+            result[name + "_evidence"] = {
+                "path": str(evidence), "bytes": len(raw),
+                "sha256": hashlib.sha256(raw).hexdigest(),
+            }
+            value = json.loads(raw)
+            explanations = value.pop("explanations", None)
+            if explanations is not None:
+                outcomes = {}
+                for explanation in explanations:
+                    outcome = explanation.get("outcome", "unknown")
+                    outcomes[outcome] = outcomes.get(outcome, 0) + 1
+                value["explanations_summary"] = {
+                    "count": len(explanations), "outcomes": outcomes,
+                    "complete_evidence": result[name + "_evidence"],
+                }
+            result[name] = value
     if daemon.poll() is not None or not endpoint.probe(daemon):
         raise RuntimeError("owned daemon changed during request; replacement left untouched")
     if result["exit"] != 0:

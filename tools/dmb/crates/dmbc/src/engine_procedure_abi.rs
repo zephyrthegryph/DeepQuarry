@@ -5,25 +5,39 @@ use dm_codegen_byond::procedure_abi::{AbiError, Category, ProcLayout};
 
 /// Positive physical membership only. Constructed from the accepted immutable
 /// engine image and traversed against the current authored inheritance tree.
+pub(crate) type RetainedMethodEntries =
+    std::sync::Arc<std::collections::BTreeMap<(dm_ir::SymbolId, dm_ir::SymbolId, bool), u32>>;
 #[derive(Clone, Debug)]
 pub(crate) struct RetainedMethods {
     source: std::sync::Arc<dm_tree::SemanticTree>,
     engine_identity: u128,
-    entries: std::collections::BTreeMap<(dm_ir::SymbolId, dm_ir::SymbolId, bool), u32>,
+    entries: RetainedMethodEntries,
 }
 impl RetainedMethods {
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
-        census.collection_entries::<((dm_ir::SymbolId, dm_ir::SymbolId, bool), u32)>(
-            "host.retained_methods",
-            &self.entries as *const _ as usize,
-            self.entries.len(),
-        );
+        if census.arc_object("host.retained_methods.entries", &self.entries) {
+            census.collection_entries::<((dm_ir::SymbolId, dm_ir::SymbolId, bool), u32)>(
+                "host.retained_methods.entries",
+                self.entries.as_ref() as *const _ as usize,
+                self.entries.len(),
+            );
+        }
     }
 
-    pub(crate) fn capture(
-        engine: &super::EngineSnapshot,
+    pub(crate) fn from_entries(
         source: std::sync::Arc<dm_tree::SemanticTree>,
-    ) -> Result<Self, String> {
+        engine_identity: u128,
+        entries: RetainedMethodEntries,
+    ) -> Self {
+        Self {
+            source,
+            engine_identity,
+            entries,
+        }
+    }
+    pub(crate) fn capture_entries(
+        engine: &super::EngineSnapshot,
+    ) -> Result<RetainedMethodEntries, String> {
         let mut entries = std::collections::BTreeMap::new();
         for record in engine.procedure_layouts() {
             let Some(name) = record.name else {
@@ -43,11 +57,7 @@ impl RetainedMethods {
                 return Err("ambiguous retained engine callable identity".into());
             }
         }
-        Ok(Self {
-            source,
-            engine_identity: engine.identity(),
-            entries,
-        })
+        Ok(std::sync::Arc::new(entries))
     }
     pub(crate) fn identity(&self) -> u128 {
         self.engine_identity

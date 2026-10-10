@@ -426,6 +426,7 @@ impl HeapCensus {
         let owner = "semantic_tree";
         if self.arc_object(owner, &snapshot.tree) {
             let tree = &snapshot.tree;
+            effective_metadata::selections(self, tree);
             self.slice(owner, tree.types(), true);
             for node in tree.types() {
                 self.slice(owner, &node.members, true);

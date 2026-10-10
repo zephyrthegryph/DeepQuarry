@@ -34,19 +34,20 @@ pub fn scalars(
     predefined: &dyn Resolver,
     predefined_identity: u128,
 ) -> dm_tree::constant_resolution::ScalarSnapshot {
-    use dm_tree::constant_resolution::{ScalarBackend, ScalarQuery};
+    scalars_with_artifacts(frontend, engine, predefined, predefined_identity, None)
+}
+pub(crate) fn scalars_with_artifacts(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    predefined: &dyn Resolver,
+    predefined_identity: u128,
+    artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
+) -> dm_tree::constant_resolution::ScalarSnapshot {
+    use dm_tree::constant_resolution::ScalarQuery;
     let tree = &frontend.snapshot.tree;
     let mut requests = tree
-        .members()
-        .iter()
-        .filter(|member| member.kind == dm_tree::MemberKind::Var && member.metadata.flags & 2 != 0)
-        .map(|member| ScalarQuery::Const {
-            owner: tree
-                .type_node(member.owner)
-                .expect("member belongs to captured tree")
-                .path,
-            name: member.name,
-        })
+        .host_declaration_selections()
+        .flat_map(|(_, selection)| selection.scalar_requests.iter().copied())
         .collect::<Vec<_>>();
     for name in ["turf", "area", "maxx", "maxy", "maxz"] {
         requests.push(ScalarQuery::EffectiveDefault {
@@ -54,31 +55,31 @@ pub fn scalars(
             name: dm_ir::SymbolId::of(name),
         });
     }
-    let decode = |raw: &str| {
-        dm_codegen_byond::decode_constant_string_literal(raw)
-            .ok()
-            .flatten()
-    };
-    let nameof = |expression: &dm_syntax::Expr| {
-        dm_codegen_byond::nameof_reference(expression).map(str::to_owned)
-    };
     let mut identity = b"native-scalar-policy-v1:byond-string-decoder:nameof-reference".to_vec();
     identity.extend_from_slice(&engine.identity().to_le_bytes());
     identity.extend_from_slice(&predefined_identity.to_le_bytes());
     let calls = crate::pure_calls::PinnedPureCalls::new(engine).ok();
-    dm_tree::constant_resolution::resolve_with_predefined_and_calls(
+    dm_tree::constant_resolution::resolve_pinned_with_artifacts(
         &frontend.snapshot,
         &requests,
-        &ScalarBackend {
-            identity: xxhash_rust::xxh3::xxh3_128(&identity),
-            decode_string: &decode,
-            nameof: &nameof,
-        },
+        xxhash_rust::xxh3::xxh3_128(&identity),
+        scalar_decode,
+        scalar_nameof,
         Some(predefined),
         calls
             .as_ref()
             .map(|calls| calls as &dyn dm_tree::constants::PureCalls),
+        artifacts,
     )
+}
+
+pub(crate) fn scalar_decode(raw: &str) -> Option<Vec<u8>> {
+    dm_codegen_byond::decode_constant_string_literal(raw)
+        .ok()
+        .flatten()
+}
+pub(crate) fn scalar_nameof(expression: &dm_syntax::Expr) -> Option<String> {
+    dm_codegen_byond::nameof_reference(expression).map(str::to_owned)
 }
 
 pub fn map_defaults(

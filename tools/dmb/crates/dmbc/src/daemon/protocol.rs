@@ -121,4 +121,46 @@ mod tests {
             _ => panic!("wrong reply"),
         }
     }
+    /// Simulated frame transport only; no daemon process is exercised.
+    #[test]
+    fn unicode_fragmented_diagnostics_precede_exact_source_rejection() {
+        let diagnostics = "code/\u{03bb}.dm:7:error: invalid na\u{00ef}ve expression\n".as_bytes();
+        let split = diagnostics.iter().position(|byte| *byte == 0xce).unwrap() + 1;
+        let mut wire = Vec::new();
+        for bytes in [&diagnostics[..split], &diagnostics[split..]] {
+            send(
+                &mut wire,
+                &Reply::Diagnostic {
+                    stdout: false,
+                    bytes: bytes.to_vec(),
+                },
+            )
+            .unwrap();
+        }
+        let expected =
+            crate::request_failure::RequestFailure::source("source analysis failed: \u{03bb}");
+        send(&mut wire, &Reply::Rejected(expected.clone())).unwrap();
+        let mut input = wire.as_slice();
+        let mut stderr = Vec::new();
+        for _ in 0..2 {
+            match receive::<Reply>(&mut input).unwrap() {
+                Reply::Diagnostic {
+                    stdout: false,
+                    bytes,
+                } => stderr.extend(bytes),
+                _ => panic!("diagnostic order/channel changed"),
+            }
+        }
+        assert_eq!(stderr, diagnostics);
+        match receive::<Reply>(&mut input).unwrap() {
+            Reply::Rejected(failure) => {
+                assert_eq!(failure, expected);
+                let boxed: Box<dyn std::error::Error> = failure.into();
+                assert_eq!(crate::request_failure::exit_code(boxed.as_ref()), 2);
+                assert_eq!(boxed.to_string(), "source analysis failed: \u{03bb}");
+            }
+            _ => panic!("source rejection missing after diagnostics"),
+        }
+        assert!(input.is_empty());
+    }
 }

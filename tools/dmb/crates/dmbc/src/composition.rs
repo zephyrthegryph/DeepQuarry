@@ -577,6 +577,7 @@ fn compose_records_access(
         symbols,
         &source_references,
         executor,
+        generation.is_some(),
     );
     for (slot, metadata) in procedures.iter().zip(metadata) {
         let index = slot.table_index;

@@ -7,6 +7,7 @@ pub(crate) struct RetainedHostFacts {
     recomputed: AtomicU64,
     constant_hits: AtomicU64,
     runtime_hits: AtomicU64,
+    scalar_hits: AtomicU64,
 }
 struct Entry {
     constants: ConstantCatalog,
@@ -17,10 +18,16 @@ struct Entry {
 }
 #[path = "runner_facts_catalogs.rs"]
 mod catalogs;
+#[path = "runner_facts_engine_providers.rs"]
+mod engine_providers;
+#[path = "runner_facts_scalars.rs"]
+mod scalars;
 enum Artifact {
     Constants(Arc<catalogs::Constants>),
     Runtime(RuntimeAliasCatalog),
     Prepared(Entry),
+    EngineProviders(Arc<crate::engine_host::PinnedEngineProviders>),
+    Scalar(Arc<dm_tree::constant_resolution::ScalarArtifact>),
 }
 const KEY: &[u8] = b"dmbc-native-host-preparation-v1";
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -28,6 +35,7 @@ enum Query {
     Engine,
     Source,
     TypePaths,
+    Scalar(dm_tree::constant_resolution::ScalarReadQuery),
 }
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Domain {
@@ -38,6 +46,7 @@ enum Answer {
     Engine(Arc<crate::runner_host::RetainedEngine>),
     Source(Arc<dm_tree::SemanticTree>),
     TypePaths(Arc<Vec<dm_ir::SymbolId>>),
+    Scalar(dm_tree::constant_resolution::ScalarReadAnswer),
 }
 impl PartialEq for Answer {
     fn eq(&self, other: &Self) -> bool {
@@ -45,6 +54,7 @@ impl PartialEq for Answer {
             (Self::Engine(a), Self::Engine(b)) => Arc::ptr_eq(a, b),
             (Self::Source(a), Self::Source(b)) => Arc::ptr_eq(a, b),
             (Self::TypePaths(a), Self::TypePaths(b)) => a == b,
+            (Self::Scalar(a), Self::Scalar(b)) => a == b,
             _ => false,
         }
     }
@@ -78,6 +88,7 @@ impl dm_session::ObservationHost<Query, Answer, Domain> for Current<'_> {
             Query::Engine => Answer::Engine(Arc::clone(self.engine)),
             Query::Source => Answer::Source(Arc::clone(&self.frontend.snapshot.tree)),
             Query::TypePaths => Answer::TypePaths(Arc::clone(self.type_paths())),
+            Query::Scalar(_) => unreachable!("scalar reads require current evaluator host"),
         }
     }
 }
@@ -89,6 +100,7 @@ impl Default for RetainedHostFacts {
             recomputed: AtomicU64::new(0),
             constant_hits: AtomicU64::new(0),
             runtime_hits: AtomicU64::new(0),
+            scalar_hits: AtomicU64::new(0),
         }
     }
 }
@@ -126,13 +138,24 @@ impl RetainedHostFacts {
         // A failed preparation must not preserve an inapplicable latest owner.
         self.retain_catalog_stages();
         let (constants, runtime) = self.catalogs(&current)?;
+        let engine_providers = self.engine_providers(&current)?;
         let Components {
             constants,
             runtime,
             pinned,
             source,
             scalar,
-        } = prepare_from_catalogs(frontend, &engine.snapshot, constants, runtime)?;
+        } = prepare_from_catalogs_with_artifacts(
+            frontend,
+            &engine.snapshot,
+            constants,
+            runtime,
+            Some(&scalars::CurrentScalars {
+                owner: self,
+                engine,
+            }),
+            Some(&engine_providers),
+        )?;
         let host = EngineResolverHost::new(Arc::clone(&scalar), constants.clone(), runtime.clone())
             .with_pinned_facts(&engine.snapshot, frontend, Arc::clone(&pinned))?;
         if let Some(facts) = scalar.retain_facts() {
@@ -208,6 +231,9 @@ impl RetainedHostFacts {
                 census.slice("host.facts.keys", key, true);
                 census.slice("host.facts.reads", reads, true);
                 for read in reads.iter() {
+                    if let Answer::Scalar(answer) = &read.answer {
+                        scalars::inspect_answer(answer, &mut census);
+                    }
                     if let Answer::TypePaths(paths) = &read.answer {
                         if census.arc_object("host.runtime.type_paths", paths) {
                             census.vec_payload("host.runtime.type_paths", paths);
@@ -218,6 +244,8 @@ impl RetainedHostFacts {
                 if census.arc_object("host.facts.value", value) {
                     match value.as_ref() {
                         Artifact::Prepared(entry) => inspect_entry(entry, &mut census),
+                        Artifact::EngineProviders(value) => value.census(&mut census),
+                        Artifact::Scalar(value) => scalars::inspect(value, &mut census),
                         Artifact::Constants(constants) => {
                             census.arc_object("host.constants", constants);
                             census.unknown(

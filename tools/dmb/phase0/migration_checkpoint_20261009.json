@@ -1,5 +1,54 @@
 {
   "scope": "native compiler migration; not performance admission",
+  "latest_prototype_cohort": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261009-200314-60477533/receipt.json",
+    "compiler_commit": "d889b0cac1",
+    "profile": "main crate opt-level 0; dependencies optimized; not revision 6 release acceptance",
+    "fresh_native_dmb_and_rsc_byte_oracles_passed": 8,
+    "retained_end_to_end_seconds": {
+      "initial": 86.8013271,
+      "unchanged": 1.6487348,
+      "body_edit": 69.4849209,
+      "new_proc": 65.6718014,
+      "new_type_and_constant": 68.5424855,
+      "constant_edit": 64.5477635,
+      "shifted_proc_body": 64.7484221,
+      "asset_edit": 72.2342179
+    },
+    "fresh_native_end_to_end_seconds": [46.9654475, 41.8782306, 44.0754947, 38.2174932, 40.0676746, 37.2691415, 36.4943155, 38.8000703],
+    "byond_structural_gate": "open; 1850404 unexplained differences; traversal completion is not semantic parity",
+    "runtime_gate": "deferred to Phase 5",
+    "limitations": [
+      "retained edits slower than fresh in this prototype; zero resident hits and approximately 34 seconds memo lookup need confirmed attribution",
+      "latest scalar, engine-provider and frame-metadata migration sources are newer than the measured executable",
+      "external unrelated Cargo activity was sampled; continuous benchmark isolation is not established",
+      "optimized build attempts hit the 300-second watchdog; no current release-profile timings"
+    ]
+  },
+  "scalar_and_owner_selection_validation": {
+    "scalar_focused_passed": 4,
+    "scalar_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-204020-85ff2eac.json",
+    "host_selection_focused_passed": 2,
+    "implemented": [
+      "scalar outcomes replay exact dependency observations in the shared host fact store",
+      "failed candidate probes roll back current graph effects; cycle ancestors decline retention",
+      "effective owner artifacts supply callable, variable and scalar selection rosters",
+      "engine-only providers retain against exact engine ownership without source payloads",
+      "session and retention generations expose lifecycle resets without affecting output identity"
+    ],
+    "driver_focused_passed": {
+      "catalog_stages": 1,
+      "engine_only_providers": 1,
+      "prepared_frame_metadata": 1,
+      "one_shot_frame": 1,
+      "frame_authority": 2,
+      "diagnostic_ordering": 1,
+      "image_header_family": 1,
+      "memo_meaning_equality": 1
+    },
+    "driver_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261009-204524-8e6c468f.json",
+    "remaining_gates": "final all-targets check pending; performance admission pending"
+  },
   "relative_declaration_migration": {
     "source_status": "shared relative AST, borrowed skeleton leaves and active symbol catalog wired; workspace checked and focused frontend fixtures passed",
     "workspace_all_targets_passed_seconds": 29.460584299988113,

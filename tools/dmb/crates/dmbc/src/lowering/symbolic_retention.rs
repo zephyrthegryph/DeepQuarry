@@ -6,6 +6,7 @@ use std::sync::atomic::Ordering;
 
 #[derive(Serialize)]
 pub struct SymbolicRetentionStats {
+    pub declines: SymbolicDeclineStats,
     pub records: usize,
     pub successful_admissions: u64,
     pub successful_reuses: u64,
@@ -16,7 +17,35 @@ pub struct SymbolicRetentionStats {
     pub unknown_capacity_payload_bytes: u64,
     pub owners: HeapCensusReport,
 }
+/// Cumulative bounded diagnostic counters, independent of the optional owner census.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+pub struct SymbolicDeclineStats {
+    pub source_identity: u64,
+    pub record_absent: u64,
+    pub key_changed: u64,
+    pub read_changed: u64,
+    pub debug_rebase: u64,
+    pub modified_reissue: u64,
+    /// All current contribution binding refusals, including ABI and helper origins.
+    pub contribution_rebind: u64,
+    pub capture_excluded: u64,
+    pub nonreusable_completion: u64,
+}
 impl SessionSymbolicMemo {
+    pub(crate) fn decline_stats(&self) -> SymbolicDeclineStats {
+        let c = &self.declines;
+        SymbolicDeclineStats {
+            source_identity: c.source_identity.load(Ordering::Relaxed),
+            record_absent: c.record_absent.load(Ordering::Relaxed),
+            key_changed: c.key_changed.load(Ordering::Relaxed),
+            read_changed: c.read_changed.load(Ordering::Relaxed),
+            debug_rebase: c.debug_rebase.load(Ordering::Relaxed),
+            modified_reissue: c.modified_reissue.load(Ordering::Relaxed),
+            contribution_rebind: c.contribution_rebind.load(Ordering::Relaxed),
+            capture_excluded: c.capture_excluded.load(Ordering::Relaxed),
+            nonreusable_completion: c.nonreusable_completion.load(Ordering::Relaxed),
+        }
+    }
     pub(crate) fn retention_stats(&self) -> SymbolicRetentionStats {
         let records = self
             .records
@@ -47,6 +76,7 @@ impl SessionSymbolicMemo {
         census.unknown("session_symbolic.records", "BTreeMap index node capacity, Arc control blocks, allocator overhead and freed pages are not exposed; this is not private-memory measurement");
         let owners = census.finish();
         SymbolicRetentionStats {
+            declines: self.decline_stats(),
             records: records.len(),
             successful_admissions: self.admitted.load(Ordering::Relaxed),
             successful_reuses: self.reused.load(Ordering::Relaxed),

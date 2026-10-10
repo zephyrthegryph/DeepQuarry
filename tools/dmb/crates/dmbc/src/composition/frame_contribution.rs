@@ -1,5 +1,5 @@
 //! Numeric procedure frame contributions on the existing admitted recipe owner.
-use super::procedure_plan::ProcedureMetadata;
+use super::procedure_plan::{PreparedMetadata, ProcedureMetadata};
 use super::*;
 use crate::symbolic::FrozenUnit;
 use std::sync::Arc;
@@ -26,6 +26,7 @@ struct StringAssignment {
 }
 pub(super) struct FrameContribution {
     start: Frontier,
+    declared: bool,
     identity: crate::lowering::UnitIdentity,
     local_count: u32,
     locals_names: Vec<String>,
@@ -63,40 +64,71 @@ impl FrameContribution {
         }
         census.abi(&self.abi);
     }
-    fn admits(
+    pub(super) fn admit_current_metadata(
         &self,
-        dmb: &Dmb,
         unit: &FrozenUnit,
-        metadata: &ProcedureMetadata,
-        index: &StringIndex,
+        projection: Option<&crate::class_projection::ClassProjection>,
+        symbols: &SymbolTable,
+        references: &dm_link::ArgumentSourceReferences,
     ) -> bool {
+        let Some(abi) = unit.lowered.abi.as_ref() else {
+            return false;
+        };
         let frame = &unit.lowered.frame;
-        if self.identity != unit.lowered.identity
-            || self.start != Frontier::current(dmb)
+        let declared = projection.map_or(Some(true), |plan| {
+            plan.procedure_declarations
+                .get(&crate::symbolic::unit_key(unit.lowered.identity))
+                .copied()
+        });
+        if declared != Some(self.declared)
+            || symbols.text(unit.lowered.identity.owner).is_none()
+            || symbols.text(unit.lowered.identity.name).is_none()
+            || self.identity != unit.lowered.identity
             || self.local_count != frame.local_count
             || self.locals_names != frame.local_names
             || self.argument_names != frame.argument_names
             || self.argument_flags != frame.argument_type_flags
-            || unit
-                .lowered
-                .abi
-                .as_ref()
-                .is_none_or(|abi| **abi != *self.abi)
-            || !metadata
-                .path
-                .as_ref()
-                .is_ok_and(|x| x.as_ref() == self.path.as_ref())
-            || !metadata
-                .default_display
-                .as_ref()
-                .is_ok_and(|x| x.as_ref() == self.display.as_ref())
-            || metadata.value_sources.len() != self.argument_names.len()
-            || metadata
-                .value_sources
-                .iter()
-                .zip(self.arguments.chunks_exact(4))
-                .any(|(source, row)| !source.as_ref().is_ok_and(|x| *x == row[1]))
+            || **abi != *self.abi
+            || frame.argument_names.len() != frame.argument_type_flags.len()
+            || frame.argument_names.len() != abi.argument_sources.len()
+            || frame.local_count as usize != frame.local_names.len()
         {
+            return false;
+        }
+        abi.argument_sources
+            .iter()
+            .zip(self.arguments.chunks_exact(4))
+            .all(|(source, row)| {
+                use dm_codegen_byond::procedure_abi::ArgumentSource;
+                let value = match source {
+                    ArgumentSource::Builtin { kind, parameter } => {
+                        Some(u32::from(*kind) | (u32::from(*parameter) << 8))
+                    }
+                    ArgumentSource::Helper { argument } => u32::try_from(*argument)
+                        .ok()
+                        .and_then(|argument| {
+                            references
+                                .index(crate::symbolic::helper_key(unit.lowered.identity, argument))
+                        })
+                        .map(|position| 0x40 | (u32::from(position) << 8)),
+                };
+                value == Some(row[1])
+            })
+    }
+    fn metadata(&self) -> ProcedureMetadata {
+        ProcedureMetadata {
+            declared: Some(self.declared),
+            path: Ok(Arc::clone(&self.path)),
+            default_display: Ok(Arc::clone(&self.display)),
+            value_sources: self
+                .arguments
+                .chunks_exact(4)
+                .map(|row| Ok(row[1]))
+                .collect(),
+        }
+    }
+    fn output_matches(&self, dmb: &Dmb, index: &StringIndex) -> bool {
+        if self.start != Frontier::current(dmb) {
             return false;
         }
         let mut next = dmb.strings.len();
@@ -129,6 +161,45 @@ impl FrameContribution {
         }
         true
     }
+    fn admits(
+        &self,
+        dmb: &Dmb,
+        unit: &FrozenUnit,
+        metadata: &ProcedureMetadata,
+        index: &StringIndex,
+    ) -> bool {
+        let frame = &unit.lowered.frame;
+        if metadata.declared != Some(self.declared)
+            || self.identity != unit.lowered.identity
+            || self.start != Frontier::current(dmb)
+            || self.local_count != frame.local_count
+            || self.locals_names != frame.local_names
+            || self.argument_names != frame.argument_names
+            || self.argument_flags != frame.argument_type_flags
+            || unit
+                .lowered
+                .abi
+                .as_ref()
+                .is_none_or(|abi| **abi != *self.abi)
+            || !metadata
+                .path
+                .as_ref()
+                .is_ok_and(|x| x.as_ref() == self.path.as_ref())
+            || !metadata
+                .default_display
+                .as_ref()
+                .is_ok_and(|x| x.as_ref() == self.display.as_ref())
+            || metadata.value_sources.len() != self.argument_names.len()
+            || metadata
+                .value_sources
+                .iter()
+                .zip(self.arguments.chunks_exact(4))
+                .any(|(source, row)| !source.as_ref().is_ok_and(|x| *x == row[1]))
+        {
+            return false;
+        }
+        self.output_matches(dmb, index)
+    }
 }
 fn record_string(
     rows: &mut Option<Vec<StringAssignment>>,
@@ -150,7 +221,7 @@ pub(super) fn emit(
     string_index: &mut StringIndex,
     unit: &FrozenUnit,
     linked_words: Arc<Vec<u32>>,
-    metadata: ProcedureMetadata,
+    metadata: impl Into<PreparedMetadata>,
     retain_frames: bool,
 ) -> Result<(), CompositionError> {
     let abi = unit
@@ -161,16 +232,27 @@ pub(super) fn emit(
     // Current code binding precedes frame admission and deferred metadata errors.
     let code_id = append_list(dmb, linked_words)?;
     let start = Frontier::current(dmb);
-    let hit = retain_frames
-        .then(|| {
-            unit.metadata_recipe
-                .frame_owner()
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .clone()
-        })
-        .flatten();
-    if let Some(hit) = hit.filter(|hit| hit.admits(dmb, unit, &metadata, string_index)) {
+    let (hit, metadata) = match metadata.into() {
+        PreparedMetadata::Retained(hit) => (Some(Arc::clone(&hit)), None),
+        PreparedMetadata::Fresh(metadata) => (None, Some(metadata)),
+    };
+    let hit = hit.or_else(|| {
+        retain_frames
+            .then(|| {
+                unit.metadata_recipe
+                    .frame_owner()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone()
+            })
+            .flatten()
+    });
+    if let Some(hit) = hit.as_ref().filter(|hit| {
+        metadata.as_ref().map_or_else(
+            || hit.output_matches(dmb, string_index),
+            |metadata| hit.admits(dmb, unit, metadata, string_index),
+        )
+    }) {
         for request in &hit.strings {
             let id = string_index.intern(dmb, &request.bytes)?;
             debug_assert_eq!(id, request.index);
@@ -183,6 +265,8 @@ pub(super) fn emit(
         dmb.procs.push(procedure);
         return Ok(());
     }
+    let metadata = metadata.unwrap_or_else(|| hit.expect("retained metadata owner").metadata());
+    let declared = metadata.declared;
     let admitted_path = retain_frames
         .then(|| metadata.path.as_ref().ok().cloned())
         .flatten();
@@ -270,6 +354,7 @@ pub(super) fn emit(
     dmb.procs.push(procedure.clone());
     let retained = Arc::new(FrameContribution {
         start,
+        declared: declared.expect("successful declaration admission"),
         identity: unit.lowered.identity,
         local_count: proc.local_count,
         locals_names: proc.local_names.clone(),

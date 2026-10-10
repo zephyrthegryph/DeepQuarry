@@ -32,11 +32,21 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
     };
     let cases = [
         "/datum/probe\n    var/const/value = 3\n    proc/read_value()\n        return value\n",
-        "/datum/probe\n    var/const/value = 3\n    var/extra = 1\n    proc/read_value()\n        return value\n",
+        "/datum/probe\n    var/const/value = 3\n    var/extra = 1\n    proc/read_value()\n        return value\n    proc/unrelated_added()\n        return 2\n",
         "/datum/probe\n    var/const/value = 4\n    var/extra = 1\n    proc/read_value()\n        return value\n    proc/new_proc()\n        return 2\n",
     ];
+    let mut previous_tree = None;
+    let mut previous_scalar_artifact = None;
+    let value_key = scalars::key(dm_tree::constant_resolution::ScalarQuery::Const {
+        owner: dm_ir::SymbolId::of("/datum/probe"),
+        name: dm_ir::SymbolId::of("value"),
+    });
     for (index, text) in cases.into_iter().enumerate() {
         let frontend = build(text);
+        if let Some(previous) = &previous_tree {
+            assert!(!Arc::ptr_eq(previous, &frontend.snapshot.tree));
+        }
+        previous_tree = Some(Arc::clone(&frontend.snapshot.tree));
         let (actual, scalar) = prepare_retained(&frontend, &engine, Some(&retained)).unwrap();
         let (fresh, fresh_scalar) = prepare(&frontend, &engine.snapshot).unwrap();
         assert_eq!(scalar.identity, fresh_scalar.identity);
@@ -45,6 +55,35 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
             actual.configuration_identity(),
             fresh.configuration_identity()
         );
+        let mut value_artifact = None;
+        retained.values.visit_storage(|view| {
+            if let dm_session::ObservedArtifactStorageView::Entry { key, value, .. } = view {
+                if key.as_ref() == value_key.as_slice() {
+                    if let Artifact::Scalar(value) = value.as_ref() {
+                        value_artifact = Some(Arc::clone(value));
+                    }
+                }
+            }
+        });
+        let value_artifact = value_artifact.expect("production scalar artifact populated");
+        if index == 1 {
+            assert!(retained.scalar_hits.load(Ordering::Relaxed) > 0);
+            assert!(Arc::ptr_eq(
+                previous_scalar_artifact.as_ref().unwrap(),
+                &value_artifact
+            ));
+        }
+        if index == 2 {
+            assert!(!Arc::ptr_eq(
+                previous_scalar_artifact.as_ref().unwrap(),
+                &value_artifact
+            ));
+        }
+        previous_scalar_artifact = Some(value_artifact);
+        assert!(Arc::ptr_eq(
+            &scalar.source.occurrences,
+            &frontend.snapshot.occurrences
+        ));
         assert_eq!(retained.constant_hits.load(Ordering::Relaxed), index as u64);
         assert_eq!(retained.runtime_hits.load(Ordering::Relaxed), index as u64);
     }
@@ -60,7 +99,14 @@ fn catalog_stages_reuse_for_member_edits_and_type_membership_invalidates_runtime
     assert_eq!(retained.runtime_hits.load(Ordering::Relaxed), 2);
     retained.values.visit_storage(|view| {
         if let dm_session::ObservedArtifactStorageView::Store { entries, .. } = view {
-            assert_eq!(entries, 3);
+            assert_eq!(
+                entries,
+                4 + prepare(&removed, &engine.snapshot)
+                    .unwrap()
+                    .1
+                    .outcomes
+                    .len()
+            );
         }
     });
 }

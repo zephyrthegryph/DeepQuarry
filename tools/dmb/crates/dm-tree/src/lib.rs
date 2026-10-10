@@ -14,11 +14,13 @@ pub mod constants;
 pub mod declaration_contributions;
 pub mod declaration_observations;
 pub mod frontend;
+mod host_declaration_selection;
 pub mod initializers;
 pub mod maps;
 mod member_arena;
 mod member_normalization;
 mod metadata_update;
+pub use host_declaration_selection::HostDeclarationSelection;
 pub mod owner_callable;
 pub mod owner_local_shape;
 pub mod owner_metadata;
@@ -124,6 +126,7 @@ pub struct SemanticTree {
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: MemberArena,
+    host_selections: Arc<host_declaration_selection::Selections>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
     /// One target per ordered skeleton, including all reopens.
@@ -486,6 +489,7 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),
+        host_selections: Arc::new(Default::default()),
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
         declaration_targets: Arc::from([]),
@@ -660,13 +664,16 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     drop(previous_resolution_profile);
     let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
     let order = metadata_update::resolution_order(members.len(), |id| members[id].previous);
-    if let (Some((_, retained)), Some(normalized)) = (normalization, normalized) {
-        retained
-            .metadata
-            .resolve(&tree, &mut members, &normalized, &order);
-    } else {
-        metadata_update::resolve_metadata(&tree, &mut members, &order);
-    }
+    tree.host_selections = Arc::new(
+        if let (Some((_, retained)), Some(normalized)) = (normalization, normalized) {
+            retained
+                .metadata
+                .resolve(&tree, &mut members, &normalized, &order)
+        } else {
+            metadata_update::resolve_metadata(&tree, &mut members, &order);
+            host_declaration_selection::collect(&tree, &members, order.iter().copied())
+        },
+    );
     drop(metadata_inheritance_profile);
     let mut mutable_types = tree.types.to_vec();
     for (node, ids) in mutable_types.iter_mut().zip(owned) {

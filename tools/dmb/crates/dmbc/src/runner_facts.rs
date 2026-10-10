@@ -57,18 +57,33 @@ fn prepare_from_catalogs(
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
 ) -> Result<Components, String> {
-    let pinned = PinnedHostFacts::capture(engine, frontend, &constants, &runtime)?;
+    prepare_from_catalogs_with_artifacts(frontend, engine, constants, runtime, None, None)
+}
+fn prepare_from_catalogs_with_artifacts(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    constants: ConstantCatalog,
+    runtime: RuntimeAliasCatalog,
+    artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
+    providers: Option<&crate::engine_host::PinnedEngineProviders>,
+) -> Result<Components, String> {
+    let pinned = if let Some(providers) = providers {
+        PinnedHostFacts::capture_with_providers(engine, frontend, &constants, &runtime, providers)?
+    } else {
+        PinnedHostFacts::capture(engine, frontend, &constants, &runtime)?
+    };
     let source = EngineResolverHost::new(
         frontend.snapshot.tree.clone(),
         constants.clone(),
         runtime.clone(),
     )
     .with_pinned_facts(engine, frontend, Arc::clone(&pinned))?;
-    let scalar = Arc::new(compile_driver::scalars(
+    let scalar = Arc::new(compile_driver::scalars_with_artifacts(
         frontend,
         engine,
         &source,
         source.configuration_identity(),
+        artifacts,
     ));
     Ok(Components {
         constants,

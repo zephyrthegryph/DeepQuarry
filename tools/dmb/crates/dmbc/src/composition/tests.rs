@@ -814,6 +814,7 @@ fn frame_contribution_rebinds_code_and_rejects_changed_numeric_and_string_author
     use std::sync::Arc;
     fn metadata() -> procedure_plan::ProcedureMetadata {
         procedure_plan::ProcedureMetadata {
+            declared: Some(true),
             path: Ok(Arc::from("/proc/frame_probe")),
             default_display: Ok(Arc::from("frame probe")),
             value_sources: Vec::new(),
@@ -943,6 +944,7 @@ fn frame_contribution_requires_current_resolved_argument_source_numbers() {
             &batch.units[0],
             Arc::new(vec![1]),
             procedure_plan::ProcedureMetadata {
+                declared: Some(true),
                 path: Ok(Arc::from("/proc/frame_argument_probe")),
                 default_display: Ok(Arc::from("frame argument probe")),
                 value_sources: vec![Ok(source)],

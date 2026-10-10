@@ -456,6 +456,21 @@ pub(crate) fn materialize_types_with_roster(
     }
 
     let mut constructed: BTreeMap<u32, Class> = BTreeMap::new();
+    let mut image_family = HashSet::new();
+    if let Some(&image) = retained.get(&SymbolId::of("/image")) {
+        image_family.insert(image);
+        loop {
+            let before = image_family.len();
+            for (id, class) in dmb.classes.iter().enumerate() {
+                if image_family.contains(&class.initial_ids[1]) {
+                    image_family.insert(id as u32);
+                }
+            }
+            if image_family.len() == before {
+                break;
+            }
+        }
+    }
     let parents = planned.iter().map(|(&index, ty)| {
         let parent = ty
                 .parent
@@ -486,12 +501,24 @@ pub(crate) fn materialize_types_with_roster(
                 .intern(dmb, path.as_bytes())
                 .map_err(|e| ProjectionError::Unsupported(format!("type path {e:?}")))?;
             record.initial_ids[1] = parent;
-            record.initial_ids[2] = strings
-                .intern(dmb, display.as_bytes())
-                .map_err(|e| ProjectionError::Unsupported(format!("type display {e:?}")))?;
-            record.text = strings
-                .intern(dmb, letter.as_bytes())
-                .map_err(|e| ProjectionError::Unsupported(format!("type letter {e:?}")))?;
+            if image_family.contains(&parent) {
+                // Native image roots may use the absent sentinel, but BYOND
+                // materializes source image subclasses with explicit empty
+                // strings. Authored assignments are applied by common writers.
+                let empty = strings
+                    .intern(dmb, b"")
+                    .map_err(|e| ProjectionError::Unsupported(format!("image default {e:?}")))?;
+                record.initial_ids[2] = empty;
+                record.text = empty;
+                image_family.insert(index);
+            } else {
+                record.initial_ids[2] = strings
+                    .intern(dmb, display.as_bytes())
+                    .map_err(|e| ProjectionError::Unsupported(format!("type display {e:?}")))?;
+                record.text = strings
+                    .intern(dmb, letter.as_bytes())
+                    .map_err(|e| ProjectionError::Unsupported(format!("type letter {e:?}")))?;
+            }
             record.lists_and_procs = [NONE; 6];
             record.overrides = NONE;
             constructed.insert(index, record);
@@ -661,6 +688,9 @@ mod construction_order_tests {
 #[path = "class_projection_tests.rs"]
 mod tests;
 
+#[cfg(test)]
+#[path = "class_projection/image_header_tests.rs"]
+mod image_header_tests;
 #[cfg(test)]
 #[path = "class_projection/shared_writer_tests.rs"]
 mod shared_writer_tests;

@@ -12,6 +12,7 @@ impl BuildHost {
         // Keep authenticated engine and preprocessing/semantic source owners.
         // Cleared consumers recreate their normal current-revision stores through
         // the same pipeline; disk remains a lazy fallback on subsequent misses.
+        self.rich_generation = self.rich_generation.saturating_add(1);
         if self.prepared_sources.is_some() {
             self.prepared_sources = Some(Arc::new(
                 crate::input_snapshot::PreparedInputArtifacts::default(),

@@ -4,29 +4,46 @@
 use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId, SymbolTable};
 use std::{collections::BTreeMap, sync::Arc};
 
+pub(super) type NativeMethods = Arc<BTreeMap<(SymbolId, SymbolId), Arc<[u8]>>>;
 #[derive(Clone, Debug)]
 pub(super) struct IntrinsicMethods {
     source: Arc<dm_tree::SemanticTree>,
-    methods: BTreeMap<(SymbolId, SymbolId), Arc<[u8]>>,
+    methods: NativeMethods,
 }
 
 impl IntrinsicMethods {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         let owner = "host.intrinsic_methods";
-        census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
-            owner,
-            &self.methods as *const _ as usize,
-            self.methods.len(),
-        );
-        for bytes in self.methods.values() {
-            census.slice(owner, bytes, true);
+        if census.arc_object(owner, &self.methods) {
+            census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
+                owner,
+                self.methods.as_ref() as *const _ as usize,
+                self.methods.len(),
+            );
+            for bytes in self.methods.values() {
+                census.slice(owner, bytes, true);
+            }
         }
     }
 
+    #[cfg(test)]
     pub(super) fn capture(
         source: Arc<dm_tree::SemanticTree>,
         catalog: &serde_json::Value,
     ) -> Result<Self, String> {
+        let (methods, spellings) = Self::capture_payload(catalog)?;
+        let mut current = SymbolTable::overlay(source.shared_symbols());
+        current
+            .merge_from(&spellings)
+            .map_err(|error| format!("native symbol {error:?}"))?;
+        Ok(Self { source, methods })
+    }
+    pub(super) fn from_payload(source: Arc<dm_tree::SemanticTree>, methods: NativeMethods) -> Self {
+        Self { source, methods }
+    }
+    pub(super) fn capture_payload(
+        catalog: &serde_json::Value,
+    ) -> Result<(NativeMethods, SymbolTable), String> {
         let types = catalog["Types"]
             .as_array()
             .ok_or("native type catalog absent")?;
@@ -34,7 +51,7 @@ impl IntrinsicMethods {
             .as_array()
             .ok_or("native callable catalog absent")?;
         let mut methods = BTreeMap::new();
-        let mut spellings = SymbolTable::overlay(source.shared_symbols());
+        let mut spellings = SymbolTable::default();
         for record in procs {
             let Some(owner_index) = record["OwningTypeId"].as_u64() else {
                 // No explicit receiver owner is positive method evidence.
@@ -100,7 +117,7 @@ impl IntrinsicMethods {
                 ));
             }
         }
-        Ok(Self { source, methods })
+        Ok((Arc::new(methods), spellings))
     }
     pub(super) fn resolve(&self, query: ResolveQuery) -> Option<ResolvedMeaning> {
         let (owner, name, verb) = match query {

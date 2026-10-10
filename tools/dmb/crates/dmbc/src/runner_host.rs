@@ -24,9 +24,18 @@ type HostParts<'a> = (
     Option<&'a mut dm_tree::frontend::RetainedSemanticTree>,
 );
 
+fn next_session_id() -> u64 {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}
+
 /// One semantic session's retained artifacts and bounded executor. A long-lived
 /// caller reuses this owner across requests without retaining a publication lease.
 pub struct BuildHost {
+    // Diagnostic lifecycle markers, never semantic cache admission or output identity.
+    session_id: u64,
+    engine_generation: u64,
+    rich_generation: u64,
     prepared_sources: Option<Arc<crate::input_snapshot::PreparedInputArtifacts>>,
     shared_engines: Option<Arc<EnginePayloads>>,
     shared_executors: Option<Arc<ExecutorPools>>,
@@ -76,6 +85,9 @@ impl std::ops::Deref for RetainedEngine {
 impl Default for BuildHost {
     fn default() -> Self {
         Self {
+            session_id: next_session_id(),
+            engine_generation: 0,
+            rich_generation: 0,
             prepared_sources: Some(Arc::new(
                 crate::input_snapshot::PreparedInputArtifacts::default(),
             )),
@@ -101,6 +113,15 @@ impl Default for BuildHost {
     }
 }
 impl BuildHost {
+    pub(crate) fn retention_status(&self) -> serde_json::Value {
+        serde_json::json!({
+            "scope": "process_local_diagnostic_only",
+            "session": self.session_id,
+            "engine_generation": self.engine_generation,
+            "rich_generation": self.rich_generation,
+            "enabled": self.retains_artifacts(),
+        })
+    }
     pub(crate) fn host_facts(
         &mut self,
     ) -> Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>> {
@@ -168,6 +189,9 @@ impl BuildHost {
     /// CLI adapter: no resident candidates or memo-record construction without disk.
     pub fn one_shot() -> Self {
         Self {
+            session_id: next_session_id(),
+            engine_generation: 0,
+            rich_generation: 0,
             prepared_sources: None,
             shared_engines: None,
             shared_executors: None,
@@ -457,6 +481,8 @@ impl BuildHost {
         if self.memo.is_some() {
             self.memo = Some(memo::ResidentMemo::default());
         }
+        self.engine_generation = self.engine_generation.saturating_add(1);
+        self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
         self.symbolic = None;
         self.initializers = None;

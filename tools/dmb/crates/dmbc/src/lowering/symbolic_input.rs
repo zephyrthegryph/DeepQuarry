@@ -15,6 +15,19 @@ pub(crate) struct SessionSymbolicMemo {
     admitted: AtomicU64,
     reused: AtomicU64,
     pruned: AtomicU64,
+    declines: DeclineCounters,
+}
+#[derive(Default)]
+struct DeclineCounters {
+    source_identity: AtomicU64,
+    record_absent: AtomicU64,
+    key_changed: AtomicU64,
+    read_changed: AtomicU64,
+    debug_rebase: AtomicU64,
+    modified_reissue: AtomicU64,
+    contribution_rebind: AtomicU64,
+    capture_excluded: AtomicU64,
+    nonreusable_completion: AtomicU64,
 }
 struct Record {
     key: Vec<u8>,
@@ -107,12 +120,23 @@ impl CompletedInput {
                     .unwrap_or_else(|e| e.into_inner())
                     .insert(value.identity(), Arc::new(record));
                 admission.store.admitted.fetch_add(1, Ordering::Relaxed);
+            } else {
+                admission
+                    .store
+                    .declines
+                    .nonreusable_completion
+                    .fetch_add(1, Ordering::Relaxed);
             }
         }
         Ok(value)
     }
 }
 impl SessionSymbolicMemo {
+    pub(super) fn capture_excluded(&self) {
+        self.declines
+            .capture_excluded
+            .fetch_add(1, Ordering::Relaxed);
+    }
     pub(super) fn retain_current(&self, frontend: &ColdFrontend) {
         let identities: std::collections::BTreeSet<_> = frontend
             .bodies
@@ -138,24 +162,41 @@ impl SessionSymbolicMemo {
         prepared: &PreparedUnit,
         bodies: &dm_tree::frontend::BodyArena<'_>,
     ) -> Option<CompletedInput> {
-        let identity = source_unit_identity(frontend, body).ok()?.identity;
+        let identity = source_unit_identity(frontend, body)
+            .map_err(|_| {
+                self.declines
+                    .source_identity
+                    .fetch_add(1, Ordering::Relaxed);
+            })
+            .ok()?
+            .identity;
         let record = self
             .records
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .get(&identity)
-            .cloned()?;
+            .cloned()
+            .or_else(|| {
+                self.declines.record_absent.fetch_add(1, Ordering::Relaxed);
+                None
+            })?;
         if record.key != key {
+            self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
         let matching = crate::lowering_memo::matching_domains(&record.versions, host);
         if record.reads.iter().any(|read| {
             !matching.contains(&read.query.domain())
-                && host.resolve(read.query).canonical_bytes() != read.answer.canonical_bytes()
+                && !same_meaning(&host.resolve(read.query), &read.answer)
         }) {
+            self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
-        let debug = crate::lowering_memo::rebase_debug(frontend, body, &record.relative_debug)?;
+        let debug = crate::lowering_memo::rebase_debug(frontend, body, &record.relative_debug)
+            .or_else(|| {
+                self.declines.debug_rebase.fetch_add(1, Ordering::Relaxed);
+                None
+            })?;
         let modified_seeds = if record.modified_recipes.is_empty() {
             Vec::new()
         } else {
@@ -169,7 +210,14 @@ impl SessionSymbolicMemo {
                         })
                         .collect::<Option<Vec<_>>>()
                 })
-                .ok()??
+                .ok()
+                .flatten()
+                .or_else(|| {
+                    self.declines
+                        .modified_reissue
+                        .fetch_add(1, Ordering::Relaxed);
+                    None
+                })?
         };
         let contribution = crate::symbolic::PreparedContribution::rebind_with_modified(
             &record.artifact,
@@ -179,13 +227,27 @@ impl SessionSymbolicMemo {
             debug,
             &record.required_types,
             modified_seeds,
-        )?;
+        )
+        .or_else(|| {
+            // Includes ABI/identity, current helper-origin and source-binding
+            // refusal; do not misleadingly attribute every None to ABI alone.
+            self.declines
+                .contribution_rebind
+                .fetch_add(1, Ordering::Relaxed);
+            None
+        })?;
         self.reused.fetch_add(1, Ordering::Relaxed);
         Some(CompletedInput {
             inner: Input::Reused(contribution),
             admission: None,
         })
     }
+}
+fn same_meaning(current: &dm_ir::ResolvedMeaning, previous: &dm_ir::ResolvedMeaning) -> bool {
+    // Exact equality also proves canonical equality without allocating two
+    // encoded buffers. Keep canonical comparison for semantically equal values
+    // whose noncanonical provenance differs across current source revisions.
+    current == previous || current.canonical_bytes() == previous.canonical_bytes()
 }
 pub(super) fn admission(
     memo: &crate::lowering_memo::ProcedureMemo,

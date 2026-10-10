@@ -66,10 +66,16 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    runner_freshness::run(request, |request, allow_moving| run_build_attempt(request, host, allow_moving))
+    runner_freshness::run(request, |request, allow_moving| {
+        run_build_attempt(request, host, allow_moving)
+    })
 }
 
-fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::BuildHost, allow_moving: bool) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+fn run_build_attempt(
+    request: BuildRequest,
+    host: &mut crate::runner_host::BuildHost,
+    allow_moving: bool,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let _build_profile = dm_profile::stage("build");
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
@@ -143,7 +149,8 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
         engine_template
             .as_ref()
             .map(|path| {
-                inputs_capture.read_binary(path)
+                inputs_capture
+                    .read_binary(path)
                     .map_err(|error| format!("engine template {}: {error}", path.display()))
             })
             .transpose()?
@@ -157,7 +164,10 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
         if engine_bytes.as_deref()
             != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
         {
-            return Err(dmbc::request_failure::RequestFailure::internal("native unsupported: compile requires the pinned BYOND 516.1687 engine template").into());
+            return Err(dmbc::request_failure::RequestFailure::internal(
+                "native unsupported: compile requires the pinned BYOND 516.1687 engine template",
+            )
+            .into());
         }
         // This driver supports the pinned 516.1687 ABI. The reusable frontend
         // still receives explicit configuration rather than inferring a target.
@@ -336,6 +346,7 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
                 None => memo,
             }
         });
+    let retention_status = host.retention_status();
     let expansion_memo = cache_snapshot.clone().map(|snapshot| {
         let memo = dmbc::expansion_memo::DiskExpansionMemo::with_lazy_disk(memo_policy, snapshot);
         match &cache_publisher {
@@ -725,8 +736,10 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
                 .unwrap_or_else(|error| error.into_inner())
                 .extend(publish_cache_records(cache, records)?);
             use std::sync::atomic::Ordering::Relaxed;
-            dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} recomputed={} unsupported_disk={}",
+            dmbc::daemon_eprintln!("native retention: policy={:032x} host={}", memo.policy, retention_status);
+            dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} resident_dropped={} retention={:?} recomputed={} unsupported_disk={}",
                 memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
+                memo.counts.resident_dropped.load(Relaxed), memo.resident_retention(),
                 memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
             let errors = memo.publication_errors();
             if !errors.is_empty() {
@@ -858,10 +871,8 @@ fn run_build_attempt(request: BuildRequest, host: &mut crate::runner_host::Build
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         drop(publication_profile);
         let _finalization_profile = dm_profile::stage("request.finalization");
-        let memo_stats = procedure_memo.as_ref().map(|memo| {
-            use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"issued_preparations":memo.counts.issued_preparations.load(Relaxed),"parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"occurrence_reads_seconds":memo.counts.occurrence_reads_ns.load(Relaxed) as f64 / 1e9,"explanation_seconds":memo.counts.explanation_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
-        });
+        let memo_stats = procedure_memo.as_ref()
+            .map(|memo| runner_report::memo_statistics(memo, &retention_status));
         let expansion_stats = expansion_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
             serde_json::json!({"candidates":memo.candidates.load(Relaxed),"stored":memo.stored.load(Relaxed),"dropped":memo.dropped.load(Relaxed),"published_records":memo.published_records.load(Relaxed),"publication_failed":memo.publication_failed.load(Relaxed),"publication_seconds":memo.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})

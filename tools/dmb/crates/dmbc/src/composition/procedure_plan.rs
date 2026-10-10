@@ -198,7 +198,17 @@ impl CachedPlan {
     }
 }
 
+pub(super) enum PreparedMetadata {
+    Fresh(ProcedureMetadata),
+    Retained(std::sync::Arc<super::frame_contribution::FrameContribution>),
+}
+impl From<ProcedureMetadata> for PreparedMetadata {
+    fn from(value: ProcedureMetadata) -> Self {
+        Self::Fresh(value)
+    }
+}
 pub(super) struct ProcedureMetadata {
+    pub declared: Option<bool>,
     pub path: Result<std::sync::Arc<str>, CompositionError>,
     pub default_display: Result<std::sync::Arc<str>, CompositionError>,
     pub value_sources: Vec<Result<u32, CompositionError>>,
@@ -233,6 +243,7 @@ fn metadata(
             .ok_or_else(|| unsupported("missing source procedure declaration provenance")),
         None => Ok(true),
     };
+    let declaration = declared.as_ref().ok().copied();
     let path = declared.and_then(|declared| unit.metadata_recipe.path(symbols, declared));
     let default_display = unit.metadata_recipe.display(symbols);
     let value_sources = unit
@@ -254,6 +265,7 @@ fn metadata(
         })
         .collect();
     Ok(ProcedureMetadata {
+        declared: declaration,
         path,
         default_display,
         value_sources,
@@ -267,9 +279,26 @@ pub(super) fn prepare_metadata(
     symbols: &SymbolTable,
     references: &dm_link::ArgumentSourceReferences,
     executor: Option<&dm_exec::BuildExecutor>,
-) -> Vec<Result<ProcedureMetadata, CompositionError>> {
+    retain_frames: bool,
+) -> Vec<Result<PreparedMetadata, CompositionError>> {
     let prepare = |slot: &Slot<UnitIdentity>| match slot.artifact {
-        Some(index) => metadata(&batch.units[index], projection, symbols, references),
+        Some(index) => {
+            let unit = &batch.units[index];
+            if retain_frames {
+                let retained = unit
+                    .metadata_recipe
+                    .frame_owner()
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone();
+                if let Some(hit) = retained
+                    .filter(|hit| hit.admit_current_metadata(unit, projection, symbols, references))
+                {
+                    return Ok(PreparedMetadata::Retained(hit));
+                }
+            }
+            metadata(unit, projection, symbols, references).map(PreparedMetadata::Fresh)
+        }
         None => Err(unsupported("missing global procedure artifact")),
     };
     let Some(executor) = executor.filter(|executor| executor.workers() > 1 && slots.len() > 1)

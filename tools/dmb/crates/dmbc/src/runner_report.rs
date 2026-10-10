@@ -1,5 +1,33 @@
 //! Small owned telemetry snapshots independent of compiler source owners.
 use crate as dmbc;
+pub(super) fn memo_statistics(
+    memo: &dmbc::lowering_memo::ProcedureMemo,
+    retention_status: &serde_json::Value,
+) -> serde_json::Value {
+    use std::sync::atomic::Ordering::Relaxed;
+    serde_json::json!({
+        "policy":format!("{:032x}",memo.policy),
+        "host":retention_status,
+        "disk_hits":memo.counts.disk_hits.load(Relaxed),
+        "resident_hits":memo.counts.resident_hits.load(Relaxed),
+        "resident_dropped":memo.counts.resident_dropped.load(Relaxed),
+        "resident_retention":format!("{:?}",memo.resident_retention()),
+        "symbolic_declines":memo.symbolic.as_ref().map(|store| store.decline_stats()),
+        "issued_preparations":memo.counts.issued_preparations.load(Relaxed),
+        "parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),
+        "recomputed":memo.counts.recomputed.load(Relaxed),
+        "pending_dropped":memo.counts.pending_dropped.load(Relaxed),
+        "published_records":memo.counts.published_records.load(Relaxed),
+        "publication_failed":memo.counts.publication_failed.load(Relaxed),
+        "key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,
+        "lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,
+        "occurrence_reads_seconds":memo.counts.occurrence_reads_ns.load(Relaxed) as f64 / 1e9,
+        "explanation_seconds":memo.counts.explanation_ns.load(Relaxed) as f64 / 1e9,
+        "encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,
+        "publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,
+        "errors":memo.publication_errors()
+    })
+}
 pub(super) struct FrontendReport {
     pub frontend_seconds: f64,
     pub declaration_reuse: serde_json::Value,

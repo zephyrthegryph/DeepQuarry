@@ -88,13 +88,27 @@ impl PinnedHostFacts {
         constants: &ConstantCatalog,
         runtime: &RuntimeAliasCatalog,
     ) -> Result<Arc<Self>, String> {
+        let providers = PinnedEngineProviders::capture(engine)?;
+        Self::capture_with_providers(engine, frontend, constants, runtime, &providers)
+    }
+    pub(crate) fn capture_with_providers(
+        engine: &crate::engine::EngineSnapshot,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        constants: &ConstantCatalog,
+        runtime: &RuntimeAliasCatalog,
+        providers: &PinnedEngineProviders,
+    ) -> Result<Arc<Self>, String> {
+        check_provider_source(engine, frontend)?;
+        if providers.engine != engine.identity() {
+            return Err("engine providers belong to another capture".into());
+        }
         let host = EngineResolverHost::new(
             Arc::clone(&frontend.snapshot.tree),
             constants.clone(),
             runtime.clone(),
         )
-        .with_pinned_callables(engine, frontend)?
-        .with_pinned_variables(engine, frontend)?;
+        .bind_callables(frontend, &providers.callables)?
+        .bind_variables(frontend, &providers.variables)?;
         Ok(Arc::new(Self {
             engine: engine.identity(),
             source: Arc::clone(&frontend.snapshot.tree),
