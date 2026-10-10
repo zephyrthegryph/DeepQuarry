@@ -359,7 +359,7 @@
 /mob/living/simple_mob/animal/space/carp	5ed399720412a422	*
 /mob/living/simple_mob/animal/space/carp/event	3c56e66aca593533	*
 /mob/living/simple_mob/animal/space/carp/holodeck	c9923d4cd97f0a20	*
-/mob/living/simple_mob/animal/space/carp/holographic	80e5a74c7f1977ed	*
+/mob/living/simple_mob/animal/space/carp/holographic	2f898b69b8cebd14	*
 /mob/living/simple_mob/animal/space/carp/large	4c07a638837e0d31	*
 /mob/living/simple_mob/animal/space/carp/large/huge	dae47f17389b8f39	*
 /mob/living/simple_mob/animal/space/carp/large/huge/roguemines	ae8477db4ce8a66c	*
@@ -14250,7 +14250,7 @@
 /obj/item/slime_extract/sound	b54f910064621a72	carried_afflictions,economic_adoption,emitting,identity,mind_host,possessed_voice
 /obj/item/slime_extract/yellow	a9906e8cf96009e7	carried_afflictions,economic_adoption,emitting,identity,mind_host,possessed_voice
 /obj/item/slime_grinder	09f22e8d5be36dc2	carried_afflictions,cube_making,economic_adoption,grinding,identity,mind_host,monkeys_recycled,possessed_voice
-/obj/item/slime_irradiator	576f9153e74b93ad	active,carried_afflictions,economic_adoption,event_cooldown,identity,mind_host,possessed_voice
+/obj/item/slime_irradiator	c48dc89484fc3686	active,carried_afflictions,economic_adoption,event_cooldown,identity,mind_host,possessed_voice
 /obj/item/slime_scanner	97e28662d2acda6b	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/slimepotion	8f1535f8632f32ad	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
 /obj/item/slimepotion/death	90a410cac971462d	carried_afflictions,economic_adoption,identity,mind_host,possessed_voice
