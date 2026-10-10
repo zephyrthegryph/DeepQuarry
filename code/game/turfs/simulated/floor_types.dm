@@ -263,9 +263,10 @@ CAPABILITIES(/turf/simulated/shuttle/floor/alien)
 	takes_underlays = 1
 	blocks_air = 1 //I'd make these unsimulated but it just fucks with so much stuff so many other places.
 
-/turf/simulated/shuttle/plating/carry/Initialize(mapload)
-	. = ..()
-	icon_state = "carry_ingame"
+/// In game the carry turf shows its in-game sprite ("carry" is the map marker).
+/turf/simulated/shuttle/plating/carry/draw(datum/look/look)
+	..()
+	look.state("carry_ingame")
 
 /turf/simulated/shuttle/plating/airless/carry
 	name = "airless carry turf"
@@ -274,9 +275,10 @@ CAPABILITIES(/turf/simulated/shuttle/floor/alien)
 	takes_underlays = 1
 	blocks_air = 1
 
-/turf/simulated/shuttle/plating/airless/carry/Initialize(mapload)
-	. = ..()
-	icon_state = "carry_ingame"
+/// In game the carry turf shows its in-game sprite ("carry" is the map marker).
+/turf/simulated/shuttle/plating/airless/carry/draw(datum/look/look)
+	..()
+	look.state("carry_ingame")
 
 /turf/simulated/shuttle/plating/skipjack //Skipjack plating
 	oxygen = 0

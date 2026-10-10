@@ -12,24 +12,16 @@ init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, 
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
-init_visuals	code/game/area/areas.dm	icon_state = ""
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
 init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
 init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
 init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
 init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
 init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
-init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(MA)
-init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(I)
-init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
-init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
 init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
-init_visuals	code/game/turfs/simulated/walls.dm	icon_state = "blank"
-init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
-init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
