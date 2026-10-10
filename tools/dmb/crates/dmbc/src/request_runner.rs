@@ -498,6 +498,8 @@ fn run_build_attempt(
         let bytes = &retained_engine.bytes;
         let engine = &retained_engine.snapshot;
         dmbc::heap_census::emit_if_enabled("frontend.ready", |census| census.frontend(&frontend))?;
+        // Quiescent, opt-in ownership traversal also covers retained memo stages.
+        host.emit_idle_census("active-frontend-ready");
         if progress_enabled {
             dmbc::daemon_eprintln!(
                 "native captured facts started: {} types, {} members, {} bodies",
