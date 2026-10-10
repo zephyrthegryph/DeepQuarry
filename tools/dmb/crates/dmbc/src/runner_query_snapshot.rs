@@ -1,5 +1,7 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
 //! No executable syntax, source text, or old frontend issuance is retained.
+#[path = "runner_query_occurrence_pages.rs"]
+mod occurrence_pages;
 #[path = "runner_query_selected.rs"]
 mod selected;
 use dm_tree::frontend::ColdFrontend;

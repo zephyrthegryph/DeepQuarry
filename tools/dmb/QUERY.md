@@ -101,7 +101,8 @@ After discovering both revisions, send a bounded source selection:
 "source_queries": [{"Occurrence": {"ordinal": 0}}, {"Provenance": {"ordinal": 0}}]
 ```
 
-`ordinal` is the analysis export's `occurrence` field. Both revision pins are
+`ordinal` is the analysis export's `occurrence` field, or an ordinal discovered
+through the occurrence pages below. Both revision pins are
 mandatory for source selections. Both typed selections use the same issued occurrence/provenance producer.
 Each answer uses `dm-session-source-query-v1`
 and contains the issued declaration target, source range, include occurrence,
@@ -109,6 +110,27 @@ region and macro definition origin ranges from the existing occurrence table.
 Unknown ordinals and stale pins fail the batch; source rows are not silently
 omitted. `provenance_complete` remains false because expanded macro traces and
 executable node coordinates are not served here. No body parsing occurs.
+
+### Discovering occurrences without another analysis export
+
+An empty query batch discovers the current `revision` and `source_revision`.
+Pin both values, then request:
+
+```json
+"source_queries": [{"OccurrencesPage": {"start": 0, "limit": 64}}]
+```
+
+The single `source_occurrences_page` envelope contains `total`, `returned`,
+`next_cursor`, and `items` in exact current occurrence order. Continue with
+`next_cursor` until it is null, keeping both revision pins unchanged. A page
+limit is 1 through 128; `start == total` returns an empty final page, while a
+cursor beyond the roster is rejected. Stale pins require discovery and restart.
+
+`page_complete: true` certifies the requested page range was emitted. The page
+and query batch retain `complete: false`; occurrence enumeration does not certify
+complete executable resolution or provenance. A response exceeding 512 KiB is
+rejected as a whole, so reduce the page limit rather than skipping any ordinal.
+Previously captured selected-reference limits still apply independently.
 
 ### Previously captured executable references
 

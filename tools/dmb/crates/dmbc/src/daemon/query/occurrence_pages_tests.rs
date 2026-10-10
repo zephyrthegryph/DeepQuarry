@@ -89,7 +89,7 @@ fn paging_rejects_bad_pins_ranges_overflow_and_tampered_or_unrequested_rows() {
         .collect::<String>();
     let front = frontend(&text);
     let state = state(&front);
-    for (start, limit) in [(0, 0), (0, 129), (81, 1)] {
+    for (start, limit) in [(0, 0), (0, 129), (u32::MAX, 1)] {
         assert!(
             evaluate_snapshot(&request(&front, start, limit), &front.snapshot.tree, &state)
                 .is_err()

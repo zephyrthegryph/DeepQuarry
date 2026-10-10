@@ -1,5 +1,7 @@
 //! Bounded read-only queries against an existing retained semantic snapshot.
 use serde::{Deserialize, Serialize};
+#[path = "query/occurrence_pages.rs"]
+mod occurrence_pages;
 #[path = "query/selected_envelope.rs"]
 mod selected_envelope;
 use std::{
@@ -23,6 +25,12 @@ pub struct QueryRequest {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SourceQuery {
+    /// Enumerate the current issued occurrence roster without a separate export.
+    /// Cursor belongs only to both explicitly pinned revisions.
+    OccurrencesPage {
+        start: u32,
+        limit: u32,
+    },
     /// Only facts already issued by explicit analyze --resolved; never relowers.
     SelectedReferences {
         ordinal: u32,
@@ -61,6 +69,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
     let expected = request.expected_revision.clone();
     let source_count = request.source_queries.len();
     let expected_source = request.expected_source_revision.clone();
+    let source_questions = request.source_queries.clone();
     let cwd = std::env::current_dir()?;
     if !request.project.is_absolute() {
         request.project = cwd.join(&request.project);
@@ -102,6 +111,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected.as_deref(),
                 expected_source.as_deref(),
             )?;
+            occurrence_pages::validate_requested(&reply, &source_questions)?;
             Ok(reply)
         }
         super::protocol::Reply::Rejected(error) => Err(error.into()),
@@ -148,6 +158,11 @@ fn validate_reply(
     let (mut rows, mut source_rows) = (0, 0);
     for line in reply.jsonl.lines() {
         let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+        if row["row"] == "source_occurrences_page" {
+            occurrence_pages::validate(&row, reply.source_revision.as_deref())?;
+            source_rows += 1;
+            continue;
+        }
         if row["row"] == "source_selected_references" {
             selected_envelope::validate(&row, reply.source_revision.as_deref())?;
             source_rows += 1;
@@ -221,6 +236,9 @@ impl QueryRequest {
                 io::ErrorKind::InvalidInput,
                 "query batch exceeds count or subject limit",
             ));
+        }
+        if self.source_queries.iter().any(|query| matches!(query, SourceQuery::OccurrencesPage { limit, .. } if !(1..=128).contains(limit))) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "occurrence page limit must be 1..128"));
         }
         if serde_json::to_vec(self).map_err(io::Error::other)?.len() > MAX_REQUEST {
             return Err(io::Error::new(
@@ -328,6 +346,10 @@ pub(super) fn evaluate_snapshot(
         let snapshot = snapshot.ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "source snapshot unavailable")
         })?;
+        if let SourceQuery::OccurrencesPage { start, limit } = question {
+            snapshot.write_occurrences_page(*start, *limit, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::SelectedReferences { ordinal } = question {
             snapshot.write_selected(*ordinal, &mut output)?;
             continue;
@@ -335,7 +357,9 @@ pub(super) fn evaluate_snapshot(
         let (ordinal, provenance) = match question {
             SourceQuery::Occurrence { ordinal } => (*ordinal, false),
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
-            SourceQuery::SelectedReferences { .. } => unreachable!("handled above"),
+            SourceQuery::SelectedReferences { .. } | SourceQuery::OccurrencesPage { .. } => {
+                unreachable!("handled above")
+            }
         };
         let mut row = snapshot.occurrence(ordinal, tree)?;
         if provenance {
@@ -615,3 +639,7 @@ mod tests {
 #[cfg(test)]
 #[path = "query/selected_tests.rs"]
 mod selected_tests;
+
+#[cfg(test)]
+#[path = "query/occurrence_pages_tests.rs"]
+mod occurrence_pages_tests;
