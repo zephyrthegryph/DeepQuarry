@@ -6,8 +6,10 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Press
 robot|none menu: Press (refused: needs an item)
 robot|none menu: Trigger
+robot|none menu: Use
 robot|none click: Click: Trigger
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Press (refused: needs an item)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -62,5 +64,5 @@ human|/obj/item menu: Press
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Trigger
 human|/obj/item click: Click: Trigger
-keys: button_press, button_press_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, trigger
+keys: button_press, button_press_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, trigger
 

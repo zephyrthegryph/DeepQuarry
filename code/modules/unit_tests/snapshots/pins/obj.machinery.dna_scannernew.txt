@@ -4,8 +4,10 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject DNA Scanner
 robot|none menu: Enter DNA Scanner
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject DNA Scanner (refused: You can't reach that.)
 ghost|none menu: Enter DNA Scanner (refused: You can't reach that.)
 ghost|none click: nothing
@@ -83,5 +85,5 @@ human|/obj/item menu: Put inside
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: dna_scannernew_eject_effect, dna_scannernew_move_inside_effect, dna_scanner_interaction_drag, dna_scanner_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: dna_scannernew_eject_effect, dna_scannernew_move_inside_effect, dna_scanner_interaction_drag, dna_scanner_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
 

@@ -69,7 +69,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 
 // ---- Actor adapters ----
 
-/// The AI's attack_ai on the medical consoles is still the hand's Use, now through silicon_use.
+/// The AI's attack_ai on the medical consoles is still the hand's Use, now through the machine's silicon_hand() op.
 /datum/unit_test/dq_cleanup_medical_ai_parity
 
 /datum/unit_test/dq_cleanup_medical_ai_parity/Run()
@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 		var/atom/target = allocate(path, T)
 		dq_cleanup_calls_reset()
 		// A type with a window op (interface(), ui_open for a remote actor) answers the AI's Use through that op; one without it falls to the hand's Use
-		// (silicon_use) and the probe's attack_hand records it.
+		// (silicon_hand()) and the probe's attack_hand records it.
 		var/answered = actor_use(/datum/input_adapter/ai, AI, target)
 		TEST_ASSERT(answered || dq_cleanup_calls() == "attack_hand", "[path]: the AI's Use is answered, by the window op or the hand's Use")
 

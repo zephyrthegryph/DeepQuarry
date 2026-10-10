@@ -7,7 +7,8 @@ robot|none menu: Open Cash Box
 robot|none menu: Open cash box
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Open Cash Box (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -101,5 +102,5 @@ human|/obj/item/card/emag menu: Put on the register
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, drag_buckle, emag.subvert, emag.use, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, refund_transaction, reset_log, robot_remote_blocked, set_amount, subtract, toggle_cash_lock, toggle_lock, use_wrench
+keys: add, cash_register_drop, cash_register_open_box_alt, cash_register_open_box_verb, cash_register_pay, cash_register_use, clear, clear_entry, custom_order, drag_buckle, emag.subvert, emag.use, link_account, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, refund_transaction, reset_log, robot_remote_blocked, set_amount, silicon_hand, subtract, toggle_cash_lock, toggle_lock, use_wrench
 

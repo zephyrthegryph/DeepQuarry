@@ -3,6 +3,7 @@ human|none menu: Touch
 human|none click: Click: Touch
 robot|none menu: Graffiti
 robot|none menu: Touch
+robot|none menu: Use
 robot|none click: Click: Touch
 ai|none menu: Interface
 ai|none click: Click: Interface
@@ -132,5 +133,5 @@ human|/obj/item/material/fishing_rod menu: Toggle Digestable (refused: You can't
 human|/obj/item/material/fishing_rod menu: Touch
 human|/obj/item/material/fishing_rod menu: Turf item
 human|/obj/item/material/fishing_rod click: Click: Cast a line
-keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, graffiti, lay_flooring, nanites_ai, nanites_hand, nanites_interface_off, nanites_interface_on, pry_covering, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, water_fill, water_fishing, weld_dents
+keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, graffiti, lay_flooring, nanites_ai, nanites_hand, nanites_interface_off, nanites_interface_on, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, water_fill, water_fishing, weld_dents
 

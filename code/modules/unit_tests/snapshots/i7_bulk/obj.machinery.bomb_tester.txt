@@ -6,6 +6,7 @@ robot|none menu: Ui open
 robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -76,5 +77,5 @@ human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Ui open
 human|/obj/item/tank menu: Use
 human|/obj/item/tank click: Click: Ui open
-keys: add_tank, canister_scan, drag_buckle, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open, part_replacement, remove_tank, robot_remote_blocked, set_can_pressure, set_mode, start_sim, ui_open
+keys: add_tank, canister_scan, drag_buckle, load_tank, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open, part_replacement, remove_tank, robot_remote_blocked, set_can_pressure, set_mode, silicon_hand, start_sim, ui_open
 

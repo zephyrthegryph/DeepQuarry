@@ -4,8 +4,10 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject VR Capsule
 robot|none menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-751 with a sharp beep.)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Eject VR Capsule (refused: You can't reach that.)
 ghost|none menu: Enter VR Capsule (refused: You can't reach that.)
 ghost|none click: nothing
@@ -74,5 +76,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan
 

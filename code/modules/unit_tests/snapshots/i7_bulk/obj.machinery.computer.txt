@@ -2,8 +2,10 @@ human|none menu: Climb
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
@@ -59,5 +61,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
 human|/obj/item/gripper deleted itself on creation
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_gripper, use_item
 

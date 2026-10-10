@@ -3,7 +3,8 @@ human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -47,5 +48,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: closesearch, crash, donate, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, print, robot_remote_blocked, search, setsubcat, swapsearch
+keys: closesearch, crash, donate, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, print, robot_remote_blocked, search, setsubcat, silicon_hand, swapsearch
 

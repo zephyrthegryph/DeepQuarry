@@ -1,7 +1,9 @@
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
@@ -61,5 +63,5 @@ human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer click: Click: Replace parts
-keys: drag_buckle, extract_grass, extract_grown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, pulverize_fossil, robot_remote_blocked
+keys: drag_buckle, extract_grass, extract_grown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, pulverize_fossil, robot_remote_blocked, silicon_hand
 

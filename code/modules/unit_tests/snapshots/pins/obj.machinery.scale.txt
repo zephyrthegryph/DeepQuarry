@@ -1,9 +1,11 @@
 human|none menu: Weigh
 human|none click: Click: Weigh
 robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
 robot|none menu: Weigh
 robot|none click: Click: Weigh
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -47,5 +49,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Weigh
 human|/obj/item click: Click: Weigh
-keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scale_weigh_hand
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scale_weigh_hand, silicon_hand
 

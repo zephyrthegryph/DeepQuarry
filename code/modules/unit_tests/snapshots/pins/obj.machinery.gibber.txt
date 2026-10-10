@@ -4,8 +4,10 @@ human|none click: Click: Start gibbing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Empty Gibber
 robot|none menu: Start gibbing
+robot|none menu: Use
 robot|none click: Click: Start gibbing
-ai|none click: nothing
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Empty Gibber (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Empty Gibber
@@ -79,5 +81,5 @@ human|/obj/item/card/emag menu: Start gibbing
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: drag_buckle, emag.subvert, emag.use, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked
+keys: drag_buckle, emag.subvert, emag.use, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand
 

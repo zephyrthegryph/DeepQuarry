@@ -4,8 +4,10 @@ human|none click: Click: Ui open
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Ui open
+robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
+ai|none menu: Use
 ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
@@ -80,5 +82,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
-keys: cleartemp, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mainmenu, melee_hit, network, release, robot_remote_blocked, scan, ui_open, use_gripper, use_item, view
+keys: cleartemp, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mainmenu, melee_hit, network, release, robot_remote_blocked, scan, silicon_hand, ui_open, use_gripper, use_item, view
 

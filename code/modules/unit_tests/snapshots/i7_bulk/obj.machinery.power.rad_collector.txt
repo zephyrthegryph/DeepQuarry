@@ -2,8 +2,10 @@ human|none menu: Climb
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
-robot|none click: nothing
-ai|none click: nothing
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
@@ -65,5 +67,5 @@ human|/obj/item/tank/phoron menu: Load phoron tank (refused: It needs to be secu
 human|/obj/item/tank/phoron menu: Move To Top
 human|/obj/item/tank/phoron menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank/phoron click: Click: Load phoron tank
-keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, toggle
+keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, toggle
 
