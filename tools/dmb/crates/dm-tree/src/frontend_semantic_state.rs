@@ -15,7 +15,7 @@ pub struct RetainedSemanticTree {
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
-    symbols: Vec<(dm_ir::SymbolId, String)>,
+    symbols: Arc<dm_ir::SymbolTable>,
     symbol_catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
     engine: Option<EngineSeed>,
     tree: Arc<SemanticTree>,
@@ -45,6 +45,11 @@ impl RetainedSemanticTree {
         let roster = super::CallableRoster::issue(tree, bodies)?;
         self.callable_roster = Some(Arc::clone(&roster));
         Ok(roster)
+    }
+
+    /// Actual immutable admission spellings; no separately owned text roster.
+    pub fn retained_symbol_owner(&self) -> Option<&Arc<dm_ir::SymbolTable>> {
+        self.entry.as_ref().map(|entry| &entry.symbols)
     }
 
     /// Immutable semantic authority only; no source occurrence or body issuance is retained.
@@ -243,18 +248,13 @@ impl RetainedSemanticTree {
                 .zip(adapted.symbol_catalog.as_ref())
                 .is_some_and(|(previous, current)| Arc::ptr_eq(previous, current))
         });
-        let symbols = (!shared_catalog).then(|| adapted.symbols.ordered());
+        let symbols = (self.entry.is_some() && !shared_catalog).then(|| adapted.symbols.ordered());
         let reusable = self.entry.as_ref().filter(|entry| {
             entry.index.skeletons().eq(adapted.skeletons.iter())
                 && (shared_catalog
-                    || symbols.as_ref().is_some_and(|symbols| {
-                        entry.symbols.len() == symbols.len()
-                            && entry.symbols.iter().zip(symbols).all(
-                                |((id, text), (current_id, current))| {
-                                    id == current_id && text.as_str() == *current
-                                },
-                            )
-                    }))
+                    || symbols
+                        .as_ref()
+                        .is_some_and(|symbols| entry.symbols.ordered() == *symbols))
                 && same_engine(entry.engine.as_ref(), engine)
         });
         if let Some(entry) = reusable {
@@ -280,7 +280,14 @@ impl RetainedSemanticTree {
                 occurrences: Arc::new(occurrences),
             });
         }
-        let symbols = symbols.unwrap_or_else(|| adapted.symbols.ordered());
+        drop(symbols);
+        // The catalog has already passed the empty-overlay check above. Its
+        // immutable owner is the exact admission input, not a pointer-only key.
+        // Standalone adapters clone map descriptors while sharing every Arcstr.
+        let symbol_owner = adapted.symbol_catalog.as_ref().map_or_else(
+            || Arc::new(adapted.symbols.clone()),
+            |catalog| Arc::clone(&catalog.symbols),
+        );
         // Exact per-owner equality shares immutable declaration contributions;
         // this index never carries a previous request's source authority.
         let index = self
@@ -343,10 +350,7 @@ impl RetainedSemanticTree {
             entry.tree = Arc::clone(&tree);
             entry.index = index.expect("updated tree has its exact contribution index");
             entry.symbol_catalog = adapted.symbol_catalog.clone();
-            entry.symbols = symbols
-                .into_iter()
-                .map(|(id, text)| (id, text.to_owned()))
-                .collect();
+            entry.symbols = symbol_owner;
             // Body indexing follows this return and may fail. Do not keep the
             // previous tree rooted through its now-foreign callable roster.
             self.discard_foreign_callable_roster(&tree);
@@ -357,10 +361,7 @@ impl RetainedSemanticTree {
             });
         }
         // Capture admission inputs before consuming them; never memoize failures.
-        let symbols = symbols
-            .into_iter()
-            .map(|(id, text)| (id, text.to_owned()))
-            .collect();
+
         let symbol_catalog = adapted.symbol_catalog.clone();
         adapted.origins = origins.into();
         let snapshot = adapted.finish_with_engine_normalization(
@@ -375,7 +376,7 @@ impl RetainedSemanticTree {
                 crate::metadata_update::MetadataDependencies::capture(&snapshot.tree, &index);
             Entry {
                 index,
-                symbols,
+                symbols: symbol_owner,
                 symbol_catalog,
                 engine: engine.cloned(),
                 tree: Arc::clone(&snapshot.tree),
@@ -407,3 +408,7 @@ mod tests;
 #[cfg(test)]
 #[path = "frontend_callable_lifecycle_tests.rs"]
 mod callable_lifecycle_tests;
+
+#[cfg(test)]
+#[path = "frontend_semantic_symbol_tests.rs"]
+mod symbol_owner_tests;

@@ -496,8 +496,9 @@ fn mutated_overlay_cannot_reuse_or_store_the_old_catalog_receipt() {
         .as_ref()
         .unwrap()
         .symbols
+        .ordered()
         .iter()
-        .any(|(_, text)| text == "new_current_spelling"));
+        .any(|(_, text)| *text == "new_current_spelling"));
 }
 
 /// Retained frontend state only: this does not exercise daemon transport or exits.
