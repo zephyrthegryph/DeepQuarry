@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/airlock_electronics)
 
 /obj/item/airlock_electronics/proc/ui_login(datum/act/op/A)
 	var/mob/user = A.actor
-	if(emagged || issilicon(user))
+	if(emagged || (A.authority & AUTH_REMOTE_ACCESS))
 		set_locked(0)
 		set_last_configurator(user.name)
 	else if(isliving(user))

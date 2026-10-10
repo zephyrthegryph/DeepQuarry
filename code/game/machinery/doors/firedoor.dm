@@ -271,7 +271,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		if(alarmed())
 			// Accountability!
 			LAZYOR(users_to_open, user.name)
-			needs_to_close = !issilicon(user)
+			needs_to_close = !(A.authority & AUTH_REMOTE_ACCESS)
 		open()
 	else
 		close()

@@ -159,6 +159,11 @@
 
 MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
 
+/// The bot's settings panel: open while it is unlocked, or to an input that came over a link (a silicon's: A.authority & AUTH_REMOTE_ACCESS).
+/// A condition: it reads and writes nothing.
+/mob/living/bot/proc/settings_unlocked(datum/act/op/A)
+	return !locked || (A && (A.authority & AUTH_REMOTE_ACCESS))
+
 /mob/living/bot/proc/pai_removable(datum/act/op/A)
 	return open && !!paicard
 

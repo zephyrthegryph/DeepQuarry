@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/computer/operating)
 
 /obj/machinery/computer/operating/proc/control_used(datum/act/op/A)
 	var/mob/user = A.actor
-	if(user.contents.Find(src) || (in_range(src, user) && isturf(loc)) || issilicon(user))
+	if(user.contents.Find(src) || (in_range(src, user) && isturf(loc)) || (A.authority & AUTH_REMOTE_ACCESS))
 		user.set_machine(src)
 	return OP_OK
 

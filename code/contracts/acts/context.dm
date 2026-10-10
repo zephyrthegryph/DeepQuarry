@@ -92,6 +92,8 @@
 	var/mob/actor
 	/// ui_data: TRUE when the viewer is a ghost looking at the window read-only (every ui_act it sends is refused; the window renders its buttons disabled).
 	var/observer = FALSE
+	/// ui_data: AUTH_* the viewer's inputs carry (its click_authority()): a window shows a silicon what its link may change.
+	var/authority
 
 /// on_notice, on_op and on_change handlers. Fields set: holder, target, the notice's typed fields, outcome.
 /datum/act/notice

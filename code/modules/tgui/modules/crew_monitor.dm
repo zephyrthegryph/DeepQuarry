@@ -8,7 +8,7 @@
 
 /// Every button clicks (unless a silicon presses it) and works only on the station's levels.
 /datum/tgui_module/crew_monitor/proc/ui_typed(datum/act/op/A)
-	if(!issilicon(A.actor))
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
 	return OP_OK
 

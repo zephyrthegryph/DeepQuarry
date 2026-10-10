@@ -154,7 +154,7 @@
 /obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/op/A)
 	var/mob/user = A.actor
 	var/newnet = A.step_value("network")
-	if(newnet && ((user in range(1, src)) || issilicon(user)))
+	if(newnet && ((user in range(1, src)) || (A.authority & AUTH_REMOTE_ACCESS)))
 		if(length(newnet) > 15)
 			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))
 

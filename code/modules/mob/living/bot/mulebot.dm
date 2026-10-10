@@ -101,7 +101,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	data["crates_only"] = crates_only
 	data["hatch"] = open
 	data["safety"] = safety
-	data["issillicon"] = issilicon(A.actor)
+	data["issillicon"] = !!(A.authority & AUTH_REMOTE_ACCESS) // the window offers a silicon the controls its link may use
 	return data
 
 /mob/living/bot/mulebot/proc/ui_act_power(datum/act/op/A)

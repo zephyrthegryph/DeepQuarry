@@ -114,8 +114,8 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	data["screen"] = screen
 	data["printing"] = printing
 	data["scan"] = scan ? scan.name : null
-	data["isAI"] = isAI(user)
-	data["isRobot"] = isrobot(user)
+	data["isAI"] = user?.records_login_kind() == LOGIN_TYPE_AI
+	data["isRobot"] = user?.records_login_kind() == LOGIN_TYPE_ROBOT
 	if(authenticated)
 		switch(screen)
 			if(SEC_DATA_R_LIST)
@@ -222,13 +222,9 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		if(check_access(scan))
 			authenticated = scan.registered_name
 			rank = scan.assignment
-	else if(login_type == LOGIN_TYPE_AI && isAI(A.actor))
+	else if(login_type != LOGIN_TYPE_NORMAL && login_type == A.actor.records_login_kind())
 		authenticated = A.actor.name
-		rank = JOB_AI
-	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(A.actor))
-		authenticated = A.actor.name
-		var/mob/living/silicon/robot/R = A.actor
-		rank = "[R.modtype] [R.braintype]"
+		rank = A.actor.records_login_rank()
 	if(authenticated)
 		rel_clear(src, nameof(src.active1))
 		rel_clear(src, nameof(src.active2))
