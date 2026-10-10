@@ -218,7 +218,7 @@ pub(crate) fn apply_settings(
                     }
                     if record.extended_sight.is_some() || setting != 0 || flags > 0x7f {
                         record.sight = 0x80;
-                        record.extended_sight = Some((flags, dark, invisible));
+                        record.extended_sight = Some((flags | 0x80, dark, invisible));
                     } else {
                         record.sight = flags as u8;
                     }

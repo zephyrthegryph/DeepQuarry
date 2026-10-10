@@ -67,7 +67,9 @@ impl Resolver for VersionHost {
             | ReadDomain::OwnerCallable(_)
             | ReadDomain::OwnerVariable(_)
             | ReadDomain::OwnerScalar(_)
-            | ReadDomain::OwnerProcedureStatic(_) => None,
+            | ReadDomain::OwnerProcedureStatic(_)
+            | ReadDomain::PredefinedCatalog(_)
+            | ReadDomain::RuntimeCatalog(_) => None,
         }
     }
     fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {

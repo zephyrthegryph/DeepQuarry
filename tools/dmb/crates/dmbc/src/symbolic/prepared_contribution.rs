@@ -49,6 +49,7 @@ impl PreparedContribution {
             debug,
             required_types,
             Vec::new(),
+            Some(Vec::new()),
         )
     }
     pub(crate) fn rebind_with_modified(
@@ -59,11 +60,8 @@ impl PreparedContribution {
         debug: crate::debug_sources::DebugOrigins,
         required_types: &[SymbolId],
         modified_seeds: Vec<PreparedModifiedSeed>,
+        modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
     ) -> Option<Self> {
-        let modified_recipes = modified_seeds
-            .iter()
-            .map(|seed| seed.source_recipe(body.expanded_span))
-            .collect();
         let identity = crate::lowering::source_unit_identity(frontend, body)
             .ok()?
             .identity;
@@ -190,8 +188,12 @@ pub fn prepare_contribution(
         &mut required_types,
         &mut modified_seeds,
     )?;
-    let ordinary_seed_count = modified_seeds.len();
+    let mut modified_recipes: Option<Vec<_>> = modified_seeds
+        .iter()
+        .map(|seed| seed.source_recipe(body_span))
+        .collect();
     for helper in &unit.source_helpers {
+        let start = modified_seeds.len();
         sidecars(
             &helper.code,
             &helper.debug_origins,
@@ -199,17 +201,18 @@ pub fn prepare_contribution(
             &mut required_types,
             &mut modified_seeds,
         )?;
+        if let Some(recipes) = &mut modified_recipes {
+            if let Some(helper_recipes) = modified_seeds[start..]
+                .iter()
+                .map(|seed| seed.helper_source_recipe(helper.argument))
+                .collect::<Option<Vec<_>>>()
+            {
+                recipes.extend(helper_recipes);
+            } else {
+                modified_recipes = None;
+            }
+        }
     }
-    // Helper expression coordinates belong to the signature input, not the body.
-    // Such seeds deliberately decline resident replay until a header recipe exists.
-    let modified_recipes = if modified_seeds.len() == ordinary_seed_count {
-        modified_seeds
-            .iter()
-            .map(|seed| seed.source_recipe(body_span))
-            .collect()
-    } else {
-        None
-    };
     let selected_facts = unit.selected_references.take();
     let contribution =
         parallel::freeze_unit(unit, symbols, source_bindings, external, freeze_detail)?;

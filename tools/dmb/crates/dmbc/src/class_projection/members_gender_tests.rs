@@ -94,6 +94,7 @@ fn authored_gender_and_inheritance_match_captured_byond_headers() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),
         runtime_writes: Arc::from([]),
@@ -107,7 +108,29 @@ fn authored_gender_and_inheritance_match_captured_byond_headers() {
     };
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     materialize_members(&mut dmb, &projection, &tables, &symbols, &NoTypes).unwrap();
+    let before_headers = dmb.clone();
     headers::finalize_headers(&mut dmb, bytes, &projection, &tables, &symbols).unwrap();
+    let recipes = HeaderRecipes::default();
+    let engine = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+    // Exercise the production retained branch both while populating recipes
+    // and on warm lookup. Its inherited-field selection must match fresh.
+    for _ in 0..2 {
+        let mut retained = before_headers.clone();
+        let mut strings = crate::composition::StringIndex::build(&retained).unwrap();
+        headers::finalize_headers_with_engine(
+            &mut retained,
+            &engine,
+            &projection,
+            &tables,
+            &symbols,
+            &mut strings,
+            None,
+            Some(&recipes),
+        )
+        .unwrap();
+        assert_eq!(retained.to_bytes().unwrap(), dmb.to_bytes().unwrap());
+    }
+    assert!(recipes.hits.load(std::sync::atomic::Ordering::Relaxed) > 0);
     let oracle = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
         "../../../../fixtures/native_compiler/gender_settings/probe.native.bin"
     ))

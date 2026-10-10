@@ -48,9 +48,9 @@ mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
 pub mod lowering_memo;
-mod lowering_memo_wire;
 mod lowering_memo_compact;
 mod lowering_memo_selection;
+mod lowering_memo_wire;
 pub mod mob_writer;
 mod native_callbacks;
 pub mod native_inputs;
@@ -83,6 +83,7 @@ pub mod resource_order;
 
 pub mod captured_non_text_driver;
 pub mod compile_driver;
+mod request_lease;
 pub mod required_types;
 pub mod skin;
 

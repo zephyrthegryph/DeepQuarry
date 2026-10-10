@@ -20,6 +20,10 @@ pub enum ReadDomain {
     OwnerScalar(ResolveQuery),
     /// Exact admitted procedure static declaration roster, process-local only.
     OwnerProcedureStatic(crate::ProcedureIdentity),
+    /// Exact immutable compiler constant catalog, process-local only.
+    PredefinedCatalog(SymbolId),
+    /// Exact alias catalog and, only on fallback, current source hierarchy.
+    RuntimeCatalog(SymbolId),
 }
 
 impl ReadDomain {
@@ -32,6 +36,8 @@ impl ReadDomain {
                 | Self::OwnerVariable(_)
                 | Self::OwnerScalar(_)
                 | Self::OwnerProcedureStatic(_)
+                | Self::PredefinedCatalog(_)
+                | Self::RuntimeCatalog(_)
         )
     }
 }
@@ -147,7 +153,8 @@ impl ResolveQuery {
             Self::Var { .. } | Self::GlobalVar(_) | Self::Constant { .. } => {
                 ReadDomain::OwnerScalar(self)
             }
-            _ => ReadDomain::Tree,
+            Self::PredefinedConstant(name) => ReadDomain::PredefinedCatalog(name),
+            Self::RuntimeType(path) => ReadDomain::RuntimeCatalog(path),
         }
     }
 }
@@ -417,7 +424,7 @@ mod tests {
         );
         assert_eq!(
             ResolveQuery::PredefinedConstant(SymbolId::of("UNIX")).domain(),
-            ReadDomain::Tree
+            ReadDomain::PredefinedCatalog(SymbolId::of("UNIX"))
         );
     }
 }

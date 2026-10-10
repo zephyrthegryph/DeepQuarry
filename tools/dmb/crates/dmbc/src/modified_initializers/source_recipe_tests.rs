@@ -113,6 +113,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             let from_wire = wire
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(7),
                     moved.snapshot.tree.symbols(),
                     &current_debug,
@@ -132,6 +133,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             assert!(wire
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(8),
                     moved.snapshot.tree.symbols(),
                     &current_debug,
@@ -142,6 +144,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             assert!(wire
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(7),
                     moved.snapshot.tree.symbols(),
                     &current_debug,
@@ -152,6 +155,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             let current = recipe
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(7),
                     moved.snapshot.tree.symbols(),
                     &current_debug,
@@ -181,6 +185,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             assert!(recipe
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(8),
                     moved.snapshot.tree.symbols(),
                     &current_debug
@@ -191,6 +196,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
             assert!(wrong_site
                 .reissue(
                     parsed,
+                    &moved,
                     &Host(7),
                     moved.snapshot.tree.symbols(),
                     &current_debug
@@ -203,6 +209,7 @@ fn modifier_recipe_reissues_current_ast_and_resources_after_source_shift() {
         assert!(recipe
             .reissue(
                 parsed,
+                &moved,
                 &Host(7),
                 moved.snapshot.tree.symbols(),
                 &current_debug

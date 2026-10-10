@@ -136,6 +136,7 @@ fn captured_byond_tmp_flags_differ_between_class_declarations_and_shared_slots()
     }
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        field_placements: Default::default(),
         procedure_declarations: Default::default(),
         shared_slot_order: {
             shared_order.push(local_key);

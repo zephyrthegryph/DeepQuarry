@@ -10,6 +10,8 @@ use dm_codegen_byond::{
 use dm_ir::{ProcedureMetadata, Resolver, SymbolTable};
 use dm_syntax::{Item, TokenKind};
 use dm_tree::frontend::ColdFrontend;
+mod header_recipe;
+pub(crate) use header_recipe::current_header_modifier;
 
 #[derive(Clone)]
 pub struct LoweredHelper {
@@ -186,17 +188,12 @@ pub fn lower_helpers<R: Resolver>(
             .ok_or("argument source expression spelling unavailable")?;
         // This header is a syntax container only; it is not emitted into any
         // callable procedure inventory or semantic key.
-        let ast = dm_syntax::parse(&format!(
-            "/proc/__argument_source_syntax()\n    return {expression}\n"
-        ));
-        if !ast.diagnostics.is_empty() || ast.items.len() != 1 {
-            return Err("unsupported argument source expression syntax".into());
-        }
+        let container = syntax_container(&expression)?;
         let mut frame = inputs.clone();
         frame.parameter_defaults.clear();
         frame.parameter_value_sources.clear();
         let mut code = dm_codegen_byond::compile_simple_proc_with_resolver_and_debug(
-            &ast.items[0].children,
+            &container.children,
             &frame,
             symbols,
             host,
@@ -330,4 +327,14 @@ mod view_tests {
             );
         }
     }
+}
+
+fn syntax_container(expression: &str) -> Result<Item, String> {
+    let mut ast = dm_syntax::parse(&format!(
+        "/proc/__argument_source_syntax()\n    return {expression}\n"
+    ));
+    if !ast.diagnostics.is_empty() || ast.items.len() != 1 {
+        return Err("unsupported argument source expression syntax".into());
+    }
+    Ok(ast.items.remove(0))
 }

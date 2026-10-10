@@ -26,6 +26,7 @@ impl CoverageTotals {
 }
 /// Query the ordinary compiler producer against current pinned host facts.
 /// This emits selected references, never a whole-program completeness claim.
+#[cfg(test)]
 pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     frontend: &dm_tree::frontend::FrontendRevision,
     engine: &crate::engine::EngineSnapshot,
@@ -34,6 +35,28 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
     executor: &dm_exec::BuildExecutor,
     memo: &crate::lowering_memo::ProcedureMemo,
     writer: &mut impl Write,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    write_resolved_observed(
+        frontend,
+        engine,
+        resolver,
+        spellings,
+        executor,
+        memo,
+        writer,
+        |_| Ok(()),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_resolved_observed<R: dm_ir::Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    engine: &crate::engine::EngineSnapshot,
+    resolver: &R,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    writer: &mut impl Write,
+    mut observe: impl FnMut(&crate::selected_query::CurrentProcedureReferences) -> std::io::Result<()>,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let mut totals = CoverageTotals {
         requested: frontend.bodies.len(),
@@ -96,6 +119,7 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         |procedure| -> Result<(), Box<dyn std::error::Error>> {
             crate::daemon::control::checkpoint()?;
             procedure.write_jsonl(writer)?;
+            observe(procedure)?;
             totals.returned(
                 procedure.unbound_selections(),
                 procedure.unavailable_coordinates(),

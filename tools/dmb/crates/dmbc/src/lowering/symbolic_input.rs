@@ -331,7 +331,13 @@ impl SessionSymbolicMemo {
                         .modified_recipes
                         .iter()
                         .map(|recipe| {
-                            recipe.reissue(parsed, host, frontend.snapshot.tree.symbols(), &debug)
+                            recipe.reissue(
+                                parsed,
+                                frontend,
+                                host,
+                                frontend.snapshot.tree.symbols(),
+                                &debug,
+                            )
                         })
                         .collect::<Option<Vec<_>>>()
                 })
@@ -352,6 +358,7 @@ impl SessionSymbolicMemo {
             debug,
             &record.required_types,
             modified_seeds,
+            Some(record.modified_recipes.clone()),
         )
         .or_else(|| {
             // Includes ABI/identity, current helper-origin and source-binding

@@ -725,6 +725,7 @@ fn run_build_attempt(
                 };
                 return Err(failure.into());
             }
+            Err(dmbc::cold::ColdError::Composition(dmbc::composition::CompositionError::SourceError(diagnostic))) => return Err(dmbc::diagnostics::report_source_error(diagnostic)?.into()),
             Err(dmbc::cold::ColdError::InitializerInvariant(message)) => {
                 return Err(dmbc::request_failure::RequestFailure::internal(format!("native internal: {message}")).into())
             }
@@ -952,9 +953,9 @@ fn run_build_attempt(
         let links = retained_engine.link_overlay()?;
         let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
         let memo = procedure_memo.as_ref().unwrap_or(&fallback_memo);
-        let procedures = crate::analysis_export::write_resolved(
+        let procedures = crate::analysis_export::write_resolved_observed(
             &frontend, &retained_engine.snapshot, &resolver, &links.inventory.spellings,
-            executor, memo, &mut output,
+            executor, memo, &mut output, |procedure| query_attempt.capture_selected(&frontend, procedure),
         )?;
         dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
     }

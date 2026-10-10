@@ -264,6 +264,7 @@ mod tests {
     use super::*;
     fn projection() -> ClassProjection {
         ClassProjection {
+            field_placements: Default::default(),
             procedure_declarations: Default::default(),
             tree_identity: 0,
             occurrence_count: 1,

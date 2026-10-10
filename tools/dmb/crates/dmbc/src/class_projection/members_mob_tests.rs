@@ -76,6 +76,7 @@ fn mob_settings_use_native_records_and_inherit_final_ordered_parent_writes() {
         }));
     }
     let projection = ClassProjection {
+        field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),
         runtime_writes: Arc::from([]),
@@ -110,6 +111,7 @@ fn mob_settings_use_native_records_and_inherit_final_ordered_parent_writes() {
             .iter()
             .find(|record| record.class == expected_class)
             .unwrap();
+        assert_eq!(record.extended_sight, expected.extended_sight, "{path:?}");
         assert_eq!(record.sight_bits(), expected.sight_bits(), "{path:?}");
         assert_eq!(
             record.see_in_dark_setting(),

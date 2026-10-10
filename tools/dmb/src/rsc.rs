@@ -233,6 +233,11 @@ impl Entry {
 
 /// Reads one entry, or returns None only at a clean end of stream.
 pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
+    read_entry_with_limit(reader, MAX_ENTRY_SIZE)
+}
+
+/// Same lossless decoder with a caller's stricter payload allocation bound.
+pub fn read_entry_with_limit(reader: &mut impl Read, limit: usize) -> io::Result<Option<Entry>> {
     let mut first = [0u8; 1];
     if reader.read(&mut first)? == 0 {
         return Ok(None);
@@ -241,7 +246,7 @@ pub fn read_entry(reader: &mut impl Read) -> io::Result<Option<Entry>> {
     length_bytes[0] = first[0];
     reader.read_exact(&mut length_bytes[1..])?;
     let length = u32::from_le_bytes(length_bytes) as usize;
-    if length > MAX_ENTRY_SIZE {
+    if length > limit.min(MAX_ENTRY_SIZE) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "RSC entry exceeds decode limit",

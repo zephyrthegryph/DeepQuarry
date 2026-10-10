@@ -109,3 +109,20 @@ region and macro definition origin ranges from the existing occurrence table.
 Unknown ordinals and stale pins fail the batch; source rows are not silently
 omitted. `provenance_complete` remains false because expanded macro traces and
 executable node coordinates are not served here. No body parsing occurs.
+
+### Previously captured executable references
+
+An explicit `analyze --resolved` request to the retained daemon records bounded
+current compiler-selected rows. A subsequent source query can request
+`{"SelectedReferences":{"ordinal":42}}`, using a procedure occurrence ordinal
+from that same source revision. Both `expected_revision` and
+`expected_source_revision` are mandatory. The daemon serves the already issued
+rows; it does not parse, resolve, or lower a missing procedure.
+
+At most 256 procedures and 512 KiB of selected JSONL are retained per current
+source snapshot. An uncaptured or omitted procedure returns a not-captured error;
+run explicit resolved analysis before querying. A new frontend snapshot replaces
+these rows. Source shifts invalidate old pins. Coverage remains incomplete:
+compiler-selected reference support is partial, and this endpoint does not supply
+full macro traces or pinned runtime/resource host facts. This capability adds no
+selection traversal to ordinary compile requests.

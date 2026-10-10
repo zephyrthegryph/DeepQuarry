@@ -464,10 +464,11 @@ pub(crate) fn materialize_members_with_roster(
         dmb.variable_footer = list(dmb, footer)?;
     }
     let mut mob_settings = BTreeMap::<u32, Vec<(u8, u32)>>::new();
-    for field in projection
+    for (field_index, field) in projection
         .fields
         .iter()
-        .filter(|field| field.role == FieldRole::Assignment)
+        .enumerate()
+        .filter(|(_, field)| field.role == FieldRole::Assignment)
     {
         if routing::separate_intrinsic_field(field, &client_owners, symbols)? {
             continue;
@@ -495,6 +496,9 @@ pub(crate) fn materialize_members_with_roster(
                 continue;
             }
             let (kind, value) = scalar(dmb, pool, &field.value, tables, value_types)?;
+            if let Some(message) = field_placements::source_error_message(field) {
+                return Err(projection.field_placements.error(field_index, message));
+            }
             let numeric = match &field.value {
                 DefaultValue::Scalar(SemanticValue::NumberBits(bits)) => {
                     Some(f32::from_bits(*bits))
@@ -526,8 +530,12 @@ pub(crate) fn materialize_members_with_roster(
                     _ => None,
                 };
                 if let Some(setting) = setting {
-                    let number = integer(0.0, u32::MAX as f32)?;
-                    // f32 rounds u32::MAX upward; reject that unrepresentable boundary.
+                    let number = numeric.filter(|number| number.is_finite()).ok_or_else(|| {
+                        ProjectionError::Unsupported(format!(
+                            "invalid intrinsic {name} numeric value"
+                        ))
+                    })?;
+                    // Positive fractions truncate toward zero in the pinned VM record.
                     if number as f64 > u32::MAX as f64 {
                         return Err(ProjectionError::Unsupported(format!(
                             "invalid intrinsic {name} numeric value"
@@ -593,9 +601,9 @@ pub(crate) fn materialize_members_with_roster(
                             b"female" => 2,
                             b"plural" => 3,
                             _ => {
-                                return Err(ProjectionError::Unsupported(
-                                    "invalid gender default".into(),
-                                ))
+                                return Err(projection
+                                    .field_placements
+                                    .error(field_index, "invalid gender".into()))
                             }
                         },
                         _ => {
@@ -738,3 +746,7 @@ mod mob_tests;
 #[cfg(test)]
 #[path = "members_gender_tests.rs"]
 mod gender_tests;
+
+#[cfg(test)]
+#[path = "members_mob_numeric_tests.rs"]
+mod mob_numeric_tests;

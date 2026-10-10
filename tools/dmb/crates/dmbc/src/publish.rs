@@ -3,7 +3,6 @@
 //! Run slots are writable copies: the Phase 0 engine probe rejected read-only
 //! hardlinks. Conventional output installation is intentionally a separate step.
 
-use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
@@ -16,6 +15,8 @@ use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 #[path = "publish_admission.rs"]
 mod admission;
+#[path = "publish_destination_leases.rs"]
+mod destination_leases;
 #[path = "publish_destinations.rs"]
 mod destinations;
 #[path = "publish_eviction.rs"]
@@ -321,7 +322,7 @@ impl PairStore {
             .create(true)
             .truncate(false)
             .open(self.root.join("store.lock"))?;
-        file.lock_exclusive()?;
+        crate::request_lease::acquire(&file)?;
         Ok(file)
     }
 
@@ -657,6 +658,7 @@ impl PairStore {
     ) -> io::Result<InstallationReceipt> {
         let ResourceInstall { prepared, prior } = resource;
         destinations::distinct([dmb, rsc, marker])?;
+        let _destinations = destination_leases::acquire()?;
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = self.verify_locked(id, exact)?;

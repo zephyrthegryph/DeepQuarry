@@ -48,37 +48,8 @@ pub fn map_captured_lower_errors(
     plan: &InitializerPlan,
     write_ordinals: &[usize],
 ) -> Result<Vec<LoweringDiagnostic>, InitializerLoweringError> {
-    // One borrowed reverse index per batch. Buckets retain expansion encounter
-    // order, including multiple macro projections of the same physical span.
-    type ProjectionKey<'a> = (&'a Path, usize, usize, usize);
-    let mut projections: HashMap<ProjectionKey<'_>, (_, Vec<_>)> = HashMap::new();
-    let mut definition_files = HashMap::new();
-    if !errors.is_empty() {
-        for expanded in frontend.expanded.origins.iter() {
-            let key = (
-                expanded.origin.path.as_path(),
-                frontend.plan.regions[expanded.region].occurrence,
-                expanded.source_span.start,
-                expanded.source_span.end,
-            );
-            match projections.entry(key) {
-                std::collections::hash_map::Entry::Vacant(entry) => {
-                    entry.insert((expanded, Vec::new()));
-                }
-                std::collections::hash_map::Entry::Occupied(mut entry) => {
-                    entry.get_mut().1.push(expanded);
-                }
-            }
-        }
-        for file in frontend.files.iter() {
-            // Match the former linear lookup's first-file behavior exactly.
-            definition_files
-                .entry(file.path.as_path())
-                .or_insert(file.id);
-        }
-    }
-    errors
-        .into_iter()
+    let origins = errors
+        .iter()
         .map(|error| {
             let local = error
                 .span
@@ -99,6 +70,75 @@ pub fn map_captured_lower_errors(
                     "initializer source write coordinate {ordinal} is outside captured plan"
                 ))
             })?;
+            Ok(origin)
+        })
+        .collect::<Result<Vec<_>, InitializerLoweringError>>()?;
+    let locations = captured_locations(frontend, &origins)?;
+    errors
+        .into_iter()
+        .zip(locations)
+        .map(|(mut error, location)| {
+            error.span = Some(dm_codegen_byond::LowerSpan { start: 0, end: 0 });
+            Ok(map_lower_errors(vec![error], &[location])?.remove(0))
+        })
+        .collect()
+}
+
+/// Exact current provenance binding shared by initializer and field diagnostics.
+pub(crate) fn captured_locations(
+    frontend: &ColdFrontend,
+    origins: &[&dm_tree::initializers::InitializerOrigin],
+) -> Result<Vec<SourceLocation>, InitializerLoweringError> {
+    // One borrowed reverse index per batch. Buckets retain expansion encounter
+    // order, including multiple macro projections of the same physical span.
+    type ProjectionKey<'a> = (&'a Path, usize, usize, usize);
+    let requested = origins
+        .iter()
+        .filter_map(|origin| {
+            if !matches!(origin.kind, InitializerOriginKind::Declaration(_)) {
+                return None;
+            }
+            let source = frontend.source(origin.provenance.span.file)?;
+            Some((
+                source.path.as_path(),
+                origin.provenance.include_occurrence as usize,
+                origin.provenance.span.start as usize,
+                origin.provenance.span.end as usize,
+            ))
+        })
+        .collect::<std::collections::HashSet<ProjectionKey<'_>>>();
+    let mut projections: HashMap<ProjectionKey<'_>, (_, Vec<_>)> = HashMap::new();
+    let mut definition_files = HashMap::new();
+    if !origins.is_empty() {
+        for expanded in frontend.expanded.origins.iter() {
+            let key = (
+                expanded.origin.path.as_path(),
+                frontend.plan.regions[expanded.region].occurrence,
+                expanded.source_span.start,
+                expanded.source_span.end,
+            );
+            if !requested.contains(&key) {
+                continue;
+            }
+            match projections.entry(key) {
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert((expanded, Vec::new()));
+                }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    entry.get_mut().1.push(expanded);
+                }
+            }
+        }
+        for file in frontend.files.iter() {
+            // Match the former linear lookup's first-file behavior exactly.
+            definition_files
+                .entry(file.path.as_path())
+                .or_insert(file.id);
+        }
+    }
+    origins
+        .iter()
+        .map(|origin| {
             let location = match origin.kind {
                 InitializerOriginKind::ProcedureStatic { expanded_span, .. } => {
                     frontend.location(expanded_span.start)
@@ -148,11 +188,7 @@ pub fn map_captured_lower_errors(
                     "initializer diagnostic has no matching captured source projection".into(),
                 )
             })?;
-            // The generic mapper sees a one-entry sidecar; rebasing the local
-            // coordinate is explicit, after the original ordinal was validated.
-            let mut rebound = error;
-            rebound.span = Some(dm_codegen_byond::LowerSpan { start: 0, end: 0 });
-            Ok(map_lower_errors(vec![rebound], &[location])?.remove(0))
+            Ok(location)
         })
         .collect()
 }

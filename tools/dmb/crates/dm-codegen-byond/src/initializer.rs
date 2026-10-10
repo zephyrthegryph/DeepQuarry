@@ -10,7 +10,11 @@ use dm_ir::{
     SymRef, SymbolTable,
 };
 mod assignment_group;
+mod finish;
 mod fragments;
+use finish::finish_initializer;
+#[cfg(test)]
+mod receiver_tests;
 pub use assignment_group::PreparedAssignmentGroup;
 pub use fragments::AssignmentFragment;
 #[derive(Debug)]
@@ -503,56 +507,6 @@ fn prepare_assignment<R: Resolver>(
     Ok((target_expr, slot))
 }
 
-fn finish_initializer(code: &mut ResolverProc, instance: bool) -> Result<(), InitializerError> {
-    // Match the initializer VM receiver convention used by the existing
-    // producer. This is an initializer entry, not an ordinary returning proc.
-    if instance {
-        for item in &mut code.procedure.code.items {
-            if let crate::Item::Instruction(instruction) = item {
-                if instruction.opcode == opcode::SET_VAR {
-                    if let [crate::Word::Variable(crate::VariableWord::Field(field))] =
-                        instruction.operands.as_slice()
-                    {
-                        instruction.operands =
-                            vec![crate::Word::Variable(crate::VariableWord::SetCache(
-                                Box::new(crate::VariableWord::Src),
-                                Box::new(crate::VariableWord::SetCache(
-                                    Box::new(crate::VariableWord::Src),
-                                    Box::new(crate::VariableWord::Field(*field)),
-                                )),
-                            ))];
-                    }
-                }
-            }
-        }
-    }
-    let items = &mut code.procedure.code.items;
-    if items.len() >= 3
-        && matches!(&items[items.len()-3], crate::Item::Instruction(ins)
-            if ins.opcode == opcode::PUSH_VAL && ins.operands == [crate::Word::Value(crate::ValueWord::Null)])
-        && matches!(&items[items.len()-2], crate::Item::Instruction(ins)
-            if ins.opcode == opcode::RET && ins.operands.is_empty())
-        && matches!(&items[items.len()-1], crate::Item::Instruction(ins)
-            if ins.opcode == opcode::END && ins.operands.is_empty())
-    {
-        items.truncate(items.len() - 3);
-        items.push(crate::Item::Instruction(crate::Instruction {
-            opcode: opcode::END,
-            operands: Vec::new(),
-        }));
-    }
-    if !matches!(items.last(),Some(crate::Item::Instruction(ins))
-        if ins.opcode == opcode::END && ins.operands.is_empty())
-        || items
-            .iter()
-            .any(|item| matches!(item,crate::Item::Instruction(ins) if ins.opcode == opcode::RET))
-    {
-        return Err(InitializerError::Unsupported(
-            "initializer has an unsupported value-return epilogue".into(),
-        ));
-    }
-    Ok(())
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -835,7 +789,7 @@ mod tests {
         assert!(result.code.procedure.code.items.iter().any(|item|
             matches!(item, crate::Item::Instruction(ins) if ins.opcode == opcode::SET_VAR
                 && ins.operands == [crate::Word::Variable(crate::VariableWord::SetCache(
-                    Box::new(crate::VariableWord::Src), Box::new(crate::VariableWord::Field(dm_ir::SymbolId::of("amount")))))])));
+                    Box::new(crate::VariableWord::Src), Box::new(crate::VariableWord::SetCache(Box::new(crate::VariableWord::Src), Box::new(crate::VariableWord::Field(dm_ir::SymbolId::of("amount")))))))])));
         assert!(!result.code.procedure.code.items.iter().any(
             |item| matches!(item, crate::Item::Instruction(ins) if ins.opcode == opcode::RET)
         ));

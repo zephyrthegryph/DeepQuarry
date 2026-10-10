@@ -3,7 +3,7 @@ use crate::lowering_memo::{ReplayDecline, ResolverRead};
 use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
-pub(crate) const SCHEMA: u32 = 0x0206_000b;
+pub(crate) const SCHEMA: u32 = 0x0206_000c;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]
@@ -375,6 +375,11 @@ impl Payload<'_> {
             debug,
             &self.required_types.0,
             modified,
+            self.recipes
+                .0
+                .iter()
+                .map(|recipe| recipe.resident_recipe())
+                .collect(),
         )
         .ok_or(ReplayDecline::ExecutableIssuer)
     }
@@ -412,6 +417,7 @@ impl<R: Resolver> ModifiedIssuer for CurrentModifiedIssuer<'_, '_, '_, R> {
                 .map(|recipe| {
                     recipe.reissue(
                         parsed,
+                        self.frontend,
                         self.host,
                         self.frontend.snapshot.tree.symbols(),
                         debug,

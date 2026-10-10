@@ -578,7 +578,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         },
     )
     .map_err(initializer_lowering_error)?;
-    let projection = crate::class_projection::project_classified_with_artifacts(
+    let mut projection = crate::class_projection::project_classified_with_artifacts(
         &frontend.snapshot,
         &frontend.emission_order,
         plan,
@@ -587,6 +587,9 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         memo.and_then(|memo| memo.class_projections.as_deref()),
     )
     .map_err(ColdError::Projection)?;
+    projection
+        .bind_field_sources(frontend, plan)
+        .map_err(ColdError::Projection)?;
     crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
         census.frontend(frontend);
         census.startup(startup);

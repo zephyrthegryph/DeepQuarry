@@ -18,6 +18,7 @@ use std::{
 #[derive(Debug)]
 pub enum CompositionError {
     Decode(io::Error),
+    SourceError(crate::lowering::LoweringDiagnostic),
     Unsupported(String),
     MissingSymbol(SymbolId),
     InvalidBinding(Key, u32),
@@ -687,7 +688,15 @@ fn compose_records_access(
             &mut string_index,
             class_roster.as_ref(),
         )
-        .map_err(|e| unsupported(format!("class members {e:?}")))?;
+        .map_err(|error| match error {
+            crate::class_projection::ProjectionError::SourceError { field, message } => {
+                match plan.source_diagnostic(field, message) {
+                    Some(diagnostic) => CompositionError::SourceError(diagnostic),
+                    None => unsupported("class member source error has no current source binding"),
+                }
+            }
+            error => unsupported(format!("class members {error:?}")),
+        })?;
         drop(members_profile);
         let headers_profile = dm_profile::stage("composition.authored_headers");
         crate::class_projection::finalize_headers_retained(

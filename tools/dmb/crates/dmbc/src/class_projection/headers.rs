@@ -1,6 +1,8 @@
 //! Finalize effective native appearance defaults after source members are written.
 //! Each known property uses its wire accessor; callback flags remain independent.
 use super::*;
+#[path = "header_fields.rs"]
+pub(super) mod fields;
 use byond_dmb::{
     dmb::{Class, Dmb},
     ids::NONE,
@@ -450,74 +452,10 @@ fn inherit_record_selected(
     child: &mut Class,
     inherit: impl Fn(&str) -> bool,
 ) -> Result<(), ProjectionError> {
-    for (name, slot) in [("desc", 3), ("icon", 4), ("icon_state", 5)] {
-        if inherit(name) {
-            child.initial_ids[slot] = parent.initial_ids[slot];
+    for field in fields::FIELDS {
+        if inherit(field.name) {
+            (field.copy)(parent, child)?;
         }
-    }
-    if inherit("name") {
-        child.initial_ids[2] = parent.initial_ids[2];
-    }
-    if inherit("text") {
-        child.text = parent.text;
-    }
-    if inherit("layer") {
-        child.layer_bits = parent.layer_bits;
-    }
-    if inherit("dir") {
-        child.direction = parent.direction;
-    }
-    if inherit("maptext") {
-        child.maptext = parent.maptext;
-    }
-    if inherit("suffix") {
-        child.suffix = parent.suffix;
-    }
-    for (name, slot) in [
-        ("maptext_width", 0),
-        ("maptext_height", 1),
-        ("maptext_x", 2),
-        ("maptext_y", 3),
-    ] {
-        if inherit(name) {
-            child.maptext_geometry[slot] = parent.maptext_geometry[slot];
-        }
-    }
-    if inherit("transform") {
-        child.transform_flag = parent.transform_flag;
-        child.transform = parent.transform;
-    }
-    if inherit("invisibility") {
-        child.set_normally_visible(parent.is_normally_visible());
-    }
-    if inherit("gender") {
-        child
-            .set_gender_code(parent.gender_code())
-            .map_err(|error| ProjectionError::Unsupported(error.to_string()))?;
-    }
-    if inherit("density") {
-        child.set_dense(parent.is_dense());
-    }
-    if inherit("opacity") {
-        child.set_opaque(parent.is_opaque());
-    }
-    if inherit("appearance_flags") {
-        child.set_appearance_flags(parent.appearance_flags());
-    }
-    if inherit("luminosity") {
-        child
-            .set_luminosity(parent.luminosity())
-            .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
-    }
-    if inherit("mouse_opacity") {
-        child
-            .set_mouse_opacity(parent.mouse_opacity())
-            .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
-    }
-    if inherit("animate_movement") {
-        child
-            .set_animate_movement(parent.animate_movement())
-            .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
     }
     Ok(())
 }
@@ -714,6 +652,7 @@ mod tests;
 #[cfg(test)]
 mod routing_tests {
     use super::*;
+
     #[test]
     fn world_and_root_projection_use_separate_records_while_retained_classes_finalize() {
         let bytes = include_bytes!("../../../../fixtures/native_template.bin");
@@ -726,6 +665,7 @@ mod routing_tests {
         let savefile = symbols.intern("/savefile").unwrap();
         let version = symbols.intern("byond_version").unwrap();
         let projection = ClassProjection {
+            field_placements: Default::default(),
             shared_slot_order: Arc::from([]),
             procedure_statics: Arc::from([]),
             runtime_writes: Arc::from([]),

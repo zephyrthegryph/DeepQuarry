@@ -42,6 +42,7 @@ fn shared_string_writer_matches_wrappers_with_duplicates_reserved_slots_and_auth
         },
     );
     let projection = ClassProjection {
+        field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),
         runtime_writes: Arc::from([]),

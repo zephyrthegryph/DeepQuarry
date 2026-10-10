@@ -8,7 +8,6 @@ use dm_tree::frontend::ColdFrontend;
 /// Hold this handle through capture, compilation and installation. Independent
 /// worktrees have distinct locks; two processes targeting one manifest serialize.
 pub fn acquire_build_lock(project: &std::path::Path) -> std::io::Result<std::fs::File> {
-    use fs2::FileExt;
     let directory = project
         .parent()
         .ok_or_else(|| {
@@ -22,7 +21,7 @@ pub fn acquire_build_lock(project: &std::path::Path) -> std::io::Result<std::fs:
         .create(true)
         .truncate(false)
         .open(directory.join("build.lock"))?;
-    file.lock_exclusive()?;
+    crate::request_lease::acquire(&file)?;
     Ok(file)
 }
 

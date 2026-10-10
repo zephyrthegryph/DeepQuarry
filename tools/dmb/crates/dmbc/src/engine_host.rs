@@ -1,4 +1,5 @@
 //! Immutable compiler configuration resolver; no output tables or legacy bindings.
+mod catalog_domains;
 #[path = "engine_constants.rs"]
 mod constants;
 mod engine_providers;
@@ -30,6 +31,7 @@ pub enum HostError {
 }
 #[derive(Clone, Debug)]
 pub struct ConstantCatalog {
+    issuer: Option<u64>,
     values: Arc<BTreeMap<SymbolId, SemanticValue>>,
     completeness: Completeness,
     identity: u128,
@@ -63,6 +65,7 @@ impl ConstantCatalog {
             bytes.extend_from_slice(&value);
         }
         Ok(Self {
+            issuer: catalog_domains::issue(),
             values: Arc::new(values),
             completeness,
             identity: xxhash_rust::xxh3::xxh3_128(&bytes),
@@ -89,6 +92,7 @@ impl ConstantCatalog {
 }
 #[derive(Clone, Debug)]
 pub struct RuntimeAliasCatalog {
+    issuer: Option<u64>,
     aliases: Arc<BTreeMap<SymbolId, SymbolId>>,
     ordinary: Arc<HashSet<SymbolId>>,
     completeness: Completeness,
@@ -142,6 +146,7 @@ impl RuntimeAliasCatalog {
             bytes.extend_from_slice(&id.bits().to_le_bytes());
         }
         Ok(Self {
+            issuer: catalog_domains::issue(),
             policy_identity,
             aliases: Arc::new(mapping),
             ordinary: Arc::new(ordinary),
@@ -316,6 +321,9 @@ impl<R: Resolver> EngineResolverHost<R> {
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if let Some(version) = self.catalog_domain(domain) {
+            return version;
+        }
         if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
             // Only a positive enriched source answer bypasses engine fallback.

@@ -233,6 +233,7 @@ mod global_record_tests {
             name: SymbolId::of("local_static"),
         };
         let plan = ClassProjection {
+            field_placements: Default::default(),
             types: Arc::from([]),
             chains: Arc::from([]),
         procedure_membership: Arc::from([]),

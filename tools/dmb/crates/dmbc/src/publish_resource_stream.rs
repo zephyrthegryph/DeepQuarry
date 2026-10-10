@@ -1,5 +1,6 @@
 //! File-backed resource production in the existing immutable publication store.
 use super::*;
+use fs2::FileExt;
 use std::io::{BufWriter, Write};
 
 /// Keeps an immutable archive reachable until its output pair is committed.

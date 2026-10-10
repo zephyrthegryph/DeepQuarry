@@ -1,0 +1,10 @@
+/mob/sight_fraction
+    sight = 1.5
+/mob/dark_fraction
+    see_in_dark = 1.5
+/mob/invisible_fraction
+    see_invisible = 1.5
+/mob/invisible_high
+    see_invisible = 101
+/mob/dark_high
+    see_in_dark = 1000000

@@ -99,6 +99,7 @@ const COMMANDS: &[CommandSpec] = &[
     CommandSpec::fixed("proc-flags-context", "FILE.dmb", 1),
     CommandSpec::fixed("mob-sight-audit", "FILE.dmb", 1),
     CommandSpec::fixed("rsc-info", "FILE.rsc", 1),
+    CommandSpec::fixed("rsc-diff", "EXPECTED.rsc ACTUAL.rsc REPORT.json SNAPSHOT_ID", 4),
     CommandSpec::fixed("rsc-kind-audit", "FILE.rsc", 1),
     CommandSpec::fixed("rsc-id-audit", "FILE.rsc", 1),
     CommandSpec::fixed("rsc-copy", "INPUT.rsc OUTPUT.rsc", 2),

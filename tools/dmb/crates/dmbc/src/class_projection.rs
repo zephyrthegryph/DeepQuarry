@@ -3,6 +3,8 @@
 //! additionally acquire VM footer slots, and field selectors remain strings.
 use crate::initializer_policy::DefaultValue;
 mod callbacks;
+mod field_placements;
+pub use field_placements::FieldPlacements;
 mod class_roster;
 pub(crate) mod header_recipes;
 mod headers;
@@ -33,6 +35,7 @@ pub enum ProjectionError {
     OpaqueField { owner: SymbolId, name: SymbolId },
     Unsupported(String),
     Evaluation(String),
+    SourceError { field: usize, message: String },
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeProjection {
@@ -65,6 +68,8 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    /// Current source binding is excluded from retained semantic field payloads.
+    pub field_placements: FieldPlacements,
     /// Exact source occurrence mode for physical proc/verb namespace paths.
     pub procedure_declarations: Arc<BTreeMap<Key, bool>>,
     pub shared_slot_order: Arc<[Key]>,
@@ -235,6 +240,7 @@ fn project_inner(
     };
     let mut seen = HashSet::new();
     let mut fields = Vec::new();
+    let mut field_placements = FieldPlacements::default();
     let default_index: HashMap<_, _> = defaults
         .into_iter()
         .flat_map(|ledger| ledger.iter())
@@ -278,7 +284,10 @@ fn project_inner(
             )?,
         };
         match contribution {
-            member_contribution::MemberContribution::Field(field) => fields.push(field),
+            member_contribution::MemberContribution::Field(field) => {
+                field_placements.push(fields.len(), id, &field);
+                fields.push(field);
+            }
             member_contribution::MemberContribution::Procedure {
                 owner,
                 name,
@@ -345,6 +354,7 @@ fn project_inner(
         })
         .collect::<Vec<_>>();
     Ok(ClassProjection {
+        field_placements,
         procedure_declarations: Arc::new(procedure_declarations),
         shared_slot_order: fields
             .iter()

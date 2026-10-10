@@ -25,6 +25,7 @@ mod tests {
     use super::super::*;
     fn projection() -> ClassProjection {
         ClassProjection {
+            field_placements: Default::default(),
             shared_slot_order: Arc::from([]),
             procedure_statics: Arc::from([]),
             runtime_writes: Arc::from([]),

@@ -241,6 +241,7 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
     };
     assert!(absent.path.is_err());
     let projection = crate::class_projection::ClassProjection {
+        field_placements: Default::default(),
         procedure_declarations: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),

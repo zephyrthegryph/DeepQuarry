@@ -1,5 +1,7 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
 //! No executable syntax, source text, or old frontend issuance is retained.
+#[path = "runner_query_selected.rs"]
+mod selected;
 use dm_tree::frontend::ColdFrontend;
 use std::{
     collections::BTreeMap,
@@ -26,6 +28,7 @@ pub(crate) struct SourceSnapshot {
     pub(crate) outcome: &'static str,
     occurrences: Arc<dm_tree::OccurrenceTable>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
+    selected: selected::SelectedRows,
 }
 impl SourceSnapshot {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -35,6 +38,7 @@ impl SourceSnapshot {
             tree: Arc::clone(&self.tree),
             occurrences: Arc::clone(&self.occurrences),
         });
+        self.selected.census(census);
         census.observe_items("query_snapshot.paths", self.paths.len());
         census.unknown("query_snapshot.paths", "BTreeMap node capacity and allocator overhead are not exposed; logical path roster count is not allocated bytes");
         for path in self.paths.values() {
@@ -49,6 +53,7 @@ impl SourceSnapshot {
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision: dm_analysis::tree_export::source_revision(frontend),
             outcome: "frontend_analyzed",
+            selected: Default::default(),
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             paths: frontend
                 .files
@@ -56,6 +61,13 @@ impl SourceSnapshot {
                 .map(|file| (file.id, Arc::clone(&file.path)))
                 .collect(),
         }
+    }
+    pub(crate) fn write_selected(
+        &self,
+        ordinal: u32,
+        output: &mut impl std::io::Write,
+    ) -> std::io::Result<()> {
+        self.selected.write(ordinal, self.source_revision, output)
     }
     pub(crate) fn occurrence(
         &self,
@@ -145,6 +157,31 @@ impl QueryAttempt {
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
         self.captured = true;
+    }
+    pub(crate) fn capture_selected(
+        &mut self,
+        frontend: &ColdFrontend,
+        current: &crate::selected_query::CurrentProcedureReferences,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return Ok(());
+        }
+        frontend
+            .body_input(current.occurrence())
+            .map_err(|diagnostic| std::io::Error::other(diagnostic.message))?;
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let snapshot = state.snapshot.as_mut().ok_or_else(|| {
+            std::io::Error::other("selected capture lacks current source snapshot")
+        })?;
+        if !snapshot.matches_tree(&frontend.snapshot.tree)
+            || !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
+        {
+            return Err(std::io::Error::other(
+                "selected capture source snapshot mismatch",
+            ));
+        }
+        snapshot.selected.capture(current);
+        Ok(())
     }
     pub(crate) fn finish_published(&mut self, pair: &crate::publish::OutputPair) {
         self.finish(Some(pair.name()));

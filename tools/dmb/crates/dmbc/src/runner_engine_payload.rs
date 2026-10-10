@@ -17,6 +17,7 @@ pub(crate) struct EnginePayload {
     compiler: u128,
     pub(super) links: Mutex<Option<EngineLinkFacts>>,
     seed: OnceLock<dm_tree::frontend::EngineSeed>,
+    pub(super) normalized: Arc<dm_tree::SharedNormalizedDeclarations>,
 }
 impl EnginePayload {
     pub(crate) fn capture(
@@ -42,6 +43,7 @@ impl EnginePayload {
             compiler,
             links: Mutex::new(None),
             seed: OnceLock::new(),
+            normalized: Arc::new(dm_tree::SharedNormalizedDeclarations::default()),
         }))
     }
     pub(crate) fn frontend_seed(&self) -> &dm_tree::frontend::EngineSeed {

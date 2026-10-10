@@ -535,7 +535,11 @@ impl BuildHost {
         self.host_facts = None;
         self.maps = None;
         if self.semantic.is_some() {
-            self.semantic = Some(dm_tree::frontend::RetainedSemanticTree::new());
+            self.semantic = Some(
+                dm_tree::frontend::RetainedSemanticTree::with_shared_normalized(Arc::clone(
+                    &retained.payload.normalized,
+                )),
+            );
             *self
                 .query_state
                 .lock()

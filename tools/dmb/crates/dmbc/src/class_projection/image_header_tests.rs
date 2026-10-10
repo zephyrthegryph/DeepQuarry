@@ -81,6 +81,7 @@ fn image_defaults_and_authored_headers_follow_semantic_parent_family() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        field_placements: Default::default(),
         shared_slot_order: Arc::from([]),
         procedure_statics: Arc::from([]),
         runtime_writes: Arc::from([]),

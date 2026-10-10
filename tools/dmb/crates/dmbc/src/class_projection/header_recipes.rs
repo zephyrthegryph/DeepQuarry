@@ -156,36 +156,16 @@ fn produce(
     let effective_overrides = parent.effective_overrides.extend(overrides);
     let mut inherited_fields = Vec::new();
     if !parent.owner.is_empty() {
-        for name in [
-            "desc",
-            "icon",
-            "icon_state",
-            "layer",
-            "dir",
-            "maptext",
-            "suffix",
-            "maptext_width",
-            "maptext_height",
-            "maptext_x",
-            "maptext_y",
-            "transform",
-            "invisibility",
-            "density",
-            "opacity",
-            "appearance_flags",
-            "luminosity",
-            "mouse_opacity",
-            "animate_movement",
-        ] {
-            if !local.contains(name) {
+        for field in super::headers::fields::FIELDS {
+            let name = field.name;
+            let eligible = match name {
+                "name" => parent.authored_name,
+                "text" => parent.authored_text,
+                _ => true,
+            };
+            if eligible && !local.contains(name) {
                 inherited_fields.push(name.to_owned());
             }
-        }
-        if parent.authored_name && !local.contains("name") {
-            inherited_fields.push("name".to_owned());
-        }
-        if parent.authored_text && !local.contains("text") {
-            inherited_fields.push("text".to_owned());
         }
     }
     HeaderRecipe {
@@ -214,7 +194,7 @@ impl HeaderRecipes {
         native: BTreeSet<Vec<u8>>,
         parent: &Arc<HeaderRecipe>,
     ) -> (Vec<u8>, Arc<HeaderRecipe>) {
-        let mut key = b"dmbc-header-decisions-v1\0".to_vec();
+        let mut key = b"dmbc-header-decisions-v3-shared-fields\0".to_vec();
         key.extend_from_slice(&(owner.len() as u64).to_le_bytes());
         key.extend_from_slice(owner);
         strings(&mut key, authored);
@@ -324,6 +304,89 @@ mod tests {
     use super::*;
     fn names(values: &[&str]) -> BTreeSet<String> {
         values.iter().map(|v| (*v).to_owned()).collect()
+    }
+    #[test]
+    fn retained_inheritance_covers_the_wire_catalog_and_respects_local_overrides() {
+        let parent = HeaderRecipe {
+            owner: b"/obj/parent".to_vec(),
+            authored_name: true,
+            authored_text: true,
+            ..Default::default()
+        };
+        let empty = BTreeSet::new();
+        let all = produce(
+            b"/obj/child",
+            &empty,
+            &empty,
+            empty.clone(),
+            BTreeSet::new(),
+            &parent,
+        );
+        let expected = names(&[
+            "desc",
+            "icon",
+            "icon_state",
+            "name",
+            "text",
+            "layer",
+            "dir",
+            "maptext",
+            "suffix",
+            "maptext_width",
+            "maptext_height",
+            "maptext_x",
+            "maptext_y",
+            "transform",
+            "invisibility",
+            "gender",
+            "density",
+            "opacity",
+            "appearance_flags",
+            "luminosity",
+            "mouse_opacity",
+            "animate_movement",
+        ]);
+        assert_eq!(
+            all.inherited_fields
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>(),
+            expected
+        );
+        let local = names(&["gender", "icon", "name", "maptext_y"]);
+        let partial = produce(
+            b"/obj/child",
+            &local,
+            &empty,
+            local.clone(),
+            BTreeSet::new(),
+            &parent,
+        );
+        assert_eq!(
+            partial
+                .inherited_fields
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>(),
+            expected.difference(&local).cloned().collect()
+        );
+        let unauthored = HeaderRecipe {
+            authored_name: false,
+            authored_text: false,
+            ..parent
+        };
+        let ordinary = produce(
+            b"/obj/child",
+            &empty,
+            &empty,
+            empty.clone(),
+            BTreeSet::new(),
+            &unauthored,
+        );
+        assert!(!ordinary
+            .inherited_fields
+            .iter()
+            .any(|name| name == "name" || name == "text"));
     }
     #[test]
     fn membership_layers_match_flat_legacy_union_and_share_empty_branches() {

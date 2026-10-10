@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import Juke from '../juke/index.js';
+import { classifyResourceReport } from './shadow_resources';
 import type { ByondCompilationResult, DreamMakerOptions } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, type CompiledOutput, type NativePairOutput } from './native_pair';
 
@@ -182,12 +183,23 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
     }
+    const resourceReport = path.join(artifacts, 'resource-diff.json');
+    const resourceCompared = await execute(inspector, ['rsc-diff', path.resolve(dme.replace(/\.dme$/i, '.rsc')), nativeRsc, resourceReport, snapshot], { throw: false });
+    let resourceAdmission: ReturnType<typeof classifyResourceReport>;
+    if (resourceCompared.code !== 0) {
+      resourceAdmission = { status: 'incomplete', reason: `resource inspector failed or exceeded its 32MiB entry bound (${resourceCompared.code})` };
+    } else {
+      try { resourceAdmission = classifyResourceReport(JSON.parse(fs.readFileSync(resourceReport, 'utf8')), snapshot); }
+      catch (error) { resourceAdmission = { status: 'invalid_report', reason: String(error) }; }
+    }
+    fs.writeFileSync(path.join(artifacts, 'resource-admission.json'), JSON.stringify(resourceAdmission, null, 2));
     let admission: ShadowAdmission;
     try { admission = classifyShadowReport(JSON.parse(fs.readFileSync(report, 'utf8')), snapshot); }
     catch (error) { admission = { status: 'invalid_report', reason: String(error) }; }
     const structuralAdmission = admission;
+    if (admission.status === 'parity' && resourceAdmission.status !== 'parity') admission = resourceAdmission;
     if (admission.status === 'parity') admission = sourceSnapshot;
-    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, sourceSnapshot }, null, 2));
+    fs.writeFileSync(path.join(artifacts, 'structural-admission.json'), JSON.stringify({ ...admission, structuralAdmission, resourceAdmission, sourceSnapshot }, null, 2));
     if (admission.status !== 'parity') {
       Juke.logger.error(`Shadow ${admission.status}: ${admission.reason}. See ${report}.`);
       throw new Juke.ExitCode(1);

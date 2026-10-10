@@ -1,5 +1,7 @@
 //! Bounded read-only queries against an existing retained semantic snapshot.
 use serde::{Deserialize, Serialize};
+#[path = "query/selected_envelope.rs"]
+mod selected_envelope;
 use std::{
     collections::BTreeMap,
     io::{self, Write},
@@ -21,6 +23,10 @@ pub struct QueryRequest {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SourceQuery {
+    /// Only facts already issued by explicit analyze --resolved; never relowers.
+    SelectedReferences {
+        ordinal: u32,
+    },
     /// Ordinal belongs only to the explicitly pinned current source revision.
     Occurrence {
         ordinal: u32,
@@ -142,6 +148,11 @@ fn validate_reply(
     let (mut rows, mut source_rows) = (0, 0);
     for line in reply.jsonl.lines() {
         let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+        if row["row"] == "source_selected_references" {
+            selected_envelope::validate(&row, reply.source_revision.as_deref())?;
+            source_rows += 1;
+            continue;
+        }
         if (row["row"] == "source_occurrence" || row["row"] == "source_provenance")
             && row["schema"] == "dm-session-source-query-v1"
         {
@@ -195,7 +206,7 @@ pub fn run_file(path: &std::path::Path, jsonl: bool) -> Result<(), Box<dyn std::
 }
 const MAX_QUERIES: usize = 128;
 const MAX_REQUEST: usize = 65536;
-const MAX_OUTPUT: usize = 524288;
+pub(crate) const MAX_OUTPUT: usize = 524288;
 impl QueryRequest {
     pub(super) fn validate(&self) -> io::Result<()> {
         if self.queries.len().saturating_add(self.source_queries.len()) > MAX_QUERIES
@@ -317,9 +328,14 @@ pub(super) fn evaluate_snapshot(
         let snapshot = snapshot.ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "source snapshot unavailable")
         })?;
+        if let SourceQuery::SelectedReferences { ordinal } = question {
+            snapshot.write_selected(*ordinal, &mut output)?;
+            continue;
+        }
         let (ordinal, provenance) = match question {
             SourceQuery::Occurrence { ordinal } => (*ordinal, false),
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
+            SourceQuery::SelectedReferences { .. } => unreachable!("handled above"),
         };
         let mut row = snapshot.occurrence(ordinal, tree)?;
         if provenance {
@@ -330,7 +346,7 @@ pub(super) fn evaluate_snapshot(
     }
     Ok(QueryReply {
         schema: "dm-session-query-v2".into(), revision, complete: false,
-        coverage: "semantic tree plus caller-selected issued declaration occurrences and source/definition spans; executable references, full macro traces and pinned resource/runtime host facts excluded".into(),
+        coverage: "semantic tree plus caller-selected issued declaration occurrences and source/definition spans; bounded previously captured compiler-selected references only; complete executable resolution, full macro traces and pinned resource/runtime host facts excluded".into(),
         query_count: request.queries.len(), source_query_count: request.source_queries.len(), source_revision,
         snapshot_outcome: snapshot.map_or("semantic_snapshot_only", |snapshot| snapshot.outcome).into(),
         last_request_outcome: state.last_request_outcome.into(),
@@ -595,3 +611,7 @@ mod tests {
         assert!(validate_reply(&reply, 1, 0, None, None).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "query/selected_tests.rs"]
+mod selected_tests;

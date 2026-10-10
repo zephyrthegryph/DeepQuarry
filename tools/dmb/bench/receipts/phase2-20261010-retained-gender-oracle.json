@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "Failed fresh-native oracle; no performance or BYOND acceptance",
+  "compiler_commit": "73744c4af4b92b21b7c3dcb0286380cb4962a777",
+  "diagnostic_receipt": "E:/dq-cache/dmb-native-v2/idle-diagnostics/20261010-001455-b7b4abff/receipt.json",
+  "status": "failed",
+  "failure": "Retained initial DMB differed from independent fresh native output.",
+  "comparison": {
+    "dmb_bytes_each": 59223433,
+    "different_bytes": 989,
+    "difference_location": "Gender class-header bytes; no procedure-code byte differences observed.",
+    "rsc_bytes_each": 223679650
+  },
+  "root_cause": "The retained header recipe field whitelist omitted gender; fresh output inherited authored gender correctly.",
+  "correction": "Use one shared header-field catalog for fresh inheritance and retained recipes, including gender; version the recipe policy. Captured golden compares complete fresh, first-retained and warm-retained DMB bytes.",
+  "correction_status": "Captured gender and full-catalog inheritance fixtures passed; full DeepQuarry fresh-native oracle remains pending.",
+  "cleanup": {
+    "owned_daemon_pid": 44792,
+    "reaped": true
+  },
+  "limits": [
+    "This run produced no admitted iteration timings.",
+    "Whole-program BYOND structural and runtime acceptance remain open."
+  ],
+  "focused_validation_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261010-003226-7ef8c8d4.json"
+}

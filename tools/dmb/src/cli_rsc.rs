@@ -1,4 +1,5 @@
 use crate::load_dmb;
+mod rsc_diff;
 use byond_dmb::rsc::{read_entry, write_entry, Entry};
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
@@ -7,6 +8,7 @@ pub(crate) fn execute(name: &str, args: &[String]) -> io::Result<()> {
     match name {
         "pair-info" => pair_info(args),
         "rsc-info" => rsc_info(args),
+        "rsc-diff" => rsc_diff::execute(args),
         "rsc-kind-audit" => rsc_kind_audit(args),
         "rsc-id-audit" => rsc_id_audit(args),
         "rsc-copy" => rsc_copy(args),

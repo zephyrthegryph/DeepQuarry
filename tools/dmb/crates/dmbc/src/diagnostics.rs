@@ -58,3 +58,18 @@ fn write_one(
     };
     writeln!(output, "{classification}: {message}")
 }
+
+/// Preserve the shared current source presentation and typed CLI/daemon status.
+pub fn report_source_error(
+    diagnostic: crate::lowering::LoweringDiagnostic,
+) -> io::Result<crate::request_failure::RequestFailure> {
+    if diagnostic.kind != DiagnosticKind::SourceError {
+        return Ok(crate::request_failure::RequestFailure::internal(
+            "projection source error has an invalid classification",
+        ));
+    }
+    write_lowering_diagnostics(&mut crate::daemon::stderr_writer(), &[diagnostic])?;
+    Ok(crate::request_failure::RequestFailure::source(
+        "native compilation rejected invalid source",
+    ))
+}
