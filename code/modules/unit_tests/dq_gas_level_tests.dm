@@ -91,6 +91,7 @@
 /datum/unit_test/dq_gas_level_disposal_wakes_when_air_returns/Run()
 	var/turf/simulated/floor/T = gas_level_test_room()
 	var/obj/machinery/disposal/disposal = allocate(/obj/machinery/disposal, T)
+	disposal.set_grid_power(TRUE) // the test room's area may be left unpowered by an earlier test: this is about the gas wake, not the grid
 	disposal.air_contents.clear()
 	var/datum/gas_mixture/environment = T.return_air()
 	var/datum/gas_mixture/standard = environment.copy()
