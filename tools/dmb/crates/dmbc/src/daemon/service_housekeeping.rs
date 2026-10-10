@@ -89,7 +89,7 @@ impl Shared {
             }
             super::super::emit_stderr(format_args!(
                 "dmbd idle release tier={} project={} pressure={pressured}",
-                if next >= 2 { "artifacts" } else { "executor" },
+                if next >= 2 { "rich-buffers" } else { "executor" },
                 key.manifest.display()
             ));
         }

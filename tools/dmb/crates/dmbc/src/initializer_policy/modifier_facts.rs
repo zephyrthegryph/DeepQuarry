@@ -145,6 +145,13 @@ impl Default for ModifierArtifacts {
     }
 }
 impl ModifierArtifacts {
+    pub(super) fn visit_storage(
+        &self,
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierFact>),
+    ) {
+        self.values.visit_storage(visitor);
+    }
+
     pub(super) fn with_limit(bytes: usize) -> Self {
         Self {
             values: dm_session::ArtifactStore::with_limit(bytes),

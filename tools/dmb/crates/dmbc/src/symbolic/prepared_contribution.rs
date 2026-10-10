@@ -12,8 +12,17 @@ pub struct PreparedContribution {
     required_types: Vec<SymbolId>,
     modified_seeds: Vec<PreparedModifiedSeed>,
     modified_recipes: Option<Vec<crate::modified_initializers::SourceRecipe>>,
+    selected_facts: Option<Arc<dm_ir::SelectedReferences>>,
 }
 impl PreparedContribution {
+    pub(crate) fn current_source(&self) -> &dm_tree::frontend::SourceLocation {
+        self.contribution.current_source()
+    }
+
+    pub(crate) fn selected_facts(&self) -> Option<&Arc<dm_ir::SelectedReferences>> {
+        self.selected_facts.as_ref()
+    }
+
     pub(crate) fn variable_record_count(&self) -> Option<usize> {
         self.contribution.variable_record_count()
     }
@@ -82,10 +91,25 @@ impl PreparedContribution {
             required_types: required_types.to_vec(),
             modified_seeds,
             modified_recipes,
+            selected_facts: None,
         })
     }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         self.contribution.census(census);
+        if let Some(facts) = &self.selected_facts {
+            let size = std::mem::size_of::<dm_ir::SelectedReferences>();
+            if census.exposed_buffer(
+                "prepared_selections",
+                Arc::as_ptr(facts) as usize,
+                size,
+                size,
+            ) && census.vec_payload("prepared_selections", &facts.references)
+            {
+                for reference in &facts.references {
+                    census.vec_payload("prepared_selections", &reference.path);
+                }
+            }
+        }
         census.vec_payload("prepared_type_requests", &self.required_types);
         census.vec_payload("prepared_modified_seeds", &self.modified_seeds);
         for seed in &self.modified_seeds {
@@ -148,7 +172,7 @@ fn sidecars(
     Ok(())
 }
 pub fn prepare_contribution(
-    unit: LoweredUnit,
+    mut unit: LoweredUnit,
     symbols: &SymbolTable,
     source_bindings: &std::collections::BTreeSet<SymRef>,
     external: &ReferenceBindings,
@@ -186,6 +210,7 @@ pub fn prepare_contribution(
     } else {
         None
     };
+    let selected_facts = unit.selected_references.take();
     let contribution =
         parallel::freeze_unit(unit, symbols, source_bindings, external, freeze_detail)?;
     if required_types.capacity() > required_types.len() {
@@ -201,6 +226,7 @@ pub fn prepare_contribution(
         required_types,
         modified_seeds,
         modified_recipes,
+        selected_facts,
     })
 }
 /// Replay pre-frozen contributions in the same source order as ordinary lowering.

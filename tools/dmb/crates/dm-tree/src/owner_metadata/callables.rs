@@ -19,6 +19,15 @@ pub struct CallableInputs {
     pub complete: bool,
     pub hierarchy_certified: bool,
 }
+pub(super) fn issue_token() -> Option<u64> {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    NEXT.fetch_update(
+        std::sync::atomic::Ordering::Relaxed,
+        std::sync::atomic::Ordering::Relaxed,
+        |value| value.checked_add(1),
+    )
+    .ok()
+}
 pub(super) fn key(owner: SymbolId) -> Arc<[u8]> {
     let mut bytes = b"owner-callable-certificate-v1".to_vec();
     bytes.extend_from_slice(&owner.bits().to_le_bytes());
@@ -108,12 +117,7 @@ impl RetainedMetadata {
                     continue;
                 }
             }
-            static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-            let Ok(version) = NEXT.fetch_update(
-                std::sync::atomic::Ordering::Relaxed,
-                std::sync::atomic::Ordering::Relaxed,
-                |value| value.checked_add(1),
-            ) else {
+            let Some(version) = issue_token() else {
                 continue;
             };
             let version = u128::from(version);
@@ -134,6 +138,7 @@ impl RetainedMetadata {
                     }),
                     hierarchy: None,
                     callable: Some((Arc::clone(&inputs[&node.path]), version)),
+                    variable: None,
                 },
             );
             certificates.insert(node.path, version);

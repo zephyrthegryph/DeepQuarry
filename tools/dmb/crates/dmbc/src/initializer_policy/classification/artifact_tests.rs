@@ -170,7 +170,10 @@ fn runtime_recipe_binds_fresh_syntax_and_matches_uncached_result() {
     assert_eq!(second.write.default, fresh.write.default);
     assert_eq!(second.write.phase, fresh.write.phase);
     assert_eq!(second.write.runtime_value, fresh.write.runtime_value);
-    assert_eq!(second.key, fresh.key);
+    assert_eq!(
+        second.accepted.as_ref().and_then(|value| value.token_key()),
+        fresh.key.as_ref()
+    );
     let (Some(RuntimeValue::Expression(a)), Some(RuntimeValue::Expression(b))) =
         (&first.write.runtime_value, &second.write.runtime_value)
     else {
@@ -205,7 +208,7 @@ fn ordered_roster_reassembly_preserves_tokens_groups_and_modifier_error_preceden
         value: AtomicU32::new(7f32.to_bits()),
         version: AtomicU64::new(1),
     };
-    let store = InitializerArtifacts::with_limit(1024 * 1024);
+    let store = InitializerArtifacts::default();
     let evaluator = crate::driver_facts::DriverEvaluator {
         pure_calls: None,
         resource_search_context: None,
@@ -253,6 +256,92 @@ fn ordered_roster_reassembly_preserves_tokens_groups_and_modifier_error_preceden
             .collect::<Vec<_>>()
     );
     assert_eq!(store.hits.load(Ordering::Relaxed), 2);
+    assert_eq!(store.token_roster_reuse_counts(), (1, 1));
+    let census_before = crate::heap_census::initializer_artifacts::inspect(&store);
+    let mut repeated = crate::heap_census::HeapCensus::new("initializer_dedup");
+    repeated.initializer_artifacts(&store);
+    repeated.initializer_artifacts(&store);
+    assert_eq!(
+        repeated.finish().unique_known_capacity_bytes,
+        census_before.unique_known_capacity_bytes
+    );
+    store.release_runtime_syntax();
+    let census_after = crate::heap_census::initializer_artifacts::inspect(&store);
+    assert!(census_after.unique_known_capacity_bytes < census_before.unique_known_capacity_bytes);
+    assert!(census_before.owners.iter().any(|owner| owner.owner
+        == "initializer_classification.runtime_ast"
+        && owner.unique_known_capacity_bytes > 0));
+    assert!(census_after
+        .owners
+        .iter()
+        .all(|owner| owner.owner != "initializer_classification.runtime_ast"));
+    assert!(census_after
+        .owners
+        .iter()
+        .any(|owner| owner.owner == "initializer_token_roster.tokens"
+            && owner.unique_known_capacity_bytes > 0));
+    // The accepted semantic owners and their global token roster survive; only
+    // recreatable source-local expression caches are released.
+    let after_pressure = run();
+    for (actual, expected) in after_pressure.writes.iter().zip(&fresh.writes) {
+        assert_eq!(actual.default, expected.default);
+        assert_eq!(actual.runtime_value, expected.runtime_value);
+        assert_eq!(actual.source_ordinal, expected.source_ordinal);
+    }
+    assert_eq!(store.token_roster_reuse_counts(), (2, 1));
+
+    // Changed dependency replaces its admitted semantic owner; canonical token/group
+    // layout must be rebuilt even when the authored write roster is identical.
+    host.value.store(9f32.to_bits(), Ordering::Relaxed);
+    host.version.store(2, Ordering::Relaxed);
+    let changed = run();
+    assert_eq!(store.token_roster_reuse_counts(), (2, 2));
+    let changed_fresh = crate::initializer_policy::classify_with_token_mode_on_executor(
+        &roster, &symbols, factory, false, &executor,
+    )
+    .unwrap();
+    for (a, b) in changed.writes.iter().zip(&changed_fresh.writes) {
+        assert_eq!(a.default, b.default);
+        assert_eq!(a.runtime_value, b.runtime_value);
+    }
+    let debug_cached = crate::initializer_policy::classify_with_reuse_on_executor(
+        &roster, &symbols, factory, true, &executor, reuse,
+    )
+    .unwrap();
+    let debug_fresh = crate::initializer_policy::classify_with_token_mode_on_executor(
+        &roster, &symbols, factory, true, &executor,
+    )
+    .unwrap();
+    for (a, b) in debug_cached.writes.iter().zip(&debug_fresh.writes) {
+        assert_eq!(a.default, b.default);
+    }
+    assert_eq!(store.token_roster_reuse_counts(), (2, 3));
+    let reversed = [roster[1].clone(), roster[0].clone()];
+    let reversed_cached = crate::initializer_policy::classify_with_reuse_on_executor(
+        &reversed, &symbols, factory, true, &executor, reuse,
+    )
+    .unwrap();
+    let reversed_fresh = crate::initializer_policy::classify_with_token_mode_on_executor(
+        &reversed, &symbols, factory, true, &executor,
+    )
+    .unwrap();
+    for (a, b) in reversed_cached.writes.iter().zip(&reversed_fresh.writes) {
+        assert_eq!(a.default, b.default);
+        assert_eq!(a.source_ordinal, b.source_ordinal);
+    }
+    assert_eq!(
+        reversed_cached
+            .groups
+            .iter()
+            .map(|g| (&g.receiver, &g.writes))
+            .collect::<Vec<_>>(),
+        reversed_fresh
+            .groups
+            .iter()
+            .map(|g| (&g.receiver, &g.writes))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(store.token_roster_reuse_counts(), (2, 4));
     // The later missing modifier must fail before evaluating the earlier invalid expression.
     let mut invalid = roster.clone();
     invalid[0].value = InitializerValue::Expression(
@@ -347,4 +436,69 @@ fn opaque_pure_call_provider_never_admits_unrecorded_external_answers() {
     assert_ne!(first.write.default, second.write.default);
     assert_eq!(store.hits.load(Ordering::Relaxed), 0);
     assert_eq!(store.recomputed.load(Ordering::Relaxed), 0);
+}
+
+#[test]
+fn roster_hit_updates_current_error_ordinal_without_using_it_as_token_seed() {
+    let mut symbols = SymbolTable::default();
+    let write = write("list(1,2)", &mut symbols);
+    let host = Host {
+        value: AtomicU32::new(0),
+        version: AtomicU64::new(1),
+    };
+    let store = InitializerArtifacts::default();
+    let evaluator = crate::driver_facts::DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: &host,
+        symbols: &symbols,
+    };
+    let factory = evaluator.parallel_evaluator().unwrap();
+    let reuse = InitializerReuse {
+        store: &store,
+        resolver: &host,
+        policy: 1,
+        resource_search_context: None,
+    };
+    let pending = |ordinal| {
+        classify_one(
+            &write,
+            &symbols,
+            &evaluator,
+            ModifierFact::Known(8),
+            ordinal,
+            factory,
+            reuse,
+        )
+        .unwrap()
+    };
+    let mut original_scratch = 999;
+    store
+        .roster
+        .finish(vec![pending(7)], false, &mut original_scratch)
+        .unwrap();
+    assert_eq!(original_scratch, 7);
+    let mut current_scratch = 123;
+    let replay = store
+        .roster
+        .finish(vec![pending(41)], false, &mut current_scratch)
+        .unwrap();
+    let mut fresh_scratch = 456;
+    let fresh = finish_pending(vec![pending(41)].into_iter(), false, &mut fresh_scratch).unwrap();
+    assert_eq!(current_scratch, fresh_scratch);
+    assert_eq!(current_scratch, 41);
+    assert_eq!(replay.writes[0].default, fresh.writes[0].default);
+    assert_eq!(replay.writes[0].source_ordinal, 41);
+    assert_eq!(store.token_roster_reuse_counts(), (1, 1));
+    // Empty producer input leaves the error scratch unchanged in both paths.
+    let mut empty_scratch = 87;
+    store
+        .roster
+        .finish(Vec::new(), false, &mut empty_scratch)
+        .unwrap();
+    store
+        .roster
+        .finish(Vec::new(), false, &mut empty_scratch)
+        .unwrap();
+    assert_eq!(empty_scratch, 87);
 }

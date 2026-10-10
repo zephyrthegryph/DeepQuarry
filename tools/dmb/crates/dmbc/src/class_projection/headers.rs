@@ -33,6 +33,7 @@ pub(crate) fn finalize_headers_with_strings(
     finalize_headers_with_roster(dmb, engine_bytes, projection, tables, symbols, pool, None)
 }
 #[allow(clippy::too_many_arguments)]
+#[cfg(test)]
 pub(crate) fn finalize_headers_with_roster(
     dmb: &mut Dmb,
     engine_bytes: &[u8],
@@ -42,8 +43,46 @@ pub(crate) fn finalize_headers_with_roster(
     pool: &mut crate::composition::StringIndex,
     roster: Option<&MaterializedClassRoster>,
 ) -> Result<(), ProjectionError> {
+    finalize_headers_retained(
+        dmb,
+        engine_bytes,
+        projection,
+        tables,
+        symbols,
+        pool,
+        roster,
+        None,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn finalize_headers_retained(
+    dmb: &mut Dmb,
+    engine_bytes: &[u8],
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &SymbolTable,
+    pool: &mut crate::composition::StringIndex,
+    roster: Option<&MaterializedClassRoster>,
+    recipes: Option<&HeaderRecipes>,
+) -> Result<(), ProjectionError> {
     let engine = Dmb::from_bytes(engine_bytes)
         .map_err(|error| ProjectionError::Unsupported(format!("header engine {error}")))?;
+    finalize_headers_with_engine(
+        dmb, &engine, projection, tables, symbols, pool, roster, recipes,
+    )
+}
+/// The supplied model must be the authenticated pinned engine owner used by composition.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn finalize_headers_with_engine(
+    dmb: &mut Dmb,
+    engine: &Dmb,
+    projection: &ClassProjection,
+    tables: &dm_link::LinkTables,
+    symbols: &SymbolTable,
+    pool: &mut crate::composition::StringIndex,
+    roster: Option<&MaterializedClassRoster>,
+    recipes: Option<&HeaderRecipes>,
+) -> Result<(), ProjectionError> {
     let engine_classes = engine
         .classes
         .iter()
@@ -126,6 +165,9 @@ pub(crate) fn finalize_headers_with_roster(
     let mut effective_overrides: HashMap<u32, Arc<HashSet<&str>>> = HashMap::new();
     let mut authored_name = HashSet::new();
     let mut authored_text = HashSet::new();
+    let mut effective_recipes = HashMap::new();
+    let mut recipe_keys = Vec::new();
+    let mut default_keys = Vec::new();
 
     for id in order {
         let authored = own.get(&id).cloned().unwrap_or_default();
@@ -147,7 +189,7 @@ pub(crate) fn finalize_headers_with_roster(
         if let Some(engine_id) = engine_id {
             let prototype = &engine.classes[engine_id];
             if let Some(parent) = engine.classes.get(prototype.parent_class_id() as usize) {
-                native_header_differences(&engine, prototype, parent, &mut local);
+                native_header_differences(engine, prototype, parent, &mut local);
                 let parent_defaults = engine
                     .class_builtin_overrides(prototype.parent_class_id() as usize)
                     .unwrap_or_default();
@@ -168,10 +210,53 @@ pub(crate) fn finalize_headers_with_roster(
                 }
             }
         }
-        local.retain(|name| authored.contains(name) || !inherited_authored.contains(name));
-        native_override_names.retain(|name| {
-            !std::str::from_utf8(name).is_ok_and(|name| inherited_overrides.contains(name))
-        });
+        let mut retained_recipe = None;
+        let mut recipe_native_names = None;
+        if let Some(store) = recipes {
+            let parent_recipe = effective_recipes
+                .get(&parent_id)
+                .cloned()
+                .unwrap_or_else(|| {
+                    Arc::new(header_recipes::HeaderRecipe {
+                        owner: dmb
+                            .classes
+                            .get(parent_id as usize)
+                            .and_then(|record| dmb.string(record.path_string_id()))
+                            .unwrap_or_default()
+                            .to_vec(),
+                        ..header_recipes::HeaderRecipe::default()
+                    })
+                });
+            let authored_owned = authored.iter().map(|name| (*name).to_owned()).collect();
+            let override_owned = override_own
+                .get(&id)
+                .into_iter()
+                .flatten()
+                .map(|name| (*name).to_owned())
+                .collect();
+            let local_owned = local.iter().map(|name| (*name).to_owned()).collect();
+            let native_owned = native_override_names.iter().cloned().collect();
+            let (key, recipe) = store.obtain(
+                path,
+                &authored_owned,
+                &override_owned,
+                local_owned,
+                native_owned,
+                &parent_recipe,
+            );
+            recipe_keys.push(key);
+            recipe_native_names = Some(recipe.native_overrides.iter().cloned().collect());
+            retained_recipe = Some(recipe);
+        } else {
+            local.retain(|name| authored.contains(name) || !inherited_authored.contains(name));
+            native_override_names.retain(|name| {
+                !std::str::from_utf8(name).is_ok_and(|name| inherited_overrides.contains(name))
+            });
+        }
+        if let Some(recipe) = &retained_recipe {
+            local = recipe.local.iter().map(String::as_str).collect();
+        }
+        let native_override_names = recipe_native_names.unwrap_or(native_override_names);
         let inherited_name = authored_name.contains(&parent_id);
         let inherited_text = authored_text.contains(&parent_id);
         if parent_id != NONE {
@@ -180,20 +265,35 @@ pub(crate) fn finalize_headers_with_roster(
                 .get(parent_id as usize)
                 .ok_or(ProjectionError::MissingMember)?
                 .clone();
-            inherit_record(
-                &parent,
-                &mut dmb.classes[id as usize],
-                &local,
-                inherited_name,
-                inherited_text,
-            )?;
-            inherit_overrides(
+            if let Some(recipe) = &retained_recipe {
+                inherit_record_selected(&parent, &mut dmb.classes[id as usize], |name| {
+                    recipe.inherited_fields.iter().any(|field| field == name)
+                })?;
+            } else {
+                inherit_record(
+                    &parent,
+                    &mut dmb.classes[id as usize],
+                    &local,
+                    inherited_name,
+                    inherited_text,
+                )?;
+            }
+            let owner_path = retained_recipe
+                .as_ref()
+                .map(|recipe| recipe.owner.as_slice())
+                .unwrap_or_default();
+            inherit_overrides_retained(
                 dmb,
                 id,
                 parent_id,
                 override_own.get(&id).unwrap_or(&HashSet::new()),
                 &native_override_names,
+                recipes.map(|store| (store, owner_path)),
+                &mut default_keys,
             )?;
+        }
+        if let Some(recipe) = retained_recipe {
+            effective_recipes.insert(id, recipe);
         }
         effective_authored.insert(id, extend_provenance(inherited_authored, &authored));
         effective_overrides.insert(
@@ -251,6 +351,10 @@ pub(crate) fn finalize_headers_with_roster(
                 None => NONE,
             };
         }
+    }
+    if let Some(store) = recipes {
+        store.retain_current(&recipe_keys);
+        store.retain_default_keys(&default_keys);
     }
     Ok(())
 }
@@ -331,27 +435,41 @@ fn inherit_record(
     authored_name: bool,
     authored_text: bool,
 ) -> Result<(), ProjectionError> {
+    inherit_record_selected(parent, child, |name| {
+        !own.contains(name)
+            && match name {
+                "name" => authored_name,
+                "text" => authored_text,
+                _ => true,
+            }
+    })
+}
+fn inherit_record_selected(
+    parent: &Class,
+    child: &mut Class,
+    inherit: impl Fn(&str) -> bool,
+) -> Result<(), ProjectionError> {
     for (name, slot) in [("desc", 3), ("icon", 4), ("icon_state", 5)] {
-        if !own.contains(name) {
+        if inherit(name) {
             child.initial_ids[slot] = parent.initial_ids[slot];
         }
     }
-    if authored_name && !own.contains("name") {
+    if inherit("name") {
         child.initial_ids[2] = parent.initial_ids[2];
     }
-    if authored_text && !own.contains("text") {
+    if inherit("text") {
         child.text = parent.text;
     }
-    if !own.contains("layer") {
+    if inherit("layer") {
         child.layer_bits = parent.layer_bits;
     }
-    if !own.contains("dir") {
+    if inherit("dir") {
         child.direction = parent.direction;
     }
-    if !own.contains("maptext") {
+    if inherit("maptext") {
         child.maptext = parent.maptext;
     }
-    if !own.contains("suffix") {
+    if inherit("suffix") {
         child.suffix = parent.suffix;
     }
     for (name, slot) in [
@@ -360,37 +478,37 @@ fn inherit_record(
         ("maptext_x", 2),
         ("maptext_y", 3),
     ] {
-        if !own.contains(name) {
+        if inherit(name) {
             child.maptext_geometry[slot] = parent.maptext_geometry[slot];
         }
     }
-    if !own.contains("transform") {
+    if inherit("transform") {
         child.transform_flag = parent.transform_flag;
         child.transform = parent.transform;
     }
-    if !own.contains("invisibility") {
+    if inherit("invisibility") {
         child.set_normally_visible(parent.is_normally_visible());
     }
-    if !own.contains("density") {
+    if inherit("density") {
         child.set_dense(parent.is_dense());
     }
-    if !own.contains("opacity") {
+    if inherit("opacity") {
         child.set_opaque(parent.is_opaque());
     }
-    if !own.contains("appearance_flags") {
+    if inherit("appearance_flags") {
         child.set_appearance_flags(parent.appearance_flags());
     }
-    if !own.contains("luminosity") {
+    if inherit("luminosity") {
         child
             .set_luminosity(parent.luminosity())
             .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
     }
-    if !own.contains("mouse_opacity") {
+    if inherit("mouse_opacity") {
         child
             .set_mouse_opacity(parent.mouse_opacity())
             .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
     }
-    if !own.contains("animate_movement") {
+    if inherit("animate_movement") {
         child
             .set_animate_movement(parent.animate_movement())
             .map_err(|e| ProjectionError::Unsupported(e.to_string()))?;
@@ -459,12 +577,33 @@ fn native_header_differences(engine: &Dmb, child: &Class, parent: &Class, own: &
     }
 }
 
+#[cfg(test)]
 fn inherit_overrides(
     dmb: &mut Dmb,
     child: u32,
     parent: u32,
     authored: &HashSet<&str>,
     native_names: &HashSet<Vec<u8>>,
+) -> Result<(), ProjectionError> {
+    inherit_overrides_retained(
+        dmb,
+        child,
+        parent,
+        authored,
+        native_names,
+        None,
+        &mut Vec::new(),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn inherit_overrides_retained(
+    dmb: &mut Dmb,
+    child: u32,
+    parent: u32,
+    authored: &HashSet<&str>,
+    native_names: &HashSet<Vec<u8>>,
+    retention: Option<(&HeaderRecipes, &[u8])>,
+    current_keys: &mut Vec<Vec<u8>>,
 ) -> Result<(), ProjectionError> {
     let decode = |id: u32| {
         if dmb.classes[id as usize].overrides == NONE {
@@ -496,6 +635,58 @@ fn inherit_overrides(
         })
         .collect::<Result<HashSet<_>, _>>()?;
     let mut words = Vec::new();
+    if let Some((store, owner)) = retention {
+        let names = |rows: &[byond_dmb::dmb::ClassBuiltinOverride]| {
+            rows.iter()
+                .map(|row| {
+                    dmb.string(row.name_string_id)
+                        .map(<[u8]>::to_vec)
+                        .ok_or(ProjectionError::MissingMember)
+                })
+                .collect::<Result<Vec<_>, _>>()
+        };
+        // Parent malformed names historically do not prevent emission. Preserve that
+        // behavior by declining selectors and using the exact ordinary producer.
+        let selectors = names(&parent_values).and_then(|parent_names| {
+            names(&own_values).map(|own_names| store.defaults(owner, &parent_names, &own_names))
+        });
+        if let Ok((key, selectors)) = selectors {
+            current_keys.push(key);
+            for selector in selectors.iter() {
+                let rows = if selector.from_parent {
+                    &parent_values
+                } else {
+                    &own_values
+                };
+                let value = rows
+                    .get(selector.ordinal)
+                    .ok_or(ProjectionError::MissingMember)?;
+                if dmb.string(value.name_string_id) != Some(selector.name.as_slice()) {
+                    return Err(ProjectionError::MissingMember);
+                }
+                words.push(value.name_string_id);
+                words.extend(value.value.encode());
+            }
+        } else {
+            append_override_rows(dmb, &parent_values, &own_values, &own_names, &mut words);
+        }
+    } else {
+        append_override_rows(dmb, &parent_values, &own_values, &own_names, &mut words);
+    }
+    dmb.classes[child as usize].overrides =
+        crate::composition::append_list(dmb, words).map_err(|error| {
+            ProjectionError::Unsupported(format!("inherited builtin defaults {error:?}"))
+        })?;
+    Ok(())
+}
+
+fn append_override_rows(
+    dmb: &Dmb,
+    parent_values: &[byond_dmb::dmb::ClassBuiltinOverride],
+    own_values: &[byond_dmb::dmb::ClassBuiltinOverride],
+    own_names: &HashSet<Vec<u8>>,
+    words: &mut Vec<u32>,
+) {
     for value in parent_values
         .iter()
         .filter(|value| {
@@ -507,11 +698,6 @@ fn inherit_overrides(
         words.push(value.name_string_id);
         words.extend(value.value.encode());
     }
-    dmb.classes[child as usize].overrides =
-        crate::composition::append_list(dmb, words).map_err(|error| {
-            ProjectionError::Unsupported(format!("inherited builtin defaults {error:?}"))
-        })?;
-    Ok(())
 }
 
 #[cfg(test)]
@@ -581,7 +767,7 @@ mod routing_tests {
             ]
             .into(),
             chains: Arc::from([]),
-        procedure_membership: Arc::from([]),
+            procedure_membership: Arc::from([]),
             procedure_declarations: Arc::new(BTreeMap::new()),
         };
         let tables = dm_link::LinkTables::build(Default::default()).unwrap();

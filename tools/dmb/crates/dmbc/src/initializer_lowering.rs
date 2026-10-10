@@ -381,7 +381,6 @@ fn lower_group<R: Resolver>(
     assembly: Option<(&InitializerAssemblies, &[u8])>,
 ) -> Result<LoweredInitializerUnit, InitializerLoweringError> {
     let symbols = plan.symbols.as_ref();
-    let mut assignments = Vec::with_capacity(group.writes.len());
     let mut entries = Vec::with_capacity(group.writes.len());
     let mut write_ordinals = Vec::with_capacity(group.writes.len());
     for &write_index in &group.writes {
@@ -461,16 +460,11 @@ fn lower_group<R: Resolver>(
                 line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
             });
         }
-        let value = value_expression(
-            write
-                .runtime_value
-                .as_ref()
-                .ok_or("initializer runtime value missing")?,
-        );
-        // Typed statements carry a local occurrence discriminator. The
-        // provider above binds it to captured source provenance, never to
-        // synthetic parser text or inferred source byte offsets.
-        assignments.push((&write.write.target, write.write.lexical_owner, value));
+        // Presence is mandatory even when the admitted assembly needs no AST roots.
+        write
+            .runtime_value
+            .as_ref()
+            .ok_or("initializer runtime value missing")?;
         write_ordinals.push(write.source_ordinal);
     }
     let debug = CapturedOrigins {
@@ -479,18 +473,6 @@ fn lower_group<R: Resolver>(
     // Current classification and provenance are always validated above.
     // Exact authored values and policy-issued array dimensions describe the
     // executable inputs; local debug ordinals are reconstructed every build.
-    let assignment_views = assignments
-        .iter()
-        .enumerate()
-        .map(|(index, (target, lexical_owner, value))| {
-            dm_codegen_byond::initializer::AssignmentView {
-                target,
-                lexical_owner: *lexical_owner,
-                value: value.as_ref(),
-                occurrence: dm_syntax::Span::new(index, index),
-            }
-        })
-        .collect::<Vec<_>>();
     let context = || InitializerContext {
         symbols,
         resource_search_context,
@@ -510,13 +492,17 @@ fn lower_group<R: Resolver>(
             }
         }
     };
-    if assignment_views.len() != group.writes.len() {
-        return Err("initializer assembly root roster differs from group".into());
-    }
     if let Some((store, key)) = assembly {
-        if let Some((code, encoding)) =
-            store.lookup_with_encoding(key, &assignment_views, symbols, host)
-        {
+        if let Some((code, encoding)) = store.lookup_with_current_roots(
+            key,
+            group.writes.len(),
+            |index| {
+                let write = classified.writes.get(*group.writes.get(index)?)?;
+                Some(value_expression(write.runtime_value.as_ref()?))
+            },
+            symbols,
+            host,
+        ) {
             return Ok(LoweredInitializerUnit {
                 scope: group
                     .receiver
@@ -529,6 +515,32 @@ fn lower_group<R: Resolver>(
             });
         }
     }
+    let assignments = group
+        .writes
+        .iter()
+        .map(|&index| {
+            let write = &classified.writes[index];
+            let value = value_expression(
+                write
+                    .runtime_value
+                    .as_ref()
+                    .expect("current runtime presence validated above"),
+            );
+            (&write.write.target, write.write.lexical_owner, value)
+        })
+        .collect::<Vec<_>>();
+    let assignment_views = assignments
+        .iter()
+        .enumerate()
+        .map(|(index, (target, lexical_owner, value))| {
+            dm_codegen_byond::initializer::AssignmentView {
+                target,
+                lexical_owner: *lexical_owner,
+                value: value.as_ref(),
+                occurrence: dm_syntax::Span::new(index, index),
+            }
+        })
+        .collect::<Vec<_>>();
     let assembly_recorder = assembly.map(|_| crate::lowering_memo::RecordingResolver::new(host));
     if let Some(recorder) = &assembly_recorder {
         for &index in &group.writes {

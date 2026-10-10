@@ -142,6 +142,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                             execution.bodies,
                                             symbolic,
                                             execution.capture_references,
+                                            execution.disk_replay_bindings,
                                         )
                                         .map(|unit| {
                                             // Memo capture/remember already completed. The

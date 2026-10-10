@@ -9,14 +9,46 @@ impl dm_ir::Resolver for SemanticTree {
             return Some((base << 1) | u128::from(self.inventory.hierarchy_certified));
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
-            let owner = match query {
-                dm_ir::ResolveQuery::Proc { owner, .. }
-                | dm_ir::ResolveQuery::ProcedureValue { owner, .. }
-                | dm_ir::ResolveQuery::MethodProcedureValue { owner, .. }
-                | dm_ir::ResolveQuery::OverrideChain { owner, .. } => owner,
+            let selection = match query {
+                dm_ir::ResolveQuery::Proc { owner, name, verb }
+                | dm_ir::ResolveQuery::ProcedureValue {
+                    owner, name, verb, ..
+                }
+                | dm_ir::ResolveQuery::MethodProcedureValue { owner, name, verb } => {
+                    (owner, name, verb)
+                }
+                dm_ir::ResolveQuery::GlobalProc(name) => (SymbolId::of("/"), name, false),
+                dm_ir::ResolveQuery::OverrideChain { owner, .. } => {
+                    return self.owner_callables.get(&owner).copied()
+                }
                 _ => return None,
             };
-            return self.owner_callables.get(&owner).copied();
+            // Root-local name receipts already have no ancestor dependency.
+            if selection.0 == SymbolId::of("/") {
+                if let Some(token) = self.owner_callable_selections.get(&selection) {
+                    return Some(*token);
+                }
+            }
+            if let Some(issuer) = &self.owner_certificate_issuer {
+                if let Some(token) = issuer.demanded_selection(self, selection) {
+                    return Some(token);
+                }
+            }
+            return self
+                .owner_callable_selections
+                .get(&selection)
+                .copied()
+                .or_else(|| self.owner_callables.get(&selection.0).copied());
+        }
+        if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
+            let (owner, name) = match query {
+                dm_ir::ResolveQuery::HasMemberVar { owner, name }
+                | dm_ir::ResolveQuery::DeclaredVarType { owner, name }
+                | dm_ir::ResolveQuery::VarStorage { owner, name }
+                | dm_ir::ResolveQuery::StaticVar { owner, name } => (owner, name),
+                _ => return None,
+            };
+            return self.owner_variable_selections.get(&(owner, name)).copied();
         }
         if domain != dm_ir::ReadDomain::Tree {
             return None;
@@ -38,7 +70,11 @@ impl dm_ir::Resolver for SemanticTree {
                     if node.metadata.inherited_opaque.is_some() {
                         return M::Unsupported(query);
                     }
-                    let mut bytes = node.content.to_le_bytes().to_vec();
+                    let mut bytes = if matches!(query, Q::Proc { .. } | Q::GlobalProc(_)) {
+                        Vec::new()
+                    } else {
+                        node.content.to_le_bytes().to_vec()
+                    };
                     bytes.extend_from_slice(&metadata_fingerprint(&node.metadata).to_le_bytes());
                     M::Member {
                         owner: self.types[node.owner.index()].path,

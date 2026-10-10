@@ -159,6 +159,9 @@ impl SemanticTree {
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
         self.owner_callables = Arc::new(Default::default());
+        self.owner_callable_demands = Arc::new(Default::default());
+        self.owner_callable_selections = Arc::new(Default::default());
+        self.owner_variable_selections = Arc::new(Default::default());
         let source_identity = *Arc::make_mut(&mut self.inventory)
             .source_identity
             .get_or_insert(self.identity);
@@ -175,6 +178,8 @@ impl SemanticTree {
         }
         if let Some(issuer) = &self.owner_certificate_issuer {
             self.owner_callables = Arc::new(issuer.certify_callables(&self));
+            self.owner_callable_selections = Arc::new(issuer.certify_selections(&self));
+            self.owner_variable_selections = Arc::new(issuer.certify_variables(&self));
         }
         Ok(self)
     }
@@ -196,6 +201,15 @@ impl SemanticTree {
         } else {
             self.identity = source_identity;
         }
+        self.owner_callable_demands = Arc::new(Default::default());
+        self.owner_variable_selections = self.owner_certificate_issuer.as_ref().map_or_else(
+            || Arc::new(Default::default()),
+            |issuer| Arc::new(issuer.certify_variables(self)),
+        );
+        self.owner_callable_selections = self.owner_certificate_issuer.as_ref().map_or_else(
+            || Arc::new(Default::default()),
+            |issuer| Arc::new(issuer.certify_selections(self)),
+        );
         self.owner_callables = self.owner_certificate_issuer.as_ref().map_or_else(
             || Arc::new(Default::default()),
             |issuer| Arc::new(issuer.certify_callables(self)),

@@ -60,6 +60,24 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
     };
     let code = lower_assignment_views(&roots, context(), &recorder).unwrap();
     store.remember(key, &code, &roots, &recorder);
+    assert!(store
+        .lookup_with_current_roots(
+            key,
+            1,
+            |_| panic!("plain admitted assembly must not prepare AST roots"),
+            &symbols,
+            &first
+        )
+        .is_some());
+    assert!(store
+        .lookup_with_current_roots(
+            key,
+            2,
+            |_| panic!("root count must decline before AST binding"),
+            &symbols,
+            &first
+        )
+        .is_none());
     root.span = dm_syntax::Span::new(500, 511);
     let current = [AssignmentView {
         target: &target,

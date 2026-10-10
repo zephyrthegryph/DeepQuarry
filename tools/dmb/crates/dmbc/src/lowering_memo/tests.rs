@@ -63,7 +63,10 @@ impl Resolver for VersionHost {
         match domain {
             ReadDomain::Tree => self.tree,
             ReadDomain::ResourceSearch => self.resource,
-            ReadDomain::OwnerHierarchy(_) | ReadDomain::OwnerCallable(_) => None,
+            ReadDomain::OwnerHierarchy(_)
+            | ReadDomain::OwnerCallable(_)
+            | ReadDomain::OwnerVariable(_)
+            | ReadDomain::OwnerScalar(_) => None,
         }
     }
     fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {

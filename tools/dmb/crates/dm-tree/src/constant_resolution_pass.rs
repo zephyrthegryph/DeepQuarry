@@ -1,6 +1,7 @@
 use super::*;
 #[derive(Default)]
 pub(super) struct Memo {
+    pub(super) certificates: BTreeMap<ScalarQuery, u64>,
     pub(super) values: BTreeMap<ScalarQuery, ScalarOutcome>,
     pub(super) active: Vec<ScalarQuery>,
     pub(super) edges: BTreeMap<ScalarQuery, BTreeSet<ScalarQuery>>,
@@ -57,6 +58,7 @@ impl Pass<'_> {
             while memo.inserted.len() > checkpoint.0 {
                 let inserted = memo.inserted.pop().unwrap();
                 memo.values.remove(&inserted);
+                memo.certificates.remove(&inserted);
                 memo.edges.remove(&inserted);
                 memo.reads.remove(&inserted);
             }
@@ -83,6 +85,9 @@ impl Pass<'_> {
                 let old = memo.predefined.insert(*name, value.clone());
                 memo.predefined_changes.push((*name, old));
             }
+            if let Some(certificate) = cached.certificate() {
+                memo.certificates.insert(query, certificate);
+            }
             cached.outcome.clone()
         } else {
             self.observe(ScalarReadQuery::PurePolicy);
@@ -93,6 +98,9 @@ impl Pass<'_> {
             && (matches!(value, ScalarOutcome::Cycle(_)) || memo.cyclic.contains(&query))
         {
             let active = memo.active.clone();
+            for active in &active {
+                memo.certificates.remove(active);
+            }
             memo.cyclic.extend(active);
         }
         if !reused && !memo.cyclic.contains(&query) {
@@ -119,18 +127,17 @@ impl Pass<'_> {
                     })
                     .collect::<Vec<_>>()
                     .into();
-                artifacts.remember(
+                let admitted = artifacts.remember_certified(
                     query,
-                    ScalarArtifact {
-                        outcome: value.clone(),
-                        dependencies,
-                        predefined,
-                    },
+                    ScalarArtifact::captured(value.clone(), dependencies, predefined),
                     reads
                         .iter()
                         .map(|read| (read.query.clone(), read.answer.clone()))
                         .collect(),
                 );
+                if let Some(certificate) = admitted.and_then(|value| value.certificate()) {
+                    memo.certificates.insert(query, certificate);
+                }
             }
         }
         drop(memo);
@@ -341,13 +348,14 @@ impl Pass<'_> {
     }
     fn answer(&self, query: &ScalarReadQuery) -> ScalarReadAnswer {
         let answer = match *query {
-            ScalarReadQuery::PurePolicy => {
-                ScalarReadAnswer::PurePolicy(self.calls.and_then(|calls| {
+            ScalarReadQuery::PurePolicy => ScalarReadAnswer::PurePolicy(
+                self.backend.identity,
+                self.calls.and_then(|calls| {
                     calls
                         .immutable_policy_identity()
                         .map(|immutable| (calls.identity(), immutable))
-                }))
-            }
+                }),
+            ),
             ScalarReadQuery::Member { owner, name } => {
                 let member = self
                     .tree
@@ -368,7 +376,7 @@ impl Pass<'_> {
                                 .flatten()
                         })
                         .unwrap_or(actual);
-                    Some((actual, declared, Arc::clone(&node.metadata)))
+                    Some((actual, declared, Arc::clone(&node.metadata), node.content))
                 });
                 ScalarReadAnswer::Member(value)
             }

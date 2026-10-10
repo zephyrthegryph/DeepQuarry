@@ -654,8 +654,31 @@ fn procedure_content(
     lowered: &LoweredUnit,
     code: Arc<dm_ir::SymbolicCode>,
 ) -> dm_link::EntryContent {
+    let procedure = &lowered.code.procedure;
+    procedure_content_fields(
+        lowered.abi.as_deref(),
+        &lowered.metadata,
+        procedure.local_count,
+        &procedure.local_names,
+        &procedure.argument_names,
+        &procedure.argument_type_flags,
+        &procedure.argument_value_sources,
+        code,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn procedure_content_fields(
+    abi: Option<&crate::procedure_policy::PreparedAbi>,
+    metadata: &dm_ir::ProcedureMetadata,
+    local_count: u32,
+    local_names: &[String],
+    argument_names: &[String],
+    argument_type_flags: &[u32],
+    value_sources: &[u32],
+    code: Arc<dm_ir::SymbolicCode>,
+) -> dm_link::EntryContent {
     let mut prefix = b"dm-frozen-procedure-v2\0".to_vec();
-    match &lowered.abi {
+    match abi {
         None => prefix.push(0),
         Some(abi) => {
             prefix.push(1);
@@ -664,24 +687,20 @@ fn procedure_content(
             prefix.extend_from_slice(&encoded);
         }
     }
-    let metadata = lowered.metadata.canonical_bytes();
+    let metadata = metadata.canonical_bytes();
     prefix.extend_from_slice(&(code.canonical_len() as u64).to_le_bytes());
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&(metadata.len() as u64).to_le_bytes());
     bytes.extend_from_slice(&metadata);
-    let procedure = &lowered.code.procedure;
-    bytes.extend_from_slice(&procedure.local_count.to_le_bytes());
-    for names in [&procedure.local_names, &procedure.argument_names] {
+    bytes.extend_from_slice(&local_count.to_le_bytes());
+    for names in [local_names, argument_names] {
         bytes.extend_from_slice(&(names.len() as u64).to_le_bytes());
         for name in names {
             bytes.extend_from_slice(&(name.len() as u64).to_le_bytes());
             bytes.extend_from_slice(name.as_bytes());
         }
     }
-    for values in [
-        &procedure.argument_type_flags,
-        &procedure.argument_value_sources,
-    ] {
+    for values in [argument_type_flags, value_sources] {
         bytes.extend_from_slice(&(values.len() as u64).to_le_bytes());
         for value in values {
             bytes.extend_from_slice(&value.to_le_bytes());
@@ -824,7 +843,7 @@ mod helper_reuse_tests;
 pub(crate) mod origin_roster;
 mod parallel;
 mod prepared_contribution;
-mod procedure_artifact;
+pub(crate) mod procedure_artifact;
 pub use prepared_contribution::{
     link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor,
     link_prepared_artifact_tables_on_executor_with_bindings, prepare_contribution,

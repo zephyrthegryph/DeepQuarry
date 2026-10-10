@@ -14,12 +14,22 @@ pub enum ReadDomain {
     OwnerHierarchy(SymbolId),
     /// Query-qualified callable owner certificate; fallback answers may decline.
     OwnerCallable(ResolveQuery),
+    /// Current source declaration/storage query; scalar values use OwnerScalar.
+    OwnerVariable(ResolveQuery),
+    /// Exact admitted scalar result; process-local and never a disk receipt.
+    OwnerScalar(ResolveQuery),
 }
 
 impl ReadDomain {
     /// Process-local issuer receipts must never authorize a disk artifact.
     pub const fn persistent_version(self) -> bool {
-        !matches!(self, Self::OwnerHierarchy(_) | Self::OwnerCallable(_))
+        !matches!(
+            self,
+            Self::OwnerHierarchy(_)
+                | Self::OwnerCallable(_)
+                | Self::OwnerVariable(_)
+                | Self::OwnerScalar(_)
+        )
     }
 }
 
@@ -118,10 +128,18 @@ impl ResolveQuery {
             Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {
                 ReadDomain::OwnerHierarchy(owner)
             }
-            Self::Proc { .. }
+            Self::HasMemberVar { .. }
+            | Self::DeclaredVarType { .. }
+            | Self::VarStorage { .. }
+            | Self::StaticVar { .. } => ReadDomain::OwnerVariable(self),
+            Self::GlobalProc(_)
+            | Self::Proc { .. }
             | Self::ProcedureValue { .. }
             | Self::MethodProcedureValue { .. }
             | Self::OverrideChain { .. } => ReadDomain::OwnerCallable(self),
+            Self::Var { .. } | Self::GlobalVar(_) | Self::Constant { .. } => {
+                ReadDomain::OwnerScalar(self)
+            }
             _ => ReadDomain::Tree,
         }
     }

@@ -4,6 +4,7 @@ use super::*;
 pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
     pub(super) key: Option<Vec<u8>>,
+    pub(super) accepted: Option<Arc<artifact::SemanticClassification>>,
 }
 fn classify_pending<'a>(
     writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
@@ -59,6 +60,7 @@ fn classify_pending<'a>(
                     runtime_value: None,
                 },
                 key: None,
+                accepted: None,
             });
             continue;
         }
@@ -108,6 +110,7 @@ fn classify_pending<'a>(
                         runtime_value: Some(RuntimeValue::SizedArray(dimensions.into())),
                     },
                     key: None,
+                    accepted: None,
                 });
                 continue;
             }
@@ -164,6 +167,7 @@ fn classify_pending<'a>(
                                     runtime_value: None,
                                 },
                                 key: None,
+                                accepted: None,
                             });
                             continue;
                         }
@@ -207,6 +211,7 @@ fn classify_pending<'a>(
                 runtime_value,
             },
             key: pending_key,
+            accepted: None,
         });
     }
     Ok(classified)
@@ -218,7 +223,17 @@ fn finish_pending(
 ) -> Result<ClassifiedInitializers, String> {
     let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
     let mut classified = Vec::with_capacity(pending.len());
-    for PendingWrite { mut write, key } in pending {
+    for PendingWrite {
+        mut write,
+        key,
+        accepted,
+    } in pending
+    {
+        let key = key.or_else(|| {
+            accepted
+                .as_ref()
+                .and_then(|value| value.token_key().cloned())
+        });
         *source_ordinal = write.source_ordinal;
         if let Some(key) = key {
             let (token, canonical) = tokens.issue(key)?;
@@ -281,3 +296,6 @@ pub(super) fn classify_from_facts(
 
 pub(super) mod artifact;
 pub(super) mod parallel;
+
+#[path = "classification/token_roster.rs"]
+mod token_roster;

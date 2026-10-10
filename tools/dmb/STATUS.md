@@ -1,4 +1,20 @@
+## 2026-10-09 current migration integration (unmeasured)
+
+Work continues beyond the d65 prototype cohort. Compact frozen disk replay now includes argument-source helper procedures with current ABI/origin/licensing checks. Retained type reachability has exact field-request and parent-index contributions. First pressure cleanup preserves symbolic dependency receipts while releasing rich, numeric-image and runtime-AST buffers. Canonical initializer roster hits preserve current diagnostic ordinals.
+
+Focused checks passed for compact main/helper replay (3), checked frozen restoration (3), scalar receipts (6), shared producer ownership (1), headers (12), required types (5), initializer classification (8), engine qualification (3), pressure owner preservation (1), assembly (3), host catalog (1), and bound images (3). The final combined workspace/all-target compile check passed in 15.24 seconds. These are focused integration checks, not runtime parity or performance acceptance. Owner metadata checks exposed real pruning before member installation; the correction and inherited name-specific receipts passed all 5 focused checks, including cyclic parent decline. Analysis queries use an immutable facts completion carrier; both coordinate and cache-publication focused checks passed.
+
+No timings below represent these uncommitted changes. The last measured body/new-procedure requests remain 61.43/62.96 seconds in an unoptimized prototype; fresh native byte parity was passed, BYOND structural/runtime gates remain open. No readiness or completion claim.
+
 # Native compiler status
+
+## Latest measured cohort (2026-10-09, d65d5e8c59)
+
+Frozen prototype compiler (dmbc opt-level 0, two workers): initial retained/cache-populating build 82.117 s; independently fresh cold 39.753 s; unchanged 1.641 s; body edit 61.435 s; new procedure 62.961 s. All four DMB/RSC pairs are byte-identical to independently fresh native builds. These are not release-profile acceptance measurements.
+
+The memory-pressure artifact tier deleted symbolic procedure records: the edited request kept session/engine identity and policy but had a new procedure generation and 48,681 absent symbolic records. Source fixes now preserve compact receipts and release rich/numeric buffers first; those fixes are not in this measured binary. BYOND structural comparison remains open (1,834,121 unexplained raw discrepancies, incomplete semantic coverage), and the full runtime baseline stays deferred. Six-worktree acceptance remains unrun.
+
+Receipt: ench/receipts/phase2-20261009-qualified-owner-prototype.json. New header/ancestry/scalar/classification/disk migration source is awaiting combined gates and new measurements.
 
 Updated 9 October 2026. Binding plan: DESIGN.md revision 6.
 

@@ -61,12 +61,20 @@ impl ScalarArtifacts for Store {
         value: ScalarArtifact,
         reads: Vec<(ScalarReadQuery, ScalarReadAnswer)>,
     ) {
+        let _ = self.remember_certified(query, value, reads);
+    }
+    fn remember_certified(
+        &self,
+        query: ScalarQuery,
+        value: ScalarArtifact,
+        reads: Vec<(ScalarReadQuery, ScalarReadAnswer)>,
+    ) -> Option<Arc<ScalarArtifact>> {
         let ledger = dm_session::ObservationLedger::default();
         for (query, answer) in reads {
             ledger.record(query, answer, (), None);
         }
         self.values
-            .insert_with(key(query).into(), ledger.reads(), Vec::new(), 0, || value);
+            .insert_with_owned(key(query).into(), ledger.reads(), Vec::new(), 0, || value)
     }
 }
 fn query(name: &str) -> ScalarQuery {
@@ -233,4 +241,94 @@ fn opaque_backend_and_pure_call_policy_decline_retention() {
             assert_eq!(entries, 0)
         }
     });
+}
+
+#[test]
+fn admitted_scalar_certificates_preserve_exact_answers_and_reject_changed_inputs() {
+    let store = Store::default();
+    let requests = [query("a")];
+    let first = run(
+        &store,
+        "/datum/probe\n    var/const/a = b + 1\n    var/const/b = 3\n",
+        &requests,
+    );
+    let meaning = ResolveQuery::Constant {
+        owner: SymbolId::of("/datum/probe"),
+        name: SymbolId::of("a"),
+    };
+    let domain = meaning.domain();
+    assert!(!domain.persistent_version());
+    let certificate = first
+        .domain_version(domain)
+        .expect("current capture is admitted");
+    let second = run(&store, "/datum/probe\n    var/const/a = b + 1\n    var/const/b = 3\n    var/extra = 2\n    proc/new_proc()\n        return 5\n", &requests);
+    assert_eq!(Some(certificate), second.domain_version(domain));
+    assert_eq!(first.resolve(meaning), second.resolve(meaning));
+    let changed = run(
+        &store,
+        "/datum/probe\n    var/const/a = b + 1\n    var/const/b = 4\n",
+        &requests,
+    );
+    assert_ne!(Some(certificate), changed.domain_version(domain));
+    assert_ne!(first.resolve(meaning), changed.resolve(meaning));
+    let unsupported = run(
+        &store,
+        "/datum/probe\n    var/const/a = b\n    var/b = 3\n",
+        &requests,
+    );
+    assert_eq!(unsupported.domain_version(domain), None);
+    let cycle = run(
+        &store,
+        "/datum/probe\n    var/const/a = b\n    var/const/b = a\n",
+        &requests,
+    );
+    assert_eq!(cycle.domain_version(domain), None);
+    assert!(cycle.issued_domain.certificates.is_empty());
+    for field in 0..6 {
+        let mut replaced = second.clone();
+        match field {
+            0 => replaced.outcomes = Arc::new((*replaced.outcomes).clone()),
+            1 => replaced.dependencies = Arc::new((*replaced.dependencies).clone()),
+            2 => replaced.predefined_reads = Arc::new((*replaced.predefined_reads).clone()),
+            3 => replaced.requested = replaced.requested.to_vec().into(),
+            4 => replaced.backend_identity ^= 1,
+            _ => {
+                replaced.source =
+                    tests::snapshot("/datum/probe\n    var/const/a = b + 1\n    var/const/b = 3\n")
+            }
+        }
+        assert_eq!(replaced.domain_version(domain), None);
+    }
+}
+
+#[test]
+fn opaque_and_ordinary_scalar_paths_issue_no_query_certificate() {
+    let source = tests::snapshot("/datum/probe\n    var/const/a = 1\n    var/mutable = 2\n");
+    let requests = [query("a")];
+    let ordinary = resolve(&source, &requests, &tests::backend_disabled());
+    let query = ResolveQuery::Constant {
+        owner: SymbolId::of("/datum/probe"),
+        name: SymbolId::of("a"),
+    };
+    assert_eq!(ordinary.domain_version(query.domain()), None);
+    let store = Store::default();
+    fn custom(_: &str) -> Option<Vec<u8>> {
+        None
+    }
+    let custom = resolve_pinned_with_artifacts(
+        &source,
+        &requests,
+        1,
+        custom,
+        nameof,
+        None,
+        None,
+        Some(&store),
+    );
+    assert_eq!(custom.domain_version(query.domain()), None);
+    let mutable = ResolveQuery::Var {
+        owner: SymbolId::of("/datum/probe"),
+        name: SymbolId::of("mutable"),
+    };
+    assert_eq!(ordinary.domain_version(mutable.domain()), None);
 }

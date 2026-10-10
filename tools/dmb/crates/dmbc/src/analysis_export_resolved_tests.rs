@@ -11,6 +11,13 @@ impl dm_preprocess::SourceProvider for Source {
 
 #[test]
 fn resolved_export_selects_local_and_binds_shifted_current_coordinates() {
+    check_resolved(false);
+}
+#[test]
+fn selected_completion_preserves_disk_population_and_resident_query_hits() {
+    check_resolved(true);
+}
+fn check_resolved(disk: bool) {
     let mut retained = crate::runner_host::BuildHost::one_shot();
     let engine = retained
         .engine(
@@ -21,7 +28,28 @@ fn resolved_export_selects_local_and_binds_shifted_current_coordinates() {
         )
         .unwrap();
     let executor = dm_exec::BuildExecutor::new(2).unwrap();
-    let memo = crate::lowering_memo::ProcedureMemo::new(123);
+    let cache = disk.then(|| {
+        let base = if cfg!(windows) {
+            std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        } else {
+            std::env::temp_dir()
+        };
+        let path = base.join(format!(
+            "selected-completion-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        dm_cache::Cache::open(path, dm_cache::Limits::default()).unwrap()
+    });
+    let memo = match &cache {
+        Some(cache) => {
+            crate::lowering_memo::ProcedureMemo::with_disk(123, cache.snapshot().unwrap())
+        }
+        None => crate::lowering_memo::ProcedureMemo::new(123),
+    };
     for (source, line) in [
         ("/proc/resolved_probe(x)\n    var/y = x\n    return y\n", 3),
         (
@@ -87,5 +115,27 @@ fn resolved_export_selects_local_and_binds_shifted_current_coordinates() {
         assert!(rows.iter().any(|row| row["row"] == "coverage"
             && row["semantic_resolution_complete"] == false
             && row["diagnostics"] == 0));
+    }
+    if let Some(cache) = cache {
+        let records = memo.take_pending();
+        assert!(
+            !records.is_empty(),
+            "query completion preserves ordinary disk population"
+        );
+        assert!(
+            memo.counts
+                .resident_hits
+                .load(std::sync::atomic::Ordering::Relaxed)
+                > 0,
+            "shifted query uses admitted resident selections"
+        );
+        cache.publish(&records).unwrap();
+        assert_eq!(
+            memo.counts
+                .compact_disk_encoded
+                .load(std::sync::atomic::Ordering::Relaxed),
+            0,
+            "capture retains safe rich disk format"
+        );
     }
 }

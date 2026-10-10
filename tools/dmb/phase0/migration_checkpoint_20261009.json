@@ -661,5 +661,255 @@
       "unknown global typo classification remains unsupported without complete engine namespace proof",
       "Phase5 runtime remains deferred"
     ]
+  },
+  "qualified_retained_migration_next_wave": {
+    "status": "source implementation in progress, not build or benchmark admitted",
+    "frozen_compiler_commit": "d65d5e8c59b3e31a80b8485edb9173a7910403b1",
+    "compile_oracle_receipt": "E:/dq-cache/dmb-native-v2/compile-oracle-20261009-2157/receipt.json",
+    "compile_oracle_findings": {
+      "hidden_marker_differences": 2,
+      "receiver_differences": 9,
+      "relative_parameter_differences": 0,
+      "prompt_differences": 16,
+      "absolute_parameter_native_exit": 70,
+      "runtime": "not run"
+    },
+    "implemented_source": [
+      "local name-qualified callable and variable receipts in existing store",
+      "retained header source selectors with current wire value binding",
+      "retained required-type ancestry with current allocation boundaries",
+      "production session generation and memo ownership wiring"
+    ],
+    "pressure_findings": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261009-215659-6e725b3d/daemon.stderr",
+      "observation": "artifacts tier pressure=true after cold deletes symbolic memo",
+      "next_source_fix": "release rich and wire buffers first, preserve compact symbolic and ABI, keep whole-session escalation after subsequent pressured sample"
+    },
+    "benchmark_status": "immutable d65 four-case cohort passed fresh native DMB/RSC byte oracle; BYOND gate open",
+    "not_complete": [
+      "compact disk completion end-to-end path",
+      "focused gates on new source",
+      "new retained performance measurements",
+      "whole-program BYOND structural and deferred runtime gates"
+    ]
+  },
+  "latest_completed_qualified_owner_benchmark": {
+    "scope": "captured real DeepQuarry end-to-end prototype diagnostic, not release acceptance",
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261009-215659-6e725b3d\\receipt.json",
+    "compiler_build": {
+      "commit": "d65d5e8c59b3e31a80b8485edb9173a7910403b1",
+      "archive_sha256": "962b5f645532e8500bb81f1fec8505894ba3dfea264341550257d09a266499d8",
+      "changed_files": 64,
+      "removed_files": 0,
+      "exit_code": 0,
+      "build_seconds": 234.32575949997408,
+      "watchdog_seconds": 300,
+      "command": [
+        "E:/cargo/bin/cargo.exe",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j1",
+        "-p",
+        "dmbc",
+        "--bin",
+        "dmbc",
+        "--config",
+        "profile.release.package.dmbc.codegen-units=256",
+        "--config",
+        "profile.release.package.dmbc.opt-level=0"
+      ],
+      "acceptance_profile": false,
+      "lto": false,
+      "dmbc_codegen_units": 256,
+      "dmbc_opt_level": 0,
+      "owned_child_cleanup": null,
+      "binary": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261009-214921-d6ad8d0b.exe",
+      "binary_sha256": "d9b1f4dce349063dd1ac8fc4aad0f4bf7e9d76592973425cffbd3ad7c93e06fd"
+    },
+    "status": "passed",
+    "BYOND_baseline_gate": "open",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_wall_seconds": 82.11706209997647,
+        "fresh_wall_seconds": 39.753086299984716,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 0,
+          "encode_seconds": 14.7236818,
+          "errors": [],
+          "explanation_seconds": 0.1482266,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 1,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 1,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48681,
+          "key_preparation_seconds": 1.4220191,
+          "lookup_seconds": 0.4614523,
+          "occurrence_reads_seconds": 0.7588071,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 1.4276381,
+          "publication_failed": 0,
+          "published_records": 48256,
+          "recomputed": 48681,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 0,
+            "read_changed": 0,
+            "record_absent": 48681,
+            "source_identity": 0
+          }
+        }
+      },
+      {
+        "kind": "unchanged",
+        "retained_wall_seconds": 1.641438000020571,
+        "fresh_wall_seconds": 33.12580249999883,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": null
+      },
+      {
+        "kind": "body",
+        "retained_wall_seconds": 61.43472290004138,
+        "fresh_wall_seconds": 36.406294899992645,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 48680,
+          "encode_seconds": 0.0001241,
+          "errors": [],
+          "explanation_seconds": 0.1427798,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 2,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 2,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48681,
+          "key_preparation_seconds": 1.3570012,
+          "lookup_seconds": 32.45677,
+          "occurrence_reads_seconds": 1.89e-05,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 0.0,
+          "publication_failed": 0,
+          "published_records": 0,
+          "recomputed": 1,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 7,
+            "read_changed": 0,
+            "record_absent": 48681,
+            "source_identity": 0
+          }
+        }
+      },
+      {
+        "kind": "structural",
+        "retained_wall_seconds": 62.960628299973905,
+        "fresh_wall_seconds": 38.87399340001866,
+        "fresh_native_byte_oracle": true,
+        "retained_memo": {
+          "disk_hits": 48679,
+          "encode_seconds": 0.0006423,
+          "errors": [],
+          "explanation_seconds": 0.1411387,
+          "host": {
+            "enabled": true,
+            "engine_generation": 1,
+            "procedure_generation": 3,
+            "procedure_policy_replacements": 0,
+            "rich_generation": 3,
+            "scope": "process_local_diagnostic_only",
+            "session": 1
+          },
+          "issued_preparations": 48682,
+          "key_preparation_seconds": 1.3738637,
+          "lookup_seconds": 33.2599088,
+          "occurrence_reads_seconds": 9.75e-05,
+          "parsed_preparations": 0,
+          "pending_dropped": 0,
+          "policy": "b36ee453ea563558d26a12385c0e2762",
+          "publication_cpu_scope_seconds": 0.0,
+          "publication_failed": 0,
+          "published_records": 0,
+          "recomputed": 3,
+          "resident_dropped": 117,
+          "resident_hits": 0,
+          "resident_retention": "Enabled",
+          "symbolic_declines": {
+            "capture_excluded": 0,
+            "contribution_rebind": 0,
+            "debug_rebase": 0,
+            "key_changed": 0,
+            "modified_reissue": 0,
+            "nonreusable_completion": 7,
+            "read_changed": 0,
+            "record_absent": 48682,
+            "source_identity": 0
+          }
+        }
+      }
+    ],
+    "BYOND_structural": {
+      "complete": false,
+      "semantic_coverage": "incomplete",
+      "total_discrepancies": 1834121,
+      "unexplained_discrepancies": 1834121
+    },
+    "outside_builds_total_cohort_seconds": 1038.7828123000218,
+    "limitations": [
+      "dmbc opt-level 0; not acceptance profile",
+      "six-worktree acceptance not run",
+      "full runtime baseline deferred",
+      "retained symbolic records erased by pressure cleanup in this frozen compiler",
+      "new migration source is not represented by these measurements"
+    ]
+  },
+  "current_source_validation": {
+    "state": "focused_and_workspace_gates_passed_pending_real_benchmark",
+    "workspace_all_targets": "PASS final 15.2448475s E:/dq-cache/dmb-native-v2/integration-gates/20261009-224902-7c168c1c.json",
+    "compact_disk_checks": 3,
+    "checked_frozen_restore_checks": 3,
+    "scalar_dependency_checks": 6,
+    "produced_shared_owner_checks": 1,
+    "retained_header_checks": 12,
+    "required_ancestry_checks": 2,
+    "pressure_owner_checks": 1,
+    "initializer_classification_checks": 8,
+    "initializer_assembly_checks": 3,
+    "host_catalog_checks": 1,
+    "bound_image_checks": 3,
+    "owner_metadata_failures": "Repaired and focused fixtures passed: pruning uses installed current member order; inherited selections retain exact demanded same-name chain; cyclic/invalid parents decline. Final workspace integration pending.",
+    "new_source_benchmarks": "not run; latest measured cohort remains d65 prototype receipt",
+    "required_type_checks": 5,
+    "owner_metadata_checks": 5,
+    "analysis_current_coordinates_and_cache_checks": 2
   }
 }

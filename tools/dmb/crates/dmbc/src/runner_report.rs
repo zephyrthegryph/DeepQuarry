@@ -9,10 +9,19 @@ pub(super) fn memo_statistics(
         "policy":format!("{:032x}",memo.policy),
         "host":retention_status,
         "disk_hits":memo.counts.disk_hits.load(Relaxed),
+        "compact_disk_hits":memo.counts.compact_disk_hits.load(Relaxed),
+        "compact_disk_encoded":memo.counts.compact_disk_encoded.load(Relaxed),
+        "compact_fallback_encoding":memo.counts.compact_fallback_encoding.load(Relaxed),
+        "compact_fallback_ineligible":memo.counts.compact_fallback_ineligible.load(Relaxed),
         "resident_hits":memo.counts.resident_hits.load(Relaxed),
         "resident_dropped":memo.counts.resident_dropped.load(Relaxed),
         "resident_retention":format!("{:?}",memo.resident_retention()),
         "symbolic_declines":memo.symbolic.as_ref().map(|store| store.decline_stats()),
+        "required_type_ancestry":memo.required_types.as_ref().map(|store| serde_json::json!({
+            "scope":"process_local_cumulative",
+            "hits":store.hits.load(Relaxed),
+            "recomputed":store.recomputed.load(Relaxed)
+        })),
         "issued_preparations":memo.counts.issued_preparations.load(Relaxed),
         "parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),
         "recomputed":memo.counts.recomputed.load(Relaxed),
@@ -62,6 +71,7 @@ pub(super) fn initializer_totals(
     memo.and_then(|memo| memo.initializers.as_ref())
         .map(|store| {
             let (modifier_hits, modifier_recomputed) = store.modifier_reuse_counts();
+            let (token_roster_hits, token_roster_recomputed) = store.token_roster_reuse_counts();
             serde_json::json!({
                 "scope": "retained_session_total",
                 "hits": store.hits.load(Relaxed),
@@ -69,6 +79,8 @@ pub(super) fn initializer_totals(
                 "declined": store.declined.load(Relaxed),
                 "modifier_hits": modifier_hits,
                 "modifier_recomputed": modifier_recomputed,
+                "token_roster_hits": token_roster_hits,
+                "token_roster_recomputed": token_roster_recomputed,
             })
         })
 }

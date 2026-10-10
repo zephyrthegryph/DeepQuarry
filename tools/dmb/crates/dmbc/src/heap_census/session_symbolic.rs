@@ -1,4 +1,6 @@
 //! Immutable resident artifact owners, without fabricated current-source bindings.
+#[path = "required_type_artifacts.rs"]
+mod required_type_artifacts;
 use super::*;
 impl HeapCensus {
     pub(crate) fn retained_symbolic_procedure(

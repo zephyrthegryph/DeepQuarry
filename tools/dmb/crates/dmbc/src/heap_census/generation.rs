@@ -1,8 +1,11 @@
 //! Exact retained canonical generation owners; no model or byte clones.
+#[path = "header_recipes.rs"]
+mod header_recipes;
 use super::*;
 impl HeapCensus {
     pub fn composition_generation(&mut self, generation: &crate::composition::RetainedGeneration) {
         generation.census_plan(self);
+        generation.census_headers(self);
         generation.visit_retained(|model, encoded| {
             self.dmb_image(model);
             self.output_encoded("retained.generation.encoded", encoded);

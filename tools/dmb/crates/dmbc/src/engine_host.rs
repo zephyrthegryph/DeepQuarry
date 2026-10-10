@@ -160,6 +160,7 @@ impl RuntimeAliasCatalog {
 }
 #[derive(Clone, Debug)]
 struct VariableAbsence {
+    issuer: Option<u64>,
     names: HashSet<SymbolId>,
     positive_constants: BTreeMap<SymbolId, SemanticValue>,
     identity: u128,
@@ -284,6 +285,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         self.answer_domain = std::sync::OnceLock::new();
         self.source_versions.push(frontend.snapshot.tree.identity());
         self.variable_absence = Some(Arc::new(VariableAbsence {
+            issuer: providers.issuer,
             names,
             positive_constants,
             identity: providers.identity,
@@ -314,6 +316,32 @@ impl<R: Resolver> EngineResolverHost<R> {
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
+            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            // Only a positive enriched source answer bypasses engine fallback.
+            // Its admitted scalar owner already records the exact engine read.
+            if !matches!(self.tree.resolve(query), M::Member { .. }) {
+                return None;
+            }
+            let provider = match &self.variable_absence {
+                Some(coverage) => coverage.issuer?,
+                None => 0,
+            };
+            return Some((u128::from(base) << 64) | u128::from(provider));
+        }
+        if let dm_ir::ReadDomain::OwnerVariable(query) = domain {
+            let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            // Only an unchanged positive/current source answer may use the
+            // local certificate. Native absence fallback remains uncertified.
+            if matches!(self.tree.resolve(query), M::Unsupported(_)) {
+                return None;
+            }
+            let provider = match &self.variable_absence {
+                Some(coverage) => coverage.issuer?,
+                None => 0,
+            };
+            return Some((u128::from(base) << 64) | u128::from(provider));
+        }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
             // Global authored-name exclusion can change fallback answers even

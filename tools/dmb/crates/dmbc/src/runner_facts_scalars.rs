@@ -72,6 +72,14 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         value: ScalarArtifact,
         reads: Vec<(ScalarReadQuery, ScalarReadAnswer)>,
     ) {
+        let _ = self.remember_certified(query, value, reads);
+    }
+    fn remember_certified(
+        &self,
+        query: ScalarQuery,
+        value: ScalarArtifact,
+        reads: Vec<(ScalarReadQuery, ScalarReadAnswer)>,
+    ) -> Option<Arc<ScalarArtifact>> {
         let ledger = dm_session::ObservationLedger::default();
         ledger.record(
             Query::Engine,
@@ -89,13 +97,17 @@ impl ScalarArtifacts for CurrentScalars<'_> {
         }
         let key = key(query);
         let charge = std::mem::size_of::<Artifact>().saturating_add(key.len());
-        self.owner.values.insert_with(
+        let admitted = self.owner.values.insert_with_owned(
             Arc::from(key),
             ledger.reads(),
             ledger.domain_receipts(),
             charge,
             || Artifact::Scalar(Arc::new(value)),
-        );
+        )?;
+        match admitted.as_ref() {
+            Artifact::Scalar(value) => Some(Arc::clone(value)),
+            _ => None,
+        }
     }
     fn finish(&self, queries: &[ScalarQuery]) {
         let keys: Vec<_> = queries.iter().copied().map(key).collect();
@@ -154,7 +166,7 @@ pub(super) fn inspect_answer(
     census: &mut crate::heap_census::HeapCensus,
 ) {
     match value {
-        ScalarReadAnswer::Member(Some((_, _, metadata))) => {
+        ScalarReadAnswer::Member(Some((_, _, metadata, _))) => {
             if census.arc_object("host.scalar.read.metadata", metadata) {
                 census.unknown(
                     "host.scalar.read.metadata",

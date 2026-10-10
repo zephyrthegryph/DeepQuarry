@@ -85,6 +85,7 @@ pub struct ScalarSnapshot {
 }
 #[derive(Clone, Debug)]
 struct ScalarDomain {
+    certificates: Arc<BTreeMap<ScalarQuery, u64>>,
     source: Arc<crate::SemanticTree>,
     outcomes: Arc<BTreeMap<ScalarQuery, ScalarOutcome>>,
     identity: u128,
@@ -105,6 +106,10 @@ mod retained;
 pub use retained::ScalarFacts;
 
 impl ScalarSnapshot {
+    /// Borrow the issued process-local certificate roster for owner accounting.
+    pub fn certificates(&self) -> &Arc<BTreeMap<ScalarQuery, u64>> {
+        &self.issued_domain.certificates
+    }
     pub fn outcome(&self, query: ScalarQuery) -> Option<&ScalarOutcome> {
         self.outcomes.get(&query)
     }
@@ -295,6 +300,12 @@ fn resolve_with_artifacts(
     let predefined_reads = Arc::new(memo.predefined);
     ScalarSnapshot {
         issued_domain: ScalarDomain {
+            certificates: Arc::new(
+                memo.certificates
+                    .into_iter()
+                    .filter(|(query, _)| !memo.cyclic.contains(query))
+                    .collect(),
+            ),
             source: Arc::clone(&snapshot.tree),
             outcomes: Arc::clone(&outcomes),
             identity,
@@ -314,11 +325,64 @@ fn resolve_with_artifacts(
     }
 }
 
+impl ScalarSnapshot {
+    fn original_domain(&self) -> bool {
+        let issued = &self.issued_domain;
+        Arc::ptr_eq(&issued.source, &self.source.tree)
+            && Arc::ptr_eq(&issued.outcomes, &self.outcomes)
+            && Arc::ptr_eq(&issued.requested, &self.requested)
+            && Arc::ptr_eq(&issued.dependencies, &self.dependencies)
+            && Arc::ptr_eq(&issued.predefined_reads, &self.predefined_reads)
+            && issued.identity == self.identity
+            && issued.backend == self.backend_identity
+    }
+    fn scalar_certificate(&self, query: ResolveQuery) -> Option<u64> {
+        if !self.original_domain() {
+            return None;
+        }
+        let (owner, name) = match query {
+            ResolveQuery::Constant { owner, name } | ResolveQuery::Var { owner, name } => {
+                (owner, name)
+            }
+            ResolveQuery::GlobalVar(name) => (SymbolId::of("/"), name),
+            _ => return None,
+        };
+        let tree = &self.source.tree;
+        let member =
+            tree.member(tree.resolve(tree.lookup_type(owner)?, name, MemberKind::Var)?)?;
+        if member.metadata.flags & 2 == 0 || member.metadata.inherited_opaque.is_some() {
+            return None;
+        }
+        let actual_owner = tree.type_node(member.owner)?.path;
+        let requested = ScalarQuery::Const { owner, name };
+        let actual = ScalarQuery::Const {
+            owner: actual_owner,
+            name,
+        };
+        // Match the same first-present selection used by resolve, including an
+        // unsupported requested outcome that must not fall through to an ancestor.
+        let selected = if self.outcomes.contains_key(&requested) {
+            requested
+        } else {
+            actual
+        };
+        if !matches!(self.outcomes.get(&selected), Some(ScalarOutcome::Value(_))) {
+            return None;
+        }
+        self.issued_domain.certificates.get(&selected).copied()
+    }
+}
+
 impl Resolver for ScalarSnapshot {
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if let dm_ir::ReadDomain::OwnerScalar(query) = domain {
+            return self.scalar_certificate(query).map(u128::from);
+        }
         if matches!(
             domain,
-            dm_ir::ReadDomain::OwnerHierarchy(_) | dm_ir::ReadDomain::OwnerCallable(_)
+            dm_ir::ReadDomain::OwnerHierarchy(_)
+                | dm_ir::ReadDomain::OwnerCallable(_)
+                | dm_ir::ReadDomain::OwnerVariable(_)
         ) {
             // Scalar enrichment only changes Var/Constant/GlobalVar, never
             // Type/Parent/Ancestry or callable queries. Bind to the CURRENT source tree certificate.
@@ -330,11 +394,7 @@ impl Resolver for ScalarSnapshot {
         let issued = &self.issued_domain;
         // Public analysis projections can be replaced. Only the originally
         // issued immutable tables retain authority for replay shortcuts.
-        if Arc::ptr_eq(&issued.source, &self.source.tree)
-            && Arc::ptr_eq(&issued.outcomes, &self.outcomes)
-            && issued.identity == self.identity
-            && issued.backend == self.backend_identity
-        {
+        if self.original_domain() {
             Some(issued.version)
         } else {
             None

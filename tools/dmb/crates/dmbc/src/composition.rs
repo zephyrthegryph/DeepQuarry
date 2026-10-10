@@ -690,7 +690,7 @@ fn compose_records_access(
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
         drop(members_profile);
         let headers_profile = dm_profile::stage("composition.authored_headers");
-        crate::class_projection::finalize_headers_with_roster(
+        crate::class_projection::finalize_headers_retained(
             &mut dmb,
             engine_bytes,
             plan,
@@ -698,6 +698,7 @@ fn compose_records_access(
             symbols,
             &mut string_index,
             class_roster.as_ref(),
+            generation.map(|owner| &owner.header_recipes),
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
         drop(headers_profile);

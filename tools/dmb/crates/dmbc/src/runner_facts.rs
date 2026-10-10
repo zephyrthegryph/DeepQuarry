@@ -7,7 +7,7 @@ pub(crate) type PreparedHost = (EngineResolverHost<ScalarSnapshot>, Arc<ScalarSn
 #[cfg(test)]
 #[path = "analysis_export_resolved_tests.rs"]
 mod resolved_tests;
-pub(super) fn prepare(
+pub(crate) fn prepare(
     frontend: &ColdFrontend,
     engine: &EngineSnapshot,
 ) -> Result<PreparedHost, String> {

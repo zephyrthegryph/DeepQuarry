@@ -147,6 +147,7 @@ impl InitializerAssemblies {
         self.lookup_with_encoding(key, roots, symbols, host)
             .map(|(code, _)| code)
     }
+    #[cfg(test)]
     pub(super) fn lookup_with_encoding<R: Resolver>(
         &self,
         key: &[u8],
@@ -157,9 +158,31 @@ impl InitializerAssemblies {
         ResolverProc,
         std::sync::Arc<crate::symbolic::InitializerEncoding>,
     )> {
+        self.lookup_with_current_roots(
+            key,
+            roots.len(),
+            |index| {
+                roots
+                    .get(index)
+                    .map(|root| std::borrow::Cow::Borrowed(root.value))
+            },
+            symbols,
+            host,
+        )
+    }
+    pub(super) fn lookup_with_current_roots<'expr, R: Resolver>(
+        &self,
+        key: &[u8],
+        root_count: usize,
+        mut root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
+        symbols: &SymbolTable,
+        host: &R,
+    ) -> Option<(
+        ResolverProc,
+        std::sync::Arc<crate::symbolic::InitializerEncoding>,
+    )> {
         let payload = self.values.lookup(key, host)?;
-        if roots.len() != payload.root_count || payload.recipes.len() != payload.root_indexes.len()
-        {
+        if root_count != payload.root_count || payload.recipes.len() != payload.root_indexes.len() {
             return None;
         }
         let recorder = crate::lowering_memo::RecordingResolver::new(host);
@@ -167,7 +190,10 @@ impl InitializerAssemblies {
             .recipes
             .iter()
             .zip(&payload.root_indexes)
-            .map(|(recipe, index)| recipe.reissue(roots.get(*index)?.value, &recorder, symbols))
+            .map(|(recipe, index)| {
+                let current = root(*index)?;
+                recipe.reissue(current.as_ref(), &recorder, symbols)
+            })
             .collect::<Option<std::collections::BTreeMap<_, _>>>()?;
         if captured
             .keys()

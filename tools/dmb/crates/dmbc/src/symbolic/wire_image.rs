@@ -11,6 +11,16 @@ struct Wired {
     final_image: ProcedureImage,
 }
 impl WireImage {
+    pub(super) fn release(&self) -> bool {
+        let retired = self
+            .current
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+        let released = retired.is_some();
+        drop(retired);
+        released
+    }
     pub(super) fn image(
         &self,
         base: ProcedureImage,
@@ -120,6 +130,14 @@ mod tests {
             .iter()
             .any(|entry| entry.owner == "latest_images.wire_answers"
                 && entry.unique_known_capacity_bytes > 0));
+        assert_eq!(owner.release_bound_images(), 1);
+        assert_eq!(owner.release_bound_images(), 0);
+        assert_eq!(
+            latest_image::LatestImage::wire_words(&owner, base.clone(), &code, &tables, &mobs)
+                .unwrap(),
+            vec![8, 7]
+        );
+        owner.visit_retained_wire(|_, _, image| assert!(!Arc::ptr_eq(&first, &image.words)));
         let changed = dm_link::MobBindings::from([(path, 8)]);
         assert_eq!(
             latest_image::LatestImage::wire_words(&owner, base.clone(), &code, &tables, &changed)

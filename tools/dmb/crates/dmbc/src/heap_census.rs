@@ -5,6 +5,7 @@ use serde::Serialize;
 mod declaration_syntax;
 mod dmb_image;
 mod effective_metadata;
+pub(crate) mod initializer_artifacts;
 mod initializer_ledger;
 mod lexical_callable;
 mod local_shape;

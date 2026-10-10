@@ -5,6 +5,10 @@ use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_ir::{SemanticValue, SymbolId, SymbolTable};
 use dm_link::{Key, LinkInventory};
 use std::collections::{BTreeMap, HashSet};
+pub(crate) mod ancestry;
+pub(crate) mod field_requests;
+pub(crate) mod parent_index;
+pub use ancestry::RequiredTypeArtifacts;
 
 pub struct Inputs<'a> {
     pub source_order: &'a [SymbolId],
@@ -52,6 +56,7 @@ pub fn admit(
             symbols: inputs.symbols,
             non_text_types: inputs.non_text_types,
         },
+        None,
     )
 }
 pub fn admit_prepared(
@@ -69,11 +74,32 @@ pub fn admit_prepared(
             symbols: inputs.symbols,
             non_text_types: inputs.non_text_types,
         },
+        None,
+    )
+}
+pub fn admit_prepared_retained(
+    projection: ClassProjection,
+    inputs: PreparedInputs<'_>,
+    artifacts: Option<&RequiredTypeArtifacts>,
+) -> Result<(ClassProjection, Vec<SymbolId>), String> {
+    admit_common(
+        projection,
+        CommonInputs {
+            source_order: inputs.source_order,
+            bodies: BodyRequirements::Prepared(inputs.body_type_requests),
+            initializers: inputs.initializers,
+            maps: inputs.maps,
+            inventory: inputs.inventory,
+            symbols: inputs.symbols,
+            non_text_types: inputs.non_text_types,
+        },
+        artifacts,
     )
 }
 fn admit_common(
     mut projection: ClassProjection,
     inputs: CommonInputs<'_>,
+    artifacts: Option<&RequiredTypeArtifacts>,
 ) -> Result<(ClassProjection, Vec<SymbolId>), String> {
     let CommonInputs {
         source_order,
@@ -84,11 +110,15 @@ fn admit_common(
         symbols,
         non_text_types,
     } = inputs;
-    let parents: BTreeMap<_, _> = projection
-        .types
-        .iter()
-        .map(|ty| (ty.path, ty.parent))
-        .collect();
+    let retained_parents = artifacts.map(|artifacts| artifacts.parents.obtain(&projection.types));
+    let fresh_parents;
+    let parents = match &retained_parents {
+        Some(parents) => parents.as_ref(),
+        None => {
+            fresh_parents = parent_index::produce(&projection.types);
+            &fresh_parents
+        }
+    };
     let retained: HashSet<_> = inventory
         .fixed
         .iter()
@@ -101,35 +131,7 @@ fn admit_common(
     needed.insert(SymbolId::of("/"));
     needed.insert(SymbolId::of("/world"));
     let mut order = Vec::new();
-    fn require(
-        path: SymbolId,
-        parents: &BTreeMap<SymbolId, Option<SymbolId>>,
-        needed: &mut HashSet<SymbolId>,
-        order: &mut Vec<SymbolId>,
-        active: &mut HashSet<SymbolId>,
-    ) -> Result<(), String> {
-        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
-            return Err(format!(
-                "native primitive requires explicit physical class ABI: {path:?}"
-            ));
-        }
-        if needed.contains(&path) {
-            return Ok(());
-        }
-        if !active.insert(path) {
-            return Err("required class parent cycle".into());
-        }
-        let parent = parents
-            .get(&path)
-            .ok_or_else(|| format!("referenced class absent from semantic skeleton: {path:?}"))?;
-        if let Some(parent) = parent {
-            require(*parent, parents, needed, order, active)?;
-        }
-        active.remove(&path);
-        needed.insert(path);
-        order.push(path);
-        Ok(())
-    }
+    let mut ancestry = ancestry::Request::new(artifacts);
     let mut requests = Vec::new();
     let mut source_seen = HashSet::new();
     for &path in source_order {
@@ -158,13 +160,7 @@ fn admit_common(
             continue;
         }
         if let Some(Some(parent)) = parents.get(&path) {
-            require(
-                *parent,
-                &parents,
-                &mut needed,
-                &mut order,
-                &mut HashSet::new(),
-            )?;
+            ancestry.require(*parent, parents, &mut needed, &mut order)?;
         }
     }
     fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) {
@@ -185,19 +181,11 @@ fn admit_common(
             _ => (),
         }
     }
-    for field in projection.fields.iter() {
-        let savefile_header = field.owner == SymbolId::of("/savefile")
-            && field.declaring_owner == SymbolId::of("/savefile")
-            && field.name == SymbolId::of("byond_version")
-            && field.role == crate::class_projection::FieldRole::Assignment
-            && field.intrinsic
-            && !field.shared;
-        if !savefile_header {
-            requests.push(field.owner);
-            requests.push(field.declaring_owner);
-        }
-        if let crate::initializer_policy::DefaultValue::Scalar(value) = &field.value {
-            values(value, &mut requests);
+    if let Some(artifacts) = artifacts {
+        artifacts.fields.append(&projection.fields, &mut requests);
+    } else {
+        for field in projection.fields.iter() {
+            field_requests::produce(field, &mut requests);
         }
     }
     for chain in projection.chains.iter() {
@@ -239,7 +227,7 @@ fn admit_common(
     }
     requests.extend_from_slice(non_text_types);
     for path in requests {
-        require(path, &parents, &mut needed, &mut order, &mut HashSet::new())?;
+        ancestry.require(path, parents, &mut needed, &mut order)?;
     }
     projection.types = projection
         .types
@@ -248,6 +236,7 @@ fn admit_common(
         .cloned()
         .collect::<Vec<_>>()
         .into();
+    ancestry.finish();
     Ok((projection, order))
 }
 
@@ -353,7 +342,8 @@ mod tests {
             .unwrap_err()
             .contains("native primitive requires explicit physical class ABI"));
         let mut field = projection();
-        std::sync::Arc::make_mut(&mut std::sync::Arc::make_mut(&mut field.fields)[0]).name = SymbolId::of("eof");
+        std::sync::Arc::make_mut(&mut std::sync::Arc::make_mut(&mut field.fields)[0]).name =
+            SymbolId::of("eof");
         assert!(admit(field, inputs())
             .unwrap_err()
             .contains("native primitive requires explicit physical class ABI"));

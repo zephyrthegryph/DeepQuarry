@@ -269,6 +269,13 @@ fn inspect_entry(entry: &Entry, census: &mut crate::heap_census::HeapCensus) {
     entry.source.census(census);
     let facts = &entry.scalar;
     census.slice("host.scalar.requested", facts.requested(), true);
+    if census.arc_object("host.scalar.certificates", facts.certificates()) {
+        census.collection_entries::<(ScalarQuery, u64)>(
+            "host.scalar.certificates",
+            facts.certificates().as_ref() as *const _ as usize,
+            facts.certificates().len(),
+        );
+    }
     if census.arc_object("host.scalar.outcomes", facts.outcomes()) {
         census.collection_entries::<(ScalarQuery, ScalarOutcome)>(
             "host.scalar.outcomes",

@@ -129,6 +129,9 @@ pub struct SemanticTree {
     host_selections: Arc<host_declaration_selection::Selections>,
     owner_hierarchy: Arc<std::collections::BTreeMap<SymbolId, u128>>,
     owner_callables: Arc<std::collections::BTreeMap<SymbolId, u128>>,
+    owner_callable_demands: Arc<owner_metadata::CallableDemands>,
+    owner_callable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>>,
+    owner_variable_selections: Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>>,
     owner_certificate_issuer: Option<Arc<owner_metadata::RetainedMetadata>>,
     by_path: Arc<HashMap<SymbolId, TypeId>>,
     direct: Arc<HashMap<(TypeId, SymbolId, MemberKind), MemberId>>,
@@ -188,6 +191,20 @@ impl SemanticTree {
     /// stay private to the semantic normalization pipeline.
     pub fn owner_certificate_issuer(&self) -> Option<&Arc<owner_metadata::RetainedMetadata>> {
         self.owner_certificate_issuer.as_ref()
+    }
+    pub fn owner_variable_selection_certificates(
+        &self,
+    ) -> &Arc<std::collections::BTreeMap<(SymbolId, SymbolId), u128>> {
+        &self.owner_variable_selections
+    }
+    /// Queried-name certificate index for this immutable current tree.
+    pub fn owner_callable_demand_certificates(&self) -> &Arc<owner_metadata::CallableDemands> {
+        &self.owner_callable_demands
+    }
+    pub fn owner_callable_selection_certificates(
+        &self,
+    ) -> &Arc<std::collections::BTreeMap<(SymbolId, SymbolId, bool), u128>> {
+        &self.owner_callable_selections
     }
     pub fn owner_callable_certificates(&self) -> &Arc<std::collections::BTreeMap<SymbolId, u128>> {
         &self.owner_callables
@@ -508,6 +525,9 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         host_selections: Arc::new(Default::default()),
         owner_hierarchy: Arc::new(Default::default()),
         owner_callables: Arc::new(Default::default()),
+        owner_callable_demands: Arc::new(Default::default()),
+        owner_callable_selections: Arc::new(Default::default()),
+        owner_variable_selections: Arc::new(Default::default()),
         owner_certificate_issuer: None,
         by_path: Arc::new(by_path),
         direct: Arc::new(HashMap::new()),
@@ -726,6 +746,8 @@ pub(crate) fn build_with_intrinsic_members_indexed(
         tree.owner_certificate_issuer = Some(Arc::clone(&retained.metadata));
         tree.owner_hierarchy = Arc::new(retained.metadata.certify_hierarchy(&tree));
         tree.owner_callables = Arc::new(retained.metadata.certify_callables(&tree));
+        tree.owner_callable_selections = Arc::new(retained.metadata.certify_selections(&tree));
+        tree.owner_variable_selections = Arc::new(retained.metadata.certify_variables(&tree));
     }
     Ok(tree)
 }

@@ -39,7 +39,8 @@ struct Record {
     modified_recipes: Vec<crate::modified_initializers::SourceRecipe>,
 }
 pub(crate) struct Admission {
-    store: Arc<SessionSymbolicMemo>,
+    store: Option<Arc<SessionSymbolicMemo>>,
+    disk: Option<crate::lowering_memo::DiskWriter>,
     key: Vec<u8>,
     reads: Arc<[ResolverRead]>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
@@ -54,7 +55,49 @@ enum Input {
     Lowered(Box<LoweredUnit>),
     Reused(crate::symbolic::PreparedContribution),
 }
+/// Immutable compiler-selected facts. Construction stays in the admitted lowerer.
+/// Coordinates remain relative; a query binds them against its current occurrence.
+pub struct ProcedureSelections {
+    identity: UnitIdentity,
+    source: dm_tree::frontend::SourceLocation,
+    facts: Option<Arc<dm_ir::SelectedReferences>>,
+}
+impl ProcedureSelections {
+    pub fn source(&self) -> &dm_tree::frontend::SourceLocation {
+        &self.source
+    }
+
+    pub fn identity(&self) -> UnitIdentity {
+        self.identity
+    }
+    pub fn facts(&self) -> Option<&dm_ir::SelectedReferences> {
+        self.facts.as_deref()
+    }
+}
 impl CompletedInput {
+    pub fn into_selected(self) -> ProcedureSelections {
+        let identity = self.identity();
+        let source = match &self.inner {
+            Input::Lowered(unit) => unit.origin.source.clone(),
+            Input::Reused(value) => value.current_source().clone(),
+        };
+        let facts = match self.inner {
+            Input::Lowered(unit) => unit.selected_references,
+            Input::Reused(value) => value.selected_facts().cloned(),
+        };
+        ProcedureSelections {
+            identity,
+            source,
+            facts,
+        }
+    }
+
+    pub(super) fn reused(value: crate::symbolic::PreparedContribution) -> Self {
+        Self {
+            inner: Input::Reused(value),
+            admission: None,
+        }
+    }
     pub(super) fn lowered(unit: LoweredUnit) -> Self {
         Self {
             inner: Input::Lowered(Box::new(unit)),
@@ -100,38 +143,55 @@ impl CompletedInput {
             }
         };
         if let Some(admission) = self.admission {
-            if value.is_reusable() {
-                let record = Record {
-                    key: admission.key,
-                    reads: admission.reads,
-                    versions: admission.versions,
-                    artifact: value.shared_artifact(),
-                    relative_debug: admission.relative_debug,
-                    required_types: value.required_types().to_vec(),
-                    modified_recipes: value
-                        .modified_recipes()
-                        .expect("reusable contribution has source recipes")
-                        .to_vec(),
-                };
-                admission
-                    .store
-                    .records
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .insert(value.identity(), Arc::new(record));
-                admission.store.admitted.fetch_add(1, Ordering::Relaxed);
-            } else {
-                admission
-                    .store
-                    .declines
-                    .nonreusable_completion
-                    .fetch_add(1, Ordering::Relaxed);
+            if let Some(writer) = &admission.disk {
+                writer.queue_compact(
+                    &admission.key,
+                    &admission.reads,
+                    &admission.versions,
+                    &value,
+                    &admission.relative_debug,
+                );
+            }
+            if let Some(store) = admission.store {
+                if value.is_reusable() {
+                    let record = Record {
+                        key: admission.key,
+                        reads: admission.reads,
+                        versions: admission.versions,
+                        artifact: value.shared_artifact(),
+                        relative_debug: admission.relative_debug,
+                        required_types: value.required_types().to_vec(),
+                        modified_recipes: value
+                            .modified_recipes()
+                            .expect("reusable contribution has source recipes")
+                            .to_vec(),
+                    };
+                    store
+                        .records
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .insert(value.identity(), Arc::new(record));
+                    store.admitted.fetch_add(1, Ordering::Relaxed);
+                } else {
+                    store
+                        .declines
+                        .nonreusable_completion
+                        .fetch_add(1, Ordering::Relaxed);
+                }
             }
         }
         Ok(value)
     }
 }
 impl SessionSymbolicMemo {
+    /// Idle pressure release preserves code, observation ledgers and rebind
+    /// recipes. Numeric link/wire answers are recreated on the next request.
+    pub(crate) fn release_bound_images(&self) -> usize {
+        let records = self.records.lock().unwrap_or_else(|e| e.into_inner());
+        records.values().fold(0usize, |released, record| {
+            released.saturating_add(record.artifact.release_bound_images())
+        })
+    }
     pub(super) fn capture_excluded(&self) {
         self.declines
             .capture_excluded
@@ -254,9 +314,16 @@ pub(super) fn admission(
     key: Vec<u8>,
     recording: &RecordingResolver<'_, impl Resolver>,
     relative_debug: Vec<usize>,
+    write_compact: bool,
 ) -> Option<Admission> {
+    let store = memo.symbolic.clone();
+    let disk = write_compact.then(|| memo.completion_writer()).flatten();
+    if store.is_none() && disk.is_none() {
+        return None;
+    }
     Some(Admission {
-        store: Arc::clone(memo.symbolic.as_ref()?),
+        store,
+        disk,
         key,
         reads: recording.reads().into(),
         versions: recording.domain_receipts().into(),
@@ -270,7 +337,8 @@ pub(super) fn disk_admission<R: Resolver>(
     promotion: &crate::lowering_memo_wire::ResidentPromotion,
 ) -> Option<Admission> {
     Some(Admission {
-        store: Arc::clone(memo.symbolic.as_ref()?),
+        store: Some(Arc::clone(memo.symbolic.as_ref()?)),
+        disk: None,
         key,
         reads: promotion
             .queries
@@ -292,7 +360,8 @@ pub(super) fn accepted_admission(
     accepted: &dm_session::AcceptedArtifact<crate::lowering_memo::CachedProcedure>,
 ) -> Option<Admission> {
     Some(Admission {
-        store: Arc::clone(memo.symbolic.as_ref()?),
+        store: Some(Arc::clone(memo.symbolic.as_ref()?)),
+        disk: None,
         key,
         reads: Arc::clone(&accepted.reads),
         versions: Arc::clone(&accepted.versions),

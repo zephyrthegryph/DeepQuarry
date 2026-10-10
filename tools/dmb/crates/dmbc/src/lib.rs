@@ -49,6 +49,7 @@ pub mod intrinsic_initializer_facts;
 pub mod lowering;
 pub mod lowering_memo;
 mod lowering_memo_wire;
+mod lowering_memo_compact;
 pub mod mob_writer;
 mod native_callbacks;
 pub mod native_inputs;

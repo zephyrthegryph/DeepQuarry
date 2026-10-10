@@ -2,6 +2,7 @@
 //! Table assignments and CurrentImage certificates are always issued later.
 use super::parallel::{BoundContribution, HelperContribution, OwnedStrings, Slots};
 use super::*;
+pub(crate) mod disk;
 #[path = "retained_census.rs"]
 mod retained_census;
 
@@ -43,6 +44,10 @@ pub(super) struct Contribution {
     binding: ProcedureRevisionBinding,
 }
 impl Contribution {
+    pub(super) fn current_source(&self) -> &dm_tree::frontend::SourceLocation {
+        &self.binding.origin.source
+    }
+
     pub(super) fn variable_record_count(&self) -> Option<usize> {
         let frame = &self.artifact.frame;
         self.artifact.helpers.iter().try_fold(
@@ -55,6 +60,12 @@ impl Contribution {
     }
 }
 impl ReusableProcedureArtifact {
+    pub(crate) fn release_bound_images(&self) -> usize {
+        self.helpers.iter().fold(
+            self.image_owner.release_bound_images(),
+            |released, helper| released.saturating_add(helper.image_owner.release_bound_images()),
+        )
+    }
     pub fn identity(&self) -> UnitIdentity {
         self.identity
     }

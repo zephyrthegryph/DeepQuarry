@@ -22,12 +22,19 @@ impl CertifiedGenerationInputs {
 pub struct RetainedGeneration {
     current: Mutex<Option<Generation>>,
     plan: Mutex<Option<procedure_plan::CachedPlan>>,
+    /// Symbolic header decisions share the session generation's policy and lifetime.
+    /// Values and dense table IDs are always bound from the current model.
+    pub(super) header_recipes: crate::class_projection::HeaderRecipes,
 }
 struct Generation {
     inputs: CertifiedGenerationInputs,
     encoded: byond_dmb::dmb::EncodedDmb,
 }
 impl RetainedGeneration {
+    pub(crate) fn census_headers(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.header_recipes(&self.header_recipes);
+    }
+
     /// All current composition checks must finish before this entry is called.
     /// Equality includes every ordered output table, raw string byte and header.
     /// A mismatch follows the ordinary canonical encoder and independent decoder.
@@ -86,6 +93,11 @@ impl RetainedGeneration {
         }
     }
     pub fn clear(&self) {
+        self.header_recipes.clear();
+        self.release_wire_images();
+    }
+    /// Release physical generation buffers without discarding symbolic header recipes.
+    pub(crate) fn release_wire_images(&self) {
         *self.plan.lock().unwrap_or_else(|error| error.into_inner()) = None;
         *self
             .current

@@ -118,23 +118,33 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
             }
         }
     }
-    let batch = lowering::lower_frontend_with_memo_on_executor_and_bodies(
+    let batch = lowering::lower_frontend_completed_input_on_execution(
         frontend,
         host,
         policy,
         config,
-        startup,
-        memo,
+        Some(startup),
+        Some(memo),
         execution.with_reference_capture(),
+        false,
+        &|input| Ok::<_, std::convert::Infallible>(input.into_selected()),
     );
     let diagnostics = batch.diagnostics;
     let mut result = Vec::with_capacity(batch.units.len());
     for unit in batch.units {
+        if unit.value.identity() != unit.identity {
+            return Err(vec![LoweringDiagnostic {
+                kind: DiagnosticKind::Internal,
+                identity: Some(unit.identity),
+                origin: unit.value.source().clone(),
+                message: "selected result carrier identity differs from completed procedure".into(),
+            }]);
+        }
         let Some(body) = current.remove(&unit.identity) else {
             return Err(vec![LoweringDiagnostic {
                 kind: DiagnosticKind::Internal,
                 identity: Some(unit.identity),
-                origin: unit.origin.source.clone(),
+                origin: unit.value.source().clone(),
                 message: "query producer returned an unissued procedure".into(),
             }]);
         };
@@ -145,7 +155,7 @@ pub fn query_partial<R: Resolver, P: AbiPolicy>(
             unavailable_coordinates: 0,
             unbound_selections: 0,
         };
-        if let Some(facts) = unit.selected_references {
+        if let Some(facts) = unit.value.facts() {
             bound.unbound_selections = facts.unbound_selections;
             for reference in &facts.references {
                 let Some((start, end)) = reference.relative_span else {

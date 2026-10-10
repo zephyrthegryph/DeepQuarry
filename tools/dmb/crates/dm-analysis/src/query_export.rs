@@ -119,6 +119,8 @@ pub fn write_queries_jsonl<'a>(
             ReadDomain::ResourceSearch => "resource_search",
             ReadDomain::OwnerHierarchy(_) => "owner_hierarchy",
             ReadDomain::OwnerCallable(_) => "owner_callable",
+            ReadDomain::OwnerVariable(_) => "owner_variable",
+            ReadDomain::OwnerScalar(_) => "owner_scalar",
         };
         emit(
             writer,

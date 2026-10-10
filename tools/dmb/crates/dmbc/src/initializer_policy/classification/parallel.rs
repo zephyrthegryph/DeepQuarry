@@ -82,6 +82,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     if factory_policy.is_none() {
         if let Some(reuse) = reuse {
             artifact::retain_roster(reuse, &[]);
+            reuse.store.roster.clear();
             reuse.store.modifiers.retain_keys(&[]);
             reuse
                 .store
@@ -204,14 +205,19 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         });
     }
     let mut source_ordinal = 0;
-    finish_pending(
-        ordered.into_iter().map(|pending| {
-            pending.expect("all successful initializer buckets cover source roster")
-        }),
-        debug_defined,
-        &mut source_ordinal,
-    )
-    .map_err(|reason| ClassificationError {
+    let pending = ordered
+        .into_iter()
+        .map(|pending| pending.expect("all successful initializer buckets cover source roster"));
+    let result = match reuse {
+        Some(reuse) if reuse.store.roster_enabled => {
+            reuse
+                .store
+                .roster
+                .finish(pending.collect(), debug_defined, &mut source_ordinal)
+        }
+        _ => finish_pending(pending, debug_defined, &mut source_ordinal),
+    };
+    result.map_err(|reason| ClassificationError {
         issues: vec![ClassificationIssue {
             source_ordinal,
             reason,

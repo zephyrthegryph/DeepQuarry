@@ -11,6 +11,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     symbolic: bool,
     capture_references: bool,
+    disk_replay_bindings: Option<DiskReplayBindings<'_>>,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
     if symbolic && capture_references {
@@ -230,6 +231,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 frontend,
                 body,
                 parsed,
+                bindings: symbolic.then_some(disk_replay_bindings).flatten(),
             },
             host,
             &prepared,
@@ -260,6 +262,22 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
         return Err(errors);
+    }
+    if let Some(value) = disk.prepared {
+        let admission = disk.resident.as_ref().and_then(|promotion| {
+            symbolic_input::disk_admission(memo, key.clone(), host, promotion)
+        });
+        memo.counts
+            .disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        memo.counts
+            .compact_disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        bodies
+            .discard_parsed(body)
+            .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
+        note(MemoOutcome::DiskHit, None, None);
+        return Ok(CompletedInput::reused(value).with_admission(admission));
     }
     if let Some(unit) = disk
         .unit
@@ -325,21 +343,33 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
                 == Some(&unit.debug_origins)
         {
+            let compact = symbolic
+                && disk_replay_bindings
+                    .is_some_and(|bindings| crate::lowering_memo_compact::eligible(unit, bindings))
+                && memo.completion_writer().is_some();
             if symbolic {
                 admission = symbolic_input::admission(
                     memo,
                     key.clone(),
                     &recording,
                     relative_debug.clone(),
+                    compact,
                 );
             }
-            memo.queue_disk(
-                &key,
-                &reads,
-                unit,
-                &relative_debug,
-                &recording.domain_receipts(),
-            );
+            if !compact {
+                if symbolic && memo.completion_writer().is_some() {
+                    memo.counts
+                        .compact_fallback_ineligible
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                }
+                memo.queue_disk(
+                    &key,
+                    &reads,
+                    unit,
+                    &relative_debug,
+                    &recording.domain_receipts(),
+                );
+            }
             memo.remember(
                 key,
                 reads,

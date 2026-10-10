@@ -350,3 +350,104 @@ fn invisibility_header_inherits_and_explicit_zero_reset_stays_visible() {
     assert!(own.contains("invisibility"));
     assert_eq!(child.flags ^ parent.flags, 4);
 }
+
+#[test]
+fn retained_header_selectors_bind_current_values_and_preserve_callback_bits() {
+    let store = HeaderRecipes::default();
+    let parent_recipe = Arc::new(header_recipes::HeaderRecipe {
+        owner: b"/atom".to_vec(),
+        authored_name: true,
+        ..Default::default()
+    });
+    let authored = BTreeSet::from(["icon".to_owned(), "layer".to_owned()]);
+    let (_, recipe) = store.obtain(
+        b"/obj/example",
+        &authored,
+        &authored,
+        authored.clone(),
+        BTreeSet::new(),
+        &parent_recipe,
+    );
+    for current in [30, 400] {
+        let dmb = image();
+        let mut parent = dmb.classes[0].clone();
+        parent.initial_ids[2] = current;
+        parent.initial_ids[4] = current + 1;
+        parent.direction = 4;
+        parent.set_mouse_opacity(0).unwrap();
+        let mut actual = dmb.classes[0].clone();
+        actual.initial_ids[4] = 99;
+        actual.layer_bits = 8.0_f32.to_bits();
+        let mut expected = actual.clone();
+        inherit_record(
+            &parent,
+            &mut expected,
+            &HashSet::from(["icon", "layer"]),
+            true,
+            false,
+        )
+        .unwrap();
+        inherit_record_selected(&parent, &mut actual, |name| {
+            recipe.inherited_fields.iter().any(|field| field == name)
+        })
+        .unwrap();
+        assert_eq!(actual, expected);
+        assert_eq!(actual.initial_ids[2], current);
+        assert_eq!(actual.initial_ids[4], 99);
+    }
+}
+#[test]
+fn retained_builtin_selectors_bind_changed_current_values_in_original_merge_order() {
+    let store = HeaderRecipes::default();
+    for number in [7.0_f32, 11.0] {
+        let mut ordinary = image();
+        let mut pool = crate::composition::StringIndex::build(&ordinary).unwrap();
+        let plane = pool.intern(&mut ordinary, b"plane").unwrap();
+        let alpha = pool.intern(&mut ordinary, b"alpha").unwrap();
+        let parent = ordinary.classes.len() as u32;
+        let child = parent + 1;
+        let record = ordinary.classes[0].clone();
+        ordinary.classes.extend([record.clone(), record]);
+        let value = |n: f32| byond_dmb::operands::Value {
+            tag_word: 42,
+            data_word: n.to_bits() >> 16,
+            extra_word: Some(n.to_bits() & 0xffff),
+        };
+        let mut parent_words = vec![plane];
+        parent_words.extend(value(number).encode());
+        parent_words.push(alpha);
+        parent_words.extend(value(2.0).encode());
+        ordinary.classes[parent as usize].overrides =
+            crate::composition::append_list(&mut ordinary, parent_words).unwrap();
+        let mut own = vec![alpha];
+        own.extend(value(4.0).encode());
+        ordinary.classes[child as usize].overrides =
+            crate::composition::append_list(&mut ordinary, own).unwrap();
+        let mut retained = ordinary.clone();
+        inherit_overrides(
+            &mut ordinary,
+            child,
+            parent,
+            &HashSet::from(["alpha"]),
+            &HashSet::new(),
+        )
+        .unwrap();
+        let mut keys = Vec::new();
+        inherit_overrides_retained(
+            &mut retained,
+            child,
+            parent,
+            &HashSet::from(["alpha"]),
+            &HashSet::new(),
+            Some((&store, b"/obj/example")),
+            &mut keys,
+        )
+        .unwrap();
+        assert_eq!(retained.to_bytes().unwrap(), ordinary.to_bytes().unwrap());
+        assert_eq!(
+            retained.class_builtin_overrides(child as usize).unwrap()[0].value,
+            value(number)
+        );
+        assert_eq!(keys.len(), 1);
+    }
+}

@@ -1,7 +1,11 @@
 //! Effective per-owner metadata over current keyed namespace contributions.
 //! Both misses and full construction use the same inheritance resolver.
 mod callables;
+mod demanded_selections;
 mod hierarchy;
+mod selections;
+pub use demanded_selections::CallableDemands;
+mod variables;
 use crate::{declaration_contributions::DeclarationKey, owner_normalization::ResolvedMember, *};
 pub use callables::{CallableFact, CallableInputs};
 use dm_session::{
@@ -13,6 +17,7 @@ use std::{
     ops::{Index, IndexMut},
     sync::atomic::{AtomicUsize, Ordering},
 };
+pub use variables::{VariableFact, VariableInputs};
 pub(crate) type OwnerContributions = BTreeMap<SymbolId, Arc<[ResolvedMember]>>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataQuery {
@@ -20,6 +25,8 @@ pub enum MetadataQuery {
     Effective(DeclarationKey),
     Hierarchy(SymbolId),
     CallableLocal(SymbolId),
+    CallableSelection(SymbolId, SymbolId, bool),
+    VariableLocal(SymbolId, SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
@@ -27,6 +34,7 @@ pub enum MetadataAnswer {
     Effective(Option<Arc<MemberMetadata>>),
     Hierarchy(Arc<[SymbolId]>),
     CallableLocal(Arc<CallableInputs>),
+    VariableLocal(Arc<VariableInputs>),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataDomain {
@@ -38,7 +46,10 @@ impl MetadataQuery {
         match self {
             Self::NormalizedOwner(_) => MetadataDomain::Namespace,
             Self::Effective(_) => MetadataDomain::EffectiveMembers,
-            Self::Hierarchy(_) | Self::CallableLocal(_) => MetadataDomain::Namespace,
+            Self::Hierarchy(_)
+            | Self::CallableLocal(_)
+            | Self::CallableSelection(..)
+            | Self::VariableLocal(..) => MetadataDomain::Namespace,
         }
     }
 }
@@ -47,16 +58,19 @@ struct EffectiveOwner {
     values: Arc<[(DeclarationKey, Arc<MemberMetadata>)]>,
     hierarchy: Option<(Arc<[SymbolId]>, u128)>,
     callable: Option<(Arc<CallableInputs>, u128)>,
+    variable: Option<(Arc<VariableInputs>, u128)>,
 }
 type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
 pub struct RetainedMetadata {
     store: Store,
+    current_demands: demanded_selections::CurrentDemands,
     hits: AtomicUsize,
 }
 impl Default for RetainedMetadata {
     fn default() -> Self {
         Self {
             store: Store::current_revision(),
+            current_demands: Default::default(),
             hits: AtomicUsize::new(0),
         }
     }
@@ -80,7 +94,9 @@ impl<M: Index<usize, Output = MemberNode>>
             MetadataQuery::NormalizedOwner(owner) => {
                 MetadataAnswer::NormalizedOwner(self.normalized.get(owner).cloned())
             }
-            MetadataQuery::CallableLocal(_) => {
+            MetadataQuery::CallableLocal(_)
+            | MetadataQuery::CallableSelection(..)
+            | MetadataQuery::VariableLocal(..) => {
                 unreachable!("effective metadata records no callable certificate inputs")
             }
             MetadataQuery::Hierarchy(owner) => {
@@ -115,6 +131,7 @@ pub enum MetadataStorageView<'a> {
     Selection(&'a Arc<crate::HostDeclarationSelection>),
     Hierarchy(&'a Arc<[SymbolId]>),
     CallableLocal(&'a Arc<CallableInputs>),
+    VariableLocal(&'a Arc<VariableInputs>),
 }
 impl RetainedMetadata {
     pub(crate) fn hits(&self) -> usize {
@@ -151,6 +168,9 @@ impl RetainedMetadata {
                 visit(MetadataStorageView::Selection(&value.selection));
                 if let Some((inputs, _)) = &value.callable {
                     visit(MetadataStorageView::CallableLocal(inputs));
+                }
+                if let Some((inputs, _)) = &value.variable {
+                    visit(MetadataStorageView::VariableLocal(inputs));
                 }
                 if let Some((paths, _)) = &value.hierarchy {
                     visit(MetadataStorageView::Hierarchy(paths));
@@ -208,6 +228,9 @@ impl RetainedMetadata {
         let mut keys = keys;
         keys.extend(tree.types.iter().map(|node| hierarchy::key(node.path)));
         keys.extend(tree.types.iter().map(|node| callables::key(node.path)));
+        keys.extend(selections::keys(tree, &*members, order));
+        keys.extend(self.demanded_keys(tree));
+        keys.extend(variables::keys(tree, &*members, order));
         self.store
             .retain_current_keys(keys.iter().map(AsRef::as_ref));
         let owners = crate::metadata_update::dependency_order(tree.types.len(), |index| {
@@ -270,6 +293,7 @@ impl RetainedMetadata {
                         selection,
                         hierarchy: None,
                         callable: None,
+                        variable: None,
                     });
             }
         }

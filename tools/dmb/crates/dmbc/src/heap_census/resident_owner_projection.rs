@@ -6,7 +6,10 @@ use crate::{
 };
 use dm_ir::ReadDomain;
 
-fn inspect_field(census: &mut HeapCensus, field: &Arc<crate::class_projection::FieldProjection>) {
+pub(super) fn inspect_field(
+    census: &mut HeapCensus,
+    field: &Arc<crate::class_projection::FieldProjection>,
+) {
     let name = "owner_projection.defaults";
     if !census.arc_object(name, field) {
         return;

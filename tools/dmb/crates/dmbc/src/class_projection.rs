@@ -5,6 +5,8 @@ use crate::initializer_policy::DefaultValue;
 mod callbacks;
 mod class_roster;
 mod headers;
+pub(crate) mod header_recipes;
+pub use header_recipes::HeaderRecipes;
 pub(crate) mod member_contribution;
 mod retained;
 pub(crate) use class_roster::MaterializedClassRoster;
@@ -15,7 +17,7 @@ pub use callbacks::materialize_callback_flags;
 use dm_ir::{SemanticValue, SymbolId, SymbolicExpression};
 use dm_link::Key;
 use dm_tree::{DefinitionMode, MemberKind, OccurrenceId, Target, TreeSnapshot};
-pub(super) use headers::finalize_headers_with_roster;
+pub(super) use headers::finalize_headers_retained;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
     sync::Arc,

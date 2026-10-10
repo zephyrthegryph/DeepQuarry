@@ -19,6 +19,16 @@ fn callable(census: &mut HeapCensus, inputs: &Arc<dm_tree::owner_metadata::Calla
         }
     }
 }
+fn variable(census: &mut HeapCensus, inputs: &Arc<dm_tree::owner_metadata::VariableInputs>) {
+    if census.arc_object("variable_selection.inputs", inputs) {
+        census.slice("variable_selection.ancestors", &inputs.ancestors, true);
+        census.slice("variable_selection.members", &inputs.members, true);
+        census.slice("variable_selection.intrinsic", &inputs.intrinsic, true);
+        for member in inputs.members.iter() {
+            metadata(census, &member.metadata);
+        }
+    }
+}
 fn answer(census: &mut HeapCensus, value: &MetadataAnswer) {
     match value {
         MetadataAnswer::NormalizedOwner(Some(members)) => {
@@ -38,6 +48,7 @@ fn answer(census: &mut HeapCensus, value: &MetadataAnswer) {
         }
         MetadataAnswer::Effective(Some(value)) => metadata(census, value),
         MetadataAnswer::CallableLocal(inputs) => callable(census, inputs),
+        MetadataAnswer::VariableLocal(inputs) => variable(census, inputs),
         MetadataAnswer::Hierarchy(paths) => {
             census.slice("retained_effective_metadata.hierarchy", paths, true);
         }
@@ -62,7 +73,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.buffer("retained_effective_metadata.values", address, size, size);
             for read in reads.iter() {
                 match read.query {
-                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) => (),
+                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) | MetadataQuery::CallableSelection(..) | MetadataQuery::VariableLocal(..) => (),
                 }
                 match read.domain {
                     MetadataDomain::Namespace | MetadataDomain::EffectiveMembers => (),
@@ -72,6 +83,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
         }
         MetadataStorageView::Selection(value) => selection(census,value),
         MetadataStorageView::CallableLocal(inputs) => callable(census, inputs),
+        MetadataStorageView::VariableLocal(inputs)=>variable(census,inputs),
         MetadataStorageView::Hierarchy(paths) => {
             census.slice("retained_effective_metadata.hierarchy", paths, true);
         }
@@ -104,6 +116,23 @@ fn selection(census: &mut HeapCensus, value: &Arc<dm_tree::HostDeclarationSelect
 pub(super) fn selections(census: &mut HeapCensus, tree: &dm_tree::SemanticTree) {
     if let Some(issuer) = tree.owner_certificate_issuer() {
         census.arc_object("owner_certificates.issuer", issuer);
+    }
+    let variables = tree.owner_variable_selection_certificates();
+    if census.arc_object("variable_selection.index", variables) {
+        census.observe_items("variable_selection.index", variables.len());
+        census.unknown("variable_selection.index","private BTree nodes excluded; current local variable-name certificate descriptor counted");
+    }
+    let demands = tree.owner_callable_demand_certificates();
+    if census.arc_object("callable_demands.index", demands) {
+        demands.visit_storage(|_, entries| {
+            census.observe_items("callable_demands.index", entries);
+            census.unknown("callable_demands.index", "private BTree node backing excluded; exact demanded certificate cardinality reported");
+        });
+    }
+    let selections = tree.owner_callable_selection_certificates();
+    if census.arc_object("callable_selection.index", selections) {
+        census.observe_items("callable_selection.index", selections.len());
+        census.unknown("callable_selection.index", "private BTree nodes excluded; current name-qualified certificate index descriptor counted");
     }
     let callables = tree.owner_callable_certificates();
     if census.arc_object("owner_callable.index", callables) {

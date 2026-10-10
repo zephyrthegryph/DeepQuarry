@@ -37,6 +37,10 @@ impl ScalarFacts {
     }
 }
 impl ScalarFacts {
+    /// Issued process-local receipts; map node overhead is not exposed.
+    pub fn certificates(&self) -> &Arc<BTreeMap<ScalarQuery, u64>> {
+        &self.domain.certificates
+    }
     pub fn requested(&self) -> &Arc<[ScalarQuery]> {
         &self.requested
     }

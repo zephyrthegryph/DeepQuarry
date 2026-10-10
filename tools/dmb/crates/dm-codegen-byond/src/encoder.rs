@@ -14,6 +14,15 @@ pub struct FrozenProc {
     labels: Vec<Option<u32>>,
 }
 impl FrozenProc {
+    /// Restore persisted encoded code through the independent decoder grammar.
+    /// Semantic reference authority remains the caller's current-source duty.
+    pub fn restore(code: SymbolicCode, labels: Vec<Option<u32>>) -> Result<Self, String> {
+        restored::validate(&code, &labels)?;
+        Ok(Self {
+            code: std::sync::Arc::new(code),
+            labels,
+        })
+    }
     pub fn code(&self) -> &SymbolicCode {
         &self.code
     }
@@ -37,6 +46,8 @@ impl FrozenProc {
         &self.labels
     }
 }
+#[path = "encoder_restored.rs"]
+mod restored;
 #[derive(Debug)]
 pub enum FreezeError {
     Abi(LinkError),

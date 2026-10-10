@@ -9,12 +9,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 #[path = "artifact_tests.rs"]
 mod tests;
 
-#[derive(Clone)]
 enum RuntimeRecipe {
     Expression(shared_expression::SharedExpression),
     SizedArray(Arc<[u16]>),
 }
-struct SemanticClassification {
+pub(crate) struct SemanticClassification {
     default: DefaultValue,
     phase: Option<Phase>,
     runtime: Option<RuntimeRecipe>,
@@ -24,6 +23,8 @@ pub struct InitializerArtifacts {
     pub(in crate::initializer_policy) modifiers:
         crate::initializer_policy::modifier_facts::ModifierArtifacts,
     values: dm_session::ArtifactStore<SemanticClassification>,
+    pub(super) roster: super::token_roster::CurrentRoster,
+    pub(super) roster_enabled: bool,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -33,6 +34,8 @@ impl Default for InitializerArtifacts {
         Self {
             values: dm_session::ArtifactStore::current_revision(),
             modifiers: Default::default(),
+            roster: Default::default(),
+            roster_enabled: true,
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -40,6 +43,48 @@ impl Default for InitializerArtifacts {
     }
 }
 impl InitializerArtifacts {
+    pub(crate) fn visit_storage(
+        &self,
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, SemanticClassification>),
+    ) {
+        self.values.visit_storage(visitor);
+    }
+    pub(crate) fn visit_modifier_storage(
+        &self,
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierFact>),
+    ) {
+        self.modifiers.visit_storage(visitor);
+    }
+
+    /// Release recreatable runtime ASTs without changing semantic admission or
+    /// the accepted-owner identities used by the canonical token roster.
+    pub fn release_runtime_syntax(&self) {
+        self.values.visit_storage(|storage| {
+            if let dm_session::ArtifactStorageView::Entry { value, .. } = storage {
+                if let Some(RuntimeRecipe::Expression(syntax)) = &value.runtime {
+                    syntax.release_syntax();
+                }
+            }
+        });
+    }
+    pub fn token_roster_reuse_counts(&self) -> (u64, u64) {
+        (
+            self.roster.hits.load(Ordering::Relaxed),
+            self.roster.recomputed.load(Ordering::Relaxed),
+        )
+    }
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn visit_token_roster(
+        &self,
+        visitor: impl FnOnce(
+            &Vec<Arc<SemanticClassification>>,
+            &Vec<Option<(u32, Arc<[u8]>)>>,
+            &Vec<RuntimeGroup>,
+        ),
+    ) {
+        self.roster.visit(visitor);
+    }
+
     pub fn modifier_reuse_counts(&self) -> (u64, u64) {
         (
             self.modifiers.hits.load(Ordering::Relaxed),
@@ -53,6 +98,8 @@ impl InitializerArtifacts {
             // Preserve the explicit compatibility budget; the new full-current
             // modifier owner is enabled only by retained-session defaults.
             modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
+            roster: Default::default(),
+            roster_enabled: false,
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -113,6 +160,35 @@ pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Vec<u8>]) {
         .retain_current_keys(keys.iter().map(Vec::as_slice));
 }
 impl SemanticClassification {
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn visit_retained_parts(
+        &self,
+        visitor: impl FnOnce(
+            &DefaultValue,
+            Option<&Vec<u8>>,
+            Option<&Arc<[u16]>>,
+            Option<(&Arc<str>, Option<&Arc<dm_syntax::Expr>>)>,
+        ),
+    ) {
+        match &self.runtime {
+            Some(RuntimeRecipe::Expression(value)) => value.visit_retained(|source, syntax| {
+                visitor(
+                    &self.default,
+                    self.key.as_ref(),
+                    None,
+                    Some((source, syntax)),
+                );
+            }),
+            Some(RuntimeRecipe::SizedArray(value)) => {
+                visitor(&self.default, self.key.as_ref(), Some(value), None);
+            }
+            None => visitor(&self.default, self.key.as_ref(), None, None),
+        }
+    }
+
+    pub(super) fn token_key(&self) -> Option<&Vec<u8>> {
+        self.key.as_ref()
+    }
     fn capture(pending: &PendingWrite, symbols: &SymbolTable) -> Option<Self> {
         let runtime = match pending.write.runtime_value.as_ref() {
             None => None,
@@ -173,7 +249,8 @@ impl SemanticClassification {
                 phase: self.phase,
                 runtime_value,
             },
-            key: self.key.clone(),
+            key: None,
+            accepted: None,
         })
     }
 }
@@ -215,7 +292,8 @@ pub(super) fn classify_one(
                     "initializer recording factory invoked twice"
                 );
                 if let Some(value) = reuse.store.values.lookup(&key, &host) {
-                    if let Some(current) = value.bind(write, symbols, ordinal) {
+                    if let Some(mut current) = value.bind(write, symbols, ordinal) {
+                        current.accepted = Some(Arc::clone(&value));
                         hit = true;
                         result = Some(Ok(vec![current]));
                         return;
@@ -291,19 +369,24 @@ pub(super) fn classify_one(
         )
         .and_then(|weight| match &value.runtime {
             Some(RuntimeRecipe::Expression(syntax)) => {
-                let (source, expression) = syntax.retained_parts();
-                crate::heap_census::resident_initializer_syntax_weight(source, expression)
-                    .and_then(|extra| weight.checked_add(extra))
+                syntax.visit_retained(|source, expression| {
+                    expression.and_then(|expression| {
+                        crate::heap_census::resident_initializer_syntax_weight(source, expression)
+                            .and_then(|extra| weight.checked_add(extra))
+                    })
+                })
             }
             _ => Some(weight),
         })
-        .is_some_and(|weight| {
+        .and_then(|weight| {
             reuse
                 .store
                 .values
-                .insert_with(key.into(), reads, versions, weight, || value)
+                .insert_with_owned(key.into(), reads, versions, weight, || value)
         });
-        if !admitted {
+        if let Some(value) = admitted {
+            pending.accepted = Some(value);
+        } else {
             reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         }
         reuse.store.recomputed.fetch_add(1, Ordering::Relaxed);

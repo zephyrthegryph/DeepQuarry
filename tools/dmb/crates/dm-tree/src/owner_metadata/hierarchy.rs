@@ -69,6 +69,7 @@ impl RetainedMetadata {
                             }),
                             hierarchy: Some((paths, version)),
                             callable: None,
+                            variable: None,
                         }
                     });
                 Some((owner, version))

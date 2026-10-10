@@ -454,7 +454,7 @@ impl std::fmt::Display for ClassificationError {
 }
 impl std::error::Error for ClassificationError {}
 #[derive(Clone, Copy)]
-enum HeaderDomain {
+pub(crate) enum HeaderDomain {
     Client,
     World,
     Savefile,
@@ -486,7 +486,7 @@ impl HeaderDomain {
     }
 }
 #[derive(Clone, Copy)]
-enum ModifierFact {
+pub(crate) enum ModifierFact {
     Header(HeaderDomain),
     Known(u32),
     MutableInstance,
@@ -539,6 +539,7 @@ pub fn classify(
 mod tests;
 
 mod classification;
+pub(crate) use classification::artifact::SemanticClassification;
 pub use classification::artifact::{InitializerArtifacts, InitializerReuse};
 
 pub fn classify_with_reuse_on_executor(

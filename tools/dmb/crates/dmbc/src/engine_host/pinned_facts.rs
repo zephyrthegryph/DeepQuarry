@@ -47,6 +47,13 @@ impl PinnedSource for dm_tree::constant_resolution::ScalarSnapshot {
             }
         }
         census.slice("host.scalar.requested", &self.requested, true);
+        if census.arc_object("host.scalar.certificates", self.certificates()) {
+            census.collection_entries::<(ScalarQuery, u64)>(
+                "host.scalar.certificates",
+                self.certificates().as_ref() as *const _ as usize,
+                self.certificates().len(),
+            );
+        }
         if census.arc_object("host.scalar.predefined", &self.predefined_reads) {
             census.collection_entries::<(SymbolId, PredefinedOutcome)>(
                 "host.scalar.predefined",

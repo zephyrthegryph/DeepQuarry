@@ -56,6 +56,7 @@ pub struct BuildHost {
         Arc<crate::initializer_lowering::InitializerAssemblies>,
     )>,
     class_projections: Option<(u128, Arc<crate::class_projection::ClassProjections>)>,
+    required_types: Option<(u128, Arc<crate::required_types::RequiredTypeArtifacts>)>,
     link_bindings: Option<(u128, Arc<dm_link::RetainedBindings>)>,
     generation: Option<(u128, Arc<crate::composition::RetainedGeneration>)>,
     host_facts: Option<Arc<crate::request_runner::runner_facts::RetainedHostFacts>>,
@@ -110,6 +111,7 @@ impl Default for BuildHost {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            required_types: None,
             link_bindings: None,
             generation: None,
             host_facts: None,
@@ -216,6 +218,7 @@ impl BuildHost {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            required_types: None,
             link_bindings: None,
             generation: None,
             host_facts: None,
@@ -394,6 +397,14 @@ impl BuildHost {
         }
         memo.class_projections = Some(Arc::clone(&self.class_projections.as_ref().unwrap().1));
         if self
+            .required_types
+            .as_ref()
+            .is_none_or(|(previous, _)| *previous != policy)
+        {
+            self.required_types = Some((policy, Arc::new(Default::default())));
+        }
+        memo.required_types = Some(Arc::clone(&self.required_types.as_ref().unwrap().1));
+        if self
             .link_bindings
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
@@ -504,6 +515,7 @@ impl BuildHost {
         self.initializer_fragments = None;
         self.initializer_assemblies = None;
         self.class_projections = None;
+        self.required_types = None;
         self.link_bindings = None;
         self.generation = None;
         self.host_facts = None;
@@ -713,15 +725,14 @@ mod tests {
     fn invalid_changed_engine_does_not_replace_authenticated_owner() {
         let mut host = BuildHost::default();
         let first = capture(&mut host, BTreeMap::new());
-        assert!(
-            host.engine(
+        assert!(host
+            .engine(
                 PathBuf::from("E:/fixture/world.dme"),
                 BTreeMap::new(),
                 true,
                 vec![0]
             )
-            .is_err()
-        );
+            .is_err());
         let again = capture(&mut host, BTreeMap::new());
         assert!(Arc::ptr_eq(&first, &again));
     }

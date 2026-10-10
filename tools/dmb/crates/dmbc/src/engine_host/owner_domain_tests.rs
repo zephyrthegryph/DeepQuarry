@@ -31,14 +31,15 @@ fn engine_wrapper_hierarchy_domain_tracks_current_delegated_source_only() {
     for query in [Q::Type(owner), Q::Parent(owner), Q::Ancestry(owner)] {
         assert_eq!(first.resolve(query), Source(11).resolve(query));
     }
-    assert_eq!(
-        Q::Var {
-            owner,
-            name: SymbolId::of("x")
-        }
-        .domain(),
-        dm_ir::ReadDomain::Tree
-    );
+    let variable = Q::Var {
+        owner,
+        name: SymbolId::of("x"),
+    };
+    assert_eq!(variable.domain(), dm_ir::ReadDomain::OwnerScalar(variable));
+    // This fake source issues hierarchy receipts only and has no positive
+    // scalar answer; the new family must not borrow hierarchy authority.
+    assert_eq!(first.domain_version(variable.domain()), None);
+    assert_eq!(first.resolve(variable), M::Unsupported(variable));
 }
 
 #[test]
@@ -84,4 +85,53 @@ fn callable_owner_certificate_declines_engine_fallback_and_qualifies_provider() 
     fallback.callable_issuer = Some(11);
     assert_eq!(fallback.resolve(query), M::Missing);
     assert_eq!(fallback.domain_version(domain), None);
+}
+#[test]
+fn variable_owner_certificate_requires_current_source_and_provider_issuer() {
+    struct Source(bool);
+    impl Resolver for Source {
+        fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+            matches!(domain, dm_ir::ReadDomain::OwnerVariable(_)).then_some(9)
+        }
+        fn resolve(&self, query: Q) -> M {
+            if self.0 {
+                M::Presence(true)
+            } else {
+                M::Unsupported(query)
+            }
+        }
+    }
+    let mut symbols = SymbolTable::default();
+    let owner = symbols.intern("/").unwrap();
+    let name = symbols.intern("value").unwrap();
+    let constants =
+        ConstantCatalog::new(1, &mut symbols, Vec::new(), Completeness::Complete).unwrap();
+    let runtime =
+        RuntimeAliasCatalog::new(1, &symbols, Vec::new(), vec![owner], Completeness::Complete)
+            .unwrap();
+    let query = Q::HasMemberVar { owner, name };
+    let mut host =
+        EngineResolverHost::new(Arc::new(Source(true)), constants.clone(), runtime.clone());
+    let source = Arc::new(dm_tree::build(SymbolTable::default(), &[]).unwrap());
+    host.variable_absence = Some(Arc::new(VariableAbsence {
+        issuer: Some(11),
+        names: HashSet::from([name]),
+        positive_constants: BTreeMap::new(),
+        identity: 1,
+        source,
+    }));
+    assert_eq!(
+        host.domain_version(query.domain()),
+        Some((9u128 << 64) | 11)
+    );
+    Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = Some(12);
+    assert_eq!(
+        host.domain_version(query.domain()),
+        Some((9u128 << 64) | 12)
+    );
+    Arc::make_mut(host.variable_absence.as_mut().unwrap()).issuer = None;
+    assert_eq!(host.domain_version(query.domain()), None);
+    let fallback = EngineResolverHost::new(Arc::new(Source(false)), constants, runtime);
+    assert_eq!(fallback.domain_version(query.domain()), None);
+    assert_eq!(fallback.resolve(query), M::Unsupported(query));
 }

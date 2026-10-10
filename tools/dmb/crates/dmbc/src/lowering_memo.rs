@@ -1,7 +1,7 @@
 //! Exact lowering variants with retained dependency answers and source replay.
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
-pub const PROCEDURE_VERSION: u32 = 5;
+pub const PROCEDURE_VERSION: u32 = 7;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -12,6 +12,10 @@ use std::sync::{
 };
 #[derive(Default)]
 pub struct MemoCounts {
+    pub compact_disk_hits: AtomicU64,
+    pub compact_disk_encoded: AtomicU64,
+    pub compact_fallback_encoding: AtomicU64,
+    pub compact_fallback_ineligible: AtomicU64,
     pub resident_hits: AtomicU64,
     pub disk_hits: AtomicU64,
     pub recomputed: AtomicU64,
@@ -48,6 +52,9 @@ impl Default for MemoLimits {
     }
 }
 type Pending = dm_cache::PendingRecords;
+#[path = "lowering_memo_population.rs"]
+mod population;
+pub(crate) use population::DiskWriter;
 
 /// One-shot CLI requests publish disk records without retaining duplicate rich IR.
 /// Retained sessions may enable bounded resident replay explicitly.
@@ -70,15 +77,16 @@ pub struct ProcedureMemo {
     pub(crate) initializer_assemblies:
         Option<Arc<crate::initializer_lowering::InitializerAssemblies>>,
     pub(crate) class_projections: Option<Arc<crate::class_projection::ClassProjections>>,
+    pub(crate) required_types: Option<Arc<crate::required_types::RequiredTypeArtifacts>>,
     pub(crate) link_bindings: Option<Arc<dm_link::RetainedBindings>>,
     disk: Option<Arc<crate::runner_disk::LazyDisk>>,
-    pending: Mutex<Pending>,
-    pub counts: MemoCounts,
+    pending: Arc<Mutex<Pending>>,
+    pub counts: Arc<MemoCounts>,
     limits: MemoLimits,
     explanations: Mutex<BTreeMap<dm_ir::ProcedureIdentity, MemoExplanation>>,
     read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
-    publication_errors: Mutex<Vec<String>>,
+    publication_errors: Arc<Mutex<Vec<String>>>,
     explanation_limit: usize,
 }
 pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + Send + Sync;
@@ -145,6 +153,9 @@ pub struct MemoExplanation {
     pub changed_query: Option<ResolveQuery>,
 }
 impl ProcedureMemo {
+    pub(crate) fn completion_writer(&self) -> Option<DiskWriter> {
+        (!self.read_only_disk && self.disk.is_some()).then(|| DiskWriter::from_memo(self))
+    }
     /// Observe the optional retained assembled-code owner without decoding it.
     pub fn initializer_assembly_retention_census(
         &self,
@@ -170,17 +181,7 @@ impl ProcedureMemo {
         self
     }
     fn wire_error(&self, message: &str) {
-        self.counts.unsupported_disk.fetch_add(1, Ordering::Relaxed);
-        self.counts
-            .publication_failed
-            .fetch_add(1, Ordering::Relaxed);
-        let mut errors = self
-            .publication_errors
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        if errors.len() < 8 {
-            errors.push(message.to_owned());
-        }
+        DiskWriter::from_memo(self).wire_error(message);
     }
     pub fn publication_errors(&self) -> Vec<String> {
         self.publication_errors
@@ -188,46 +189,7 @@ impl ProcedureMemo {
             .unwrap_or_else(|error| error.into_inner())
             .clone()
     }
-    fn publish(&self, records: Vec<dm_cache::Record>) {
-        let _profile = dm_profile::stage("lowering.population_flush");
-        let count = records.len();
-        let start = std::time::Instant::now();
-        let outcome = match &self.publisher {
-            Some(publisher) => publisher(records),
-            None => self
-                .disk
-                .as_ref()
-                .ok_or_else(|| "cache publication has no captured writer".to_owned())
-                .and_then(|disk| {
-                    disk.publish(&records)
-                        .map(|_| ())
-                        .map_err(|error| error.to_string())
-                }),
-        };
-        match outcome {
-            Ok(()) => {
-                self.counts
-                    .published_records
-                    .fetch_add(count as u64, Ordering::Relaxed);
-            }
-            Err(message) => {
-                self.counts
-                    .publication_failed
-                    .fetch_add(count as u64, Ordering::Relaxed);
-                let mut errors = self
-                    .publication_errors
-                    .lock()
-                    .unwrap_or_else(|error| error.into_inner());
-                if errors.len() < 8 {
-                    errors.push(message.chars().take(512).collect());
-                }
-            }
-        }
-        self.counts.publication_ns.fetch_add(
-            start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-            Ordering::Relaxed,
-        );
-    }
+
     /// Bounded, structurally sorted observations. Hash-only bucket misses are
     /// reported as NoExactVariant, never invented dependency changes.
     pub fn explain(&self) -> Vec<MemoExplanation> {
@@ -265,15 +227,16 @@ impl ProcedureMemo {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            required_types: None,
             link_bindings: None,
             disk: None,
-            pending: Mutex::new(Pending::default()),
-            counts: MemoCounts::default(),
+            pending: Arc::new(Mutex::new(Pending::default())),
+            counts: Arc::new(MemoCounts::default()),
             limits: MemoLimits::default(),
             explanations: Mutex::new(BTreeMap::new()),
             read_only_disk: false,
             publisher: None,
-            publication_errors: Mutex::new(Vec::new()),
+            publication_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
         }
     }
@@ -315,17 +278,18 @@ impl ProcedureMemo {
             initializer_fragments: None,
             initializer_assemblies: None,
             class_projections: None,
+            required_types: None,
             link_bindings: None,
             disk: Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
                 snapshot.into(),
             ))),
-            pending: Mutex::new(Pending::default()),
-            counts: MemoCounts::default(),
+            pending: Arc::new(Mutex::new(Pending::default())),
+            counts: Arc::new(MemoCounts::default()),
             limits,
             explanations: Mutex::new(BTreeMap::new()),
             read_only_disk: false,
             publisher: None,
-            publication_errors: Mutex::new(Vec::new()),
+            publication_errors: Arc::new(Mutex::new(Vec::new())),
             explanation_limit: 256,
         }
     }
@@ -375,12 +339,14 @@ impl ProcedureMemo {
                         frontend: context.frontend,
                         body: context.body,
                         parsed: context.parsed,
+                        bindings: context.bindings,
                     },
                     host,
                     prepared,
                 )
             };
-            let admitted = result.unit.is_some() || result.errors.is_some();
+            let admitted =
+                result.unit.is_some() || result.prepared.is_some() || result.errors.is_some();
             let mut replay = replay.borrow_mut();
             if admitted || replay.is_none() {
                 *replay = Some(result);
@@ -396,7 +362,7 @@ impl ProcedureMemo {
                 });
         debug_assert_eq!(
             view.is_some(),
-            result.unit.is_some() || result.errors.is_some()
+            result.unit.is_some() || result.prepared.is_some() || result.errors.is_some()
         );
         if self.resident_retention == ResidentRetention::Enabled {
             if let (Some(unit), Some(promotion)) = (&result.unit, result.resident.as_ref()) {
@@ -535,36 +501,7 @@ impl ProcedureMemo {
         }
     }
     fn queue_payload(&self, key: &[u8], payload: Vec<u8>) {
-        let record_key = Self::record_key(key);
-        let bytes = match dm_cache::encode_variants(&[payload]) {
-            Ok(bytes) => bytes,
-            Err(error) => {
-                self.wire_error(&format!("cache variant encoding failed: {error}"));
-                return;
-            }
-        };
-        let ready = {
-            let _profile = dm_profile::item("lowering.population_queue");
-            self.pending
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .push(
-                    dm_cache::Record {
-                        key: record_key,
-                        symbols: Vec::new(),
-                        payload: bytes.into(),
-                    },
-                    self.limits.pending_bytes.clamp(1, 8 * 1024 * 1024) as u64,
-                )
-        };
-        match ready {
-            Ok(batches) => {
-                for records in batches {
-                    self.publish(records);
-                }
-            }
-            Err(error) => self.wire_error(&format!("cache record staging failed: {error}")),
-        }
+        DiskWriter::from_memo(self).queue_payload(key, payload);
     }
     /// Publish once per build; never create one physical segment per procedure.
     pub fn take_pending(&self) -> Vec<dm_cache::Record> {

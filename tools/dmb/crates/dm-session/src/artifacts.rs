@@ -231,6 +231,19 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
+        self.insert_with_owned(key, reads, versions, weight, create)
+            .is_some()
+    }
+    /// Return the actual immutable stored owner without cloning the produced payload.
+    /// Budget rejection does not invoke the producer; borrowed owners survive pruning.
+    pub fn insert_with_owned(
+        &self,
+        key: Arc<[u8]>,
+        reads: Vec<Observation<Q, A, D>>,
+        versions: Vec<(D, u128)>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         // Resident storage evicts before admitting a new value. Results are
@@ -248,21 +261,22 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 });
             }
             state.bytes -= removed;
+            let value = Arc::new(create());
             state.buckets.entry(hash).or_default().push(Variant {
                 key,
                 reads: reads.into(),
                 versions: versions.into(),
-                value: Arc::new(create()),
+                value: Arc::clone(&value),
                 weight,
             });
             state.bytes += weight;
-            return true;
+            return Some(value);
         }
         let Retention::Budgeted(limit) = self.retention else {
             unreachable!()
         };
         if weight > limit {
-            return false;
+            return None;
         }
         while state.bytes.saturating_add(weight) > limit {
             let Some(oldest_bucket) = state.buckets.keys().next().copied() else {
@@ -283,26 +297,28 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 // Removing a variant releases accounted storage below.
                 let removed = bucket.remove(index);
                 let removed_weight = removed.weight;
+                let value = Arc::new(create());
                 bucket.push(Variant {
                     key,
                     reads: reads.into(),
                     versions: versions.into(),
-                    value: Arc::new(create()),
+                    value: Arc::clone(&value),
                     weight,
                 });
                 state.bytes = state.bytes - removed_weight + weight;
-                return true;
+                return Some(value);
             }
         }
+        let value = Arc::new(create());
         bucket.push(Variant {
             key,
             reads: reads.into(),
             versions: versions.into(),
-            value: Arc::new(create()),
+            value: Arc::clone(&value),
             weight,
         });
         state.bytes += weight;
-        true
+        Some(value)
     }
 }
 
@@ -334,6 +350,27 @@ mod tests {
         }
     }
     struct Value(Arc<AtomicUsize>);
+    #[test]
+    fn produced_owner_is_shared_and_survives_current_roster_pruning() {
+        let store = ArtifactStore::current_revision();
+        let key: Arc<[u8]> = Arc::from(b"produced".as_slice());
+        let produced = store
+            .insert_with_owned(Arc::clone(&key), vec![], vec![], 1, || {
+                Value(Arc::new(AtomicUsize::new(0)))
+            })
+            .unwrap();
+        let found = store.lookup(&key, &Host).unwrap();
+        assert!(Arc::ptr_eq(&produced, &found));
+        store.retain_current_keys(std::iter::empty());
+        assert!(store.lookup(&key, &Host).is_none());
+        assert!(Arc::ptr_eq(&produced, &found));
+        let rejected = ArtifactStore::<Value>::with_limit(0);
+        assert!(rejected
+            .insert_with_owned(key, vec![], vec![], 1, || panic!(
+                "oversized producers must not run"
+            ))
+            .is_none());
+    }
     #[test]
     fn diagnostic_storage_borrows_actual_owner_without_cloning_it() {
         let store = ArtifactStore::current_revision();

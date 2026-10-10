@@ -329,12 +329,18 @@ pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
 }
 /// One borrowed build executor and its issued request-local lazy body arena.
 #[derive(Clone, Copy)]
+pub struct DiskReplayBindings<'a> {
+    pub source: &'a std::collections::BTreeSet<dm_ir::SymRef>,
+    pub external: &'a crate::symbolic::ReferenceBindings,
+}
+#[derive(Clone, Copy)]
 pub struct LoweringExecution<'a, 'frontend> {
     pub executor: &'a dm_exec::BuildExecutor,
     pub bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
     pub capture_references: bool,
     /// Analysis query selection; compilation uses the complete issued roster.
     pub selected_bodies: Option<&'a [&'frontend BodyOccurrence]>,
+    pub disk_replay_bindings: Option<DiskReplayBindings<'a>>,
 }
 impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
     pub fn new(
@@ -346,7 +352,12 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
             bodies,
             capture_references: false,
             selected_bodies: None,
+            disk_replay_bindings: None,
         }
+    }
+    pub fn with_disk_replay_bindings(mut self, bindings: DiskReplayBindings<'a>) -> Self {
+        self.disk_replay_bindings = Some(bindings);
+        self
     }
     /// Explicit analysis clients pay for typed-node selection recording.
     /// Ordinary builds keep the existing no-capture lowering path.
@@ -558,7 +569,7 @@ pub use completion::{
     lower_frontend_completed_input_on_execution, lower_frontend_completed_on_execution,
     CompletedLoweringBatch, CompletedUnit,
 };
-pub use symbolic_input::{CompletedInput, SymbolicRetentionStats};
+pub use symbolic_input::{CompletedInput, ProcedureSelections, SymbolicRetentionStats};
 fn compact_retained(unit: &mut LoweredUnit) {
     fn compact<T>(values: &mut Vec<T>) {
         if values.capacity() > values.len() {

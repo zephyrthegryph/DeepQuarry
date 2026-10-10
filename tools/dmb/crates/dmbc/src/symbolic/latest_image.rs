@@ -12,6 +12,14 @@ struct Linked {
     image: ProcedureImage,
 }
 impl LatestImage {
+    /// Drop numeric projections only. Every future use follows ordinary binding
+    /// validation and reconstructs the image from the immutable symbolic code.
+    pub(crate) fn release_bound_images(&self) -> usize {
+        let retired = self.value.lock().unwrap_or_else(|e| e.into_inner()).take();
+        let linked = usize::from(retired.is_some());
+        drop(retired);
+        linked + usize::from(self.wire.release())
+    }
     pub(super) fn link(
         &self,
         frozen: &Arc<FrozenProc>,
@@ -115,6 +123,13 @@ mod tests {
         let first = owner.link(&frozen, &current, &tables).unwrap();
         let hit = owner.link(&frozen, &current, &tables).unwrap();
         assert!(Arc::ptr_eq(&first.words, &hit.words));
+        let code_owner = frozen.shared_code();
+        assert_eq!(owner.release_bound_images(), 1);
+        assert_eq!(owner.release_bound_images(), 0);
+        let rebuilt = owner.link(&frozen, &current, &tables).unwrap();
+        assert_eq!(rebuilt, first);
+        assert!(!Arc::ptr_eq(&rebuilt.words, &first.words));
+        assert!(Arc::ptr_eq(&code_owner, &frozen.shared_code()));
         let mut shifted = origins;
         shifted.entries[0].line = 500;
         let shifted = shifted.into();

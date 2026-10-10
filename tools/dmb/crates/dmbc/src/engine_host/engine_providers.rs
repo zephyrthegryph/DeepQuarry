@@ -18,6 +18,7 @@ pub(super) struct CallableProviders {
     pub intrinsic: BTreeSet<SymbolId>,
 }
 pub(super) struct VariableProviders {
+    pub issuer: Option<u64>,
     pub spellings: SymbolTable,
     pub intrinsic: BTreeSet<SymbolId>,
     pub constants: ConstantCatalog,
@@ -126,7 +127,16 @@ impl VariableProviders {
             bytes.extend_from_slice(&name.bits().to_le_bytes());
         }
 
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let issuer = NEXT
+            .fetch_update(
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+                |value| value.checked_add(1),
+            )
+            .ok();
         Ok(Self {
+            issuer,
             spellings: catalog_symbols,
             intrinsic,
             constants: pinned_constants,

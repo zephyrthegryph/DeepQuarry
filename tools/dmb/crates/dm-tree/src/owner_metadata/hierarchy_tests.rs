@@ -147,7 +147,20 @@ fn hierarchy_receipts_reuse_only_exact_current_ancestry_and_qualify_completeness
             name: SymbolId::of("x")
         }
         .domain(),
-        ReadDomain::Tree
+        ReadDomain::OwnerScalar(ResolveQuery::Var {
+            owner: child,
+            name: SymbolId::of("x")
+        })
+    );
+    assert_eq!(
+        complete.domain_version(
+            ResolveQuery::Var {
+                owner: child,
+                name: SymbolId::of("x")
+            }
+            .domain()
+        ),
+        None
     );
     assert!(!domain.persistent_version());
 }

@@ -589,6 +589,11 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         census.frontend(frontend);
         census.startup(startup);
         census.initializer_ledger(&initialization.classified);
+        if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
+            if census.arc_object("initializer_classification.owner", store) {
+                census.initializer_artifacts(store);
+            }
+        }
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
     // Capture only stored descriptor defaults while their source ledger is live.
@@ -642,7 +647,12 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         config,
         Some(startup),
         memo,
-        crate::lowering::LoweringExecution::new(executor, &bodies),
+        crate::lowering::LoweringExecution::new(executor, &bodies).with_disk_replay_bindings(
+            crate::lowering::DiskReplayBindings {
+                source: &source_bindings,
+                external: links.references,
+            },
+        ),
         true,
         &complete,
     );
@@ -718,7 +728,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let non_text_types = non_text
         .map(|stage| stage.required_types())
         .unwrap_or_default();
-    let (projection, source_type_order) = crate::required_types::admit_prepared(
+    let (projection, source_type_order) = crate::required_types::admit_prepared_retained(
         projection,
         crate::required_types::PreparedInputs {
             source_order: declarations.source_type_order,
@@ -729,6 +739,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
             symbols: plan.symbols.as_ref(),
             non_text_types: &non_text_types,
         },
+        memo.and_then(|memo| memo.required_types.as_deref()),
     )
     .map_err(ColdError::Initializer)?;
     drop(body_types);
