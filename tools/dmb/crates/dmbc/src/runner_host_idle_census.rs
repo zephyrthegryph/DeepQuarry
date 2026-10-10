@@ -17,7 +17,7 @@ impl BuildHost {
         }
         census.finish()
     }
-    pub(super) fn emit_idle_census(&self, boundary: &str) {
+    pub(crate) fn emit_idle_census(&self, boundary: &str) {
         let Some(path) = std::env::var_os("DMB_IDLE_CENSUS_PATH").filter(|path| !path.is_empty())
         else {
             return;
