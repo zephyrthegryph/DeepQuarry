@@ -10,7 +10,7 @@ pub(crate) mod header_recipes;
 mod headers;
 pub use header_recipes::HeaderRecipes;
 pub(crate) mod member_contribution;
-mod retained;
+pub(crate) mod retained;
 pub(crate) mod type_roster;
 pub(crate) use class_roster::MaterializedClassRoster;
 pub use retained::ClassProjections;

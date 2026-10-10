@@ -9,10 +9,22 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 pub struct ClassProjections {
     pub(crate) types: super::type_roster::TypeRoster,
-    values: dm_session::ArtifactStore<Vec<MemberContribution>>,
+    values: dm_session::ArtifactStore<OwnerProjection>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+}
+#[derive(Clone, PartialEq, Eq)]
+pub(crate) struct MemberInput {
+    pub kind: MemberKind,
+    pub definition: dm_tree::DefinitionMode,
+    pub name: SymbolId,
+    pub metadata: Arc<dm_ir::DeclarationMeaning>,
+    pub default: Option<DefaultValue>,
+}
+pub(crate) struct OwnerProjection {
+    pub inputs: Vec<MemberInput>,
+    pub values: Vec<MemberContribution>,
 }
 impl Default for ClassProjections {
     fn default() -> Self {
@@ -27,7 +39,8 @@ impl Default for ClassProjections {
 }
 struct Owner<'a> {
     key: Vec<u8>,
-    hit: Option<Arc<Vec<MemberContribution>>>,
+    hit: Option<Arc<OwnerProjection>>,
+    inputs: Vec<MemberInput>,
     produced: Vec<MemberContribution>,
     recorder: RecordingResolver<'a, dm_tree::SemanticTree>,
     next: usize,
@@ -45,35 +58,6 @@ fn source_bearing(value: &SemanticValue) -> bool {
         _ => false,
     }
 }
-fn default_bytes(value: &DefaultValue) -> Option<Vec<u8>> {
-    let mut bytes = Vec::new();
-    match value {
-        DefaultValue::Transform(matrix) => {
-            bytes.push(2);
-            for bits in matrix {
-                bytes.extend_from_slice(&bits.to_le_bytes());
-            }
-        }
-        DefaultValue::Scalar(value) => {
-            if source_bearing(value) {
-                return None;
-            }
-            bytes.push(0);
-            bytes.extend_from_slice(&value.canonical_bytes());
-        }
-        DefaultValue::InitializerExpression { token, canonical } => {
-            bytes.push(1);
-            bytes.extend_from_slice(&token.to_le_bytes());
-            bytes.extend_from_slice(&(canonical.len() as u64).to_le_bytes());
-            bytes.extend_from_slice(canonical);
-        }
-    }
-    Some(bytes)
-}
-fn chunk(key: &mut Vec<u8>, bytes: &[u8]) {
-    key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-    key.extend_from_slice(bytes);
-}
 impl ClassProjections {
     pub(super) fn begin<'a>(
         &'a self,
@@ -83,7 +67,7 @@ impl ClassProjections {
     ) -> Option<Request<'a>> {
         let tree = source.tree.as_ref();
         let keys = (|| {
-            let mut keys: HashMap<SymbolId, Option<Vec<u8>>> = HashMap::new();
+            let mut keys: HashMap<SymbolId, Option<(Vec<u8>, Vec<MemberInput>)>> = HashMap::new();
             // This scan issues no diagnostics or semantic queries: uncertain input
             // declines retention, leaving original encounter/error order to produce.
             for &id in order {
@@ -94,28 +78,30 @@ impl ClassProjections {
                 let member = tree.member(member_id)?;
                 let owner = tree.type_node(member.owner)?.path;
                 let slot = keys.entry(owner).or_insert_with(|| {
-                    let mut key = b"dmbc-owner-projection-v1-symbolic-token-roster\0".to_vec();
+                    let mut key = b"dmbc-owner-projection-v2-exact-input-roster\0".to_vec();
                     key.extend_from_slice(&owner.bits().to_le_bytes());
-                    Some(key)
+                    Some((key, Vec::new()))
                 });
                 // A source-bearing default disqualifies only its own type. All
                 // occurrences still pass current membership/default admission.
                 let default = if member.kind == MemberKind::Var {
-                    Some(default_bytes(defaults.get(&id)?))
+                    Some((*defaults.get(&id)?).clone())
                 } else {
                     None
                 };
-                if matches!(default, Some(None)) {
+                if matches!(&default, Some(DefaultValue::Scalar(value)) if source_bearing(value)) {
                     *slot = None;
                 }
-                let Some(key) = slot.as_mut() else { continue };
-                key.push(member.kind as u8);
-                key.push(member.definition as u8);
-                key.extend_from_slice(&member.name.bits().to_le_bytes());
-                chunk(key, &member.metadata.canonical_bytes());
-                if let Some(Some(default)) = default {
-                    chunk(key, &default);
-                }
+                let Some((_, inputs)) = slot.as_mut() else {
+                    continue;
+                };
+                inputs.push(MemberInput {
+                    kind: member.kind,
+                    definition: member.definition,
+                    name: member.name,
+                    metadata: Arc::clone(&member.metadata),
+                    default,
+                });
             }
             Some(keys)
         })();
@@ -124,16 +110,21 @@ impl ClassProjections {
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         };
-        self.values
-            .retain_current_keys(keys.values().filter_map(|key| key.as_deref()));
+        self.values.retain_current_keys(
+            keys.values()
+                .filter_map(|key| key.as_ref().map(|(key, _)| key.as_slice())),
+        );
         let owners = keys
             .into_iter()
             .filter_map(|(owner, key)| {
-                let Some(key) = key else {
+                let Some((key, inputs)) = key else {
                     self.declined.fetch_add(1, Ordering::Relaxed);
                     return None;
                 };
-                let hit = self.values.lookup(&key, tree);
+                let hit = self
+                    .values
+                    .lookup(&key, tree)
+                    .filter(|value| value.inputs == inputs);
                 if hit.is_some() {
                     self.hits.fetch_add(1, Ordering::Relaxed);
                 }
@@ -142,6 +133,7 @@ impl ClassProjections {
                     Owner {
                         key,
                         hit,
+                        inputs,
                         produced: Vec::new(),
                         recorder: RecordingResolver::new(tree),
                         next: 0,
@@ -156,7 +148,7 @@ impl ClassProjections {
     }
     pub(crate) fn visit_storage(
         &self,
-        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, Vec<MemberContribution>>),
+        visitor: impl FnMut(dm_session::ArtifactStorageView<'_, OwnerProjection>),
     ) {
         self.values.visit_storage(visitor);
     }
@@ -182,7 +174,7 @@ impl Request<'_> {
         let index = owner.next;
         owner.next += 1;
         if let Some(hit) = &owner.hit {
-            if let Some(contribution) = hit.get(index) {
+            if let Some(contribution) = hit.values.get(index) {
                 return Ok(contribution.clone());
             }
             owner.hit = None;
@@ -214,7 +206,7 @@ impl Request<'_> {
             if owner.hit.is_some() {
                 continue;
             }
-            if owner.produced.len() != owner.next {
+            if owner.produced.len() != owner.next || owner.next != owner.inputs.len() {
                 self.store.declined.fetch_add(1, Ordering::Relaxed);
                 continue;
             }
@@ -222,6 +214,7 @@ impl Request<'_> {
             let versions = owner.recorder.domain_receipts();
             let Some(weight) = crate::heap_census::resident_owner_projection_weight(
                 &owner.produced,
+                &owner.inputs,
                 &owner.key,
                 &reads,
                 &versions,
@@ -232,7 +225,12 @@ impl Request<'_> {
             self.store.recomputed.fetch_add(1, Ordering::Relaxed);
             self.store
                 .values
-                .insert_with(owner.key.into(), reads, versions, weight, || owner.produced);
+                .insert_with(owner.key.into(), reads, versions, weight, || {
+                    OwnerProjection {
+                        inputs: owner.inputs,
+                        values: owner.produced,
+                    }
+                });
         }
     }
 }

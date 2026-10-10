@@ -142,6 +142,85 @@ mod tests {
     use super::*;
     use std::{path::PathBuf, sync::Arc};
 
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok(self.0.into())
+        }
+    }
+
+    #[test]
+    fn pinned_frontend_startup_classification_binds_current_warning_lines() {
+        let mut retained = crate::runner_host::BuildHost::one_shot();
+        let engine = retained
+            .engine(
+                "warnings.dme".into(),
+                Default::default(),
+                true,
+                include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+            )
+            .unwrap();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        for (source, shift) in [
+            (
+                "/var/list/global_value[2] = null\n/datum/probe\n    var/list/value[2] = list(1,2)\n    var/list/implicit[2]\n/datum/probe/child\n    value = null\n/proc/probe()\n    var/static/list/cache[2] = null\n    return cache\n",
+                0,
+            ),
+            (
+                "// shifted current source\n\n/var/list/global_value[2] = null\n/datum/probe\n    var/list/value[2] = list(1,2)\n    var/list/implicit[2]\n/datum/probe/child\n    value = null\n/proc/probe()\n    var/static/list/cache[2] = null\n    return cache\n",
+                2,
+            ),
+        ] {
+            let frontend = dm_tree::frontend::FrontendRevision::new(
+                dm_tree::frontend::build_with_config(
+                    std::path::Path::new("warnings.dme"),
+                    &Source(source),
+                    &Default::default(),
+                    dm_tree::frontend::FrontendConfig {
+                        workers: 1,
+                        engine: Some(engine.frontend_seed()),
+                        observer: None,
+                    },
+                )
+                .unwrap(),
+            );
+            let (host, _) =
+                crate::request_runner::runner_facts::prepare(&frontend, &engine.snapshot).unwrap();
+            let bodies = dm_tree::frontend::BodyArena::new(&frontend);
+            let startup = crate::startup::capture_revision_facts_with_executor_and_bodies(
+                &frontend,
+                &[],
+                &executor,
+                &bodies,
+            )
+            .unwrap();
+            let current = startup.view_revision(&frontend).unwrap();
+            let plan = current.plan();
+            let evaluator = crate::driver_facts::DriverEvaluator {
+                pure_calls: None,
+                resource_search_context: None,
+                resolver: &host,
+                symbols: &plan.symbols,
+            };
+            let classified =
+                super::super::classify(&plan.writes, &plan.symbols, &evaluator).unwrap();
+            let warnings = capture(&frontend, plan, &classified).unwrap();
+            let rows = warnings
+                .iter()
+                .map(|warning| (warning.name.as_str(), warning.location.line))
+                .collect::<Vec<_>>();
+            assert_eq!(
+                rows,
+                [
+                    ("global_value", 1 + shift),
+                    ("value", 3 + shift),
+                    ("cache", 8 + shift)
+                ]
+            );
+            assert_eq!(render(&warnings).unwrap().len(), 3);
+        }
+    }
+
     #[test]
     fn inherited_receivers_warn_once_but_distinct_includes_remain_distinct() {
         let origin = InitializerOrigin {
@@ -178,7 +257,11 @@ mod tests {
             code: WarningCode::ListDoubleInit,
             name: "value".into(),
             location: SourceLocation {
-                span: dm_ir::Span { file: dm_ir::FileId(0), start: 12, end: 19 },
+                span: dm_ir::Span {
+                    file: dm_ir::FileId(0),
+                    start: 12,
+                    end: 19,
+                },
                 path: Arc::new(PathBuf::from("current.dm")),
                 semantic_path: Arc::from("current.dm"),
                 line: 2,

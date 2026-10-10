@@ -81,17 +81,25 @@ fn project_source(
 #[test]
 fn interleaved_owner_payloads_rebind_shifted_sources_and_match_fresh_reorder() {
     let store = ClassProjections::default();
-    let source="/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n";
+    let source = "/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n";
     project_source(&store, source, false);
     let before = store.hits.load(Ordering::Relaxed);
-    project_source(&store,"\n\n/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 4\n/datum/b/proc/q()\n    return 2\n",false);
+    project_source(
+        &store,
+        "\n\n/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 4\n/datum/b/proc/q()\n    return 2\n",
+        false,
+    );
     assert!(
         store.hits.load(Ordering::Relaxed) > before,
         "unchanged owner semantic payload must reuse"
     );
     let reversed = project_source(&store, source, true);
     assert_eq!(reversed.fields[0].name, SymbolId::of("y"));
-    let changed=project_source(&store,"/datum/a\n    var/x = 4\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n",false);
+    let changed = project_source(
+        &store,
+        "/datum/a\n    var/x = 4\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n",
+        false,
+    );
     assert_eq!(
         changed.fields[0].value,
         DefaultValue::Scalar(SemanticValue::NumberBits(4f32.to_bits()))
@@ -122,4 +130,32 @@ fn current_ordered_projection_shares_admitted_field_rows_and_invalidates_values(
     );
     assert_eq!(moved.fields[0].name, SymbolId::of("y"));
     assert!(Arc::ptr_eq(&changed.fields[1], &moved.fields[0]));
+}
+
+#[test]
+fn compact_owner_locator_keeps_exact_metadata_and_order_authority() {
+    let store = ClassProjections::default();
+    let first = project_source(&store, "/datum/a\n    var/x = 3\n    var/y = 3\n", false);
+    let mut maximum_key = 0;
+    let mut captured = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ArtifactStorageView::Entry { key, value, .. } = view {
+            maximum_key = maximum_key.max(key.len());
+            captured += value.inputs.len();
+            assert_eq!(value.inputs.len(), value.values.len());
+        }
+    });
+    assert!(captured >= 2, "real owner payload was admitted");
+    assert!(
+        maximum_key < 80,
+        "locator excludes metadata/default serialization"
+    );
+    let changed = project_source(&store, "/datum/a\n    var/x = 4\n    var/y = 3\n", false);
+    assert!(!Arc::ptr_eq(&first.fields[0], &changed.fields[0]));
+    let reordered = project_source(&store, "/datum/a\n    var/y = 3\n    var/x = 4\n", false);
+    assert_eq!(reordered.fields[0].name, SymbolId::of("y"));
+    assert!(
+        !Arc::ptr_eq(&changed.fields[0], &reordered.fields[1]),
+        "ordered input mismatch must recompute the owner"
+    );
 }

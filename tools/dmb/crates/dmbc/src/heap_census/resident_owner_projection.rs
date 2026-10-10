@@ -25,11 +25,13 @@ pub(super) fn inspect_field(
 
 pub(crate) fn weight(
     values: &Vec<MemberContribution>,
+    inputs: &Vec<crate::class_projection::retained::MemberInput>,
     key: &[u8],
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
     let mut census = HeapCensus::new("resident_owner_projection_admission");
+    inspect_inputs(&mut census, inputs);
     census.vec_payload("resident_owner_projection.values", values);
     for value in values {
         match value {
@@ -63,6 +65,29 @@ pub(crate) fn weight(
             .saturating_add(key.len())
             .saturating_add(4096),
     )
+}
+
+fn inspect_inputs(
+    census: &mut HeapCensus,
+    inputs: &Vec<crate::class_projection::retained::MemberInput>,
+) {
+    census.vec_payload("owner_projection.inputs", inputs);
+    for input in inputs {
+        if census.arc_object("owner_projection.input_metadata", &input.metadata) {
+            census.declaration(&input.metadata);
+        }
+        if let Some(value) = &input.default {
+            match value {
+                DefaultValue::Transform(_) => {}
+                DefaultValue::Scalar(value) => {
+                    census.semantic_value("owner_projection.input_defaults", value)
+                }
+                DefaultValue::InitializerExpression { canonical, .. } => {
+                    census.slice("owner_projection.input_defaults", canonical, true);
+                }
+            }
+        }
+    }
 }
 
 /// Diagnostic accounting separates real backing from private index uncertainty.
@@ -111,9 +136,10 @@ pub(super) fn inspect_into(
                 super::resident_weight::answer(&mut census, &read.answer);
             }
             if census.arc_object("owner_projection.values", value)
-                && census.vec_payload("owner_projection.values", value.as_ref())
+                && census.vec_payload("owner_projection.values", &value.values)
             {
-                for member in value.iter() {
+                inspect_inputs(census, &value.inputs);
+                for member in value.values.iter() {
                     if let MemberContribution::Field(field) = member {
                         inspect_field(&mut census, field);
                     }
@@ -173,9 +199,9 @@ mod tests {
     fn owned_nested_default_and_unused_vector_capacity_raise_conservative_charge() {
         let empty = Vec::new();
         let mut values = Vec::new();
-        let before = weight(&values, b"key", &empty, &Vec::new()).unwrap();
+        let before = weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap();
         values.reserve_exact(100);
-        let reserved = weight(&values, b"key", &empty, &Vec::new()).unwrap();
+        let reserved = weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap();
         assert!(reserved >= before + 100 * size_of::<MemberContribution>());
         values.push(MemberContribution::Field(std::sync::Arc::new(
             crate::class_projection::FieldProjection {
@@ -192,6 +218,6 @@ mod tests {
                 )]))),
             },
         )));
-        assert!(weight(&values, b"key", &empty, &Vec::new()).unwrap() > reserved);
+        assert!(weight(&values, &Vec::new(), b"key", &empty, &Vec::new()).unwrap() > reserved);
     }
 }
