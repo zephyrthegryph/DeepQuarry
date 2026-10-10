@@ -153,6 +153,10 @@
 /datum/life_test_step/sleeper/life_steps()
 	return list(seq_step(PROC_REF(count), after = LIFE_TAIL, key = "life_test_sleeper", reads = list(MOB_KEY_HEALTH), once = TRUE))
 
+/// Runs once per wake; status changes wake it.
+/datum/life_test_step/status_sleeper/life_steps()
+	return list(seq_step(PROC_REF(count), after = LIFE_TAIL, key = "life_test_status_sleeper", reads = list(MOB_KEY_STATUS), once = TRUE))
+
 /// Deletes its mob during the frame.
 /datum/life_test_step/deleter/life_steps()
 	return list(seq_step(PROC_REF(delete_mob), after = LIFE_TAIL, key = "life_test_deleter"))
@@ -985,17 +989,6 @@
 /mob/living/carbon/human/dq_test_status_probe/proc/probe_status(list/keys)
 	status_deliveries++
 
-/// A mouse that counts the deliveries of its status key.
-/mob/living/simple_mob/animal/passive/mouse/dq_test_status_probe
-	var/status_deliveries = 0
-
-/mob/living/simple_mob/animal/passive/mouse/dq_test_status_probe/reactions()
-	. = ..()
-	. += on_change(list(MOB_KEY_STATUS), PROC_REF(probe_status))
-
-/mob/living/simple_mob/animal/passive/mouse/dq_test_status_probe/proc/probe_status(list/keys)
-	status_deliveries++
-
 /// A status change publishes MOB_KEY_STATUS, and a change that doesn't change the value publishes nothing.
 /datum/unit_test/life_om/status_raises_once
 
@@ -1026,16 +1019,17 @@
 /datum/unit_test/life_om/no_self_wake
 
 /datum/unit_test/life_om/no_self_wake/run_life()
-	var/mob/living/simple_mob/animal/passive/mouse/dq_test_status_probe/M = allocate(/mob/living/simple_mob/animal/passive/mouse/dq_test_status_probe)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	M.status_set(STAT_SLEEPING, 100)
 	M.status_at_least(STAT_CONFUSED, 100)
 	sched.run_pass(1e9)
-	rx_drain()
-	M.status_deliveries = 0
+	var/datum/life_test_step/status_sleeper/S = life_test_add(M, /datum/life_test_step/status_sleeper)
 	seq_run_frame_now(M, LIFE_SEQ)
-	rx_drain()
-	TEST_ASSERT_EQUAL(M.status_deliveries, 0, "a frame publishes no status change on its own mob")
+	TEST_ASSERT(life_test_asleep(M, "life_test_status_sleeper"), "a once step reading the status key sleeps after its run")
+	var/runs = S.runs_on(M)
+	seq_run_frame_now(M, LIFE_SEQ)
+	TEST_ASSERT_EQUAL(S.runs_on(M), runs, "a frame publishes no status change on its own mob (the status reader never woke)")
 	TEST_ASSERT(life_test_settle(M), "a sleeping, confused mouse parks; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(M.has_status(STAT_SLEEPING), "and stays asleep while parked")
 
