@@ -844,7 +844,6 @@ initialize	code/modules/xenoarcheaology/tools/ano_device_battery.dm	/obj/item/an
 initialize	code/modules/xenoarcheaology/tools/artifact_harvester.dm	/obj/machinery/artifact_harvester/Initialize(mapload)
 initialize	code/modules/xenoarcheaology/tools/tools.dm	/obj/item/storage/box/samplebags/Initialize(mapload)
 initialize	code/modules/xenobio/items/slime_objects.dm	/obj/item/flashlight/slime/Initialize(mapload)
-initialize	code/modules/xenobio/items/slime_objects.dm	/obj/item/slime_irradiator/Initialize(mapload)
 initialize	maps/common/common_shuttles_crew.dm	/obj/machinery/status_display/shuttle_display/Initialize(mapload)
 initialize	maps/common/common_things.dm	/obj/item/multitool/scioutpost/Initialize(mapload)
 initialize	maps/common/common_things.dm	/obj/sc_away_spawner/Initialize(mapload)
