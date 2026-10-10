@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { CompilerProvenance } from './compiler_provenance';
+import { parseNativePublicationProof, type NativePublicationProof } from './native_publication_proof';
 
 export type PairIdentity = {
   pairId: string; dmbHash: string; rscHash: string; dmbBytes: number; rscBytes: number;
@@ -9,6 +10,7 @@ export type PairIdentity = {
 export type NativePairOutput = PairIdentity & {
   kind: 'native_pair'; compiler: string; store: string; outputProject: string;
   provenance?: CompilerProvenance;
+  publicationProof?: NativePublicationProof;
 };
 export type CompiledOutput = NativePairOutput | {
   kind: 'conventional'; backend: 'byond'; dmb: string; rsc: string;
@@ -46,7 +48,11 @@ export function parseCompileResult(value: unknown, compiler: string, project: st
   const outputProject = absolute(value.output_project);
   const expected = fs.existsSync(project) ? fs.realpathSync.native(project) : path.resolve(project);
   if (!samePath(outputProject, expected)) throw new Error('Native compile result names another output project.');
-  return { kind: 'native_pair', compiler, store: absolute(value.store), outputProject, ...identity(value) };
+  const store = absolute(value.store);
+  const pair = identity(value);
+  const publicationProof = parseNativePublicationProof(value.publication_proof, pair.pairId, store);
+  return { kind: 'native_pair', compiler, store, outputProject, ...pair,
+    ...(publicationProof ? { publicationProof } : {}) };
 }
 
 function assertRegular(file: string): void {

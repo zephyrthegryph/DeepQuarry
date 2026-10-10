@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import type { ByondCompilationResult } from './byond';
 import type { CompiledOutput, PairIdentity } from './native_pair';
+import type { NativePublicationProof } from './native_publication_proof';
 
 export type CompilerProvenance = {
   requestedBackend: 'byond' | 'native' | 'shadow';
@@ -12,6 +13,8 @@ export type CompilerProvenance = {
   orderedDefines: readonly string[];
   fallback: 'internal_error_70' | null;
   nativePair: PairIdentity | null;
+  /** Native-only issued metadata; never a shared input closure certificate. */
+  nativePublicationProof?: NativePublicationProof;
 };
 
 export function observedExecutable(executable: string): { executable: string; sha256: string | null } {
@@ -34,7 +37,8 @@ export function nativeProvenance(output: CompiledOutput, defines: readonly strin
   return { requestedBackend: 'native', actualBackend: 'native', orderedDefines: [...defines], fallback: null,
     // Native executable version is not issued by the pair receipt; do not substitute target BYOND version.
     compiler: { ...identity, version: null, build: null },
-    nativePair: { pairId: output.pairId, dmbHash: output.dmbHash, rscHash: output.rscHash, dmbBytes: output.dmbBytes, rscBytes: output.rscBytes } };
+    nativePair: { pairId: output.pairId, dmbHash: output.dmbHash, rscHash: output.rscHash, dmbBytes: output.dmbBytes, rscBytes: output.rscBytes },
+    ...(output.publicationProof ? { nativePublicationProof: output.publicationProof } : {}) };
 }
 
 export class CompilerProvenanceError extends Error {}
