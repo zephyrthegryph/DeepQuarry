@@ -68,6 +68,8 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 			return
 
 // a charged blade punishes its wielder.
+DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(message = "%SRC% screeches as it's destroyed", message_class = "cult"))
+
 /obj/item/melee/artifact_blade/on_destroy(force)
 	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
@@ -79,7 +81,6 @@ CAPABILITIES(/obj/item/melee/artifact_blade)
 		blood_splatter(last_touched(), last_touched(), 1)
 		if(last_touched().loc)
 			conjure_animation(last_touched().loc)
-	visible_message(span_cult("\The [src] screeches as it's destroyed"))
 	var/turf/T = get_turf(last_touched())
 	if(istype(T))
 		lightning_strike(T, TRUE)

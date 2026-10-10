@@ -50,6 +50,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
+	reagents(100)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
 	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
 	interface("Microwave")
@@ -102,8 +103,6 @@ CAPABILITIES(/obj/machinery/microwave)
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 
-	create_reagents(100)
-	rel_set(reagents, nameof(reagents.my_atom), src)
 
 	default_apply_parts()
 

@@ -13,8 +13,9 @@ CAPABILITIES(/obj/structure/crystal)
 	return R.choose(list("It shines faintly as it catches the light.", "It appears to have a faint inner glow.", "It seems to draw you inward as you look it at.", "Something twinkles faintly as you look at it.", "It's mesmerizing to behold."))
 
 // the crystal shatters into shards.
+DESTROY_EFFECTS(/obj/structure/crystal, new /datum/destroy_effects_data(message = "%SRC% shatters!", message_class = "bolddanger"))
+
 /obj/structure/crystal/on_destroy(force)
-	src.visible_message(span_bolddanger("[src] shatters!"))
 	for(var/chance in list(75, 50, 25))
 		if(prob(chance))
 			new /obj/item/material/shard/phoron(src.loc)
