@@ -2,8 +2,10 @@
 	name = "\improper CentCom. hat"
 	icon_state = "centcom"
 	desc = "It's good to be emperor."
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/centhat)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/centhat/customs
 	name = "Customs Hat"
@@ -126,9 +128,10 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	desc = "These were once used by Plague doctors, allegedly. They're pretty much useless."
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	permeability_coefficient = 0.01
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/plaguedoctorhat)
+	configure(item_protection(permeability = 0.01, siemens = 0.9))
 
 /obj/item/clothing/head/plaguedoctorhat/gold
 	name = "golden plague doctor's hat"
@@ -147,8 +150,10 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	name = "nurse's hat"
 	desc = "It allows quick identification of trained medical personnel."
 	icon_state = "nursehat"
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/nursehat)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/syndicatefake
 	name = "red space-helmet replica"
@@ -156,8 +161,10 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	icon_state = "syndicate"
 	desc = "A plastic replica of a bloodthirsty mercenary's space helmet, you'll look just like a real murderous criminal operative in this! This is a toy, it is not made for use in space!"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	siemens_coefficient = 2.0
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/syndicatefake)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/cueball
 	name = "cueball helmet"
@@ -194,7 +201,9 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	desc = "A working man's cap."
 	icon_state = "flat_cap"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	siemens_coefficient = 0.9 //...what?
+
+CAPABILITIES(/obj/item/clothing/head/flatcap)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/flatcap/grey
 	icon_state = "flat_capw"
@@ -225,15 +234,19 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	desc = "Eeeee~heheheheheheh!"
 	icon_state = "witch"
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 2.0
+
+CAPABILITIES(/obj/item/clothing/head/witchwig)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/chicken
 	name = "chicken suit head"
 	desc = "Bkaw!"
 	icon_state = "chickenhead"
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 0.7
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/chicken)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/bearpelt
 	name = "bear pelt hat"
@@ -241,7 +254,9 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	icon_state = "bearpelt"
 	item_state_slots = list(slot_r_hand_str = "beret_black", slot_l_hand_str = "beret_black")
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/head/bearpelt)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/xenos
 	name = "xenos helmet"
@@ -249,8 +264,10 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	item_state_slots = list(slot_r_hand_str = "xenos_helm", slot_l_hand_str = "xenos_helm")
 	desc = "A helmet made out of chitinous alien hide."
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	siemens_coefficient = 2.0
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/xenos)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/philosopher_wig
 	name = "natural philosopher's wig"
@@ -258,8 +275,10 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	icon_state = "philosopher_wig"
 	item_state_slots = list(slot_r_hand_str = "pwig", slot_l_hand_str = "pwig")
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 2.0 //why is it so conductive?!
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/philosopher_wig)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/orangebandana //themij: Taryn Kifer
 	name = "orange bandana"
@@ -396,16 +415,20 @@ CAPABILITIES(/obj/item/clothing/head/maangtikka)
 	name = "top-hat"
 	desc = "It's an amish looking hat."
 	icon_state = "tophat"
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/that)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/beaverhat
 	name = "beaver hat"
 	desc = "Soft felt makes this hat both comfortable and elegant."
 	icon_state = "beaver_hat"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/beaverhat)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/boaterhat
 	name = "boater hat"
@@ -718,7 +741,9 @@ TYPE_TABLE(/obj/item/clothing/head/fedora/brown, suit_storage_spec, list(HOLD_ON
 	name = "shiny hood"
 	desc = "You can be a super-hero in this! Just don't forget your superhuman senses!"
 	icon_state = "hood_c"
-	gas_transfer_coefficient = 0.90
+
+CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
+	configure(item_protection(gas_transfer = 0.90))
 
 /obj/item/clothing/head/shiny_hood/closed/poly
 	name = "polychromic closed shiny hood"

@@ -6,30 +6,31 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	permeability_coefficient = 0.01
 	armor_spec = "bio=100;rad=20;acid=60"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
-	siemens_coefficient = 0.9
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL | ALLOW_SURVIVALFOOD
 	resistance_flags = UNACIDABLE
+
+CAPABILITIES(/obj/item/clothing/head/bio_hood)
+	configure(item_protection(permeability = 0.01, siemens = 0.9))
 
 /obj/item/clothing/suit/bio_suit
 	name = "bio suit"
 	desc = "A suit that protects against biological contamination."
 	icon_state = "bio"
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 	slowdown = 1.0
 	armor_spec = "bio=100;rad=20;acid=60"
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 0.9
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	resistance_flags = UNACIDABLE
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 
 //Standard biosuit, orange stripe
 

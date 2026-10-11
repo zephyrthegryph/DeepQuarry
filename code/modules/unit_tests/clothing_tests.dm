@@ -142,43 +142,43 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 
 	// Temps — most clothing offers no cold protection (min temp 0/null); only a
 	// negative protection temperature is an actual data error.
-	TEST_ASSERT(C.min_cold_protection_temperature >= 0, "[C.type]: Clothing - Cold protection temperature was negative.")
+	TEST_ASSERT(protection_of(C).min_cold >= 0, "[C.type]: Clothing - Cold protection temperature was negative.")
 
-	if(C.max_heat_protection_temperature && C.min_cold_protection_temperature && C.max_heat_protection_temperature < C.min_cold_protection_temperature)
+	if(protection_of(C).max_heat && protection_of(C).min_cold && protection_of(C).max_heat < protection_of(C).min_cold)
 		TEST_NOTICE(src, "[C.type]: Clothing - Maximum heat protection was greater than minimum cold protection.")
 		failed = TRUE
 
-	if(C.cold_protection)
-		if(islist(C.cold_protection))
+	if(protection_of(C).cold_parts)
+		if(islist(protection_of(C).cold_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - cold_protection was defined as a list, when it is a bitflag.")
 			failed = TRUE
-		else if(!isnum(C.cold_protection))
+		else if(!isnum(protection_of(C).cold_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - cold_protection was defined as something other than a number, when it is a bitflag.")
 			failed = TRUE
 		else
-			if(C.cold_protection && C.cold_protection != FULL_BODY)
+			if(protection_of(C).cold_parts && protection_of(C).cold_parts != FULL_BODY)
 				// Check flags that should be unused
-				if(C.cold_protection & FACE)
+				if(protection_of(C).cold_parts & FACE)
 					TEST_NOTICE(src, "[C.type]: Clothing - cold_protection uses FACE bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
-				if(C.cold_protection & EYES)
+				if(protection_of(C).cold_parts & EYES)
 					TEST_NOTICE(src, "[C.type]: Clothing - cold_protection uses EYES bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
 
-	if(C.heat_protection)
-		if(islist(C.heat_protection))
+	if(protection_of(C).heat_parts)
+		if(islist(protection_of(C).heat_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - heat_protection was defined as a list, when it is a bitflag.")
 			failed = TRUE
-		else if(!isnum(C.heat_protection))
+		else if(!isnum(protection_of(C).heat_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - heat_protection was defined as something other than a number, when it is a bitflag.")
 			failed = TRUE
 		else
-			if(C.heat_protection && C.heat_protection != FULL_BODY)
+			if(protection_of(C).heat_parts && protection_of(C).heat_parts != FULL_BODY)
 				// Check flags that should be unused
-				if(C.heat_protection & FACE)
+				if(protection_of(C).heat_parts & FACE)
 					TEST_NOTICE(src, "[C.type]: Clothing - heat_protection uses FACE bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
-				if(C.heat_protection & EYES)
+				if(protection_of(C).heat_parts & EYES)
 					TEST_NOTICE(src, "[C.type]: Clothing - heat_protection uses EYES bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
 	return failed

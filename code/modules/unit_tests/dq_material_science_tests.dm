@@ -154,7 +154,7 @@
 			var/obj/item/changed = new(run_loc_floor_bottom_left)
 			TEST_ASSERT(baseline.apply_material_construction(defaults, slots.type, slots_total), "Baseline [application]/[role] must construct")
 			TEST_ASSERT(changed.apply_material_construction(variant, slots.type, slots_total), "Variant [application]/[role] must construct")
-			var/changed_physics = baseline.max_integrity != changed.max_integrity || baseline.throw_speed != changed.throw_speed || baseline.throw_range != changed.throw_range || baseline.siemens_coefficient != changed.siemens_coefficient || material_build_view(baseline).effective_density != material_build_view(changed).effective_density
+			var/changed_physics = baseline.max_integrity != changed.max_integrity || baseline.throw_speed != changed.throw_speed || baseline.throw_range != changed.throw_range || protection_of(baseline).siemens != protection_of(changed).siemens || material_build_view(baseline).effective_density != material_build_view(changed).effective_density
 			TEST_ASSERT(changed_physics, "Changing [application]'s [role] must alter a live physical property")
 			qdel(baseline)
 			qdel(changed)

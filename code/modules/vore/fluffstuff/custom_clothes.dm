@@ -4,9 +4,11 @@
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	rolled_sleeves = 0
 	rolled_down = 0
+
+CAPABILITIES(/obj/item/clothing/under/sec_flight_suit)
+	configure(item_protection(siemens = 0.9))
 
 
 
@@ -20,7 +22,9 @@
 	icon_state = "trek_engsec"
 	item_state = "trek_engsec"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
+	configure(item_protection(siemens = 0.9))
 
 //TNG
 /obj/item/clothing/under/rank/trek/sec/next
@@ -584,13 +588,13 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/fluff/modernfedcoat, suit_storage_spe
 	icon_state = "freddyhead"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	permeability_coefficient = 0.01
 	armor_spec = ""
 	flags_inv = HIDEMASK|HIDEEARS
-	cold_protection = HEAD
-	siemens_coefficient = 0.9
 
 	//Bonnie Head
+
+CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
+	configure(item_protection(permeability = 0.01, cold_parts = HEAD, siemens = 0.9))
 /obj/item/clothing/head/helmet/fluff/freddy/bonnie
 	desc = "Children's entertainer."
 	icon_state = "bonniehead"
@@ -619,15 +623,14 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/fluff/modernfedcoat, suit_storage_spe
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.02
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = ""
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	siemens_coefficient = 0.9
 
 	//Bonnie Suit
+
+CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/fluff/freddy, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
 /obj/item/clothing/suit/fluff/freddy/bonnie
@@ -1160,7 +1163,9 @@ Departamental Swimsuits, for general use
 	name = DEVELOPER_WARNING_NAME
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/under/swimsuit/fluff)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/under/swimsuit/fluff/engineering
 	name = "Engineering Swimsuit"
@@ -1212,8 +1217,10 @@ Departamental Swimsuits, for general use
 	name = "MedSci Uniform"
 	desc = "The uniform worn by medsci officers in the mid 2260s."
 	icon_state = "trek_medsci"
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10" // basically a copy of vanilla sci/med
+
+CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
+	configure(item_protection(permeability = 0.50))
 
 //TNG
 /obj/item/clothing/under/rank/trek/command/next
@@ -1261,8 +1268,10 @@ Departamental Swimsuits, for general use
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	icon_state = "trek_ds9_coat"
 	body_parts_covered = CHEST|ARMS
-	permeability_coefficient = 0.50
 	armor_spec = ""
+
+CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
+	configure(item_protection(permeability = 0.50))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/trek/ds9, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL))))
 
@@ -1508,7 +1517,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "kilanosuit"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/fluff/kilanosuit)
+	configure(item_protection(siemens = 0.9))
 
 //BeyondMyLife: Ne'tra Ky'ram
 /obj/item/storage/backpack/messenger/sec/fluff/kilano
@@ -1540,11 +1551,10 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano/netra, fit_spec, null)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanoboots"
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	cold_protection = FEET|LEGS
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = FEET|LEGS
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
+	configure(item_protection(cold_parts = FEET|LEGS, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET|LEGS, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //BeyondMyLife: Ne'tra Ky'ram
 
@@ -1943,10 +1953,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 	flags = NONE
 	armor_spec = "" // It's not armor, it's a dorky frickin cape
 	body_parts_covered = null // Cape ain't gonna cover a THING
-	cold_protection = CHEST|ARMS // It will keep you toasty tho, it's more than big enough to help with that! Just wrap the thing around you when on the surface, idk
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "nikkicape"
+
+CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
+	configure(item_protection(cold_parts = CHEST|ARMS))
 
 /obj/item/clothing/head/fluff/nikki
 	// I have never tryharded so much just to accomplish something so stupid as "Vore By Hat" in my entire life, and I apologize to each and every one of you.

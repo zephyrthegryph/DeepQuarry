@@ -10,7 +10,9 @@
 	name = "winter hood"
 	desc = "A hood attached to a heavy winter jacket."
 	icon_state = "winterhood"
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hood/winter/captain
 	name = "site manager's winter hood"
@@ -179,9 +181,10 @@
 	desc = "An armoured hood for exploring harsh environments."
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
+
+CAPABILITIES(/obj/item/clothing/head/hood/explorer)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.9))
 
 // Costumes
 /obj/item/clothing/head/hood/carp_hood
@@ -189,7 +192,9 @@
 	desc = "A hood attached to a carp costume."
 	icon_state = "carp_casual"
 	item_state_slots = list(slot_r_hand_str = "carp_casual", slot_l_hand_str = "carp_casual") //Does not exist -S2-
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE	//Space carp like space, so you should too
+
+CAPABILITIES(/obj/item/clothing/head/hood/carp_hood)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hood/ian_hood
 	name = "corgi hood"
@@ -250,22 +255,30 @@
 /obj/item/clothing/head/hood/galahad
 	name = "galahad hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/head/hood/galahad)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/lancelot
 	name = "lancelot hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/head/hood/lancelot)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/robin
 	name = "robin hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 3
+
+CAPABILITIES(/obj/item/clothing/head/hood/robin)
+	configure(item_protection(siemens = 3))
 
 /obj/item/clothing/head/hood/chain
 	name = "robin hood"
 	armor_spec = "melee=60;bullet=10;laser=10"
-	siemens_coefficient = 3
+
+CAPABILITIES(/obj/item/clothing/head/hood/chain)
+	configure(item_protection(siemens = 3))
 
 // Costume Versions Here
 /obj/item/clothing/head/hood/galahad_costume

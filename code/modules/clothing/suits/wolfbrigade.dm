@@ -52,11 +52,9 @@
 	force = 5
 	armor_spec = "melee=60;bullet=60;laser=40;energy=30;bomb=50;rad=10"
 	item_flags = NOSLIP
-	siemens_coefficient = 0.6
-	cold_protection = FEET
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = FEET
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/shoes/combat/wolfbrigade)
+	configure(item_protection(siemens = 0.6, cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/arm_guard/combat/wolfbrigade
 	name = "Protect Gear armguards"

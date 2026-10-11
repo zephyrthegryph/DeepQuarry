@@ -4414,3 +4414,13 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 trait (492 types, `tools/dx/codemods/type_trait.py item_sounds`); a subtype that set one to null declares `TRAIT_NONE`. Doors keep their own
 `hitsound` var. No behaviour change intended; pinned by `dq_type_trait/item_sounds_declared`. Run-time writers (the welder's lit sound, a
 borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item its own copy.
+
+## Item protection as a type trait (rewrite/look-traits, gap 5)
+
+`heat_protection`, `cold_protection`, `max_heat_protection_temperature`, `min_cold_protection_temperature`, `max_pressure_protection`,
+`min_pressure_protection`, `gas_transfer_coefficient`, `permeability_coefficient` and `siemens_coefficient` leave `/obj/item` for the
+`item_protection()` trait (473 types, `tools/dx/codemods/type_trait.py protection`). A species keeps its own `siemens_coefficient`. Pinned
+by `dq_type_trait/item_protection_declared`, the body slot insulation and clothing tests. The heat-protection property provider reads the
+trait (no instance var to name as its state var). `protection_of(null)` answers the defaults, so a read through an empty slot (`worn?.x`)
+still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
+as a body temperature).

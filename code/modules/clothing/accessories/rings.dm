@@ -15,10 +15,10 @@
 	icon = 'icons/inventory/hands/item.dmi'
 	force = 7	//base punch strength is 5
 	punch_force = 2	//added to base punch strength when added as a glove accessory
-	siemens_coefficient = 1
 	slowdown = 0
 
 CAPABILITIES(/obj/item/clothing/accessory/ring)
+	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /////////////////////////////////////////

@@ -167,22 +167,25 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
 	name = "void magnus hood"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = HEAD
-	heat_protection = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/culthood/void)
+	configure(item_protection(cold_parts = HEAD, heat_parts = HEAD))
 
 /obj/item/clothing/suit/cultrobes/void
 	name = "void magnus robes"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes/void)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/shoes/boots/cult/void
 	name = "void magnus boots"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/cult/void)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/gloves/tactical/void
 	desc = "These warm red gloves glow warmly, while making the world round them seem darker."

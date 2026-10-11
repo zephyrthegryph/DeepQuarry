@@ -26,7 +26,6 @@
 	desc = "The last suit you'll ever wear."
 	icon_state = "internalaffairs_rig"
 	armor_spec = ""
-	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0
 	offline_vision_restriction = 0
@@ -37,6 +36,9 @@
 	glove_type = null
 	helm_type = null
 	boot_type = null
+
+CAPABILITIES(/obj/item/rig/internalaffairs)
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/rig/internalaffairs, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, /obj/item/storage))))
 
@@ -67,7 +69,6 @@ TYPE_TABLE(/obj/item/rig/internalaffairs, suit_storage_spec, list(HOLD_ONLY(list
 	offline_slowdown = 5
 	offline_vision_restriction = 2
 	emp_protection = -20
-	siemens_coefficient= 0.75
 	rigsuit_max_pressure = 15 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
@@ -75,6 +76,9 @@ TYPE_TABLE(/obj/item/rig/internalaffairs, suit_storage_spec, list(HOLD_ONLY(list
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/industrial)
+	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/rig/industrial, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_BAYSUIT))))
 
@@ -98,20 +102,23 @@ TYPE_TABLE(/obj/item/rig/industrial, suit_storage_spec, list(HOLD_ONLY(list(POCK
 	slowdown = 0
 	offline_slowdown = 0.5
 	offline_vision_restriction = 1
-	siemens_coefficient = 0.75
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/eva
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 
 	req_access = list()
 	req_one_access = list()
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/rig/eva)
+	configure(item_protection(siemens = 0.75, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/eva, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_CE, /obj/item/storage))))
 
 /obj/item/clothing/gloves/gauntlets/rig/eva
 	name = "insulated gauntlets"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/eva)
+	configure(item_protection(siemens = 0))
 
 /obj/item/rig/eva/equipped
 
@@ -135,7 +142,6 @@ TYPE_TABLE(/obj/item/rig/eva, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENE
 	slowdown = 0
 	offline_slowdown = 0
 	offline_vision_restriction = 0
-	siemens_coefficient= 0.75
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
@@ -145,13 +151,17 @@ TYPE_TABLE(/obj/item/rig/eva, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENE
 
 	req_access = list()
 	req_one_access = list()
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/rig/ce)
+	configure(item_protection(siemens = 0.75, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/ce, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE, POCKET_BAYSUIT))))
 
 /obj/item/clothing/gloves/gauntlets/rig/ce
 	name = "insulated gauntlets"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/magboots/rig/ce
 	name = "advanced boots"
@@ -185,7 +195,6 @@ TYPE_TABLE(/obj/item/rig/ce, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENER
 	armor_spec = "melee=45;bullet=5;laser=45;energy=80;bomb=100;bio=100;rad=100"
 	slowdown = 0.5
 	offline_vision_restriction = 1
-	siemens_coefficient= 0.75
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hazmat
 	//ywadd start
@@ -195,6 +204,9 @@ TYPE_TABLE(/obj/item/rig/ce, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENER
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/hazmat)
+	configure(item_protection(siemens = 0.75))
 
 //ywadd start
 
@@ -228,13 +240,15 @@ TYPE_TABLE(/obj/item/rig/hazmat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_G
 	armor_spec = "melee=30;bullet=15;laser=20;energy=60;bomb=30;bio=100;rad=100"
 	slowdown = 0.5
 	offline_vision_restriction = 1
-	siemens_coefficient= 0.75
 	seal_delay = 5
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/medical
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/medical)
+	configure(item_protection(siemens = 0.75))
 
 //Access restriction and seal delay, plus pat_module and rescue_pharm for medical suit
 
@@ -260,12 +274,14 @@ TYPE_TABLE(/obj/item/rig/medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_
 	slowdown = 0.5
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
-	siemens_coefficient= 0.7
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hazard
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/hazard)
+	configure(item_protection(siemens = 0.7))
 
 TYPE_TABLE(/obj/item/rig/hazard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
 
@@ -296,13 +312,14 @@ TYPE_TABLE(/obj/item/rig/hazard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_G
 	offline_vision_restriction = 0
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE // so it's like a rig firesuit
 	armor_spec = "melee=40;bullet=10;laser=30;energy=55;bomb=70;bio=100;rad=100"
 	chest_type = /obj/item/clothing/suit/space/rig/focalpoint
 	helm_type = /obj/item/clothing/head/helmet/space/rig/focalpoint
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ce/focalpoint
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/focalpoint
+
+CAPABILITIES(/obj/item/rig/focalpoint)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/focalpoint, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, /obj/item/storage/backpack))))
 
@@ -337,9 +354,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/ce/focalpoint, fit_spec, list(R
 
 /obj/item/clothing/gloves/gauntlets/rig/focalpoint
 	icon_state = "techno_rig"
-	siemens_coefficient = 0
 	// No animal people sprites for these yet, sad times
 	sprite_sheets = null
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
+	configure(item_protection(siemens = 0))
 
 // 'Ironhammer' hardsuit
 
@@ -556,7 +575,9 @@ TYPE_TABLE(/obj/item/rig/bayeng, suit_storage_spec, list(HOLD_ONLY(list(POCKET_G
 	item_state = null
 	sprite_sheets = null
 	sprite_sheets_obj = null
-	siemens_coefficient = 0 // insulated
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
+	configure(item_protection(siemens = 0))
 
 // Pathfinder rig from bay - event/reward stuff here
 /obj/item/rig/pathfinder
@@ -661,11 +682,13 @@ TYPE_TABLE(/obj/item/rig/bayeng, suit_storage_spec, list(HOLD_ONLY(list(POCKET_G
 	slowdown = 1
 	offline_slowdown = 3
 	offline_vision_restriction = 1
-	siemens_coefficient= 0.7
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/pursuit
 
 	req_access = list(ACCESS_HOS)
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/ch/pursuit)
+	configure(item_protection(siemens = 0.7))
 
 TYPE_TABLE(/obj/item/rig/ch/pursuit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE, POCKET_EXPLO))))
 

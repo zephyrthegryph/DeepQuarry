@@ -5,8 +5,10 @@
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment. Only for the most fashionable of military figureheads."
 	item_flags = 0
 	flags_inv = HIDEFACE|BLOCKHAIR
-	permeability_coefficient = 0.01
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50;cold=60"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
+	configure(item_protection(permeability = 0.01))
 
 //Captain's space suit This is not the proper path but I don't currently know enough about how this all works to mess with it.
 /obj/item/clothing/suit/armor/captain
@@ -14,18 +16,14 @@
 	desc = "A bulky, heavy-duty piece of exclusive corporate armor. YOU are in charge!"
 	icon_state = "caparmor"
 	w_class = ITEMSIZE_HUGE
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.02
 	item_flags = 0
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1.5
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
-	min_pressure_protection = 0
-	max_pressure_protection = 2 * ONE_ATMOSPHERE
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/armor/captain)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, min_pressure = 0, max_pressure = 2 * ONE_ATMOSPHERE, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 //Deathsquad suit
 
@@ -38,7 +36,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/captain, suit_storage_spec, list(HOLD_O
 	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=100;rad=60;cold=60"
 	item_flags = THICKMATERIAL
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad)
+	configure(item_protection(siemens = 0.6))
 
 //how is this a space helmet?
 /obj/item/clothing/head/helmet/space/deathsquad/beret
@@ -49,7 +49,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/captain, suit_storage_spec, list(HOLD_O
 	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=30;rad=30;cold=60"
 	item_flags = 0
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad/beret)
+	configure(item_protection(siemens = 0.9))
 
 //Space santa outfit suit
 /obj/item/clothing/head/helmet/space/santahat
@@ -78,7 +80,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/santa, suit_storage_spec, list(HOLD_ONL
 	item_flags = 0
 	flags_inv = BLOCKHAIR
 	body_parts_covered = 0
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/suit/space/pirate //Whhhhyyyyyyy???
 	name = "pirate coat"
@@ -87,9 +91,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/santa, suit_storage_spec, list(HOLD_ONL
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
-	siemens_coefficient = 0.9
 	flags_inv = HIDETAIL|HIDEHOLSTER
 	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/space/pirate)
+	configure(item_protection(siemens = 0.9))
 
 //Orange emergency space suit
 

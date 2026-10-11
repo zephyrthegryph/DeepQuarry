@@ -373,6 +373,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	item_protection(heat_parts = 0, cold_parts = 0, gas_transfer = 1, permeability = 1, siemens = 1) // what it protects from: a type trait (code/game/objects/items.dm)
 	item_sounds(hit = SFX_SWING_HIT, pickup = SFX_GENERIC_PICKUP, drop = SFX_GENERIC_DROP) // what it sounds like: a type trait (code/game/objects/items.dm)
 	// an item on a floor or in a hand is picked up, put down or used, not struck by another; its own ops answer before any blow
 	without("melee_hit")

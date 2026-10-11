@@ -13,10 +13,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots)
 	name = "cowboy boots"
 	desc = "Lacking a durasteel horse to ride."
 	icon_state = "cowboy"
-	heat_protection = FEET|LEGS
-	cold_protection = FEET|LEGS
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
+	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER))
 
 /obj/item/clothing/shoes/boots/cowboy/classic
@@ -53,9 +52,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
 	desc = "Standard-issue Security combat boots for combat scenarios or combat situations. All combat, all the time."
 	icon_state = "jackboots"
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
-	siemens_coefficient = 0.7
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots)
+	configure(item_protection(siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/jackboots/toeless
@@ -71,16 +70,18 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless, fit_spec, null)
 	desc = "Taller synthleather boots with an artificial shine."
 	icon_state = "kneeboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	heat_protection = FEET|LEGS
-	cold_protection = FEET|LEGS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/knee)
+	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 /obj/item/clothing/shoes/boots/jackboots/toeless/knee
 	name = "toe-less knee-length jackboots"
 	desc = "Modified pair of taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digikneeboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	heat_protection = FEET|LEGS
-	cold_protection = FEET|LEGS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/knee)
+	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/knee, fit_spec, null)
 
@@ -89,16 +90,18 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/knee, fit_spec, null
 	desc = "Even taller synthleather boots with an artificial shine."
 	icon_state = "thighboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	heat_protection = FEET|LEGS
-	cold_protection = FEET|LEGS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/thigh)
+	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 /obj/item/clothing/shoes/boots/jackboots/toeless/thigh
 	name = "toe-less thigh-length jackboots"
 	desc = "Modified pair of even taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digithighboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	heat_protection = FEET|LEGS
-	cold_protection = FEET|LEGS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh)
+	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
 TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, null)
 
@@ -110,9 +113,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, nul
 	desc = "A pair of steel-toed work boots designed for use in industrial settings. Safety first."
 	icon_state = "workboots"
 	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
-	siemens_coefficient = 0.7
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/workboots)
+	configure(item_protection(siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/workboots/toeless
@@ -127,11 +130,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 	name = "winter boots"
 	desc = "Boots lined with 'synthetic' animal fur."
 	icon_state = "winterboots"
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 	snow_speed = -1
 	step_volume_mod = 0.8
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/winter)
+	configure(item_protection(min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/shoes/boots/winter/security
 	name = "security winter boots"
@@ -208,21 +212,27 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 	desc = "Tan boots with extra padding and armor."
 	icon_state = "jungle"
 	armor_spec = "melee=40;bullet=30;laser=40;energy=25;bomb=50"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/tactical)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/duty
 	name = "duty boots"
 	desc = "A pair of steel-toed synthleather boots with a mirror shine."
 	icon_state = "duty"
 	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/duty)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/jungle
 	name = "jungle boots"
 	desc = "A pair of durable brown boots. Waterproofed for use planetside."
 	icon_state = "jungle"
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;bio=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jungle)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/boots/swat
 	name = "\improper SWAT shoes"
@@ -230,7 +240,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 	icon_state = "swat"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	item_flags = NOSLIP
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/swat)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/shoes/boots/combat //Basically SWAT shoes combined with galoshes.
 	name = "combat boots"
@@ -239,10 +251,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 	force = 5
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	item_flags = NOSLIP
-	siemens_coefficient = 0.6
 
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
+CAPABILITIES(/obj/item/clothing/shoes/boots/combat)
+	configure(item_protection(siemens = 0.6, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 
 //Stolen from CM, refurbished to be less terrible.
 /obj/item/clothing/shoes/boots/marine
@@ -250,7 +262,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
 	desc = "Standard issue combat boots for combat scenarios or combat situations. All combat, all the time.  It can hold a Strategical knife."
 	icon_state = "jackboots"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/marine)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/shoes/boots/singer
 	name = "blue performer's boots"

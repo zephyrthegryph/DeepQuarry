@@ -2,13 +2,12 @@
 	desc = "A pair of brown shoes. They seem to have extra grip."
 	name = "brown shoes"
 	icon_state = "brown"
-	permeability_coefficient = 0.05
 	item_flags = NOSLIP
-	siemens_coefficient = 0.8
 	step_volume_mod = 0.5
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
+	configure(item_protection(permeability = 0.05, siemens = 0.8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
@@ -22,13 +21,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	desc = "Rubber boots"
 	name = "galoshes"
 	icon_state = "galoshes"
-	permeability_coefficient = 0.05
-	siemens_coefficient = 0 //They're thick rubber boots! Of course they won't conduct electricity!
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
+	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
@@ -127,10 +125,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
 	icon_state = "cult"
 	item_state_slots = list(slot_r_hand_str = "cult", slot_l_hand_str = "cult")
 	force = 2
-	siemens_coefficient = 0.7
 
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
+CAPABILITIES(/obj/item/clothing/shoes/cult)
+	configure(item_protection(siemens = 0.7, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 
 TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 
@@ -289,12 +287,14 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	icon_state = "jetboots"
 	item_state = "jetboots"
 	actions_types = list(/datum/action/item_action/activate_jump_boots)
-	permeability_coefficient = 0.05
 	var/jumpdistance = 5 //-1 from to see the actual distance, e.g 4 goes over 3 tiles
 	var/jumpspeed = 3
 	var/recharging_rate = 60 //default 6 seconds between each dash
 	var/recharging_time = 0 //time until next dash
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/shoes/bhop)
+	configure(item_protection(permeability = 0.05))
 
 /obj/item/clothing/shoes/bhop/ui_action_click(mob/unused_user, actiontype)
 	var/mob/living/user = loc
@@ -385,9 +385,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
-	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
+
+CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	configure(item_protection(siemens = 0.7))
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list(SFX_MECHSTEP=1))
@@ -435,8 +437,6 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	name = "absorbent galoshes"
 	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "galoshes_dry"
-	permeability_coefficient = 0.05
-	siemens_coefficient = 0
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 
@@ -444,6 +444,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
 

@@ -575,8 +575,8 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 				prot = 1
 			else if(H.get_equipped_item(SLOT_ID_GLOVES))
 				var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
-				if(G.max_heat_protection_temperature)
-					if(G.max_heat_protection_temperature > LIGHT_BULB_TEMPERATURE)
+				if(protection_of(G).max_heat)
+					if(protection_of(G).max_heat > LIGHT_BULB_TEMPERATURE)
 						prot = 1
 		else
 			prot = 1

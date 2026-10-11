@@ -32,13 +32,7 @@
 	var/catchable = TRUE
 	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 	var/pry = 0			//Used in attackby() to open doors
-	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-	var/max_heat_protection_temperature //Set this variable to determine up to which temperature (IN KELVIN) the item protects against heat damage. Keep at null to disable protection. Only protects areas set by heat_protection flags
-	var/min_cold_protection_temperature //Set this variable to determine down to which temperature (IN KELVIN) the item protects against cold damage. 0 is NOT an acceptable number due to if(varname) tests!! Keep at null to disable protection. Only protects areas set by cold_protection flags
 
-	var/max_pressure_protection // Set this variable if the item protects its wearer against high pressures below an upper bound. Keep at null to disable protection.
-	var/min_pressure_protection // Set this variable if the item protects its wearer against low pressures above a lower bound. Keep at null to disable protection. 0 represents protection against hard vacuum.
 
 	var/tmp/list/actions //list of /datum/action's that this item has.
 	var/list/actions_types //list of paths of action datums to give to the item on New().
@@ -50,9 +44,6 @@
 
 	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 
-	var/gas_transfer_coefficient = 1 // for leaking gas from turf to mask and vice-versa (for masks right now, but at some point, i'd like to include space helmets)
-	var/permeability_coefficient = 1 // for chemicals/diseases
-	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
@@ -1193,3 +1184,92 @@ READS_AS(/proc/sounds_of, ITEM_SOUNDS_KEY)
 
 /obj/item/proc/set_drop_sound(value)
 	return set_item_sound("drop", value)
+
+// ---- what an item protects its wearer from: the item_protection() type trait ----
+//
+// The body parts an item shields from heat and cold and down/up to which temperature, the pressures it holds, and how much gas,
+// chemicals and current pass it are per-type data in its CAPABILITIES block (configure(item_protection(...))), not vars on /obj/item.
+// heat_parts / cold_parts are body-part flags; max_heat / min_cold are kelvin, max_pressure / min_pressure kPa (null: no protection);
+// gas_transfer, permeability and siemens are coefficients. Read with protection_of(I).siemens (protection_of_type(path) for a type's
+// declaration). A value that changes at run time (a sealed suit, cut gloves) is written with set_<old var>(), which gives the item its own
+// copy and publishes ITEM_PROTECTION_KEY.
+
+STATIC_ENTRY(item_protection)
+
+/proc/item_protection(heat_parts = null, cold_parts = null, max_heat = null, min_cold = null, max_pressure = null, min_pressure = null, gas_transfer = null, permeability = null, siemens = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_ITEM_PROTECTION, null, list("heat_parts" = heat_parts, "cold_parts" = cold_parts, "max_heat" = max_heat, "min_cold" = min_cold, "max_pressure" = max_pressure, "min_pressure" = min_pressure, "gas_transfer" = gas_transfer, "permeability" = permeability, "siemens" = siemens))
+
+/datum/type_trait/item_protection
+	var/heat_parts = 0
+	var/cold_parts = 0
+	var/max_heat
+	var/min_cold
+	var/max_pressure
+	var/min_pressure
+	var/gas_transfer = 1
+	var/permeability = 1
+	var/siemens = 1
+
+/datum/type_trait/item_protection/copy_values(datum/type_trait/item_protection/into)
+	into.heat_parts = heat_parts
+	into.cold_parts = cold_parts
+	into.max_heat = max_heat
+	into.min_cold = min_cold
+	into.max_pressure = max_pressure
+	into.min_pressure = min_pressure
+	into.gas_transfer = gas_transfer
+	into.permeability = permeability
+	into.siemens = siemens
+
+/datum/entry_engine/type_trait/item_protection
+	kind = ENTRY_ITEM_PROTECTION
+	trait_type = /datum/type_trait/item_protection
+
+/// What `I` protects from (its own values once one was set at run time). Read only.
+READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
+/proc/protection_of(obj/item/I) as /datum/type_trait/item_protection
+	READS_FROM(I)
+	return type_trait_of(I, ENTRY_ITEM_PROTECTION)
+
+/// What an item type declares it protects from (no instance): the old initial(siemens_coefficient).
+/proc/protection_of_type(type) as /datum/type_trait/item_protection
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_ITEM_PROTECTION)
+
+/// Writes one of the item's protection values at run time (its own copy of the trait).
+/obj/item/proc/set_item_protection(field, value)
+	var/datum/type_trait/item_protection/now = protection_of(src)
+	if(now.vars[field] == value)
+		return FALSE
+	var/datum/type_trait/item_protection/own = type_trait_own(src, ENTRY_ITEM_PROTECTION)
+	own.vars[field] = value // ALLOW(api): the field is one of the trait's nine, named by the setters below
+	tracked_changed(src, ITEM_PROTECTION_KEY)
+	return TRUE
+
+/obj/item/proc/set_heat_protection(value)
+	return set_item_protection("heat_parts", value)
+
+/obj/item/proc/set_cold_protection(value)
+	return set_item_protection("cold_parts", value)
+
+/obj/item/proc/set_max_heat_protection_temperature(value)
+	return set_item_protection("max_heat", value)
+
+/obj/item/proc/set_min_cold_protection_temperature(value)
+	return set_item_protection("min_cold", value)
+
+/obj/item/proc/set_max_pressure_protection(value)
+	return set_item_protection("max_pressure", value)
+
+/obj/item/proc/set_min_pressure_protection(value)
+	return set_item_protection("min_pressure", value)
+
+/obj/item/proc/set_gas_transfer_coefficient(value)
+	return set_item_protection("gas_transfer", value)
+
+/obj/item/proc/set_permeability_coefficient(value)
+	return set_item_protection("permeability", value)
+
+/obj/item/proc/set_siemens_coefficient(value)
+	return set_item_protection("siemens", value)

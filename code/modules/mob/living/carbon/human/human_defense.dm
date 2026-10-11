@@ -533,7 +533,7 @@ emp_act
 		var/through = weights[part]
 		for(var/obj/item/clothing/C in worn)
 			if(C.body_parts_covered & part)
-				through *= C.permeability_coefficient
+				through *= protection_of(C).permeability
 		. += through
 
 // This is for preventing harm by being covered in water, which only prometheans need to deal with.

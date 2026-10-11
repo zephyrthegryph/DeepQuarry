@@ -16,32 +16,32 @@
 	icon_state = "firesuit"
 	item_state_slots = list(slot_r_hand_str = "black_suit", slot_l_hand_str = "black_suit")
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.90
-	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1.0
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = 0
-	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	min_pressure_protection = 0.2 * ONE_ATMOSPHERE
-	max_pressure_protection = 20  * ONE_ATMOSPHERE
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/fire)
+	configure(item_protection(gas_transfer = 0.90, permeability = 0.50, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_pressure = 0.2 * ONE_ATMOSPHERE, max_pressure = 20  * ONE_ATMOSPHERE))
 
 TYPE_TABLE(/obj/item/clothing/suit/fire, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher))))
 
 /obj/item/clothing/suit/fire/firefighter
 	name = "firesuit"
 	icon_state = "firesuit2"
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000
+
+CAPABILITIES(/obj/item/clothing/suit/fire/firefighter)
+	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 /obj/item/clothing/suit/fire/heavy
 	name = "atmospheric firesuit"
 	desc = "A suit that protects against extreme fire and heat."
 	icon_state = "atmos_firesuit"
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 	slowdown = 1.5
+
+CAPABILITIES(/obj/item/clothing/suit/fire/heavy)
+	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 /*
  * Bomb protection
@@ -53,24 +53,23 @@ TYPE_TABLE(/obj/item/clothing/suit/fire, suit_storage_spec, list(HOLD_ONLY(list(
 	armor_spec = "bomb=100"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
-	siemens_coefficient = 0
 	resistance_flags = BOMB_PROOF
+
+CAPABILITIES(/obj/item/clothing/head/bomb_hood)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/suit/bomb_suit
 	name = "bomb suit"
 	desc = "A suit designed for safety when handling explosives."
 	icon_state = "bombsuit"
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
 	slowdown = 2
 	armor_spec = "bomb=100"
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
-	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0
 	resistance_flags = BOMB_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/bomb_suit)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0))
 
 /obj/item/clothing/head/bomb_hood/security
 	icon_state = "bombsuitsec"
@@ -102,8 +101,6 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 	desc = "A suit that protects against radiation. Label: Made with lead, do not eat insulation."
 	icon_state = "rad"
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.90
-	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 	slowdown = 1.5
 	armor_spec = "bio=60;rad=100"
@@ -113,6 +110,7 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 TYPE_TABLE(/obj/item/clothing/suit/radiation, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))))
 
 CAPABILITIES(/obj/item/clothing/suit/radiation)
+	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
 
 /obj/item/clothing/suit/radiation/teshari

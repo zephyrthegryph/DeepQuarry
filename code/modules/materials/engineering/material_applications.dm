@@ -39,7 +39,7 @@
 		// dielectric performance changes its real electrical coupling.
 		throw_speed = max(1, round(initial(throw_speed) * clamp(100 / max(build.effective_density, 10), 0.5, 1.5)))
 		throw_range = max(1, round(initial(throw_range) * clamp(100 / max(build.effective_density, 10), 0.5, 1.5)))
-		siemens_coefficient = clamp(initial(siemens_coefficient) * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2)
+		set_siemens_coefficient(clamp(protection_of_type(type).siemens * (1.25 - build.effective_electrical_resistance / 125), 0.05, 2))
 		worn_protection_changed()
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
@@ -98,8 +98,8 @@
 				// the load-bearing layer supplies the actual armor calculation.
 				color = material_for_role(MATERIAL_ROLE_JACKET)?.icon_colour || structure.icon_colour
 				var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER) || structure
-				clothing.siemens_coefficient = clamp(initial(clothing.siemens_coefficient) * (1.2 - liner.dielectric_strength / 125), 0.05, 2)
-				clothing.permeability_coefficient = clamp(initial(clothing.permeability_coefficient) * (1.2 - liner.corrosion_resistance / 125), 0.05, 2)
+				clothing.set_siemens_coefficient(clamp(protection_of_type(clothing.type).siemens * (1.2 - liner.dielectric_strength / 125), 0.05, 2))
+				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.2 - liner.corrosion_resistance / 125), 0.05, 2))
 				clothing.worn_protection_changed()
 		if(MATERIAL_APPLICATION_MACHINE_PART, MATERIAL_APPLICATION_CAPACITOR, MATERIAL_APPLICATION_MANIPULATOR, MATERIAL_APPLICATION_MATTER_BIN, MATERIAL_APPLICATION_SCANNER, MATERIAL_APPLICATION_LASER)
 			if(istype(src, /obj/item/stock_parts))
@@ -151,7 +151,7 @@
 				clothing.set_material(fabric.name)
 				color = fabric.icon_colour
 				var/datum/material/reinforcement = material_for_role(MATERIAL_ROLE_STRUCTURE) || fabric
-				clothing.permeability_coefficient = clamp(initial(clothing.permeability_coefficient) * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2)
+				clothing.set_permeability_coefficient(clamp(protection_of_type(clothing.type).permeability * (1.15 - reinforcement.corrosion_resistance / 150), 0.05, 2))
 		if(MATERIAL_APPLICATION_CABLE)
 			var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary
 			build.engineered_id = conductor.name

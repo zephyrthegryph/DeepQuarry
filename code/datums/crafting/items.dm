@@ -136,8 +136,10 @@
 	icon_state = "seccloak"
 	color = "#F13C00"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/firecloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(istype(damage_source, /obj/item/projectile))
@@ -186,13 +188,12 @@
 	desc = "Handmade boots of scavanged bits."
 	icon_state = "winterboots"
 	color = "#0000CC"
-	cold_protection = FEET
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = FEET
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 	snow_speed = -1
 	rock_climbing = TRUE
 	item_flags = NOSLIP
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/frost)
+	configure(item_protection(cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Turtle
 /obj/item/material/twohanded/sledgehammer/gravity
@@ -252,11 +253,6 @@
 	on each glove."
 	icon_state = "regen"
 	item_state = "graygloves"
-	siemens_coefficient = 0
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
@@ -279,6 +275,7 @@
 TRACKED(/obj/item/clothing/gloves/toxinregen, purging)
 
 CAPABILITIES(/obj/item/clothing/gloves/toxinregen)
+	configure(item_protection(siemens = 0, cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 	every(2 SECONDS, then(PROC_REF(purge_step)), when = nameof(purging))
 
 /// Works every 2 s while worn.

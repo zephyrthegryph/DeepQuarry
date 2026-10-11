@@ -6,8 +6,6 @@
 	item_flags = AIRTIGHT|FLEXIBLEMATERIAL
 	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.10
-	permeability_coefficient = 0.50
 	var/hanging = 0
 	actions_types = list(/datum/action/item_action/adjust_breath_mask)
 	special_handling = TRUE
@@ -18,13 +16,13 @@
 	if(user.canmove && !user.stat)
 		src.hanging = !src.hanging
 		if (src.hanging)
-			gas_transfer_coefficient = 1
+			set_gas_transfer_coefficient(1)
 			body_parts_covered = body_parts_covered & ~FACE
 			item_flags = item_flags & ~AIRTIGHT
 			icon_state = "breathdown"
 			to_chat(user, "Your mask is now hanging on your neck.")
 		else
-			gas_transfer_coefficient = initial(gas_transfer_coefficient)
+			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
 			body_parts_covered = initial(body_parts_covered)
 			item_flags = initial(item_flags)
 			icon_state = initial(icon_state)
@@ -32,6 +30,7 @@
 		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
+	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 	op("breath_mask_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(breath_mask_adjust_self)))
 	op("breath_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(breath_toggle_verb)))
@@ -51,21 +50,27 @@ CAPABILITIES(/obj/item/clothing/mask/breath)
 	name = "medical mask"
 	icon_state = "medical"
 	item_state_slots = list(slot_r_hand_str = "medical", slot_l_hand_str = "medical")
-	permeability_coefficient = 0.01
+
+CAPABILITIES(/obj/item/clothing/mask/breath/medical)
+	configure(item_protection(permeability = 0.01))
 
 /obj/item/clothing/mask/breath/emergency
 	desc = "A close-fitting  mask that is used by the wallmounted emergency oxygen pump."
 	name = "emergency mask"
 	icon_state = "breath"
 	item_state = "breath"
-	permeability_coefficient = 0.50
+
+CAPABILITIES(/obj/item/clothing/mask/breath/emergency)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/mask/breath/anesthetic
 	desc = "A close-fitting sterile mask that is used by the anesthetic wallmounted pump."
 	name = "anesthetic mask"
 	icon_state = "medical"
 	item_state = "medical"
-	permeability_coefficient = 0.01
+
+CAPABILITIES(/obj/item/clothing/mask/breath/anesthetic)
+	configure(item_protection(permeability = 0.01))
 
 
 /obj/item/clothing/mask/breath/transparent
@@ -82,10 +87,9 @@ CAPABILITIES(/obj/item/clothing/mask/breath)
 	item_flags = AIRTIGHT|FLEXIBLEMATERIAL
 	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.10
-	permeability_coefficient = 0.50
 
 CAPABILITIES(/obj/item/clothing/mask/altevian_breath)
+	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 
 TYPE_TABLE(/obj/item/clothing/mask/altevian_breath, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))

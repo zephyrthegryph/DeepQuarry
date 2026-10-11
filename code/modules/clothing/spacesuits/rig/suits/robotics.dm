@@ -10,7 +10,6 @@
 	offline_slowdown = 1
 	offline_vision_restriction = 0
 	emp_protection = -20
-	siemens_coefficient= 0.75
 	rigsuit_max_pressure = 8 * ONE_ATMOSPHERE
 	rigsuit_min_pressure = 0
 
@@ -23,6 +22,9 @@
 	req_access = list()
 	req_one_access = list()
 
+CAPABILITIES(/obj/item/rig/robotics)
+	configure(item_protection(siemens = 0.75))
+
 TYPE_TABLE(/obj/item/rig/robotics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact))))
 
 /obj/item/clothing/head/helmet/space/rig/advsuit
@@ -31,5 +33,6 @@ TYPE_TABLE(/obj/item/rig/robotics, suit_storage_spec, list(HOLD_ONLY(list(POCKET
 /obj/item/clothing/suit/space/rig/advsuit
 	name = "Hardsuit" // Replcing Void with Hard to fit the naming convention. Specced down hardsuit for comfort
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
-	heat_protection =	 CHEST|LEGS|ARMS|HANDS|FEET
-	cold_protection =	 CHEST|LEGS|ARMS|HANDS|FEET
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/advsuit)
+	configure(item_protection(heat_parts = CHEST|LEGS|ARMS|HANDS|FEET, cold_parts = CHEST|LEGS|ARMS|HANDS|FEET))
