@@ -5,6 +5,8 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
 	var/datum/gas_mixture/air_contents
+	/// The volume its mixture is made with (an injector or scrubber sets its own).
+	var/air_volume = 200
 
 	var/datum/pipe_network/network
 	/// Its one pipe neighbour (a relation view: it reads null once the neighbour is gone; disconnect() is the domain unlink).
@@ -13,8 +15,7 @@
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
 
-	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
-	air_contents.set_volume(200)
+	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture(air_volume))
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir

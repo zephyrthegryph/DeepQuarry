@@ -370,12 +370,12 @@ CAPABILITIES(/obj/item/integrated_circuit/output/text_to_speech/advanced)
 	// It is commented out due to picking up the assembly killing the beam.
 
 CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(on_moved)))
 	owns_one(nameof(hologram), /obj/effect/overlay/holographic)
 
 /obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(on_moved)))
 
 // its hologram goes with it.
 

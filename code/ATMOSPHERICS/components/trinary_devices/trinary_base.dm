@@ -10,6 +10,10 @@
 	var/datum/gas_mixture/air1
 	var/datum/gas_mixture/air2
 	var/datum/gas_mixture/air3
+	/// The volumes its three port mixtures are made with (a subtype's filter or mixer sets its own).
+	var/air1_volume = 200
+	var/air2_volume = 200
+	var/air3_volume = 200
 
 	var/obj/machinery/atmospherics/node3
 
@@ -20,13 +24,9 @@
 /obj/machinery/atmospherics/trinary/Initialize(mapload)
 	. = ..()
 
-	atmos_air_set(src, nameof(air1), new /datum/gas_mixture)
-	atmos_air_set(src, nameof(air2), new /datum/gas_mixture)
-	atmos_air_set(src, nameof(air3), new /datum/gas_mixture)
-
-	air1.set_volume(200)
-	air2.set_volume(200)
-	air3.set_volume(200)
+	atmos_air_set(src, nameof(air1), new /datum/gas_mixture(air1_volume))
+	atmos_air_set(src, nameof(air2), new /datum/gas_mixture(air2_volume))
+	atmos_air_set(src, nameof(air3), new /datum/gas_mixture(air3_volume))
 
 /obj/machinery/atmospherics/trinary/init_dir()
 	initialize_directions = get_initialize_directions_trinary(dir, mirrored, tee)
