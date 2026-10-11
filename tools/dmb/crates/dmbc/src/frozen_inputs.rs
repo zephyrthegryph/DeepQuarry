@@ -43,10 +43,56 @@ pub struct Journal {
     directory: PathBuf,
     index: Mutex<Index>,
 }
+/// Borrowed observations from this journal, not an assertion that either
+/// compiler's entire input/search/configuration closure has been captured.
+/// The callback must not re-enter the same Inputs: its index is locked.
+pub struct JournalAccessView<'a> {
+    journal: &'a Journal,
+    index: &'a Index,
+}
+/// One recorded file owner. Payload loading is explicit and independently
+/// verified; enumerating the view never loads the complete asset corpus.
+pub struct JournalFileAccess<'a> {
+    pub path: &'a Path,
+    pub stamp: &'a Stamp,
+    pub content: u128,
+    journal: &'a Journal,
+}
+impl JournalFileAccess<'_> {
+    pub fn read_verified(&self) -> io::Result<CapturedInputRead> {
+        self.journal.read_payload(self.stamp.clone(), self.content)
+    }
+}
+impl JournalAccessView<'_> {
+    pub fn files(&self) -> impl Iterator<Item = JournalFileAccess<'_>> {
+        self.index.files.iter().map(|(path, (stamp, content))| JournalFileAccess {
+            path, stamp, content: *content, journal: self.journal,
+        })
+    }
+    pub fn negative_paths(&self) -> impl Iterator<Item = &Path> {
+        self.index.negative.iter().map(PathBuf::as_path)
+    }
+    pub fn folders(&self) -> impl Iterator<Item = (&Path, &FolderListing)> {
+        self.index.folders.iter().map(|(path, listing)| (path.as_path(), listing))
+    }
+}
 fn invalid(message: impl Into<String>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.into())
 }
 impl Inputs {
+    /// Visit the existing journal's current borrowed roster. Live providers
+    /// have no issued journal and return None. This does not finalize recording.
+    pub fn with_access_view<R>(
+        &self,
+        visit: impl FnOnce(JournalAccessView<'_>) -> io::Result<R>,
+    ) -> io::Result<Option<R>> {
+        let journal = match self {
+            Self::Live => return Ok(None),
+            Self::Recording(journal) | Self::Replay(journal) => journal,
+        };
+        let index = journal.index.lock().map_err(|_| invalid("verification mutex poisoned"))?;
+        visit(JournalAccessView { journal, index: &index }).map(Some)
+    }
     pub fn record(directory: &Path) -> io::Result<Self> {
         fs::create_dir(directory)?;
         fs::create_dir(directory.join("payloads"))?;
@@ -95,6 +141,16 @@ impl Drop for Inputs {
     }
 }
 impl Journal {
+    fn read_payload(&self, stamp: Stamp, hash: u128) -> io::Result<CapturedInputRead> {
+        let bytes = dm_profile::io_call(
+            || fs::read(self.payload(hash)),
+            |bytes| (bytes.len() as u64, 0),
+        )?;
+        if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
+            return Err(invalid("verification payload checksum mismatch"));
+        }
+        Ok(CapturedInputRead::from_verified(stamp, bytes, hash))
+    }
     fn payload(&self, hash: u128) -> PathBuf {
         self.directory.join("payloads").join(format!("{hash:032x}"))
     }
@@ -149,14 +205,7 @@ impl SnapshotProvider for Inputs {
                     None => return Err(Journal::unknown(path.as_ref())),
                 }
             };
-            let bytes = dm_profile::io_call(
-                || fs::read(journal.payload(hash)),
-                |bytes| (bytes.len() as u64, 0),
-            )?;
-            if bytes.len() as u64 != stamp.size || xxhash_rust::xxh3::xxh3_128(&bytes) != hash {
-                return Err(invalid("verification payload checksum mismatch"));
-            }
-            return Ok(CapturedInputRead::from_verified(stamp, bytes, hash));
+            return journal.read_payload(stamp, hash);
         }
         let path = canonical_path(path);
         match self {
@@ -370,3 +419,7 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "frozen_inputs/access_view_tests.rs"]
+mod access_view_tests;
