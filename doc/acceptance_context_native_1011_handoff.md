@@ -44,3 +44,5 @@ mandatory smoke and incremental-pin checks. Results remain pending. No pin rows
 were blessed for these failures.
 
 The latest repair run on 781a12c6f8 passed 33 tests and failed only the two pin suites. Production compilation, DreamChecker, ratchets and boot were clean. Real acceptance, lifecycle and metadata regressions passed. Residual differences are master-added robot keys and volatile fixture serials/source line numbers; the pin producer now normalizes only those volatile values while retaining substantive refusal and fault text. Verification remains pending.
+
+Master c25bd00e3c introduced tracked_tests. Its check exposed 40 raw fixture writes to fields tracked by this landing. Thirty-eight now call the real existing setters; the two deliberate metadata fault controls use the harness set_var to preserve explicit fault timing and restoration. The targeted lint is clean at the unchanged baseline of 225. The queued b27b664195 gate was cancelled before compilation/tests after this lint failure; it supplies no runtime proof.

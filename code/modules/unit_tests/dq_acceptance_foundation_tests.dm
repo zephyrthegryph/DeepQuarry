@@ -353,7 +353,7 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	set_global(nameof(GLOB.op_pure_violations), violations_before ? violations_before.Copy() : list())
 	set_global(nameof(GLOB.op_pure_expected), TRUE)
 	// Test-only flag change avoids invoking automatic recheck before the explicit fault probe.
-	F.fault_metadata = TRUE
+	set_var(F, nameof(F.fault_metadata), TRUE)
 	var/caught = FALSE
 	var/count_before = length(GLOB.op_pure_violations)
 	TEST_ASSERT(P.resume_act(), "Pending metadata probe restores actual suspended context")
@@ -370,7 +370,7 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	TEST_ASSERT_EQUAL(length(P.watch_index), length(index_before), "Failed collection preserves subscription count")
 	for(var/index in index_before)
 		TEST_ASSERT(P in GLOB.op_watchers[index], "Failed collection preserves every original registration")
-	F.fault_metadata = FALSE
+	set_var(F, nameof(F.fault_metadata), FALSE)
 	P.end_with(ACT_REFUSED, /datum/msg/op/cancelled)
 	// Both requirement and selector fault paths must release pooled candidate acts.
 	for(var/path in list(/obj/dq_acceptance_metadata_cleanup/needs_fault, /obj/dq_acceptance_metadata_cleanup/when_fault))

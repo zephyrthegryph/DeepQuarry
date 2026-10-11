@@ -463,10 +463,10 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
 	bat.force = 10
-	bat.w_class = ITEMSIZE_NORMAL
+	bat.set_w_class(ITEMSIZE_NORMAL)
 	var/obj/item/twig = allocate(/obj/item, run_loc_floor_bottom_left)
 	twig.force = 1
-	twig.w_class = ITEMSIZE_TINY
+	twig.set_w_class(ITEMSIZE_TINY)
 	for(var/i in 1 to 40)
 		A.attackby(bat, H)
 	TEST_ASSERT(!p2_apc_cover_removed(A), "a whole APC keeps its cover")
@@ -491,7 +491,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
 	bat.force = 10
-	bat.w_class = ITEMSIZE_NORMAL
+	bat.set_w_class(ITEMSIZE_NORMAL)
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
 	A.coverlocked = FALSE
@@ -521,7 +521,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
 	bat.force = 10
-	bat.w_class = ITEMSIZE_NORMAL
+	bat.set_w_class(ITEMSIZE_NORMAL)
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	A.take_damage(A.max_integrity * 0.75)
 	for(var/i in 1 to 200)
