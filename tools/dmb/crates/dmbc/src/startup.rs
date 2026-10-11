@@ -362,7 +362,7 @@ pub(crate) fn capture_with_prepared_bodies<'a>(
     artifacts: Option<&StartupArtifacts>,
     prepared: &crate::lowering::PreparedBodyRoster<'_>,
 ) -> Result<CapturedStartup<'a>, String> {
-    if revision.is_some_and(|revision| !std::ptr::eq::<ColdFrontend>(revision, frontend)) {
+    if revision.is_some_and(|revision| !std::ptr::eq::<ColdFrontend>(&**revision, frontend)) {
         return Err("startup revision belongs to another current frontend".into());
     }
     let mut facts = capture_facts_with_executor_and_bodies_and_artifacts(

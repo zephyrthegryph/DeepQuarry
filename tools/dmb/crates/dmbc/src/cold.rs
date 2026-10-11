@@ -425,8 +425,8 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn compile_with_startup<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+fn compile_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     resolver: &R,
     policy: &P,
     links: CapturedLinkInputs<'_>,
@@ -438,7 +438,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     executor: &dm_exec::BuildExecutor,
-    bodies: dm_tree::frontend::BodyArena<'_>,
+    bodies: dm_tree::frontend::BodyArena<'frontend>,
 ) -> Result<ColdOutput, ColdError> {
     let engine_bytes = links.engine_bytes;
     let types = declarations.type_values;
@@ -463,8 +463,8 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     resolver: &R,
     policy: &P,
     links: CapturedLinkInputs<'_>,
@@ -476,9 +476,9 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     executor: &dm_exec::BuildExecutor,
-    bodies: dm_tree::frontend::BodyArena<'_>,
+    bodies: dm_tree::frontend::BodyArena<'frontend>,
     prepared_abi: Option<&crate::driver_facts::PreparedSourceAbi>,
-    prepared_roster: Option<&crate::lowering::PreparedBodyRoster<'_>>,
+    prepared_roster: Option<&crate::lowering::PreparedBodyRoster<'frontend>>,
 ) -> Result<PreparedCold, ColdError> {
     startup
         .validate_for(frontend)

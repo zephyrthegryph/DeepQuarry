@@ -92,6 +92,7 @@ fn deferred_default_provenance_failure_does_not_preempt_body_diagnostic() {
         &executor,
         dm_tree::frontend::BodyArena::new(&frontend),
         None,
+        None,
     );
     match result {
         Err(ColdError::Lowering(errors)) => assert!(errors
@@ -197,6 +198,7 @@ fn production_preparation_releases_cached_initializer_ast_before_body_policy() {
         Some(&memo),
         &executor,
         dm_tree::frontend::BodyArena::new(&frontend),
+        None,
         None,
     );
     assert!(observed.load(Ordering::Relaxed));
