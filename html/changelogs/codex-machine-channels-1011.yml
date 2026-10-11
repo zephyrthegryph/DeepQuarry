@@ -1,4 +1,5 @@
-author: "Codex"
+author: Codex
 delete-after: true
 changes:
-  - code_imp: "Machine state readers and jukebox appearance use tracked and stat dependencies."
+  - bugfix: Machine menus follow masked EMP source changes.
+  - code_imp: Machine condition and settings readers use native state delivery.
