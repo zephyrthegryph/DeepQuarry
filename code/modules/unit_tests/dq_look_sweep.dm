@@ -381,22 +381,19 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	dq_look_drain_turf(T)
 
 /// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
-/// most DQ_LOOK_STATE_MAX_VARS of them, then narrowed to the plan's list for the type when the plan names one.
+/// most DQ_LOOK_STATE_MAX_VARS of them. A concrete read plan filters candidates before that limit.
 /datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
 	var/list/found = list()
 	for(var/name in subject.vars)
 		if(name in base_vars)
 			continue
+		if(islist(plan_entry) && !(name in plan_entry))
+			continue
 		if(isnum(subject.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
 			found += name
 	if(length(found) > DQ_LOOK_STATE_MAX_VARS)
 		found.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
-	if(!islist(plan_entry))
-		return found
-	. = list()
-	for(var/name in found)
-		if(name in plan_entry)
-			. += name
+	return found
 
 /// Writes `value` to `target.vars[name]` the way a caller does (its tracked setter when it has one, else the raw var) and redraws.
 /datum/unit_test/proc/dq_look_write(atom/target, name, value)
@@ -576,6 +573,67 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			continue
 		if(before[name] != after[name])
 			log_test("LOOK LEAK: [type] changed GLOB.[name]: [before[name]] -> [after[name]]")
+
+
+// An actual subtype with more early unread numeric fields than the fallback limit.
+/obj/dq_look_late_dependency
+	abstract_type = /obj/dq_look_late_dependency
+	var/unread_01 = 0
+	var/unread_02 = 0
+	var/unread_03 = 0
+	var/unread_04 = 0
+	var/unread_05 = 0
+	var/unread_06 = 0
+	var/unread_07 = 0
+	var/unread_08 = 0
+	var/unread_09 = 0
+	var/unread_10 = 0
+	var/unread_11 = 0
+	var/unread_12 = 0
+	var/unread_13 = 0
+	var/unread_14 = 0
+	var/unread_15 = 0
+	var/unread_16 = 0
+	var/unread_17 = 0
+	var/unread_18 = 0
+	var/unread_19 = 0
+	var/unread_20 = 0
+	var/unread_21 = 0
+	var/unread_22 = 0
+	var/unread_23 = 0
+	var/unread_24 = 0
+	var/unread_25 = 0
+	var/late_read = 0
+
+TRACKED(/obj/dq_look_late_dependency, late_read)
+
+/datum/unit_test/dq_look_sweep_plan_before_limit/Run()
+	dq_look_scope_globals()
+	var/turf/T = test_floor()
+	var/list/base_vars = dq_look_state_base_vars(/obj, T)
+	var/obj/dq_look_late_dependency/probe = allocate(/obj/dq_look_late_dependency, T)
+	var/list/fallback = dq_look_probe_names(probe, base_vars, "*")
+	TEST_ASSERT_EQUAL(length(fallback), DQ_LOOK_STATE_MAX_VARS, "Unknown read plans retain the original fallback limit")
+	TEST_ASSERT(!(nameof(probe.late_read) in fallback), "The actual late field lies beyond the unfiltered limit")
+	var/list/planned = dq_look_probe_names(probe, base_vars, list(nameof(probe.late_read)))
+	TEST_ASSERT_EQUAL(length(planned), 1, "Concrete plan excludes all early unread fields before applying the limit")
+	TEST_ASSERT_EQUAL(planned[1], nameof(probe.late_read), "The real analyzed late dependency remains eligible")
+	for(var/type in list(/obj/item/gun/projectile/automatic/l6_saw, /obj/item/gun/projectile/automatic/mg42))
+		var/obj/item/gun/projectile/automatic/G = allocate(type, T)
+		var/list/names = dq_look_probe_names(G, base_vars, list("cover_open"))
+		TEST_ASSERT("cover_open" in names, "The real machine-gun cover remains a planned numeric field [type]")
+		var/cover_setter = (type == /obj/item/gun/projectile/automatic/l6_saw) ? TYPE_PROC_REF(/obj/item/gun/projectile/automatic/l6_saw, set_cover_open) : TYPE_PROC_REF(/obj/item/gun/projectile/automatic/mg42, set_cover_open)
+		var/original = G.vars["cover_open"]
+		dq_look_settle()
+		var/list/before = dq_look_pin_lines(G)
+		call(G, cover_setter)(!original)
+		dq_look_settle()
+		var/list/changed_rows = dq_look_pin_lines(G)
+		TEST_ASSERT_NOTEQUAL(jointext(before, "\n"), jointext(changed_rows, "\n"), "Actual cover setter changes the gun's native look [type]")
+		call(G, cover_setter)(original)
+		dq_look_settle()
+		var/list/restored = dq_look_pin_lines(G)
+		TEST_ASSERT_EQUAL(jointext(restored, "\n"), jointext(before, "\n"), "Actual cover setter restores the native look [type]")
 
 #undef DQ_LOOK_TREE_DIR
 #undef DQ_LOOK_STATE_DIR

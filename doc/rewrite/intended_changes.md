@@ -4800,3 +4800,10 @@ through normal lifecycle cleanup, releasing their host watches. This changes
 fixture teardown, not appearance or production initialization. The new scope
 regression asserts identity and contents after actual nested-fixture teardown.
 No appearance differences or captured runtimes are blessed by this repair.
+
+
+The concrete appearance read plan is now applied before the 24-field probe limit.
+Previously, unrelated earlier fields could displace an actual draw dependency as
+master moved base state. L6/MG42 cover-open probe coverage is restored through
+their real setters. Unknown-plan fallback ordering and its limit are unchanged.
+This is coverage repair, not an intended change to either gun's appearance.
