@@ -356,3 +356,14 @@ All four are hard errors. `python3 tools/dx/codemods/ctor_args.py --apply` rewri
 removed, a dead one before a live one written `null`, forward-only parameters dropped with an exact `..(params)` becoming `..()`, and
 `overrides = TRUE` added); anything it cannot do exactly it prints as residue. The first run removed 22 dead arguments, 37 forward-only
 parameter lists and marked 33 position takeovers.
+
+## 17. Tests write tracked state through setters too (October 2026, `tooling-fix`)
+
+A test that writes a tracked var raw (`A.equipment = POWERCHAN_ON_AUTO` on the map's APC) changes shared state with no
+`state_changed()` mark, and a later test's refresh sweep reports `REFRESH DRIFT` on it, far from the cause (it took the grid tests
+followed by the lights tests to show). The `tracked` lint exempts the test trees, so a second lint, `tracked_tests`, reads
+`code/modules/unit_tests/`, `code/modules/benchmarks/` and `code/tests/` for the same writes: `TRACKED`/`SETTER` vars, `derive()`
+values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-only over `tools/ci/tracked_tests_baseline.txt`
+(225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
+`A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the
+current one part, which names the part that moved.

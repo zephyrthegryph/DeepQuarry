@@ -668,7 +668,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/multitool/multi = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
-	A.operating = TRUE
+	A.set_operating(TRUE)
 	open_cover(H, A)
 	touch(H, A, null)
 	TEST_ASSERT_NULL(A.cell, "cell out")
@@ -1031,8 +1031,8 @@
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.operating = TRUE
-	A.chargemode = TRUE
+	A.set_operating(TRUE)
+	A.set_chargemode(TRUE)
 	A.set_equipment(POWERCHAN_ON_AUTO)
 	A.set_lighting(POWERCHAN_ON_AUTO)
 	A.set_environ(POWERCHAN_ON_AUTO)

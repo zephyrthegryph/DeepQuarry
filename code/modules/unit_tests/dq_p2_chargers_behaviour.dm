@@ -110,7 +110,7 @@
 /datum/unit_test/dq_p2_chargers/proc/p2c_cell(type = /obj/item/cell)
 	var/obj/item/cell/C = allocate(type, run_loc_floor_bottom_left)
 	C.maxcharge = 1e7
-	C.charge = 0
+	C.set_charge(0)
 	return C
 
 /datum/unit_test/dq_p2_chargers/proc/touch(mob/living/carbon/human/H, atom/target, obj/item/held, gesture = GESTURE_CLICK)
@@ -302,12 +302,12 @@
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/cell/cell = p2c_cell()
 	cell.maxcharge = 1000
-	cell.charge = 1000
+	cell.set_charge(1000)
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(cell.charge, 1000, "full stays full")
 	TEST_ASSERT_EQUAL(C.use_power, USE_POWER_IDLE, "idle while full")
 	cell.maxcharge = 1e7
-	cell.charge = 0
+	cell.set_charge(0)
 	C.set_grid_power(FALSE)
 	p2c_settle()
 	TEST_ASSERT_EQUAL(cell.charge, 0, "no power, no charge")
@@ -357,7 +357,7 @@
 	var/obj/item/melee/baton/loaded/G = allocate(/obj/item/melee/baton/loaded, run_loc_floor_bottom_left)
 	var/obj/item/cell/C = G.get_cell()
 	C.maxcharge = 1e7
-	C.charge = charge
+	C.set_charge(charge)
 	return G
 
 /// A recharger starts anchored and idle, with a 40 kW rate; the wall one is 60 kW and cannot be wrenched.
@@ -502,11 +502,11 @@
 	var/obj/item/G = p2c_gun()
 	var/obj/item/cell/C = G.get_cell()
 	C.maxcharge = 1000
-	C.charge = 1000
+	C.set_charge(1000)
 	touch(H, R, G)
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "idle while full")
 	C.maxcharge = 1e7
-	C.charge = 0
+	C.set_charge(0)
 	R.set_grid_power(FALSE)
 	p2c_settle()
 	TEST_ASSERT_EQUAL(C.charge, 0, "unpowered: no charge")

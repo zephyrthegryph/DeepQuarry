@@ -8,7 +8,7 @@
 	var/obj/item/pen/inactive = allocate(/obj/item/pen, T)
 	TEST_ASSERT_NOTNULL(cell, "the actual APC fixture starts with its real installed power cell")
 	key_set(apc, COVER_OPEN, TRUE)
-	cell.charge = cell.maxcharge / 2
+	cell.set_charge(cell.maxcharge / 2)
 	var/charge_before = cell.charge
 	TEST_ASSERT(user.put_in_active_hand(active), "the actual actor's active hand holds its first distinct item")
 	TEST_ASSERT(user.put_in_inactive_hand(inactive), "the actual actor's inactive hand holds its second distinct item")

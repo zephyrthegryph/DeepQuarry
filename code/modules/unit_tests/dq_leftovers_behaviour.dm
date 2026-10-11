@@ -188,7 +188,7 @@
 
 /datum/unit_test/dq_leftovers/gradual_charge_steps_each_second/run_gate()
 	var/obj/item/cell/C = allocate(/obj/item/cell, tile(2, 2))
-	C.charge = 0
+	C.set_charge(0)
 	C.gradual_charge(4, 1, FALSE, null)
 	var/after_first = C.charge
 	TEST_ASSERT(after_first > 0, "the first step lands at once")

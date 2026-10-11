@@ -417,10 +417,10 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/robotic_fabricator/F = mach(/obj/machinery/robotic_fabricator, tile(3, 2))
 	F.metal_amount = 100000
-	F.operating = TRUE
+	F.set_operating(TRUE)
 	press(H, F, "build_l_arm")
 	TEST_ASSERT_EQUAL(F.metal_amount, 100000, "a busy fabricator takes no order")
-	F.operating = FALSE
+	F.set_operating(FALSE)
 	press(H, F, "build_l_arm")
 	TEST_ASSERT_EQUAL(F.metal_amount, 75000, "an idle one spends the metal")
 	var/list/data = hc_data(F, H)
@@ -854,7 +854,7 @@
 	set_global("act_last_reply", GLOB.act_last_reply) // scoped restoration of hit dispatch scratch state
 	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
 	C.material_emp_resistance = 0
-	C.charge = 1000
+	C.set_charge(1000)
 	C.emp_act(2)
 	TEST_ASSERT_EQUAL(C.charge, 500, "the real EMP entry drains half an unprotected cell")
 	var/obj/item/am_containment/J = allocate(/obj/item/am_containment, tile(4, 2))

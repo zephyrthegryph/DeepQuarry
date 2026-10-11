@@ -472,7 +472,7 @@
 	var/obj/machinery/light/L = light()
 	var/obj/item/cell/C = p2l_cell(L)
 	C.maxcharge = 2000
-	C.charge = 2000
+	C.set_charge(2000)
 	set_area_power(FALSE)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BURNED, "the tube burned out")
 
@@ -483,7 +483,7 @@
 /datum/unit_test/dq_p2_lights/emergency_cell_recharges_when_power_returns/run_gate()
 	var/obj/machinery/light/L = light()
 	var/obj/item/cell/C = p2l_cell(L)
-	C.charge = C.maxcharge - 0.6 // one recharge step of 0.4 every two seconds: two steps
+	C.set_charge(C.maxcharge - 0.6) // one recharge step of 0.4 every two seconds: two steps
 	set_area_power(FALSE)
 	set_area_power(TRUE)
 	TEST_ASSERT(C.charge < C.maxcharge, "not charged at once")
