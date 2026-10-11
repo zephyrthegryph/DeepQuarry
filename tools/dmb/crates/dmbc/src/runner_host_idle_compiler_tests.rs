@@ -76,7 +76,10 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
         host.semantic.as_ref().unwrap().snapshot_tree().unwrap()
     ));
     assert!(host.symbolic.is_none());
-    assert!(host.abi.is_none());
+    assert!(
+        host.abi.is_some(),
+        "compact ABI facade retains its explicit engine baseline"
+    );
     assert!(
         host.startup.is_some(),
         "compact startup facade remains bounded"

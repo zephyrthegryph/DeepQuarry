@@ -9,7 +9,7 @@ pub(in crate::driver_facts) const KEY: &[u8] = b"dm-process-abi-batch-v2-symboli
 #[derive(Clone)]
 pub(crate) struct Inputs {
     pub(crate) graph: Arc<dm_tree::frontend::CallableAbiGraph>,
-    pub(crate) engine: Arc<crate::runner_host::EnginePayload>,
+    pub(crate) engine: std::sync::Weak<crate::runner_host::EnginePayload>,
     pub(crate) boundaries: BTreeMap<UnitIdentity, Boundary>,
     pub(crate) resource: Option<u128>,
     pub(crate) evaluation_resource: Option<u128>,
@@ -18,7 +18,7 @@ pub(crate) struct Inputs {
 }
 impl PartialEq for Inputs {
     fn eq(&self, b: &Self) -> bool {
-        Arc::ptr_eq(&self.engine, &b.engine)
+        observations::same_engine(&self.engine, &b.engine)
             && (Arc::ptr_eq(&self.graph, &b.graph) || self.graph == b.graph)
             && self.boundaries == b.boundaries
             && self.resource == b.resource
@@ -114,7 +114,7 @@ pub(in crate::driver_facts) fn inputs(
     }
     Some(Arc::new(Inputs {
         graph: roster.graph().clone(),
-        engine: engine.clone(),
+        engine: Arc::downgrade(engine),
         boundaries: boundaries
             .iter()
             .map(|(id, b)| (*id, Boundary::capture(Some(b))))

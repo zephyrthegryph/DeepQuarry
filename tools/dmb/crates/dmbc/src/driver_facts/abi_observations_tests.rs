@@ -37,7 +37,7 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
     let inputs = Arc::new(Inputs {
         metadata: metadata(),
         predecessor: None,
-        engine: Arc::clone(&owner),
+        engine: Arc::downgrade(&owner),
         boundary: Boundary::Fresh,
         resource: None,
         evaluation_resource: None,
@@ -73,6 +73,9 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
             }))
         )
         .is_some());
+    let compact = store.compact_for_pressure(1024 * 1024);
+    assert_eq!(compact.retained_entries, 1);
+    assert!(compact.charged_bytes > std::mem::size_of::<Artifact>());
     let host = Host(false);
     assert!(store
         .store
@@ -92,7 +95,8 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
     changed.definition = Some(dm_tree::DefinitionMode::Declare);
     variants.push(changed);
     let mut changed = (*inputs).clone();
-    changed.engine = engine();
+    let foreign_engine = engine();
+    changed.engine = Arc::downgrade(&foreign_engine);
     variants.push(changed);
     let mut changed = (*inputs).clone();
     changed.boundary = Boundary::Absent;
@@ -194,7 +198,7 @@ fn typed_abi_negative_semantic_reads_replay_and_current_keys_replace_history() {
     let inputs = Arc::new(Inputs {
         metadata: metadata(),
         predecessor: None,
-        engine: Arc::clone(&owner),
+        engine: Arc::downgrade(&owner),
         boundary: Boundary::Fresh,
         resource: None,
         evaluation_resource: None,
@@ -290,10 +294,11 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
             }
         }
     }
+    let owner = engine();
     let inputs = Arc::new(Inputs {
         metadata: metadata(),
         predecessor: None,
-        engine: engine(),
+        engine: Arc::downgrade(&owner),
         boundary: Boundary::Fresh,
         resource: None,
         evaluation_resource: None,

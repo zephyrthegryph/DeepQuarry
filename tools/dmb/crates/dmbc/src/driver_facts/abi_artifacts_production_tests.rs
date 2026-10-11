@@ -43,7 +43,7 @@ fn retained_frontend(
     )
     .unwrap()
 }
-fn prepared(
+pub(super) fn prepared(
     front: &ColdFrontend,
     engine: &EngineSnapshot,
     store: Option<&AbiArtifacts>,
@@ -83,7 +83,7 @@ fn prepared(
     )
     .unwrap()
 }
-fn same(retained: &PreparedPinnedSourceAbi, fresh: &PreparedPinnedSourceAbi) {
+pub(super) fn same(retained: &PreparedPinnedSourceAbi, fresh: &PreparedPinnedSourceAbi) {
     assert_eq!(retained.prepared.diagnostics, fresh.prepared.diagnostics);
     assert!(
         retained.prepared.diagnostics.is_empty(),

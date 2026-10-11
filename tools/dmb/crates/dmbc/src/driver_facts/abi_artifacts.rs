@@ -57,6 +57,15 @@ impl Default for AbiArtifacts {
     }
 }
 impl AbiArtifacts {
+    /// Cap exposed ABI payload/receipt ownership only. The existing shared
+    /// engine baseline remains separately owned and is not called byte-bounded.
+    pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
+        let report = self
+            .store
+            .prune_for_pressure(bytes, Self::compact_payload_charge);
+        self.groups.prune();
+        report
+    }
     pub(crate) fn with_engine_owner(engine_owner: Arc<crate::runner_host::EnginePayload>) -> Self {
         Self {
             engine_owner: Some(engine_owner),
@@ -198,7 +207,7 @@ pub(super) fn prepare(
                     ancestry: structural.map(|(_, ancestry)| ancestry),
                     metadata: Arc::clone(current_metadata),
                     predecessor: predecessor.cloned(),
-                    engine: Arc::clone(engine),
+                    engine: Arc::downgrade(engine),
                     boundary: observations::Boundary::capture(
                         inherited.boundaries.get(&context.identity),
                     ),
@@ -370,3 +379,7 @@ mod tests;
 #[cfg(test)]
 #[path = "abi_artifacts_production_tests.rs"]
 mod production_tests;
+
+#[cfg(test)]
+#[path = "abi_pressure_tests.rs"]
+mod pressure_tests;

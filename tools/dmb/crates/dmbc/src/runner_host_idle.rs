@@ -30,7 +30,10 @@ impl BuildHost {
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
             eprintln!("dmbd compact startup {report:?}");
         }
-        self.abi = None;
+        if let Some((_, owner)) = &self.abi {
+            let report = owner.compact_for_pressure(32 * 1024 * 1024);
+            eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?}");
+        }
         self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {
             let report = owner.compact_for_pressure(64 * 1024 * 1024);

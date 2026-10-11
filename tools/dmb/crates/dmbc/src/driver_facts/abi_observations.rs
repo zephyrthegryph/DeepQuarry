@@ -38,7 +38,10 @@ pub(crate) struct Inputs {
     pub(crate) definition: Option<dm_tree::DefinitionMode>,
     pub(crate) metadata: Arc<dm_ir::ProcedureMetadata>,
     pub(crate) predecessor: Option<Arc<PreparedAbi>>,
-    pub(crate) engine: Arc<crate::runner_host::EnginePayload>,
+    // Historical receipts retain issuer identity, not the decoded engine graph.
+    // A dead issuer cannot admit a current answer; production holds its live
+    // engine separately through AbiArtifacts/Transport.
+    pub(crate) engine: std::sync::Weak<crate::runner_host::EnginePayload>,
     pub(crate) boundary: Boundary,
     pub(crate) resource: Option<u128>,
     pub(crate) evaluation_resource: Option<u128>,
@@ -82,7 +85,7 @@ impl Boundary {
 }
 impl PartialEq for Inputs {
     fn eq(&self, b: &Self) -> bool {
-        Arc::ptr_eq(&self.engine, &b.engine)
+        same_engine(&self.engine, &b.engine)
             && (Arc::ptr_eq(&self.metadata, &b.metadata)
                 || self.metadata == b.metadata
                 || self.metadata.canonical_bytes() == b.metadata.canonical_bytes())
@@ -101,6 +104,14 @@ impl PartialEq for Inputs {
     }
 }
 impl Eq for Inputs {}
+pub(super) fn same_engine(
+    a: &std::sync::Weak<crate::runner_host::EnginePayload>,
+    b: &std::sync::Weak<crate::runner_host::EnginePayload>,
+) -> bool {
+    a.upgrade()
+        .zip(b.upgrade())
+        .is_some_and(|(a, b)| Arc::ptr_eq(&a, &b))
+}
 pub(in crate::driver_facts) struct Current<'a> {
     pub inputs: Arc<Inputs>,
     pub resolver: &'a dyn Resolver,

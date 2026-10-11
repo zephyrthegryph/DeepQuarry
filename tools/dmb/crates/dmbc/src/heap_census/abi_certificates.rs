@@ -1,5 +1,7 @@
 //! Borrowed ABI certificates and retained artifact payloads; never reserialize.
 use super::*;
+#[path = "abi_compact.rs"]
+pub(crate) mod compact;
 impl HeapCensus {
     pub(crate) fn prepared_canonical(
         &mut self,
@@ -71,7 +73,7 @@ impl HeapCensus {
                             crate::driver_facts::abi_artifacts::observations::Answer::BatchInputs(inputs) => {
                                 if self.arc_object("prepared_abi.batch_inputs", inputs) {
                                     self.callable_abi_graph(&inputs.graph);
-                                    self.abi_engine_owner(&inputs.engine);
+                                    self.observe_items("prepared_abi.weak_engine_issuer", 1);
                                     self.observe_items("prepared_abi.batch_boundaries", inputs.boundaries.len());
                                     self.unknown("prepared_abi.batch_boundaries", "private BTree backing excluded");
                                     for boundary in inputs.boundaries.values() {
@@ -87,7 +89,7 @@ impl HeapCensus {
                                     self.procedure_metadata("prepared_abi.metadata", &inputs.metadata);
                                     if let Some(ancestry) = &inputs.ancestry { self.slice("prepared_abi.ancestry", ancestry, true); }
                                     if let Some(abi) = &inputs.predecessor { self.abi(abi); }
-                                    self.abi_engine_owner(&inputs.engine);
+                                    self.observe_items("prepared_abi.weak_engine_issuer", 1);
                                     if let crate::driver_facts::abi_artifacts::observations::Boundary::Intrinsic{layout,..} = &inputs.boundary {
                                         for bytes in [&layout.display_name,&layout.description].into_iter().flatten() {
                                             self.vec_payload("prepared_abi.boundary_layout", bytes);

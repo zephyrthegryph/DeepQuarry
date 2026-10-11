@@ -149,7 +149,12 @@ impl Transport {
         }
     }
     fn engine(&self, current: &observations::Inputs, pure: Option<&[u8]>) -> EngineProof {
-        let (bytes, schema, bootstrap, compiler) = current.engine.disk_abi_authority();
+        // Every caller authenticates this transport's live issuer first.
+        debug_assert!(observations::same_engine(
+            &current.engine,
+            &Arc::downgrade(&self.engine_owner)
+        ));
+        let (bytes, schema, bootstrap, compiler) = self.engine_owner.disk_abi_authority();
         EngineProof {
             bytes: bytes.to_vec(),
             schema,
@@ -163,7 +168,7 @@ impl Transport {
         Some(self.key(10, &bytes))
     }
     fn admit_engine(&self, current: &observations::Inputs, pure: Option<&[u8]>) -> bool {
-        if !Arc::ptr_eq(&self.engine_owner, &current.engine) {
+        if !observations::same_engine(&Arc::downgrade(&self.engine_owner), &current.engine) {
             return false;
         }
         let (policy, admitted) = self.engine_admitted.get_or_init(|| {
@@ -239,6 +244,9 @@ impl Transport {
         artifact: &UnitArtifact,
         reads: &[dm_session::ResolverRead],
     ) {
+        if !observations::same_engine(&current.engine, &Arc::downgrade(&self.engine_owner)) {
+            return;
+        }
         let Some(proof) = InputsProof::capture(current, pure) else {
             return;
         };
@@ -320,7 +328,8 @@ fn portable(value: &ResolvedMeaning) -> bool {
 }
 impl InputsProof {
     fn capture(inputs: &observations::Inputs, pure: Option<&[u8]>) -> Option<Self> {
-        let (bytes, schema, bootstrap, compiler) = inputs.engine.disk_abi_authority();
+        let engine = inputs.engine.upgrade()?;
+        let (bytes, schema, bootstrap, compiler) = engine.disk_abi_authority();
         // This initial codec admits only the exact checked-in template. A unit
         // cannot refer to an arbitrary engine by a content hash: collisions in
         // the shared proof bucket would otherwise lose its engine association.
