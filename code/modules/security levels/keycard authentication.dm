@@ -18,9 +18,6 @@
 	//2 = authenticate
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
 
 MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 
@@ -112,6 +109,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/keycard_auth)
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	interface("KeycardAuth", title = "Keycard Authentication")
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))

@@ -17,8 +17,6 @@
 	/// there is not sent again.
 	var/tmp/power_node_at
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	/// Persistent supply registered with set_power_supply() (W). Every
 	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
 	/// most never set a nonzero supply, which costs nothing.
@@ -212,6 +210,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 // attach a wire to a power machine - leads from the turf you are standing on
 //almost never called, overwritten by all power machines but terminal and generator
 CAPABILITIES(/obj/machinery/power)
+	configure(uses_power(idle = 0, active = 0))
 	op("cable_place", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Lay cable"), then(PROC_REF(interaction_cable_place)))
 	extend("machine_anchor", then(PROC_REF(rewired)))
 	extend("machine_unanchor", then(PROC_REF(rewired)))

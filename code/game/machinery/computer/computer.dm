@@ -6,8 +6,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 300
-	active_power_usage = 300
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	var/processing = 0
 
@@ -28,6 +26,7 @@ MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")
 // (one time in five over severity), a blob hits it as a medium blast, a screwdriver disconnects the monitor into a frame with its board (a
 // broken one drops its glass), and any other item is the hand's use of it.
 CAPABILITIES(/obj/machinery/computer)
+	configure(uses_power(idle = 300, active = 300))
 	membership(joins = REGISTRY_COMPUTERS)
 	climb()
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp)))

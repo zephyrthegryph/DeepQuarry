@@ -7,10 +7,7 @@
 	var/state_base = "recon"
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 1000
 	var/processing_revive = FALSE
 	clicksound = SFX_MACHINES_BUTTONBEEP	//standard initialization sound
 	var/dingsound = SFX_MACHINES_KITCHEN_MICROWAVE_MICROWAVE_END	//sound to play when the process is complete
@@ -119,6 +116,7 @@
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
 CAPABILITIES(/obj/machinery/protean_reconstitutor)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 1000))
 	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove component"),
 		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req(PROC_REF(has_components))),

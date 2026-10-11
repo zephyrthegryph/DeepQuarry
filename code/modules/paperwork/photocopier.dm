@@ -8,9 +8,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 200
-	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/photocopier
 	can_buckle = TRUE
 	var/obj/item/copyitem = null	//what's in the copier!
@@ -26,6 +23,7 @@
 
 // The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
 CAPABILITIES(/obj/machinery/photocopier)
+	configure(uses_power(idle = 30, active = 200, channel = EQUIP))
 	interface("Photocopier")
 	without("ui_open")
 	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
@@ -174,7 +172,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 /obj/machinery/photocopier/proc/copy_finished(mob/user, left)
 	audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
 	playsound(src, "sound/machines/buzzbeep.ogg", 30)
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	copy_next(user, left - 1)
 
 /obj/machinery/photocopier/proc/interaction_insert(datum/act/op/A)

@@ -11,10 +11,9 @@
 	var/previous_power_state = 0
 
 	use_power = USE_POWER_IDLE
-	active_power_usage = 2000
-	idle_power_usage = 1000
 
 CAPABILITIES(/obj/machinery/auto_cloner)
+	configure(uses_power(active = 2000, idle = 1000))
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	rolls(nameof(time_per_spawn), range_of(1200, 3600))
 	rolls(nameof(spawn_type), PROC_REF(roll_spawn_type))
@@ -35,7 +34,7 @@ CAPABILITIES(/obj/machinery/auto_cloner)
 /obj/machinery/auto_cloner/proc/work_step(datum/act/timer/A)
 	if(!last_process)
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
-	if(powered(power_channel))
+	if(powered(power_of(src).channel))
 		if(!previous_power_state)
 			previous_power_state = 1
 			icon_state = "cellold1"

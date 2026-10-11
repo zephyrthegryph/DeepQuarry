@@ -363,9 +363,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 */
 /obj/machinery/ai_powersupply
 	name="Power Supply"
-	active_power_usage=50000 // Station AIs use significant amounts of power. This, when combined with charged SMES should mean AI lasts for 1hr without external power.
 	use_power = USE_POWER_ACTIVE
-	power_channel = EQUIP
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
@@ -385,6 +383,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/ai_powersupply)
+	configure(uses_power(active = 50000, channel = EQUIP))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 
 /obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)

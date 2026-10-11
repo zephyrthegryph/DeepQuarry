@@ -5,12 +5,11 @@
 	density = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_OFF // Does not require power for pipes
-	idle_power_usage = 0
-	active_power_usage = 0
 	circuit = /obj/item/circuitboard/industrial_reagent_hub
 	default_max_vol = 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/hub)
+	configure(uses_power(idle = 0, active = 0))
 	without(CAP_REAGENTS) // a hub holds nothing: it moves a tanker's load
 	after_init(0, then(PROC_REF(apply_default_parts)))
 

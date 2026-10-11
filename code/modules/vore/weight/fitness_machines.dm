@@ -4,8 +4,6 @@
 	icon = 'icons/obj/machines/fitness_machines_vr.dmi'
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	var/messages
 	var/workout_sounds
 	var/cooldown = 10
@@ -13,6 +11,7 @@
 
 // Ungated, as the old attack_hand overrides never called ..(): the machinery operability checks never applied.
 CAPABILITIES(/obj/machinery/fitness)
+	configure(uses_power(idle = 0, active = 0))
 	op("fitness_workout_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Work out"), then(PROC_REF(fitness_workout_hand)))
 
 /// Old attack_hand: work out, burning nutrition and weight.
@@ -111,10 +110,9 @@ CAPABILITIES(/obj/machinery/fitness/heavy)
 	desc = "A scale used to measure ones weight relative to their size and species."
 	anchored = TRUE // Set to 0 when we can construct or dismantle these.
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 
 CAPABILITIES(/obj/machinery/scale)
+	configure(uses_power(idle = 0, active = 0))
 	op("scale_weigh_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Weigh"), then(PROC_REF(scale_weigh_hand)))
 
 /// Old attack_hand: read out the weight of whoever stands on it.

@@ -194,8 +194,6 @@ CAPABILITIES(/obj/structure/particle_accelerator/end_cap/pre_mapped)
 	anchored = FALSE
 	density = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	active = 0
 	var/reference = null
 	var/powered = null
@@ -203,6 +201,7 @@ CAPABILITIES(/obj/structure/particle_accelerator/end_cap/pre_mapped)
 	var/desc_holder = null
 
 CAPABILITIES(/obj/machinery/particle_accelerator)
+	configure(uses_power(idle = 0, active = 0))
 	climb()
 	rotatable()
 	construction(start(STAGE_PA_LOOSE),

@@ -20,7 +20,6 @@
 	var/max_catriges = 30
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100
 	anchored = TRUE
 	unacidable = TRUE
 
@@ -31,6 +30,7 @@
 	var/import_job = JOB_CHEMIST
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
+	configure(uses_power(idle = 100))
 	rotatable()
 	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))

@@ -11,12 +11,10 @@
 	var/state_prefix = "oven"
 	var/datum/looping_sound/oven/oven_loop
 	circuit = /obj/item/circuitboard/oven
-	active_power_usage = 6 KILOWATTS
 	heating_power = 6 KILOWATTS
 	//Based on a double deck electric convection oven
 
 	resistance = 2 KILOWATTS // Approx. 2 minutes to heat up.
-	idle_power_usage = 2 KILOWATTS
 	//uses ~30% power to stay warm
 	optimal_power = 0.8 // Oven cooks .2 faster than the default speed.
 
@@ -43,6 +41,7 @@
 		)
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	configure(uses_power(active = 6 KILOWATTS, idle = 2 KILOWATTS))
 	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))

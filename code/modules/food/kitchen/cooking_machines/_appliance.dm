@@ -13,8 +13,6 @@
 	var/starts_off = FALSE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5			// Power used when turned on, but not processing anything
-	active_power_usage = 1000		// Power used when turned on and actively cooking something
 
 	var/cooking_power = 0			// Effectiveness/speed at cooking
 	var/cooking_coeff = 0			// Optimal power * proximity to optimal temp; used to calc. cooking power.
@@ -46,6 +44,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
+	configure(uses_power(idle = 5, active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
@@ -945,7 +944,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module) - get_part_count(/obj/item/stock_parts/scanning_module)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
-	set_active_power_usage(initial(active_power_usage) - scan_rating * 25)
+	set_active_power_usage(power_of_type(type).active - scan_rating * 25)
 	heating_power = initial(heating_power) + cap_rating * 25
 	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.

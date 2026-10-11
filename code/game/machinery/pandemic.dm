@@ -8,7 +8,6 @@
 	anchored = TRUE
 	icon = 'icons/obj/pandemic.dmi'
 	icon_state = "pandemic0"
-	idle_power_usage = 20
 	use_power = TRUE
 
 	var/temp_html = ""
@@ -92,6 +91,7 @@ MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
 MSG_DEF_SELF(pandemic/not_beaker, "not possible right now")
 
 CAPABILITIES(/obj/machinery/computer/pandemic)
+	configure(uses_power(idle = 20))
 	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req(PROC_REF(empty_slot_holds)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
@@ -322,7 +322,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 	return disease.GetDiseaseID()
 
 /obj/machinery/computer/pandemic/proc/create_vaccine_bottle(index)
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	var/id = get_virus_id_by_index(text2num(index))
 	var/datum/affliction/contagion/disease = GLOB.archive_diseases[id]
 	if(!disease)
@@ -349,7 +349,7 @@ MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
 
 	var/old_name = adv_disease.name
 
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	adv_disease = adv_disease.Copy()
 	adv_disease.name = old_name
 	var/list/cures = get_beaker_cures(id)

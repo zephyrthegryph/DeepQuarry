@@ -35,13 +35,13 @@ MSG_DEF_SELF(sleeper/needs_beaker, "There is no beaker to drain into.")
 	unacidable = TRUE
 	dir = 8
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/sleeper_console
 	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
 CAPABILITIES(/obj/machinery/sleep_console)
+	configure(uses_power(idle = 40))
 	machine_basics(repair = NONE)
 	paired_console(/obj/machinery/sleeper, nameof(sleeper))
 	links(/obj/machinery/sleep_console::sleeper, /obj/machinery/sleeper::console)
@@ -86,8 +86,6 @@ CAPABILITIES(/obj/machinery/sleep_console)
 	var/auto_eject_dead = FALSE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 15
-	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
 TRACKED(/obj/machinery/sleeper, filtering)
 TRACKED(/obj/machinery/sleeper, pumping)
@@ -95,6 +93,7 @@ TRACKED(/obj/machinery/sleeper, stasis_rate)
 TRACKED(/obj/machinery/sleeper, auto_eject_dead)
 
 CAPABILITIES(/obj/machinery/sleeper)
+	configure(uses_power(idle = 15, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_SLEEPER, enter_wait = SLEEPER_ENTER_WAIT, controls_inside = nameof(controls_inside))
 	extend(TAG_POD_ENTER, needs(req_operable()))
@@ -143,8 +142,8 @@ CAPABILITIES(/obj/machinery/sleeper)
 
 	cap_rating = max(1, round(cap_rating / 2))
 
-	update_idle_power_usage(initial(idle_power_usage) / cap_rating)
-	update_active_power_usage(initial(active_power_usage) / cap_rating)
+	update_idle_power_usage(power_of_type(type).idle / cap_rating)
+	update_active_power_usage(power_of_type(type).active / cap_rating)
 
 	if(!limited)
 		for(var/obj/item/stock_parts/P in component_parts)

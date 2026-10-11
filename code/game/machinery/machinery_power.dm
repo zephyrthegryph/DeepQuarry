@@ -2,14 +2,85 @@
 // /obj/machinery POWER USAGE CODE HERE! GO GO GADGET STATIC POWER!
 // Note: You can find /obj/machinery/power power usage code in power.dm
 //
-// The following four machinery variables determine the "static" amount of power used every power cycle:
-// - use_power, idle_power_usage, active_power_usage, power_channel
-//
-// Please never change any of these variables! Use the procs that update them instead!
+// What a machine uses every power cycle: use_power (its mode) and its uses_power() trait (channel, idle and active draw).
+// Change them with the procs below, never directly.
 //
 
+// ---- what a machine draws: the uses_power() type trait ----
+//
+// The channel a machine draws on and its idle and active draw are per-type data, declared in the type's CAPABILITIES block, not vars on
+// /obj/machinery:
+//
+//	CAPABILITIES(/obj/machinery/firealarm)
+//		configure(uses_power(channel = ENVIRON, idle = 2, active = 6))
+//
+// /obj/machinery declares uses_power(EQUIP, 0, 0); a subtype names only what it changes. Read with power_of(M).channel / .idle / .active
+// (power_of_type(path) for a type's declared values, the old initial()). A machine whose draw changes at run time (its parts, a mode) writes
+// it with set_idle_power_usage() / set_active_power_usage() / set_power_channel(): the machine gets its own copy of the trait, and the write
+// publishes USES_POWER_KEY, the key power_of() reads as, so the area's demand follows.
+
+STATIC_ENTRY(uses_power)
+
+/// A machine's draw: the channel it draws on (EQUIP, LIGHT, ENVIRON), its idle draw and its active draw, in watts. Null inherits.
+/proc/uses_power(channel = null, idle = null, active = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_USES_POWER, null, list("channel" = channel, "idle" = idle, "active" = active))
+
+/datum/type_trait/power
+	var/channel = EQUIP
+	var/idle = 0
+	var/active = 0
+
+/datum/type_trait/power/copy_values(datum/type_trait/power/into)
+	into.channel = channel
+	into.idle = idle
+	into.active = active
+
+/datum/entry_engine/type_trait/power
+	kind = ENTRY_USES_POWER
+	trait_type = /datum/type_trait/power
+
+/// What `M` draws: its channel, idle and active draw (its own values once one was set at run time). Read only. A reader subscribes to
+/// USES_POWER_KEY, which the setters publish.
+READS_AS(/proc/power_of, USES_POWER_KEY)
+/proc/power_of(obj/machinery/M) as /datum/type_trait/power
+	READS_FROM(M)
+	return type_trait_of(M, ENTRY_USES_POWER)
+
+/// What a machine type declares it draws (no instance): the old initial(active_power_usage).
+/proc/power_of_type(type) as /datum/type_trait/power
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_USES_POWER)
+
+/// Sets the idle draw (the area's demand follows while the machine is idle).
+/obj/machinery/proc/set_idle_power_usage(value)
+	if(power_of(src).idle == value)
+		return FALSE
+	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
+	own.idle = value
+	tracked_changed(src, USES_POWER_KEY)
+	return TRUE
+
+/// Sets the active draw (the area's demand follows while the machine is active).
+/obj/machinery/proc/set_active_power_usage(value)
+	if(power_of(src).active == value)
+		return FALSE
+	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
+	own.active = value
+	tracked_changed(src, USES_POWER_KEY)
+	return TRUE
+
+/// Sets the channel the machine draws on (its draw moves between the area's channel demands).
+/obj/machinery/proc/set_power_channel(value)
+	if(power_of(src).channel == value)
+		return FALSE
+	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
+	own.channel = value
+	tracked_changed(src, USES_POWER_KEY)
+	return TRUE
+
 // Current power consumption right now.
-#define POWER_CONSUMPTION (use_power == USE_POWER_IDLE ? idle_power_usage : (use_power >= USE_POWER_ACTIVE ? active_power_usage : 0))
+#define POWER_CONSUMPTION (use_power == USE_POWER_IDLE ? power_of(src).idle : (use_power >= USE_POWER_ACTIVE ? power_of(src).active : 0))
 
 // returns true if the area has power on given channel (or doesn't require power).
 // defaults to power_channel
@@ -23,7 +94,7 @@
 	if(!A)
 		return 0					// if not, then not powered
 	if(chan == CURRENT_CHANNEL)
-		chan = power_channel
+		chan = power_of(src).channel
 	return A.powered(chan)			// return power status of the area
 
 // called whenever the power settings of the containing area change
@@ -49,7 +120,7 @@
 	if(power_forced)
 		return TRUE
 	var/area/served = power_area
-	return !served || served.powered(power_channel)
+	return !served || served.powered(power_of(src).channel)
 
 /**
  * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
@@ -80,7 +151,7 @@
 	if(!A)
 		return
 	if(chan == CURRENT_CHANNEL)
-		chan = power_channel
+		chan = power_of(src).channel
 	return A.use_power_oneoff(amount, chan)
 
 // Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
@@ -144,8 +215,7 @@
 	power_change() // Force check in case the old area was powered and the new one isn't or vice versa.
 
 //
-// Usage Update Procs - These procs are the only allowed way to modify these four variables:
-// 	- use_power, idle_power_usage, active_power_usage, power_channel
+// Usage Update Procs - the only way to change use_power and the uses_power() trait at run time
 //
 
 // Sets the use_power var. The draw is a contribution to the area's demand that reads it, so the write is the whole update.
@@ -160,7 +230,7 @@
 	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
 	return TRUE
 
-/// Sets the power_channel var; the draw moves between the area's channel demands with it (power_channel is tracked).
+/// Sets the channel the machine draws on; the draw moves between the area's channel demands with it.
 /obj/machinery/proc/update_power_channel(new_channel)
 	return set_power_channel(new_channel)
 
@@ -185,13 +255,13 @@
 
 /// The channel the machine draws on is EQUIP (the cond of its equipment contribution).
 /obj/machinery/proc/draws_equip(datum/act/A)
-	return power_channel == EQUIP
+	return power_of(src).channel == EQUIP
 
 /obj/machinery/proc/draws_light(datum/act/A)
-	return power_channel == LIGHT
+	return power_of(src).channel == LIGHT
 
 /obj/machinery/proc/draws_environ(datum/act/A)
-	return power_channel == ENVIRON
+	return power_of(src).channel == ENVIRON
 
 /// What the machine asks of its channel right now: its idle or active draw by the mode it is in, or nothing.
 /obj/machinery/proc/power_demand(datum/act/A)

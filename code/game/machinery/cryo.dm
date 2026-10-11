@@ -50,8 +50,6 @@ MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your s
 	interact_offline = 1
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 200
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
 	clicksound = SFX_MACHINES_BUTTONBEEP
@@ -72,6 +70,7 @@ TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 	return HEAT_TARGET_NONE
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	configure(uses_power(idle = 20, active = 200))
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
 	extend(TAG_POD_ENTER, needs(req_operable(), req_bool(PROC_REF(piped), because = MSG(cryo_cell/not_connected))))

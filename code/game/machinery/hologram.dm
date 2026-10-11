@@ -38,7 +38,6 @@ Possible to do for anyone motivated enough:
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	var/power_per_hologram = 500 //per usage per hologram
-	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
 	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad (a relation view)
 	/// The holograms this pad projects, one per master (owned; each names its AI in `master`).
@@ -47,6 +46,7 @@ Possible to do for anyone motivated enough:
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 CAPABILITIES(/obj/machinery/hologram/holopad)
+	configure(uses_power(idle = 5))
 	op("holopad_request_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
 	op("holopad_request_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
 	op("holopad_project", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Project"), then(PROC_REF(holopad_silicon_use)))
@@ -221,8 +221,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	icon = 'icons/obj/stationobjs.dmi'
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
+
+CAPABILITIES(/obj/machinery/hologram)
+	configure(uses_power(idle = 5, active = 100))
 
 //Destruction procs.
 // its AI masters' holograms are cleared.

@@ -10,10 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 200
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
 	var/paperamount = 0
@@ -29,6 +26,7 @@ TRACKED(/obj/machinery/papershredder, paperamount)
 
 
 CAPABILITIES(/obj/machinery/papershredder)
+	configure(uses_power(idle = 10, active = 200, channel = EQUIP))
 	climb()
 	op("empty_into", item(/obj/item/storage), priority(OP_PRIORITY_DEFAULT - 1), label("Empty into"), then(PROC_REF(interaction_empty_into)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

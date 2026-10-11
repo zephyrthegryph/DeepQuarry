@@ -4,7 +4,6 @@
 	desc = null // Gets written in New()
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "exonet"
-	idle_power_usage = 2500
 	density = TRUE
 	on = 1
 	var/toggle = 1
@@ -23,6 +22,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	configure(uses_power(idle = 2500))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	emp_disable(300 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))

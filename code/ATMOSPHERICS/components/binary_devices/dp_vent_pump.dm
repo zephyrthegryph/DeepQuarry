@@ -19,7 +19,6 @@
 	level = 1
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 7500			//7500 W ~ 10 HP
 
 	pipe_flags = PIPING_ALL_LAYER
@@ -209,6 +208,7 @@ TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	configure(uses_power(idle = 150))
 	examine_line(PROC_REF(gauge_text))
 
 /// The gauge, to someone beside it.

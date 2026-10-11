@@ -3,7 +3,6 @@
 	desc = "It controls objects, remotely."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "doorctrl0"
-	power_channel = ENVIRON
 	layer = ABOVE_WINDOW_LAYER
 	flags = WALL_ITEM
 	var/desiredstate = 0
@@ -16,8 +15,6 @@
 
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 
 // ---- what a remote button is, declared ----
 //
@@ -32,6 +29,7 @@ MSG_DEF_SELF(button/no_route, "Error, no route to host.")
 MSG_DEF_SELF(button/no_lock, "It has no lock to subvert.")
 
 CAPABILITIES(/obj/machinery/button/remote)
+	configure(uses_power(channel = ENVIRON, idle = 2, active = 4))
 	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE)
 	extend("emag.use", needs(req(PROC_REF(has_access_lock))))
 	extend("emag.subvert", needs(req(PROC_REF(has_access_lock))))
@@ -317,8 +315,9 @@ CAPABILITIES(/obj/machinery/button/remote/driver)
 	desc = "Forces the opening of doors in an emergency, regardless of whether they're powered."
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
+
+CAPABILITIES(/obj/machinery/button/remote/airlock/release)
+	configure(uses_power(idle = 0, active = 0))
 
 /obj/machinery/button/remote/airlock/release/trigger()
 	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)

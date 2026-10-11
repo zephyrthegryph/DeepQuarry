@@ -1,4 +1,5 @@
 CAPABILITIES(/obj/machinery/anomaly_harvester)
+	configure(uses_power(active = 40000, idle = 1000))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("release_all", ui_act(), then(PROC_REF(ui_act_release_all)))
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
@@ -19,8 +20,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	icon_state = "harvester"
 	density = TRUE
 	circuit = /obj/item/circuitboard/anomaly_harvester
-	active_power_usage = 40000
-	idle_power_usage = 1000
 
 	var/points = 0
 	var/points_to_create = 100

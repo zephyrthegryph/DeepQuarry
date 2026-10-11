@@ -18,12 +18,14 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 25
 	machinetype = 5
 	produces_heat = 0
 	delay = 7
 	circuit = /obj/item/circuitboard/telecomms/broadcaster
 	// Linked bluespace radios are BS_RX_RADIOS(src) (the bluespace_rx_from relation).
+
+CAPABILITIES(/obj/machinery/telecomms/broadcaster)
+	configure(uses_power(idle = 25))
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 	// Don't broadcast rejected signals
@@ -120,13 +122,15 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	desc = "A compact machine used for portable subspace telecommuniations processing."
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
 	anchored = TRUE
 	machinetype = 6
 	produces_heat = 0
 	var/intercept = 0 // if nonzero, broadcasts all messages to syndicate channel
 
 	// Linked bluespace radios: BS_TX_RADIOS(src) transmit to it, BS_RX_RADIOS(src) receive from it.
+
+CAPABILITIES(/obj/machinery/telecomms/allinone)
+	configure(uses_power(idle = 20))
 
 /obj/machinery/telecomms/allinone/receive_signal(datum/signal/signal)
 
@@ -198,7 +202,9 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 //Antag version with unlimited range (doesn't even check) and uses no power, to enable antag comms to work anywhere.
 /obj/machinery/telecomms/allinone/antag
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
+
+CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
+	configure(uses_power(idle = 0))
 
 /obj/machinery/telecomms/allinone/antag/receive_signal(datum/signal/signal)
 	if(!running) // has to be on to receive messages
@@ -731,10 +737,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	desc = "A compact machine used for portable subspace telecommuniations processing."
 	density = 1
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
 	anchored = 1
 	machinetype = 6
 	produces_heat = 0
+
+CAPABILITIES(/obj/machinery/telecomms/allinone/link)
+	configure(uses_power(idle = 20))
 
 /obj/machinery/telecomms/allinone/link/receive_signal(datum/signal/signal)
 

@@ -5,12 +5,11 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 200
 	circuit = /obj/item/circuitboard/industrial_reagent_waste_processor
 	default_max_vol = CARGOTANKER_VOLUME
 
 CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
+	configure(uses_power(idle = 0, active = 200))
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	climb()
 	op("waste_processor_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into processor"), then(PROC_REF(interaction_drain_trolley)))
@@ -29,7 +28,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 
 	if (prob((reagents.total_volume / reagents.maximum_volume) * 100))
 		flick("waste_burn",src)
-		use_power_oneoff(active_power_usage)
+		use_power_oneoff(power_of(src).active)
 		reagents.clear_reagents()
 
 /obj/machinery/reagent_refinery/waste_processor/draw(datum/look/look)

@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/industrial_reagent_furnace
 	VAR_PROTECTED/filter_side = -1 // L
 	VAR_PRIVATE/filter_reagent_id = ""
@@ -21,6 +19,7 @@ TRACKED(/obj/machinery/reagent_refinery/furnace, filter_side)
 	icon_state = "furnace_r"
 
 CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
+	configure(uses_power(idle = 5, active = 500))
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	climb()

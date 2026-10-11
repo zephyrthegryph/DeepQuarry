@@ -6,8 +6,6 @@
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
 	icon_state = "dbchime-standby"
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 200
 	anchored = TRUE
 	flags = WALL_ITEM
 	var/id_tag = null
@@ -16,7 +14,7 @@
 /obj/machinery/doorbell_chime/proc/chime()
 	if(!operable())
 		return
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	playsound(src, chime_sound, 75)
 	icon_state = "dbchime-active"
 	set_light(2, 0.5, "#33FF33")
@@ -36,6 +34,7 @@
 MSG_DEF_SELF(doorbell/needs_item, "needs an item")
 
 CAPABILITIES(/obj/machinery/doorbell_chime)
+	configure(uses_power(idle = 10, active = 200))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))

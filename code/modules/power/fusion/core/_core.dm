@@ -13,8 +13,6 @@
 	icon_state = "core0"
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50
-	active_power_usage = 500 //multiplied by field strength
 	anchored = FALSE
 
 	circuit = /obj/item/circuitboard/fusion_core
@@ -44,6 +42,7 @@ MSG_DEF(fusion_core/sample_loaded, "You secure %I% in %T%'s shielded treatment c
 TRACKED(/obj/machinery/power/fusion_core, id_tag)
 
 CAPABILITIES(/obj/machinery/power/fusion_core)
+	configure(uses_power(idle = 50, active = 500))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/output))
 	reagents(10000)
@@ -64,7 +63,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(broken_now())
 		return
-	if(idle_power_usage > avail())
+	if(power_of(src).idle > avail())
 		return
 	. = 1
 
@@ -164,7 +163,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
 	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
 	batch.add_batch_heat(max(100, owned_field.plasma_temperature * batch.amount * 0.04), HEAT_SOURCE_DEVICE)
-	batch.record_electricity(active_power_usage * 5)
+	batch.record_electricity(power_of(src).active * 5)
 	var/phoron_key
 	var/hydrogen_key
 	for(var/reactant in owned_field.dormant_reactant_quantities)

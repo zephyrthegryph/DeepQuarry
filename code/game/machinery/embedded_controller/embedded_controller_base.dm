@@ -3,7 +3,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
 	var/list/valid_actions
 	on = 1
@@ -13,6 +12,7 @@
 TRACKED(/obj/machinery/embedded_controller, processing_shown)
 
 CAPABILITIES(/obj/machinery/embedded_controller)
+	configure(uses_power(idle = 10))
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(program), /datum/embedded_program, starts = nameof(program))
@@ -79,7 +79,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 /obj/machinery/embedded_controller/radio
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_control_standby"
-	power_channel = ENVIRON
 	density = FALSE
 	unacidable = TRUE
 	flags = WALL_ITEM
@@ -89,6 +88,9 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	var/frequency = AIRLOCK_FREQ
 	var/radio_filter = null
 	var/datum/radio_frequency/radio_connection
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio)
+	configure(uses_power(channel = ENVIRON))
 
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program

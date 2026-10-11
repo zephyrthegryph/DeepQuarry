@@ -14,11 +14,9 @@
 	var/icon_state_open = "oxygen_tank_open"
 	var/icon_state_closed = "oxygen_tank"
 
-	power_channel = ENVIRON
-	idle_power_usage = 10
-	active_power_usage = 120 // No idea what the realistic amount would be.
 
 CAPABILITIES(/obj/machinery/oxygen_pump)
+	configure(uses_power(channel = ENVIRON, idle = 10, active = 120))
 	silicon_ui()
 	ref_one(nameof(breather), /mob/living/carbon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(breather), wakes_on = list(nameof(breather)))

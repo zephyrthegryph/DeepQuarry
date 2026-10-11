@@ -111,7 +111,6 @@ CAPABILITIES(/obj/machinery/shield)
 	var/check_delay = 60	//periodically recheck if we need to rebuild a shield
 	var/power_efficiency = 1 //Inverse. The lower, the more power efficient we are.
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
 
 TRACKED(/obj/machinery/shieldgen, malfunction)
 
@@ -120,6 +119,7 @@ TRACKED(/obj/machinery/shieldgen, is_open)
 MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 
 CAPABILITIES(/obj/machinery/shieldgen)
+	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))
 	climb()

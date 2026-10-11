@@ -37,7 +37,6 @@ Thus, the two variables affect pump operation are set in New():
 
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 
 	var/max_pressure_setting = 15000	//kPa
 
@@ -173,6 +172,7 @@ Thus, the two variables affect pump operation are set in New():
 	return
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
+	configure(uses_power(idle = 150))
 	pipe_device_window("GasPump")
 	pipe_device_switch()
 	pipe_device_max(PROC_REF(max_output_set))

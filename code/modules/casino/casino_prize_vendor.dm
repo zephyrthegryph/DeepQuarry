@@ -40,7 +40,6 @@
 
 	// Power
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
@@ -294,6 +293,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/casino_prize_dispenser)
+	configure(uses_power(idle = 10))
 	interface("CasinoPrizeDispenser")
 	without("ui_open")
 	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))

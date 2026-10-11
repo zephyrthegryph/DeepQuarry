@@ -143,13 +143,13 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 	PROTECTED_PROC(TRUE)
 	if(RT.total_volume <= 0 || !anchored || !target.anchored)
 		return 0
-	if(active_power_usage > 0 && !can_use_power_oneoff(active_power_usage))
+	if(power_of(src).active > 0 && !can_use_power_oneoff(power_of(src).active))
 		return 0
 	if(!istype(target,/obj/machinery/reagent_refinery) || istype(target,/obj/machinery/reagent_refinery/grinder)) // Grinders don't allow input
 		return 0
 	var/transfered = target.handle_transfer(src,RT,source_forward_dir, amount_per_transfer_from_this, filter_id)
-	if(transfered > 0 && active_power_usage > 0)
-		use_power_oneoff(active_power_usage)
+	if(transfered > 0 && power_of(src).active > 0)
+		use_power_oneoff(power_of(src).active)
 	return transfered
 
 /// Handles reagent recieving from transfer_tank(), returns how much reagent was transfered if successful. Overriden to prevent access from certain sides or for filtering.

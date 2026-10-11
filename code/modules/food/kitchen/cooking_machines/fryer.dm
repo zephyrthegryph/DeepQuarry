@@ -11,7 +11,6 @@
 	var/datum/looping_sound/deep_fryer/fry_loop
 	circuit = /obj/item/circuitboard/fryer
 	appliancetype = FRYER
-	active_power_usage = 12 KILOWATTS
 	heating_power = 12 KILOWATTS
 
 	light_y = 15
@@ -20,7 +19,6 @@
 	optimal_temp = 400 + T0C // Increasing this to be 2x Oven to allow for a much higher/realistic frying temperatures. Doesn't really do anything but make heating the fryer take a bit longer.
 	optimal_power = 0.95 // .35 higher than the default to give fryers faster cooking speed.
 
-	idle_power_usage = 3.6 KILOWATTS
 	// Power used to maintain temperature once it's heated.
 	// Going with 25% of the active power. This is a somewhat arbitrary value.
 
@@ -37,6 +35,7 @@
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
 CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
+	configure(uses_power(active = 12 KILOWATTS, idle = 3.6 KILOWATTS))
 	hose_sockets(list(/datum/hose_connector/input/fryer))
 	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)
 	owns_one(nameof(oil), /datum/reagents/oil_reagents, starts = PROC_REF(make_oil))

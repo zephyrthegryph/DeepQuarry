@@ -8,8 +8,6 @@
 	active = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 
 TRACKED(/obj/machinery/button, id)
 
@@ -19,6 +17,7 @@ TRACKED(/obj/machinery/button, id)
 MSG_DEF_SELF(button/needs_item, "needs an item")
 
 CAPABILITIES(/obj/machinery/button)
+	configure(uses_power(idle = 2, active = 4))
 	op("button_press", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), then(PROC_REF(interaction_press)))
 	op("button_press_item", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), needs(req(/obj/item, because = MSG(button/needs_item)), req_adjacent(), req_capable()), when(PROC_REF(local_item_press)), then(TYPE_PROC_REF(/atom, op_as_touch)))
 

@@ -59,9 +59,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 80
-	active_power_usage = 1000 //For heating/cooling rooms: the thermostat's rated energy per service interval.
-	power_channel = ENVIRON
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
 	clicksound = SFX_BUTTON
 	clickvol = 30
@@ -137,6 +134,7 @@ TRACKED(/obj/machinery/alarm, rcon_setting)
 TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
+	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm, starts = /datum/looping_sound/alarm/decompression_alarm)
 	// The thermostat: a heat pump on the room's air toward the target while it works, heating resistively and cooling into the station's

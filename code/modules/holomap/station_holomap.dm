@@ -11,8 +11,6 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/station_map
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = ON_BORDER|WALL_ITEM
@@ -35,6 +33,7 @@ TRACKED(/obj/machinery/station_map, bogus)
 TRACKED(/obj/machinery/station_map, offsets_settled_flag)
 
 CAPABILITIES(/obj/machinery/station_map)
+	configure(uses_power(idle = 10, active = 500))
 	without("silicon_hand") // silicons can't use it by a plain click
 	ref_one(nameof(watching_mob))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))

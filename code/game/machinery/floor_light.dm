@@ -45,9 +45,6 @@ CAPABILITIES(/obj/item/floor_light)
 	layer = TURF_LAYER+0.001
 	anchored = FALSE
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 2
-	active_power_usage = 20
-	power_channel = LIGHT
 
 	on = null
 	var/damaged
@@ -162,6 +159,7 @@ TRACKED(/obj/machinery/floor_light, default_light_colour)
 	return (!operable())
 
 CAPABILITIES(/obj/machinery/floor_light)
+	configure(uses_power(idle = 2, active = 20, channel = LIGHT))
 	started_work(step = PROC_REF(work_step))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))

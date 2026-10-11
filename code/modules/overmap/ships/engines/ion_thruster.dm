@@ -35,8 +35,6 @@
 	desc = "An advanced ion propulsion device, using energy and minutes amount of gas to generate thrust."
 	icon = 'icons/turf/shuttle_parts_vr.dmi' // New icons
 	icon_state = "ion" // New icons
-	power_channel = ENVIRON
-	idle_power_usage = 100
 	anchored = TRUE
 	var/datum/ship_engine/ion/controller
 	var/thrust_limit = 1
@@ -45,6 +43,7 @@
 	var/generated_thrust = 2.5
 
 CAPABILITIES(/obj/machinery/ion_engine)
+	configure(uses_power(channel = ENVIRON, idle = 100))
 	after_init(0, then(PROC_REF(init_glow)))
 	owns_one(nameof(controller), starts = /datum/ship_engine/ion)
 

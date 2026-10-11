@@ -35,8 +35,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/body_scanner
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 60
-	active_power_usage = 10000	//10 kW. It's a big all-body scanner.
 	light_color = "#00FF00"
 	var/obj/machinery/body_scanconsole/console
 	var/printing_text = null
@@ -48,6 +46,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 TRACKED(/obj/machinery/bodyscanner, scan_ratio)
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	configure(uses_power(idle = 60, active = 10000))
 	blast_contents() // the patient takes the full blast
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_BODY_SCANNER, bare = TRUE)

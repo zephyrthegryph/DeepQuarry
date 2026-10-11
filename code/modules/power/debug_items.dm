@@ -67,10 +67,12 @@ CAPABILITIES(/obj/machinery/power/debug_items/infinite_cable_powersink)
 	name = "APC dummy load"
 	desc = "A dummy load that connects to an APC, used for load testing purposes."
 	use_power = USE_POWER_ACTIVE
-	active_power_usage = 0
+
+CAPABILITIES(/obj/machinery/power/debug_items/infinite_apc_powersink)
+	configure(uses_power(active = 0))
 
 /obj/machinery/power/debug_items/infinite_apc_powersink/show_info(mob/user)
 	. = ..()
-	. += span_filter_notice("Dummy load is using [num2text(active_power_usage, 20)] W")
+	. += span_filter_notice("Dummy load is using [num2text(power_of(src).active, 20)] W")
 	. += span_filter_notice("Powered: [powered() ? "YES" : "NO"]")
 

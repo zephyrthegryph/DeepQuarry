@@ -8,8 +8,6 @@
 	icon_state = "mass_driver"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/mass_driver
 
 	var/power = 1.0
@@ -56,6 +54,7 @@
 	return
 
 CAPABILITIES(/obj/machinery/mass_driver)
+	configure(uses_power(idle = 2, active = 50))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
 	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),

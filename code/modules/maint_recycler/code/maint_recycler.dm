@@ -19,8 +19,6 @@
 	resistance_flags = INDESTRUCTIBLE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 300
-	active_power_usage = 300
 	clicksound = SFX_RECYCLER_TYPING
 
 	light_color = "#0f8f0f"
@@ -113,6 +111,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(uses_power(idle = 300, active = 300))
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)

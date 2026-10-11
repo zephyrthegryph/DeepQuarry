@@ -7,8 +7,6 @@
 	density = FALSE
 	anchored = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/grinder
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
@@ -23,6 +21,7 @@ STAT(/obj/machinery/reagentgrinder, grinding, ANY)
 SOURCE_DEF(grind)
 
 CAPABILITIES(/obj/machinery/reagentgrinder)
+	configure(uses_power(idle = 5, active = 100))
 	owns_many(nameof(holdingitems))
 	owns_one(nameof(beaker), /obj/item/reagent_containers, starts = /obj/item/reagent_containers/glass/beaker/large)
 	op("use", item(/obj/item), label("Use"), then(PROC_REF(item_used)))

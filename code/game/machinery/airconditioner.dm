@@ -7,8 +7,6 @@
 	anchored = 1
 	//Consider making this powered by the room at some point.
 	use_power = 0 //is powered directly from cables
-	active_power_usage = 25 KILOWATTS  //Low Power
-	idle_power_usage = 250
 
 	circuit = null
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -16,6 +14,9 @@
 	null so people can not deconstruct them and remake them to normal Regulators,
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
+
+CAPABILITIES(/obj/machinery/power/thermoregulator/cryogaia)
+	configure(uses_power(active = 25 KILOWATTS, idle = 250))
 
 
 #define MODE_IDLE 0
@@ -30,14 +31,15 @@
 	anchored = 1
 	//Consider making this powered by the room at some point.
 	use_power = 0 //is powered directly from cables
-	active_power_usage = 250 // VERY low power use
-	idle_power_usage = 250
 
 	circuit = null
 	/*
 	null so people can not deconstruct them and remake them to normal Regulators,
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
+
+CAPABILITIES(/obj/machinery/power/thermoregulator/southerncross)
+	configure(uses_power(active = 250, idle = 250))
 
 /// Powered straight from its cables with no metering: the pump works while it is on a network.
 /obj/machinery/power/thermoregulator/southerncross/regulator_step(datum/act/A)
@@ -73,8 +75,6 @@
 	anchored = FALSE
 
 	use_power = USE_POWER_OFF //is powered directly from cables
-	active_power_usage = 150 KILOWATTS  //BIG POWER
-	idle_power_usage = 500
 
 	circuit = /obj/item/circuitboard/thermoregulator
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -109,6 +109,7 @@ MSG_DEF(thermoregulator/deactivated, "You deactivate %T%.", "%U% deactivates %T%
 MSG_DEF_SELF(thermoregulator/loose, "It must be bolted down first.")
 
 CAPABILITIES(/obj/machinery/power/thermoregulator)
+	configure(uses_power(active = 150 KILOWATTS, idle = 500))
 	climb()
 	// A heat pump on the room's air toward the target, against the station's heat-rejection loop at 20 C: a Carnot-bounded COP both
 	// ways (heating draws on the loop, cooling rejects into it). Its work is paid from the grid (regulator_step()).
@@ -196,7 +197,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 	if(!power_region)
 		turn_off()
 		return
-	if(draw_power(idle_power_usage) < idle_power_usage)
+	if(draw_power(power_of(src).idle) < power_of(src).idle)
 		visible_message(span_infoplain(span_bold("\The [src]") + " shuts down."))
 		turn_off()
 		return
@@ -253,7 +254,7 @@ CAPABILITIES(/obj/machinery/power/thermoregulator)
 /obj/machinery/power/thermoregulator/overload(obj/machinery/power/source)
 	if(!anchored || !power_region)
 		return
-	var/power_avail = draw_power(active_power_usage*10)
+	var/power_avail = draw_power(power_of(src).active*10)
 	// The surge burns through its coils: what it drew becomes heat in the room, one for one.
 	heat_add(loc.return_air(), power_avail, HEAT_SOURCE_DEVICE)
 	var/turf/T = get_turf(src)

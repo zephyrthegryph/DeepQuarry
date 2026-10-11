@@ -566,7 +566,7 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 
 /obj/machinery/button/windowtint/power_change()
 	. = ..()
-	if(active && !powered(power_channel))
+	if(active && !powered(power_of(src).channel))
 		toggle_tint()
 
 /// The look (the draw sweep: from its template).

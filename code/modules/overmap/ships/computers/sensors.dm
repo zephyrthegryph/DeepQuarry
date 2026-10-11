@@ -179,7 +179,6 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	var/heat_reduction = 1.5 // mitigates this much heat per tick
 	var/heat = 0
 	var/range = 1
-	idle_power_usage = 5000
 
 // sensor consoles lose it.
 /obj/machinery/shipsensors/lifecycle_dematerialize()
@@ -235,7 +234,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 	if(!use_power && (get_integrity() <= 0 || !in_vacuum()))
 		return // No turning on if broken or misplaced.
 	if(!use_power) //need some juice to kickstart
-		use_power_oneoff(idle_power_usage*5)
+		use_power_oneoff(power_of(src).idle*5)
 	set_use_power(!use_power)
 	refresh_linked_consoles()
 	work_start(src)
@@ -244,6 +243,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 MSG_DEF_SELF(shipsensors/repairing, span_notice("You start repairing the damage to %T%."))
 
 CAPABILITIES(/obj/machinery/shipsensors)
+	configure(uses_power(idle = 5000))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(damaged)), begins(MSG(shipsensors/repairing)), plays(SFX_ITEMS_WELDER, at_start = TRUE), wait(PROC_REF(weld_time)), then(PROC_REF(weld_repair_done)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(sensors_emp_shutdown)))
@@ -258,7 +258,7 @@ CAPABILITIES(/obj/machinery/shipsensors)
 
 			take_damage(rand(10,50), BURN, FIRE)
 			toggle()
-		heat += idle_power_usage/15000
+		heat += power_of(src).idle/15000
 
 	if (heat > 0)
 		heat = max(0, heat - heat_reduction)

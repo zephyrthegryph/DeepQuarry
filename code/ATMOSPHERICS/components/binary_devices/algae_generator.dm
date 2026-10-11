@@ -7,10 +7,7 @@
 	circuit = /obj/item/circuitboard/algae_farm
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100		// Minimal lights to keep algae alive
-	active_power_usage = 5000	// Powerful grow lights to stimulate oxygen production
 	//power_rating = 7500			//7500 W ~ 10 HP
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
@@ -39,6 +36,7 @@ TRACKED(/obj/machinery/atmospherics/binary/algae_farm, working)
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
 	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
 	interface("AlgaeFarm")
 	part_replacement()
@@ -58,7 +56,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 	set_recent_moles_transferred(0)
 	ui_error = null
 	if(use_power == USE_POWER_IDLE)
-		last_power_draw = idle_power_usage
+		last_power_draw = power_of(src).idle
 	else
 		last_power_draw = 0
 
@@ -100,7 +98,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 /// One service interval of farming (its every(), while it has work).
 /obj/machinery/atmospherics/binary/algae_farm/proc/farm_step(datum/act/A)
 	set_recent_moles_transferred(0)
-	last_power_draw = active_power_usage
+	last_power_draw = power_of(src).active
 
 	// STEP 1 - Check material resources
 	if(stored_material[MAT_ALGAE] < algae_per_mole)

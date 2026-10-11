@@ -88,7 +88,6 @@ base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_value = FALSE
 base_var	code/datums/sparse_vars/observer_events.dm	var/tmp/list/observer_event_listeners
 base_var	code/datums/sparse_vars/update_on_z.dm	var/tmp/list/image/z_update_images
 base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
-base_var	code/datums/sys/appearance.dm	var/tmp/list/appearance_proc_overlays
 base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_touched_at)
@@ -159,9 +158,6 @@ base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	var/summoned =
 base_var	code/game/jobs/access.dm	/obj/var/list/req_access
 base_var	code/game/jobs/access.dm	/obj/var/list/req_one_access
 base_var	code/game/machinery/machinery.dm	var/use_power = USE_POWER_IDLE
-base_var	code/game/machinery/machinery.dm	var/idle_power_usage = 0
-base_var	code/game/machinery/machinery.dm	var/active_power_usage = 0
-base_var	code/game/machinery/machinery.dm	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
 base_var	code/game/machinery/machinery.dm	var/tmp/power_init_complete = FALSE
 base_var	code/game/machinery/machinery.dm	var/power_subscriber = TRUE
 base_var	code/game/machinery/machinery.dm	var/list/component_parts = null

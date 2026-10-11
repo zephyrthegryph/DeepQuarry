@@ -16,8 +16,6 @@
 	unacidable = TRUE
 	clicksound = SFX_BUTTON
 	clickvol = 60
-	idle_power_usage = 5
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/injector_maker
 	var/obj/item/reagent_containers/beaker = null
 	var/list/beaker_reagents_list
@@ -42,6 +40,7 @@ MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
 MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
 CAPABILITIES(/obj/machinery/injector_maker)
+	configure(uses_power(idle = 5, active = 100))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),
 		label("Add container"), then(PROC_REF(beaker_added)))

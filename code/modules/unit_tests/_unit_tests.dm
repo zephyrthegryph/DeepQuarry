@@ -211,6 +211,7 @@
 #include "dq_gas_watch_fire_tests.dm"
 #include "dq_gas_level_tests.dm"
 #include "dq_station_alert_tests.dm"
+#include "dq_type_trait_tests.dm"
 #include "dq_vg_binding_tests.dm"
 #include "dq_heat_domain_tests.dm"
 #include "dq_heat_api_tests.dm"

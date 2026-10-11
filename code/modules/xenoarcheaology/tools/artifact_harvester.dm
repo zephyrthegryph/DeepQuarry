@@ -5,8 +5,6 @@
 	icon_state = "incubator"	//incubator_on
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 50
-	active_power_usage = 750
 	use_power = USE_POWER_IDLE
 	var/harvesting = 0
 	var/harvesting_speed = 0
@@ -18,6 +16,7 @@
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	configure(uses_power(idle = 50, active = 750))
 	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
 	ref_one(nameof(cur_artifact), /obj)

@@ -14,7 +14,6 @@
 	var/base_state = "mflash"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
 
 /obj/machinery/flasher/portable //Portable version of the flasher. Only flashes when anchored
 	name = "portable flasher"
@@ -100,6 +99,7 @@ CAPABILITIES(/obj/machinery/flasher/portable)
 		O.status_at_least(STAT_WEAKENED, flash_time)
 
 CAPABILITIES(/obj/machinery/flasher)
+	configure(uses_power(idle = 2))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(flasher_emp))))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
 	op("flasher_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Flash"), then(PROC_REF(flasher_silicon_trigger)))

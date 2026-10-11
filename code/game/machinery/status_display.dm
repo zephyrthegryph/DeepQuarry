@@ -20,7 +20,6 @@
 	density = FALSE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
 	mode = 1	// 0 = Blank
@@ -163,6 +162,7 @@
 		refresh()
 
 CAPABILITIES(/obj/machinery/status_display)
+	configure(uses_power(idle = 10))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
 	display_disconnect_op()

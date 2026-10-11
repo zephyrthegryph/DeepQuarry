@@ -10,7 +10,6 @@
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/recharge_station
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50
 	var/icon_update_tick = 0	// Used to rebuild the overlay only once every 10 ticks
 	var/charging = 0
 
@@ -288,6 +287,7 @@ MSG_DEF_SELF(recharge_station/needs_mob, "needs a mob")
 MSG_DEF_SELF(recharge_station/needs_living_grab, "needs a grab holding a living mob")
 
 CAPABILITIES(/obj/machinery/recharge_station)
+	configure(uses_power(idle = 50))
 	default_parts()
 	ref_one(nameof(cell), /obj/item/cell) // component_parts owns the cell
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)

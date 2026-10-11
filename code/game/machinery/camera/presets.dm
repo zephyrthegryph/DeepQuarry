@@ -229,4 +229,4 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 		mult++
 	if (isMotion())
 		mult++
-	update_active_power_usage(mult * initial(active_power_usage))
+	update_active_power_usage(mult * power_of_type(type).active)

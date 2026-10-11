@@ -8,8 +8,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	anchored = TRUE
-	idle_power_usage = 5
-	active_power_usage = 100
 	var/tmp/obj/machinery/recycling/crusher/crusher	//Connects to regular crusher
 	var/tmp/obj/machinery/button/garbosystem/button
 	var/list/affecting
@@ -63,6 +61,7 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/v_garbosystem)
+	configure(uses_power(idle = 5, active = 100))
 	hose_sockets(list(/datum/hose_connector/output))
 	reagents(CARGOTANKER_VOLUME * 2)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))

@@ -4398,3 +4398,12 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **`dq_loot_search_pin`, boxfort piles** (36 rows): the same seeds now find other boxes. Cause: 68e9f5ae83 rolls a pile's look with
   `rolls()` from the instance's own stream; the old `Initialize()` drew it from the world RNG the pin had seeded, so every search after it
   read one draw later. The tables and their weights are unchanged; only which seed gives which result moved.
+## Machine power as a type trait (rewrite/look-traits, gap 5)
+
+`idle_power_usage`, `active_power_usage` and `power_channel` are no longer vars on `/obj/machinery`: they are the `uses_power()` type trait
+(212 types codemodded, `tools/dx/codemods/type_trait.py power`). Pinned by `dq_type_trait/*`, the grid tests and `dq_p2_lights/*`.
+
+* **The values publish one key**, `USES_POWER_KEY`, instead of three var names; the area-demand contributions read it.
+* **The Southern Cross omni mixer's map edit `active_power_usage = 7500` is gone** (a type trait cannot be var-edited on a map); the mixer draws
+  its type's declared power.
+* **View Variables** edits the three by their old names through `vv_edit_var()`; they no longer show as vars.

@@ -360,5 +360,5 @@ CAPABILITIES(/datum/material_service)
 	report.set_info(report.info + ("<b>Measured efficiency:</b> [round(reading["efficiency"] * 100, 0.1)]%<br>"))
 	report.attach_contract_evidence(tool.engineering_evidence_id)
 	toner--
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	return TRUE

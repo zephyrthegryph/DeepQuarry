@@ -6,8 +6,6 @@
 	icon_state = "generic"
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 50
-	active_power_usage = 1.5 KILOWATTS
 
 	circuit = /obj/item/circuitboard/bomb_tester
 
@@ -32,6 +30,7 @@
 TRACKED(/obj/machinery/bomb_tester, simulating)
 
 CAPABILITIES(/obj/machinery/bomb_tester)
+	configure(uses_power(idle = 50, active = 1.5 KILOWATTS))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(faketank), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)

@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_mixer
 	default_max_vol = 240 // Two large beakers of volume
 	var/mixer_angle = 0
@@ -115,6 +113,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 	return got_input
 
 CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	configure(uses_power(idle = 0, active = 50))
 	without("reagent_refinery_set_transfer_amount")
 	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))
 	op("set_rotation_2", menu(), label("Set Mixer Rotation"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_rotation)))

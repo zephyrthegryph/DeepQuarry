@@ -13,9 +13,6 @@
 	icon = 'icons/obj/heartmonitor.dmi'
 	icon_state = "base"
 	anchored = FALSE
-	power_channel = EQUIP
-	idle_power_usage = 10
-	active_power_usage = 100
 
 	var/beep = TRUE
 
@@ -144,6 +141,7 @@
 	return "erratic"
 
 CAPABILITIES(/obj/machinery/vitals_monitor)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
 	drag_onto(PROC_REF(drop_input))

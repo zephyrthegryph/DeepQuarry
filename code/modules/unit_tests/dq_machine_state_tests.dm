@@ -6,9 +6,9 @@
 /// A machine that draws idle and active power on the equipment channel.
 /obj/machinery/dq_draw_probe
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
-	power_channel = EQUIP
+
+CAPABILITIES(/obj/machinery/dq_draw_probe)
+	configure(uses_power(idle = 10, active = 100, channel = EQUIP))
 
 /// Losing power or breaking makes a machine inoperable; restoring either makes it work again.
 /datum/unit_test/dq_machine_operable_follows_power_and_repair

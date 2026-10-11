@@ -21,7 +21,6 @@ log transactions
 	icon_state = "atm"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/atm
 	flags = WALL_ITEM
 	var/tmp/datum/money_account/authenticated_account
@@ -194,6 +193,7 @@ MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
+	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(assign_machine_id)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))

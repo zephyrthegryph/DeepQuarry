@@ -148,8 +148,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	volume_rate = 7000
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50 // //internal circuitry, friction losses and stuff
-	active_power_usage = 1000 // // Blowers running
 	power_rating = 100000 // //100 kW ~ 135 HP
 
 	var/global/gid = 1
@@ -163,6 +161,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 		set_use_power(1 + on)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
+	configure(uses_power(idle = 50, active = 1000))
 	without(CAP_CLIMB) // not climbable
 	huge_portable_controls()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
@@ -197,7 +196,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
 
 	var/transfer_moles = min(1, volume_rate/environment.return_volume())*environment.total_moles()
 
-	power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, active_power_usage)
+	power_draw = scrub_gas(src, scrubbing_gas, environment, air_contents, transfer_moles, power_of(src).active)
 
 	if (power_draw < 0)
 		last_flow_rate = 0

@@ -8,8 +8,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/industrial_reagent_reactor
 	default_max_vol = REAGENT_VAT_VOLUME
 	reagent_type = /datum/reagents/distilling
@@ -22,6 +20,7 @@
 	VAR_PRIVATE/drain_time = 10
 
 CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
+	configure(uses_power(idle = 0, active = 500))
 	default_parts()
 	owns_one(nameof(internal_tank), /obj/machinery/portable_atmospherics/canister, starts = /obj/machinery/portable_atmospherics/canister/empty, starts_args = NO_LOC)
 	climb()

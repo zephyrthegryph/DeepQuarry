@@ -10,7 +10,6 @@
 	name = "technology fabricator"
 	desc = "Makes researched and prototype items with materials and energy."
 	/// Energy cost per full stack of materials spent. Material insertion is 40% of this.
-	active_power_usage = 5000
 
 	/// The efficiency coefficient. Material costs and print times are multiplied by this number;
 	var/efficiency_coeff = 1
@@ -36,6 +35,7 @@
 TRACKED(/obj/machinery/rnd/production, stripe_color)
 
 CAPABILITIES(/obj/machinery/rnd/production)
+	configure(uses_power(active = 5000))
 	owns_one(nameof(materials), /datum/remote_materials)
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))
 	owns_one(nameof(print_run), /datum/fab_run)
@@ -153,7 +153,7 @@ CAPABILITIES(/obj/machinery/rnd/production)
 	PRIVATE_PROC(TRUE)
 
 	//we use initial(active_power_usage) because higher tier parts will have higher active usage but we have no benifit from it
-	if(use_power_oneoff(ROUND_UP((amount_inserted / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * 0.4 * initial(active_power_usage))))
+	if(use_power_oneoff(ROUND_UP((amount_inserted / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * 0.4 * power_of_type(type).active)))
 		var/datum/material/highest_mat_ref
 
 		var/highest_mat = 0

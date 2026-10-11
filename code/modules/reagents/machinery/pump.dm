@@ -11,7 +11,6 @@
 	icon_state = "pump"
 
 	circuit = /obj/item/circuitboard/fluidpump
-	active_power_usage = 200 * CELLRATE
 
 	var/obj/item/cell/cell = null
 	var/reagents_per_cycle = 5
@@ -21,6 +20,7 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	configure(uses_power(active = 200 * CELLRATE))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/output))
 	silicon_hand()
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/pump)
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
-	set_active_power_usage(initial(active_power_usage) / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator))))
+	set_active_power_usage(power_of_type(type).active / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator))))
 	reagents_per_cycle = initial(reagents_per_cycle) * pump_power
 
 	var/bin_size = get_part_rating(/obj/item/stock_parts/matter_bin)
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/pump)
 	look.watch(reagents)
 	var/base = initial(icon_state)
 	look.overlay("[base]-tank")
-	look.overlay("[base]-lowpower", !(cell?.check_charge(active_power_usage)))
+	look.overlay("[base]-lowpower", !(cell?.check_charge(power_of(src).active)))
 	if(reagents.total_volume >= 1)
 		look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
 	look.overlay("[base]-glass")
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/pump)
 
 /// Pumps every machine frame; runs while on (declared).
 /obj/machinery/pump/proc/work_step(datum/act/timer/A)
-	if(!anchored || !(cell?.use(active_power_usage)))
+	if(!anchored || !(cell?.use(power_of(src).active)))
 		set_pump_on(FALSE)
 		return
 
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/machinery/pump)
 	if(target == on)
 		return FALSE
 
-	if(!on && (!(cell?.check_charge(active_power_usage)) || !anchored))
+	if(!on && (!(cell?.check_charge(power_of(src).active)) || !anchored))
 		return FALSE
 
 	set_on(!on)
