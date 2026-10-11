@@ -492,7 +492,7 @@ impl<'a> IssuedBodyInput<'a> {
     pub fn compact(&self) -> ItemView<'_> {
         self.compact
     }
-    pub fn occurrence(&self) -> &BodyOccurrence {
+    pub fn occurrence(&self) -> &'a BodyOccurrence {
         self.occurrence
     }
 }
