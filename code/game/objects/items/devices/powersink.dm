@@ -48,7 +48,7 @@ TRACKED(/obj/item/powersink, mode)
 /obj/item/powersink/proc/detached_from_cable(datum/act/op/A)
 	set_anchored(FALSE)
 	act_message(A.actor, src, others = span_notice("%U% detaches %T% from the cable!"))
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	playsound(src, sounds_of(A.held).use, 50, 1)
 	icon_state = "powersink0"
 	return OP_OK
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/powersink)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
 			set_mode(1)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 			icon_state = "powersink0"
 		
 	return TRUE
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/item/powersink)
 	if(!PN)
 		return 1
 
-	set_light(12)
+	set_glow(src, GLOW(12, null, null))
 	power_warn(PN)
 	// found a powernet, so drain up to max power from it
 	drained = power_draw(PN, drain_rate)

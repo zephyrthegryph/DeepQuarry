@@ -1,6 +1,5 @@
 /obj/machinery/computer/fusion_core_control
 	name = "\improper R-UST Mk. 8 core control"
-	light_color = COLOR_ORANGE
 	circuit = /obj/item/circuitboard/fusion_core_control
 
 	icon_keyboard = "tech_key"
@@ -13,6 +12,7 @@
 
 // Its window is its monitor's (a hand on a working console opens it); a multitool sets the ident tag the monitor looks for.
 CAPABILITIES(/obj/machinery/computer/fusion_core_control)
+	configure(light_glow(color = COLOR_ORANGE))
 	op("use", hand(), when(req_empty_hand()), label("Use"), wait(0), needs(req_operable()), then(PROC_REF(open_monitor)))
 	op("set_tag", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Core Control", "question" = "Enter a new ident tag.", "max_len" = MAX_NAME_LEN)),

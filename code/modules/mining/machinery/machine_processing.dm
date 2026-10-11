@@ -198,7 +198,6 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	icon_state = "furnace"
 	density = TRUE
 	anchored = TRUE
-	light_range = 3
 	var/tmp/obj/machinery/mineral/input
 	var/tmp/obj/machinery/mineral/output
 	var/tmp/obj/machinery/mineral/console
@@ -273,6 +272,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 /// arrives (on_input_entered()).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 
 /obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)

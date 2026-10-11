@@ -1386,6 +1386,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /// `keep_organs`: change the species' facts (languages, verbs, components, factors, HUD) but
 /// keep the body and organs it has, e.g. a nymph taking over a synthetic body (D21).
 /mob/living/carbon/human/proc/set_species(new_species, keep_organs = FALSE)
+	// the first species of a canonical subtype (skrell, xdrone, monkey) is its compiled one, whatever species its maker passed (was forced_initial_species)
+	if(!species && initial(species_at_make))
+		new_species = initial(species_at_make)
 
 	if(!dna)
 		if(!new_species)

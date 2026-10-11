@@ -10,7 +10,6 @@
 	icon = 'icons/obj/machines/timeclock_vr.dmi'
 	icon_state = "timeclock"
 	icon_keyboard = null
-	light_color = "#0099ff"
 	light_power_on = 0.5
 	layer = ABOVE_WINDOW_LAYER
 	density = FALSE
@@ -39,9 +38,9 @@
 /obj/machinery/computer/timeclock/power_change()
 	. = ..()
 	if(power_lost())
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	else
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 
 /obj/machinery/computer/timeclock/proc/interaction_insert_id(datum/act/op/A)
 	var/mob/user = A.actor
@@ -54,6 +53,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/timeclock)
+	configure(light_glow(color = "#0099ff"))
 	interface("TimeClock")
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
 	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("assignment"), arg("rank")), then(PROC_REF(ui_act_switch_to_onduty_rank)))

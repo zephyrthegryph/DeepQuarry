@@ -63,7 +63,6 @@ MSG_DEF(alarm/cut_out, "You have cut the wires inside %T%.", "%U% has cut the wi
 	clicksound = SFX_BUTTON
 	clickvol = 30
 	blocks_emissive = NONE
-	light_power = 0.25
 	flags = WALL_ITEM
 	circuit = /obj/item/circuitboard/airalarm
 	mode = AALARM_MODE_SCRUBBING
@@ -134,6 +133,7 @@ TRACKED(/obj/machinery/alarm, rcon_setting)
 TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
+	configure(light_glow(power = 0.25))
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)

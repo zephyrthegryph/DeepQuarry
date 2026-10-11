@@ -45,7 +45,6 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 
 	var/light_range_on = 3
 	var/light_power_on = 1
-	light_color = "#5BA8FF"
 	/// Admin quick-start: the next step brings it straight online.
 	var/Varedit_start = FALSE
 	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
@@ -55,6 +54,7 @@ TRACKED(/obj/machinery/field_generator, Varedit_start)
 TRACKED(/obj/machinery/field_generator, warming_up)
 
 CAPABILITIES(/obj/machinery/field_generator)
+	configure(light_glow(color = "#5BA8FF"))
 	climb()
 	floor_weld(busy = nameof(active))
 	ref_many(nameof(fields), /obj/machinery/containment_field)
@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/proc/finish_turn_off()
 	cleanup()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 /obj/machinery/field_generator/proc/turn_on()
 	set_active(1)
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	changed(src)
 	if(warming_up >= 3)
 		start_fields()
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 
 /obj/machinery/field_generator/proc/calc_power()
 	if(Varpower)

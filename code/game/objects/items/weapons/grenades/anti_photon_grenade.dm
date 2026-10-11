@@ -12,7 +12,7 @@
 		..()
 		return
 	playsound(src, light_sound, 50, 1, 5)
-	set_light(10, -10, "#FFFFFF")
+	set_glow(src, GLOW(10, -10, "#FFFFFF"))
 
 	var/extra_delay = rand(0,90)
 	after(src, 20 SECONDS + extra_delay, PROC_REF(grenade_light), with = list(extra_delay))
@@ -21,7 +21,7 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(prob(10+extra_delay))
-		set_light(10, 10, "#[num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)]")
+		set_glow(src, GLOW(10, 10, "#[num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)]"))
 	after(src, 1 SECONDS, PROC_REF(grenade_blast))
 
 /obj/item/grenade/anti_photon/proc/grenade_blast()

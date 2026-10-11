@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	if(rag)
 		look.watch(rag)
 		look.underlay(look_image('icons/obj/drinks.dmi', rag.rag_lit ? "[rag_underlay]_lit" : rag_underlay))
-		look.glow(rag.light_range, rag.light_power, rag.light_color)
+		look.glow(glow_of(rag).range, glow_of(rag).power, glow_of(rag).color)
 	else
 		look.glow(GLOW_OFF)
 

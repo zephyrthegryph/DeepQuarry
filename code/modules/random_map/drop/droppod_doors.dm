@@ -64,10 +64,10 @@ CAPABILITIES(/obj/structure/droppod_door)
 	// Overwrite turfs.
 	var/turf/origin = get_turf(src)
 	origin.ChangeTurf(/turf/simulated/floor/reinforced)
-	origin.set_light(0) // Forcing updates
+	set_glow(origin, GLOW(0, null, null)) // Forcing updates
 	var/turf/T = get_step(origin, src.dir)
 	T.ChangeTurf(/turf/simulated/floor/reinforced)
-	T.set_light(0) // Forcing updates
+	set_glow(T, GLOW(0, null, null)) // Forcing updates
 
 	// Destroy turf contents.
 	for(var/obj/O in turf_contents_of_type(origin, /obj))

@@ -10,7 +10,6 @@
 	alpha = 50
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	light_color = "#cc7700"
 
 	var/size = 1
 	var/energy = 0
@@ -43,14 +42,13 @@
 	var/light_max_power = 5
 
 	// lit at its minimum from the start (static light vars, applied when it materializes)
-	light_range = 2
-	light_power = 3
 	light_on = TRUE
 	var/last_range = 2
 	var/last_power = 3
 
 // The core owns its field (fusion_core/Startup()); the field names its core back and owns the catchers that take particles into it.
 CAPABILITIES(/obj/effect/fusion_em_field)
+	configure(light_glow(color = "#cc7700", range = 2, power = 3))
 	owns_many(nameof(particle_catchers))
 	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
 	param(nameof(owned_core), pos = 1)
@@ -146,7 +144,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 		use_power = light_min_power + CEILING((light_max_power-light_min_power)*temp_mod, 1)
 
 	if(last_range != use_range || last_power != use_power)
-		set_light(use_range,use_power)
+		set_glow(src, GLOW(use_range, use_power, null))
 		last_range = use_range
 		last_power = use_power
 
@@ -512,30 +510,30 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 //Temperature changes depending on color.
 /obj/effect/fusion_em_field/proc/temp_color()
 	if(plasma_temperature > 60000) //high ultraviolet - magenta
-		light_color = "#cc005f"
+		set_light_color("#cc005f")
 		light_max_range = 25
 		light_max_power = 10
 	else if(plasma_temperature > 12000) //ultraviolet - blue
-		light_color = "#1b00cc"
+		set_light_color("#1b00cc")
 		light_max_range = 20
 		light_max_power = 10
 	else if(plasma_temperature > 8000) //nearing ultraviolet - cyan
-		light_color = "#00cccc"
+		set_light_color("#00cccc")
 		light_max_range = 15
 		light_max_power = 10
 	else if(plasma_temperature > 4000) // green
-		light_color = "#1ab705"
+		set_light_color("#1ab705")
 		light_max_range = 10
 		light_max_power = 10
 	else if(plasma_temperature <= 4000) //orange
-		light_color = "#cc7700"
+		set_light_color("#cc7700")
 		light_max_range = 5
 		light_max_power = 5
 	return
 //moved the flare to a proc for various reasons. Called on line 225.
 /obj/effect/fusion_em_field/proc/emflare()
 		radiation += plasma_temperature/2
-		light_color = "#ff0000"
+		set_light_color("#ff0000")
 		light_max_power = 30
 		light_min_power = 30
 		light_min_range = 30
@@ -547,7 +545,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 
 /obj/effect/fusion_em_field/proc/Rupture()
 	visible_message(span_danger("\The [src] shudders like a dying animal before flaring to eye-searing brightness and rupturing!"))
-	set_light(15, 15, "#CCCCFF")
+	set_glow(src, GLOW(15, 15, "#CCCCFF"))
 	empulse(get_turf(src), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	GLOB.global_announcer.autosay("WARNING: FIELD RUPTURE IMMINENT!", "Containment Monitor")
 	RadiateAll()
@@ -566,7 +564,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 /obj/effect/fusion_em_field/proc/MRC() //spews electromagnetic pulses in an area around the core.
 	visible_message(span_danger("\The [src] glows an extremely bright pink and flares out of existance!"))
 	GLOB.global_announcer.autosay("Warning! Magnetic Resonance Cascade detected! Brace for electronic system distruption.", "Field Stability Monitor")
-	set_light(15, 15, "#ff00d8")
+	set_glow(src, GLOW(15, 15, "#ff00d8"))
 	var/list/things_in_range = range(15, owned_core)
 	var/list/turfs_in_range = list()
 	for (var/turf/T in things_in_range)
@@ -615,7 +613,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 
 /obj/effect/fusion_em_field/proc/BluespaceQuenchEvent() //!!FUN!! causes a number of explosions in an area around the core. Will likely destory or heavily damage the reactor.
 	visible_message(span_danger("\The [src] shudders like a dying animal before flaring to eye-searing brightness and rupturing!"))
-	set_light(15, 15, "#CCCCFF")
+	set_glow(src, GLOW(15, 15, "#CCCCFF"))
 	empulse(get_turf(src), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	GLOB.global_announcer.autosay("WARNING: FIELD RUPTURE IMMINENT!", "Containment Monitor")
 	RadiateAll()

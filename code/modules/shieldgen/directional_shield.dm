@@ -80,8 +80,6 @@ CAPABILITIES(/obj/effect/directional_shield)
 	but allow those projectiles to leave the shield from the inside.  Blocking too many damaging projectiles will cause the shield to fail."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "signmaker_sec"
-	light_range = 4
-	light_power = 4
 	light_on = TRUE
 	var/active = FALSE					// If it's on.
 	// The projector's integrity is the shield's strength: how much damage the shield blocks before breaking.
@@ -101,6 +99,7 @@ CAPABILITIES(/obj/effect/directional_shield)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/shield_projector)
+	configure(light_glow(range = 4, power = 4))
 	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
 	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(moved_event)))
 	when(nameof(always_on), after_init(0, then(PROC_REF(raise_after_init))))
@@ -142,7 +141,7 @@ TRACKED(/obj/item/shield_projector, regenerating)
 
 /obj/item/shield_projector/proc/destroy_shields()
 	rel_clear(src, nameof(active_shields))
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	active = FALSE
 
 /obj/item/shield_projector/proc/update_shield_positions(datum/act/notice/N)
@@ -199,7 +198,7 @@ TRACKED(/obj/item/shield_projector, regenerating)
 
 	var/new_color = rgb(new_r, new_g, new_b)
 
-	set_light(light_range, light_power, new_color)
+	set_glow(src, GLOW(glow_of(src).range, glow_of(src).power, new_color))
 
 	// Now deploy the new color to all the shields.
 	for(var/obj/effect/directional_shield/S in active_shields)

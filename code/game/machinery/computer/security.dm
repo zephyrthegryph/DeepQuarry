@@ -9,7 +9,6 @@
 	desc = "Used to view, edit and maintain security records"
 	icon_keyboard = "security_key"
 	icon_screen = "security"
-	light_color = "#a91515"
 	req_one_access = list(ACCESS_SECURITY, ACCESS_FORENSICS_LOCKERS, ACCESS_LAWYER)
 	circuit = /obj/item/circuitboard/secure_data
 	var/obj/item/card/id/scan = null
@@ -81,6 +80,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/secure_data, sec_field_choices, list(
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
+	configure(light_glow(color = "#a91515"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active2), /datum/data/record)

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/entertainment_monitor.dmi'
 	icon_state = "screen"
 	icon_screen = null
-	light_color = "#FFEEDB"
 	light_range_on = 2
 	network = list(NETWORK_BODYCAM)
 	circuit = /obj/item/circuitboard/security/telescreen/bodycamera
@@ -27,6 +26,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
 CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	configure(light_glow(color = "#FFEEDB"))
 	ref_one(nameof(showing), /atom)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
 	owns_one(nameof(bradio), starts = /obj/item/radio)

@@ -24,9 +24,9 @@
 	// 1: The "Best" scan available
 	var/scan_mode = 1
 
-	light_color = "#315ab4"
 
 CAPABILITIES(/obj/machinery/computer/cloning)
+	configure(light_glow(color = "#315ab4"))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(autoprocess), wakes_on = list(nameof(autoprocess)))
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
 	owns_many(nameof(records))

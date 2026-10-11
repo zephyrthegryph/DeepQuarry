@@ -1092,8 +1092,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	muzzle_flash_range = 0
 	impact_light_intensity = 0
 	impact_light_range  = 0
-	light_range = 0 //No your tongue can not glow...For now.
-	light_power = 0
 	light_on = 0 //NO LIGHT
 	combustion = FALSE //No, your tongue can't set the room on fire.
 	pass_flags = PASSTABLE
@@ -1103,6 +1101,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	impact_type = /obj/effect/projectile/impact/appendage
 
 CAPABILITIES(/obj/item/projectile/beam/appendage)
+	configure(light_glow(range = 0, power = 0))
 	configure(item_sounds(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /obj/item/projectile/beam/appendage/generate_hitscan_tracers()
@@ -1156,23 +1155,23 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 /obj/effect/projectile/muzzle/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "muzzle_appendage"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/tracer/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "appendage_beam"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00" //Doesn't matter. Not used.
+
+CAPABILITIES(/obj/effect/projectile/tracer/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/impact/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "impact_appendage_combined"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/impact/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 //LONG VORE ABILITY END
 
 /obj/item/gun/energy/gun/tongue //This is the 'tongue' gun for admin memery.

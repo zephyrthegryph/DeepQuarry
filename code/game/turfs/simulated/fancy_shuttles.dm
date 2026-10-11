@@ -137,8 +137,8 @@ CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
 /turf/simulated/wall/fancy_shuttle/update_connections()
 	return
 
-/turf/simulated/wall/fancy_shuttle/set_light(l_range, l_power, l_color, l_on)
-	return
+/turf/simulated/wall/fancy_shuttle/accepts_glow()
+	return FALSE
 
 /obj/effect/floor_decal/fancy_shuttle
 	icon = 'icons/turf/fancy_shuttles/_fancy_helpers.dmi'

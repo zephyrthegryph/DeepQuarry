@@ -12,7 +12,6 @@
 	var/screen = "stocks"
 	var/tmp/datum/stock/current_stock
 
-	light_color = LIGHT_COLOR_GREEN
 
 /obj/machinery/computer/stockexchange/proc/interaction_attackby(datum/act/op/A)
 	SStgui.update_uis(src)
@@ -266,6 +265,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/computer/stockexchange)
+	configure(light_glow(color = LIGHT_COLOR_GREEN))
 	interface("StockExchange")
 	without("ui_open")
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))

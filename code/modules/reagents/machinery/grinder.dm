@@ -122,7 +122,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
-		set_light(l_range = max(1, S.get_amount()/10), l_power = max(1, S.get_amount()/10), l_color = "#8A8A00")
+		set_glow(src, GLOW(max(1, S.get_amount()/10), max(1, S.get_amount()/10), "#8A8A00"))
 		after(src, 30 SECONDS, PROC_REF(puny_protons))
 	// end
 	return TRUE

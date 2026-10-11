@@ -66,9 +66,7 @@
 	name = "glowing growth"
 	desc = "Weird glowing organic growth."
 	layer = ABOVE_TURF_LAYER+0.01
-	light_range = NODERANGE
 	light_on = TRUE
-	light_color = "#673972"
 
 	var/node_range = NODERANGE
 
@@ -180,6 +178,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	setup(PROC_REF(fullUpdateWeedOverlays))
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
+	configure(light_glow(range = 3, color = "#673972")) // NODERANGE
 	every(2 SECONDS, then(PROC_REF(node_step)))
 
 /obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
@@ -222,8 +221,10 @@ CAPABILITIES(/obj/effect/alien/weeds/node)
 	return OP_OK
 
 /obj/effect/alien/weeds/node/weak
-	light_range = 2
 	node_range = 1
+
+CAPABILITIES(/obj/effect/alien/weeds/node/weak)
+	configure(light_glow(range = 2))
 // end.
 
 #undef NODERANGE

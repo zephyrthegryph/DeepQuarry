@@ -37,9 +37,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	desc = "A large portal. Touching it without going through may alter the destination."
 	var/list/destination_station_areas // Override this in map files!
 	var/list/destination_wilderness_areas // Override this in map files!
-	light_range = 2
-	light_power = 3
-	light_color = "#ffffff"
 	light_on = TRUE
 
 /obj/structure/dark_portal/hub/close_portal()
@@ -136,6 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	return TRUE
 
 CAPABILITIES(/obj/structure/dark_portal/hub)
+	configure(light_glow(range = 2, power = 3, color = "#ffffff"))
 	setup(PROC_REF(close_portal)) // it starts open to itself
 	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))

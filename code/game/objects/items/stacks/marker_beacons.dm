@@ -105,8 +105,6 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "markerrandom"
 	anchored = TRUE
-	light_range = 2
-	light_power = 0.8
 	var/icon_base = "marker"
 	var/remove_speed = 15
 	var/picked_color
@@ -116,6 +114,7 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 TRACKED(/obj/structure/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/structure/marker_beacon)
+	configure(light_glow(range = 2, power = 0.8))
 	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
 	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
@@ -145,7 +144,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 /obj/structure/marker_beacon/draw(datum/look/look)
 	..()
 	look.state("[icon_base][lowertext(picked_color)]-on")
-	look.glow(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
+	look.glow(glow_of(src).range, glow_of(src).power, GLOB.marker_beacon_colors[picked_color])
 
 MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."))
 

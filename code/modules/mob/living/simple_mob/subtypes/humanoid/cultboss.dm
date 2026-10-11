@@ -117,11 +117,10 @@
 	name = "inversion bolt"
 	damage = 20
 	eyeblur = 0
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
 
 CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 	configure(item_combat(armor_penetration = 50))
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift

@@ -339,7 +339,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 		flick(fire_anim, src)
 
 	if(muzzle_flash)
-		set_light(muzzle_flash)
+		set_glow(src, GLOW(muzzle_flash, null, null))
 
 	if(one_handed_penalty)
 		if(!src.is_held_twohanded(user))

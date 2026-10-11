@@ -12,7 +12,6 @@
 	desc = "Used to view, edit and maintain medical records."
 	icon_keyboard = "med_key"
 	icon_screen = "medcomp"
-	light_color = "#315ab4"
 	req_one_access = list(ACCESS_MEDICAL, ACCESS_FORENSICS_LOCKERS, ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/med_data
 	var/obj/item/card/id/scan = null
@@ -34,6 +33,7 @@ MSG_DEF(records/inserted_id, "You insert %I%.", "")
 MSG_DEF(records/ejected_id, "You remove %I% from %T%.", "")
 
 CAPABILITIES(/obj/machinery/computer/med_data)
+	configure(light_glow(color = "#315ab4"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active2), /datum/data/record)
@@ -652,9 +652,11 @@ MSG_DEF_SELF(records/not_authenticated, "You must log in first.")
 	icon_screen = "pcu_generic"
 	icon_state = "pcu_med"
 	icon_keyboard = "pcu_key"
-	light_color = "#5284e7"
 	circuit = /obj/item/circuitboard/med_data/pcu
 	density = FALSE
+
+CAPABILITIES(/obj/machinery/computer/med_data/laptop)
+	configure(light_glow(color = "#5284e7"))
 
 #undef MED_DATA_R_LIST
 #undef MED_DATA_MAINT

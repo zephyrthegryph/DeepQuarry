@@ -188,7 +188,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathstart(atom/A) //Borrowed from le big dragon
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	flames = 1
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))

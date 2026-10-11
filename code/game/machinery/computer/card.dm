@@ -5,7 +5,6 @@
 	desc = "Terminal for programming employee ID cards to access parts of the station."
 	icon_keyboard = "id_key"
 	icon_screen = "id"
-	light_color = "#0099ff"
 	req_access = list(ACCESS_CHANGE_IDS)
 	circuit = /obj/item/circuitboard/card
 	var/obj/item/card/id/scan = null
@@ -46,6 +45,7 @@ TRACKED(/obj/machinery/computer/card, printing)
 // the subject's. Every change to the loaded card needs an authenticated operator and a card (assign_possible()), and the card's name follows
 // its owner and assignment after every button.
 CAPABILITIES(/obj/machinery/computer/card)
+	configure(light_glow(color = "#0099ff"))
 	interface("IdentificationComputer")
 	op("insert_id", item(/obj/item/card/id), needs(req(PROC_REF(has_free_slot))), then(PROC_REF(card_inserted)), opens_ui())
 	op("eject", menu(), label("Eject ID Card"), needs(req(PROC_REF(has_a_card))), says(MSG(card_console/ejected)), then(PROC_REF(eject_first_card)))

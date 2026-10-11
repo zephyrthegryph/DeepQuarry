@@ -67,6 +67,12 @@ SPECS = {
         skip={"code/modules/mob/mob_kind.dm"},
         skip_refs=r"(^|\.)species$",  # a species' own can_climb and death_message
     ),
+    "light": dict(
+        base="/atom", ctor="light_glow", reader="glow_of", type_reader="glow_of_type",
+        fields={"light_range": "range", "light_power": "power", "light_color": "color"},
+        skip={"code/modules/lighting/glow.dm", "code/modules/lighting/lighting_source.dm", "code/__defines/lighting.dm"},
+        skip_refs=r"(^|\.)(lighting_source|current_weather|light)$",  # the light source datum and the weather's own light_color
+    ),
     "item_combat": dict(
         base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
@@ -193,8 +199,12 @@ LOCALS = {}  # name -> declared type path, for the current proc
 SHADOW = set()  # field names the current proc declares itself (an argument `force`, a local `var/reach`): its bare uses are not the var
 
 
+# /atom's subtypes are written from their own roots (/obj, /mob, /turf, /area), not under /atom/.
+ROOTS_OF = {"/atom": ("/atom", "/obj", "/mob", "/turf", "/area"), "/atom/movable": ("/atom/movable", "/obj", "/mob")}
+
+
 def under_base(path):
-    return path == BASE or path.startswith(BASE + "/")
+    return any(path == r or path.startswith(r + "/") for r in ROOTS_OF.get(BASE, (BASE,)))
 
 
 def ref_ok(ref):
@@ -325,7 +335,7 @@ def main():
                     for am in re.finditer(r"((?:[A-Za-z_]\w*/)+)([A-Za-z_]\w*)", pm.group(3)):
                         LOCALS[am.group(2)] = "/" + am.group(1).rstrip("/")
             om =OVERRIDE.match(line) if cur else None
-            if om and (cur == BASE or cur.startswith(BASE + "/")):
+            if om and under_base(cur):
                 value = om.group(2)
                 if value.strip() == "null":
                     value = "TRAIT_NONE"
