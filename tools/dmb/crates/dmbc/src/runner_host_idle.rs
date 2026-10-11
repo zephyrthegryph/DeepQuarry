@@ -78,6 +78,16 @@ impl BuildHost {
             *query = Default::default();
         }
         drop(query);
+        // Worker heaps have already been joined, and optional artifact owners
+        // have been dropped. Reclaim freed pages before private-memory pressure
+        // decides whether the surviving semantic owner must also be evicted.
+        // This preserves the existing live-data budgets and admission receipts.
+        let reclaim_started = std::time::Instant::now();
+        dm_profile::reclaim_unused_allocator_pages();
+        eprintln!(
+            "dmbd allocator page reclamation seconds={:.6}",
+            reclaim_started.elapsed().as_secs_f64()
+        );
         self.emit_idle_census("after-compiler-release");
     }
 

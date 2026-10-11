@@ -9,6 +9,7 @@ allocation-counting = []
 
 [dependencies]
 mimalloc = "0.1.52"
+libmimalloc-sys = { version = "=0.1.49", features = ["extended"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["registry"] }
 tracing-chrome = "0.7"

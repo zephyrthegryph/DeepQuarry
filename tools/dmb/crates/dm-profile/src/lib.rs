@@ -946,3 +946,5 @@ impl Drop for ProfileGuard {
 #[cfg(test)]
 #[path = "tests.rs"]
 mod interval_tests;
+mod allocator_maintenance;
+pub use allocator_maintenance::reclaim_unused_allocator_pages;
