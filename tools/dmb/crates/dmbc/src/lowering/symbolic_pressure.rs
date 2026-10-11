@@ -21,7 +21,9 @@ impl SessionSymbolicMemo {
         };
         owner
             .values
-            .prune_for_pressure(limit, |key, _, _, record| charge(key, record, limit))
+            .prune_for_pressure_with_budget(limit, |key, _, _, record, allowance| {
+                charge(key, record, allowance)
+            })
     }
 }
 

@@ -105,18 +105,65 @@ mod tests {
         let original =
             store.prune_for_pressure(usize::MAX, |_, _, _, value| Some(value.capacity()));
         let second = store.lease();
-        let rejected = store.prune_for_pressure(original.charged_bytes, |_, _, _, value| {
-            let (accepted, changed) =
-                second.visit_receipted_with(b"key", &mut |_, _| None, &mut |_| true);
-            assert!(accepted.is_some());
-            assert!(changed.is_none());
-            Some(value.capacity())
-        });
+        let rejected = store.prune_for_pressure_with_budget(
+            original.charged_bytes,
+            |_, _, _, value, allowance| {
+                assert_eq!(allowance, value.capacity());
+                let (accepted, changed) =
+                    second.visit_receipted_with(b"key", &mut |_, _| None, &mut |_| true);
+                assert!(accepted.is_some());
+                assert!(changed.is_none());
+                Some(value.capacity())
+            },
+        );
         assert_eq!(rejected.retained_entries, 0);
         assert_eq!(rejected.evicted_entries, 1);
         assert_eq!(store.admitted_bytes(), 0);
         assert_eq!(escaped.as_slice(), &[1; 8]);
         drop((first, second));
+    }
+
+    #[test]
+    fn budgeted_pressure_skips_exhausted_tail_and_exposes_only_payload_allowance() {
+        let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
+        let lease = store.lease();
+        for index in 0u32..32 {
+            drop(
+                lease
+                    .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], vec![], 1, || {
+                        vec![1; 8]
+                    })
+                    .unwrap(),
+            );
+        }
+        let limit = {
+            let state = store.state.lock().unwrap();
+            let hash = *state.buckets.keys().next().unwrap();
+            entry_index_charge(&state, hash, 0) + 8
+        };
+        let mut calls = 0;
+        let report = store.prune_for_pressure_with_budget(limit, |_, _, _, value, allowance| {
+            calls += 1;
+            assert_eq!(allowance, 8);
+            Some(value.capacity())
+        });
+        assert_eq!(
+            calls, 1,
+            "index-only rejection avoids charging the exhausted tail"
+        );
+        assert_eq!(report.retained_entries, 1);
+        assert_eq!(report.evicted_entries, 31);
+        assert_eq!(report.charged_bytes, limit);
+        assert_eq!(store.admitted_bytes(), limit);
+        let mut calls = 0;
+        let report = store.prune_for_pressure_with_budget(0, |_, _, _, _, _| {
+            calls += 1;
+            Some(0)
+        });
+        assert_eq!(calls, 0);
+        assert_eq!(report.evicted_entries, 1);
+        assert_eq!(store.admitted_bytes(), 0);
+        drop(lease);
     }
 
     #[test]
@@ -275,6 +322,43 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
             &Arc<T>,
         ) -> Option<usize>,
     ) -> PressurePrune {
+        // Compatibility callbacks may perform bookkeeping even for rejected
+        // rows. Preserve their invocation contract on the same pruning producer.
+        self.prune_with_budget(limit, false, |key, reads, versions, value, _| {
+            charge(key, reads, versions, value)
+        })
+    }
+
+    /// Bound payload traversal by the current remaining logical allowance after
+    /// index charges. Candidates whose current index alone cannot fit are
+    /// detached without invoking the payload callback. Claims/index charges are
+    /// rechecked after the unlocked callback and by final reconciliation.
+    pub fn prune_for_pressure_with_budget(
+        &self,
+        limit: usize,
+        charge: impl FnMut(
+            &Arc<[u8]>,
+            &Receipt<Q, A, D>,
+            &Arc<[(D, u128)]>,
+            &Arc<T>,
+            usize,
+        ) -> Option<usize>,
+    ) -> PressurePrune {
+        self.prune_with_budget(limit, true, charge)
+    }
+
+    fn prune_with_budget(
+        &self,
+        limit: usize,
+        skip_unchargeable: bool,
+        mut charge: impl FnMut(
+            &Arc<[u8]>,
+            &Receipt<Q, A, D>,
+            &Arc<[(D, u128)]>,
+            &Arc<T>,
+            usize,
+        ) -> Option<usize>,
+    ) -> PressurePrune {
         // Weak identities prevent allocator-address reuse without pinning payloads.
         // This scalar roster is the only whole-store temporary allocation; receipt
         // and payload owners are borrowed one candidate at a time.
@@ -303,21 +387,27 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                     .and_then(|bucket| {
                         bucket
                             .iter()
-                            .find(|entry| Arc::as_ptr(&entry.value) as usize == pointer)
+                            .position(|entry| Arc::as_ptr(&entry.value) as usize == pointer)
+                            .map(|position| (position, &bucket[position]))
                     })
-                    .map(|entry| {
+                    .map(|(position, entry)| {
                         (
                             Arc::clone(&entry.key),
                             entry.reads.clone(),
                             Arc::clone(&entry.versions),
                             Arc::clone(&entry.value),
+                            remaining.checked_sub(entry_index_charge(&state, *hash, position)),
                         )
                     })
             };
-            let Some((key, reads, versions, value)) = candidate else {
+            let Some((key, reads, versions, value, allowance)) = candidate else {
                 continue;
             };
-            let payload = charge(&key, &reads, &versions, &value);
+            let payload = if skip_unchargeable && allowance.is_none() {
+                None
+            } else {
+                charge(&key, &reads, &versions, &value, allowance.unwrap_or(0))
+            };
             let detached = {
                 let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
                 let position = state.buckets.get(hash).and_then(|bucket| {
