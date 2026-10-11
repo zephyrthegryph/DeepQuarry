@@ -10,6 +10,7 @@
 	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
 	var/obj/item/multitool/tool = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
 	var/original_range = outlet.eject_range
+	actor.put_in_active_hand(tool) // the multitool's question keeps the tool in hand
 	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, tool, TOOL_MULTITOOL), ITEM_INTERACT_BLOCKING, "A closed outlet refuses configuration")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "A refused configuration asks nothing")
 	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER), ITEM_INTERACT_SUCCESS, "The screwdriver opens the outlet")
