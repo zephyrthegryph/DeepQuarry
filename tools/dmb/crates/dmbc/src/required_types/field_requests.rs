@@ -1,9 +1,10 @@
 //! Current immutable field observations issue symbolic reachability requests.
 //! Encounter placement stays request-local; source-bearing defaults decline.
 use crate::class_projection::{FieldProjection, FieldRole};
+use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
 use crate::initializer_policy::DefaultValue;
 use dm_ir::{SemanticValue, SymbolId};
-use dm_session::{Observation, ObservationHost, ObservedArtifactStore};
+use dm_session::{Observation, ObservationHost};
 use std::sync::Arc;
 pub(crate) struct FieldRequests {
     values: ObservedArtifactStore<Vec<SymbolId>, (), Arc<FieldProjection>, ()>,
@@ -75,6 +76,15 @@ fn key(index: usize) -> Vec<u8> {
     key
 }
 impl FieldRequests {
+    pub(crate) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+        }
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(super) fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }

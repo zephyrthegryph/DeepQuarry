@@ -1,7 +1,8 @@
 //! Ordered output type selection; every hit observes current type contents and membership.
 use super::*;
 use crate::class_projection::TypeProjection;
-use dm_session::{Observation, ObservationHost, ObservedArtifactStore};
+use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
+use dm_session::{Observation, ObservationHost};
 use std::sync::Arc;
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) struct Selection {
@@ -36,6 +37,15 @@ pub(super) fn produce(
         .into()
 }
 impl SelectedRosters {
+    pub(crate) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+        }
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(super) fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }

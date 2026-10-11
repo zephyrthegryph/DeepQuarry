@@ -1,6 +1,7 @@
 //! Source allocation prefix admitted by issued roster, current fixed types and parents.
 use super::*;
-use dm_session::{Observation, ObservationHost, ObservedArtifactStore};
+use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
+use dm_session::{Observation, ObservationHost};
 use std::sync::Arc;
 #[derive(Clone)]
 pub(crate) struct Prefix {
@@ -31,6 +32,15 @@ impl Default for SourcePrefixes {
     }
 }
 impl SourcePrefixes {
+    pub(crate) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+        }
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(super) fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }

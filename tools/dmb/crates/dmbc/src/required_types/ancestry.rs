@@ -1,7 +1,10 @@
 //! Exact symbolic ancestry receipts, with fresh current allocation placement.
 use super::*;
 use dm_session::{Observation, ObservationHost};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 #[derive(Clone)]
 pub(crate) struct Closure {
     pub boundary: Option<SymbolId>,
@@ -19,7 +22,12 @@ pub struct RequiredTypeArtifacts {
     pub(crate) allocations: crate::type_creation_order::AllocationArtifacts,
     pub(crate) parents: super::parent_index::ParentIndex,
     pub(crate) fields: super::field_requests::FieldRequests,
-    values: dm_session::ObservedArtifactStore<Closure, SymbolId, Option<Option<SymbolId>>, ()>,
+    values: crate::initializer_lowering::receipts::publication_store::PublicationStore<
+        Closure,
+        SymbolId,
+        Option<Option<SymbolId>>,
+        (),
+    >,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
 }
@@ -31,13 +39,37 @@ impl Default for RequiredTypeArtifacts {
             prefixes: Default::default(),
             allocations: Default::default(),
             parents: Default::default(),
-            values: dm_session::ObservedArtifactStore::current_revision(),
+            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }
     }
 }
 impl RequiredTypeArtifacts {
+    pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
+        Arc::new(Self {
+            fields: self.fields.for_request(publishable),
+            selected: self.selected.for_request(publishable),
+            prefixes: self.prefixes.for_request(publishable),
+            allocations: self.allocations.for_request(publishable),
+            parents: self.parents.for_request(publishable),
+            values: self.values.for_request(publishable),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+        })
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        let results = [
+            self.fields.publish_successful(),
+            self.selected.publish_successful(),
+            self.prefixes.publish_successful(),
+            self.allocations.publish_successful(),
+            self.parents.publish_successful(),
+            self.values.publish_successful(),
+        ];
+        results.into_iter().all(|published| published)
+    }
+
     pub fn clear(&self) {
         self.fields.clear();
         self.selected.clear();
@@ -99,7 +131,15 @@ impl<'a> Request<'a> {
         key.extend_from_slice(&path.bits().to_le_bytes());
         if let Some(store) = self.store {
             self.keys.push(key.clone());
-            if let Some(value) = store.values.lookup(&key, &Parents(parents)) {
+            if let Some(value) = store
+                .values
+                .visit_explained(&key, &Parents(parents), &mut |value| {
+                    value
+                        .boundary
+                        .is_none_or(|boundary| needed.contains(&boundary))
+                })
+                .0
+            {
                 if value
                     .boundary
                     .is_none_or(|boundary| needed.contains(&boundary))
@@ -213,6 +253,53 @@ mod tests {
             (id("/datum"), None),
         ])
     }
+    #[test]
+    fn pending_required_rosters_preserve_published_ancestry_on_failure_and_analysis() {
+        let owner = RequiredTypeArtifacts::default();
+        let parents = graph();
+        let run = |store: &RequiredTypeArtifacts| {
+            let mut needed = HashSet::new();
+            let mut order = Vec::new();
+            let mut request = Request::new(Some(store));
+            request
+                .require(id("/datum/a/b"), &parents, &mut needed, &mut order)
+                .unwrap();
+            request.finish();
+            let mut fresh_needed = HashSet::new();
+            let mut fresh_order = Vec::new();
+            Request::new(None)
+                .require(
+                    id("/datum/a/b"),
+                    &parents,
+                    &mut fresh_needed,
+                    &mut fresh_order,
+                )
+                .unwrap();
+            assert_eq!(needed, fresh_needed);
+            assert_eq!(order, fresh_order);
+        };
+        let first = owner.for_request(true);
+        run(&first);
+        assert!(first.publish_successful());
+        let failed = owner.for_request(true);
+        failed.clear();
+        drop(failed);
+        let next = owner.for_request(true);
+        run(&next);
+        assert_eq!(next.hits.load(Ordering::Relaxed), 1);
+        let analysis = owner.for_request(false);
+        analysis.clear();
+        assert!(!analysis.publish_successful());
+        assert!(next.publish_successful());
+        let removed = owner.for_request(true);
+        Request::new(Some(&removed)).finish();
+        assert!(removed.publish_successful());
+        let fresh = owner.for_request(true);
+        run(&fresh);
+        assert_eq!(fresh.hits.load(Ordering::Relaxed), 0);
+        assert_eq!(fresh.recomputed.load(Ordering::Relaxed), 1);
+    }
+
     #[test]
     fn retained_closure_preserves_current_boundary_and_encounter_order() {
         let store = RequiredTypeArtifacts::default();

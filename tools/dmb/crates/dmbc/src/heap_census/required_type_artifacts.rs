@@ -181,7 +181,7 @@ impl HeapCensus {
                 }
             }
         });
-        self.unknown("required_types.index","private BTree nodes and allocator metadata excluded; accessible key/read/closure buffers counted, current-roster retention has no byte admission budget");
+        self.unknown("required_types.index","private BTree nodes, publication/lease controls and allocator metadata excluded; shared pending/published key/read/closure buffers counted, current-roster retention has no byte admission budget");
     }
     fn required_allocation_roster(
         &mut self,

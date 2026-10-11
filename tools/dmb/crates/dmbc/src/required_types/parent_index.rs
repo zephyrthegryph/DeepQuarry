@@ -1,7 +1,8 @@
 //! An exact full current type roster admits its derived parent lookup index.
 use crate::class_projection::TypeProjection;
+use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
 use dm_ir::SymbolId;
-use dm_session::{Observation, ObservationHost, ObservedArtifactStore};
+use dm_session::{Observation, ObservationHost};
 use std::{collections::BTreeMap, sync::Arc};
 type Parents = BTreeMap<SymbolId, Option<SymbolId>>;
 const KEY: &[u8] = b"dmbc-required-parent-index-v1\0";
@@ -26,6 +27,15 @@ pub(super) fn produce(types: &[TypeProjection]) -> Parents {
     types.iter().map(|ty| (ty.path, ty.parent)).collect()
 }
 impl ParentIndex {
+    pub(crate) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+        }
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(super) fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }

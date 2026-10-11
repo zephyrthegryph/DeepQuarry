@@ -1,6 +1,7 @@
 //! Source-neutral allocation proof issued by the ordinary checked allocator.
 use super::*;
-use dm_session::{ObservationHost, ObservedArtifactStore};
+use crate::initializer_lowering::receipts::publication_store::PublicationStore as ObservedArtifactStore;
+use dm_session::ObservationHost;
 /// This owner certifies ordered allocation only, never current source positions.
 #[derive(PartialEq, Eq)]
 pub struct AllocationRoster {
@@ -31,6 +32,15 @@ impl ObservationHost<SymbolId, Option<String>, ()> for Spellings<'_> {
     }
 }
 impl AllocationArtifacts {
+    pub(crate) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+        }
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub fn clear(&self) {
         self.values.retain_current_keys(std::iter::empty::<&[u8]>());
     }
