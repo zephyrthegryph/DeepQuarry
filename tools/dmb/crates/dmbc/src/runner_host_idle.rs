@@ -58,6 +58,9 @@ impl BuildHost {
             .query_state
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        if let Some(snapshot) = query.snapshot.as_mut() {
+            snapshot.release_body_queries();
+        }
         if query.snapshot.as_ref().is_some_and(|snapshot| {
             self.semantic
                 .as_ref()

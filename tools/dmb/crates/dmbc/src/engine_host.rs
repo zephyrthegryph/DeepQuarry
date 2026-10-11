@@ -207,6 +207,8 @@ pub struct EngineResolverHost<R> {
     variable_absence: Option<Arc<VariableAbsence>>,
 }
 impl<R: Resolver> EngineResolverHost<R> {
+    /// Borrow the exact immutable source owner for retained ownership accounting.
+    pub(crate) fn shared_source(&self) -> &Arc<R> { &self.tree }
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
         Self {
             answer_domain: std::sync::OnceLock::new(),

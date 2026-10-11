@@ -1,7 +1,9 @@
 //! Current source query projection: shared issued occurrences, paths, and revision only.
-//! No executable syntax, source text, or old frontend issuance is retained.
+//! Immutable issued source owners are shared; no full frontend revision is retained.
 #[path = "runner_query_occurrence_pages.rs"]
 mod occurrence_pages;
+#[path = "runner_query_resolved.rs"]
+mod resolved;
 #[path = "runner_query_selected.rs"]
 mod selected;
 use dm_tree::frontend::ColdFrontend;
@@ -35,6 +37,7 @@ pub(crate) struct SourceSnapshot {
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
+    resolved: Option<resolved::ResolvedContext>,
     replay_proof: Option<ReplayProof>,
 }
 struct ReplayProof {
@@ -55,6 +58,12 @@ impl ReplayProof {
     }
 }
 impl SourceSnapshot {
+    /// Detach optional heavy source/selection owners under idle pressure.
+    /// Existing request handles remain immutable; pinned lightweight rows survive.
+    pub(crate) fn release_body_queries(&mut self) {
+        self.body_archive = None;
+        self.resolved = None;
+    }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         // Only Arc handles are cloned for the common graph visitor. No source
         // rows, paths, metadata, or semantic payloads are materialized.
@@ -72,6 +81,9 @@ impl SourceSnapshot {
             census.source_export_mapping(mapping);
         }
         self.selected.census(census);
+        if let Some(resolved) = &self.resolved {
+            resolved.census(census);
+        }
         if let Some(proof) = &self.replay_proof {
             proof
                 .inputs
@@ -151,6 +163,7 @@ impl SourceSnapshot {
             outcome: "frontend_analyzed",
             source_mapping: frontend.source_export_mapping().cloned(),
             selected: Default::default(),
+            resolved: None,
             replay_proof: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive: frontend.body_archive(),
@@ -170,10 +183,23 @@ impl SourceSnapshot {
         ordinal: u32,
         output: &mut impl std::io::Write,
     ) -> std::io::Result<()> {
-        self.selected.write(ordinal, self.source_revision, output)
-    }
-    pub(crate) fn has_selected(&self, ordinal: u32) -> bool {
-        self.selected.contains(ordinal)
+        if self.selected.contains(ordinal) {
+            return self.selected.write(ordinal, self.source_revision, output);
+        }
+        let context = self.resolved.as_ref().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "current resolved host unavailable or evicted",
+            )
+        })?;
+        let archive = self.body_archive.as_ref().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "current body archive unavailable or evicted",
+            )
+        })?;
+        let current = context.query(archive, ordinal)?;
+        selected::SelectedRows::write_current(&current, self.source_revision, output)
     }
     pub(crate) fn occurrence(
         &self,
@@ -270,6 +296,46 @@ impl QueryAttempt {
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
         self.captured = true;
+    }
+    pub(crate) fn capture_resolved_host(
+        &mut self,
+        frontend: &ColdFrontend,
+        resolver: resolved::CapturedResolver,
+        abi: Arc<crate::driver_facts::PreparedAbiUnits>,
+        startup: Arc<crate::startup::StartupFacts>,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return Ok(());
+        }
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let snapshot = state
+            .snapshot
+            .as_mut()
+            .filter(|snapshot| snapshot.matches_tree(&frontend.snapshot.tree))
+            .ok_or_else(|| {
+                std::io::Error::other("current resolved capture differs from query source")
+            })?;
+        if !Arc::ptr_eq(&snapshot.occurrences, &frontend.snapshot.occurrences)
+            || snapshot
+                .bodies
+                .as_ref()
+                .is_none_or(|bodies| !Arc::ptr_eq(bodies, &frontend.bodies))
+            || !Arc::ptr_eq(&startup.plan().source.tree, &frontend.snapshot.tree)
+            || !Arc::ptr_eq(
+                &startup.plan().source.occurrences,
+                &frontend.snapshot.occurrences,
+            )
+            || !Arc::ptr_eq(
+                &resolver.tree().shared_source().source.tree,
+                &frontend.snapshot.tree,
+            )
+        {
+            return Err(std::io::Error::other(
+                "resolved capture current source owners differ",
+            ));
+        }
+        snapshot.resolved = Some(resolved::ResolvedContext::new(resolver, abi, startup));
+        Ok(())
     }
     pub(crate) fn capture_selected(
         &mut self,

@@ -150,51 +150,12 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
                 message: "query producer returned an unissued procedure".into(),
             }]);
         };
-        let mut bound = CurrentProcedureReferences {
-            identity: unit.identity,
-            declaration: body.clone(),
-            references: Vec::new(),
-            unavailable_coordinates: 0,
-            unbound_selections: 0,
-        };
-        if let Some(facts) = unit.value.facts() {
-            bound.unbound_selections = facts.unbound_selections;
-            for reference in &facts.references {
-                let Some((start, end)) = reference.relative_span else {
-                    bound.unavailable_coordinates += 1;
-                    continue;
-                };
-                let length = body.expanded_span.end - body.expanded_span.start;
-                if start > end || end > length {
-                    return Err(vec![diagnostic(
-                        body,
-                        "admitted reference coordinate exceeds current body",
-                    )]);
-                }
-                let Some(start) = body.expanded_span.start.checked_add(start) else {
-                    return Err(vec![diagnostic(body, "reference coordinate overflow")]);
-                };
-                let Some(end) = body.expanded_span.start.checked_add(end) else {
-                    return Err(vec![diagnostic(body, "reference coordinate overflow")]);
-                };
-                let Some(source) = frontend.location(start) else {
-                    return Err(vec![diagnostic(
-                        body,
-                        "reference has no current source origin",
-                    )]);
-                };
-                bound.references.push(CurrentReference {
-                    name: reference.name,
-                    meaning: reference.meaning.clone(),
-                    path: reference.path.clone(),
-                    source,
-                    expanded_span: start..end,
-                });
-            }
-        } else {
-            bound.unavailable_coordinates = 1;
-        }
-        result.push(bound);
+        result.push(bind_current(
+            unit.identity,
+            body,
+            unit.value.facts(),
+            |offset| frontend.location(offset),
+        )?);
     }
     if diagnostics.is_empty() && !current.is_empty() {
         return Err(current
@@ -206,6 +167,59 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
         units: result,
         diagnostics,
     })
+}
+
+pub(crate) fn bind_current(
+    identity: UnitIdentity,
+    body: &BodyOccurrence,
+    facts: Option<&dm_ir::SelectedReferences>,
+    location: impl Fn(usize) -> Option<SourceLocation>,
+) -> Result<CurrentProcedureReferences, Vec<LoweringDiagnostic>> {
+    let mut bound = CurrentProcedureReferences {
+        identity,
+        declaration: body.clone(),
+        references: Vec::new(),
+        unavailable_coordinates: 0,
+        unbound_selections: 0,
+    };
+    if let Some(facts) = facts {
+        bound.unbound_selections = facts.unbound_selections;
+        for reference in &facts.references {
+            let Some((start, end)) = reference.relative_span else {
+                bound.unavailable_coordinates += 1;
+                continue;
+            };
+            let length = body.expanded_span.end - body.expanded_span.start;
+            if start > end || end > length {
+                return Err(vec![diagnostic(
+                    body,
+                    "admitted reference coordinate exceeds current body",
+                )]);
+            }
+            let Some(start) = body.expanded_span.start.checked_add(start) else {
+                return Err(vec![diagnostic(body, "reference coordinate overflow")]);
+            };
+            let Some(end) = body.expanded_span.start.checked_add(end) else {
+                return Err(vec![diagnostic(body, "reference coordinate overflow")]);
+            };
+            let Some(source) = location(start) else {
+                return Err(vec![diagnostic(
+                    body,
+                    "reference has no current source origin",
+                )]);
+            };
+            bound.references.push(CurrentReference {
+                name: reference.name,
+                meaning: reference.meaning.clone(),
+                path: reference.path.clone(),
+                source,
+                expanded_span: start..end,
+            });
+        }
+    } else {
+        bound.unavailable_coordinates = 1;
+    }
+    Ok(bound)
 }
 
 fn diagnostic(body: &BodyOccurrence, message: &str) -> LoweringDiagnostic {

@@ -205,6 +205,25 @@ impl<R: Resolver> NativeResourceResolver<R> {
             lookups: captured_lookups,
         })
     }
+    /// Borrow metadata storage without copying a catalog or retaining resources.
+    pub fn visit_metadata_storage(
+        &self,
+        mut visit: impl FnMut(
+            &Arc<SymbolTable>,
+            &Vec<(String, std::path::PathBuf)>,
+            &Vec<NativeResourceRecord>,
+            &HashMap<u128, Arc<[u8]>>,
+            &HashMap<(SymbolId, u128), CapturedResourceOutcome>,
+        ),
+    ) {
+        visit(
+            &self.symbols,
+            &self.aliases,
+            &self.ordered,
+            &self.contexts,
+            &self.lookups,
+        );
+    }
     pub fn ordered_resources(&self) -> &[NativeResourceRecord] {
         &self.ordered
     }

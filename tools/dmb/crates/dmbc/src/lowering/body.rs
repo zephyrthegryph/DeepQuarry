@@ -373,7 +373,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         let _profile = dm_profile::item("lowering.fresh_codegen");
         match executable_view {
             Some(view) if typed_ready && capture_references => {
-                dm_codegen_byond::compile_statement_view_with_resolver_and_references_at(
+                super::compile_selected_view(
                     view,
                     &inputs,
                     symbols,

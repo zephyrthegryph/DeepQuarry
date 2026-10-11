@@ -757,6 +757,12 @@ fn run_build_attempt(
             ));
             drop(compilation_resolver);
             let (resolver, output_stage, publication) = nontext.into_composition_parts();
+            let query_owners = prepared.query_owners();
+            if let Some((abi,startup)) = query_owners {
+                query_attempt.capture_resolved_host(&frontend,resolver,abi,startup)
+                    .map_err(|error|dmbc::cold::ColdError::InitializerInvariant(format!("query host capture: {error}")))?;
+            } else { drop(resolver); }
+
             let composition = prepared.seal(
                 &frontend,
                 Arc::clone(bytes),
@@ -764,7 +770,6 @@ fn run_build_attempt(
                 Some(Box::new(output_stage)),
             )?;
             // The sealed composition retains exact output facts and no source owners.
-            drop(resolver);
             drop(frontend);
             let output =
                 composition.compose_with_generation(executor, progress_enabled.then_some(&cold_observer), generation.as_deref())?;

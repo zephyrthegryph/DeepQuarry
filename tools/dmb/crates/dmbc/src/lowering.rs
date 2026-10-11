@@ -21,6 +21,9 @@ struct MemoCapture {
 mod diagnostic_anchor_tests;
 #[path = "lowering/error_anchor.rs"]
 mod error_anchor;
+#[path = "lowering/selection_kernel.rs"]
+mod selection_kernel;
+pub(crate) use selection_kernel::{compile_selected_view, append_selected_grammar};
 #[path = "lowering/grammar.rs"]
 mod grammar;
 fn replay_errors(

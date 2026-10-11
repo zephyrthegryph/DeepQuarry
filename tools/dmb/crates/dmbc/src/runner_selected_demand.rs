@@ -5,6 +5,7 @@ pub(crate) struct Demand {
     request: QueryRequest,
     reply: Option<QueryReply>,
 }
+#[cfg(test)]
 pub(crate) fn execute(
     request: &QueryRequest,
     host: &mut crate::runner_host::BuildHost,

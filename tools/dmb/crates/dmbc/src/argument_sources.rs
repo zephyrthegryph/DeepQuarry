@@ -202,6 +202,24 @@ impl<'a> ParameterDiagnosticSource<'a> {
             symbols,
         })
     }
+    pub(crate) fn from_archive(
+        body: &'a dm_tree::frontend::ArchivedBody<'_>,
+        metadata: &'a ProcedureMetadata,
+        symbols: &'a SymbolTable,
+    ) -> Option<Self> {
+        let header = body.header_source()?;
+        if header != body.header().header {
+            return None;
+        }
+        Some(Self {
+            header: ProcedureHeader {
+                header,
+                header_span: body.header().header_span,
+            },
+            metadata,
+            symbols,
+        })
+    }
     pub(crate) fn authenticates(&self, span: &dm_codegen_byond::LowerSpan) -> bool {
         self.metadata
             .signature
@@ -290,9 +308,18 @@ pub fn lower_helpers<R: Resolver>(
             host,
             Some(&FixedOrigin),
         )
-        .map_err(|errors| failure::lowered(
-            frontend, parsed, metadata, owner, absolute, &origin, &expression, errors,
-        ))?;
+        .map_err(|errors| {
+            failure::lowered(
+                frontend,
+                parsed,
+                metadata,
+                owner,
+                absolute,
+                &origin,
+                &expression,
+                errors,
+            )
+        })?;
         // VM argument-source records have an empty formal table, while Arg
         // operands continue to address the owner's original lexical frame.
         code.procedure.argument_names.clear();

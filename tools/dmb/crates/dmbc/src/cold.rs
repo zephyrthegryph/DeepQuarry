@@ -379,6 +379,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         Some(&prepared.prepared),
         Some(&roster),
     )?;
+    output.query_abi = Some(std::sync::Arc::clone(prepared.prepared.units_owner()));
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
     output.started = total;
@@ -858,6 +859,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         modified: modified.descriptors,
         symbols: std::sync::Arc::clone(&plan.symbols),
         startup: Some(startup.facts()),
+        query_abi: None,
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,

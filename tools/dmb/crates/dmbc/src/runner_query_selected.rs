@@ -53,6 +53,20 @@ impl SelectedRows {
         self.bytes += row.0.len();
         self.rows.insert(ordinal, row.0);
     }
+    pub(super) fn write_current(
+        current: &crate::selected_query::CurrentProcedureReferences,
+        revision: u128,
+        output: &mut impl Write,
+    ) -> io::Result<()> {
+        let mut bytes = Limited(Vec::new());
+        current.write_jsonl(&mut bytes).map_err(io::Error::other)?;
+        Self::write_envelope(
+            current.occurrence().declaration.0,
+            revision,
+            &bytes.0,
+            output,
+        )
+    }
     pub(super) fn write(
         &self,
         ordinal: u32,
@@ -61,6 +75,14 @@ impl SelectedRows {
     ) -> io::Result<()> {
         let row = self.rows.get(&ordinal).ok_or_else(|| io::Error::new(io::ErrorKind::NotFound,
             "selected references were not captured for this procedure; analyze --resolved first (bounded snapshot may omit rows)"))?;
+        Self::write_envelope(ordinal, revision, row, output)
+    }
+    fn write_envelope(
+        ordinal: u32,
+        revision: u128,
+        row: &[u8],
+        output: &mut impl Write,
+    ) -> io::Result<()> {
         let captured = std::str::from_utf8(row).map_err(io::Error::other)?;
         serde_json::to_writer(
             &mut *output,

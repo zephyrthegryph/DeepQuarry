@@ -139,6 +139,17 @@ fn lazy_body_model_matches_full_current_parser_after_frontend_release() {
         expected_lexical
     );
     assert_eq!(row["semantic_resolution_complete"], false);
+    state
+        .lock()
+        .unwrap()
+        .snapshot
+        .as_mut()
+        .unwrap()
+        .release_body_queries();
+    assert!(evaluate_snapshot(&request, &tree, &state.lock().unwrap()).is_err());
+    request.source_queries = vec![SourceQuery::BodyContextsPage { start: 0, limit: 1 }];
+    assert!(evaluate_snapshot(&request, &tree, &state.lock().unwrap()).is_ok());
+    request.source_queries = vec![SourceQuery::BodyModel { ordinal: 0 }];
     request.expected_source_revision = None;
     assert!(request.validate().is_err());
     request.expected_source_revision = Some(format!("{:032x}", source_revision));

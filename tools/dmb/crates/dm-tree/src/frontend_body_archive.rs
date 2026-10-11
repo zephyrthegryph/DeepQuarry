@@ -10,11 +10,14 @@ pub struct BodyArchive {
     bodies: Arc<[BodyOccurrence]>,
     tree: Arc<SemanticTree>,
     mapping: Arc<SourceExportMapping>,
+    callables: Arc<CallableRoster>,
+    body_indices: Arc<HashMap<OccurrenceId, usize>>,
 }
 pub struct ArchivedBody<'a> {
     archive: &'a BodyArchive,
     occurrence: &'a BodyOccurrence,
     statements: Arc<StatementBody>,
+    header: Item,
 }
 impl ArchivedBody<'_> {
     pub fn occurrence(&self) -> &BodyOccurrence {
@@ -22,6 +25,15 @@ impl ArchivedBody<'_> {
     }
     pub fn statement_body(&self) -> &StatementBody {
         &self.statements
+    }
+    pub fn header(&self) -> &Item {
+        &self.header
+    }
+    pub fn header_source(&self) -> Option<&str> {
+        self.archive.source.get(self.header.header_span.range())
+    }
+    pub fn location(&self, offset: usize) -> Option<SourceLocation> {
+        self.archive.mapping.output(offset)
     }
     pub fn tree(&self) -> &SemanticTree {
         &self.archive.tree
@@ -43,10 +55,19 @@ impl ColdFrontend {
             bodies: Arc::clone(&self.issued_bodies),
             tree: Arc::clone(&self.snapshot.tree),
             mapping: Arc::clone(self.source_export_mapping()?),
+            callables: Arc::clone(&self.callable_roster),
+            body_indices: Arc::clone(&self.body_by_declaration),
         }))
     }
 }
 impl BodyArchive {
+    pub fn body_index(&self, declaration: OccurrenceId) -> Option<usize> {
+        self.body_indices.get(&declaration).copied()
+    }
+    pub fn callables(&self) -> &Arc<CallableRoster> {
+        &self.callables
+    }
+
     pub fn matches_tree(&self, tree: &SemanticTree) -> bool {
         std::ptr::eq(self.tree.as_ref(), tree)
     }
@@ -84,7 +105,11 @@ impl BodyArchive {
             archive: self,
             occurrence,
             statements,
+            header: item,
         })
+    }
+    pub fn binding_storage(&self) -> (&Arc<CallableRoster>, &Arc<HashMap<OccurrenceId, usize>>) {
+        (&self.callables, &self.body_indices)
     }
     pub fn visit_storage(
         &self,

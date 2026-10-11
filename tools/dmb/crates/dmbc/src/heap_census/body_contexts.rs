@@ -3,6 +3,19 @@ use super::*;
 impl HeapCensus {
     pub(crate) fn body_archive(&mut self, archive: &Arc<dm_tree::frontend::BodyArchive>) {
         if self.arc_object("query_snapshot.body_archive", archive) {
+            let (callables, indices) = archive.binding_storage();
+            self.callable_roster(callables);
+            if self.arc_object("query_snapshot.body_archive.indices", indices) {
+                self.collection_entries::<(dm_tree::OccurrenceId, usize)>(
+                    "query_snapshot.body_archive.indices",
+                    Arc::as_ptr(indices) as usize,
+                    indices.len(),
+                );
+                self.unknown(
+                    "query_snapshot.body_archive.indices",
+                    "private HashMap backing and Arc control block",
+                );
+            }
             archive.visit_storage(|source, syntax, bodies| {
                 self.source_text("query_snapshot.body_archive.text", source);
                 self.declaration_syntax("query_snapshot.body_archive.syntax", syntax);
@@ -24,6 +37,104 @@ impl HeapCensus {
                 self.source_location(owner, location);
             }
         }
+    }
+    pub(crate) fn resolved_query_host(
+        &mut self,
+        resolver: &Arc<
+            dm_resources::native_resolver::NativeResourceResolver<
+                crate::engine_host::EngineResolverHost<
+                    dm_tree::constant_resolution::ScalarSnapshot,
+                >,
+            >,
+        >,
+    ) {
+        let owner = "query_snapshot.current_resolver";
+        if !self.arc_object(owner, resolver) {
+            return;
+        }
+        resolver.visit_metadata_storage(|symbols, aliases, ordered, contexts, lookups| {
+            self.symbols(symbols);
+            self.vec_payload(owner, aliases);
+            for (alias, path) in aliases {
+                self.string(owner, alias);
+                self.path(owner, path);
+            }
+            self.vec_payload(owner, ordered);
+            self.collection_entries::<(u128, Arc<[u8]>)>(
+                owner,
+                contexts as *const _ as usize,
+                contexts.len(),
+            );
+            for bytes in contexts.values() {
+                self.slice(owner, bytes, true);
+            }
+            self.collection_entries::<(
+                (dm_ir::SymbolId, u128),
+                dm_resources::native_resolver::CapturedResourceOutcome,
+            )>(owner, lookups as *const _ as usize, lookups.len());
+        });
+        let scalar = resolver.tree().shared_source();
+        if self.arc_object("query_snapshot.scalar", scalar) {
+            self.snapshot(&scalar.source);
+            self.slice(owner, &scalar.requested, true);
+            if self.arc_object(owner, &scalar.outcomes) {
+                self.collection_entries::<(
+                    dm_tree::constant_resolution::ScalarQuery,
+                    dm_tree::constant_resolution::ScalarOutcome,
+                )>(
+                    owner,
+                    Arc::as_ptr(&scalar.outcomes) as usize,
+                    scalar.outcomes.len(),
+                );
+                for value in scalar.outcomes.values() {
+                    match value {
+                        dm_tree::constant_resolution::ScalarOutcome::Value(value) => {
+                            self.semantic_value(owner, value)
+                        }
+                        dm_tree::constant_resolution::ScalarOutcome::Cycle(cycle) => {
+                            self.slice(owner, cycle, true);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            if self.arc_object(owner, &scalar.dependencies) {
+                self.collection_entries::<(
+                    dm_tree::constant_resolution::ScalarQuery,
+                    Arc<[dm_tree::constant_resolution::ScalarQuery]>,
+                )>(
+                    owner,
+                    Arc::as_ptr(&scalar.dependencies) as usize,
+                    scalar.dependencies.len(),
+                );
+                for dependencies in scalar.dependencies.values() {
+                    self.slice(owner, dependencies, true);
+                }
+            }
+            if self.arc_object(owner, scalar.certificates()) {
+                self.collection_entries::<(dm_tree::constant_resolution::ScalarQuery, u64)>(
+                    owner,
+                    Arc::as_ptr(scalar.certificates()) as usize,
+                    scalar.certificates().len(),
+                );
+            }
+            if self.arc_object(owner, &scalar.predefined_reads) {
+                self.collection_entries::<(
+                    dm_ir::SymbolId,
+                    dm_tree::constant_resolution::PredefinedOutcome,
+                )>(
+                    owner,
+                    Arc::as_ptr(&scalar.predefined_reads) as usize,
+                    scalar.predefined_reads.len(),
+                );
+                for answer in scalar.predefined_reads.values() {
+                    if let dm_tree::constant_resolution::PredefinedOutcome::Value(value) = answer {
+                        self.semantic_value(owner, value);
+                    }
+                }
+            }
+        }
+        self.unknown(owner, "private engine catalogs, scalar certificate BTree backing, resource HashMap backing and Arc control blocks; metadata-only host has no ResourceSet or encoded RSC");
     }
     pub(crate) fn source_export_mapping(
         &mut self,

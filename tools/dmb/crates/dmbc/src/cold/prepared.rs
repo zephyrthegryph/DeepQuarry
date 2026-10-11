@@ -14,6 +14,7 @@ pub struct PreparedCold {
     )>,
     pub(super) symbols: Arc<dm_ir::SymbolTable>,
     pub(super) startup: Option<Arc<crate::startup::StartupFacts>>,
+    pub(super) query_abi: Option<Arc<crate::driver_facts::PreparedAbiUnits>>,
     pub(super) timings: ColdTimings,
     pub(super) started: Instant,
 }
@@ -28,6 +29,18 @@ pub struct PreparedComposition {
 }
 
 impl PreparedCold {
+    pub(crate) fn query_owners(
+        &self,
+    ) -> Option<(
+        Arc<crate::driver_facts::PreparedAbiUnits>,
+        Arc<crate::startup::StartupFacts>,
+    )> {
+        Some((
+            Arc::clone(self.query_abi.as_ref()?),
+            Arc::clone(self.startup.as_ref()?),
+        ))
+    }
+
     pub fn domains(&self) -> crate::type_values::PreparedValueDomains {
         let mut domains =
             crate::type_values::PreparedValueDomains::for_projection(&self.projection);
