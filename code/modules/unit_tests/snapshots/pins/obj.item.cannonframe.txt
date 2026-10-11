@@ -17,10 +17,7 @@
 -menu: Put back
 -menu: Ui open
 -click: Click: Put back
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
 +4 menu: Secure the piping
-+6 menu: Turn Around
 +7 click: Click: Secure the piping
 human|/obj/item/transfer_valve menu: Move To Top
 human|/obj/item/transfer_valve menu: Toggle Digestable (refused: You can't do that.)

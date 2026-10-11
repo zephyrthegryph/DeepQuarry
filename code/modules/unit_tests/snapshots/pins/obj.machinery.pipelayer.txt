@@ -34,9 +34,6 @@ human|none click: Click: Toggle
 -menu: Ui open
 -click: Click: Put back
 +2 menu: Recycle pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
 +7 click: Click: Recycle pipe
 @obj human|/obj/item/stack/material
 -click: nothing

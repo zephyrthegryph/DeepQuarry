@@ -4770,3 +4770,4 @@ behaviour change intended (a subtype inherits its ancestor's value as the table 
   A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
 - **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
   tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
+rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
