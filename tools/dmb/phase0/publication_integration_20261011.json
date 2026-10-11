@@ -204,5 +204,33 @@
     "compiler_errors_reported": false,
     "retry": "running from completed artifacts",
     "scope": "Rust prototype tooling build; not DM compilation timing"
+  },
+  "focused_validation_e8e60": {
+    "source_commit": "e8e60cce27f41a4ed0ba17e69e67d5c1bb6dfae1",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-090133-680c77c3-job-cargo.json",
+    "build_scope": "dmbc, dm-tree and dm-codegen-byond test executables emitted; aggregate build failed on two old dm-session fixture calls missing versions; fixed4ad9854996, core rerun pending",
+    "passed": 31,
+    "failed": 2,
+    "receipts": [
+      "20261011-090626-bc43b727-focused.json",
+      "20261011-090640-ff6cd602-focused.json",
+      "20261011-090703-52981488-focused.json",
+      "20261011-090704-70ea130a-focused.json",
+      "20261011-090713-2a0ebadf-focused.json"
+    ],
+    "receipt_root": "E:/dq-cache/dmb-native-v2/integration-gates",
+    "failures": [
+      {
+        "test": "structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave",
+        "cause": "qualified candidate count0 expected1; ordinary exact fallback succeeds; optimization remains open",
+        "fix": "in progress"
+      },
+      {
+        "test": "repeated_include_duplicate_locations_keep_distinct_current_encounters",
+        "cause": "fixture expected duplicate declaration from second same file include, but actual include planner suppresses it",
+        "fix": "in progress"
+      }
+    ],
+    "scope": "bounded selected tests; not runtime parity, current CLI acceptance or benchmark"
   }
 }
