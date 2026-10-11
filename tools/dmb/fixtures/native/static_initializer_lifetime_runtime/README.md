@@ -1,12 +1,11 @@
 # Static initializer lifetime runtime contract
 
 Two constructions of the same datum must initialize its static slot once. Both
-receivers initially read7; a write through the first is visible as19 through the
+receivers initially read 7; a write through the first is visible as 19 through the
 second. The instance contrast performs its initialization in `New()`, producing
-11 and22 with two initializer calls. This avoids an illegal runtime expression
-in an instance field default. These are independent expected values, pending
-actual pinned BYOND/native execution; they do not establish historical power
-runtime causality.
+11 and 22 with two initializer calls. This avoids an illegal runtime expression
+in an instance field default. These are independent expected values, authenticated by the pinned executions
+below. They do not establish historical power runtime causality.
 
 `run.py` reuses the existing bounded paired runtime launcher and transports the
 explicit resource with digest checks. `run_retained.py` reuses the existing

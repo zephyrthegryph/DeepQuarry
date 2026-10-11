@@ -16,8 +16,9 @@ def required_edit_coverage(edits):
 
 
 def bounded_policy(total_workers, request_workers, job_memory_mib, sampled_bytes=None):
-    if not 1 <= total_workers <= 8 or not 1 <= request_workers <= total_workers:
-        raise ValueError("request workers must fit explicit total worker budget 1..8")
+    if (type(total_workers) is not int or type(request_workers) is not int
+            or not 1 <= total_workers <= 2 or not 1 <= request_workers <= total_workers):
+        raise ValueError("request workers must fit explicit total worker budget 1..2")
     if not 1 <= job_memory_mib <= 32768:
         raise ValueError("job memory must be 1..32768 MiB")
     job_bytes = job_memory_mib * 1024 * 1024
@@ -37,6 +38,8 @@ def edit_sessions(edit, session_count):
 
 
 def session_edit_coverage(edits, session_count):
+    if type(session_count) is not int or session_count != 6:
+        raise ValueError("six-worktree coverage requires exactly six source sessions")
     assignments = [edit_sessions(edit, session_count) for edit in edits]
     if not any("sessions" in edit for edit in edits):
         result = required_edit_coverage(edits)

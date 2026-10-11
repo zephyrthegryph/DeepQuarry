@@ -18,7 +18,7 @@ class CoverageTests(unittest.TestCase):
 class BoundsTests(unittest.TestCase):
     def test_default_worker_and_memory_caps(self):
         self.assertEqual(bounded_policy(2, 2, 4096, 4_000_000_000), 4096 * 1024 * 1024)
-        for total, workers, mib in [(0, 1, 4096), (9, 2, 4096), (2, 8, 4096), (2, 2, 0), (2, 2, 32769)]:
+        for total, workers, mib in [(0, 1, 4096), (3, 1, 4096), (8, 2, 4096), (9, 2, 4096), (2, 8, 4096), (2, 2, 0), (2, 2, 32769)]:
             with self.assertRaises(ValueError): bounded_policy(total, workers, mib)
         with self.assertRaises(ValueError): bounded_policy(2, 2, 4096, 5_000_000_000)
     def test_explicit_allowance_does_not_change_worker_budget(self):
@@ -33,6 +33,14 @@ class AssignmentTests(unittest.TestCase):
         self.assertEqual(coverage["classification"], "six-session-isolation-probe")
         self.assertEqual(coverage["per_session"], [["body"], ["newproc"], [], [], [], []])
         self.assertEqual(edit_sessions({"kind": "body"}, 6), tuple(range(6)))
+
+    def test_six_label_cannot_admit_a_different_session_count(self):
+        edits = [{"kind": "body"}] + [
+            {"kind": "structural", "structural_kind": kind}
+            for kind in ("newvar", "newproc", "default")]
+        for count in (1, 5, 7, True, 6.0):
+            with self.assertRaises(ValueError):
+                session_edit_coverage(edits, count)
 
     def test_full_coverage_requires_every_root(self):
         edits = [{"kind": "body", "sessions": list(range(6))}] + [
