@@ -1,4 +1,6 @@
 use super::*;
+#[path = "driver_constructor_diagnostics.rs"]
+mod constructor_diagnostics;
 
 /// One immutable resolver must include the selected scalar constant overlay,
 /// engine constants and captured resources. No filesystem access occurs here.
@@ -541,7 +543,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
-        let mut bytes = b"dmbc-driver-initializer-policy-v1\0".to_vec();
+        let mut bytes = b"dmbc-driver-initializer-policy-v2;typed-constructor-absence\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -559,7 +561,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a905)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a906)
     }
     fn with_recording_evaluator(
         &self,
@@ -650,31 +652,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         &self,
         write: &dm_ir::InitializerWrite,
     ) -> Result<Option<SymbolId>, String> {
-        let query = match write.target {
-            dm_ir::InitializerTarget::Shared { owner, name, .. } if owner == SymbolId::of("/") => {
-                ResolveQuery::GlobalVar(name)
-            }
-            dm_ir::InitializerTarget::Shared { owner, name, .. } => {
-                ResolveQuery::DeclaredVarType { owner, name }
-            }
-            dm_ir::InitializerTarget::Instance {
-                receiver_owner: owner,
-                name,
-                ..
-            } => ResolveQuery::DeclaredVarType { owner, name },
-            dm_ir::InitializerTarget::ProcedureStatic(identity) => ResolveQuery::ProcedureStatic {
-                procedure: identity.procedure,
-                name: identity.name,
-            },
-        };
-        let declared = match self.resolver.resolve(query) {
-            ResolvedMeaning::DeclaredType(value) => value,
-            ResolvedMeaning::Member { data, .. } if data.inherited_opaque.is_none() => {
-                data.declared_type
-            }
-            ResolvedMeaning::ProcedureStatic(declaration) => declaration.declared_type,
-            _ => return Err("initializer constructor declared type is not captured".into()),
-        };
+        let declared = self.declared_constructor_type(write)?;
         declared
             .map(
                 |path| match self.resolver.resolve(ResolveQuery::RuntimeType(path)) {
@@ -747,6 +725,9 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         if let Some(reason) = self.instance_call_error(write, ast) {
             return Ok((Evaluation::SourceError(reason), Some(prepared)));
         }
+        if let Some(reason) = self.constructor_reference_error(write, ast) {
+            return Ok((Evaluation::SourceError(reason), Some(prepared)));
+        }
         let evaluation = self
             .scalar_ast_in(
                 write.lexical_owner,
@@ -765,6 +746,9 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         _symbols: &dm_ir::SymbolTable,
     ) -> Result<Evaluation, String> {
         if let Some(reason) = self.instance_call_error(write, ast) {
+            return Ok(Evaluation::SourceError(reason));
+        }
+        if let Some(reason) = self.constructor_reference_error(write, ast) {
             return Ok(Evaluation::SourceError(reason));
         }
         Ok(self
