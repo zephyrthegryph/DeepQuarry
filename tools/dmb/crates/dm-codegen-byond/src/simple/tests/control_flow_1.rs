@@ -856,7 +856,9 @@ fn break_inside_switch_exits_enclosing_loop() {
 fn protected_entry_gotos_are_exact_native_bad_link_source_errors() {
     for source in [
         include_str!("../../../../../fixtures/native/protected_entry_diagnostics/goto_into_try.dm"),
-        include_str!("../../../../../fixtures/native/protected_entry_diagnostics/goto_into_iterator.dm"),
+        include_str!(
+            "../../../../../fixtures/native/protected_entry_diagnostics/goto_into_iterator.dm"
+        ),
     ] {
         let parsed = dm_syntax::parse(source);
         assert!(parsed.diagnostics.is_empty());
@@ -864,6 +866,28 @@ fn protected_entry_gotos_are_exact_native_bad_link_source_errors() {
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
         assert_eq!(errors[0].reason, "goto inside: bad link");
-        assert_eq!(errors[0].span.unwrap().start, source.find("goto inside").unwrap());
+        assert_eq!(
+            errors[0].span.unwrap().start,
+            source.find("goto inside").unwrap()
+        );
     }
+}
+
+#[test]
+fn authenticated_local_var_block_uses_full_declaration_lowering() {
+    let source = include_str!(
+        "../../../../../fixtures/native/local_declaration_group_diagnostics/group_block_control.dm"
+    );
+    let parsed = dm_syntax::parse(source);
+    let body = dm_syntax::parse_body_items(&parsed.items[0].children);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    let block = compile_simple_proc(&parsed.items[0].children).unwrap();
+    let control = dm_syntax::parse(include_str!(
+        "../../../../../fixtures/native/local_declaration_group_diagnostics/separate_control.dm"
+    ));
+    let separate = compile_simple_proc(&control.items[0].children).unwrap();
+    assert_eq!(
+        link_proc(&block.code, &Ledger::default()).unwrap().words,
+        link_proc(&separate.code, &Ledger::default()).unwrap().words
+    );
 }

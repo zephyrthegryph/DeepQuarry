@@ -176,36 +176,23 @@ fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Stat
     while index < items.len() {
         let item = &items[index];
         let header = item.header.trim();
+        if !item.children.is_empty()
+            && (header == "var" || (header.starts_with("var/") && !header.contains('=')))
+        {
+            parse_var_block(
+                &item.children,
+                &format!("{}/", header.trim_end_matches('/')),
+                diagnostics,
+                &mut statements,
+            );
+            index += 1;
+            continue;
+        }
         if (header.starts_with("var/") || starts_keyword(header, "var")) && item.children.is_empty()
         {
             let parts = split_case_alternatives(header);
             if parts.len() > 1 {
-                let first_decl = parts[0].split('=').next().unwrap().trim();
-                let prefix = first_decl
-                    .rsplit_once('/')
-                    .map(|(base, _)| format!("{base}/"))
-                    .unwrap_or_else(|| "var ".into());
-                for (part_index, part) in parts.into_iter().enumerate() {
-                    let part = part.trim();
-                    let mut nested = item.clone();
-                    nested.header = if part_index == 0 {
-                        part.into()
-                    } else {
-                        format!("{prefix}{part}")
-                    };
-                    let at = item.header.find(part).unwrap_or(0);
-                    nested.header_span.start +=
-                        at.saturating_sub(if part_index == 0 { 0 } else { prefix.len() });
-                    let actual_span = Span::new(
-                        item.header_span.start + at,
-                        item.header_span.start + at + part.len(),
-                    );
-                    let mut statement = parse_one(&nested, diagnostics);
-                    statement.span = actual_span;
-                    statement.header_span = actual_span;
-                    statement.raw_header = part.into();
-                    statements.push(statement);
-                }
+                parse_var_parts(item, "", diagnostics, &mut statements);
                 index += 1;
                 continue;
             }
@@ -574,14 +561,104 @@ fn parse_spawn(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Stateme
     Some(StatementKind::Spawn { delay, body })
 }
 
+fn parse_var_block(
+    items: &[Item],
+    prefix: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+    statements: &mut Vec<Statement>,
+) {
+    for item in items {
+        let header = item.header.trim();
+        if !item.children.is_empty() {
+            if !header.is_empty()
+                && header.split('/').all(|part| {
+                    !part.is_empty()
+                        && part
+                            .bytes()
+                            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+                })
+            {
+                parse_var_block(
+                    &item.children,
+                    &format!("{prefix}{header}/"),
+                    diagnostics,
+                    statements,
+                );
+            } else {
+                diagnostics.push(Diagnostic {
+                    span: item.header_span,
+                    kind: DiagnosticKind::Unsupported,
+                    message: "unsupported local declaration group".into(),
+                });
+            }
+        } else {
+            parse_var_parts(item, prefix, diagnostics, statements);
+        }
+    }
+}
+
+fn parse_var_parts(
+    item: &Item,
+    prefix: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+    statements: &mut Vec<Statement>,
+) {
+    let header = item.header.trim();
+    let parts = split_case_alternatives(header);
+    let first_decl = parts[0].split('=').next().unwrap().trim();
+    let combined = format!("{prefix}{first_decl}");
+    let inherited = combined
+        .rsplit_once('/')
+        .map(|(base, _)| format!("{base}/"))
+        .unwrap_or_else(|| "var ".into());
+    let mut consumed = 0;
+    for (index, part) in parts.into_iter().enumerate() {
+        let part = part.trim();
+        let Some(relative) = item.header[consumed..].find(part) else {
+            diagnostics.push(Diagnostic {
+                span: item.header_span,
+                kind: DiagnosticKind::Unsupported,
+                message: "local declaration occurrence unavailable".into(),
+            });
+            return;
+        };
+        let at = consumed + relative;
+        consumed = at + part.len();
+        let mut leaf = item.clone();
+        leaf.header = part.into();
+        leaf.header_span = Span::new(
+            item.header_span.start + at,
+            item.header_span.start + at + part.len(),
+        );
+        leaf.span = leaf.header_span;
+        let prefix = if index == 0 { prefix } else { &inherited };
+        if let Some(kind) = parse_var_header(&leaf, prefix, diagnostics) {
+            statements.push(Statement {
+                kind,
+                span: leaf.span,
+                header_span: leaf.header_span,
+                raw_header: leaf.header,
+            });
+        }
+    }
+}
+
 fn parse_var(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<StatementKind> {
+    parse_var_header(item, "", diagnostics)
+}
+fn parse_var_header(
+    item: &Item,
+    prefix: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<StatementKind> {
     let header = item.header.trim();
     let assignment = header
         .find('=')
         .filter(|&at| !header[at + 1..].starts_with('='));
-    let declaration = header[..assignment.unwrap_or(header.len())]
-        .trim()
-        .to_owned();
+    let declaration = format!(
+        "{prefix}{}",
+        header[..assignment.unwrap_or(header.len())].trim()
+    );
     let name = declaration
         .strip_prefix("var/")
         .or_else(|| declaration.strip_prefix("var "))

@@ -380,3 +380,89 @@ fn try_catch_and_throw_are_structured() {
     assert!(matches!(protected[0].kind, StatementKind::Throw(_)));
     assert!(matches!(catch_body[0].kind, StatementKind::Return(Some(_))));
 }
+
+#[test]
+fn local_var_block_issues_ordered_declarations_with_current_expression_spans() {
+    let source = "/proc/probe()\n    var\n        first = 7\n        second = 11\n    return first + second\n";
+    let parsed = crate::parse(source);
+    let body = crate::parse_body_items(&parsed.items[0].children);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    assert_eq!(body.statements.len(), 3);
+    for (index, name, value) in [(0, "first", "7"), (1, "second", "11")] {
+        let statement = &body.statements[index];
+        let crate::StatementKind::Var {
+            declaration,
+            value: Some(expression),
+        } = &statement.kind
+        else {
+            panic!("missing declaration")
+        };
+        assert_eq!(declaration, &format!("var/{name}"));
+        assert_eq!(
+            &source[statement.header_span.start..statement.header_span.end],
+            format!("{name} = {value}")
+        );
+        assert_eq!(&source[expression.span.start..expression.span.end], value);
+    }
+}
+
+#[test]
+fn local_var_groups_inherit_type_prefix_without_reordering_initializers() {
+    let source = "/proc/probe()\n    var\n        list\n            first = list(7)\n            second = first.Copy()\n    var/list\n        third = second.Copy()\n";
+    let parsed = crate::parse(source);
+    let body = crate::parse_body_items(&parsed.items[0].children);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    assert_eq!(body.statements.len(), 3);
+    for (statement, name, value) in body
+        .statements
+        .iter()
+        .zip([
+            ("first", "list(7)"),
+            ("second", "first.Copy()"),
+            ("third", "second.Copy()"),
+        ])
+        .map(|(s, (n, v))| (s, n, v))
+    {
+        let crate::StatementKind::Var {
+            declaration,
+            value: Some(expression),
+        } = &statement.kind
+        else {
+            panic!("missing declaration")
+        };
+        assert_eq!(declaration, &format!("var/list/{name}"));
+        assert_eq!(&source[expression.span.start..expression.span.end], value);
+    }
+    let invalid = crate::parse("/proc/probe()\n    var\n        if(1)\n            wrong = 7\n");
+    let body = crate::parse_body_items(&invalid.items[0].children);
+    assert!(!body.diagnostics.is_empty());
+    assert!(body.statements.is_empty());
+}
+
+#[test]
+fn var_block_comma_leaves_share_standalone_split_and_inherited_type() {
+    let source = "/proc/probe()\n    var\n        list\n            first = list(7), second = first.Copy()\n        count = 1, total = count + 2\n";
+    let parsed = crate::parse(source);
+    let body = crate::parse_body_items(&parsed.items[0].children);
+    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
+    assert_eq!(body.statements.len(), 4);
+    for (statement, (name, expression_text)) in body.statements.iter().zip([
+        ("var/list/first", "list(7)"),
+        ("var/list/second", "first.Copy()"),
+        ("var/count", "1"),
+        ("var/total", "count + 2"),
+    ]) {
+        let crate::StatementKind::Var {
+            declaration,
+            value: Some(expression),
+        } = &statement.kind
+        else {
+            panic!("missing declaration")
+        };
+        assert_eq!(declaration, name);
+        assert_eq!(
+            &source[expression.span.start..expression.span.end],
+            expression_text
+        );
+    }
+}
