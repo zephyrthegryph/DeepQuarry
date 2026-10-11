@@ -60,10 +60,11 @@
 	add_click_catcher()
 	update_client_color()
 
-	if(!plane_holder) //Lazy
-		rel_set(src, nameof(plane_holder), new /datum/plane_holder(src)) //Not a location, it takes it and saves it.
-	if(!vis_enabled)
-		vis_enabled = list()
+	// The plane masters live on the hud built above; recalculate_vis() rebuilds what this mob sees through them.
+	var/datum/hud/hud = hud_used
+	var/datum/plane_holder/plane_holder = new /datum/plane_holder(src) //Not a location, it takes it and saves it.
+	rel_set(hud, nameof(hud.plane_holder), plane_holder)
+	hud.vis_enabled = list()
 	client.screen += plane_holder.plane_masters
 	if(GLOB.global_vantag_hud)
 		vantag_hud = TRUE

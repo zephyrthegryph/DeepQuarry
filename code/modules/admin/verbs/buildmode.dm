@@ -19,7 +19,7 @@
 			log_admin("[key_name(M)] exited build mode.")
 			M.client.buildmode = 0
 			M.client.show_popup_menus = 1
-			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, FALSE)
 			for(var/obj/effect/bmode/buildholder/H in REGISTRY_MEMBERS(REGISTRY_BUILDMODE_HOLDERS))
 				if(H.cl() == M.client)
 					spent(H, M)
@@ -27,7 +27,7 @@
 			log_admin("[key_name(M)] entered build mode.")
 			M.client.buildmode = 1
 			M.client.show_popup_menus = 0
-			M.plane_holder.set_vis(VIS_BUILDMODE, TRUE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, TRUE)
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)

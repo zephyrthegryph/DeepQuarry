@@ -32,7 +32,7 @@
 /datum/unit_test/dq_timed_pin_w8/nailpolish_paint_other/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.set_selecting(BP_R_HAND)
+	hud_of(user)?.zone_sel.set_selecting(BP_R_HAND)
 	var/mob/living/carbon/human/patient = other()
 	var/obj/item/nailpolish/polish = hold(/obj/item/nailpolish)
 	polish.set_open(TRUE)

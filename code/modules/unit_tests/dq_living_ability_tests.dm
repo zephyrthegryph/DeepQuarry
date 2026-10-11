@@ -146,7 +146,7 @@
 /datum/unit_test/dq_living_ability/grab_drain_runs_stage_by_stage/exercise()
 	var/mob/living/carbon/human/H = person()
 	var/mob/living/carbon/human/V = person(get_step(get_turf(H), NORTH))
-	H.zone_sel = allocate(/atom/movable/screen/zone_sel) // a hud-less human has none, and a grab's step reads the aimed zone
+	rel_set(dq_test_hud(H), nameof(/datum/hud::zone_sel), allocate(/atom/movable/screen/zone_sel)) // a hud-less human has none, and a grab's step reads the aimed zone
 	var/obj/item/grab/G = new /obj/item/grab(H, V)
 	H.put_in_active_hand(G)
 	G.state = GRAB_NECK

@@ -6,10 +6,10 @@
 
 /obj/mecha/proc/get_pilot_zone_sel()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	if(!occupant || !occupant.zone_sel || occupant.stat)
+	if(!occupant || !hud_of(occupant)?.zone_sel || occupant.stat)
 		return BP_TORSO
 
-	return occupant.zone_sel.selecting
+	return hud_of(occupant)?.zone_sel?.selecting
 
 /// Whether the pilot (a mob in MECHA_SLOT_PILOT) has combat mode on (no variant held); the pilot's posture as mech state. FALSE with no pilot.
 /obj/mecha/proc/pilot_is_harming()

@@ -60,7 +60,7 @@
 /datum/unit_test/dq_timed_pin_w8/soap_bite/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_MOUTH
+	hud_of(user)?.zone_sel.selecting = O_MOUTH
 	target = user
 	held = hold(/obj/item/soap)
 
@@ -79,7 +79,7 @@
 /datum/unit_test/dq_timed_pin_w8/soap_scrub_decal/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	target = allocate(/obj/effect/decal/cleanable/dirt, get_step(user, NORTH))
 	held = hold(/obj/item/soap)
 

@@ -129,6 +129,17 @@
 /proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null)
 	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after))
 
+/// A screen element of the client HUD (/datum/hud): the hud owns it, so it goes when the hud does (the mob drops its hud on logout and builds a
+/// new one on login). `when = PROC_REF(x)` builds the element with the hud whenever x() on the hud is true; without it, the mob's
+/// create_mob_hud() builds it. `owned = FALSE` for an element that a hud screen list (adding, other, extra_screens) already owns: the var
+/// only points at it. Read an element through hud_of(M)?.x; a mob with no client has no hud.
+/proc/hud_element(var_name, type, when = null, owned = TRUE)
+	if(!owned)
+		return ref_one(var_name, type)
+	if(isnull(when))
+		return owns_one(var_name, type)
+	return owns_one(var_name, type, starts = call(/proc/when)(when, type), starts_args = NO_LOC)
+
 /// `count =` makes that many of `starts` (or of `type` when starts is left out): owns_many(nameof(cells), /obj/item/cell, count = 2).
 /proc/owns_many(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, count = null, only_if = null, otherwise = ON_DESTROY_DELETE, successor = null, successor_var = null, starts_set = null, on_lost = null, starts_after = null)
 	if(!isnull(count))
