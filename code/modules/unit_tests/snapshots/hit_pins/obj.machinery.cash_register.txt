@@ -4,7 +4,7 @@ emag | cash_open: 0 -> 1
 emag | is_emagged: 0 -> 1
 emag | locked: 1 -> 0
 emag | req_access: list(1) -> list(0)
-emp 1 | refresh_queued: 131071 -> 0
+emp 1 | refresh_queued: DEP_ALL -> 0
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted

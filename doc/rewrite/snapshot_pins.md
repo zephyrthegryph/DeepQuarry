@@ -132,7 +132,7 @@ A pin of what a thing does when it is hit or emagged, for the hit-reaction and e
 clicked by a human. The rows are what changed: `<trigger> | <var>: <old> -> <new>` for each var of the target, `deleted`, `turf: +<type> xN` /
 `-<type> xN` for what appeared on or left its tile, `runtime: <message>` when the entry threw, `nothing`. Randomness is reseeded per trigger; a var that
 holds a clock reading (cooldown, ready, time, next, last, delay, timer) is written as `<set>` or `0`, `atom_integrity` as `up` or `down`, and a blob
-hit as `survives` or `destroyed` (a blob rolls its damage). Mobs and turfs are not hit-pinned (the harness cannot make them behave). A pin sees the
+hit as `survives` or `destroyed` (a blob rolls its damage). A bitmask the engine keeps is written by flag name: `refresh_queued` as `DEP_*` (`DEP_ALL`, `DEP_DRAW|DEP_UI`), `refresh_bits` as `CHANGE_*` (bits no flag names stay a number; `dq_pin_bitmask_flags()` in `dq_hit_pins.dm` lists them). Mobs and turfs are not hit-pinned (the harness cannot make them behave). A pin sees the
 state at the end of the call and one drain later, not a timer seconds on, and not a hit hook that runs after the hit instead of before it unless that
 changes the end state: hand-written tests cover those. A type whose entry throws on a bare instance (the rig's shock wire without a wearer) is a
 finding, not a pin: leave it out and say so.
