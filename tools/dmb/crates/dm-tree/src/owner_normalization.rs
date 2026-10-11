@@ -199,7 +199,7 @@ impl Default for RetainedNormalization {
     }
 }
 fn key(owner: SymbolId) -> Arc<[u8]> {
-    let mut bytes = b"owner-normalization-v1".to_vec();
+    let mut bytes = b"owner-normalization-v2-inherited-variable-declarations".to_vec();
     bytes.extend_from_slice(&owner.bits().to_le_bytes());
     bytes.into()
 }

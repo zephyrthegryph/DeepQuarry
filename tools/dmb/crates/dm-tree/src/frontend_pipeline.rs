@@ -342,22 +342,24 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         adapted.skeletons.len(),
     );
     let profile_stage = dm_profile::stage("frontend.tree_resolution");
+    let resolution_symbols = adapted.symbols.clone();
     let mut resolution_diagnostic = None;
     let on_error =
         |error: &SnapshotError, skeletons: &[Skeleton], origins: &[crate::Provenance]| {
-            resolution_diagnostic = Some(resolution_error(
+            resolution_diagnostic = Some(duplicate_diagnostics::resolve(
                 error,
                 skeletons,
                 origins,
                 &mapping,
                 config.engine.is_some(),
+                &resolution_symbols,
             ));
         };
     let snapshot = match semantic_state.as_deref_mut() {
         Some(state) => state.resolve(adapted, config.engine, on_error, executor),
         None => adapted.finish_with_engine_observed_on_executor(config.engine, on_error, executor),
     }
-    .map_err(|_| vec![resolution_diagnostic.expect("resolution failure must notify observer")])?;
+    .map_err(|_| resolution_diagnostic.expect("resolution failure must notify observer"))?;
     timings.tree_resolution = resolution_start.elapsed();
     observe(
         config,

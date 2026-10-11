@@ -63,6 +63,44 @@ pub(crate) fn resolve_previous<M: crate::member_binding::MemberWrite + ?Sized>(
                 }
                 parent = tree.parent(owner);
             }
+            if modes[i] == DefinitionMode::Declare && node.kind == MemberKind::Var {
+                if let Some(previous) = previous {
+                    let mut previous_owner = members.member(previous.index()).owner;
+                    // Assignments in an intermediate parent do not redeclare the
+                    // variable. Locate the actual formal declaration through the
+                    // same current owner/member chains, including forward owners.
+                    let mut declaration_owner = tree.parent(node.owner);
+                    while let Some(owner) = declaration_owner {
+                        if tree.types[owner.index()].path == root {
+                            break;
+                        }
+                        let mut selected = tree.direct.get(&(owner, node.name, node.kind)).copied();
+                        let mut found = false;
+                        while let Some(id) = selected {
+                            let declaration = members.member(id.index());
+                            if declaration.owner != owner {
+                                break;
+                            }
+                            if modes[id.index()] == DefinitionMode::Declare {
+                                previous_owner = owner;
+                                found = true;
+                                break;
+                            }
+                            selected = declaration.previous;
+                        }
+                        if found {
+                            break;
+                        }
+                        declaration_owner = tree.parent(owner);
+                    }
+                    return Err(TreeError::InheritedDuplicate {
+                        owner: tree.types[node.owner.index()].path,
+                        previous_owner: tree.types[previous_owner.index()].path,
+                        name: node.name,
+                        kind: node.kind,
+                    });
+                }
+            }
             members.set_previous(i, previous);
             metadata_update::apply_opaque_base(tree, members, i);
             let node = members.member(i);

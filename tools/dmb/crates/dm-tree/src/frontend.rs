@@ -813,6 +813,9 @@ impl Mapping<'_> {
     }
 }
 
+#[path = "frontend_duplicate_diagnostics.rs"]
+mod duplicate_diagnostics;
+
 fn resolution_error(
     error: &SnapshotError,
     skeletons: &[Skeleton],

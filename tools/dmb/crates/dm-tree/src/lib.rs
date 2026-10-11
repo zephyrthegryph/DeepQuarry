@@ -161,6 +161,12 @@ pub enum TreeError {
         name: SymbolId,
         kind: MemberKind,
     },
+    InheritedDuplicate {
+        owner: SymbolId,
+        previous_owner: SymbolId,
+        name: SymbolId,
+        kind: MemberKind,
+    },
     MissingOverride {
         owner: SymbolId,
         name: SymbolId,
