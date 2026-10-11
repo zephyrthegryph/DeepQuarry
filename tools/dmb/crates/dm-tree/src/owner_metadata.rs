@@ -35,6 +35,7 @@ pub enum MetadataQuery {
     VariableLocal(SymbolId, SymbolId),
     MemberName(SymbolId),
     MemberSelector(SymbolId),
+    CallableChain(SymbolId, SymbolId, bool),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
@@ -59,6 +60,7 @@ impl MetadataQuery {
             Self::Hierarchy(_)
             | Self::CallableLocal(_)
             | Self::CallableSelection(..)
+            | Self::CallableChain(..)
             | Self::CallablePresence(..)
             | Self::VariableLocal(..)
             | Self::MemberName(_)
@@ -153,6 +155,7 @@ impl<M: crate::member_binding::MemberRead + ?Sized>
             }
             MetadataQuery::CallableLocal(_)
             | MetadataQuery::CallableSelection(..)
+            | MetadataQuery::CallableChain(..)
             | MetadataQuery::CallablePresence(..)
             | MetadataQuery::VariableLocal(..)
             | MetadataQuery::MemberName(_)

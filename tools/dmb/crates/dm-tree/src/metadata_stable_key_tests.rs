@@ -468,3 +468,56 @@ fn reopened_typed_array_formal_reorder_and_override_removal_match_fresh() {
         );
     }
 }
+
+#[test]
+fn symbol_only_update_replaces_lexical_authority_and_shares_semantic_owners() {
+    let (tree, declarations) = captured_inputs(false, false);
+    let graph = MetadataDependencies::capture(&tree, &declarations).unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut symbols = tree.symbols().clone();
+    let added = symbols.intern("new_body_spelling").unwrap();
+    let updated = graph
+        .update(
+            &tree,
+            declarations.skeletons(),
+            declarations.skeletons(),
+            symbols,
+            &executor,
+        )
+        .unwrap();
+    assert!(updated.symbols().text(added).is_some());
+    assert!(tree.symbols().text(added).is_none());
+    assert!(Arc::ptr_eq(&tree.types, &updated.types));
+    assert!(Arc::ptr_eq(&tree.inventory, &updated.inventory));
+    assert!(Arc::ptr_eq(
+        &tree.owner_callable_demands,
+        &updated.owner_callable_demands
+    ));
+    for (a, b) in tree.members.iter().zip(updated.members.iter()) {
+        assert_eq!(a, b);
+        assert!(Arc::ptr_eq(&a.metadata, &b.metadata));
+    }
+    let removed = graph
+        .update(
+            &updated,
+            declarations.skeletons(),
+            declarations.skeletons(),
+            tree.symbols().clone(),
+            &executor,
+        )
+        .unwrap();
+    assert!(removed.symbols().text(added).is_none());
+    assert!(
+        updated.symbols().text(added).is_some(),
+        "old snapshot stays immutable"
+    );
+    let fresh = build(
+        tree.symbols().clone(),
+        &declarations.skeletons().cloned().collect::<Vec<_>>(),
+    )
+    .unwrap();
+    assert_eq!(removed.members.len(), fresh.members.len());
+    for (a, b) in removed.members.iter().zip(fresh.members.iter()) {
+        assert_eq!(a, b);
+    }
+}

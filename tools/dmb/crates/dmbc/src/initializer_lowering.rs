@@ -348,6 +348,7 @@ fn lower_plan<R: Resolver>(
                 .into_iter()
                 .enumerate()
                 .map(|(local, issue)| dm_codegen_byond::LowerError {
+                    primary_anchor: None,
                     related: Vec::new(),
                     // Certified source text already has its language-level
                     // wording; internal stage context belongs to unsupported errors.

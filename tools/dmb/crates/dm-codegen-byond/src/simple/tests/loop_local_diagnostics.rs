@@ -1,6 +1,20 @@
 use super::*;
 
 #[test]
+fn explicit_iterator_filter_preserves_current_duplicate_name_authority() {
+    let source = "/proc/probe()\n    var/value = 1\n    for(var/value as anything in list(2))\n        return value\n";
+    let parsed = dm_syntax::parse(source);
+    let errors = compile_simple_proc(&parsed.items[0].children).unwrap_err();
+    assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
+    assert_eq!(errors[0].reason, "value: duplicate definition");
+    assert_eq!(errors[0].span.unwrap().start, source.find("for(").unwrap());
+    assert_eq!(
+        errors[0].related[0].span.start,
+        source.find("var/value").unwrap()
+    );
+}
+
+#[test]
 fn authenticated_same_pair_name_rejection_keeps_both_current_header_receipts() {
     let source =
         include_str!("../../../../../fixtures/native/loop_local_diagnostics/same_pair_name.dm");
@@ -13,6 +27,12 @@ fn authenticated_same_pair_name_rejection_keeps_both_current_header_receipts() {
     assert_eq!(errors[0].related.len(), 1);
     assert_eq!(errors[0].related[0].span.start, header);
     assert_eq!(errors[0].related[0].message, "value: previous definition");
+    assert_eq!(
+        errors[0].primary_anchor,
+        Some(crate::DiagnosticAnchor::LexerCursorAfterOffset(
+            errors[0].span.unwrap().end
+        ))
+    );
 }
 
 #[test]

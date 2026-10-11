@@ -38,7 +38,7 @@ impl Compiler<'_> {
                     } => &[declaration],
                     _ => &[],
                 };
-                for declaration in declarations {
+                for (binding_index, declaration) in declarations.iter().enumerate() {
                     let pair_declares = matches!(control, ForControl::Pair { key_binding, .. } if key_binding.starts_with("var/"));
                     if declaration.starts_with("var/") || pair_declares {
                         if let Some(name) = local_name(declaration)
@@ -51,7 +51,14 @@ impl Compiler<'_> {
                                     start: statement.header_span.start,
                                     end: statement.header_span.end,
                                 },
-                            )?;
+                            )
+                            .map_err(|error| {
+                                Self::pair_binding_error(
+                                    error,
+                                    binding_index,
+                                    statement.header_span.end,
+                                )
+                            })?;
                         }
                     }
                 }
@@ -429,9 +436,14 @@ impl Compiler<'_> {
                         }
                     });
                     let binding_variable = if let Some(name) = local_name(binding) {
-                        if self.local_slots.contains_key(name) {
-                            return Err(error(&statement.raw_header, "repeated iterator binding"));
-                        }
+                        self.check_local_declaration(
+                            name,
+                            &statement.raw_header,
+                            LowerSpan {
+                                start: statement.header_span.start,
+                                end: statement.header_span.end,
+                            },
+                        )?;
                         let slot = self.locals.len() as u32;
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
@@ -528,7 +540,9 @@ impl Compiler<'_> {
                     body,
                 } => {
                     let mut pair = Vec::with_capacity(2);
-                    for binding in [key_binding, value_binding] {
+                    for (binding_index, binding) in
+                        [key_binding, value_binding].into_iter().enumerate()
+                    {
                         let name = local_name(binding).unwrap_or(binding);
                         let variable = if key_binding.starts_with("var/")
                             || binding.starts_with("var/")
@@ -542,7 +556,14 @@ impl Compiler<'_> {
                                     start: statement.header_span.start,
                                     end: statement.header_span.end,
                                 },
-                            )?;
+                            )
+                            .map_err(|error| {
+                                Self::pair_binding_error(
+                                    error,
+                                    binding_index,
+                                    statement.header_span.end,
+                                )
+                            })?;
                             let slot = self.locals.len() as u32;
                             self.locals.push(name.into());
                             self.local_slots.insert(name.into(), slot);

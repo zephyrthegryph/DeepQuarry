@@ -50,8 +50,12 @@ impl dm_ir::Resolver for SemanticTree {
                     (owner, name, verb)
                 }
                 dm_ir::ResolveQuery::GlobalProc(name) => (SymbolId::of("/"), name, false),
-                dm_ir::ResolveQuery::OverrideChain { owner, .. } => {
-                    return self.owner_callables.get(&owner).copied()
+                dm_ir::ResolveQuery::OverrideChain { owner, name, verb } => {
+                    // A sibling callable cannot change this named chain answer.
+                    // Keep content-sensitive inputs distinct from declarations.
+                    return self.owner_certificate_issuer.as_ref().and_then(|issuer| {
+                        issuer.demanded_override_chain(self, owner, name, verb)
+                    });
                 }
                 _ => return None,
             };

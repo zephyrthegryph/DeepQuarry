@@ -1,11 +1,33 @@
 //! Diagnostic lexer cursors bound exclusively through the current captured source plan.
-use super::ColdFrontend;
+use super::{ColdFrontend, SourceLocation};
 use std::sync::Arc;
 
+enum CapturedCursor {
+    Token(SourceLocation),
+    Boundary {
+        path: Arc<str>,
+        line: usize,
+        location: Option<SourceLocation>,
+    },
+}
 impl ColdFrontend {
     /// Resolve a lexer cursor after a current expanded body offset. Include
     /// returns use the directive planner's checked decoded resume position.
     pub fn diagnostic_cursor_after(&self, end: usize) -> Option<(Arc<str>, usize)> {
+        self.diagnostic_cursor(end).map(|cursor| match cursor {
+            CapturedCursor::Token(location) => (location.semantic_path, location.line),
+            CapturedCursor::Boundary { path, line, .. } => (path, line),
+        })
+    }
+    /// Bind a lexer token or a planner-issued return/EOF boundary to the exact
+    /// current source occurrence and ordered encounter-stream cursor.
+    pub fn diagnostic_cursor_location_after(&self, end: usize) -> Option<SourceLocation> {
+        match self.diagnostic_cursor(end)? {
+            CapturedCursor::Token(location) => Some(location),
+            CapturedCursor::Boundary { location, .. } => location,
+        }
+    }
+    fn diagnostic_cursor(&self, end: usize) -> Option<CapturedCursor> {
         let text = self.expanded.text.as_ref();
         if end == 0 || end > text.len() || !text.is_char_boundary(end) {
             return None;
@@ -15,7 +37,7 @@ impl ColdFrontend {
             .and_then(|token| self.location(token.span.start));
         if let Some(next) = &next {
             if next.include_occurrence == before.include_occurrence {
-                return Some((next.semantic_path.clone(), next.line));
+                return Some(CapturedCursor::Token(next.clone()));
             }
         }
         let mut occurrence = before.include_occurrence;
@@ -36,11 +58,16 @@ impl ColdFrontend {
                 }
                 if let Some(next) = &next {
                     if next.include_occurrence == cursor.parent_occurrence() {
-                        return Some((next.semantic_path.clone(), next.line));
+                        return Some(CapturedCursor::Token(next.clone()));
                     }
                 }
                 if let Some(line) = cursor.directive_anchor_line() {
-                    return Some((parent.semantic_path.clone(), line));
+                    return self.return_cursor_boundary(
+                        cursor.parent_occurrence(),
+                        offset,
+                        line,
+                        cursor.encounter_ordinal(),
+                    );
                 }
                 // A terminal parent include returns again. This test uses the
                 // captured decoded text, never an invented line increment.
@@ -73,9 +100,71 @@ impl ColdFrontend {
                 }
             }
             let line = included.eof_cursor_line()?;
-            return (line != 0).then(|| (included.semantic_path.clone(), line));
+            return self.return_cursor_boundary(
+                occurrence,
+                file.text.len(),
+                line,
+                included.eof_cursor_encounter(),
+            );
         }
         None
+    }
+    fn return_cursor_boundary(
+        &self,
+        occurrence: usize,
+        offset: usize,
+        line: usize,
+        encounter: Option<usize>,
+    ) -> Option<CapturedCursor> {
+        if line == 0 {
+            return None;
+        }
+        let included = self.plan.occurrences.get(occurrence)?;
+        let file = self
+            .files
+            .iter()
+            .find(|file| file.path == included.path && file.captured)?;
+        if offset > file.text.len() || !file.text.is_char_boundary(offset) {
+            return None;
+        }
+        let location = encounter
+            .filter(|ordinal| *ordinal <= self.plan.items.len())
+            .and_then(|encounter_ordinal| {
+                let mut chain = vec![occurrence];
+                let mut current = occurrence;
+                for _ in 0..self.plan.occurrences.len() {
+                    match self.plan.occurrences.get(current)?.parent {
+                        Some(parent) => {
+                            chain.push(parent);
+                            current = parent;
+                        }
+                        None => {
+                            chain.reverse();
+                            return Some(SourceLocation {
+                                span: dm_ir::Span {
+                                    file: file.id,
+                                    start: u32::try_from(offset).ok()?,
+                                    end: u32::try_from(offset).ok()?,
+                                },
+                                path: included.path.clone(),
+                                semantic_path: included.semantic_path.clone(),
+                                line,
+                                encounter_ordinal,
+                                include_occurrence: occurrence,
+                                include_chain: chain.into(),
+                                // Physical directive-reader boundaries are not macro-expanded tokens.
+                                macro_expansions: Arc::new(Vec::new()),
+                            });
+                        }
+                    }
+                }
+                None
+            });
+        Some(CapturedCursor::Boundary {
+            path: included.semantic_path.clone(),
+            line,
+            location,
+        })
     }
 }
 #[cfg(test)]
@@ -109,6 +198,32 @@ mod tests {
             1,
         )
         .unwrap()
+    }
+    #[test]
+    fn parent_eof_uses_planner_issued_encounter_and_current_parent_provenance() {
+        let frontend = fixture("#include \"child.dm\"\n", None, "/datum/probe\n");
+        let end = frontend.expanded.text.find("/datum/probe").unwrap() + "/datum/probe".len();
+        let (path, line) = frontend.diagnostic_cursor_after(end).unwrap();
+        assert_eq!(path.as_ref(), "cursor.dme");
+        assert_eq!(line, 2);
+        let location = frontend.diagnostic_cursor_location_after(end).unwrap();
+        assert_eq!(location.semantic_path, path);
+        assert_eq!(location.line, line);
+        assert_eq!(location.include_occurrence, 0);
+        assert_eq!(
+            location.encounter_ordinal,
+            frontend.plan.occurrences[0].eof_cursor_encounter().unwrap()
+        );
+        assert_eq!(
+            location.span.file,
+            frontend
+                .files
+                .iter()
+                .find(|file| file.path == location.path)
+                .unwrap()
+                .id
+        );
+        assert!(location.macro_expansions.is_empty());
     }
     #[test]
     fn included_eof_uses_checked_repeated_nested_and_physical_resume_cursors() {

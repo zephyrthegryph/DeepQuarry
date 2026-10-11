@@ -438,6 +438,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             directive_line,
             suppressed: false,
             eof_cursor_line: None,
+            eof_cursor_encounter: None,
             return_cursor: parent.and_then(|parent_occurrence| {
                 let parent = &self.plan.occurrences[parent_occurrence];
                 let text = self.plan.source_texts.get(parent.path.as_ref())?;
@@ -449,6 +450,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     parent_occurrence,
                     decoded_offset: directive_span.end,
                     directive_anchor_line: None,
+                    encounter_ordinal: None,
                 })
             }),
         });
@@ -695,6 +697,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         .get(child)
                         .is_some_and(|entry| entry.parent == Some(occurrence))
                     {
+                        // The child visit has completed. Issue the CURRENT
+                        // ordered stream boundary, including suppressed includes.
+                        if let Some(returned) = &mut self.plan.occurrences[child].return_cursor {
+                            returned.encounter_ordinal = Some(self.plan.items.len());
+                        }
                         returns.push((child, cursor));
                     }
                 }
@@ -804,6 +811,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
         if self.plan.diagnostics.len() == diagnostic_start {
             self.plan.occurrences[occurrence].eof_cursor_line = line_number.checked_add(1);
+            self.plan.occurrences[occurrence].eof_cursor_encounter = Some(self.plan.items.len());
         }
     }
 

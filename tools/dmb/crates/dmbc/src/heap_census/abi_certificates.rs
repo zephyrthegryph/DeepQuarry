@@ -116,7 +116,9 @@ impl HeapCensus {
                                         self.slice("prepared_abi.batch_row_versions", &row.versions, true);
                                     }
                                 }
-                                self.unknown("prepared_abi.batch_binding", "Weak current-binding hint has no strong old roster ownership; weak Arc control storage is private");
+                                if let Some(binding) = recipe.binding.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+                                    self.prepared_abi_units(binding);
+                                }
                                 if self.vec_payload("prepared_abi.batch_keys", &recipe.keys) {
                                     for key in &recipe.keys {self.slice("prepared_abi.artifact_keys",key,true);}
                                 }

@@ -378,6 +378,12 @@ impl MetadataDependencies {
             }
         }
         tree.symbols = std::sync::Arc::new(symbols);
+        // Exact skeleton equality proved by changed() gives an empty cone.
+        // Only lexical authority changed: keep the already admitted immutable
+        // declaration/member/inventory owners rather than revisit every row.
+        if dirty.is_empty() {
+            return Some(tree);
+        }
         let dirty_set: std::collections::HashSet<_> = dirty.iter().copied().collect();
         let mut members = previous_tree.members.clone();
         for (index, skeleton) in current.enumerate() {

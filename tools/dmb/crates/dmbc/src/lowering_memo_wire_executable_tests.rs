@@ -73,6 +73,7 @@ fn anonymous_executable_roundtrips_and_rechecks_negative_reads() {
 fn binary_failure_wire_preserves_optional_spans_and_rechecks_answers() {
     let errors = vec![
         dm_codegen_byond::LowerError {
+            primary_anchor: None,
             related: Vec::new(),
             statement: "first".into(),
             reason: "unknown".into(),
@@ -80,6 +81,7 @@ fn binary_failure_wire_preserves_optional_spans_and_rechecks_answers() {
             kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
         },
         dm_codegen_byond::LowerError {
+            primary_anchor: None,
             related: Vec::new(),
             statement: "second".into(),
             reason: "duplicate".into(),
@@ -157,6 +159,7 @@ fn domain_receipts_apply_to_anonymous_success_and_failure_wire() {
         &recorder.reads(),
         &recorder.domain_receipts(),
         &[dm_codegen_byond::LowerError {
+            primary_anchor: None,
             related: Vec::new(),
             statement: "bad".into(),
             reason: "unsupported".into(),
@@ -200,6 +203,7 @@ fn unified_anonymous_lookup_preserves_failure_priority_and_exact_read_invalidati
     )
     .unwrap();
     let errors = vec![dm_codegen_byond::LowerError {
+        primary_anchor: None,
         related: vec![dm_codegen_byond::LowerRelated {
             span: dm_codegen_byond::LowerSpan { start: 1, end: 3 },
             message: "value: previous definition".into(),

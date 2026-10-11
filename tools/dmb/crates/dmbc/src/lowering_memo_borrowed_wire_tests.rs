@@ -3,6 +3,9 @@ use super::*;
 fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
     let key = b"exact-key";
     let errors = [dm_codegen_byond::LowerError {
+        primary_anchor: Some(dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(
+            7,
+        )),
         related: Vec::new(),
         statement: "return Ω".into(),
         reason: "unsupported exact model".into(),
@@ -27,7 +30,7 @@ fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
     let bytes = encode_failure(key, None, &reads, &[], &errors).unwrap();
     let current: FailurePayload =
         dm_wire::decode_borrowed(FAILURE_SCHEMA, &bytes, bytes.len()).unwrap();
-    let legacy = dm_wire::encode(0x0206_0012, &current).unwrap();
+    let legacy = dm_wire::encode(0x0206_0014, &current).unwrap();
     assert!(validate(&bytes).is_ok());
     assert!(
         validate(&legacy).is_err(),
@@ -46,6 +49,7 @@ fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
         vec![(
             errors[0].statement.clone(),
             errors[0].reason.clone(),
+            errors[0].primary_anchor,
             errors[0].span,
             errors[0].kind,
             errors[0].related.clone(),
@@ -60,6 +64,7 @@ fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
         vec![(
             errors[0].statement.clone(),
             errors[0].reason.clone(),
+            errors[0].primary_anchor,
             errors[0].span,
             errors[0].kind,
         )],

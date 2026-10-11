@@ -8,7 +8,7 @@ use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 const EXECUTABLE_SCHEMA: u32 = 0x0206_0011;
-const FAILURE_SCHEMA: u32 = 0x0206_0013;
+const FAILURE_SCHEMA: u32 = 0x0206_0015;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
 #[path = "lowering_memo_read_wire.rs"]
@@ -338,6 +338,12 @@ pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
         if value.errors.is_empty()
             || value.errors.iter().any(|error| {
                 error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                    || matches!(
+                        error.primary_anchor,
+                        Some(dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(
+                            0
+                        ))
+                    )
                     || error
                         .related
                         .iter()
@@ -360,6 +366,12 @@ pub(crate) fn encode_failure(
     if errors.is_empty()
         || errors.iter().any(|error| {
             error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                || matches!(
+                    error.primary_anchor,
+                    Some(dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(
+                        0
+                    ))
+                )
                 || error
                     .related
                     .iter()
@@ -400,6 +412,12 @@ pub(crate) fn decode_failure<R: Resolver>(
         || payload.errors.is_empty()
         || payload.errors.iter().any(|error| {
             error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                || matches!(
+                    error.primary_anchor,
+                    Some(dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(
+                        0
+                    ))
+                )
                 || error
                     .related
                     .iter()
@@ -666,6 +684,12 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
             if value.errors.is_empty()
                 || value.errors.iter().any(|error| {
                     error.kind == dm_codegen_byond::LowerErrorKind::Internal
+                        || matches!(
+                            error.primary_anchor,
+                            Some(dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(
+                                0
+                            ))
+                        )
                         || error
                             .related
                             .iter()

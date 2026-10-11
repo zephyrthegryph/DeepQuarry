@@ -10,20 +10,24 @@ use std::{
 #[path = "frontend_callable_abi_roster.rs"]
 mod abi;
 pub use abi::{CallableAbiEntry, CallableAbiGraph, CallableAbiMeaning, CallableAbiRoster};
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct CallableRoster {
     tree: Arc<SemanticTree>,
+    index: Arc<CallableIndexRecipe>,
+    abi: Option<Arc<CallableAbiRoster>>,
+}
+#[derive(Debug)]
+pub struct CallableIndexRecipe {
     members: Vec<MemberId>,
     identities: Vec<ProcedureIdentity>,
     ordinals: HashMap<MemberId, usize>,
     dependents: Vec<Vec<usize>>,
     ready: Vec<usize>,
-    abi: Option<Arc<CallableAbiRoster>>,
 }
 impl PartialEq for CallableRoster {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self, other)
-            || (Arc::ptr_eq(&self.tree, &other.tree) && self.members == other.members)
+            || (Arc::ptr_eq(&self.tree, &other.tree) && self.index.members == other.index.members)
     }
 }
 impl Eq for CallableRoster {}
@@ -74,17 +78,44 @@ impl CallableRoster {
         let abi = CallableAbiRoster::issue(tree, &members, &identities).ok();
         Ok(Arc::new(Self {
             tree: Arc::clone(tree),
-            members,
-            identities,
-            ordinals,
-            dependents,
-            ready,
+            index: Arc::new(CallableIndexRecipe {
+                members,
+                identities,
+                ordinals,
+                dependents,
+                ready,
+            }),
             abi,
         }))
+    }
+    /// Rebind the existing graph/index recipe to a new lexical facade only.
+    /// These exact immutable owners cover every input used by issue(): current
+    /// dense layout, member metadata/edges, and relevant owner ancestry.
+    /// Structural changes always decline rather than reuse historical arena IDs.
+    pub(super) fn rebind_semantic_owner(&self, tree: &Arc<SemanticTree>) -> Option<Arc<Self>> {
+        let old = &self.tree;
+        if !Arc::ptr_eq(&old.types, &tree.types)
+            || !Arc::ptr_eq(&old.owner_ancestry, &tree.owner_ancestry)
+            || old.members.len() != tree.members.len()
+            || !Arc::ptr_eq(old.members.chunk_offsets(), tree.members.chunk_offsets())
+            || old.members.chunks().len() != tree.members.chunks().len()
+            || !old
+                .members
+                .chunks()
+                .iter()
+                .zip(tree.members.chunks())
+                .all(|(a, b)| Arc::ptr_eq(a, b))
+        {
+            return None;
+        }
+        let mut rebound = self.clone();
+        rebound.tree = tree.clone();
+        Some(Arc::new(rebound))
     }
     pub(super) fn matches(&self, tree: &Arc<SemanticTree>, bodies: &[BodyOccurrence]) -> bool {
         self.authenticates_tree(tree)
             && self
+                .index
                 .members
                 .iter()
                 .copied()
@@ -95,10 +126,10 @@ impl CallableRoster {
         Arc::ptr_eq(&self.tree, tree)
     }
     pub fn identity(&self, ordinal: usize) -> Option<ProcedureIdentity> {
-        self.identities.get(ordinal).copied()
+        self.index.identities.get(ordinal).copied()
     }
     pub fn ordinal(&self, member: MemberId) -> Option<usize> {
-        self.ordinals.get(&member).copied()
+        self.index.ordinals.get(&member).copied()
     }
     pub fn identity_for_member(&self, member: MemberId) -> Option<ProcedureIdentity> {
         self.identity(self.ordinal(member)?)
@@ -107,26 +138,31 @@ impl CallableRoster {
         self.abi.as_ref()
     }
     pub fn members(&self) -> &[MemberId] {
-        &self.members
+        &self.index.members
     }
     pub fn dependents(&self, ordinal: usize) -> &[usize] {
-        self.dependents.get(ordinal).map_or(&[], Vec::as_slice)
+        self.index
+            .dependents
+            .get(ordinal)
+            .map_or(&[], Vec::as_slice)
     }
     pub fn ready(&self) -> &[usize] {
-        &self.ready
+        &self.index.ready
     }
     pub fn visit_storage(&self, mut visitor: impl FnMut(CallableRosterStorage<'_>)) {
-        visitor(CallableRosterStorage::Members(&self.members));
-        visitor(CallableRosterStorage::Identities(&self.identities));
-        visitor(CallableRosterStorage::Ready(&self.ready));
-        visitor(CallableRosterStorage::Dependents(&self.dependents));
+        visitor(CallableRosterStorage::IndexOwner(&self.index));
+        visitor(CallableRosterStorage::Members(&self.index.members));
+        visitor(CallableRosterStorage::Identities(&self.index.identities));
+        visitor(CallableRosterStorage::Ready(&self.index.ready));
+        visitor(CallableRosterStorage::Dependents(&self.index.dependents));
         visitor(CallableRosterStorage::Ordinals {
-            len: self.ordinals.len(),
-            capacity: self.ordinals.capacity(),
+            len: self.index.ordinals.len(),
+            capacity: self.index.ordinals.capacity(),
         });
     }
 }
 pub enum CallableRosterStorage<'a> {
+    IndexOwner(&'a Arc<CallableIndexRecipe>),
     Members(&'a Vec<MemberId>),
     Identities(&'a Vec<ProcedureIdentity>),
     Ready(&'a Vec<usize>),

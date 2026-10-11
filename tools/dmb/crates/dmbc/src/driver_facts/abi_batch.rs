@@ -52,9 +52,10 @@ pub(crate) struct Row {
 pub(crate) struct Recipe {
     pub(crate) rows: Arc<[Row]>,
     pub(crate) units: Arc<[(dm_ir::ProcedureIdentity, Arc<UnitArtifact>)]>,
-    // Binding ownership is request-local. A weak hint preserves same-binding
-    // replay without retaining a previous tree/index after structural replacement.
-    pub(crate) binding: Mutex<std::sync::Weak<crate::driver_facts::PreparedAbiUnits>>,
+    // One admitted current binding, containing immutable ABI payloads and dense
+    // identifiers only: PreparedAbiUnits retains no tree, source, or origins.
+    // Exact receipt and current roster/map admission precede every reuse.
+    pub(crate) binding: Mutex<Option<Arc<crate::driver_facts::PreparedAbiUnits>>>,
     pub(crate) keys: Vec<Arc<[u8]>>,
 }
 struct Current<'a> {
@@ -151,8 +152,9 @@ pub(in crate::driver_facts) fn replay(
     };
     let mut binding = recipe.binding.lock().unwrap_or_else(|e| e.into_inner());
     let units = match binding
-        .upgrade()
+        .as_ref()
         .filter(|old| old.admit(frontend, &members).is_ok())
+        .cloned()
     {
         Some(current) => current,
         None => crate::driver_facts::PreparedAbiUnits::rebind(
@@ -163,7 +165,7 @@ pub(in crate::driver_facts) fn replay(
         )
         .ok()?,
     };
-    *binding = Arc::downgrade(&units);
+    *binding = Some(units.clone());
     drop(binding);
     let keys = Mutex::new(
         recipe
@@ -289,7 +291,7 @@ pub(in crate::driver_facts) fn remember(
             Artifact::Batch(Arc::new(Recipe {
                 units: units.into(),
                 rows: rows.into(),
-                binding: Mutex::new(Arc::downgrade(prepared)),
+                binding: Mutex::new(Some(prepared.clone())),
                 keys,
             }))
         },

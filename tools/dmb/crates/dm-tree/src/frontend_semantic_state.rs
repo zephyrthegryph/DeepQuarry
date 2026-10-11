@@ -12,6 +12,7 @@ pub struct RetainedSemanticTree {
     hits: u64,
     rebuilds: u64,
     metadata_updates: u64,
+    symbol_only_rebinds: u64,
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -24,12 +25,10 @@ struct Entry {
 }
 impl RetainedSemanticTree {
     fn discard_foreign_callable_roster(&mut self, tree: &Arc<SemanticTree>) {
-        if self
-            .callable_roster
-            .as_ref()
-            .is_some_and(|roster| !roster.authenticates_tree(tree))
-        {
-            self.callable_roster = None;
+        if let Some(roster) = &self.callable_roster {
+            if !roster.authenticates_tree(tree) {
+                self.callable_roster = roster.rebind_semantic_owner(tree);
+            }
         }
     }
     pub(super) fn bind_callable_roster(
@@ -234,6 +233,9 @@ impl RetainedSemanticTree {
     pub fn normalization_hits(&self) -> usize {
         self.normalization.hits()
     }
+    pub fn symbol_only_rebinds(&self) -> u64 {
+        self.symbol_only_rebinds
+    }
     pub fn metadata_updates(&self) -> u64 {
         self.metadata_updates
     }
@@ -316,6 +318,10 @@ impl RetainedSemanticTree {
                 .ok()
                 .map(|(index, _)| index)
             });
+        let unchanged_declarations = self.entry.as_ref().is_some_and(|entry| {
+            same_engine(entry.engine.as_ref(), engine)
+                && entry.index.skeletons().eq(adapted.skeletons.iter())
+        });
         let updated = self.entry.as_ref().and_then(|entry| {
             index.as_ref()?;
             if !same_engine(entry.engine.as_ref(), engine) {
@@ -331,18 +337,20 @@ impl RetainedSemanticTree {
         });
         if let Some(mut tree) = updated {
             tree.selection_publication_deferred = true;
-            let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
-                index
-                    .as_ref()
-                    .expect("updated tree has current declaration index"),
-                engine,
-            )
-            .map_err(|error| {
-                let error = SnapshotError::Tree(error);
-                on_error(&error, &adapted.skeletons.to_vec(), &origins);
-                error
-            })?;
-            tree.refresh_metadata_identity(identity, hierarchy);
+            if !unchanged_declarations {
+                let (identity, hierarchy) = crate::adapter::projected_identity_indexed(
+                    index
+                        .as_ref()
+                        .expect("updated tree has current declaration index"),
+                    engine,
+                )
+                .map_err(|error| {
+                    let error = SnapshotError::Tree(error);
+                    on_error(&error, &adapted.skeletons.to_vec(), &origins);
+                    error
+                })?;
+                tree.refresh_metadata_identity(identity, hierarchy);
+            }
             let prior_index = self
                 .entry
                 .as_ref()
@@ -373,6 +381,9 @@ impl RetainedSemanticTree {
             self.discard_foreign_callable_roster(&tree);
             self.normalization.release_publication();
             self.metadata_updates += 1;
+            if unchanged_declarations {
+                self.symbol_only_rebinds += 1;
+            }
             return Ok(TreeSnapshot {
                 tree,
                 occurrences: Arc::new(occurrences),

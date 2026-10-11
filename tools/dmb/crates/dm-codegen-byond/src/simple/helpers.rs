@@ -43,6 +43,7 @@ pub fn nameof_reference(expr: &Expr) -> Option<&str> {
 
 pub(super) fn error(statement: &str, reason: &str) -> LowerError {
     LowerError {
+        primary_anchor: None,
         related: Vec::new(),
         statement: statement.into(),
         reason: reason.into(),

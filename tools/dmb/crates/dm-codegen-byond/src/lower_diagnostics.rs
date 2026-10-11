@@ -19,6 +19,9 @@ pub struct LowerError {
     pub reason: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub span: Option<LowerSpan>,
+    /// Current-source primary cursor; memo storage rebases offsets relative to the body.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary_anchor: Option<crate::DiagnosticAnchor>,
     #[serde(default)]
     pub kind: LowerErrorKind,
     #[serde(default)]

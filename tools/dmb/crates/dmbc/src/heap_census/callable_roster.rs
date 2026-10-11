@@ -9,7 +9,15 @@ impl HeapCensus {
         if let Some(abi) = roster.abi() {
             self.callable_abi_roster(abi);
         }
-        roster.visit_storage(|view| match view {
+        let mut index_admitted = false;
+        roster.visit_storage(|view| {
+            if let V::IndexOwner(owner) = view {
+                index_admitted = self.arc_object("frontend.callable_index_recipe", owner);
+                return;
+            }
+            if !index_admitted { return; }
+            match view {
+            V::IndexOwner(_) => unreachable!("handled index owner"),
             V::Members(values) => { self.vec_payload(name, values); },
             V::Identities(values) => { self.vec_payload(name, values); },
             V::Ready(values) => { self.vec_payload(name, values); },
@@ -21,6 +29,7 @@ impl HeapCensus {
             V::Ordinals { len, capacity } => {
                 self.observe_items(name, len);
                 self.unknown(name, &format!("member ordinal HashMap backing: {len} entries/{capacity} capacity; private buckets excluded"));
+            }
             }
         });
         self.unknown(name, "strong semantic tree backing shared with snapshot; retained tree-only payload counted by snapshot visitor when present");

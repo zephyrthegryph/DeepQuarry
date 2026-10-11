@@ -94,3 +94,44 @@ fn abi_roster_equality_covers_settings_signature_and_current_parent_structure() 
     let ancestry = build(&mut state, "/datum/base/proc/p(x=1)\n    set waitfor = 0\n    return x\n/datum/base/child\n    parent_type = /datum\n");
     assert!(before != ancestry.callable_abi_roster().unwrap().unwrap());
 }
+
+#[test]
+fn lexical_facade_rebind_reuses_graph_but_rejects_foreign_dense_layout() {
+    let mut state = RetainedSemanticTree::default();
+    let current = build(
+        &mut state,
+        "/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n",
+    );
+    let roster = current.callable_roster().unwrap();
+    let mut facade = current.snapshot.tree.as_ref().clone();
+    let mut symbols = facade.symbols().clone();
+    let spelling = symbols.intern("new_body_spelling").unwrap();
+    facade.symbols = Arc::new(symbols);
+    let facade = Arc::new(facade);
+    let rebound = roster.rebind_semantic_owner(&facade).unwrap();
+    assert!(rebound.authenticates_tree(&facade));
+    assert!(Arc::ptr_eq(&roster.index, &rebound.index));
+    assert!(!rebound.authenticates_tree(&current.snapshot.tree));
+    assert!(Arc::ptr_eq(roster.abi().unwrap(), rebound.abi().unwrap()));
+    assert!(Arc::ptr_eq(
+        roster.abi().unwrap().graph(),
+        rebound.abi().unwrap().graph()
+    ));
+    assert_eq!(roster.members(), rebound.members());
+    assert!(facade.symbols().text(spelling).is_some());
+    assert!(current.snapshot.tree.symbols().text(spelling).is_none());
+    let issued = CallableRoster::issue(&facade, &current.bodies).unwrap();
+    assert_eq!(issued.abi().unwrap(), rebound.abi().unwrap());
+    assert_eq!(issued.index.identities, rebound.index.identities);
+    let changed = build(&mut state, "/var/inserted=1\n/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n");
+    assert!(roster
+        .rebind_semantic_owner(&changed.snapshot.tree)
+        .is_none());
+    let signature = build(
+        &mut state,
+        "/datum/a/proc/p(x=3)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n",
+    );
+    assert!(roster
+        .rebind_semantic_owner(&signature.snapshot.tree)
+        .is_none());
+}

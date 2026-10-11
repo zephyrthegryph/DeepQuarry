@@ -54,7 +54,7 @@ fn certified_incomplete_body_is_source_error_at_current_shifted_line() {
         assert_eq!(error.kind, DiagnosticKind::SourceError);
         assert_eq!(error.origin.line, line);
         assert_eq!(error.origin.path.as_path(), Path::new("project.dme"));
-        assert_eq!(error.message, "missing right operand for +");
+        assert_eq!(error.message, "missing expression");
     }
 }
 

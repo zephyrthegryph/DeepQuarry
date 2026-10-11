@@ -70,6 +70,7 @@ impl Compiler<'_> {
                         // Every namespace probe above completed authoritatively.
                         // Unsupported/failed host answers exit through Host instead.
                         LowerError {
+                            primary_anchor: None,
                             related: Vec::new(),
                             kind: LowerErrorKind::SourceError,
                             ..error(statement, &format!("undefined var: {name}"))

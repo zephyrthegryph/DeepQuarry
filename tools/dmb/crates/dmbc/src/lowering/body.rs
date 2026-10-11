@@ -397,6 +397,9 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         return None;
                     }
                     let mut error = error.clone();
+                    if let Some(anchor) = error.primary_anchor {
+                        error.primary_anchor = Some(super::error_anchor::relative(anchor, body)?);
+                    }
                     if let Some(span) = &mut error.span {
                         span.start = span.start.checked_sub(body.expanded_span.start)?;
                         span.end = span.end.checked_sub(body.expanded_span.start)?;
@@ -435,6 +438,26 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         message: "invalid secondary diagnostic source span".into(),
                     };
                 };
+                let origin = match e.primary_anchor {
+                    Some(anchor) => {
+                        match super::error_anchor::bind(frontend, body, anchor, false) {
+                            Some(origin) => origin,
+                            None => {
+                                return LoweringDiagnostic {
+                                    related: Vec::new(),
+                                    kind: DiagnosticKind::Internal,
+                                    identity: Some(identity),
+                                    origin: body.source.clone(),
+                                    message: "invalid primary diagnostic source anchor".into(),
+                                }
+                            }
+                        }
+                    }
+                    None => e
+                        .span
+                        .and_then(|span| frontend.location(span.start))
+                        .unwrap_or_else(|| body.source.clone()),
+                };
                 LoweringDiagnostic {
                     related,
                     kind: match e.kind {
@@ -447,10 +470,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
                     },
                     identity: Some(identity),
-                    origin: e
-                        .span
-                        .and_then(|span| frontend.location(span.start))
-                        .unwrap_or_else(|| body.source.clone()),
+                    origin,
                     message: if e.kind == dm_codegen_byond::LowerErrorKind::SourceError
                         || e.statement.is_empty()
                     {

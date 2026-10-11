@@ -562,3 +562,57 @@ fn structural_batch_rows_splice_new_proc_and_removal_with_fresh_parity() {
     assert_eq!(store.scheduled_reused(), 4);
     assert_eq!(store.totals().1, 3, "removal prepares no surviving units");
 }
+
+#[test]
+fn batch_binding_survives_request_drop_and_replacement_releases_old_binding() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let first = frontend("/datum/a/proc/p(x=1)\n    return x\n", &owner.snapshot);
+    let request = prepared(&first, &owner.snapshot, Some(&store));
+    let weak = Arc::downgrade(request.prepared.units_owner());
+    drop(request);
+    assert!(
+        weak.upgrade().is_some(),
+        "same recipe owns admitted binding between requests"
+    );
+    let shifted = frontend(
+        "// shifted current origin\n/datum/a/proc/p(x=1)\n    return x+1\n",
+        &owner.snapshot,
+    );
+    let request = prepared(&shifted, &owner.snapshot, Some(&store));
+    assert!(Arc::ptr_eq(
+        &weak.upgrade().unwrap(),
+        request.prepared.units_owner()
+    ));
+    same(&request, &prepared(&shifted, &owner.snapshot, None));
+    drop(request);
+    let signature = frontend("/datum/a/proc/p(x=2)\n    return x\n", &owner.snapshot);
+    let request = prepared(&signature, &owner.snapshot, Some(&store));
+    same(&request, &prepared(&signature, &owner.snapshot, None));
+    assert!(
+        weak.upgrade().is_none(),
+        "replacement prunes previous binding"
+    );
+    let signature_weak = Arc::downgrade(request.prepared.units_owner());
+    drop(request);
+    let dense = frontend(
+        "/var/added=1\n/datum/a/proc/p(x=2)\n    return x\n",
+        &owner.snapshot,
+    );
+    let request = prepared(&dense, &owner.snapshot, Some(&store));
+    same(&request, &prepared(&dense, &owner.snapshot, None));
+    assert!(signature_weak.upgrade().is_none());
+    let final_weak = Arc::downgrade(request.prepared.units_owner());
+    drop(request);
+    drop(store);
+    assert!(
+        final_weak.upgrade().is_none(),
+        "store release drops only retained binding"
+    );
+}

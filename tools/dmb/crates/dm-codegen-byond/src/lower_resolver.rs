@@ -436,6 +436,7 @@ impl ProjectResolver<'_> {
             _ => String::new(),
         };
         LowerError {
+            primary_anchor: None,
             related: Vec::new(),
             statement: String::new(),
             reason: format!("{reason}: {query:?}{names}"),

@@ -279,12 +279,14 @@ mod tests {
         let sources = [source("class.dm", 90, 4), source("static.dm", 12, 9)];
         let errors = vec![
             LowerError {
+                primary_anchor: None,
                 related: Vec::new(),
                 reason: "unsupported meaning".into(),
                 span: Some(LowerSpan { start: 1, end: 1 }),
                 ..Default::default()
             },
             LowerError {
+                primary_anchor: None,
                 related: Vec::new(),
                 reason: "bad label".into(),
                 kind: LowerErrorKind::SourceError,
@@ -324,6 +326,7 @@ mod tests {
         let errors = [1, 0, 2]
             .into_iter()
             .map(|ordinal| LowerError {
+                primary_anchor: None,
                 related: Vec::new(),
                 reason: "unsupported assignment".into(),
                 span: Some(LowerSpan {
@@ -377,6 +380,7 @@ mod tests {
         assert!(matches!(
             map_lower_errors(
                 vec![LowerError {
+                    primary_anchor: None,
                     related: Vec::new(),
                     span: Some(LowerSpan { start: 9, end: 9 }),
                     ..Default::default()
@@ -423,6 +427,7 @@ mod tests {
         let ordinals = (0..128).collect::<Vec<_>>();
         let errors = (0..16384)
             .map(|index| LowerError {
+                primary_anchor: None,
                 related: Vec::new(),
                 reason: format!("boundary {index}"),
                 span: Some(LowerSpan {

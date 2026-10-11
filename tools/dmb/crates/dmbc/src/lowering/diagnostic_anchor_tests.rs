@@ -129,3 +129,46 @@ fn current_lexer_cursor_rebinds_shared_and_wire_recipes_without_stale_next_offse
         }
     }
 }
+
+#[test]
+fn pair_failure_cursor_receipts_rebind_current_source_and_reject_out_of_body() {
+    let source =
+        include_str!("../../../../fixtures/native/loop_local_diagnostics/pair_value_comments.dm");
+    let mut stored = None;
+    for shift in [0, 3] {
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("cursor.dme"),
+            &Source("\n".repeat(shift) + source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &frontend.bodies[0];
+        let parsed = frontend.parse_body(body).unwrap();
+        let errors = dm_codegen_byond::compile_simple_proc(&parsed.item().children).unwrap_err();
+        let anchor = errors[0].primary_anchor.unwrap();
+        let current = error_anchor::bind(&frontend, body, anchor, false).unwrap();
+        assert_eq!(current.line, 6 + shift);
+        assert_eq!(current.include_occurrence, body.source.include_occurrence);
+        assert_eq!(current.semantic_path.as_ref(), "probe.dm");
+        let relative = error_anchor::relative(anchor, body).unwrap();
+        if let Some(first) = stored {
+            assert_eq!(relative, first);
+        } else {
+            stored = Some(relative);
+        }
+        let wire = dm_wire::encode(0x0300_0001, &relative).unwrap();
+        let restored = dm_wire::decode(0x0300_0001, &wire, wire.len()).unwrap();
+        let replay = error_anchor::bind(&frontend, body, restored, true).unwrap();
+        assert_eq!(replay.span, current.span);
+        assert_eq!(replay.line, current.line);
+        assert_eq!(replay.include_chain, current.include_chain);
+        assert!(error_anchor::bind(
+            &frontend,
+            body,
+            dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(usize::MAX),
+            true
+        )
+        .is_none());
+    }
+}

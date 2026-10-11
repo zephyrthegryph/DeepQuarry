@@ -1,6 +1,17 @@
 //! One declaration collision rule for typed and compatibility statement paths.
 use super::*;
 impl Compiler<'_> {
+    pub(super) fn pair_binding_error(
+        mut error: LowerError,
+        index: usize,
+        end: usize,
+    ) -> LowerError {
+        if index == 1 {
+            error.primary_anchor = Some(crate::DiagnosticAnchor::LexerCursorAfterOffset(end));
+        }
+        error
+    }
+
     pub(super) fn record_local_header(&mut self, slot: u32, span: dm_syntax::Span) {
         self.local_declarations.insert(
             slot,

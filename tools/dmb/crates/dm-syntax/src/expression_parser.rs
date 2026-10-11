@@ -366,7 +366,10 @@ impl ExprParser {
                 self.diagnostics.push(Diagnostic {
                     span: Span::new(lhs.span.end, lhs.span.end),
                     kind: DiagnosticKind::IncompleteExpression,
-                    message: format!("missing right operand for {op}"),
+                    // The recognized binary operator exhausted its expression
+                    // input. Use the compiler's general missing-expression
+                    // wording; retain operator detail for uncertified recovery.
+                    message: "missing expression".into(),
                 });
                 break;
             }
@@ -757,6 +760,24 @@ mod incomplete_tests {
                 .any(|diagnostic| diagnostic.kind == DiagnosticKind::IncompleteExpression));
         }
     }
+    #[test]
+    fn certified_binary_eof_uses_common_missing_expression_wording() {
+        for source in ["1 +", "(1 +", "1 *", "1 &&", "1 =="] {
+            let parsed = parse_expression(source);
+            let diagnostic = parsed
+                .diagnostics
+                .iter()
+                .find(|d| d.kind == DiagnosticKind::IncompleteExpression)
+                .unwrap();
+            assert_eq!(diagnostic.message, "missing expression", "{source}");
+        }
+        let parsed = parse_expression("1 + @");
+        assert!(!parsed
+            .diagnostics
+            .iter()
+            .any(|d| d.kind == DiagnosticKind::IncompleteExpression));
+    }
+
     #[test]
     fn only_recognized_eof_failures_are_certified() {
         for source in ["1 +", "(1 +", "(1", "!", "~", "+", "-", "++", "--"] {

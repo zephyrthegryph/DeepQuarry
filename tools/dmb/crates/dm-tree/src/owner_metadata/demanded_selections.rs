@@ -50,6 +50,7 @@ pub(super) fn inputs(
     name: SymbolId,
     verb: Option<bool>,
     parent_certificate: Option<u128>,
+    include_content: bool,
 ) -> Option<Arc<CallableInputs>> {
     let node = &tree.types[index];
     let matches_kind = |kind| match verb {
@@ -69,7 +70,7 @@ pub(super) fn inputs(
             Some(CallableFact {
                 key: member_key(tree, id)?,
                 definition: member.definition,
-                content: 0,
+                content: if include_content { member.content } else { 0 },
                 metadata: Arc::clone(&member.metadata),
                 previous: match member.previous {
                     Some(id) => Some(member_key(tree, id)?),
@@ -267,6 +268,17 @@ impl RetainedMetadata {
     ) -> Option<u128> {
         self.demanded_name(tree, (selection.0, selection.1, u8::from(selection.2)))
     }
+    /// Certify the exact current named OverrideChain meaning. Content is part
+    /// of that answer; executable body source remains a separate dependency.
+    pub(crate) fn demanded_override_chain(
+        &self,
+        tree: &SemanticTree,
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+    ) -> Option<u128> {
+        self.demanded_name(tree, (owner, name, 6 + u8::from(verb)))
+    }
     pub(crate) fn demanded_variable(
         &self,
         tree: &SemanticTree,
@@ -354,7 +366,9 @@ impl RetainedMetadata {
                     )
                 } else {
                     (
-                        if selection.2 == 3 {
+                        if selection.2 >= 6 {
+                            MetadataQuery::CallableChain(selection.0, selection.1, selection.2 == 7)
+                        } else if selection.2 == 3 {
                             MetadataQuery::CallablePresence(selection.0, selection.1)
                         } else {
                             MetadataQuery::CallableSelection(
@@ -370,9 +384,10 @@ impl RetainedMetadata {
                             if selection.2 == 3 {
                                 None
                             } else {
-                                Some(selection.2 == 1)
+                                Some(selection.2 == 1 || selection.2 == 7)
                             },
                             parent_certificate,
+                            selection.2 >= 6,
                         )?),
                     )
                 };
@@ -429,3 +444,7 @@ impl RetainedMetadata {
 #[cfg(test)]
 #[path = "demanded_selection_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "demanded_override_tests.rs"]
+mod override_tests;

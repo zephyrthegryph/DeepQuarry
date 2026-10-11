@@ -19,6 +19,8 @@ struct MemoCapture {
 #[cfg(test)]
 #[path = "lowering/diagnostic_anchor_tests.rs"]
 mod diagnostic_anchor_tests;
+#[path = "lowering/error_anchor.rs"]
+mod error_anchor;
 fn replay_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
@@ -28,19 +30,23 @@ fn replay_errors(
     errors
         .into_iter()
         .map(|error| {
-            let origin = match error.span {
-                None => body.source.clone(),
-                Some(span) => {
-                    if span.end
-                        > body
-                            .expanded_span
-                            .end
-                            .checked_sub(body.expanded_span.start)?
-                        || span.start > span.end
-                    {
-                        return None;
+            let origin = if let Some(anchor) = error.primary_anchor {
+                error_anchor::bind(frontend, body, anchor, true)?
+            } else {
+                match error.span {
+                    None => body.source.clone(),
+                    Some(span) => {
+                        if span.end
+                            > body
+                                .expanded_span
+                                .end
+                                .checked_sub(body.expanded_span.start)?
+                            || span.start > span.end
+                        {
+                            return None;
+                        }
+                        frontend.location(body.expanded_span.start.checked_add(span.start)?)?
                     }
-                    frontend.location(body.expanded_span.start.checked_add(span.start)?)?
                 }
             };
             Some(LoweringDiagnostic {

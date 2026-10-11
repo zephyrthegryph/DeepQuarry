@@ -14,7 +14,9 @@ pub trait DebugSourceProvider {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum DiagnosticAnchor {
     AtOffset(usize),
     LexerCursorAfterOffset(usize),

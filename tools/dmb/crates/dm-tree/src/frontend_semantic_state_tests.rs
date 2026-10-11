@@ -499,6 +499,34 @@ fn mutated_overlay_cannot_reuse_or_store_the_old_catalog_receipt() {
         .ordered()
         .iter()
         .any(|(_, text)| *text == "new_current_spelling"));
+    assert_eq!(state.symbol_only_rebinds(), 1);
+    let old = state.entry.as_ref().unwrap().tree.clone();
+    let removed = state
+        .resolve(
+            make(),
+            None,
+            |_, _, _| panic!("unexpected resolution error"),
+            &executor,
+        )
+        .unwrap();
+    let fresh = RetainedSemanticTree::new()
+        .resolve(
+            make(),
+            None,
+            |_, _, _| panic!("unexpected resolution error"),
+            &executor,
+        )
+        .unwrap();
+    let spelling = dm_ir::SymbolId::of("new_current_spelling");
+    assert!(old.symbols().text(spelling).is_some());
+    assert!(removed.tree.symbols().text(spelling).is_none());
+    assert_eq!(
+        removed.tree.symbols().ordered(),
+        fresh.tree.symbols().ordered()
+    );
+    assert!(Arc::ptr_eq(&old.types, &removed.tree.types));
+    assert!(Arc::ptr_eq(&old.inventory, &removed.tree.inventory));
+    assert_eq!(state.symbol_only_rebinds(), 2);
 }
 
 /// Retained frontend state only: this does not exercise daemon transport or exits.

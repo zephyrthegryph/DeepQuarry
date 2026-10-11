@@ -70,6 +70,7 @@ impl FrontendReport {
                 "common_resolved_members": counts.common_resolved_members,
                 "structurally_reused_members": counts.structurally_reused_members,
                 "structurally_dirty_members": counts.structurally_dirty_members,
+                "symbol_only_rebinds": state.symbol_only_rebinds(),
             })
         });
     }

@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 4;
+pub const DIRECTIVE_VERSION: u32 = 5;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
     Text(usize),
@@ -416,18 +416,31 @@ mod tests {
             assert_eq!(memo.inserts.load(Ordering::Relaxed), count);
             for (a, b) in cold.occurrences.iter().zip(&reused.occurrences) {
                 assert_eq!(a.eof_cursor_line(), b.eof_cursor_line());
+                assert_eq!(a.eof_cursor_encounter(), b.eof_cursor_encounter());
                 assert_eq!(
                     a.return_cursor().map(|c| (
                         c.parent_occurrence(),
                         c.decoded_offset(),
-                        c.directive_anchor_line()
+                        c.directive_anchor_line(),
+                        c.encounter_ordinal()
                     )),
                     b.return_cursor().map(|c| (
                         c.parent_occurrence(),
                         c.decoded_offset(),
-                        c.directive_anchor_line()
+                        c.directive_anchor_line(),
+                        c.encounter_ordinal()
                     ))
                 );
+            }
+            assert_eq!(
+                cold.occurrences[0].eof_cursor_encounter(),
+                Some(cold.items.len())
+            );
+            for included in cold.occurrences.iter().skip(1) {
+                let returned = included.return_cursor().unwrap();
+                assert!(returned
+                    .encounter_ordinal()
+                    .is_some_and(|ordinal| ordinal <= cold.items.len()));
             }
             assert_eq!(
                 cold.occurrences[0].eof_cursor_line(),
@@ -444,8 +457,8 @@ mod tests {
                 .clone();
             let bytes = record.to_bytes().unwrap();
             assert!(DirectiveRecord::from_bytes(&bytes).is_ok());
-            // The prior wire domain cannot issue the new processed-line event.
-            let old = dm_wire::encode(3, record.as_ref()).unwrap();
+            // Prior receipts did not issue ordered return/EOF cursor events.
+            let old = dm_wire::encode(4, record.as_ref()).unwrap();
             assert!(DirectiveRecord::from_bytes(&old).is_err());
         }
     }

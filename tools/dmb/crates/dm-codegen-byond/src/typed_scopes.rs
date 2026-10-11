@@ -78,11 +78,13 @@ fn prepare_bodies<'a>(
             || !input.parameter_types.is_empty()
             || !input.readonly_parameters.is_empty()
         {
-            return Err(vec![LowerError { related: Vec::new(), statement:"initializer scopes".into(),
+            return Err(vec![LowerError { primary_anchor: None,
+            related: Vec::new(), statement:"initializer scopes".into(),
                 reason:"initializer lexical slices cannot supply procedure frames or parameter metadata".into(), ..LowerError::default() }]);
         }
         if input.resource_search_context != resource_search_context {
             return Err(vec![LowerError {
+                primary_anchor: None,
                 related: Vec::new(),
                 statement: "initializer scopes".into(),
                 reason: "initializer slices require one explicit captured resource search context"

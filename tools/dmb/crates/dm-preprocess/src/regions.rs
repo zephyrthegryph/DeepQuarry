@@ -49,6 +49,7 @@ pub struct IncludeOccurrence {
     pub suppressed: bool,
     return_cursor: Option<IncludeReturnCursor>,
     eof_cursor_line: Option<usize>,
+    eof_cursor_encounter: Option<usize>,
 }
 
 /// Current directive planner authority; offsets are decoded physical source bytes.
@@ -57,8 +58,13 @@ pub struct IncludeReturnCursor {
     parent_occurrence: usize,
     decoded_offset: usize,
     directive_anchor_line: Option<usize>,
+    encounter_ordinal: Option<usize>,
 }
 impl IncludeReturnCursor {
+    /// Ordered item-stream position issued immediately after the child returns.
+    pub fn encounter_ordinal(self) -> Option<usize> {
+        self.encounter_ordinal
+    }
     pub fn parent_occurrence(self) -> usize {
         self.parent_occurrence
     }
@@ -75,6 +81,10 @@ impl IncludeOccurrence {
         self.return_cursor
     }
     /// Logical reader EOF after completed planning, including unterminated last lines.
+    /// Ordered item-stream position issued at successful occurrence EOF.
+    pub fn eof_cursor_encounter(&self) -> Option<usize> {
+        self.eof_cursor_encounter
+    }
     pub fn eof_cursor_line(&self) -> Option<usize> {
         self.eof_cursor_line
     }
