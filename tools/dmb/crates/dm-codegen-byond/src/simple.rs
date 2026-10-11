@@ -598,7 +598,17 @@ fn compile_with_lookup_mode(
                     occurrence,
                     double_receiver,
                     continuation,
-                ),
+                )
+                .map_err(|mut error| {
+                    // Initializer slices expose issued assignment coordinates,
+                    // not byte spans in their borrowed expression ASTs.
+                    let span = LowerSpan { start: occurrence.start, end: occurrence.end };
+                    error.span = Some(span);
+                    for note in &mut error.related {
+                        note.span = span;
+                    }
+                    error
+                }),
             };
             if result.is_err() {
                 break;
