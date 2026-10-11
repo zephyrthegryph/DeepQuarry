@@ -83,15 +83,20 @@ fn unit(c: &mut HeapCensus, value: &Arc<UnitArtifact>) -> Option<usize> {
     }
     c.shared_procedure_inputs(&value.inputs);
     c.abi(&value.abi);
+    let mut private = super::super::resident_abi::input_index_charge(&value.inputs);
     if let Some(canonical) = &value.canonical {
         c.prepared_canonical(canonical);
+        canonical.visit_storage(|inputs, _, _| {
+            // A checked compatibility rebind can retain a distinct canonical
+            // input owner with equal meaning but different backing capacity.
+            if !Arc::ptr_eq(inputs, &value.inputs) {
+                private = private.and_then(|charge| {
+                    charge.checked_add(super::super::resident_abi::input_index_charge(inputs)?)
+                });
+            }
+        });
     }
-    map_charge::<String, String>(value.inputs.parameter_types.len())?.checked_add(map_charge::<
-        u32,
-        (),
-    >(
-        value.inputs.readonly_parameters.len(),
-    )?)
+    private
 }
 impl crate::driver_facts::AbiArtifacts {
     pub(crate) fn compact_payload_charge(
@@ -136,5 +141,40 @@ impl crate::driver_facts::AbiArtifacts {
             }
         }
         super::super::initializer_artifacts::compact_charge(c, private)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compact_unit_charges_reserved_parameter_map_capacity_without_new_meaning() {
+        let mut inputs = dm_codegen_byond::ProcedureInputs::default();
+        let original = Arc::new(UnitArtifact {
+            inputs: Arc::new(inputs.clone()),
+            abi: Arc::new(crate::procedure_policy::PreparedAbi {
+                layout: Default::default(),
+                argument_sources: vec![],
+                source_helpers: vec![],
+            }),
+            canonical: None,
+        });
+        let base = unit(&mut HeapCensus::new("test_base"), &original).unwrap();
+        inputs.parameter_types.reserve(1000);
+        assert!(inputs.parameter_types.is_empty());
+        let capacity = inputs.parameter_types.capacity();
+        let reserved = Arc::new(UnitArtifact {
+            inputs: Arc::new(inputs),
+            abi: original.abi.clone(),
+            canonical: None,
+        });
+        let charge = unit(&mut HeapCensus::new("test_reserved"), &reserved).unwrap();
+        assert!(charge >= base + capacity * size_of::<(String, String)>());
+        assert_eq!(
+            original.inputs.parameter_types,
+            reserved.inputs.parameter_types
+        );
+        assert_eq!(original.abi.layout, reserved.abi.layout);
     }
 }

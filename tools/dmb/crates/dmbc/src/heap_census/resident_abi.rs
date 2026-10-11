@@ -4,6 +4,27 @@ use crate::{lowering_memo::ResolverRead, procedure_policy::PreparedAbi};
 use dm_codegen_byond::lower_resolver::ProcedureInputs;
 use dm_ir::ReadDomain;
 
+/// Exposed usable HashMap capacity plus modeled scalar hash/set backing.
+/// This is a logical admission envelope, not a physical allocator measurement.
+pub(crate) fn input_index_charge(inputs: &ProcedureInputs) -> Option<usize> {
+    let capacity = inputs.parameter_types.capacity();
+    let map = if capacity == 0 {
+        0
+    } else {
+        capacity
+            .checked_mul(2)?
+            .checked_add(1)?
+            .checked_mul(size_of::<(String, String)>().checked_add(1)?)?
+            .checked_add(64)?
+    };
+    map.checked_add(
+        inputs
+            .readonly_parameters
+            .len()
+            .checked_mul(16 * size_of::<u32>() + 512)?,
+    )
+}
+
 pub(crate) fn weight(
     inputs: &Arc<ProcedureInputs>,
     abi: &Arc<PreparedAbi>,
@@ -11,26 +32,12 @@ pub(crate) fn weight(
     reads: &Vec<ResolverRead>,
     versions: &Vec<(ReadDomain, u128)>,
 ) -> Option<usize> {
-    let parameter_types = &inputs.parameter_types;
-    let readonly_parameters = &inputs.readonly_parameters;
     let mut census = HeapCensus::new("resident_abi_admission");
     census.shared_procedure_inputs(inputs);
     // std exposes usable HashMap capacity, not its private bucket allocation.
     // The bucket upper bound and deliberately loose BTree node allowance are
     // admission charges, never presented as exact census payload measurements.
-    let map_charge = if parameter_types.capacity() == 0 {
-        0
-    } else {
-        parameter_types
-            .capacity()
-            .saturating_mul(2)
-            .saturating_add(1)
-            .saturating_mul(size_of::<(String, String)>().saturating_add(1))
-            .saturating_add(64)
-    };
-    let set_charge = readonly_parameters
-        .len()
-        .saturating_mul(16 * size_of::<u32>() + 512);
+    let indexes = input_index_charge(inputs)?;
     census.abi(abi);
     census.vec_payload("resident_abi.reads", reads);
     census.vec_payload("resident_abi.versions", versions);
@@ -47,8 +54,7 @@ pub(crate) fn weight(
     Some(
         usize::try_from(report.unique_known_capacity_bytes)
             .ok()?
-            .saturating_add(map_charge)
-            .saturating_add(set_charge)
+            .saturating_add(indexes)
             // Conservative admission includes shared Arc control overhead;
             // diagnostic census still reports actual exposed payload only.
             .saturating_add(2 * size_of::<usize>() + std::mem::align_of::<ProcedureInputs>())
