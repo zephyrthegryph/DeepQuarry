@@ -229,12 +229,18 @@ pub fn lower_frontend_completed_input_on_execution<
     // Bound live miss preparation to one worker-sized window. Cold requests
     // must not retain every parsed body and proof ledger before producing code.
     let window_size = chunk.saturating_mul(executor.workers().max(1)).max(1);
+    let progress_started = execution.progress_enabled.then(std::time::Instant::now);
+    let mut last_progress = progress_started;
+    let mut last_completed = 0usize;
+    let mut admission_elapsed = std::time::Duration::ZERO;
+    let mut lowering_elapsed = std::time::Duration::ZERO;
     for start in (0..bodies.len()).step_by(window_size) {
         let end = start.saturating_add(window_size).min(bodies.len());
         let window: Vec<_> = (start..end).map(|position| bodies.at(position)).collect();
         // Current admission remains exhaustive. Only declined candidates enter the
         // cold lowering queue; neither phase creates another cache or model.
         let indexed: Vec<_> = window.iter().enumerate().collect();
+        let admission_started = progress_started.map(|_| std::time::Instant::now());
         let admitted = memo::map_stage(executor, &indexed, chunk, &|(
             local_position,
             (body, prepared_body),
@@ -294,6 +300,9 @@ pub fn lower_frontend_completed_input_on_execution<
             })
         });
         let mut pending = Vec::new();
+        if let Some(started) = admission_started {
+            admission_elapsed += started.elapsed();
+        }
         for (local_position, input) in admitted.into_iter().enumerate() {
             let position = start + local_position;
             match input {
@@ -310,6 +319,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 }
             }
         }
+        let lowering_started = progress_started.map(|_| std::time::Instant::now());
         let produced = memo::map_stage(executor, &pending, chunk, &|(position, slot)| {
             let _profile = dm_profile::stage("cold.procedure_lowering");
             let attempt = slot
@@ -329,6 +339,26 @@ pub fn lower_frontend_completed_input_on_execution<
                     "procedure lowering worker panicked".into(),
                 ))
             }));
+        }
+        if let Some(started) = lowering_started {
+            lowering_elapsed += started.elapsed();
+        }
+        if let (Some(started), Some(previous)) = (progress_started, last_progress) {
+            if end == bodies.len()
+                || end.saturating_sub(last_completed) >= 1024
+                || previous.elapsed() >= std::time::Duration::from_secs(2)
+            {
+                crate::daemon_eprintln!(
+                    "native procedure lowering completed={}/{} elapsed={:.3}s admission_windows={:.3}s lowering_windows={:.3}s",
+                    end,
+                    bodies.len(),
+                    started.elapsed().as_secs_f64(),
+                    admission_elapsed.as_secs_f64(),
+                    lowering_elapsed.as_secs_f64()
+                );
+                last_completed = end;
+                last_progress = Some(std::time::Instant::now());
+            }
         }
     }
     let mut batch = CompletedLoweringBatch::default();

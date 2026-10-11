@@ -394,6 +394,7 @@ pub struct LoweringExecution<'a, 'frontend> {
     pub selected_bodies: Option<&'a [&'frontend BodyOccurrence]>,
     pub disk_replay_bindings: Option<DiskReplayBindings<'a>>,
     pub(crate) prepared_roster: Option<&'a PreparedBodyRoster<'frontend>>,
+    pub(crate) progress_enabled: bool,
 }
 impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
     pub fn new(
@@ -408,10 +409,15 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
             selected_bodies: None,
             disk_replay_bindings: None,
             prepared_roster: None,
+            progress_enabled: false,
         }
     }
     pub fn with_disk_replay_bindings(mut self, bindings: DiskReplayBindings<'a>) -> Self {
         self.disk_replay_bindings = Some(bindings);
+        self
+    }
+    pub(crate) fn with_progress(mut self, enabled: bool) -> Self {
+        self.progress_enabled = enabled;
         self
     }
     pub(crate) fn with_prepared_roster(

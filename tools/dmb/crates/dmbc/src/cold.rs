@@ -691,6 +691,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         Some(startup),
         memo,
         crate::lowering::LoweringExecution::new(executor, &bodies)
+            .with_progress(observer.is_some())
             .with_prepared_roster(&roster)
             .with_disk_replay_bindings(crate::lowering::DiskReplayBindings {
                 source: source_bindings,
