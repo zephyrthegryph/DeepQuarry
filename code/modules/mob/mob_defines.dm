@@ -23,20 +23,6 @@
 
 	var/stat = CONSCIOUS //Whether a mob is alive or dead.
 
-	/**
-	 * Whether and how a mob is incapacitated
-	 *
-	 * Normally being restrained, agressively grabbed, or in stasis counts as incapacitated
-	 * unless there is a flag being used to check if it's ignored
-	 *
-	 * * bitflags: (see code/__DEFINES/status_effects.dm)
-	 * * INCAPABLE_RESTRAINTS - if our mob is in a restraint (handcuffs)
-	 * * INCAPABLE_STASIS - if our mob is in stasis (stasis bed, etc.)
-	 * * INCAPABLE_GRAB - if our mob is being agressively grabbed
-	 *
-	**/
-	VAR_FINAL/incapacitated = NONE
-
 
 
 	//spells hud icons - this interacts with add_spell and remove_spell
@@ -339,6 +325,8 @@ CAPABILITIES(/mob)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+/// A mob's stat: set_stat() is its setter (always use it, never write the var) and publishes the stat key on a real change.
+TRACKED(/mob, stat)
 TRACKED(/mob, blinded)
 TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
