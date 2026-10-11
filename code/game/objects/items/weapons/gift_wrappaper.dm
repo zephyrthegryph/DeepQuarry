@@ -15,14 +15,10 @@
 	item_state = "gift1"
 	resistance_flags = FLAMMABLE
 
-/obj/item/a_gift/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10,10)
-	pixel_y = rand(-10,10)
-	if(w_class > 0 && w_class < ITEMSIZE_LARGE)
-		icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-	else
-		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
+/// Rolled before init (rolls()): a box shape for its size and a random paper colour.
+/obj/item/a_gift/proc/roll_wrapping(datum/roller/R)
+	var/shape = (w_class > 0 && w_class < ITEMSIZE_LARGE) ? w_class : R.number(1, 3)
+	return "gift[shape]_[R.choose(list("g","r","b","y","p"))]"
 
 CAPABILITIES(/obj/item/gift)
 	owns_one(nameof(gift), /obj/item)
@@ -80,6 +76,8 @@ CAPABILITIES(/obj/item/a_gift)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// the old attack_self: open it (an advanced present rolls its own loot table)
 	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open_gift)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
+	rolls(nameof(icon_state), PROC_REF(roll_wrapping))
 
 /// Old attack_self.
 /obj/item/a_gift/proc/interaction_open_gift(datum/act/op/A)

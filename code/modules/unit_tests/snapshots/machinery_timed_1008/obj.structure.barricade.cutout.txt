@@ -30,13 +30,8 @@ robot|none click: Click: Stand up
 +3 menu: Stand up
 @obj.structure human|/obj/item
 +2 menu: Stand up
-@obj human|/obj/item/stack
--menu: Pad (refused: You cannot pad that with that.)
--click: Click: Pad
-+2 menu: Repair (refused: )
+@obj.structure human|/obj/item/stack
 +3 menu: Stand up
-+5 menu: Use
-+6 click: Click: Repair
 human|/obj/item/reagent_containers/glass/paint menu: Hit
 human|/obj/item/reagent_containers/glass/paint menu: Move To Top
 human|/obj/item/reagent_containers/glass/paint menu: Open or close the lid

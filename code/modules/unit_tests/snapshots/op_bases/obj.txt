@@ -225,11 +225,13 @@ human|/obj/item/coin menu: Rotate Counter Clockwise (refused: It is fastened to 
 human|/obj/item/coin menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/coin menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/coin click: nothing
-human|/obj/item/disk menu: Hit
+human|/obj/item/disk menu: Climb
+human|/obj/item/disk menu: Insert disk
 human|/obj/item/disk menu: Move To Top
 human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk click: Click: Tuck disk
+human|/obj/item/disk menu: Use
+human|/obj/item/disk menu: Use item
+human|/obj/item/disk click: Click: Use item
 human|/obj/item/disk/botany menu: Load disk
 human|/obj/item/disk/botany menu: Move To Top
 human|/obj/item/disk/botany menu: Toggle Digestable (refused: You can't do that.)
@@ -633,11 +635,11 @@ human|/obj/item/spacecasinocash menu: Move To Top
 human|/obj/item/spacecasinocash menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/spacecasinocash menu: Use (refused: the SPASM is disabled)
 human|/obj/item/spacecasinocash click: Click: Use
-human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Combine
 human|/obj/item/stack menu: Move To Top
-human|/obj/item/stack menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack menu: Split
 human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack click: Click: Pad
+human|/obj/item/stack click: Click: Combine
 human|/obj/item/stack/arcadeticket menu: Climb
 human|/obj/item/stack/arcadeticket menu: Move To Top
 human|/obj/item/stack/arcadeticket menu: Pay
@@ -869,6 +871,7 @@ human|/obj/item/toy/plushie menu: Move To Top
 human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/toy/plushie menu: Tuck plushie
+human|/obj/item/toy/plushie menu: Turn Around (refused: It is fastened to the floor!)
 human|/obj/item/toy/plushie click: Click: Tuck plushie
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)

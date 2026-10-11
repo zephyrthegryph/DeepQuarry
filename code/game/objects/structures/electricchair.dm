@@ -6,9 +6,6 @@
 	var/obj/item/assembly/shock_kit/part = null
 	COOLDOWN_DECLARE(shock_cooldown)
 
-/obj/structure/bed/chair/e_chair/Initialize(mapload)
-	. = ..()
-	return
 
 /// The ledger slot its kit sits in: a chair's only other slot is its buckle seat, which takes mobs, so `part` names this one.
 #define SLOT_ECHAIR_KIT "echair_kit"

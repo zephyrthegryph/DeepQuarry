@@ -67,21 +67,14 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box)
 		/obj/item/reagent_containers/food/snacks/egg,
 		/obj/item/reagent_containers/food/snacks/boiledegg)))
 
-/obj/item/storage/fancy/egg_box/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
-
 /obj/item/storage/fancy/egg_box/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(open_state)
+		look.state(open_state || "[initial(icon_state)]0")
 		if(held_count() >= 1)
 			look.overlay("eggbox[held_count()]")
 	else
-		look.state(closed_state)
+		look.state(closed_state || initial(icon_state))
 
 /obj/item/storage/fancy/egg_box/open(mob/user as mob)
 	if(open)
@@ -257,24 +250,23 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 	storage_slots = 6
 	icon_type = "cigarette"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
+	flags = NOREACT | OPENCONTAINER
 	var/brand = "\improper Trans-Stellar Duty-free"
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	reagents(PROC_REF(pack_volume)) // so people can inject the whole packet without opening it
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette,
 		/obj/item/flame/lighter,
 		/obj/item/trash/cigbutt)))
 
+/// A pack's reagents: 15 units for each cigarette or cigar it holds (reagents()).
+/obj/item/storage/fancy/proc/pack_volume()
+	return 15 * storage_slots
+
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]_open"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
 	. = ..()
-	flags |= NOREACT
-	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT. So people can inject cigarettes without opening a packet, now with being able to inject the whole one
-	flags |= OPENCONTAINER
 	if(brand)
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 			C.brand = brand
@@ -283,11 +275,11 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 /obj/item/storage/fancy/cigarettes/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : open_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (open_state || "[initial(icon_state)]_open"))
 		if(held_count() >= 1)
 			look.overlay("cig[held_count()]")
 	else
-		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : closed_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (closed_state || initial(icon_state)))
 
 /obj/item/storage/fancy/cigarettes/open(mob/user as mob)
 	if(open)
@@ -399,21 +391,15 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	storage_slots = 5
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
+	flags = NOREACT
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigar)
+	reagents(PROC_REF(pack_volume)) // so people can inject the cigars without opening the case
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette/cigar,
 		/obj/item/trash/cigbutt/cigarbutt)))
 
-/obj/item/storage/fancy/cigar/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
-	flags |= NOREACT
-	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT
 
 /obj/item/storage/fancy/cigar/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	var/obj/item/clothing/mask/smokable/cigarette/cigar/C = W
@@ -424,11 +410,11 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 /obj/item/storage/fancy/cigar/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(open_state)
+		look.state(open_state || "[initial(icon_state)]0")
 		if(held_count() >= 1)
 			look.overlay("[initial(icon_state)][held_count()]")
 	else
-		look.state(closed_state)
+		look.state(closed_state || initial(icon_state))
 
 /obj/item/storage/fancy/cigar/open(mob/user as mob)
 	if(open)

@@ -9,11 +9,9 @@
 	var/duration = 10 //in deciseconds
 	var/randomdir = TRUE
 
-/obj/effect/temp_visual/Initialize(mapload)
-	. = ..()
-	if(randomdir)
-		dir = pick(list(NORTH, SOUTH, EAST, WEST))
-	expire(duration)
+CAPABILITIES(/obj/effect/temp_visual)
+	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)), when = nameof(randomdir))
+	lives_for(nameof(duration))
 
 /obj/effect/temp_visual/singularity_act()
 	return

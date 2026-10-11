@@ -1,15 +1,80 @@
-@obj.structure.bed human|none
-@obj.structure.bed robot|none
+human|none menu: Disassemble
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none click: Click: Disassemble
+robot|none menu: Disassemble
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
+robot|none click: Click: Disassemble
 @obj.structure ai|none
 @obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/tool/screwdriver
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/tool/crowbar
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/tool/wrench
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/tool/wirecutters
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/multitool
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/weldingtool
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/stack/cable_coil
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/stack/material/steel
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
 @obj.structure.bed human|/obj/item/card/id
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Disassemble
 @obj.structure.bed human|/obj/item
-keys: disassemble, melee_hit
+-menu: Melt
+-menu: Use
+-click: Click: Use
++0 menu: Disassemble
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Disassemble
+keys: disassemble, melee_hit, rotatable.turn_around

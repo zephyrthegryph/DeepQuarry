@@ -8,7 +8,8 @@
 	var/chem_volume = 0
 	var/chewtime = 0
 	var/brand
-	var/wrapped = FALSE
+	var/wrapped = FALSE // a wrapped one has no slot_flags until unwrapped (each wrapped type sets slot_flags = null)
+	flags = NOREACT // so it doesn't react until you light it
 
 TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 
@@ -38,9 +39,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	if(wrapped)
 		look.overlay("[initial(icon_state)]_wrapper")
 
-/obj/item/clothing/mask/chewable/Initialize(mapload)
-	. = ..()
-	flags |= NOREACT // so it doesn't react until you light it
 
 /obj/item/clothing/mask/chewable/equipped(mob/living/user, slot)
 	..()
@@ -123,6 +121,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/fine)
 	icon_state = "nic_gum"
 	type_butt = /obj/item/trash/spitgum
 	wrapped = TRUE
+	slot_flags = null
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2), tint = TRUE))
@@ -179,23 +178,16 @@ CAPABILITIES(/obj/item/storage/chewables)
 CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
-/obj/item/storage/box/fancy/chewables/tobacco/nico/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
-
 TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : open_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (open_state || "[initial(icon_state)]0"))
 		if(held_count() >= 1)
 			look.overlay("chew_nico[held_count()]")
 	else
-		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : closed_state)
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (closed_state || initial(icon_state)))
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/open(mob/user as mob)
 	if(open)
@@ -221,17 +213,28 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
+/// A wrapped candy's random fruit flavour (rolls()) and how much of it it holds; the candy takes the colour of what it holds.
+/obj/item/clothing/mask/chewable/candy/var/flavour
+/obj/item/clothing/mask/chewable/candy/var/flavour_amount = 0
+
+/// The rolled flavour (reagents(contents_from =)).
+/obj/item/clothing/mask/chewable/candy/proc/flavour_contents()
+	return flavour ? list("[flavour]" = flavour_amount) : null
+
+
 /obj/item/clothing/mask/chewable/candy/gum
 	name = "chewing gum"
 	desc = "A chewy wad of fine synthetic rubber and artificial flavoring. Be sure to unwrap it, genius."
 	icon_state = "gum"
 	item_state = "gum"
 	wrapped = TRUE
+	slot_flags = null
+	flavour_amount = 10
 
-/obj/item/clothing/mask/chewable/candy/gum/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
-	color = reagents.get_color()
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
+	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
+
 
 /obj/item/storage/box/gum
 	name = "\improper Frooty-Choos flavored gum"
@@ -262,6 +265,8 @@ CAPABILITIES(/obj/item/storage/box/gum)
 	icon_state = "lollipop"
 	item_state = "lollipop"
 	wrapped = TRUE
+	slot_flags = null
+	flavour_amount = 20
 	var/list/victims = null
 
 /obj/item/clothing/mask/chewable/candy/lolli/chewable_step(datum/act/timer/A)
@@ -305,6 +310,8 @@ CAPABILITIES(/obj/item/storage/box/gum)
 	return ..()
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
+	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
 	op("stick_on", item(/obj/item/holder), passes(), then(PROC_REF(stuck_on)))
 
 /// A small living thing in a holder can be stuck to the lollipop (unwrapped); the click goes on.
@@ -341,10 +348,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 		if(victims && victims.len)
 			. += span_notice("It has [english_list(victims)] stuck on it.")
 
-/obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
-	color = reagents.get_color()
 
 /obj/item/storage/box/pocky
 	name = "\improper Totemo yoi Pocky"

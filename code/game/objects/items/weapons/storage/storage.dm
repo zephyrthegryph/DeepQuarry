@@ -927,7 +927,7 @@ CAPABILITIES(/obj/item/storage/trinketbox)
 /obj/item/storage/trinketbox/draw(datum/look/look)
 	. = ..()
 	if(open)
-		look.state(open_state)
+		look.state(open_state || "[initial(icon_state)]_open")
 		var/list/held = held_things()
 		if(length(held) >= 1)
 			var/contained_image = null
@@ -939,14 +939,8 @@ CAPABILITIES(/obj/item/storage/trinketbox)
 				contained_image = "medal_trinket"
 			look.overlay(contained_image)
 	else
-		look.state(closed_state)
+		look.state(closed_state || initial(icon_state))
 
-/obj/item/storage/trinketbox/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]_open"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
 
 /// Used in hand: the lid flips.
 /obj/item/storage/trinketbox/proc/flip_lid(datum/act/op/A)
