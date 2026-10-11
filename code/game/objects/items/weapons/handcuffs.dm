@@ -10,8 +10,6 @@
 	throw_speed = 2
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 500)
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/elastic
 	var/dispenser = 0
 	var/breakouttime = 1200 //Deciseconds = 120s = 2 minutes
@@ -65,6 +63,7 @@
 
 /// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
 CAPABILITIES(/obj/item/handcuffs)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("cuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(attempt_to_cuff_timed_done)))
 
 /obj/item/handcuffs/proc/cuff_time(datum/act/op/A)

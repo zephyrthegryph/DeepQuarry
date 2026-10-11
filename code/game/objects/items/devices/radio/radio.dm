@@ -787,7 +787,7 @@ CAPABILITIES(/obj/item/radio/borg)
 	rel_take(src, nameof(keyslot))
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/item/radio/borg/recalculateChannels()

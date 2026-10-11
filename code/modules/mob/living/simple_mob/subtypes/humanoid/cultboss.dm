@@ -204,13 +204,13 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
 	defend_chance = 25
 	projectile_parry_chance = 25
 	armor_penetration = 25
-	hitsound = SFX_WEAPONS_BLADESLICE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/melee/voidblade)
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/capture_crystal/demon
 	spawn_mob_type = /mob/living/simple_mob/vore/demonAI

@@ -52,8 +52,6 @@
 	var/bulb_shards = 0
 	// when we get this many shards, we get a free bulb.
 	var/shards_required = 4
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///For attack_self chain
 	var/special_handling = FALSE
@@ -75,6 +73,7 @@ TRACKED(/obj/item/lightreplacer, max_uses)
 TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),
 		needs(req(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in)))

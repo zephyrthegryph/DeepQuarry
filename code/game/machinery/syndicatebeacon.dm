@@ -149,7 +149,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 	if(anchored)
 		set_anchored(FALSE)
 		to_chat(user, span_notice("You unscrew the beacon from the floor."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		disconnect_from_network()
 		return OP_OK
 	if(!connect_to_network())
@@ -157,7 +157,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon)
 		return OP_OK
 	set_anchored(TRUE)
 	to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 // an active beacon deactivates.

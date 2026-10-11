@@ -14,12 +14,11 @@
 		/obj/item/clothing/head/helmet/space/void,
 		/obj/item/clothing/suit/space/void
 		)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TRACKED(/obj/item/modkit, parts)
 
 CAPABILITIES(/obj/item/modkit)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	examine_line(PROC_REF(refit_description))
 	op("refit", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Refit hardsuit"),
 		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req(PROC_REF(refit_allowed))), then(PROC_REF(refitted)))
@@ -56,8 +55,8 @@ CAPABILITIES(/obj/item/modkit)
 /// All eligibility checks run before refitting changes the original target or spends kit parts.
 /obj/item/modkit/proc/refitted(datum/act/op/A)
 	var/obj/item/clothing/O = A.target
-	if(O.usesound)
-		play_sfx(src, O.usesound, volume = 100, vary = TRUE)
+	if(sounds_of(O).use)
+		play_sfx(src, sounds_of(O).use, volume = 100, vary = TRUE)
 	act_message(A.actor, src, MSG_SELF(span_notice("You open %T% and modify \the [O].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens %T% and modifies \the [O].")))
 	O.refit_for_species(target_species)
 	if(istype(O, /obj/item/clothing/head/helmet))

@@ -244,7 +244,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 /obj/structure/door_assembly/proc/board_seated(datum/act/op/A)
 	var/obj/item/W = A.held
 	to_chat(A.actor, span_notice("You installed the airlock electronics!"))
-	playsound(src, W.usesound, 100, 1)
+	playsound(src, sounds_of(W).use, 100, 1)
 	move_into(src, nameof(electronics), W, A.actor)
 	update_state()
 	return OP_OK

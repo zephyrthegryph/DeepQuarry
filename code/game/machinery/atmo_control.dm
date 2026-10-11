@@ -134,7 +134,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 /obj/machinery/air_sensor/proc/unfastened(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	playsound(src, W.usesound, 50, 1)
+	playsound(src, sounds_of(W).use, 50, 1)
 	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), MSG_OTHERS("%U% unfastens %T%."), MSG_BLIND("You hear ratcheting."))
 	var/obj/item/pipe_gsensor/gsensor = new /obj/item/pipe_gsensor(loc)
 	gsensor.id_tag = id_tag

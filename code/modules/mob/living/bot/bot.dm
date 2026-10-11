@@ -147,7 +147,7 @@
 		return OP_OK
 	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /mob/living/bot/proc/welder_used(datum/act/op/A)
@@ -158,7 +158,7 @@
 	mend(TREAT_PLATING_REPAIR, 10)
 	mend(TREAT_WIRING_REPAIR, 10)
 	act_message(user, src, MSG_SELF(span_notice("You repair %T%.")), MSG_OTHERS(span_notice("%U% repairs %T%.")))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))

@@ -319,7 +319,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 /obj/machinery/shieldgen/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	playsound(src, W.usesound, 100, 1)
+	playsound(src, sounds_of(W).use, 100, 1)
 	set_is_open(!is_open)
 	to_chat(user, span_blue("You [is_open ? "open the panel and expose the wiring" : "close the panel"]."))
 	return OP_OK
@@ -331,7 +331,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 		to_chat(user, "The bolts are covered, unlocking this would retract the covers.")
 		return OP_OK
 	if(anchored)
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		to_chat(user, span_blue("You unsecure the [src] from the floor!"))
 		if(active)
 			to_chat(user, span_blue("The [src] shuts off!"))
@@ -340,7 +340,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	else
 		if(istype(get_turf(src), /turf/space))
 			return OP_OK
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		to_chat(user, span_blue("You secure the [src] to the floor!"))
 		set_anchored(TRUE)
 	return OP_OK

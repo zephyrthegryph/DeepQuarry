@@ -104,7 +104,7 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 		set_glass(FALSE)
 		new /obj/item/material/shard(loc)
 		return OP_OK
-	playsound(src, I.usesound, 50, 1)
+	playsound(src, sounds_of(I).use, 50, 1)
 	to_chat(user, span_notice("You remove the glass."))
 	set_glass(FALSE)
 	icon_state = "mirror_frame"

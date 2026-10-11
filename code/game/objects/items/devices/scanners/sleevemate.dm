@@ -21,8 +21,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
@@ -100,6 +98,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
 	// The timed scans and transfers, started by the topic ops above once they have checked the target.
 	op("mindscan_wait", ai(), takes("subject", "nif"), wait(8 SECONDS), on_interrupt(PROC_REF(Topic_timed_failed)), then(PROC_REF(Topic_timed_done)))

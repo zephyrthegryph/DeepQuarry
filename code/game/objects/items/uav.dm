@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/uav)
 	if(!cell)
 		return OP_OK
 	to_chat(user, span_notice("You remove [cell] from [nickname]."))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	power_down()
 	cell.forceMove(get_turf(src))
 	rel_take(src, nameof(cell))

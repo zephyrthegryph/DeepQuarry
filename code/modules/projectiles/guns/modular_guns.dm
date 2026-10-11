@@ -56,7 +56,7 @@
 	var/obj/item/tool = A.held
 	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
 	assembled = !assembled
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
 CAPABILITIES(/obj/item/gun/energy/modular)
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/gun/energy/modular)
 		return OP_OK
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
-		playsound(src, tool.usesound, 50, 1)
+		playsound(src, sounds_of(tool).use, 50, 1)
 		rel_take(src, nameof(guncomponents), I)
 		I.forceMove(get_turf(src))
 		CheckParts()

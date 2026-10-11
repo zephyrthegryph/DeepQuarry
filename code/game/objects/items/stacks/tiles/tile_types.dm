@@ -18,8 +18,6 @@
 	randpixel = 7
 	w_class = ITEMSIZE_NORMAL
 	max_amount = 60
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 	//crafting / welding vars
 	var/datum/material/material //*sigh* i guess this is how we're doing this.
@@ -45,6 +43,7 @@
 			stacktype = material.stack_type
 
 CAPABILITIES(/obj/item/stack/tile)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/stack/tile/proc/welder_used(datum/act/op/A)
@@ -82,10 +81,11 @@ CAPABILITIES(/obj/item/stack/tile)
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
 	craftable = TRUE
 	resistance_flags = FLAMMABLE
+
+CAPABILITIES(/obj/item/stack/tile/grass)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/stack/tile/grass/sif
 	name = "sivian grass tile"
@@ -116,9 +116,10 @@ CAPABILITIES(/obj/item/stack/tile)
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	resistance_flags = FLAMMABLE
+
+CAPABILITIES(/obj/item/stack/tile/wood)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/tile/wood/alt
 	name = "wood floor tile"
@@ -406,9 +407,10 @@ CAPABILITIES(/obj/item/stack/tile)
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_CLOTH
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 	resistance_flags = FLAMMABLE
+
+CAPABILITIES(/obj/item/stack/tile/carpet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 
 /obj/item/stack/tile/carpet/teal
 	desc = "A piece of teal carpet. It is the same size as a normal floor tile!"

@@ -2,7 +2,6 @@
 	name = "chewable item master"
 	desc = "If you are seeing this, ahelp it."
 	icon = 'icons/inventory/face/item.dmi'
-	drop_sound = SFX_ITEMS_DROP_FOOD
 	body_parts_covered = 0
 
 	var/type_butt = null
@@ -18,6 +17,7 @@ TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 /obj/item/clothing/mask/chewable/var/chewing = FALSE
 TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
 	reagents(nameof(chem_volume))
 	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
 	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
@@ -134,12 +134,14 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "cigpacket"
 	item_state = "cigpacket"
-	drop_sound = SFX_ITEMS_DROP_SHOVEL
 	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	w_class = ITEMSIZE_SMALL
 	throwforce = 2
 	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco = 6)
+
+CAPABILITIES(/obj/item/storage/chewables)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL))
 
 /obj/item/storage/chewables/Initialize(mapload)
 	. = ..()
@@ -170,11 +172,13 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	item_state = "Epacket"
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco/nico = 6)
 	storage_slots = 6
-	drop_sound = SFX_ITEMS_DROP_BOX
 	use_sound = SFX_ITEMS_STORAGE_BOX
 	var/open = 0
 	var/open_state
 	var/closed_state
+
+CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/Initialize(mapload)
 	if(!open_state)
@@ -241,13 +245,13 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/gum = 5)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 5
 	foldable = null
 	trash = /obj/item/trash/gumpack
 
 
 CAPABILITIES(/obj/item/storage/box/gum)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/chewable/candy/gum,
 		/obj/item/trash/spitgum)))
@@ -352,13 +356,13 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/pocky = 8)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 8
 	foldable = null
 	trash = /obj/item/trash/pocky
 
 
 CAPABILITIES(/obj/item/storage/box/pocky)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky)))
 
 /obj/item/clothing/mask/chewable/candy/pocky

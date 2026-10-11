@@ -320,7 +320,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	var/obj/item/tool = A.held
 	oneway = !oneway
 	to_chat(A.actor, "You set the switch to [oneway ? "one" : "two"] way operation.")
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
 /// The wirecutters, behind the open panel: the conveyors' speed.

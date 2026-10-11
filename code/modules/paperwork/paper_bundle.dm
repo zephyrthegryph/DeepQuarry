@@ -12,8 +12,6 @@
 	layer = MOB_LAYER
 	pressure_resistance = 1
 	attack_verb = list("bapped")
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/page = 1    // current page
 	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
@@ -124,6 +122,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("bundle_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("bundle_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("bundle_rename", menu(), label("Rename bundle"), needs(carried()), then(PROC_REF(bundle_rename_op)))

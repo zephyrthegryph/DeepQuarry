@@ -62,8 +62,6 @@
 	item_state = "book16"
 	author = "Donk Co."
 	title = "WizOff Guide"
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	dat = {"
 
 		<html>
@@ -98,3 +96,6 @@
 		</html>
 
 		"}
+
+CAPABILITIES(/obj/item/book/manual/wizzoffguide)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))

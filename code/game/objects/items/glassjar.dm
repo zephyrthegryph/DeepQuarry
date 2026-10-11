@@ -8,8 +8,6 @@
 	MATERIAL_BULK(MAT_GLASS, 200)
 	flags = NOBLUDGEON
 	var/contains = 0 // 0 = nothing, 1 = money, 2 = animal, 3 = spiderling
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 	///If we can fill it with water
 	var/can_fill = FALSE
@@ -51,6 +49,7 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		return
 
 CAPABILITIES(/obj/item/glass_jar)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	slot(CONTAINER_SLOT_JAR)
 	// the old attack_self: empty the jar (help keeps a fish's water in)
 	op("empty", in_hand(), stance(I_HELP), label("Empty"), then(PROC_REF(emptied_gently)))

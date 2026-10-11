@@ -106,7 +106,7 @@
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"
 		BCS.icon_state = "ertjaws"
-		BCS.hitsound = 'sound/weapons/bite.ogg'
+		BCS.set_hitsound('sound/weapons/bite.ogg')
 		BCS.attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
 		BCS.dogborg = TRUE
 
@@ -225,7 +225,7 @@
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"
 		BCS.icon_state = "ertjaws"
-		BCS.hitsound = 'sound/weapons/bite.ogg'
+		BCS.set_hitsound('sound/weapons/bite.ogg')
 		BCS.attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
 		BCS.dogborg = TRUE
 

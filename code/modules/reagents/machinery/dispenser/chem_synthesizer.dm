@@ -946,5 +946,5 @@ MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract 
 		return OP_OK
 	to_chat(A.actor, span_notice("You remove \the [cartridge] from \the [src]."))
 	cartridge.forceMove(loc)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK

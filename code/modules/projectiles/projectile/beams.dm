@@ -13,7 +13,6 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#FF0D00"
-	hitsound = SFX_WEAPONS_SEAR
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser
@@ -22,6 +21,9 @@
 
 	hud_state = "laser"
 	hud_state_empty = "battery_empty"
+
+CAPABILITIES(/obj/item/projectile/beam)
+	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/beam/practice
 	name = "laser"
@@ -281,7 +283,7 @@
 	agony = 35
 	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
-	hitsound = SFX_WEAPONS_ZAPBANG
+
 
 
 	combustion = FALSE
@@ -291,6 +293,9 @@
 	impact_type = /obj/effect/projectile/impact/stun
 
 	hud_state = "taser" // TGMC Ammo HUD port
+
+CAPABILITIES(/obj/item/projectile/beam/stun)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/stun/weak
 	name = "weak stun beam"
@@ -362,8 +367,10 @@
 	damage = 30
 	agony = 15
 	eyeblur = 2
-	hitsound = SFX_WEAPONS_ZAPBANG
 	hud_state = "taser"
+
+CAPABILITIES(/obj/item/projectile/beam/shock)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/shock/weak
 	damage = 5

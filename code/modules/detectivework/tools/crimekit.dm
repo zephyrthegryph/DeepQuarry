@@ -13,6 +13,7 @@
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "case"
 	storage_slots = 14
-	drop_sound = SFX_ITEMS_DROP_TOOLBOX
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
+
+CAPABILITIES(/obj/item/storage/briefcase/crimekit)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 

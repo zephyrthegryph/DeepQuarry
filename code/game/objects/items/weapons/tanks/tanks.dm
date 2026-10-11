@@ -14,8 +14,6 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'
 		)
-	drop_sound = SFX_ITEMS_DROP_GASCAN
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	var/gauge_icon = "indicator_tank"
 	var/last_gauge_pressure
@@ -51,6 +49,7 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
 	// during rounds are never touched, and an intact, sealed tank lying about has no reason to explode spontaneously.
 	every(2 SECONDS, then(PROC_REF(tank_step)), when = cond_any(nameof(leaking), nameof(seal_damaged), nameof(handled)))

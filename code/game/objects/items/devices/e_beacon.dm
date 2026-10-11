@@ -6,8 +6,6 @@
 	var/beacon_active = FALSE
 	var/list/levels_for_distress
 	var/obj/item/gps/gps = null
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/emergency_beacon/Initialize(mapload)
 	for(var/i in 1 to length(levels_for_distress))
@@ -25,6 +23,7 @@
 TRACKED(/obj/item/emergency_beacon, beacon_active)
 
 CAPABILITIES(/obj/item/emergency_beacon)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(gps), /obj/item/gps, starts = /obj/item/gps/emergency_beacon)
 	// the old attack_self: on solid ground, after a yes, the beacon is spiked in a moment later
 	op("activate", in_hand(), label("Activate"), needs(req_is(nameof(beacon_active), FALSE, because = MSG(emergency_beacon/active)), req(PROC_REF(on_solid_ground))),

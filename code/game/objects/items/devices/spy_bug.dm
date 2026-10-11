@@ -15,10 +15,9 @@
 	var/obj/machinery/camera/bug/camera
 	var/camtype = /obj/machinery/camera/bug
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/camerabug)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
@@ -64,8 +63,9 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 	throw_range = 15
 	throw_speed = 3
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+CAPABILITIES(/obj/item/brokenbug)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+
 
 /obj/item/brokenbug/spy
 	name = "broken bug"
@@ -176,14 +176,13 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 	/// Relation list view: the paired bug cameras (deleted ones leave it).
 	var/list/obj/machinery/camera/bug/paired
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /*
 /obj/item/bug_monitor/Initialize(mapload)
 	radio = new(src)
 */
 CAPABILITIES(/obj/item/bug_monitor)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))
 

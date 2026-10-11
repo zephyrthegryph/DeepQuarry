@@ -316,8 +316,8 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 /obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	user.break_cloak()
 	material_response_impact(get_turf(target), target)
-	if(hitsound)
-		playsound(src, hitsound, 50, 1, -1)
+	if(sounds_of(src).hit)
+		playsound(src, sounds_of(src).hit, 50, 1, -1)
 
 	var/power = force * user.factor(BF_MELEE_DAMAGE)
 

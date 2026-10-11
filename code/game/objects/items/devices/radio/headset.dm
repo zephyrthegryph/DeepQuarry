@@ -19,10 +19,9 @@
 	var/ks1type = null
 	var/ks2type = null
 
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 CAPABILITIES(/obj/item/radio/headset)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
 	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
@@ -126,7 +125,7 @@ CAPABILITIES(/obj/item/radio/headset)
 		rel_take(src, nameof(keyslot2))
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/item/radio/headset/recalculateChannels(setDescription = FALSE, register = TRUE)

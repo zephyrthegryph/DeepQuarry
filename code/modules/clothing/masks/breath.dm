@@ -10,8 +10,6 @@
 	permeability_coefficient = 0.50
 	var/hanging = 0
 	actions_types = list(/datum/action/item_action/adjust_breath_mask)
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
@@ -34,6 +32,7 @@
 		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 	op("breath_mask_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(breath_mask_adjust_self)))
 	op("breath_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(breath_toggle_verb)))
 
@@ -85,7 +84,8 @@ CAPABILITIES(/obj/item/clothing/mask/breath)
 	w_class = ITEMSIZE_SMALL
 	gas_transfer_coefficient = 0.10
 	permeability_coefficient = 0.50
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
+
+CAPABILITIES(/obj/item/clothing/mask/altevian_breath)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 
 TYPE_TABLE(/obj/item/clothing/mask/altevian_breath, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))

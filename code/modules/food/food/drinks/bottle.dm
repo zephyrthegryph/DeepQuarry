@@ -21,8 +21,8 @@
 	. = ..()
 	if(isGlass)
 		unacidable = TRUE
-		drop_sound = SFX_ITEMS_DROP_BOTTLE
-		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
+		set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
+		set_pickup_sound(SFX_ITEMS_PICKUP_BOTTLE)
 
 /obj/item/reagent_containers/food/drinks/bottle/ownership()
 	. = ..()

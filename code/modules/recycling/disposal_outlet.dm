@@ -53,7 +53,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	var/obj/item/I = A.held
 	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED
 	to_chat(user, "You [mode == OUTLET_UNSCREWED ? "remove" : "attach"] the screws around the power connection.")
-	playsound(src, I.usesound, 50, 1)
+	playsound(src, sounds_of(I).use, 50, 1)
 	return OP_OK
 
 /obj/structure/disposaloutlet/proc/welder_used(datum/act/op/A)

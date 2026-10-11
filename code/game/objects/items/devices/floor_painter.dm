@@ -38,8 +38,6 @@
 		"northeast" =   NORTHEAST,
 		"precise" = 0
 		)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/floor_painter/afterattack(atom/A, mob/user, proximity, params)
 	if(!proximity)
@@ -111,6 +109,7 @@ TRACKED(/obj/item/floor_painter, paint_dir)
 TRACKED(/obj/item/floor_painter, paint_colour)
 
 CAPABILITIES(/obj/item/floor_painter)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/floor_painter/proc/choose_colour, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/floor_painter/proc/choose_decal, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED)

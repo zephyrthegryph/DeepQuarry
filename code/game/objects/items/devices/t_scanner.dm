@@ -16,8 +16,6 @@
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/t_scanner/var/on = 0
 TRACKED(/obj/item/t_scanner, on)
@@ -27,6 +25,7 @@ TRACKED(/obj/item/t_scanner, on)
 	look.state("t-ray[on]")
 
 CAPABILITIES(/obj/item/t_scanner)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Scans underfloor objects while switched on.
 	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
 	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))

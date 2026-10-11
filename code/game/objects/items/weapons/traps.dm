@@ -260,7 +260,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		var/inc_damage = tool.force
 
 		if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
-			playsound(src, tool.usesound, 100, 1)
+			playsound(src, sounds_of(tool).use, 100, 1)
 			inc_damage *= 3
 
 		if(tool.obj_damage_type() != BRUTE)

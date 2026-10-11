@@ -153,7 +153,7 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 	var/obj/item/tool = A.held
 	set_wiresexposed(!wiresexposed)
 	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/item/radio/intercom/proc/wirecutter_used(datum/act/op/A)
@@ -162,7 +162,7 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 	if(!wiresexposed)
 		return OP_OK
 	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
 	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy

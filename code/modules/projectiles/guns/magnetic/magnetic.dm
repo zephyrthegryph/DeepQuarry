@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/gun/magnetic)
 		return OP_OK
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	rel_take(src, nameof(capacitor))
 	return OP_OK
 

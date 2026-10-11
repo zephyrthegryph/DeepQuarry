@@ -264,7 +264,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	set_panel_open(!panel_open)
 	act_message(user, null, MSG_SELF(span_notice("You screw the camera's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% screws the camera's panel [panel_open ? "open" : "closed"]!")))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /// The wirecutters or a multitool: the coverage is refreshed, and behind the open panel the wires' window opens.
@@ -285,8 +285,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	var/obj/item/W = A.held_provider()
 	var/obj/item/weldingtool/welder = W.get_welder()
 	welder.eyecheck(A.actor)
-	if(W.usesound)
-		play_sfx(src, W.usesound, volume = 50, vary = TRUE)
+	if(sounds_of(W).use)
+		play_sfx(src, sounds_of(W).use, volume = 50, vary = TRUE)
 	return OP_OK
 
 /obj/machinery/camera/proc/weld_duration(datum/act/op/A)
@@ -373,8 +373,8 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if (W.force >= src.toughness)
 		user.do_attack_animation(src)
 		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by %T%!"))
-		if (W.hitsound)
-			playsound(src, W.hitsound, 50, 1, -1)
+		if (sounds_of(W).hit)
+			playsound(src, sounds_of(W).hit, 50, 1, -1)
 	receive_weapon_hit(W, user, silent = FALSE)
 	return OP_OK
 

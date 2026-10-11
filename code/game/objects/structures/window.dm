@@ -616,7 +616,7 @@ CAPABILITIES(/obj/machinery/button/windowtint)
 	var/obj/item/tool = A.held
 	if(!panel_open)
 		return OP_DECLINE // a shut panel: the cutters go on to the legacy tool handling, as before
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	dismantle()
 	return OP_OK

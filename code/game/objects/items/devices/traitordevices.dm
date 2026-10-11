@@ -28,8 +28,6 @@ effective or pretty fucking useless.
 	var/times_used = 0 //Number of times it's been used.
 	var/max_uses = 2
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TRACKED(/obj/item/batterer, times_used)
 TRACKED(/obj/item/batterer, max_uses)
@@ -37,6 +35,7 @@ TRACKED(/obj/item/batterer, max_uses)
 MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
 CAPABILITIES(/obj/item/batterer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available))), then(PROC_REF(batter_triggered)))
 
 /obj/item/batterer/proc/batter_available(datum/act/op/A)

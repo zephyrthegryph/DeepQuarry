@@ -10,13 +10,12 @@
 	var/audio = 0		//If you need to hear to get the message
 	var/translation_enabled = 0
 	var/datum/language/langset_static
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TRACKED(/obj/item/universal_translator, translation_enabled)
 TRACKED(/obj/item/universal_translator, langset_static)
 
 CAPABILITIES(/obj/item/universal_translator)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("enable", in_hand(), label("Enable translator"), when(cond_not(nameof(translation_enabled))),
 		needs(carried(), req(PROC_REF(language_supported))),
 		asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0),

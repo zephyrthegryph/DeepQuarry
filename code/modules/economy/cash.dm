@@ -18,8 +18,6 @@
 	w_class = ITEMSIZE_SMALL
 	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
@@ -101,6 +99,7 @@ TRACKED(/obj/item/spacecash, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecash)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(register_sellable)))
 	rolls(nameof(note_seed), range_of(0, 49))
 	op("cash_take", in_hand(), label("Use"),
@@ -195,12 +194,11 @@ CAPABILITIES(/obj/item/spacecash)
 	initial_name = "charge card"
 	icon_state = "efundcard"
 	desc = "A card that holds an amount of money."
-	drop_sound = SFX_ITEMS_DROP_CARD
-	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/spacecash/ewallet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
 /// A charge card keeps its mapped look and name.

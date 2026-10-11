@@ -407,14 +407,14 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 		MSG_OTHERS(span_danger("%U% [blocked ? "welds" : "unwelds"] %T% with \a [welder].")), \
 		MSG_BLIND("You hear something being welded."), \
 		item = welder)
-	playsound(src, welder.usesound, 100, TRUE)
+	playsound(src, sounds_of(welder).use, 100, TRUE)
 	return OP_OK
 
 /// A screwdriver opens or closes the maintenance hatch of a shut door.
 /obj/machinery/door/firedoor/proc/hatch_toggled(datum/act/op/A)
 	var/mob/user = A.actor
 	set_hatch_open(!hatch_open)
-	playsound(src, A.held.usesound, 50, TRUE)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 	act_message(user, src, MSG_SELF("You have [hatch_open ? "opened" : "closed"] %T% maintenance hatch."), \
 		MSG_OTHERS(span_danger("%U% has [hatch_open ? "opened" : "closed"] %T% maintenance hatch.")))
 	return OP_OK
@@ -426,7 +426,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 /// A crowbar takes the electronics out of a welded, shut door with its hatch open: an assembly stands where it was.
 /obj/machinery/door/firedoor/proc/electronics_out(datum/act/op/A)
 	var/mob/user = A.actor
-	playsound(src, A.held.usesound, 50, TRUE)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 	act_message(user, src, MSG_SELF("You have removed the electronics from %T%."), MSG_OTHERS(span_danger("%U% has removed the electronics from %T%.")))
 	if(broken_now())
 		new /obj/item/circuitboard/broken(loc)

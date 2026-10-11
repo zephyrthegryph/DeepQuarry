@@ -139,7 +139,7 @@ CAPABILITIES(/obj/structure/reflector)
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		can_rotate = !can_rotate
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
-		playsound(W, W.usesound, 50, 1)
+		playsound(W, sounds_of(W).use, 50, 1)
 		return TRUE
 
 	if(W.get_welder() || (W.has_tool_quality(TOOL_WRENCH) && can_decon))

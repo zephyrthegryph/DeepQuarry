@@ -14,14 +14,13 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	throw_speed = 5
 	throw_range = 10
 	var/mode = 1;
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/robotanalyzer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	do_scan(M, user)
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/robotanalyzer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("mode", hand(), gesture(GESTURE_ALT), then(PROC_REF(mode_toggled)))
 
 /// Alt-click: switch between scanning cyborgs and scanning for upgrades.

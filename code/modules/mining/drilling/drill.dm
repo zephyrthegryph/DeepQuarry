@@ -535,7 +535,7 @@ CAPABILITIES(/obj/machinery/mining/brace)
 	if(istype(get_turf(src), /turf/space))
 		balloon_alert(user, "you can't anchor something to empty space. Idiot.")
 		return OP_OK
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	balloon_alert(user, "[anchored ? "una" : "a"]nchored the brace")
 	set_anchored(!anchored)
 	if(anchored)

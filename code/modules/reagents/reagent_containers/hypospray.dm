@@ -15,8 +15,6 @@
 	/// Poured into until it is spent (an autoinjector shuts when it is used).
 	var/open_at_start = TRUE
 	slot_flags = SLOT_BELT
-	drop_sound = SFX_ITEMS_DROP_GUN
-	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	preserve_item = 1
 	var/filled = 0
 	var/list/filled_reagents
@@ -30,6 +28,7 @@
 // (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
 // resists in combat mode. Armour does not stop it. The sound, the transfer and the log are do_injection(), which a type may extend.
 CAPABILITIES(/obj/item/reagent_containers/hypospray)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	configure(reagents(contents_from = PROC_REF(filled_contents)))
 	reagent_container(
 		volume = nameof(volume),

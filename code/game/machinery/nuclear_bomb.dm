@@ -87,7 +87,7 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 /obj/machinery/nuclearbomb/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	add_fingerprint(user)
 	if(auth())
 		if(opened == 0)

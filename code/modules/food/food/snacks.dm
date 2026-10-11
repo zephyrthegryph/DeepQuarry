@@ -2640,12 +2640,11 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickennoodlesoup)
 	center_of_mass_y = 5
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_TOMATO = 2, PLANT_POTATO = 2, PLANT_CARROT = 2, PLANT_EGGPLANT = 2, PLANT_MUSHROOMS = 2)
-	drop_sound = SFX_ITEMS_DROP_SHOVEL
-	pickup_sound = SFX_ITEMS_PICKUP_SHOVEL
 	bitesize = 10
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/bearstew
@@ -5979,13 +5978,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 6
 	foldable = null
 	trash = /obj/item/trash/admints
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 
 /obj/item/reagent_containers/food/snacks/candy
@@ -6317,11 +6316,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
 	filling_color = "#631212"
 	center_of_mass_x = 15
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_SODA
-	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/tuna

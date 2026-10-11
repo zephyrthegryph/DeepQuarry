@@ -150,7 +150,7 @@ CAPABILITIES(/obj/effect/blob)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 	var/damage_type = W.obj_damage_type()
 	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
 		blob_damage(W.force, damage_type)
 	return OP_PASS

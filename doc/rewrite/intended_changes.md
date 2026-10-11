@@ -4519,3 +4519,9 @@ The same producer isolation fix submitted on requirement E is carried here becau
 ### Batch 44: requirements-zero E, F, G merged (2026-10-11)
 
 `dq_conversion_pin`, `dq_requirement_fifth_pin` and `dq_requirement_sixth_pin` are re-blessed in master's factored pin format. Row changes beyond the format: master's tool-act `use_screwdriver`/`use_multitool` ops now appear on the anomaly signaler, filing cabinet, alien cable coil and collapsible sniper (whose screwdriver click becomes `Remove the DNA lock`); Nikki's constructor diagnostic drops its stack-location suffix (G's producer change). The nuclear bomb panel's remote reach is asked by authority (`AUTH_REMOTE_ACCESS`) rather than by AI actor type (silicon_entry lint).
+## Item sounds as a type trait (rewrite/look-traits, gap 5)
+
+`hitsound`, `usesound`, `mob_throw_hit_sound`, `equip_sound`, `pickup_sound` and `drop_sound` leave `/obj/item` for the `item_sounds()`
+trait (492 types, `tools/dx/codemods/type_trait.py item_sounds`); a subtype that set one to null declares `TRAIT_NONE`. Doors keep their own
+`hitsound` var. No behaviour change intended; pinned by `dq_type_trait/item_sounds_declared`. Run-time writers (the welder's lit sound, a
+borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item its own copy.

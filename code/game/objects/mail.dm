@@ -5,8 +5,6 @@
 	icon_state = "mail_small"
 	item_flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	/// Destination tagging for the mail sorter.
 	var/sortTag = 0
@@ -198,6 +196,7 @@ TRACKED(/obj/item/mail, postmark_roll)
 		look.overlay(look_overlay_image(icon, "postmark", pixel_x = stamp_offset_x + postmark_dx, pixel_y = stamp_offset_y + low + round(postmark_roll * (1 - low)), appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/mail)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	// the old attack_self: open the letter
 	op("unwrap", in_hand(), label("Unwrap"), needs(req(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
 	// a destination tagger labels it

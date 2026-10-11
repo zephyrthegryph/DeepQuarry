@@ -27,7 +27,8 @@ if [ -z "$ref" ]; then
 fi
 
 merge_rc=0
-git merge --no-edit "$ref" || merge_rc=$?
+# --no-commit: a real merge is committed below, with the regenerated look keys in it (no separate "Regenerate" commit).
+git merge --no-edit --no-commit "$ref" || merge_rc=$?
 
 if [ "$merge_rc" -ne 0 ]; then
 	mapfile -t conflicted < <(git diff --name-only --diff-filter=U)
@@ -68,13 +69,20 @@ if [ ${#remaining[@]} -gt 0 ]; then
 	exit 1
 fi
 
-if [ -f .git/MERGE_HEAD ] || git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+	echo "dq_merge_master: merged $ref; regenerating"
+	tools/build/build.sh gen || exit 1
+	# look_keys.txt is a pure function of the tree: never hand-merged, regenerated into the merge commit itself.
+	bash tools/ci/check_look_keys_format.sh --regen || exit 1
+	git add -- "$LOOK_KEYS"
 	git commit -q --no-edit || { echo "dq_merge_master: commit failed" >&2; exit 1; }
-elif [ ${#tracked[@]} -gt 0 ]; then
+	exit 0
+fi
+if [ ${#tracked[@]} -gt 0 ]; then
 	git commit -q -m "Untrack the generated analyze output (the build regenerates it)" || exit 1
 fi
 
-echo "dq_merge_master: merged $ref; regenerating"
+echo "dq_merge_master: merged $ref (fast-forward or up to date); regenerating"
 tools/build/build.sh gen || exit 1
-# look_keys.txt is a pure function of the tree: never hand-merged, always regenerated after the merge.
+# No merge commit to carry them: a tree whose keys are stale still gets one commit (rare: only a branch that committed stale keys).
 bash tools/ci/check_look_keys_format.sh --commit

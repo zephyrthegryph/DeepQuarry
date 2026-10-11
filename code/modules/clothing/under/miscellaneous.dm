@@ -1688,12 +1688,14 @@
 	icon = 'icons/obj/card_new.dmi'
 	icon_state = "permit-nude"
 	body_parts_covered = 0
-	equip_sound = null
 
 	sprite_sheets = null
 
 	item_state = "golem"  //This is dumb and hacky but was here when I got here.
 	worn_state = "golem"  //It's basically just a coincidentally black iconstate in the file.
+
+CAPABILITIES(/obj/item/clothing/under/permit)
+	configure(item_sounds(equip = TRAIT_NONE))
 
 /obj/item/clothing/under/hyperfiber
 	name = "HYPER jumpsuit"

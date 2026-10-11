@@ -99,7 +99,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 /obj/machinery/feeder/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
 	refresh_fill()
