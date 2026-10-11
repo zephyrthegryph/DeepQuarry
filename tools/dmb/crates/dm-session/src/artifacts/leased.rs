@@ -215,6 +215,15 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
 {
     /// Current local-input acceptance and observer delivery precede a pending
     /// claim. The strong request-bound capability already proves all read values.
+    pub fn claim_current<H>(
+        &self,
+        candidate: UnchangedCandidate<'_, '_, T, Q, A, D, H>,
+        locally_current: impl FnOnce(&[u8], &Arc<T>) -> bool,
+        observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Option<Arc<T>> {
+        let (key, accepted) = candidate.admit_current(locally_current, observed)?;
+        self.claim(&key, accepted)
+    }
     pub fn claim_unchanged<H>(
         &self,
         candidate: UnchangedCandidate<'_, '_, T, Q, A, D, H>,

@@ -102,6 +102,16 @@ pub fn lower_frontend_completed_input_on_execution<
             memo.and_then(|memo| memo.symbolic.as_ref())?
                 .candidate_roster(admission)
         });
+    // A complete current body issuer is required alongside the already admitted
+    // ABI graph. Custom policies and absent current rosters decline.
+    let local_inputs = prepared.and_then(|_| {
+        policy.current_local_inputs(
+            frontend,
+            startup.map_or(frontend.snapshot.tree.symbols(), |startup| {
+                startup.plan().symbols.as_ref()
+            }),
+        )
+    });
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
         || {
@@ -208,6 +218,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 host,
                 request_admission,
                 candidate_roster.as_ref(),
+                local_inputs.as_ref(),
                 policy,
                 startup,
                 memo,

@@ -12,13 +12,26 @@ pub struct UnchangedCandidate<'request, 'host, T, Q, A: Eq, D, H> {
 }
 impl<T, Q, A: Eq, D, H> UnchangedCandidate<'_, '_, T, Q, A, D, H> {
     pub fn admit(
-        mut self,
+        self,
         key: &[u8],
         locally_current: impl FnOnce(&Arc<T>) -> bool,
         mut observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
     ) -> Option<ObservedArtifact<T, Q, A, D>> {
+        self.admit_current(
+            |actual, value| actual == key && locally_current(value),
+            &mut observed,
+        )
+        .map(|(_, artifact)| artifact)
+    }
+    /// The caller must license the complete current local inputs for this exact
+    /// producer key; a prefix alone is never admission authority.
+    pub fn admit_current(
+        mut self,
+        locally_current: impl FnOnce(&[u8], &Arc<T>) -> bool,
+        mut observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)> {
         let artifact = self.artifact.take()?;
-        if self.key.as_ref() != key || !locally_current(&artifact.value) {
+        if !locally_current(&self.key, &artifact.value) {
             return None;
         }
         artifact.reads.visit_storage(|view| {
@@ -26,7 +39,7 @@ impl<T, Q, A: Eq, D, H> UnchangedCandidate<'_, '_, T, Q, A, D, H> {
                 observed(leaf);
             }
         });
-        Some(artifact)
+        Some((self.key, artifact))
     }
 }
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
@@ -90,6 +103,32 @@ pub struct UnchangedCandidates<'request, 'host, T, Q, A: Eq, D, H> {
     candidates: Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>>,
 }
 impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+    /// Prefix selection is routing only. Every selected token still requires
+    /// complete current key/local-input licensing before exposing its value.
+    pub fn take_prefix(
+        &mut self,
+        prefix: &[u8],
+    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
+        let start = self
+            .candidates
+            .partition_point(|candidate| candidate.key.as_ref() < prefix);
+        let end = start
+            + self.candidates[start..]
+                .iter()
+                .take_while(|candidate| candidate.key.starts_with(prefix))
+                .count();
+        self.candidates[start..end]
+            .iter_mut()
+            .rev()
+            .filter_map(|candidate| {
+                Some(UnchangedCandidate {
+                    key: Arc::clone(&candidate.key),
+                    artifact: Some(candidate.artifact.take()?),
+                    _request: candidate._request,
+                })
+            })
+            .collect()
+    }
     pub fn take(&mut self, key: &[u8]) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
         let start = self
             .candidates

@@ -371,17 +371,14 @@ impl SessionSymbolicMemo {
         if let Some(attempt) = &self.attempt {
             let mut completed = None;
             if let Some(candidates) = candidates {
-                let locator =
-                    symbolic_publication::locator(identity, &key.materialize(prepared_tail));
                 // Extraction holds only the request roster lock. Rebind/observer
                 // callbacks and pending claims execute after that guard drops.
-                for candidate in candidates.take(&locator) {
+                for candidate in candidates.take_identity(identity) {
                     let accepted = attempt
                         .with_pending(|leases| {
-                            leases.records.claim_unchanged(
+                            leases.records.claim_current(
                                 candidate,
-                                &locator,
-                                |record| {
+                                |_, record| {
                                     completed = self.lookup_record(
                                         record,
                                         key,

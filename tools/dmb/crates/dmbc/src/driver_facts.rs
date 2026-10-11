@@ -233,6 +233,9 @@ pub fn unit_members(frontend: &ColdFrontend) -> Result<BTreeMap<UnitIdentity, Me
 #[path = "driver_facts/prepared_units.rs"]
 mod prepared_units;
 pub(crate) use prepared_units::PreparedAbiUnits;
+#[path = "driver_facts/local_inputs.rs"]
+mod local_inputs;
+pub use local_inputs::LocalInputRoster;
 pub struct PreparedSourceAbi {
     units: Arc<PreparedAbiUnits>,
     pub diagnostics: Vec<(usize, AbiError)>,
@@ -858,6 +861,22 @@ impl<'a> FrozenPreparedPolicy<'a> {
     }
 }
 impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
+    fn current_local_inputs<'a>(
+        &'a self,
+        frontend: &'a ColdFrontend,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Option<crate::lowering::LocalInputRoster<'a>> {
+        if !std::ptr::eq(frontend, self.frontend)
+            || !symbols.is_extension_of(frontend.snapshot.tree.symbols())
+        {
+            return None;
+        }
+        Some(LocalInputRoster::from_admitted(
+            frontend,
+            self.prepared.units_owner(),
+        ))
+    }
+
     fn uses_issued_statements(&self) -> bool {
         true
     }

@@ -83,6 +83,7 @@ pub(in crate::lowering) fn lower_one_input<'frontend, R: Resolver, P: AbiPolicy>
         host,
         request_admission,
         None,
+        None,
         policy,
         startup,
         memo,

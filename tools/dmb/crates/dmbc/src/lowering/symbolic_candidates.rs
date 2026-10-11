@@ -29,6 +29,27 @@ impl SessionSymbolicMemo {
     }
 }
 impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
+    pub(super) fn take_identity(
+        &self,
+        identity: UnitIdentity,
+    ) -> Vec<
+        dm_session::UnchangedCandidate<
+            'request,
+            'host,
+            Record,
+            dm_ir::ResolveQuery,
+            dm_ir::ResolvedMeaning,
+            dm_ir::ReadDomain,
+            R,
+        >,
+    > {
+        let prefix = symbolic_publication::locator(identity, &[]);
+        self.values
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take_prefix(&prefix)
+    }
+    #[cfg(test)]
     pub(super) fn take(
         &self,
         key: &[u8],

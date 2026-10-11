@@ -38,6 +38,7 @@ fn admission_defers_cold_producer_and_consumes_it_once_with_fresh_output() {
         frontend.snapshot.tree.as_ref(),
         None,
         None,
+        None,
         &policy,
         None,
         None,

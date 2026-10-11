@@ -139,3 +139,34 @@ fn request_roster_consumes_exact_keys_once_and_keeps_variant_precedence() {
         33
     );
 }
+
+#[test]
+fn prefix_dispatch_never_substitutes_for_complete_local_inputs() {
+    let store = Store::current_revision();
+    store.enable_incidence();
+    store.insert_with_receipt(Arc::from([1, 0]), reads(), Arc::from([(2, 7)]), 1, || 11);
+    store.insert_with_receipt(Arc::from([1, 1]), reads(), Arc::from([(2, 7)]), 1, || 12);
+    store.insert_with_receipt(Arc::from([2, 0]), reads(), Arc::from([(2, 7)]), 1, || 22);
+    let host = Host {
+        version: Some(7),
+        observing: false,
+        calls: AtomicUsize::new(0),
+    };
+    let request = crate::ReceiptAdmission::new(&host);
+    let mut roster = store.unchanged_candidate_roster(&request);
+    let mut delivered = 0;
+    let accepted: Vec<_> = roster
+        .take_prefix(&[1])
+        .into_iter()
+        .filter_map(|candidate| {
+            candidate.admit_current(
+                |key, value| key == [1, 0] && **value == 11,
+                |leaf| delivered += leaf.len(),
+            )
+        })
+        .collect();
+    assert_eq!(accepted.len(), 1);
+    assert_eq!(accepted[0].0.as_ref(), &[1, 0]);
+    assert_eq!(delivered, 1);
+    assert_eq!(roster.take_prefix(&[2]).len(), 1);
+}

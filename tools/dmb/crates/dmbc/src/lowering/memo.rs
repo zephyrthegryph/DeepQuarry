@@ -16,6 +16,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     host: &'a R,
     request_admission: Option<&'a symbolic_input::RequestAdmission<'_, R>>,
     candidates: Option<&symbolic_input::RequestCandidates<'_, '_, R>>,
+    local_inputs: Option<&LocalInputRoster<'_>>,
     policy: &'a P,
     startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
@@ -109,15 +110,20 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
         };
         let metadata = current_key.metadata;
-        let (needs_parsed, prepared, prepared_tail) = match policy
-            .prepare_issued(metadata, issued, &context)
-            .ok()?
-        {
-            Some(replay) => {
+        let issued_prepared =
+            if let Some(unit) = local_inputs.and_then(|inputs| inputs.prepared(current_body)) {
+                Some(unit)
+            } else {
+                policy
+                    .prepare_issued(metadata, issued, &context)
+                    .ok()?
+                    .map(|replay| replay.into_view())
+            };
+        let (needs_parsed, prepared, prepared_tail) = match issued_prepared {
+            Some(prepared) => {
                 memo.counts
                     .issued_preparations
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let prepared = replay.into_view();
                 let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared)?;
                 (false, prepared, tail)
             }

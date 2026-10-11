@@ -226,9 +226,20 @@ pub fn source_unit_roster(
         Err(diagnostics)
     }
 }
+pub use crate::driver_facts::LocalInputRoster;
+
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
+    /// Custom/opaque policies provide no independent current local-input license.
+    fn current_local_inputs<'a>(
+        &'a self,
+        _frontend: &'a ColdFrontend,
+        _symbols: &SymbolTable,
+    ) -> Option<LocalInputRoster<'a>> {
+        None
+    }
+
     fn uses_issued_statements(&self) -> bool {
         false
     }
