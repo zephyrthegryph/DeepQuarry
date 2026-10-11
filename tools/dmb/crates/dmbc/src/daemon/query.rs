@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 mod occurrence_pages;
 #[path = "query/selected_envelope.rs"]
 mod selected_envelope;
-mod semantic_pages;
 pub mod semantic_client;
+mod semantic_pages;
 use std::{
     collections::BTreeMap,
     io::{self, Write},
@@ -247,7 +247,7 @@ const MAX_QUERIES: usize = 128;
 const MAX_REQUEST: usize = 65536;
 pub(crate) const MAX_OUTPUT: usize = 524288;
 impl QueryRequest {
-    pub(super) fn validate(&self) -> io::Result<()> {
+    pub(crate) fn validate(&self) -> io::Result<()> {
         if self.queries.len().saturating_add(self.source_queries.len()) > MAX_QUERIES
             || self.queries.iter().any(|query| {
                 query
@@ -319,7 +319,7 @@ pub(super) fn evaluate(
 ) -> io::Result<QueryReply> {
     evaluate_snapshot(request, tree, &Default::default())
 }
-pub(super) fn evaluate_snapshot(
+pub(crate) fn evaluate_snapshot(
     request: &QueryRequest,
     tree: &dm_tree::SemanticTree,
     state: &crate::runner_host::query_snapshot::QueryState,

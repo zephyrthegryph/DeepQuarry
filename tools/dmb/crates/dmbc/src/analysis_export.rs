@@ -56,10 +56,26 @@ pub(crate) fn write_resolved_observed<R: dm_ir::Resolver>(
     executor: &dm_exec::BuildExecutor,
     memo: &crate::lowering_memo::ProcedureMemo,
     writer: &mut impl Write,
+    observe: impl FnMut(&crate::selected_query::CurrentProcedureReferences) -> std::io::Result<()>,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    write_resolved_selected(
+        frontend, engine, resolver, spellings, executor, memo, writer, None, observe,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    engine: &crate::engine::EngineSnapshot,
+    resolver: &R,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    writer: &mut impl Write,
+    selected: Option<&[&dm_tree::frontend::BodyOccurrence]>,
     mut observe: impl FnMut(&crate::selected_query::CurrentProcedureReferences) -> std::io::Result<()>,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let mut totals = CoverageTotals {
-        requested: frontend.bodies.len(),
+        requested: selected.map_or(frontend.bodies.len(), |bodies| bodies.len()),
         ..Default::default()
     };
     crate::daemon::control::checkpoint()?;
@@ -114,7 +130,11 @@ pub(crate) fn write_resolved_observed<R: dm_ir::Resolver>(
         },
         &startup,
         memo,
-        crate::lowering::LoweringExecution::new(executor, &bodies),
+        match selected {
+            Some(selected) => crate::lowering::LoweringExecution::new(executor, &bodies)
+                .with_selected_bodies(selected),
+            None => crate::lowering::LoweringExecution::new(executor, &bodies),
+        },
         64,
         |procedure| -> Result<(), Box<dyn std::error::Error>> {
             crate::daemon::control::checkpoint()?;

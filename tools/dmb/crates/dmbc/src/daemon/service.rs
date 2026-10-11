@@ -439,7 +439,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     .ok_or_else(|| {
                         io::Error::new(io::ErrorKind::NotFound, "query session has not been built")
                     })?;
-                let host = slot.host.try_lock().map_err(|_| {
+                let mut host = slot.host.try_lock().map_err(|_| {
                     io::Error::new(
                         io::ErrorKind::WouldBlock,
                         "query session is building; retry after completion",
@@ -453,7 +453,41 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                 })?;
                 let state = host.query_state();
                 let state = state.lock().unwrap_or_else(|error| error.into_inner());
-                super::query::evaluate_snapshot(&request, tree, &state)
+                let needs_demand = request.source_queries.iter().any(|query| match query {
+                    super::query::SourceQuery::SelectedReferences { ordinal } => state
+                        .snapshot
+                        .as_ref()
+                        .is_none_or(|snapshot| !snapshot.has_selected(*ordinal)),
+                    _ => false,
+                });
+                if !needs_demand {
+                    return super::query::evaluate_snapshot(&request, tree, &state);
+                }
+                // Reject stale pins against the published snapshot before rebuilding.
+                let mut pins = request.clone();
+                pins.source_queries.clear();
+                pins.queries.clear();
+                super::query::evaluate_snapshot(&pins, tree, &state)?;
+                drop(state);
+                // Build admission acquires worker capacity before the host lock.
+                // Release our read lock before following that same order.
+                drop(host);
+                let _permit = shared.acquire_until(
+                    1,
+                    &admission_deadline::AdmissionDeadline::new(Instant::now()),
+                )?;
+                let mut host = slot.host.try_lock().map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::WouldBlock,
+                        "query session is building; retry after completion",
+                    )
+                })?;
+                crate::request_runner::selected_demand::execute(&request, &mut host).map_err(
+                    |error| match error.downcast::<io::Error>() {
+                        Ok(error) => *error,
+                        Err(error) => io::Error::other(error.to_string()),
+                    },
+                )
             })();
             match result {
                 Ok(reply) => protocol::send(&mut stream, &Reply::Query(reply)),

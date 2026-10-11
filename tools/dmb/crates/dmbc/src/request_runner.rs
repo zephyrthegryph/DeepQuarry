@@ -1,7 +1,12 @@
 //! Shared request execution; the CLI and future hosts use this exact pipeline.
 use crate as dmbc;
 use crate::request::{BuildCommand, BuildOutcome, BuildRequest, Command, CommandOutcome};
-use std::{io::{self, Write}, path::PathBuf, sync::Arc, time::Instant};
+use std::{
+    io::{self, Write},
+    path::PathBuf,
+    sync::Arc,
+    time::Instant,
+};
 #[path = "runner_facts.rs"]
 pub(crate) mod runner_facts;
 #[path = "runner_report.rs"]
@@ -11,12 +16,12 @@ mod runner_resources;
 use runner_resources::{OutputResourceSink, ResourceOutputs};
 #[path = "runner_cache_records.rs"]
 mod runner_cache_records;
+#[path = "runner_configuration.rs"]
+mod runner_configuration;
 #[path = "runner_freshness.rs"]
 mod runner_freshness;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
-#[path = "runner_configuration.rs"]
-mod runner_configuration;
 use runner_cache_records::publish_cache_records;
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -60,22 +65,27 @@ fn inspect(project: PathBuf, target: Option<&str>) -> Result<(), Box<dyn std::er
 pub fn run_build(request: BuildRequest) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     run_build_with_host(request, &mut crate::runner_host::BuildHost::one_shot())
 }
-
-/// Execute the same pipeline with an optional retained exact-engine owner.
 pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    runner_freshness::run(request, |request| {
-        run_build_attempt(request, host)
-    })
+    runner_freshness::run(request, |request| run_build_attempt(request, host, None))
 }
+#[path = "runner_analysis.rs"]
+mod runner_analysis;
+#[path = "runner_selected_demand.rs"]
+pub(crate) mod selected_demand;
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
+    mut demand: Option<&mut selected_demand::Demand>,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
-        host.query_state(),
+        if demand.is_some() {
+            Arc::new(std::sync::Mutex::new(Default::default()))
+        } else {
+            host.query_state()
+        },
         host.retains_artifacts(),
     );
     let _build_profile = dm_profile::stage("build");
@@ -153,7 +163,8 @@ fn run_build_attempt(
             trace_path.as_deref(),
         )?,
     );
-    let generated_paths = dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
+    let generated_paths =
+        dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
             .expect("explicit generated output policy");
     let prepared_sources = host.prepared_sources();
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
@@ -214,7 +225,13 @@ fn run_build_attempt(
     };
     if command == BuildCommand::Compile && !no_cache {
         let compiler = compiler.expect("configured compiler identity");
-        let configuration = runner_configuration::session(&project, &defines, compiler, engine_identity, bootstrap_catalog)?;
+        let configuration = runner_configuration::session(
+            &project,
+            &defines,
+            compiler,
+            engine_identity,
+            bootstrap_catalog,
+        )?;
         query_attempt.configure(configuration.clone());
         let configured = dmbc::session::Session::from_locked(
             configuration,
@@ -235,11 +252,15 @@ fn run_build_attempt(
                     generated_paths,
                     |record| {
                         if prior_outputs.is_none() {
-                            prior_outputs = record.outputs.as_ref().map(|outputs| std::sync::Arc::new(outputs.clone()));
+                            prior_outputs = record
+                                .outputs
+                                .as_ref()
+                                .map(|outputs| std::sync::Arc::new(outputs.clone()));
                         }
                         if resource_prior.is_none() {
                             if let Some(manifest) = &record.resource_manifest {
-                                resource_prior = Some((record.pair, std::sync::Arc::new(manifest.clone())));
+                                resource_prior =
+                                    Some((record.pair, std::sync::Arc::new(manifest.clone())));
                             }
                         }
                     },
@@ -256,10 +277,7 @@ fn run_build_attempt(
                         exact_inputs,
                         now_ns(),
                     )?;
-                    runner_freshness::admit_live(
-                        &validated.record().inputs,
-                        generated_paths,
-                    )?;
+                    runner_freshness::admit_live(&validated.record().inputs, generated_paths)?;
                     dmbc::daemon::control::begin_publication()?;
                     if !outputs_match {
                         store.install_exact(
@@ -275,14 +293,18 @@ fn run_build_attempt(
                         let timing = &validated.timings;
                         dmbc::daemon_eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
                     }
-                    query_attempt.admit_published_replay(&validated.record().inputs, engine_bytes.as_deref().unwrap_or_default(), host.query_tree());
+                    query_attempt.admit_published_replay(
+                        &validated.record().inputs,
+                        engine_bytes.as_deref().unwrap_or_default(),
+                        host.query_tree(),
+                    );
                     let rehashed = validated.validation.rehashed;
                     if validated.validation.rehashed > 0 || output_rehashes > 0 || !outputs_match {
                         let mut record = validated.into_record();
                         if !outputs_match {
                             let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                             for extension in ["dmb", "rsc", "dmb-pair.json"] {
-                                capture_output_digest(
+                                selected_demand::capture_output_digest(
                                     &mut outputs,
                                     &output_project.with_extension(extension),
                                 )?;
@@ -393,12 +415,23 @@ fn run_build_attempt(
     } else {
         None
     };
-    let resource_owner = if executable && !verification_capture { host.resources() } else { None };
-    let resource_configuration = crate::runner_host::resources::Configuration {
-        policy: memo_policy, project: project.clone(), defines: defines.clone(),
-        output: output_project.clone(), store: output_store.clone(), generated: generated_paths.clone(),
+    let resource_owner = if executable && !verification_capture {
+        host.resources()
+    } else {
+        None
     };
-    if let Some(hint) = resource_owner.as_ref().and_then(|owner| owner.hint(&resource_configuration)) {
+    let resource_configuration = crate::runner_host::resources::Configuration {
+        policy: memo_policy,
+        project: project.clone(),
+        defines: defines.clone(),
+        output: output_project.clone(),
+        store: output_store.clone(),
+        generated: generated_paths.clone(),
+    };
+    if let Some(hint) = resource_owner
+        .as_ref()
+        .and_then(|owner| owner.hint(&resource_configuration))
+    {
         resource_prior = Some((hint.pair, std::sync::Arc::clone(&hint.manifest)));
         prior_outputs = Some(std::sync::Arc::clone(&hint.outputs));
     }
@@ -486,6 +519,12 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
+    if let Some(demand) = demand.as_deref_mut() {
+        let engine = engine_capture.as_ref().ok_or("selected query requires pinned engine")?;
+        demand.complete(&frontend, engine, host_facts.as_deref(), executor, procedure_memo.as_ref(), memo_policy)?;
+        runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?;
+        return Ok(BuildOutcome::Analyzed { semantic_rows: 0, occurrence_rows: 0, body_rows: 0, seconds: total.elapsed().as_secs_f64() });
+    }
     query_attempt.capture(&frontend);
     if command == BuildCommand::Compile {
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
@@ -946,59 +985,10 @@ fn run_build_attempt(
             seconds: total.elapsed().as_secs_f64(),
         });
     }
-    let mut output = io::BufWriter::new(dmbc::daemon::stdout_writer());
-    dmbc::daemon::control::checkpoint()?;
-    let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
-    if command == BuildCommand::AnalyzeResolved {
-        let retained_engine = engine_capture.as_ref().ok_or("resolved analysis requires pinned engine")?;
-        let (resolver, _scalar) = runner_facts::prepare_retained(&frontend, retained_engine, host_facts.as_deref())?;
-        dmbc::daemon::control::checkpoint()?;
-        let links = retained_engine.link_overlay()?;
-        let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
-        let memo = procedure_memo.as_ref().unwrap_or(&fallback_memo);
-        let procedures = crate::analysis_export::write_resolved_observed(
-            &frontend, &retained_engine.snapshot, &resolver, &links.inventory.spellings,
-            executor, memo, &mut output, |procedure| query_attempt.capture_selected(&frontend, procedure),
-        )?;
-        dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
-    }
-    if command == BuildCommand::AnalyzeBodies {
-        let bodies = crate::analysis_export::write_bodies(&frontend, &mut output)?;
-        dmbc::daemon_eprintln!("source executable analysis: {bodies} issued bodies; semantic gaps remain explicit");
-    }
-    output.flush()?;
-    let timings = &frontend.timings;
-    dmbc::daemon_eprintln!(
-        "source analysis: {} semantic, {} occurrence, {} body rows; planning={:.3}s expansion={:.3}s declarations={:.3}s tree={:.3}s provenance={:.3}s total={:.3}s",
-        counts.semantic_rows,
-        counts.occurrence_rows,
-        counts.body_rows,
-        timings.directive_planning.as_secs_f64(),
-        timings.expansion.as_secs_f64(),
-        timings.declaration_parsing.as_secs_f64(),
-        timings.tree_resolution.as_secs_f64(),
-        timings.provenance_and_body_indexing.as_secs_f64(),
-        timings.total.as_secs_f64(),
-    );
-    // Partial analysis exports do not certify a fully populated compile session.
-    query_attempt.finish_analyzed();
-    Ok(BuildOutcome::Analyzed {
-        semantic_rows: counts.semantic_rows,
-        occurrence_rows: counts.occurrence_rows,
-        body_rows: counts.body_rows,
-        seconds: total.elapsed().as_secs_f64(),
-    })
+    runner_analysis::finish(&frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
+        procedure_memo.as_ref(), memo_policy, command, &mut query_attempt, total)
     });
     drop(frontend_memo);
     host.prune_foreign_callable_index();
     execution_result?
-}
-
-fn capture_output_digest(
-    snapshot: &mut dmbc::input_snapshot::InputSnapshot,
-    path: &std::path::Path,
-) -> io::Result<()> {
-    use dmbc::input_snapshot::{FileSystemInputs, SnapshotProvider};
-    let (stamp, content) = FileSystemInputs.digest(path)?;
-    snapshot.record_verified_digest(path, stamp, content)
 }

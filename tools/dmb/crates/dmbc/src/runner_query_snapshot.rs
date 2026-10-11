@@ -153,6 +153,9 @@ impl SourceSnapshot {
     ) -> std::io::Result<()> {
         self.selected.write(ordinal, self.source_revision, output)
     }
+    pub(crate) fn has_selected(&self, ordinal: u32) -> bool {
+        self.selected.contains(ordinal)
+    }
     pub(crate) fn occurrence(
         &self,
         ordinal: u32,

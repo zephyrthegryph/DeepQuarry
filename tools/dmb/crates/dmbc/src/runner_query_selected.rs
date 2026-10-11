@@ -34,6 +34,9 @@ impl SelectedRows {
             census.vec_payload("query_snapshot.selected_rows", bytes);
         }
     }
+    pub(super) fn contains(&self, ordinal: u32) -> bool {
+        self.rows.contains_key(&ordinal)
+    }
     pub(super) fn capture(&mut self, current: &crate::selected_query::CurrentProcedureReferences) {
         if self.rows.len() >= 256 {
             return;
