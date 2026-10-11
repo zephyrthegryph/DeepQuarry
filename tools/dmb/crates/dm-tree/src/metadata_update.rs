@@ -9,6 +9,8 @@ use std::sync::Arc;
 #[path = "metadata_structural.rs"]
 mod structural;
 pub(crate) use structural::StructuralMetadata;
+#[path = "metadata_adjacency.rs"]
+mod adjacency;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Shape {
@@ -105,6 +107,13 @@ impl MetadataDependencies {
         vector(&self.order, &mut visit);
     }
     pub(crate) fn capture(tree: &SemanticTree, declarations: &KeyedDeclarations) -> Option<Self> {
+        Self::capture_current(tree, declarations, None)
+    }
+    fn capture_current(
+        tree: &SemanticTree,
+        declarations: &KeyedDeclarations,
+        previous: Option<(&Self, &std::collections::BTreeSet<DeclarationKey>)>,
+    ) -> Option<Self> {
         if tree.declarations().len() != declarations.len() {
             return None;
         }
@@ -137,12 +146,16 @@ impl MetadataDependencies {
         if projection.len() != nodes.len() {
             return None;
         }
-        for (index, member) in tree.members.iter().enumerate() {
-            if let Some(previous) = member.previous {
-                let edges = nodes[*projection.get(&keys[previous.index()])?]
-                    .dependants
-                    .get_or_insert_with(|| Arc::new(Vec::new()));
-                Arc::make_mut(edges).push(keys[index]);
+        if let Some((previous, changed)) = previous {
+            adjacency::bind(tree, &keys, &projection, &mut nodes, previous, changed)?;
+        } else {
+            for (index, member) in tree.members.iter().enumerate() {
+                if let Some(previous) = member.previous {
+                    let edges = nodes[*projection.get(&keys[previous.index()])?]
+                        .dependants
+                        .get_or_insert_with(|| Arc::new(Vec::new()));
+                    Arc::make_mut(edges).push(keys[index]);
+                }
             }
         }
         let mut stable_projection: Vec<_> = (0..nodes.len()).collect();
@@ -174,28 +187,14 @@ impl MetadataDependencies {
         declarations: &KeyedDeclarations,
         previous: Option<(&Self, &KeyedDeclarations)>,
     ) -> Option<Self> {
-        let mut current = Self::capture(tree, declarations)?;
-        if let Some((old, old_declarations)) = previous {
-            let delta = declarations.delta_since(old_declarations);
-            let changed: std::collections::BTreeSet<_> =
-                delta.changes.iter().map(|change| change.key).collect();
-            for node in &mut current.nodes {
-                if changed.contains(&node.key) {
-                    continue;
-                }
-                let Some(slot) = old.slot(node.key) else {
-                    continue;
-                };
-                let prior = &old.nodes[slot];
-                // Unchanged declaration rows alone do not prove adjacency: a
-                // new override or changed parent can alter the dependency cone.
-                if node.dependants == prior.dependants {
-                    node.dependants = prior.dependants.clone();
-                }
-            }
-        }
-        Some(current)
+        let Some((old, old_declarations)) = previous else {
+            return Self::capture(tree, declarations);
+        };
+        let delta = declarations.delta_since(old_declarations);
+        let changed = delta.changes.iter().map(|change| change.key).collect();
+        Self::capture_current(tree, declarations, Some((old, &changed)))
     }
+
     fn slot(&self, key: DeclarationKey) -> Option<usize> {
         let order = key_order(key);
         let index = self

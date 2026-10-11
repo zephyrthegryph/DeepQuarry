@@ -521,3 +521,69 @@ fn symbol_only_update_replaces_lexical_authority_and_shares_semantic_owners() {
         assert_eq!(a, b);
     }
 }
+
+#[test]
+fn structural_adjacency_binds_current_order_before_allocating_changed_edges() {
+    fn input(siblings: &[&str]) -> (SemanticTree, KeyedDeclarations) {
+        let (base, index) = captured_inputs(false, false);
+        let mut symbols = base.symbols().clone();
+        let mut rows: Vec<_> = index.skeletons().cloned().collect();
+        let parent = dm_ir::SymbolId::of("/datum/base");
+        let name = dm_ir::SymbolId::of("value");
+        for spelling in siblings {
+            let path = symbols.intern(spelling).unwrap();
+            rows.push(Skeleton::Type {
+                path,
+                explicit_parent: Some(parent),
+            });
+            rows.push(Skeleton::Member {
+                owner: path,
+                name,
+                kind: MemberKind::Var,
+                mode: DefinitionMode::Override,
+                metadata: Arc::new(MemberMetadata::default()),
+                content: 0,
+            });
+        }
+        let tree = build(symbols, &rows).unwrap();
+        let (index, _) = KeyedDeclarations::capture(None, &rows).unwrap();
+        (tree, index)
+    }
+    let (old_tree, old_index) = input(&["/datum/sibling_a", "/datum/sibling_b"]);
+    let old = MetadataDependencies::capture(&old_tree, &old_index).unwrap();
+    let parent = old
+        .nodes
+        .iter()
+        .find(|node| node.key.owner == dm_ir::SymbolId::of("/datum/base"))
+        .unwrap();
+    let old_edges = parent.dependants.as_ref().unwrap();
+    assert_eq!(old_edges.len(), 3);
+    for siblings in [
+        vec!["/datum/sibling_a", "/datum/sibling_b"],
+        vec!["/datum/sibling_a", "/datum/sibling_c", "/datum/sibling_b"],
+        vec!["/datum/sibling_b", "/datum/sibling_a"],
+        vec!["/datum/sibling_b"],
+    ] {
+        let (tree, index) = input(&siblings);
+        let actual =
+            MetadataDependencies::capture_rebased(&tree, &index, Some((&old, &old_index))).unwrap();
+        let fresh = MetadataDependencies::capture(&tree, &index).unwrap();
+        assert!(actual.roster == fresh.roster);
+        assert_eq!(actual.members_at_declaration, fresh.members_at_declaration);
+        assert_eq!(actual.projection, fresh.projection);
+        assert_eq!(actual.order, fresh.order);
+        for node in &actual.nodes {
+            let expected = &fresh.nodes[fresh.slot(node.key).unwrap()];
+            assert_eq!(node.member, expected.member);
+            assert_eq!(node.dependants, expected.dependants);
+        }
+        let edges = actual.nodes[actual.slot(parent.key).unwrap()]
+            .dependants
+            .as_ref()
+            .unwrap();
+        assert_eq!(
+            Arc::ptr_eq(edges, old_edges),
+            siblings == ["/datum/sibling_a", "/datum/sibling_b"]
+        );
+    }
+}
