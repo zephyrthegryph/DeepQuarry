@@ -96,6 +96,18 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         })));
     };
     let current_body = current_body.expect("current key was issued from this row");
+    // Exact resident/disk replay already admitted the executable and its reads.
+    // Attach the SAME current ABI/body certificate used by fresh production, so
+    // publishing a promoted record does not force full-key admission next time.
+    let promote_admission = |admission: symbolic_input::Admission| {
+        admission
+            .with_metadata(Arc::clone(current_key.metadata))
+            .with_local(
+                (!capture_references && !selections_only)
+                    .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+                    .flatten(),
+            )
+    };
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
@@ -311,7 +323,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             note(MemoOutcome::ResidentHit, None, None);
             return Ok(Admission::Admitted(
                 CompletedInput::lowered(unit).with_admission(
-                    admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+                    admission.map(promote_admission),
                 ),
             ));
         }
@@ -449,7 +461,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
         return Ok(Admission::Admitted(input.with_admission(
-            admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+            admission.map(promote_admission),
         )));
     }
     if let Some(unit) = disk
@@ -489,7 +501,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         note(MemoOutcome::DiskHit, None, None);
         return Ok(Admission::Admitted(
             CompletedInput::lowered(unit).with_admission(
-                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+                admission.map(promote_admission),
             ),
         ));
     }
