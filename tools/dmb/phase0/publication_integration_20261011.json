@@ -67,5 +67,26 @@
     "full_suite": false,
     "shared_input_closure_authenticated": false,
     "accepted_runtime_baseline": false
-  }
+  },
+  "migration_source_pending_validation": [
+    {
+      "commit": "f492bed0a2",
+      "change": "Contextual portable initializer policy authenticates inner engine association",
+      "tests_run": false
+    },
+    {
+      "commit": "0e9eed6021",
+      "change": "Prepared request roster issues shared symbolic source binding set",
+      "tests_run": false,
+      "cross_request_reuse": false
+    }
+  ],
+  "validation_blocker": {
+    "kind": "owned E disk space",
+    "free_bytes_observed": 279080960,
+    "rust_and_runtime_jobs_active": false,
+    "automatic_cleanup_rejected": true,
+    "manual_script": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-old-compiler-rcgu.ps1"
+  },
+  "dirty_scheduling": "open: exact local-input delta foundation remains separate from exhaustive semantic read change authority; no unaffected-row skip enabled"
 }
