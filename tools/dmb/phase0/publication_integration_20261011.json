@@ -1075,6 +1075,19 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "shared_pressure_focused_589": {
+    "source_commit": "589eda04e19fa2217a1e79c6f2353fca16e62e68",
+    "source_archive_sha256": "f53b3de0d9a7f401f9ccaa1b79cdb1777d16f82dd2cce32cfed1ae9b20dc1989",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164323-5658a606-job-cargo.json",
+    "build_seconds": 284.61,
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164827-5e49e427-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164833-067cbe42-focused.json"
+    ],
+    "focused_tests_passed": 15,
+    "inspector_failed_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-164839-097563c4-focused.json",
+    "scope": "Shared core five tests, symbolic pressure six, initializer pressure one, footprint census two, actual busy named-pipe one passed. Inspector one passed and two failed locating named pinned icon procedures; investigation pending. No performance or full runtime gate claim."
+  },
   "allocator_reclamation_build": {
     "commit": "cb23d1937ab6dfd887eb38de2c71e2b3e76717d5",
     "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-163346-4a1481b5-job-cargo.json",
