@@ -209,9 +209,9 @@ TRACKED(/obj/effect/plant, wall_shift)
 		var/blight = 1+round(seed().get_trait(TRAIT_POTENCY)/20)
 		if(blight >= 5)
 			blight = 5
-		look.light(blight, 0.5, clr)
+		look.glow(blight, 0.5, clr)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /// A fully grown plant stands tall (and, of woody seeds, blocks the way); a younger one lies flat and open.
 /obj/effect/plant/proc/plant_settle(full_grown)

@@ -25,8 +25,6 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	layer = ABOVE_WINDOW_LAYER
 	circuit = /obj/item/circuitboard/request
 	blocks_emissive = NONE
-	light_power = 0.25
-	light_color = "#00ff00"
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/department = "Unknown" //The list of all departments on the station (Determined from this variable on each unit) Set this to the same thing if you want several consoles in one department
@@ -51,7 +49,6 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	var/message = "";
 	var/recipient = ""; //the department which will be receiving the message
 	var/priority = -1 ; //Priority of the message being sent
-	light_range = 0
 	var/datum/announcement/announcement
 
 CAPABILITIES(/obj/machinery/requests_console)
@@ -95,8 +92,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	if(departmentType & RC_INFO)
 		GLOB.req_console_information |= department
 
-	update_icon()
-
 // the last console of a department takes it off the request lists.
 /obj/machinery/requests_console/lifecycle_dematerialize()
 	var/lastDeptRC = 1
@@ -113,20 +108,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/requests_console/appearance_overlays()
-	. = list()
+TRACKED(/obj/machinery/requests_console, newmessagepriority)
 
+/// What the console shows: dark without power, else its screen for the newest message's priority, lit.
+/obj/machinery/requests_console/draw(datum/look/look)
+	..()
 	if(power_lost())
-		set_light(0)
-		set_light_on(FALSE)
-		icon_state = "req_comp_off"
-	else
-		icon_state = "req_comp_[newmessagepriority]"
-		. += mutable_appearance(icon, "req_comp_ov[newmessagepriority]")
-		. += emissive_appearance(icon, "req_comp_ov[newmessagepriority]")
-		set_light(2)
-		set_light_on(TRUE)
+		look.state("req_comp_off")
+		return
+	look.state("req_comp_[newmessagepriority]")
+	look.glow("req_comp_ov[newmessagepriority]")
+	look.glow(GLOW(2, 0.25, "#00ff00"))
 
 /obj/machinery/requests_console/ui_title(mob/user)
 	return "[department] Request Console"
@@ -237,8 +229,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 	if(tempScreen == RCS_VIEWMSGS)
 		for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 			if(Console.department == department)
-				Console.newmessagepriority = 0
-				Console.update_icon()
+				Console.set_newmessagepriority(0)
 	if(tempScreen == RCS_MAINMENU)
 		reset_message()
 	screen = tempScreen

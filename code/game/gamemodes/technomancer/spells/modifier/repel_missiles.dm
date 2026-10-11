@@ -13,7 +13,7 @@
 	icon_state = "generic"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_FORCE
-	light_color = "#FF5C5C"
+	spell_light_color = "#FF5C5C"
 	modifier_type = /datum/body_effect/technomancer/repel_missiles
 	modifier_duration = 10 MINUTES
 

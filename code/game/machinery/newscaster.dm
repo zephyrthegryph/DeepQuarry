@@ -108,7 +108,7 @@ CAPABILITIES(/datum/feed_network)
 /datum/feed_network/proc/alert_readers(annoncement)
 	for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 		NEWSCASTER.newsAlert(annoncement)
-		NEWSCASTER.update_icon()
+	wanted_changed()
 
 /obj/machinery/newscaster
 	name = "newscaster"
@@ -117,9 +117,6 @@ CAPABILITIES(/datum/feed_network)
 	icon_state = "newscaster_normal"
 	layer = ABOVE_WINDOW_LAYER
 	blocks_emissive = NONE
-	light_power = 0.9
-	light_range = 2
-	light_color = "#00ff00"
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
@@ -148,7 +145,6 @@ CAPABILITIES(/datum/feed_network)
 	var/c_locked=0;        //Will our new channel be locked to public submissions?
 	var/hitstaken = 0      //Death at 3 hits from an item with force>=15
 	var/datum/feed_channel/viewing_channel
-	light_range = 0
 	anchored = TRUE
 	var/obj/machinery/exonet_node/node
 	circuit = /obj/item/circuitboard/newscaster
@@ -157,6 +153,7 @@ CAPABILITIES(/datum/feed_network)
 
 CAPABILITIES(/obj/machinery/newscaster)
 	after_init(0, then(PROC_REF(connect_exonet)))
+	after_init(0, then(PROC_REF(follow_wanted)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("set_channel_lock", ui_act("set_channel_lock"), then(PROC_REF(ui_act_set_channel_lock)))
 	op("set_attachment", ui_act("set_attachment"), then(PROC_REF(ui_act_set_attachment)))
@@ -192,51 +189,55 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	. = ..()
 	unit_no = ++unit_no_cur
 	paper_remaining = 15
-	update_icon()
 
 /// Joins the exonet node, once the map around it exists.
 /obj/machinery/newscaster/proc/connect_exonet(datum/act/timer/A)
 	rel_set(src, nameof(node), get_exonet_node())
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/newscaster/appearance_overlays()
-	. = list()
-	if(!ispowered || (broken_now()))
-		icon_state = "newscaster_off"
-		if(broken_now()) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			. += "crack3"
-		set_light(0)
-		set_light_on(FALSE)
-		return .
+TRACKED(/obj/machinery/newscaster, ispowered)
+TRACKED(/obj/machinery/newscaster, alert)
+TRACKED(/obj/machinery/newscaster, hitstaken)
+TRACKED(/obj/machinery/newscaster, wanted_up)
 
-	if(GLOB.news_network.wanted_issue()) //wanted icon state, there can be no overlays on it as it's a priority message
-		icon_state = "newscaster_wanted"
-		. += mutable_appearance(icon, "newscaster_wanted_ov")
-		. += emissive_appearance(icon, "newscaster_wanted_ov")
-		return .
+/// TRUE while the network circulates a wanted issue: every caster shows it (set by the network, wanted_changed()).
+/obj/machinery/newscaster/var/wanted_up = FALSE
 
-	if(alert) //new message alert overlay
-		. += "newscaster_alert"
-		. += mutable_appearance(icon, "newscaster_alert")
-		. += emissive_appearance(icon, "newscaster_alert")
+/// What the caster shows: dark (and cracked) without power or broken; else the wanted notice, which hides everything else, or the normal
+/// screen with the new-message alert and its cracks, lit while it is on.
+/obj/machinery/newscaster/draw(datum/look/look)
+	..()
+	if(!ispowered || broken_now())
+		look.state("newscaster_off")
+		look.overlay("crack3", broken_now())
+		return
+	look.glow(GLOW(2, 0.9, "#00ff00"))
+	if(wanted_up)
+		look.state("newscaster_wanted")
+		look.glow("newscaster_wanted_ov")
+		return
+	look.state("newscaster_normal")
+	if(alert)
+		look.glow("newscaster_alert")
+	if(hitstaken > 0)
+		look.overlay("crack[hitstaken]")
+	look.glow("newscaster_normal_ov")
 
-	if(hitstaken > 0) //Cosmetic damage overlay
-		. += "crack[hitstaken]"
+/// Shows the wanted issue the network circulates as the caster is made.
+/obj/machinery/newscaster/proc/follow_wanted(datum/act/timer/A)
+	set_wanted_up(!!GLOB.news_network?.wanted_issue())
 
-	icon_state = "newscaster_normal"
-	. += emissive_appearance(icon, "newscaster_normal_ov")
-	. += mutable_appearance(icon, "newscaster_normal_ov")
-	set_light(2)
-	set_light_on(TRUE)
-	return .
+/// The network's wanted issue went up or came down: every caster follows it.
+/datum/feed_network/proc/wanted_changed()
+	var/up = !!wanted_issue()
+	for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
+		NEWSCASTER.set_wanted_up(up)
 
 /obj/machinery/newscaster/power_change()
 	if(broken_now()) //Broken shit can't be powered.
 		return
 	. = ..()
 	if(!power_lost())
-		ispowered = 1
+		set_ispowered(1)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
@@ -686,8 +687,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		return
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
-		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
-			NEWSCASTER.update_icon()
+		GLOB.news_network.wanted_changed()
 		set_temp("Wanted issue taken down.", "success", FALSE)
 		SStgui.update_uis(src)
 
@@ -766,8 +766,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(news_call)
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"[news_call]\""),2)
-		alert = 1
-		update_icon()
+		set_alert(1)
 		after(src, 30 SECONDS, PROC_REF(clear_alert))
 // playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) // less peeps pls
 	else
@@ -777,12 +776,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	return
 
 /obj/machinery/newscaster/proc/lose_power()
-	ispowered = 0
-	update_icon()
+	set_ispowered(0)
 
 /obj/machinery/newscaster/proc/clear_alert()
-	alert = 0
-	update_icon()
+	set_alert(0)
 
 /// parent channel (a relation view: it reads null once the target is deleted).
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel

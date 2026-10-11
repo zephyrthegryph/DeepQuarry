@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/floor_light)
 		return ITEM_INTERACT_BLOCKING
 	act_message(user, src, others = span_notice("%U% has repaired %T%."))
 	atom_fix()
-	damaged = null
+	set_damaged(null)
 	update_brightness()
 	return ITEM_INTERACT_SUCCESS
 
@@ -101,7 +101,8 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 	else
 		act_message(user, src, others = span_danger("%U% attacks %T%!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
-		if(isnull(damaged)) damaged = 0
+		if(isnull(damaged))
+			set_damaged(rand(1, 4))
 	update_brightness()
 	return OP_OK
 
@@ -133,28 +134,29 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 		update_brightness()
 	return PROCESS_KILL
 
+/// The light is lit while it is on and drawing its active power; else it stops drawing.
 /obj/machinery/floor_light/proc/update_brightness()
-	if(on && use_power == USE_POWER_ACTIVE)
-		if(light_range != default_light_range || light_power != default_light_power || light_color != default_light_colour)
-			set_light(default_light_range, default_light_power, default_light_colour)
-	else
+	if(!lit())
 		set_use_power(USE_POWER_OFF)
-		if(light_range || light_power)
-			set_light(0)
+	update_active_power_usage(lit() ? (default_light_range + default_light_power) * 10 : 0)
 
-	update_active_power_usage((light_range + light_power) * 10)
-	update_icon()
+/obj/machinery/floor_light/proc/lit()
+	return on && use_power == USE_POWER_ACTIVE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/floor_light/appearance_overlays()
-	. = list()
-	if(use_power && !broken())
-		if(isnull(damaged))
-			. += CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001)
-		else
-			if(damaged == 0) //Needs init.
-				damaged = rand(1,4)
-			. += CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001)
+TRACKED(/obj/machinery/floor_light, damaged)
+TRACKED(/obj/machinery/floor_light, default_light_colour)
+
+/// What the panel shows while it draws power and works: its light, flickering once damaged, and the light it casts while lit.
+/obj/machinery/floor_light/draw(datum/look/look)
+	..()
+	if(!use_power || broken())
+		return
+	if(isnull(damaged))
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
+	else
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
+	if(lit())
+		look.glow(GLOW(default_light_range, default_light_power, default_light_colour))
 
 /obj/machinery/floor_light/proc/broken()
 	return (!operable())
@@ -172,9 +174,9 @@ CAPABILITIES(/obj/machinery/floor_light)
 /obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)
 	var/datum/damage_packet/packet = A.packet
 	if(packet.severity >= 2 && isnull(damaged))
-		damaged = 0
+		set_damaged(rand(1, 4))
 	return HOOK_DECLINE
 
 /obj/machinery/floor_light/cultify()
-	default_light_colour = "#FF0000"
+	set_default_light_colour("#FF0000")
 	update_brightness()

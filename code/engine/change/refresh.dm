@@ -74,7 +74,11 @@
 #if defined(UNIT_TESTS)
 	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
 	if(E == GLOB.refresh_running && !GLOB.ledger_adopting)
-		var/msg = "REFRESH SELF-MARK: [E.type] marked itself changed during its own refresh"
+		// The writer's frames, innermost first: the runtime is caught by the drain, which keeps only its message.
+		var/chain = ""
+		for(var/callee/frame = caller; frame && length(chain) < 400; frame = frame.caller)
+			chain += " <- [frame.proc]"
+		var/msg = "REFRESH SELF-MARK: [E.type][var_name ? ".[var_name]" : ""] marked itself changed during its own refresh[chain]"
 		GLOB.refresh_self_marks += msg
 		if(!GLOB.refresh_self_mark_expected)
 			stack_trace(msg)
@@ -500,8 +504,11 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	if(!L.touched)
 		if(apply && !isnull(A.rx?.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
-			// last look set (overlays, filters, vis_contents, base properties).
+			// last look set (overlays, filters, vis_contents, base properties, its light). Taking them back is presentation too.
+			var/atom/outer_empty = GLOB.refresh_applying
+			GLOB.refresh_applying = A
 			L.apply_to(A)
+			GLOB.refresh_applying = outer_empty
 			rx_of(A).look_key = null
 			if(engine?.look_watchers)
 				look_published(A, engine)

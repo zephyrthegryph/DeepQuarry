@@ -151,7 +151,7 @@ CAPABILITIES(/obj/structure/marker_beacon)
 /obj/structure/marker_beacon/draw(datum/look/look)
 	..()
 	look.state("[icon_base][lowertext(picked_color)]-on")
-	look.light(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
+	look.glow(light_range, light_power, GLOB.marker_beacon_colors[picked_color])
 
 MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."))
 

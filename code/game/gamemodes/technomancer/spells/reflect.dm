@@ -14,9 +14,12 @@
 	toggled = 1
 	var/reflecting = 0
 	var/damage_to_energy_multiplier = 60.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 1200 energy cost
+
+CAPABILITIES(/obj/item/spell/reflect)
+	look_glow(GLOW(3, 2, "#006AFF"))
+
 /obj/item/spell/reflect/Initialize(mapload, coreless)
 	. = ..()
-	set_light(3, 2, l_color = "#006AFF")
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 

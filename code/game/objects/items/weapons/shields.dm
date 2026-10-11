@@ -210,11 +210,11 @@ CAPABILITIES(/obj/item/shield/energy)
 	if(active)
 		look.overlay(look_appearance(icon, "[base]_blade", color = lcolor))
 		look.held_state("[base]_blade")
-		look.light(lrange, lpower, lcolor)
+		look.glow(lrange, lpower, lcolor)
 	else
 		look.set_color("FFFFFF")
 		look.held_state(base)
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/shield/energy/proc/shield_recolored(datum/act/op/A)
 	var/datum/prompt/color/choice = A.answer

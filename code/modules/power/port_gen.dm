@@ -470,12 +470,12 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	if(active && !overheating)
 		look.state("potatoon")
 		look.overlay(mutable_appearance(icon, "eggrad", alpha = 90)) //v.faint glow for reasons. the reasons being it's producing radiation as per code
-		look.light(2, 2, "#A8B0F8")
+		look.glow(2, 2, "#A8B0F8")
 	else if(overheating)	//The warp core is overloading, Captain!
 		look.state("potatodanger")	//show that it's angry, even when it's off. something something subroutine. Visual feedback!
 		if(active)	//but only glow if it's also still on, since the reaction is ongoing.
 			look.overlay(mutable_appearance(icon, "eggrad", alpha = 190)) //more intense glow, lightings
-			look.light(5, 4, "#A8B0F8")
+			look.glow(5, 4, "#A8B0F8")
 	else	//off and it isn't angry, so we just vibe as 'off'
 		look.state(initial(icon_state))
 //Port Emd, RS PR #484

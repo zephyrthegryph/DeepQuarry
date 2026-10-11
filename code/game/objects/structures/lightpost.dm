@@ -20,10 +20,10 @@ TRACKED(/obj/structure/lightpost, festive)
 	..()
 	var/base = look.state_so_far(src)
 	if(lit)
-		look.light(5, 1, "#E9E4AF")
+		look.glow(5, 1, "#E9E4AF")
 		look.overlay(look_overlay_image(null, "[base]-glow", plane = PLANE_LIGHTING_ABOVE))
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 	if(festive)
 		look.overlay(look_overlay_image(null, "[base]-festive"))
 

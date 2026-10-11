@@ -4359,3 +4359,29 @@ The requirement pins Codex recorded before rf-silicon landed (`dq_requirement_pr
 - **Guns and magazines load at the root of init** (`owns_many(starts = PROC_REF)`): a hand-loaded gun's random short load is drawn as one count (`max_shells - rand(0, max_shells)`, the same distribution as removing that many after a full load); a magazine still starts latent where it did. An artifact casing's bullet is its own declaration (the gun's projectile type, or a riot foam dart outside an artifact gun).
 - **Two hand-made children became owned** (they were undeclared views): a vehicle cage's vehicle (`on_destroy = ON_DESTROY_SPILL`, so a destroyed cage still puts it out; taking the cage apart releases it with `rel_take()`) and the bio-compostor's muffin monster (deleted with the terminal; the emag releases it with `rel_take()`). Reagent circuits with a volume and splattering blob shots declare their holder; a pump or filter circuit still has none.
 - A map-placed AI core's laws and the destructive analyzer's material link are made at the root of init (`starts = PROC_REF(x)`, which now receives `mapload`). The overmap's edge tiles work out their coordinate digits before `..()` and draw them (`coord_marks`).
+
+## Light as a look part (rewrite/look-traits, gap 4)
+
+`look.glow(range, power, color)` / `look_glow(GLOW(...))` replace `look.light()`, `look.light_off()` and the provider form
+(`DECLARE_APPEARANCE_PROC` + `appearance_overlays()`, now hard-banned). The eleven providers that wrote `icon_state` or called `set_light()`
+from a draw (fire alarm, newscaster, requests console, holoposter, space heater, particle focus, door timer, floor light, recharge station and drone pod,
+IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw(look)` over tracked state. Pinned by the look state pins
+(`dq_look_state_pin`) and `interim_iv_drip_patient_actor` / `interim_feeder_patient_actor` (which now redraw with `refresh_flush()`).
+
+* **Airlock controllers show their cycle.** `/obj/machinery/embedded_controller/radio/airlock` (and its advanced and plain subtypes) had a provider that
+  only added the open-panel overlay and never called its parent's, so the display stayed on its mapped `airlock_control_standby` state. It now shows
+  off / standby / process like the radio controller it is. The access controller keeps its own states and still draws no open-panel layer.
+* **The door timer's countdown is an overlay**, not the machine's own `maptext`, and it moves once per machine interval through a tracked
+  `shown_seconds` (it was redrawn on the same interval before). A broken timer shows its blue screen as an overlay on its own sprite.
+* **The holoposter's examine line is computed** (power, broken, alert, advert) instead of being written by the draw; the advert is a tracked `poster`
+  var, not the `icon_state` it used to write, and the alert is a tracked `alerting` set when the security level changes. A mapped poster with
+  `icon_forced` keeps its mapped advert.
+* **The drone pod's "It appears broken..." / "unpowered..." are examine lines** instead of a `desc` the draw overwrote.
+* **The newscaster's wanted notice follows a tracked `wanted_up`** that the news network sets on every caster when an issue goes up or comes down
+  (`wanted_changed()`); the old draw read the network on each redraw. A caster made while an issue is up picks it up after init.
+* **The recharge station's gauge and dim state are tracked** (`gauge_state`, `cell_dead`), written where it used to call `update_icon()`.
+* **The IV drip's and feeder's fill overlay** is a shared cached image per (icon, level, colour) instead of a fresh `/icon` per redraw; it is written
+  where the old code redrew (attach, detach, each step).
+* **A floor light's damage flicker is rolled when it is damaged** (it was rolled by the first draw after the damage).
+* **Lights that were set at init are declared**: the technomancer auras, modifiers, chroma (spell and the light it leaves), flame tongue, radiance and
+  reflect, and the slime extract flashlight. The modifiers' colour moved from the base `light_color` to their own `spell_light_color`.

@@ -80,6 +80,6 @@ TRACKED(/obj/item/clothing/suit/armor/shield, active)
 	look.state("shield_armor_[active]")
 	look.held_state("shield_armor_[active]")
 	if(active)
-		look.light(2, 1, "#006AFF")
+		look.glow(2, 1, "#006AFF")
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)

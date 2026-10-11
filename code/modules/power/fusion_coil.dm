@@ -30,16 +30,16 @@ TRACKED(/obj/item/fusion_coil, coil_damaged)
 	if(coil_damaged)
 		look.overlay(mutable_appearance(icon, "fc_unstable"))
 		look.overlay(emissive_appearance(icon, "fc_unstable"))
-		look.light(1, 3, light_color_danger)
+		look.glow(1, 3, light_color_danger)
 		return
 
 	if(coil_charged)
 		look.overlay(mutable_appearance(icon, "fc_charged"))
 		look.overlay(emissive_appearance(icon, "fc_charged"))
-		look.light(1, 2, light_color)
+		look.glow(1, 2, light_color)
 		return
 
-	look.light_off()
+	look.glow(GLOW_OFF)
 
 /obj/item/fusion_coil/bullet_act(obj/item/projectile/P, def_zone)
 	. = ..()

@@ -1000,13 +1000,13 @@ TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 	look.watch(selected_sprite)
 	if(stat == DEAD)
 		look.state(selected_sprite.dead_icon)
-		look.light(3, 1, selected_sprite.dead_light)
+		look.glow(3, 1, selected_sprite.dead_light)
 	else if(aiRestorePowerRoutine)
 		look.state(selected_sprite.nopower_icon)
-		look.light(1, 1, selected_sprite.nopower_light)
+		look.glow(1, 1, selected_sprite.nopower_light)
 	else
 		look.state(selected_sprite.alive_icon)
-		look.light(1, 1, selected_sprite.alive_light)
+		look.glow(1, 1, selected_sprite.alive_light)
 
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()

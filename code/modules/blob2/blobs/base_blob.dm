@@ -58,10 +58,10 @@ TRACKED(/obj/structure/blob, look_tint)
 	if(look_title)
 		look.identity(name = "[look_title] [base_name]")
 		look.set_color(look_tint)
-		look.light(3, 3, look_tint)
+		look.glow(3, 3, look_tint)
 	else
 		look.identity(name = "inert [base_name]")
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/structure/blob/update_transform()
 	var/matrix/M = matrix()

@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 	..()
 	look.state(ecig_state())
 	if(active)
-		look.light(brightness_on)
+		look.glow(brightness_on)
 
 /obj/item/clothing/mask/smokable/ecig/state_suffix()
 	return ""

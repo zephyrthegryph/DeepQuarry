@@ -1,3 +1,12 @@
+/// The fill overlay of a drip or feeder container: `state` of `icon` with the reagent colour added (the legacy icon add, built once per colour).
+DECLARE_SHARED_CACHE(reagent_fill_overlays, GLOBAL_PROC_REF(build_reagent_fill_overlay), SC_NEVER)
+
+/proc/build_reagent_fill_overlay(icon, state, colour)
+	var/icon/filled = icon(icon, state)
+	if(colour)
+		filled += colour
+	return image(filled)
+
 /obj/machinery/iv_drip
 	name = "\improper IV drip"
 	desc = "Helpful for giving someone blood! Or taking it away. It giveth, it taketh."
@@ -14,31 +23,42 @@
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/iv_drip/appearance_overlays()
-	. = list()
-	if(attached())
-		icon_state = "hooked"
-	else
-		icon_state = ""
+TRACKED(/obj/machinery/iv_drip, fill_state)
+TRACKED(/obj/machinery/iv_drip, fill_color)
+/// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
+/obj/machinery/iv_drip/var/fill_state
+/obj/machinery/iv_drip/var/fill_color
 
-	if(beaker)
-		var/datum/reagents/reagents = beaker.reagents
-		if(reagents.total_volume)
-			var/image/filling = image('icons/obj/iv_drip.dmi', src, "reagent")
+/// Writes the fill overlay the container's level and colour show.
+/obj/machinery/iv_drip/proc/refresh_fill()
+	var/datum/reagents/reagents = beaker?.reagents
+	if(!reagents?.total_volume)
+		set_fill_state(null)
+		return
+	var/percent = round((reagents.total_volume / beaker.volume) * 100)
+	switch(percent)
+		if(0 to 9)
+			set_fill_state("reagent0")
+		if(10 to 24)
+			set_fill_state("reagent10")
+		if(25 to 49)
+			set_fill_state("reagent25")
+		if(50 to 74)
+			set_fill_state("reagent50")
+		if(75 to 79)
+			set_fill_state("reagent75")
+		if(80 to 90)
+			set_fill_state("reagent80")
+		if(91 to INFINITY)
+			set_fill_state("reagent100")
+	set_fill_color(reagents.get_color())
 
-			var/percent = round((reagents.total_volume / beaker.volume) * 100)
-			switch(percent)
-				if(0 to 9)		filling.icon_state = "reagent0"
-				if(10 to 24) 	filling.icon_state = "reagent10"
-				if(25 to 49)	filling.icon_state = "reagent25"
-				if(50 to 74)	filling.icon_state = "reagent50"
-				if(75 to 79)	filling.icon_state = "reagent75"
-				if(80 to 90)	filling.icon_state = "reagent80"
-				if(91 to INFINITY)	filling.icon_state = "reagent100"
-
-			filling.icon += reagents.get_color()
-			. += filling
+/// What it shows: hooked up while attached to a patient, and its container's fill in the reagent's colour.
+/obj/machinery/iv_drip/draw(datum/look/look)
+	..()
+	look.state(attached() ? "hooked" : "")
+	if(fill_state)
+		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 
 CAPABILITIES(/obj/machinery/iv_drip)
 	ref_one(nameof(attached), /mob/living/carbon/human)
@@ -62,13 +82,13 @@ CAPABILITIES(/obj/machinery/iv_drip)
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
 		rel_clear(src, nameof(attached))
-		update_icon()
+		refresh_fill()
 		return
 
 	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(user, src, others = "%U% attaches %T% to \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		update_icon()
+		refresh_fill()
 
 MSG_DEF_SELF(iv_drip/beaker, "there is already a reagent container loaded")
 
@@ -84,7 +104,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 	if(!move_into(src, nameof(src.beaker), W, user))
 		return OP_DECLINE
 	to_chat(user, "You attach \the [W] to \the [src].")
-	update_icon()
+	refresh_fill()
 	return OP_OK
 
 /obj/machinery/iv_drip/proc/screwdriver_used(datum/act/op/A)
@@ -111,7 +131,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
 			rel_clear(src, nameof(attached))
-			update_icon()
+			refresh_fill()
 			return PROCESS_KILL
 
 	if(attached() && beaker)
@@ -123,7 +143,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 					// speed up transfer on blood packs
 					transfer_amount = 4
 				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
-				update_icon()
+				refresh_fill()
 
 		// Take blood
 		else
@@ -158,7 +178,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 				beaker.reagents.update_total()
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()
-				update_icon()
+				refresh_fill()
 				if(SScontracts)
 					emit_contract_event(CONTRACT_EVENT_BLOOD_DONATED, list(
 						"department" = DEPARTMENT_MEDICAL,
@@ -175,7 +195,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
 	rel_take(src, nameof(beaker))
-	update_icon()
+	refresh_fill()
 	return OP_OK
 
 /// Old verb "Toggle Mode".

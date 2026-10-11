@@ -485,15 +485,15 @@ CAPABILITIES(/obj/machinery/alarm)
 		if(0)
 			look.state("alarm_0")
 			look.glow(is_main ? "alarm_ov0" : "alarm_ovP")
-			look.light(2, 0.25, is_main ? "#03A728" : "#0033FF")
+			look.glow(2, 0.25, is_main ? "#03A728" : "#0033FF")
 		if(1)
 			look.state("alarm_2") //yes, alarm2 is yellow alarm
 			look.glow("alarm_ov2")
-			look.light(2, 0.25, "#EC8B2F")
+			look.glow(2, 0.25, "#EC8B2F")
 		if(2)
 			look.state("alarm_1")
 			look.glow("alarm_ov1")
-			look.light(2, 0.25, "#DA0205")
+			look.glow(2, 0.25, "#DA0205")
 
 /// Its power or condition changed: the area may need another main alarm, its scan its first look, its loop its silence.
 /obj/machinery/alarm/proc/power_changed(datum/act/A)
