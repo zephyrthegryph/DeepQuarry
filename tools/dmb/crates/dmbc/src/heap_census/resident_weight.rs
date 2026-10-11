@@ -65,6 +65,35 @@ fn nodes<K, V>(map: &BTreeMap<K, V>) -> usize {
     map.len()
         .saturating_mul(size_of::<(K, V)>().saturating_mul(16).saturating_add(512))
 }
+fn code(c: &mut HeapCensus, code: &dm_codegen_byond::lower_resolver::ResolverProc) -> usize {
+    c.resolver_code(code);
+    let owner = "resident_modified";
+    let mut overhead = nodes(&code.procedure_values)
+        .saturating_add(nodes(&code.procedure_statics))
+        .saturating_add(nodes(&code.slots))
+        .saturating_add(nodes(&code.resources))
+        .saturating_add(nodes(&code.instances))
+        .saturating_add(nodes(&code.modified_instances));
+    for captured in code.modified_instances.values() {
+        let descriptor = &captured.descriptor;
+        if c.slice(owner, descriptor.fields(), true) {
+            for (name, value) in descriptor.fields() {
+                c.string(owner, name);
+                c.typed_expression(owner, value);
+            }
+        }
+        // The public descriptor exposes every resource key/value. Its shared
+        // map node capacity is private: charge a maximum-fanout node per row,
+        // plus the Arc/map allocation even for an empty map.
+        overhead = overhead
+            .saturating_add(nodes(descriptor.resources()))
+            .saturating_add(128);
+        for name in descriptor.resources().keys() {
+            c.string(owner, name);
+        }
+    }
+    overhead
+}
 #[cfg(test)]
 pub(crate) fn procedure(
     unit: &crate::lowering::LoweredUnit,
@@ -97,11 +126,8 @@ fn procedure_core(
     reads: &[ResolverRead],
     ledger: impl FnOnce(&mut HeapCensus),
 ) -> Option<usize> {
-    if !unit.code.modified_instances.is_empty() || !unit.source_helpers.is_empty() {
-        return None;
-    }
     let mut c = HeapCensus::new("resident_admission");
-    c.resolver_code(&unit.code);
+    let mut map_overhead = code(&mut c, &unit.code);
     if let Some(references) = &unit.selected_references {
         if c.arc_object("resident_reference_selections", references)
             && c.vec_payload("resident_reference_selections", &references.references)
@@ -112,8 +138,12 @@ fn procedure_core(
         }
     }
     c.vec_payload("resident_helpers", &unit.source_helpers);
-    // resolver_code's sole fixed-map limitation is covered explicitly below;
-    // private modified values were rejected before this traversal.
+    for helper in &unit.source_helpers {
+        map_overhead = map_overhead.saturating_add(code(&mut c, &helper.code));
+        c.debug("resident_helper_debug", &helper.debug_origins);
+    }
+    // Every resolver map has a conservative node charge above; modified
+    // expression buffers use the same complete typed syntax walker.
     c.owner("lowered_code").unknown.remove(
         "resolver BTreeMap nodes and modified-instance nested expression buffers not exposed",
     );
@@ -150,11 +180,7 @@ fn procedure_core(
             .saturating_add(size_of::<crate::lowering_memo::CachedProcedure>())
             .saturating_add(key.len())
             .saturating_add(4096)
-            .saturating_add(nodes(&unit.code.procedure_values))
-            .saturating_add(nodes(&unit.code.procedure_statics))
-            .saturating_add(nodes(&unit.code.slots))
-            .saturating_add(nodes(&unit.code.resources))
-            .saturating_add(nodes(&unit.code.instances)),
+            .saturating_add(map_overhead),
     )
 }
 
@@ -198,7 +224,7 @@ mod tests {
         assert_eq!(census.finish().unique_known_capacity_bytes, 0);
     }
     #[test]
-    fn actual_operand_capacity_increases_resident_charge_and_unknown_sidecar_declines() {
+    fn actual_operand_and_helper_capacity_increases_resident_charge() {
         let frontend = dm_tree::frontend::build(
             std::path::Path::new("project.dme"),
             &Source,
@@ -222,7 +248,41 @@ mod tests {
                 code: unit.code.clone(),
                 debug_origins: unit.debug_origins.clone(),
             });
-        assert!(procedure(unit, &args.0, b"key", &args.1, &args.2).is_none());
+        let with_helper = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        assert!(with_helper > after);
+        unit.source_helpers[0]
+            .code
+            .procedure
+            .code
+            .items
+            .reserve(20000);
+        assert!(procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap() > with_helper);
+        let before_modified = procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap();
+        let expression = dm_syntax::Expr {
+            kind: dm_syntax::ExprKind::Group(Box::new(dm_syntax::Expr {
+                kind: dm_syntax::ExprKind::Literal("x".repeat(10000)),
+                span: dm_syntax::Span::new(0, 10000),
+            })),
+            span: dm_syntax::Span::new(0, 10000),
+        };
+        let descriptor = dm_ir::ModifiedInstance::capture(
+            dm_ir::SymbolId::of("/obj"),
+            dm_ir::SymbolId::of("/"),
+            None,
+            &[(String::from("field"), expression)],
+        );
+        unit.source_helpers[0].code.modified_instances.insert(
+            dm_ir::SymRef::Instance(dm_ir::SymbolId::of("modified")),
+            dm_codegen_byond::lower_resolver::CapturedModifiedInstance {
+                descriptor,
+                field_origins: vec![Some(0)],
+                origin: Some(0),
+                source_span: None,
+            },
+        );
+        assert!(
+            procedure(unit, &args.0, b"key", &args.1, &args.2).unwrap() > before_modified + 10000
+        );
 
         let value =
             ResolvedMeaning::Value(dm_ir::SemanticValue::Text(Arc::from(b"text".as_slice())));
