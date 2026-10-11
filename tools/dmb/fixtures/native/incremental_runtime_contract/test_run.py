@@ -13,6 +13,31 @@ spec.loader.exec_module(helper)
 
 
 class RuntimeContractHelperTests(unittest.TestCase):
+    def test_extra_asset_transport_rejects_source_mutation_during_copy(self):
+        retirement = helper.load("asset_contract_retirement", HERE.parent / "power_retirement_runtime/run.py")
+        with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
+            root = Path(directory)
+            source, destination = root / "source", root / "destination"
+            source.mkdir()
+            destination.mkdir()
+            names = retirement.fixture_files(("contract-resource.txt", "probe.dmm"))
+            sha = lambda file: hashlib.sha256(file.read_bytes()).hexdigest()
+            for name in names:
+                (source / name).write_bytes(name.encode())
+            hashes = {name: sha(source / name) for name in names}
+            def changing_sha(file):
+                digest = sha(file)
+                # The copy now exists: model a concurrent mutation of the
+                # original map after the pre-copy digest but before admission.
+                if file == source / "probe.dmm" and (destination / "probe.dmm").exists():
+                    file.write_bytes(b"concurrently changed map")
+                    return sha(file)
+                return digest
+            with self.assertRaisesRegex(ValueError, "changed during copy"):
+                retirement.copy_fixture_files(source, destination, names, hashes, changing_sha)
+            self.assertEqual(sha(destination / "probe.dmm"), hashes["probe.dmm"])
+            self.assertNotEqual(sha(source / "probe.dmm"), hashes["probe.dmm"])
+
     def test_runtime_archive_mutation_preserves_authenticated_acquisition(self):
         with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
             root = Path(directory)
