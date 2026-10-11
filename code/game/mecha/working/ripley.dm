@@ -127,12 +127,12 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 
 //Meant for random spawns.
 /obj/mecha/working/ripley/mining/old
+	max_integrity = 190 // just slightly worse
 	desc = "An old, dusty mining ripley."
 
 // ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/working/ripley/mining/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 190	//Just slightly worse.
 	update_integrity(25)
 	cell.set_charge(rand(0, cell.charge))
 
