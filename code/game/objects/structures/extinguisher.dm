@@ -31,12 +31,9 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 // ALLOW(init/INSTANCE_STATE): a built cabinet sits on its wall empty; a mapped one comes with its extinguisher
 /obj/structure/extinguisher_cabinet/Initialize(mapload)
 	. = ..()
-
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
-	else if(has_extinguisher)
-		observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 
 
 /// Anything held: an extinguisher goes into an open empty cabinet; anything else opens or shuts it.
@@ -47,7 +44,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		if(!has_extinguisher && opened)
 			if(!move_into(src, nameof(src.has_extinguisher), O, user))
 				return OP_OK
-			observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
 			opened = !opened
@@ -77,7 +73,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
 			return OP_OK
 	if(has_extinguisher)
-		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
 		rel_take(src, nameof(has_extinguisher))
@@ -90,7 +85,6 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 /obj/structure/extinguisher_cabinet/proc/interaction_tk(datum/act/op/A)
 	var/mob/user = A.actor
 	if(has_extinguisher)
-		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		rel_take(src, nameof(has_extinguisher))
@@ -99,12 +93,8 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		opened = !opened
 	return OP_OK
 
-/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/act/notice/A)
-	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/source = A.target
-	if(source != has_extinguisher)
-		return
-	rel_take(src, nameof(has_extinguisher))
+/// owns(on_lost =): the extinguisher left the cabinet (taken, or destroyed in it): the cabinet stands open.
+/obj/structure/extinguisher_cabinet/proc/extinguisher_lost(obj/item/extinguisher/E)
 	opened = TRUE
 
 /obj/structure/extinguisher_cabinet/proc/appearance_suffix()
@@ -129,4 +119,4 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 
 /obj/structure/extinguisher_cabinet/ownership()
 	. = ..()
-	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED, starts = when(cond_not(nameof(building)), /obj/item/extinguisher))
+	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED, starts = when(cond_not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost))
