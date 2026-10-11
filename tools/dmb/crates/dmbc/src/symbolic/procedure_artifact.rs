@@ -80,7 +80,15 @@ impl Contribution {
                 .local_names
                 .len()
                 .checked_add(frame.argument_names.len())?,
-            |count, helper| count.checked_add(helper.local_names.len()),
+            |count, helper| {
+                let prefix = usize::try_from(helper.argument).ok()?;
+                if prefix >= frame.argument_names.len() {
+                    return None;
+                }
+                count
+                    .checked_add(helper.local_names.len())?
+                    .checked_add(prefix)
+            },
         )
     }
 }

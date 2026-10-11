@@ -320,8 +320,9 @@ pub fn lower_helpers<R: Resolver>(
                 errors,
             )
         })?;
-        // VM argument-source records have an empty formal table, while Arg
-        // operands continue to address the owner's original lexical frame.
+        // This executable-only helper does not retain a separate formal frame.
+        // Composition binds today's owning parameter-name prefix at emission;
+        // Arg operands continue to address the owner's full lexical frame.
         code.procedure.argument_names.clear();
         code.procedure.argument_type_flags.clear();
         code.procedure.argument_value_sources.clear();

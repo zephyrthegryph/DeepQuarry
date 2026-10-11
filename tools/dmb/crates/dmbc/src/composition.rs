@@ -665,11 +665,14 @@ fn compose_records_access(
                 batch.helpers[helper_index].bytecode_features(),
             ),
         );
-        emit_anonymous(
+        let helper = &batch.helpers[helper_index];
+        let prefix = helper_metadata::prefix(&batch, &procedures, helper.owner, helper.argument)?;
+        helper_metadata::emit(
             &mut dmb,
             &mut string_index,
             words,
-            &batch.helpers[helper_index].local_names,
+            &helper.local_names,
+            prefix,
         )?;
     }
     if initializer_count != batch.initializers.len() {
@@ -877,36 +880,14 @@ fn reserve_procedure_sentinel(dmb: &mut Dmb) {
         });
     }
 }
+mod helper_metadata;
 fn emit_anonymous(
     dmb: &mut Dmb,
     strings: &mut StringIndex,
     words: impl Into<std::sync::Arc<Vec<u32>>>,
     names: &[String],
 ) -> Result<(), CompositionError> {
-    let code = append_list(dmb, words)?;
-    let mut locals = Vec::with_capacity(names.len());
-    for name in names {
-        let name = strings.intern(dmb, name.as_bytes())?;
-        let id = u32::try_from(dmb.variables.len())
-            .map_err(|_| unsupported("anonymous local overflow"))?;
-        dmb.variables.push(Variable {
-            kind: 0,
-            value: 0,
-            name,
-        });
-        locals.push(id);
-    }
-    let locals = append_list(dmb, locals)?;
-    let args = append_list(dmb, Vec::new())?;
-    dmb.procs.push(Proc {
-        strings: [NONE; 4],
-        source_parameter: 255,
-        source_kind: 0,
-        flags: 4,
-        extended_flags: None,
-        code_locals_args: [code, locals, args],
-    });
-    Ok(())
+    helper_metadata::emit(dmb, strings, words, names, &[])
 }
 
 #[cfg(test)]
