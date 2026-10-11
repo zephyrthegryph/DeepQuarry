@@ -48,9 +48,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 
-/obj/machinery/appliance/cooker/oven/Initialize(mapload)
-	. = ..()
-
 
 
 /obj/machinery/appliance/cooker/oven/ui_data(datum/act/eval/A)

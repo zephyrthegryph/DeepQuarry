@@ -4,6 +4,9 @@
 // is the source of truth for per-line diff context.
 
 /obj/machinery/atmospherics/trinary/mixer
+	air3_volume = ATMOS_DEFAULT_VOLUME_MIXER * 1.5
+	air2_volume = ATMOS_DEFAULT_VOLUME_MIXER
+	air1_volume = ATMOS_DEFAULT_VOLUME_MIXER
 	icon = 'icons/atmos/mixer.dmi'
 	icon_state = "map"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -33,13 +36,6 @@
 /obj/machinery/atmospherics/trinary/mixer/derived()
 	. = ..()
 	. += drawn_from(nameof(use_power))
-
-/obj/machinery/atmospherics/trinary/mixer/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
-	air3.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 1.5)
 
 /// A mixer is a Rust budget group (rust_set_budget_leg()): two input legs (port 1 and port 2 into port 3) with their shares.
 /// The requested moles from the inputs' live gas, the entropy/power budget and the split are computed in Rust each device
