@@ -3,7 +3,9 @@
 	name = "Skrellian helmet"
 	desc = "Smoothly contoured and polished to a shine. Still looks like a fishbowl."
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL,SPECIES_HUMAN))))
 
@@ -17,7 +19,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/skrell, fit_spec, list(REQ_FITS_
 	name = "Skrellian voidsuit"
 	desc = "Seems like a wetsuit with reinforced plating seamlessly attached to it. Very chic."
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/space/skrell)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL,SPECIES_HUMAN))))
 
@@ -36,8 +40,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/skrell, suit_storage_spec, list(HOLD_ON
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.2
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/space/vox)
+	configure(item_protection(siemens = 0.2, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
@@ -45,10 +50,12 @@ TYPE_TABLE(/obj/item/clothing/suit/space/vox, suit_storage_spec, list(HOLD_ONLY(
 
 /obj/item/clothing/head/helmet/space/vox
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.2
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL | AIRTIGHT
 	flags_inv = 0
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/vox)
+	configure(item_protection(siemens = 0.2))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 

@@ -24,7 +24,6 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 	body_parts_covered = HEAD|FACE|EYES
 	actions_types = list(/datum/action/item_action/flip_welding_mask)
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
@@ -33,6 +32,7 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
 	op("head_welding_toggle_verb", menu(), label("Adjust welding mask"), needs(carried()), then(PROC_REF(head_welding_toggle_verb_op)))
@@ -224,8 +224,10 @@ CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
 	desc = "A pair of kitty ears. Meow!"
 	icon_state = "kitty"
 	body_parts_covered = 0
-	siemens_coefficient = 1.5
 	item_icons = null
+
+CAPABILITIES(/obj/item/clothing/head/kitty)
+	configure(item_protection(siemens = 1.5))
 
 /obj/item/clothing/head/richard
 	name = "chicken mask"

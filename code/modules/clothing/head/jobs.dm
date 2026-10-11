@@ -161,9 +161,11 @@
 	icon_state = "fedora_brown"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
-	siemens_coefficient = 0.9
 	valid_accessory_slots = null
 	show_examine = FALSE
+
+CAPABILITIES(/obj/item/clothing/head/det)
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/head/det, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
 

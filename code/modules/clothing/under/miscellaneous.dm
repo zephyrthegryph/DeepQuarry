@@ -136,25 +136,22 @@
 	desc = "It has a NASA logo on it and is made of space-proofed materials."
 	icon_state = "black"
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.02
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS //Needs gloves and shoes with cold protection to be fully protected.
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/space)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/under/acj
 	name = "administrative cybernetic jumpsuit"
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	desc = "it's a cybernetically enhanced jumpsuit used for administrative duties."
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/under/acj)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
 /obj/item/clothing/under/owl
 	name = "owl uniform"
@@ -1026,7 +1023,6 @@
  */
 
 /obj/item/clothing/under/swimsuit/
-	siemens_coefficient = 1
 	body_parts_covered = 0
 
 /obj/item/clothing/under/swimsuit/black
@@ -1656,7 +1652,6 @@
 	icon_state = "sexybunny_black"
 
 /obj/item/clothing/under/cohesion
-	permeability_coefficient = 0  //Should have this anyway
 
 /obj/item/clothing/under/cohesion/striped/testpartial //testing better coverage.
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS

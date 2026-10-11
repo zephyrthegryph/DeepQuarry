@@ -62,19 +62,27 @@ TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GE
 //The cybersuit is not space-proof. It does however, have good siemens_coefficient values
 /obj/item/clothing/head/helmet/space/rig/light/hacker
 	name = "headgear"
-	siemens_coefficient = 0.4
 	flags_inv = HIDEEARS
 
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/light/hacker)
+	configure(item_protection(siemens = 0.4))
+
 /obj/item/clothing/suit/space/rig/light/hacker
-	siemens_coefficient = 0.4
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/light/hacker)
+	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/shoes/lightrig/hacker
-	siemens_coefficient = 0.4
 	step_volume_mod = 0.3 //Special sneaky cyber-soles, for infiltration.
 	flags = NOSLIP //They're not magboots, so they're not super good for exterior hull walking, BUT for interior infiltration they'll do swell.
 
+CAPABILITIES(/obj/item/clothing/shoes/lightrig/hacker)
+	configure(item_protection(siemens = 0.4))
+
 /obj/item/clothing/gloves/gauntlets/rig/light/hacker
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/hacker)
+	configure(item_protection(siemens = 0))
 
 /obj/item/rig/light/ninja
 	name = "ominous suit control module"
@@ -111,7 +119,9 @@ TYPE_TABLE(/obj/item/rig/light/ninja, suit_storage_spec, list(HOLD_ONLY(list(POC
 
 /obj/item/clothing/gloves/gauntlets/rig/light/ninja
 	name = "insulated gloves"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/magboots/rig/light/ninja
 	step_volume_mod = 0.25	//Not quite silent, but still damn quiet

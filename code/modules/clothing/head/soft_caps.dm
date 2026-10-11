@@ -4,7 +4,6 @@
 	icon_state = "cargosoft"
 	item_state_slots = list(slot_r_hand_str = "cargosoft", slot_l_hand_str = "cargosoft")
 	var/flipped = 0
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
 	special_handling = TRUE
 
@@ -18,6 +17,7 @@
 TRACKED(/obj/item/clothing/head/soft, flipped)
 
 CAPABILITIES(/obj/item/clothing/head/soft)
+	configure(item_protection(siemens = 0.9))
 	op("flip", in_hand(), label("Flip"), then(PROC_REF(soft_cap_flip_self)))
 
 /// Old attack_self.

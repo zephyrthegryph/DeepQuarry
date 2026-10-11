@@ -100,9 +100,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	icon_state = "lingarmor"
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
-	siemens_coefficient = 0.3
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	slowdown = 1.5
+
+CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
+	configure(item_protection(siemens = 0.3, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/space/changeling/armored/Initialize(mapload)
 	. = ..()
@@ -116,8 +117,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	desc = "A tough, hard covering of black chitin with transparent chitin in front."
 	icon_state = "lingarmorhelmet"
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60"
-	siemens_coefficient = 0.3
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling/armored)
+	configure(item_protection(siemens = 0.3, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/shoes/magboots/changeling/armored
 	desc = "A tough, hard mass of chitin, with long talons for digging into terrain."
@@ -130,7 +132,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	desc = "Very resilient gauntlets made out of black chitin.  It looks very durable, and can probably resist electrical shock in addition to the elements."
 	icon_state = "ling"
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60" //No idea if glove armor gets checked
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/combat/changeling)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/boots/combat/changeling //Noslips
 	name = "chitinous boots"
@@ -138,6 +142,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	of the floor at will, granting the wearer stability."
 	icon_state = "lingarmor"
 	armor_spec = "melee=75;bullet=60;laser=70;energy=60;bomb=60"
-	siemens_coefficient = 0.3
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/combat/changeling)
+	configure(item_protection(siemens = 0.3, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))

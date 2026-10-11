@@ -4,56 +4,47 @@
 	desc = "These gloves will protect the wearer from electric shock."
 	name = "insulated gloves"
 	icon_state = "yellow"
-	siemens_coefficient = 0
-	permeability_coefficient = 0.05
 
 
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 CAPABILITIES(/obj/item/clothing/gloves/yellow)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0, permeability = 0.05))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/clothing/gloves/fyellow                             //Cheap Chinese Crap
 	desc = "These gloves are cheap copies of proper insulated gloves. No way this can end badly."
 	name = "budget insulated gloves"
 	icon_state = "yellow"
-	siemens_coefficient = 1			//Set to a default of 1, gets overridden in initialize()
-	permeability_coefficient = 0.05
 
 CAPABILITIES(/obj/item/clothing/gloves/fyellow)
+	configure(item_protection(siemens = 1, permeability = 0.05))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	after_init(0, then(PROC_REF(roll_insulation)))
 
-// ALLOW(init/INSTANCE_STATE): rolls how well these gloves insulate
-/obj/item/clothing/gloves/fyellow/Initialize(mapload)
-	. = ..()
-	// Picks a value between 0 and 1.25, in 5% increments //
-	var/shock_pick = rand(0,15)
-	siemens_coefficient = shock_pick * 0.05
+/// How well these gloves insulate: a value between 0 and 0.75, in 5% steps, rolled once made.
+/obj/item/clothing/gloves/fyellow/proc/roll_insulation(datum/act/timer/A)
+	set_siemens_coefficient(rand(0, 15) * 0.05)
 
 /obj/item/clothing/gloves/black
 	desc = "These work gloves are thick and fire-resistant."
 	name = "black gloves"
 	icon_state = "black"
-	permeability_coefficient = 0.05
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/black)
+	configure(item_protection(permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/orange
 	name = "orange gloves"
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "orange"
 
+CAPABILITIES(/obj/item/clothing/gloves/orange)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/red
@@ -61,11 +52,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "red"
 
+CAPABILITIES(/obj/item/clothing/gloves/red)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/rainbow
@@ -73,11 +63,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "rainbow"
 
+CAPABILITIES(/obj/item/clothing/gloves/rainbow)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/blue
@@ -85,11 +74,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "blue"
 
+CAPABILITIES(/obj/item/clothing/gloves/blue)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/purple
@@ -97,11 +85,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "purple"
 
+CAPABILITIES(/obj/item/clothing/gloves/purple)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/green
@@ -109,11 +96,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "green"
 
+CAPABILITIES(/obj/item/clothing/gloves/green)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/grey
@@ -121,11 +107,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "gray"
 
+CAPABILITIES(/obj/item/clothing/gloves/grey)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/light_brown
@@ -133,11 +118,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "lightbrown"
 
+CAPABILITIES(/obj/item/clothing/gloves/light_brown)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/brown
@@ -145,11 +129,10 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	desc = "A pair of gloves. They look heat-resistant." // Updated description for temp changes.
 	icon_state = "brown"
 
+CAPABILITIES(/obj/item/clothing/gloves/brown)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 // start: More gloves give cold/heat protection.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
 
 /obj/item/clothing/gloves/evening
@@ -157,8 +140,9 @@ CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	name = "evening gloves"
 	icon_state = "evening_gloves"
 	addblends = "evening_gloves_a"
-	heat_protection = ARMS|HANDS
-	cold_protection = ARMS|HANDS
+
+CAPABILITIES(/obj/item/clothing/gloves/evening)
+	configure(item_protection(heat_parts = ARMS|HANDS, cold_parts = ARMS|HANDS))
 
 /obj/item/clothing/gloves/fingerless
 	desc = "A pair of gloves that don't actually cover the fingers."

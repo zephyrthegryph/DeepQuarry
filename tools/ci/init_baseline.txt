@@ -2652,8 +2652,6 @@ init_lines	code/modules/clothing/glasses/glasses.dm	"Scanning pattern 2" = image
 init_lines	code/modules/clothing/glasses/glasses.dm	"Scanning pattern 3" = image(icon = src.icon, icon_state = "tacsecvis3"),
 init_lines	code/modules/clothing/glasses/glasses.dm	"Scanning pattern 4" = image(icon = src.icon, icon_state = "tacsecvis4"),
 init_lines	code/modules/clothing/glasses/glasses.dm	)
-init_lines	code/modules/clothing/gloves/color.dm	var/shock_pick = rand(0,15)
-init_lines	code/modules/clothing/gloves/color.dm	siemens_coefficient = shock_pick * 0.05
 init_lines	code/modules/clothing/gloves/miscellaneous.dm	if(icon_state == "ranger_gloves")
 init_lines	code/modules/clothing/gloves/miscellaneous.dm	name = "[glovecolor] ranger gloves"
 init_lines	code/modules/clothing/head/fishing.dm	roll_slogan()

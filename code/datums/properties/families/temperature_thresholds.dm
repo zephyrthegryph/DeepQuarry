@@ -130,12 +130,10 @@
 	property = PROP_MAX_HEAT_PROTECTION
 	applies_to = /obj/item
 	unit = PROP_UNIT_KELVIN
-	state_var = "max_heat_protection_temperature"
 	variant_var = "max_heat_protection_temperature"
 
 /datum/property_provider/type_var/max_heat_protection/read_initial(path)
-	var/obj/item/I = path
-	return initial(I.max_heat_protection_temperature)
+	return protection_of_type(path).max_heat
 
 /datum/property_def/tag/flammable
 	id = TAG_FLAMMABLE

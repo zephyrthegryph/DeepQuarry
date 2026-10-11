@@ -108,6 +108,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	var/icon_nobadge
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest)
+	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 	op("vest_toggle_verb", menu(), label("Adjust Badge"), needs(carried()), then(PROC_REF(vest_toggle_verb)))
 
 /// Old verb "Adjust Badge".

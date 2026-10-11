@@ -238,7 +238,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 	var/user_protected = 0
 	if(h_user.get_equipped_item(SLOT_ID_GLOVES))
 		var/obj/item/clothing/gloves/G = h_user.get_equipped_item(SLOT_ID_GLOVES)
-		if(G.siemens_coefficient == 0)
+		if(protection_of(G).siemens == 0)
 			user_protected = 1
 	log_game("SMES FAILURE: <b>[src.x]X [src.y]Y [src.z]Z</b> User: [h_user.ckey], Intensity: [intensity]/100")
 	message_admins("SMES FAILURE: <b>[src.x]X [src.y]Y [src.z]Z</b> User: [h_user.ckey], Intensity: [intensity]/100 - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[src.x];Y=[src.y];Z=[src.z]'>JMP</a>")

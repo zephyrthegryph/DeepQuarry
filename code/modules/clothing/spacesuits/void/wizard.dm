@@ -6,9 +6,11 @@
 	item_state_slots = list(slot_r_hand_str = "wiz_helm", slot_l_hand_str = "wiz_helm")
 	unacidable = TRUE //No longer shall our kind be foiled by lone chemists with spray bottles!
 	armor_spec = "melee=40;bullet=20;laser=20;energy=20;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.7
 	sprite_sheets_obj = null
 	wizard_garb = 1
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/wizard)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/wizard
 	icon_state = "rig-wiz"
@@ -18,6 +20,8 @@
 	w_class = ITEMSIZE_NORMAL
 	unacidable = TRUE
 	armor_spec = "melee=40;bullet=20;laser=20;energy=20;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.7
 	sprite_sheets_obj = null
 	wizard_garb = 1
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/wizard)
+	configure(item_protection(siemens = 0.7))

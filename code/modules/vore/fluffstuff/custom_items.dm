@@ -487,13 +487,11 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
-	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 
 CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM))
 
 //SilencedMP5A5:Serdykov Antoz
@@ -1264,11 +1262,9 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
 	armor_spec = "" // this isn't armor, it's a dorky frickin cape
-	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0
 	offline_vision_restriction = 0
-	siemens_coefficient = 0.9
 	chest_type = /obj/item/clothing/suit/fluff/nikki
 
 	req_access = list()
@@ -1281,6 +1277,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 CAPABILITIES(/obj/item/rig/nikki)
+	configure(item_protection(siemens = 0.9))
 	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 
 /// Requirement: with the panel open, only mounted size guns go in.

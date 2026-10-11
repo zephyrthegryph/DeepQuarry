@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_under_cohesion, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/cohesion)
+	configure(item_protection(permeability = 0))
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

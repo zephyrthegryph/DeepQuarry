@@ -66,3 +66,20 @@ CAPABILITIES(/obj/machinery/dq_power_trait_probe/child)
 	TEST_ASSERT(A.set_drop_sound(SFX_GENERIC_DROP), "a run-time write takes")
 	TEST_ASSERT_EQUAL(sounds_of(A).drop, SFX_GENERIC_DROP, "the item reads its own")
 	TEST_ASSERT_EQUAL(sounds_of(B).drop, card.drop, "a sibling keeps the type's")
+
+/datum/unit_test/dq_type_trait/item_protection_declared
+
+/// The item protection trait: insulated gloves' declaration, a cut pair's own copy, and an empty slot reading the defaults.
+/datum/unit_test/dq_type_trait/item_protection_declared/Run()
+	var/datum/type_trait/item_protection/base = protection_of_type(/obj/item)
+	TEST_ASSERT_EQUAL(base.siemens, 1, "an item conducts by default")
+	TEST_ASSERT_NULL(base.max_heat, "and protects from no heat")
+	var/datum/type_trait/item_protection/gloves = protection_of_type(/obj/item/clothing/gloves/yellow)
+	TEST_ASSERT_EQUAL(gloves.siemens, 0, "insulated gloves stop current")
+	TEST_ASSERT_EQUAL(gloves.cold_parts, HANDS, "and keep the hands warm")
+	var/obj/item/clothing/gloves/yellow/A = allocate(/obj/item/clothing/gloves/yellow, test_floor())
+	var/obj/item/clothing/gloves/yellow/B = allocate(/obj/item/clothing/gloves/yellow, test_floor())
+	TEST_ASSERT(A.set_siemens_coefficient(0.5), "a run-time write takes")
+	TEST_ASSERT_EQUAL(protection_of(A).siemens, 0.5, "the pair reads its own")
+	TEST_ASSERT_EQUAL(protection_of(B).siemens, 0, "a sibling keeps the type's")
+	TEST_ASSERT_NULL(protection_of(null).max_heat, "an empty slot reads the defaults")
