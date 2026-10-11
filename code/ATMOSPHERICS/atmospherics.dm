@@ -13,9 +13,6 @@ Pipelines + Other Objects -> Pipe network
 	material_template = /datum/material_template/pressure
 	material_total = SHEET_MATERIAL_AMOUNT
 	anchored = TRUE
-	idle_power_usage = 0
-	active_power_usage = 0
-	power_channel = ENVIRON
 	var/nodealert = 0
 	var/power_rating //the maximum amount of power the machine can use to do work, affects how powerful the machine is, in Watts
 	/// Bumped (rust_device_dirty()) when the device's Rust law changed for a reason that is no DM var of its own:

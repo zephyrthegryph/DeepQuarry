@@ -8,7 +8,6 @@
 	throwpass = 1
 	use_power = USE_POWER_IDLE
 	layer = ON_WINDOW_LAYER
-	power_channel = EQUIP
 	on = 0
 	var/id_tag = null
 
@@ -16,6 +15,9 @@
 	var/datum/radio_frequency/radio_connection
 	/// Without it the feedback becomes horribly spammy.
 	COOLDOWN_DECLARE(feedback_cooldown)
+
+CAPABILITIES(/obj/machinery/mech_sensor)
+	configure(uses_power(channel = EQUIP))
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
 	if(!enabled())

@@ -11,10 +11,7 @@
 	var/state_base = "jukebox"
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/jukebox
 	clicksound = SFX_MACHINES_BUTTONBEEP
 	volume = 0.5
@@ -29,6 +26,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))

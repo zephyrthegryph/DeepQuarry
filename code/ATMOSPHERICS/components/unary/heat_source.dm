@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
 TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
 	reagents(120)
@@ -33,7 +34,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 5			//5 Watts for thermostat related circuitry
 	circuit = /obj/item/circuitboard/unary_atmos/heater
 
 	var/max_temperature = T20C + 680

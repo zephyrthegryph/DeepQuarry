@@ -23,7 +23,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/biogenerator
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
 	var/processing = 0
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/points = 0
@@ -134,6 +133,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/biogenerator)
+	configure(uses_power(idle = 40))
 	interface("Biogenerator")
 	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
 	op("detach", ui_act("detach"), then(PROC_REF(ui_act_detach)))

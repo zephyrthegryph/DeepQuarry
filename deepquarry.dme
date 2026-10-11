@@ -5684,6 +5684,8 @@
 #include "code\engine\declare\graph.dm"
 #include "code\engine\declare\explain.dm"
 #include "code\engine\declare\static_entries.dm"
+#include "code\engine\declare\type_traits.dm"
+#include "code\engine\declare	raits.dm"
 #include "code\library\loot\loot_entries.dm"
 #include "code\library\loot\loot_search.dm"
 #include "code\library\maps\map_resolver_entry.dm"

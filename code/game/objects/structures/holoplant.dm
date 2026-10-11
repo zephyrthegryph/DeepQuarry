@@ -5,8 +5,6 @@
 	icon_state = "holopot"
 	light_color = "#3C94C5"
 	anchored = TRUE
-	idle_power_usage = 0
-	active_power_usage = 5
 	maintenance_flags = MACHINE_MAINT_WRENCH
 	maintenance_wrench_time = 1 SECOND
 	var/interference = FALSE
@@ -78,6 +76,7 @@
 	return getHologramIcon(plant_icon, 0)
 
 CAPABILITIES(/obj/machinery/holoplant)
+	configure(uses_power(idle = 0, active = 5))
 	after_init(0, then(PROC_REF(init_activate)))
 	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
 	emag(then(PROC_REF(on_emag)))

@@ -24,7 +24,6 @@ Thus, the two variables affect pump operation are set in New():
 	desc = "A pump that moves gas by volume"
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 15000	//15000 W ~ 20.4 HP
 
 	var/max_transfer_rate = ATMOS_DEFAULT_VOLUME_PUMP	// Ls
@@ -211,6 +210,7 @@ MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air s
 MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	configure(uses_power(idle = 150))
 	pipe_device_window("GasPump")
 	pipe_device_switch()
 	pipe_device_max(PROC_REF(max_output_set))

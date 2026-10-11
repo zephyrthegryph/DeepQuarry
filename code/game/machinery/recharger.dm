@@ -66,8 +66,6 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	icon_state = "recharger0"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 4
-	active_power_usage = 40000	//40 kW
 	/// The charge given per machine frame, in watts; the capacitors set it (RefreshParts()).
 	var/efficiency = 40000
 	var/icon_state_charged = "recharger2"
@@ -86,6 +84,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 TRACKED(/obj/machinery/recharger, charge_phase)
 
 CAPABILITIES(/obj/machinery/recharger)
+	configure(uses_power(idle = 4, active = 40000))
 	default_parts()
 	machine_basics(repair = NONE)
 	anchor(empty = nameof(charging))
@@ -112,7 +111,6 @@ CAPABILITIES(/obj/machinery/recharger)
 	icon_state = "wrecharger0"
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
-	active_power_usage = 60000	//60 kW , It's more specialized than the standalone recharger (guns, batons, and flashlights only) so make it more powerful
 	efficiency = 60000
 	small = TRUE
 	icon_state_charged = "wrecharger2"
@@ -123,6 +121,7 @@ CAPABILITIES(/obj/machinery/recharger)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/recharger/wallcharger)
+	configure(uses_power(active = 60000))
 	without(CAP_ANCHOR)
 
 /obj/machinery/recharger/Initialize(mapload)
@@ -131,7 +130,7 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 
 /obj/machinery/recharger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
-	efficiency = active_power_usage * (1+ (E - 1)*0.5)
+	efficiency = power_of(src).active * (1+ (E - 1)*0.5)
 
 // ---- the slot's conditions ----
 

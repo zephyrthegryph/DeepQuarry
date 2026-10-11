@@ -13,10 +13,7 @@
 	icon_state = "slotmachine"
 	anchored = 1
 	density = 1
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	maintenance_flags = MACHINE_MAINT_WRENCH
 	maintenance_wrench_time = 2 SECONDS
 	light_power = 0.9
@@ -34,6 +31,7 @@
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/slot_machine)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert chip"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))
@@ -164,10 +162,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	icon_state = "ntslotmachine"
 	anchored = 1
 	density = 1
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	light_power = 0.9
 	light_range = 2
 	light_color = "#B1FBBFF"
@@ -183,6 +178,7 @@ MSG_DEF_SELF(slot_machine/unanchored, "the slot machine isn't secured")
 	var/confetti_strength = 8
 
 CAPABILITIES(/obj/machinery/station_slot_machine)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cash"), needs(req_bool(PROC_REF(not_running_holds), because = PROC_REF(not_running_refusal)), req_is(nameof(anchored), TRUE, because = MSG(station_slot_machine/unanchored))), then(PROC_REF(interaction_attackby)))

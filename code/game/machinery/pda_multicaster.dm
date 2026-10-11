@@ -7,7 +7,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/telecomms/pda_multicaster
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 750
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
@@ -17,6 +16,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/pda_multicaster)
+	configure(uses_power(idle = 750))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	emp_disable(300 SECONDS)

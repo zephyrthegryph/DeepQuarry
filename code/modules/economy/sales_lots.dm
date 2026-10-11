@@ -200,8 +200,6 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	var/department_id = DEPARTMENT_CIVILIAN
 	var/markup_percent = 25
 	var/machine_id
@@ -268,6 +266,7 @@ TRACKED(/obj/machinery/department_storefront, department_id)
 	return max(5, round(item.w_class * 5))
 
 CAPABILITIES(/obj/machinery/department_storefront)
+	configure(uses_power(idle = 10, active = 100))
 	after_init(0, then(PROC_REF(set_up_storefront)))
 	interface("DepartmentStorefront")
 	without("ui_open")

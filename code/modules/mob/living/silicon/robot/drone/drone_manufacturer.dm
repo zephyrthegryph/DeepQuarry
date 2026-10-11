@@ -12,8 +12,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 5000
 
 	var/fabricator_tag = "Upper Level"
 	var/drone_progress = 0
@@ -44,6 +42,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/drone_fabricator)
+	configure(uses_power(idle = 20, active = 5000))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 
 /obj/machinery/drone_fabricator/proc/work_step(datum/act/timer/A)

@@ -8,8 +8,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
@@ -36,6 +34,7 @@ STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/smartfridge)
+	configure(uses_power(idle = 5, active = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge, starts = /datum/looping_sound/fridge)
 	owns_many(nameof(item_records))

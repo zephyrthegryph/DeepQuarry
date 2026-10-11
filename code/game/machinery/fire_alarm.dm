@@ -17,9 +17,6 @@ FIRE ALARM
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
 	panel_open = FALSE
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm
@@ -44,6 +41,7 @@ TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
 	channel = CHANGE_MACHINE_SETTINGS
 
 CAPABILITIES(/obj/machinery/firealarm)
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
 	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
 	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
@@ -259,8 +257,6 @@ TRACKED(/obj/machinery/firealarm, seclevel)
 	var/lockdownbyai = 0
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
 
 // TGUI migration. PartyAlarm.tsx handles both clear-text
 // (humans/AI) and scrambled (everyone else) display via a data flag.
@@ -274,6 +270,7 @@ TRACKED(/obj/machinery/firealarm, seclevel)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/partyalarm)
+	configure(uses_power(idle = 2, active = 6))
 	interface("PartyAlarm", title = "Party Button")
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 	op("alarm", ui_act("alarm"), then(PROC_REF(ui_act_alarm)))

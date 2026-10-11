@@ -136,8 +136,6 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	dir = 4
 	var/accurate = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_hub
 	var/obj/machinery/computer/teleporter/com
 
@@ -150,6 +148,7 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 // the teleporter console forgets its hub.
 
 CAPABILITIES(/obj/machinery/teleport/hub)
+	configure(uses_power(idle = 10, active = 2000))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("ghost_follow", observer(), label("Follow the link"), then(PROC_REF(hub_ghost_follow)))
 
@@ -205,10 +204,11 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 	COOLDOWN_DECLARE(teleport_cooldown)
 	var/engaged = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_station
 	var/obj/machinery/teleport/hub/com
+
+CAPABILITIES(/obj/machinery/teleport/station)
+	configure(uses_power(idle = 10, active = 2000))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
 /obj/machinery/teleport/station/Initialize(mapload)

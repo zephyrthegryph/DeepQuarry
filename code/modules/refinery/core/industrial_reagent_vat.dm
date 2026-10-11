@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_vat
 	// Chemical bath funtimes!
 	can_buckle = TRUE
@@ -90,6 +88,7 @@
 	return length(src?.buckled_mob_list()) && reagents.total_volume > 0
 
 CAPABILITIES(/obj/machinery/reagent_refinery/vat)
+	configure(uses_power(idle = 0, active = 50))
 	default_parts()
 	without("reagent_refinery_set_transfer_amount")
 	op("reagent_vat_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into vat"), then(PROC_REF(interaction_drain_trolley)))

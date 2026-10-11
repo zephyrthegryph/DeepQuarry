@@ -5,7 +5,6 @@
 	name = "abstract parent for disperser"
 	desc = "You should never see one of these, bap your mappers."
 	icon = 'icons/obj/disperser.dmi'
-	idle_power_usage = 200
 	density = TRUE
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -32,6 +31,7 @@
 	return OP_DECLINE
 
 CAPABILITIES(/obj/machinery/disperser)
+	configure(uses_power(idle = 200))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))

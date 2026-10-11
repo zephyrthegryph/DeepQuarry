@@ -3,8 +3,6 @@
 	desc = "A place to store things you might want later!"
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "item_bank"
-	idle_power_usage = 1
-	active_power_usage = 5
 	anchored = TRUE
 	density = FALSE
 	var/busy_bank = FALSE
@@ -54,6 +52,7 @@ TRACKED(/obj/machinery/item_bank, busy_bank)
 		return persist_name
 
 CAPABILITIES(/obj/machinery/item_bank)
+	configure(uses_power(idle = 1, active = 5))
 	// Ten seconds at the bank once the questions are answered: the retrieval (the item type comes with the call) and the storing (the held item is the one stored).
 	op("retrieve_wait", ai(), takes("item_type"), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(retrieve_finished)))
 	op("store_wait", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(store_finished)))

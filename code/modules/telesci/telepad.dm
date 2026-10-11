@@ -8,8 +8,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/telesci_pad
-	idle_power_usage = 200
-	active_power_usage = 5000
 	var/efficiency
 
 // This board declares no req_components, so its default parts are declared
@@ -49,6 +47,7 @@
 	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
 CAPABILITIES(/obj/machinery/telepad)
+	configure(uses_power(idle = 200, active = 5000))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("part_replacement_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
 

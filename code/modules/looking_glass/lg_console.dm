@@ -9,7 +9,6 @@
 	var/static/list/secret_programs = list()
 
 	use_power = USE_POWER_IDLE
-	active_power_usage = 8000
 
 	var/current_program = "Off"
 	var/tmp/area/looking_glass/my_area
@@ -48,6 +47,7 @@
 		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
 CAPABILITIES(/obj/machinery/computer/looking_glass)
+	configure(uses_power(active = 8000))
 	interface("LookingGlass")
 	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
 	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))

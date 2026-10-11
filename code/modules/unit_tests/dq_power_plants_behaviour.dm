@@ -803,7 +803,7 @@
 		TEST_ASSERT_EQUAL(F.size, expected[strength], "strength [strength] makes a field of size [expected[strength]]")
 	core.set_strength(5000)
 	TEST_ASSERT_EQUAL(core.field_strength, 1000, "the strength is capped at 1000")
-	TEST_ASSERT_EQUAL(core.active_power_usage, 5000, "and draws 5 W a unit")
+	TEST_ASSERT_EQUAL(power_of(core).active, 5000, "and draws 5 W a unit")
 	core.set_strength(0)
 	TEST_ASSERT_EQUAL(core.field_strength, 1, "and floored at 1")
 	core.Shutdown()

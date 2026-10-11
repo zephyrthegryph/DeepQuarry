@@ -5,11 +5,10 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_pump
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pump)
+	configure(uses_power(idle = 0, active = 50))
 	default_parts()
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/output))
 	climb()

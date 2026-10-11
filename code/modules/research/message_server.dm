@@ -55,8 +55,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/message_server
 
 	var/list/datum/data_pda_msg/pda_msgs
@@ -75,6 +73,7 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
+	configure(uses_power(idle = 10, active = 100))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), STAT_OPERABLE), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
@@ -269,8 +268,6 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	// ALLOW(instance_list): d: blackbox singleton log
 	var/list/messages = list()		//Stores messages of non-standard frequencies
 	var/list/messages_admin
@@ -293,6 +290,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	//Only one can exist in the world!
 
 CAPABILITIES(/obj/machinery/blackbox_recorder)
+	configure(uses_power(idle = 10, active = 100))
 	owns_many(nameof(feedback), /datum/feedback_variable)
 /obj/machinery/blackbox_recorder/Initialize(mapload)
 	. = ..()

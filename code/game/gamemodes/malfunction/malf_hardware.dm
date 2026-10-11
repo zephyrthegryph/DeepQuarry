@@ -65,7 +65,7 @@
 		T.repair_damage(T.max_integrity)
 		T.shot_delay = round(initial(T.shot_delay) / 2)
 		T.set_auto_repair(TRUE)
-		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
+		T.update_active_power_usage(round(power_of_type(T.type).active * 5))
 
 /// Owner (a relation view).
 /datum/malf_hardware/proc/owner_ref() as /mob/living/silicon/ai

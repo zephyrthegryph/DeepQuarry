@@ -4,9 +4,11 @@
 /obj/machinery/dq_h4_heater
 	name = "test heater"
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 1000
 	heat_output = 1000
 	heat_dissipation = 100
+
+CAPABILITIES(/obj/machinery/dq_h4_heater)
+	configure(uses_power(idle = 1000))
 
 /datum/unit_test/dq_h4_machine_heat_regulator
 

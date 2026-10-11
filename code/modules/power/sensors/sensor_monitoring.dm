@@ -15,8 +15,6 @@
 	circuit = /obj/item/circuitboard/powermonitor
 	var/alerting = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 300
-	active_power_usage = 300
 	var/datum/tgui_module/power_monitor/power_monitor
 TRACKED(/obj/machinery/computer/power_monitor, alerting)
 
@@ -27,6 +25,7 @@ TRACKED(/obj/machinery/computer/power_monitor, alerting)
 // The power monitoring console: its window is its monitor module's (an empty hand on a working console), and it watches its sensors for alerts
 // (monitor_step()).
 CAPABILITIES(/obj/machinery/computer/power_monitor)
+	configure(uses_power(idle = 300, active = 300))
 	owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(monitor_step)))
 	op("use", hand(), label("Use"), ungated(), wait(0), when(req_empty_hand()), needs(req_operable()), then(PROC_REF(used)))

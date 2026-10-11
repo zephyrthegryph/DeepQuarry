@@ -133,10 +133,10 @@
 	if(elapsed <= 0)
 		return
 	var/limit = emitter_output_limit()
-	var/request = active_power_usage * min(material_output_setting, limit) / emitter_efficiency()
+	var/request = power_of(src).active * min(material_output_setting, limit) / emitter_efficiency()
 	var/actual = draw_power(request)
 	var/input_energy = actual * elapsed
-	var/stored = min(input_energy, max(active_power_usage * 10 - material_stored_energy, 0))
+	var/stored = min(input_energy, max(power_of(src).active * 10 - material_stored_energy, 0))
 	material_stored_energy += stored
 	// A live accelerator beam is intrinsically high-energy work, independent of
 	// the concrete machine type or whether its component materials are standard.

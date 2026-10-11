@@ -5,8 +5,6 @@
 	icon_state = "borgcharger0(old)"
 	density = TRUE
 
-	idle_power_usage = 100
-	active_power_usage = 1000
 	use_power = USE_POWER_IDLE
 
 	var/spawn_progress_time = 0
@@ -147,6 +145,7 @@
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/machinery/replicator)
+	configure(uses_power(idle = 100, active = 1000))
 	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicator")
 	without("ui_open")

@@ -160,7 +160,6 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 	desc = "Sends atmospheric readings to a nearby controller."
 
 	anchored = TRUE
-	power_channel = ENVIRON
 	circuit = /obj/item/circuitboard/airlock_cycling
 
 	var/id_tag
@@ -180,6 +179,7 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 // watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor)
+	configure(uses_power(channel = ENVIRON))
 	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
 	multitool_settings(list(
 		list("Master Tag", "master_tag", "text", 30),
@@ -309,7 +309,6 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	name = "access button"
 
 	anchored = TRUE
-	power_channel = ENVIRON
 	circuit = /obj/item/circuitboard/airlock_cycling
 
 	var/master_tag
@@ -328,6 +327,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 MSG_DEF_SELF(access_button/denied, "Access Denied")
 
 CAPABILITIES(/obj/machinery/access_button)
+	configure(uses_power(channel = ENVIRON))
 	multitool_settings(list(
 		list("Tag", "master_tag", "text", 30),
 		list("Frequency", "frequency", "frequency"),

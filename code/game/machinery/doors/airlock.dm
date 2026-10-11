@@ -18,7 +18,6 @@
 	name = "Airlock"
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
-	power_channel = ENVIRON
 
 	explosion_resistance = 10
 
@@ -135,6 +134,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(uses_power(channel = ENVIRON))
 	panel()
 	// twelve wires (fourteen and their own colours with secure electronics), in the airlock's window with its radio; the AI control, ID scan,
 	// safety, shock and bolt wires come with the capabilities that own their state

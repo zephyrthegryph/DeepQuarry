@@ -25,8 +25,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 5000
 
 	// Amount of materials we can store total
 	var/list/materials = list(MAT_STEEL = 0, MAT_GLASS = 0) // ALLOW(instance_list): d: edited in place per instance (7 writers)
@@ -220,6 +218,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/partslathe)
+	configure(uses_power(idle = 30, active = 5000))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("PartsLathe")

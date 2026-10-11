@@ -200,7 +200,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 /// A ranged machine's range, within what it can do; a longer range draws more power.
 /obj/machinery/telecomms/proc/ui_act_range(datum/act/op/A, range)
 	overmap_range = clamp(range, overmap_range_min, overmap_range_max)
-	update_idle_power_usage(initial(idle_power_usage) ** (overmap_range + 1))
+	update_idle_power_usage(power_of_type(type).idle ** (overmap_range + 1))
 	return OP_OK
 
 /// needs: the machine is damaged.
@@ -215,6 +215,7 @@ TRACKED(/obj/machinery/telecomms, temp)
 // ---- the relay ----
 
 CAPABILITIES(/obj/machinery/telecomms/relay)
+	configure(uses_power(idle = 600))
 	op("receive", ui_act(), toggles(nameof(receiving)), then(PROC_REF(receiving_reported)))
 	op("broadcast", ui_act(), toggles(nameof(broadcasting)), then(PROC_REF(broadcasting_reported)))
 	op("change_listening", ui_act("change_listening"), needs(req(PROC_REF(can_change_level))), then(PROC_REF(ui_act_change_listening)))
@@ -250,6 +251,7 @@ CAPABILITIES(/obj/machinery/telecomms/relay)
 // ---- the bus ----
 
 CAPABILITIES(/obj/machinery/telecomms/bus)
+	configure(uses_power(idle = 1000))
 	op("change_freq", ui_act("change_freq"), asks(/datum/prompt/number, fields = list("question" = "Specify a new frequency for new signals to change to. Enter 0 to turn off frequency changing. Decimals assigned automatically.", "default" = computed(PROC_REF(change_freq_default)))), then(PROC_REF(change_frequency_entered)))
 
 /obj/machinery/telecomms/bus/Options_Menu()
@@ -287,3 +289,6 @@ CAPABILITIES(/obj/machinery/telecomms/bus)
 /obj/machinery/telecomms/receiver
 	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 	ranged = "use_receive_range"
+
+CAPABILITIES(/obj/machinery/telecomms/receiver)
+	configure(uses_power(idle = 600))

@@ -42,9 +42,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 2
-	active_power_usage = 10
-	power_channel = LIGHT
 	max_integrity = 20
 	integrity_failure = 0.5
 	/// What light is currently in the socket. Use bulb() to read it.
@@ -102,6 +99,7 @@ TRACKED(/obj/machinery/light, flickering)
 TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light)
+	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
 	owns_one(nameof(installed_light), /obj/item/light)

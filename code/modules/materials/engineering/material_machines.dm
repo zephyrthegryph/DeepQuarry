@@ -50,8 +50,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 5000
 	circuit = /obj/item/circuitboard/machine/material_furnace
 	var/list/feedstock
 	var/list/carbon_feed
@@ -68,6 +66,7 @@ TRACKED(/obj/machinery/material_furnace, firing)
 	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED, is_list = TRUE)
 
 CAPABILITIES(/obj/machinery/material_furnace)
+	configure(uses_power(idle = 20, active = 5000))
 	ref_one(nameof(output_stock), /obj/item/stack/material/processed_alloy)
 	reagents(120)
 	owns_one(nameof(chamber_air), /datum/gas_mixture)
@@ -208,7 +207,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return OP_OK
 	set_firing(TRUE)
 	icon_state = "nt_cruciforge_work"
-	var/ignition_energy = use_power_oneoff(active_power_usage * 6)
+	var/ignition_energy = use_power_oneoff(power_of(src).active * 6)
 	heat_add(chamber_air, ignition_energy, HEAT_SOURCE_DEVICE)
 	for(var/step in 1 to 3)
 		chamber_air.react()

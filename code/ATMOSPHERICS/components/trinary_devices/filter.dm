@@ -15,7 +15,6 @@
 	desc = "Filters one type of gas from an input, and pushes it out the side."
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 7500	//This also doubles as a measure of how powerful the filter is, in Watts. 7500 W ~ 10 HP
 
 	var/temp = null // -- TLE
@@ -148,6 +147,7 @@ TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("rate", ui_act("rate", arg("rate")), then(PROC_REF(ui_act_rate)))

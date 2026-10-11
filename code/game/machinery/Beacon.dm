@@ -7,10 +7,10 @@
 	layer = UNDER_JUNK_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
 	var/obj/item/radio/beacon/Beacon
 
 CAPABILITIES(/obj/machinery/bluespace_beacon)
+	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(Beacon), /obj/item/radio/beacon, starts = /obj/item/radio/beacon, starts_args = NO_LOC)
 

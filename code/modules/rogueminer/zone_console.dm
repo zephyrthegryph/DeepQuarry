@@ -13,8 +13,6 @@
 	icon_screen = "request"
 	light_color = "#315ab4"
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 250
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/roguezones
 
 	var/debug = 0
@@ -41,6 +39,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/roguezones)
+	configure(uses_power(idle = 250, active = 500))
 	after_init(0, then(PROC_REF(make_controller)))
 	interface("RogueZones")
 	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))

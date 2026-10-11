@@ -28,7 +28,6 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 	var/id = null
 
 	use_power = USE_POWER_OFF	//uses grid power, not APC power
-	active_power_usage = 30000	//30 kW laser. I guess that means 30 kJ per shot.
 
 	active = 0
 	/// It had the energy for its last shot (the beam overlay shows while it has).
@@ -55,6 +54,7 @@ MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
 TRACKED(/obj/machinery/power/emitter, anomalous)
 
 CAPABILITIES(/obj/machinery/power/emitter)
+	configure(uses_power(active = 30000))
 	climb()
 	rotatable()
 	floor_weld(busy = nameof(active), changed = PROC_REF(rung_moved))
@@ -163,14 +163,14 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /// One step while it is on (every machine service interval): it must still be welded and wired; it charges, and fires when its shot is ready
 /// and it holds the energy for it.
 /obj/machinery/power/emitter/proc/emitter_step(datum/act/timer/A)
-	if(state != FLOOR_WELD_WELDED || (!power_region && active_power_usage))
+	if(state != FLOOR_WELD_WELDED || (!power_region && power_of(src).active))
 		set_active(0)
 		return
 	charge_emitter()
 	if(!COOLDOWN_FINISHED(src, shot_cooldown) || active != 1)
 		return
 	var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
-	var/desired_beam = active_power_usage * (burst_time / 10) / burst_shots * material_output_setting
+	var/desired_beam = power_of(src).active * (burst_time / 10) / burst_shots * material_output_setting
 	var/efficiency = emitter_efficiency()
 	var/required_energy = desired_beam / efficiency
 	if(material_stored_energy < required_energy)
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	return OP_OK
 
 /obj/machinery/power/emitter/atom_destruction(damage_flag)
-	if(power_region && avail(active_power_usage))
+	if(power_region && avail(power_of(src).active))
 		visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))
 		explosion(get_turf(src), 1, 2, 4)
 	else
@@ -280,7 +280,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 
 /// Its beam shows while it is on, fed and on a live network.
 /obj/machinery/power/emitter/proc/beam_shown()
-	return powered && power_region && avail(active_power_usage) && active
+	return powered && power_region && avail(power_of(src).active) && active
 
 /obj/machinery/power/emitter/draw(datum/look/look)
 	..()

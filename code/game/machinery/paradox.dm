@@ -1,6 +1,5 @@
 /obj/machinery/paradoxrift
 	name = "Paradoxical Rift Generator"
-	idle_power_usage = 2500000
 	use_power = USE_POWER_OFF
 	icon = 'icons/obj/machines/defense.dmi'
 	icon_state = "paradox"
@@ -38,6 +37,7 @@
 /// Spills loot while unpowered (the declaration above runs it only then).
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/paradoxrift)
+	configure(uses_power(idle = 2500000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(unpowered), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 
 /obj/machinery/paradoxrift/proc/work_step(datum/act/timer/A)

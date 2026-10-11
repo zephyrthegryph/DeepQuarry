@@ -13,7 +13,6 @@
 	unacidable = TRUE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100 //Watts, I hope.  Just enough to do the computer and display things.
 
 	var/max_power = 500000
 	var/thermal_efficiency = 0.65
@@ -43,6 +42,7 @@ MSG_DEF(teg/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% 
 MSG_DEF_SELF(teg/not_ready, "It isn't bolted down and working.")
 
 CAPABILITIES(/obj/machinery/power/generator)
+	configure(uses_power(idle = 100))
 	rotatable()
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator, starts = /datum/looping_sound/generator)

@@ -9,17 +9,18 @@
 /// A machine that draws on the channel it is told to (equipment by default): idle 10 W, active 100 W.
 /obj/machinery/dq_grid_probe
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
-	power_channel = EQUIP
+
+CAPABILITIES(/obj/machinery/dq_grid_probe)
+	configure(uses_power(idle = 10, active = 100, channel = EQUIP))
 
 GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a test's standing load
 
 /// A machine that carries a test's standing load on one channel of its area.
 /obj/machinery/dq_grid_load
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	power_channel = EQUIP
+
+CAPABILITIES(/obj/machinery/dq_grid_load)
+	configure(uses_power(idle = 0, channel = EQUIP))
 
 /// The area of `where` takes `watts` more standing load on `chan` (negative: gives it back), through one probe machine per area and channel.
 /proc/dq_area_load(turf/where, watts, chan = EQUIP)
@@ -29,8 +30,8 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 		P = new(where)
 		P.update_power_channel(chan)
 		GLOB.dq_grid_load_probes[key] = P
-	P.update_idle_power_usage(P.idle_power_usage + watts)
-	if(P.idle_power_usage <= 0)
+	P.update_idle_power_usage(power_of(P).idle + watts)
+	if(power_of(P).idle <= 0)
 		GLOB.dq_grid_load_probes -= key
 		qdel(P)
 
@@ -107,7 +108,7 @@ GLOBAL_LIST_EMPTY(dq_grid_load_probes) // "area:channel" -> the probe carrying a
 		if(!A || QDELETED(M))
 			continue
 		counted++
-		var/key = "[REF(A)]:[M.power_channel]"
+		var/key = "[REF(A)]:[power_of(M).channel]"
 		expected[key] = (expected[key] || 0) + M.get_power_usage()
 	TEST_ASSERT(counted > 0, "no machines on the test map to recount")
 	var/checked = 0

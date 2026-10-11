@@ -236,8 +236,6 @@ MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the ho
 	circuit = /obj/item/circuitboard/honey_extractor
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 15
-	active_power_usage = 200
 	use_power = USE_POWER_IDLE
 
 	var/processing = 0
@@ -310,7 +308,7 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
 	set_processing(held.honey)
-	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
+	use_power_oneoff(power_of(src).active * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.set_honey(0)
 	after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return OP_OK
@@ -444,6 +442,7 @@ TRACKED(/obj/item/bee_pack, full)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/machinery/honey_extractor)
+	configure(uses_power(idle = 15, active = 200))
 	default_parts()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))

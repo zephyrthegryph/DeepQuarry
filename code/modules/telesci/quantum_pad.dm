@@ -6,8 +6,6 @@
 	icon_state = "qpad"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 200
-	active_power_usage = 5000
 	circuit = /obj/item/circuitboard/quantumpad
 	var/teleport_cooldown = 400 //30 seconds base due to base parts
 	var/teleport_speed = 50
@@ -58,6 +56,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
+	configure(uses_power(idle = 200, active = 5000))
 	ref_one(nameof(linked_pad), /obj/machinery/power/quantumpad, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("quantumpad_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(quantumpad_ghost_travel)))

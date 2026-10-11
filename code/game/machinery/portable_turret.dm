@@ -53,9 +53,6 @@
 
 	density = FALSE
 	use_power = TRUE				//this turret uses and requires power
-	idle_power_usage = 50		//when inactive, this turret takes up constant 50 Equipment power
-	active_power_usage = 300	//when active, this turret takes up constant 300 Equipment power
-	power_channel = EQUIP	//drains power from the EQUIPMENT channel
 	req_one_access = list(ACCESS_SECURITY, ACCESS_HEADS)
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -137,6 +134,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	configure(uses_power(idle = 50, active = 300, channel = EQUIP))
 	machine_basics(repair = NONE)
 	membership(joins = REGISTRY_TURRETS)
 	lock(starts_locked = nameof(lock_at_start), alt = FALSE, guarded = FALSE)
@@ -1024,8 +1022,6 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 /obj/machinery/porta_turret/rcd
 	desc = "A cheap turret printed by a rapid construction device with its own power supply. Not very sturdy, but it still hurts."
 	use_power = FALSE
-	idle_power_usage = 0
-	active_power_usage = 0
 	max_integrity = 20	//extremely brittle
 	reqpower = 0
 	enabled = TRUE
@@ -1044,6 +1040,7 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 
 /// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
+	configure(uses_power(idle = 0, active = 0))
 	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 	configure(machine_basics(repair = NONE, powered = FALSE))
 	without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op

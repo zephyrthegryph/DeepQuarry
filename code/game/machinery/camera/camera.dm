@@ -5,8 +5,6 @@
 	icon = 'icons/obj/monitors_vr.dmi' // New Icons
 	icon_state = "camera"
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 5
-	active_power_usage = 10
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
@@ -48,6 +46,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	configure(uses_power(idle = 5, active = 10))
 	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
 	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(req(PROC_REF(paper_show_meant))), then(PROC_REF(interaction_show_paper)))

@@ -23,6 +23,11 @@
 #define EQUIP   1
 #define LIGHT   2
 #define ENVIRON 3
+
+/// The entry kind of uses_power() (code/game/machinery/machinery_power.dm): a machine's channel and its idle and active draw, a type trait.
+#define ENTRY_USES_POWER "uses_power"
+/// The change key a machine's uses_power() values publish under when one is set at run time (power_of() reads as it).
+#define USES_POWER_KEY "uses_power"
 #define TOTAL   4 // For total power used only.
 
 // Bitflags for machine stat variable.

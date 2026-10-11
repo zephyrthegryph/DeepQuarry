@@ -4,8 +4,6 @@
 	icon = 'icons/obj/machines/petrification.dmi'
 	icon_state = "petrification"
 
-	idle_power_usage = 100
-	active_power_usage = 1000
 	use_power = USE_POWER_IDLE
 	anchored = TRUE
 	unacidable = TRUE
@@ -20,6 +18,7 @@
 	var/list/remotes
 
 CAPABILITIES(/obj/machinery/petrification)
+	configure(uses_power(idle = 100, active = 1000))
 	owns_many(nameof(remotes))
 	interface("PetrificationInterface")
 	op("set_option", ui_act("set_option", arg("option", schema_text(4096))),

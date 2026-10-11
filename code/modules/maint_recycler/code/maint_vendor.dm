@@ -10,7 +10,6 @@
 	unacidable = TRUE
 	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 
 	description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."
 
@@ -29,6 +28,7 @@
 	var/obj/effect/overlay/recycler/monitor_screen
 
 CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(uses_power(idle = 10))
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
 	owns_many(nameof(product_datums))

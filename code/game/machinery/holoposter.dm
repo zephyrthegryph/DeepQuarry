@@ -5,8 +5,6 @@
 	icon_state = "off"
 	anchored = TRUE
 	use_power = 1
-	idle_power_usage = 80
-	power_channel = ENVIRON
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/icon_forced = FALSE
 	/// TRUE while a station alert overrides the advert (security_changed()).
@@ -125,6 +123,7 @@ TRACKED(/obj/machinery/holoposter, poster)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/holoposter)
+	configure(uses_power(idle = 80, channel = ENVIRON))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("question" = "Available Posters", "title" = "Holographic Poster", "choices" = computed(PROC_REF(poster_choices)), "timeout" = 0)),

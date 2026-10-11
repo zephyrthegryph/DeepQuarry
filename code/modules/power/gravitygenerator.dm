@@ -176,9 +176,6 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 
 /obj/machinery/gravity_generator/main
 	icon_state = "on_8"
-	idle_power_usage = 0
-	active_power_usage = 30000 // Gravity consumption change
-	power_channel = ENVIRON
 	sprite_number = 8
 	use_power = USE_POWER_IDLE
 
@@ -202,6 +199,7 @@ TRACKED(/obj/machinery/gravity_generator/main, current_overlay)
 // The main part: its window and breaker, its eight parts (owned), and its spin (spin_step(), every machine service interval while it spins
 // and is whole).
 CAPABILITIES(/obj/machinery/gravity_generator/main)
+	configure(uses_power(idle = 0, active = 30000, channel = ENVIRON))
 	after_init(0, then(PROC_REF(find_levels)))
 	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
 	ref_one(nameof(middle), /obj)

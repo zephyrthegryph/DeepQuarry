@@ -9,7 +9,6 @@
 	icon_state = "emitter-off"
 	req_access = list(ACCESS_ENGINE)
 	use_power = USE_POWER_IDLE
-	active_power_usage = 50000
 
 	circuit = /obj/item/circuitboard/gyrotron
 
@@ -24,6 +23,7 @@
 TRACKED(/obj/machinery/power/emitter/gyrotron, id_tag)
 
 CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
+	configure(uses_power(active = 50000))
 	registry(REGISTRY_GYROTRONS, key = nameof(id_tag))
 	part_replacement()
 	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(cond_not(nameof(anomalous))),
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)
 	mega_energy = new_power
-	update_active_power_usage(mega_energy * initial(active_power_usage))
+	update_active_power_usage(mega_energy * power_of_type(type).active)
 
 /obj/machinery/power/emitter/gyrotron/get_rand_burst_delay()
 	return rate * 10
@@ -58,4 +58,4 @@ CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
 	return E
 
 /obj/machinery/power/emitter/gyrotron/emitter_look(datum/look/look)
-	look.state((active && power_region && avail(active_power_usage)) ? "emitter-on" : "emitter-off")
+	look.state((active && power_region && avail(power_of(src).active)) ? "emitter-on" : "emitter-off")

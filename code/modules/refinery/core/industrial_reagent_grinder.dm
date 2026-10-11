@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 300
 	circuit = /obj/item/circuitboard/industrial_reagent_grinder
 	var/const/limit = 50
 	VAR_PRIVATE/list/holdingitems = list()
@@ -148,6 +146,7 @@
 	return FALSE
 
 CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
+	configure(uses_power(idle = 5, active = 300))
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	without("reagent_refinery_set_transfer_amount")
 	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_bool(PROC_REF(has_room_holds), because = PROC_REF(has_room_refusal))), then(PROC_REF(interaction_insert)))

@@ -11,12 +11,11 @@ fundamental differences
 	max_contents = 1
 	starts_off = TRUE
 	cooking_coeff = 0.75 // Original value 0.4
-	active_power_usage = 3000
-	idle_power_usage = 50
 	var/datum/looping_sound/mixer/mixer_loop
 	tgui_id = "KitchenMixer"
 
 CAPABILITIES(/obj/machinery/appliance/mixer)
+	configure(uses_power(active = 3000, idle = 50))
 	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
 	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer, starts = /datum/looping_sound/mixer)
 

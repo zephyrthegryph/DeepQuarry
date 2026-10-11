@@ -79,10 +79,12 @@
 
 	contraband = list()
 	vend_delay = 15
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	req_access = list(ACCESS_BAR)
 	req_log_access = ACCESS_BAR
 	has_logs = 1
+
+CAPABILITIES(/obj/machinery/vending/deluxe_boozeomat)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/deluxe_dinner
 	name = "Deluxe Dining Distributor"
@@ -149,11 +151,13 @@
 
 	contraband = list()
 	vend_delay = 15
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	req_access = list(ACCESS_BAR)
 	req_log_access = ACCESS_BAR
 	has_logs = 1
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/deluxe_dinner)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/deluxe_cigs
 	name = "Premium Tobacco Distributor"
@@ -171,11 +175,13 @@
 
 	contraband = list()
 	vend_delay = 15
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	req_access = list(ACCESS_BAR)
 	req_log_access = ACCESS_BAR
 	has_logs = 1
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/deluxe_cigs)
+	configure(uses_power(idle = 211))
 
 //
 //Unlocked Vendors

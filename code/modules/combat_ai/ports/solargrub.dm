@@ -109,7 +109,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 		return !is_welded(V)
 	if(is_type_in_list(M, LV.ignored_machine_types))
 		return FALSE
-	if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
+	if(!power_of(M).idle && !power_of(M).active && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 		return FALSE
 	if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 		return FALSE

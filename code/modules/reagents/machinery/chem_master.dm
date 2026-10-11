@@ -10,7 +10,6 @@
 	icon_state = "mixer0"
 	circuit = /obj/item/circuitboard/chem_master
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
 	var/obj/item/reagent_containers/beaker = null
 	var/obj/item/storage/pill_bottle/loaded_pill_bottle = null
 	var/list/pill_bottle_wrappers = null // Enable customizing pill bottle type
@@ -71,6 +70,7 @@ MSG_DEF_SELF(chem_master/pill_bottle_loaded, "A pill bottle is already loaded in
 // The window: its buttons are ops, and every modal of the old ui_modal_opened()/ui_modal_answered() pair is an op bound to "modal:<id>" whose question
 // is asked inline (a modal of the window); a modal that chained to another (a count, then the name) is one op with two steps.
 CAPABILITIES(/obj/machinery/chem_master)
+	configure(uses_power(idle = 20))
 	reagents(900) // the buffer: a huge number so it should (probably) never dump your reagents
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(loaded_pill_bottle), /obj/item/storage/pill_bottle)

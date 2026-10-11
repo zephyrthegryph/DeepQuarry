@@ -12,9 +12,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	desc = "A specialized computer designed to synchronize a variety of weapon systems and a vessel's astronav data."
 	icon = 'icons/obj/pointdefense.dmi'
 	icon_state = "control"
-	power_channel = EQUIP
 	use_power = USE_POWER_ACTIVE
-	active_power_usage = 5 KILOWATTS
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense_control
@@ -38,6 +36,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 		. += "[desc_panel_image("multitool")]to set ident tag"
 
 CAPABILITIES(/obj/machinery/pointdefense_control)
+	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
 	interface("PointDefenseControl")
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
 	ref_many(nameof(targets))
@@ -194,7 +193,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	//We throw a laser but it doesnt have to hit for meteor to explode
 	var/obj/item/projectile/beam/coildefense/coil = new(get_turf(src))
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
-	use_power_oneoff(idle_power_usage * 10)
+	use_power_oneoff(power_of(src).idle * 10)
 	coil.launch_projectile(target = M.loc, user = src)
 	after(src, 1 SECONDS, PROC_REF(fire_sound_delayed))
 

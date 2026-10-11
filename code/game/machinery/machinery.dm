@@ -98,9 +98,6 @@ Class Procs:
 		//0 = dont run the auto
 		//1 = run auto, use idle
 		//2 = run auto, use active
-	var/idle_power_usage = 0
-	var/active_power_usage = 0
-	var/power_channel = EQUIP //EQUIP, ENVIRON or LIGHT
 	/// The area the machine draws its power through, as a relation (the other end of the area's power_machines): the machine contributes
 	/// its draw to that area's demand stats and reads that area's channels for its power. Written only by the base machine's own area
 	/// handling (rel_set() in Initialize and area_changed()).
@@ -138,15 +135,13 @@ Class Procs:
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
-TRACKED(/obj/machinery, active_power_usage)
-TRACKED(/obj/machinery, idle_power_usage)
-TRACKED(/obj/machinery, power_channel)
 TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
 MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
 
 CAPABILITIES(/obj/machinery)
+	uses_power(channel = EQUIP, idle = 0, active = 0) // what it draws: a type trait (machinery_power.dm); a subtype configure()s what it changes
 	silicon_hand(tier = OP_PRIORITY_DEFAULT - 100) // the AI's Use of a machine is the hand's
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
 	extend("melee_hit", when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))))
@@ -158,13 +153,13 @@ CAPABILITIES(/obj/machinery)
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read, settled by area.power_change() before the machines are told. A type that
 	// runs on its own supply, or delays its loss, drops this entry by its key and says its own.
-	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", "power_channel", "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
-	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
-	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
-	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", "idle_power_usage", "active_power_usage")), reads = list("power_channel"))
+	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_light), contributes_to(nameof(power_area), STAT_DEMAND_LIGHT, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
+	when(TYPE_PROC_REF(/obj/machinery, draws_environ), contributes_to(nameof(power_area), STAT_DEMAND_ENVIRON, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
 	owns_one(nameof(circuit), /obj/item/circuitboard)
 	owns_many(nameof(component_parts))
 	param(nameof(dir_at_make), pos = 1, keep = FALSE)
@@ -268,13 +263,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(var_name == NAMEOF(src, use_power))
 		set_use_power(new_value)
 		return TRUE
-	else if(var_name == NAMEOF(src, power_channel))
+	else if(var_name == "power_channel") // the uses_power() trait's values are not vars; VV edits them by their old names
 		update_power_channel(new_value)
 		return TRUE
-	else if(var_name == NAMEOF(src, idle_power_usage))
+	else if(var_name == "idle_power_usage")
 		update_idle_power_usage(new_value)
 		return TRUE
-	else if(var_name == NAMEOF(src, active_power_usage))
+	else if(var_name == "active_power_usage")
 		update_active_power_usage(new_value)
 		return TRUE
 	return ..()

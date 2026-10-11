@@ -6,12 +6,10 @@
 	var/obj/machinery/atmospherics/pipe/target
 	var/list/pipes_on_turf
 	anchored = TRUE
-	power_channel = ENVIRON
 	var/frequency = 0
 	var/id
 	var/open = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 15
 	/// The mixture it reads (its pipe's, or a turf meter's turf's): what its gas watch is on.
 	var/datum/gas_mixture/watched_air
 	/// What the needle shows (an icon state of meter.dmi) and the kPa it last sent, so a change below the display's resolution is not a change.
@@ -29,6 +27,7 @@ MSG_DEF_SELF(meter/no_pipe, "There is no pipe here to watch.")
 MSG_DEF_SELF(meter/panel_shut, "Its maintenance panel is shut.")
 
 CAPABILITIES(/obj/machinery/meter)
+	configure(uses_power(channel = ENVIRON, idle = 15))
 	gas_watch(air = nameof(watched_air), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_PRESSURE)
 	on_change(nameof(needle), ANY, then(PROC_REF(needle_moved)))
 	examine_line(PROC_REF(gauge_text))

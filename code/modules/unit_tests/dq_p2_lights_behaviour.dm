@@ -265,7 +265,7 @@
 	TEST_ASSERT_EQUAL(L.light_power, 1, "tube power")
 	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_TUBE, "tube colour")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "it draws its active power")
-	TEST_ASSERT_EQUAL(L.active_power_usage, 12, "two watts for each unit of range times power")
+	TEST_ASSERT_EQUAL(power_of(L).active, 12, "two watts for each unit of range times power")
 
 /// A small fixture takes a bulb: shorter range, less draw, the bulb colour.
 /datum/unit_test/dq_p2_lights/small_fixture_starts_lit_with_the_bulb_numbers
@@ -276,7 +276,7 @@
 	TEST_ASSERT_EQUAL(L.light_range, 4, "bulb range")
 	TEST_ASSERT_EQUAL(L.light_power, 1, "bulb power")
 	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_BULB, "bulb colour")
-	TEST_ASSERT_EQUAL(L.active_power_usage, 8, "draw follows range times power")
+	TEST_ASSERT_EQUAL(power_of(L).active, 8, "draw follows range times power")
 
 /// A spotlight takes a large tube and a floor lamp a large bulb.
 /datum/unit_test/dq_p2_lights/spot_and_floor_lamp_take_their_large_lights
@@ -285,11 +285,11 @@
 	var/obj/machinery/light/spot/S = light(/obj/machinery/light/spot, tile(1, 3))
 	TEST_ASSERT_EQUAL(S.light_range, 8, "large tube range")
 	TEST_ASSERT_EQUAL(S.light_power, 2, "large tube power")
-	TEST_ASSERT_EQUAL(S.active_power_usage, 32, "large tube draw")
+	TEST_ASSERT_EQUAL(power_of(S).active, 32, "large tube draw")
 	var/obj/machinery/light/flamp/F = light(/obj/machinery/light/flamp, tile(3, 3))
 	TEST_ASSERT_EQUAL(F.light_range, 6, "large bulb range")
 	TEST_ASSERT_EQUAL(F.light_power, 1, "large bulb power")
-	TEST_ASSERT_EQUAL(F.active_power_usage, 12, "large bulb draw")
+	TEST_ASSERT_EQUAL(power_of(F).active, 12, "large bulb draw")
 
 /// A placed fixture holds a charged emergency cell, unless it is a point-of-interest fixture.
 /datum/unit_test/dq_p2_lights/placed_fixture_has_a_charged_emergency_cell

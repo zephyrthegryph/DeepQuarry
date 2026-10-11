@@ -6,10 +6,7 @@
 	anchored = TRUE
 	opacity = FALSE
 	density = FALSE
-	power_channel = ENVIRON	//so they shut off last
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2500
 	integrity_failure = 0.5
 	var/ispowered = TRUE
 	var/isactive = FALSE
@@ -27,18 +24,24 @@ TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
-	active_power_usage = 2000
 	field_type = /obj/structure/atmospheric_retention_field/impassable
+
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/impassable)
+	configure(uses_power(active = 2000))
 
 /obj/machinery/atmospheric_field_generator/perma
 	name = "static atmospheric retention field generator"
 	desc = "A floor-mounted piece of equipment that generates an atmosphere-retaining energy field when powered and activated. This model is designed to always be active, though the field will still drop from loss of power or electromagnetic interference.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
 	alwaysactive = TRUE
-	active_power_usage = 2000
+
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma)
+	configure(uses_power(active = 2000))
 
 /obj/machinery/atmospheric_field_generator/perma/impassable
-	active_power_usage = 1500
 	field_type = /obj/structure/atmospheric_retention_field/impassable
+
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
+	configure(uses_power(active = 1500))
 
 /obj/machinery/atmospheric_field_generator/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -107,6 +110,7 @@ TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 		disable_field()
 
 CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	configure(uses_power(channel = ENVIRON, idle = 10, active = 2500))
 	emp_disable(7.5 SECONDS)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))

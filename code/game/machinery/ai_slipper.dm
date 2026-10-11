@@ -4,7 +4,6 @@
 	icon_state = "liquid_dispenser"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/uses = 20
 	var/disabled = 1
 	var/lethal = 0
@@ -66,6 +65,7 @@ TRACKED(/obj/machinery/ai_slipper, cooldown_stopped)
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/ai_slipper)
+	configure(uses_power(idle = 10))
 	on_change(PROC_REF(emagged), ANY, then(PROC_REF(reset_cooldown_repeat)))
 	on_change(nameof(density), ANY, then(PROC_REF(reset_cooldown_repeat)))
 	on_change(nameof(use_power), ANY, then(PROC_REF(reset_cooldown_repeat)))

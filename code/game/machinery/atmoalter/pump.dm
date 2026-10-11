@@ -191,8 +191,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	volume = 500000
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50		//internal circuitry, friction losses and stuff
-	active_power_usage = 1000	// Blowers running
 	power_rating = 100000	//100 kW ~ 135 HP
 
 	var/static/gid = 1
@@ -205,6 +203,7 @@ MSG_DEF_SELF(huge_portable/anchored, "You wrench it down.")
 MSG_DEF_SELF(huge_portable/unanchored, "You unwrench it.")
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
+	configure(uses_power(idle = 50, active = 1000))
 	huge_portable_controls()
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
 
