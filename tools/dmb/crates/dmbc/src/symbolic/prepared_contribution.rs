@@ -15,6 +15,28 @@ pub struct PreparedContribution {
     selected_facts: Option<Arc<dm_ir::SelectedReferences>>,
 }
 impl PreparedContribution {
+    pub(crate) fn verification_equal(&self, other: &Self) -> bool {
+        self.identity == other.identity
+            && self.effective == other.effective
+            && self.required_types == other.required_types
+            && match (&self.modified_recipes, &other.modified_recipes) {
+                (Some(a), Some(b)) => {
+                    a.len() == b.len()
+                        && a.iter().zip(b.iter()).all(|(a, b)| {
+                            match (
+                                dm_wire::encode(1, &a.disk_evidence()),
+                                dm_wire::encode(1, &b.disk_evidence()),
+                            ) {
+                                (Ok(a), Ok(b)) => a == b,
+                                _ => false,
+                            }
+                        })
+                }
+                (None, None) => self.modified_seeds.is_empty() && other.modified_seeds.is_empty(),
+                _ => false,
+            }
+            && self.contribution.verification_equal(&other.contribution)
+    }
     pub(crate) fn current_warnings(
         &self,
         symbols: &SymbolTable,

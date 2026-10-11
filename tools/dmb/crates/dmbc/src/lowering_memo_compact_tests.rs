@@ -289,6 +289,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                     parsed: None,
                     bindings: Some(bindings),
                     selections_only: false,
+                    verify: false,
                     modified: Some(&issuer),
                 },
                 &abi.prepared.units()[0].1
@@ -304,6 +305,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                     parsed: None,
                     bindings: Some(bindings),
                     selections_only: false,
+                    verify: false,
                     modified: Some(&issuer),
                 },
                 &abi.prepared.units()[0].1
@@ -327,6 +329,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         parsed: None,
         bindings: Some(bindings),
         selections_only: false,
+        verify: false,
         modified: Some(&issuer),
     };
     if plain && !helpers {
@@ -505,6 +508,7 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
                     parsed: None,
                     bindings: Some(bindings),
                     selections_only: false,
+                    verify: false,
                     modified: None,
                 },
                 shifted_ready,

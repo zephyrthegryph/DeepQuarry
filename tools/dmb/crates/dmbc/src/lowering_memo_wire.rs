@@ -656,6 +656,7 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub parsed: Option<crate::argument_sources::ProcedureHeader<'a>>,
     pub bindings: Option<crate::lowering::DiskReplayBindings<'a>>,
     pub selections_only: bool,
+    pub verify: bool,
     pub modified: Option<&'a dyn crate::lowering_memo_compact::ModifiedIssuer>,
 }
 #[derive(Default)]
@@ -666,6 +667,7 @@ pub(crate) struct ResidentPromotion {
 }
 #[derive(Default)]
 pub(crate) struct ProcedureLookup {
+    pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
     pub unit: Option<LoweredUnit>,
     pub selections: Option<Arc<dm_ir::SelectedReferences>>,
     pub prepared: Option<crate::symbolic::PreparedContribution>,
@@ -807,6 +809,7 @@ impl Candidates<'_> {
                         parsed: context.parsed,
                         bindings: context.bindings,
                         selections_only: true,
+                        verify: context.verify,
                         modified: context.modified,
                     },
                     prepared,
@@ -829,6 +832,7 @@ impl Candidates<'_> {
                     continue;
                 }
                 let promotion = v.promotion();
+                let verification_reads = context.verify.then(|| v.verification_reads());
                 match v.rebind(
                     ProcedureReplayContext {
                         frontend: context.frontend,
@@ -836,11 +840,13 @@ impl Candidates<'_> {
                         parsed: context.parsed,
                         bindings: context.bindings,
                         selections_only: context.selections_only,
+                        verify: context.verify,
                         modified: context.modified,
                     },
                     prepared,
                 ) {
                     Ok(value) => {
+                        result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);
                         return result;
@@ -874,10 +880,17 @@ impl Candidates<'_> {
             match value {
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
                 Candidate::Failure(v) => {
+                    result.verification_reads = context.verify.then(|| {
+                        v.reads
+                            .iter()
+                            .map(|r| (r.query, r.answer.to_vec()))
+                            .collect()
+                    });
                     result.errors = Some(v.errors.into_iter().map(ErrorWire::rehydrate).collect());
                     return result;
                 }
                 Candidate::Executable(v) => {
+                    let verification_reads = context.verify.then(|| v.reads.clone());
                     let promotion = ResidentPromotion {
                         queries: v.reads.iter().map(|(query, _)| *query).collect(),
                         versions: v.versions.clone(),
@@ -892,6 +905,7 @@ impl Candidates<'_> {
                         context.parsed,
                     ) {
                         Ok(unit) => {
+                            result.verification_reads = verification_reads;
                             result.unit = Some(unit);
                             result.resident = Some(promotion);
                             return result;
@@ -928,3 +942,34 @@ mod owner_domain_tests;
 #[cfg(test)]
 #[path = "lowering_memo_warning_wire_tests.rs"]
 mod warning_wire_tests;
+
+/// Verification-only canonical executable comparison; not an admission authority.
+pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool {
+    fn code_equal(a: &ResolverProc, b: &ResolverProc) -> bool {
+        match (
+            dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(a)),
+            dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(b)),
+        ) {
+            (Ok(a), Ok(b)) => a == b,
+            _ => false,
+        }
+    }
+    a.identity == b.identity
+        && a.effective == b.effective
+        && a.metadata.canonical_bytes() == b.metadata.canonical_bytes()
+        && a.abi.as_ref().map(|v| v.canonical_bytes())
+            == b.abi.as_ref().map(|v| v.canonical_bytes())
+        && a.selected_references == b.selected_references
+        && a.debug_origins == b.debug_origins
+        && code_equal(&a.code, &b.code)
+        && a.source_helpers.len() == b.source_helpers.len()
+        && a.source_helpers
+            .iter()
+            .zip(&b.source_helpers)
+            .all(|(a, b)| {
+                a.owner == b.owner
+                    && a.argument == b.argument
+                    && a.debug_origins == b.debug_origins
+                    && code_equal(&a.code, &b.code)
+            })
+}

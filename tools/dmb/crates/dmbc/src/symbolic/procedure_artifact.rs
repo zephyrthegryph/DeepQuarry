@@ -391,3 +391,47 @@ impl Contribution {
         }
     }
 }
+
+impl Contribution {
+    pub(crate) fn verification_equal(&self, other: &Self) -> bool {
+        fn inventory(
+            a: &dm_link::InventoryContribution,
+            b: &dm_link::InventoryContribution,
+        ) -> bool {
+            a.entry().key == b.entry().key
+                && a.entry().content == b.entry().content
+                && a.slots()
+                    .iter()
+                    .map(|v| (v.symbol, v.owner, v.name))
+                    .eq(b.slots().iter().map(|v| (v.symbol, v.owner, v.name)))
+                && a.strings()
+                    .iter()
+                    .map(|v| (v.id, v.bytes.as_ref()))
+                    .eq(b.strings().iter().map(|v| (v.id, v.bytes.as_ref())))
+        }
+        fn frozen(a: &FrozenProc, b: &FrozenProc) -> bool {
+            a.code().canonical_bytes() == b.code().canonical_bytes() && a.labels() == b.labels()
+        }
+        let a = &self.artifact;
+        let b = &other.artifact;
+        a.identity == b.identity
+            && a.frame == b.frame
+            && a.warnings == b.warnings
+            && a.abi.as_ref().map(|v| v.canonical_bytes())
+                == b.abi.as_ref().map(|v| v.canonical_bytes())
+            && a.instances == b.instances
+            && frozen(&a.frozen, &b.frozen)
+            && inventory(&a.inventory, &b.inventory)
+            && a.helpers.len() == b.helpers.len()
+            && a.helpers.iter().zip(&b.helpers).all(|(a, b)| {
+                a.argument == b.argument
+                    && a.warnings == b.warnings
+                    && a.local_names == b.local_names
+                    && a.instances == b.instances
+                    && frozen(&a.frozen, &b.frozen)
+                    && inventory(&a.inventory, &b.inventory)
+            })
+            && self.binding.debug == other.binding.debug
+            && self.binding.helpers == other.binding.helpers
+    }
+}

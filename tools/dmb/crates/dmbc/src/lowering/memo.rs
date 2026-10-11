@@ -1,4 +1,6 @@
 //! Exact procedure memo replay and source-ordered cold fallback.
+#[path = "memo_verify.rs"]
+mod verify;
 use super::*;
 #[path = "rich_sidecars.rs"]
 mod rich_sidecars;
@@ -155,6 +157,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
         std::sync::atomic::Ordering::Relaxed,
     );
+    let verify_hit = !selections_only && memo.verification.select();
     let lookup_start = std::time::Instant::now();
     let note = |outcome, reason, changed_query| {
         memo.counts.lookup_ns.fetch_add(
@@ -182,8 +185,26 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 &prepared,
                 bodies,
                 selections_only,
+                verify_hit,
                 current_body,
             ) {
+                if verify_hit {
+                    verify::verify(
+                        memo,
+                        verify::Expected::Input(&input),
+                        input.verification_reads(),
+                        frontend,
+                        body,
+                        host,
+                        policy,
+                        startup,
+                        bodies,
+                        capture_references,
+                        current_body,
+                        disk_replay_bindings,
+                        "symbolic resident",
+                    )?;
+                }
                 bodies
                     .discard_parsed(body)
                     .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
@@ -228,9 +249,6 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             }
         });
         if let Some(mut unit) = rebound_current {
-            memo.counts
-                .resident_hits
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             unit.origin = body.clone();
             unit.abi = prepared.abi.clone();
             if let Some(member) = frontend.snapshot.tree.member(body.member) {
@@ -242,6 +260,31 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             bodies
                 .discard_parsed(body)
                 .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
+            if verify_hit {
+                let reads: Vec<_> = accepted
+                    .reads
+                    .iter()
+                    .map(|r| (r.query, r.answer.canonical_bytes()))
+                    .collect();
+                verify::verify(
+                    memo,
+                    verify::Expected::Unit(&unit),
+                    Some(&reads),
+                    frontend,
+                    body,
+                    host,
+                    policy,
+                    startup,
+                    bodies,
+                    capture_references,
+                    current_body,
+                    disk_replay_bindings,
+                    "rich resident",
+                )?;
+            }
+            memo.counts
+                .resident_hits
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             note(MemoOutcome::ResidentHit, None, None);
             return Ok(CompletedInput::lowered(unit).with_admission(
                 admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
@@ -267,6 +310,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 parsed,
                 bindings: symbolic.then_some(disk_replay_bindings).flatten(),
                 selections_only,
+                verify: verify_hit,
                 modified: Some(&modified_issuer),
             },
             host,
@@ -291,6 +335,23 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         .errors
         .and_then(|errors| replay_errors(frontend, body, identity, errors))
     {
+        if verify_hit {
+            verify::verify(
+                memo,
+                verify::Expected::Errors(&errors),
+                disk.verification_reads.as_deref(),
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                current_body,
+                disk_replay_bindings,
+                "disk failure",
+            )?;
+        }
         memo.counts
             .disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -334,17 +395,35 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         let admission = disk.resident.as_ref().and_then(|promotion| {
             symbolic_input::disk_admission(memo, key.clone(), host, promotion)
         });
+        bodies
+            .discard_parsed(body)
+            .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
+        let input = CompletedInput::reused(value);
+        if verify_hit {
+            verify::verify(
+                memo,
+                verify::Expected::Input(&input),
+                disk.verification_reads.as_deref(),
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                current_body,
+                disk_replay_bindings,
+                "compact disk",
+            )?;
+        }
         memo.counts
             .disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         memo.counts
             .compact_disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        bodies
-            .discard_parsed(body)
-            .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(CompletedInput::reused(value)
+        return Ok(input
             .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));
     }
     if let Some(unit) = disk
@@ -358,12 +437,29 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         } else {
             None
         };
-        memo.counts
-            .disk_hits
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         bodies
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
+        if verify_hit {
+            verify::verify(
+                memo,
+                verify::Expected::Unit(&unit),
+                disk.verification_reads.as_deref(),
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                current_body,
+                disk_replay_bindings,
+                "rich disk",
+            )?;
+        }
+        memo.counts
+            .disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
         return Ok(CompletedInput::lowered(unit)
             .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));

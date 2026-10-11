@@ -78,6 +78,7 @@ impl Admission {
 pub struct CompletedInput {
     inner: Input,
     admission: Option<Admission>,
+    verification_reads: Option<Vec<(dm_ir::ResolveQuery, Vec<u8>)>>,
 }
 enum Input {
     Selections(
@@ -118,6 +119,7 @@ impl CompletedInput {
         Self {
             inner: Input::Selections(identity, effective, body, facts),
             admission: None,
+            verification_reads: None,
         }
     }
 
@@ -144,17 +146,36 @@ impl CompletedInput {
         Self {
             inner: Input::Reused(value),
             admission: None,
+            verification_reads: None,
         }
     }
     pub(super) fn lowered(unit: LoweredUnit) -> Self {
         Self {
             inner: Input::Lowered(Box::new(unit)),
             admission: None,
+            verification_reads: None,
         }
     }
     pub(super) fn with_admission(mut self, admission: Option<Admission>) -> Self {
         self.admission = admission;
         self
+    }
+    pub(super) fn verification_reads(&self) -> Option<&[(dm_ir::ResolveQuery, Vec<u8>)]> {
+        self.verification_reads.as_deref()
+    }
+    pub(super) fn verification_unit(&self) -> Option<&LoweredUnit> {
+        if let Input::Lowered(v) = &self.inner {
+            Some(v)
+        } else {
+            None
+        }
+    }
+    pub(super) fn verification_prepared(&self) -> Option<&crate::symbolic::PreparedContribution> {
+        if let Input::Reused(v) = &self.inner {
+            Some(v)
+        } else {
+            None
+        }
     }
     pub fn identity(&self) -> UnitIdentity {
         match &self.inner {
@@ -339,6 +360,7 @@ impl SessionSymbolicMemo {
         prepared: &PreparedUnit,
         bodies: &dm_tree::frontend::BodyArena<'_>,
         selections_only: bool,
+        verify: bool,
         current: &PreparedBody<'_>,
     ) -> Option<CompletedInput> {
         let identity = current.source().identity;
@@ -357,6 +379,7 @@ impl SessionSymbolicMemo {
                     prepared,
                     bodies,
                     selections_only,
+                    verify,
                     current,
                     true,
                 );
@@ -415,6 +438,7 @@ impl SessionSymbolicMemo {
             prepared,
             bodies,
             selections_only,
+            verify,
             current,
             false,
         )
@@ -433,6 +457,7 @@ impl SessionSymbolicMemo {
         prepared: &PreparedUnit,
         bodies: &dm_tree::frontend::BodyArena<'_>,
         selections_only: bool,
+        verify: bool,
         current: &PreparedBody<'_>,
         reads_validated: bool,
     ) -> Option<CompletedInput> {
@@ -549,6 +574,13 @@ impl SessionSymbolicMemo {
         Some(CompletedInput {
             inner: Input::Reused(contribution),
             admission: None,
+            verification_reads: verify.then(|| {
+                record
+                    .reads
+                    .iter()
+                    .map(|r| (r.query, r.answer.canonical_bytes()))
+                    .collect()
+            }),
         })
     }
 }

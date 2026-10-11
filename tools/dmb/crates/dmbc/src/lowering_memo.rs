@@ -68,7 +68,10 @@ pub enum ResidentRetention {
 #[path = "lowering_memo/publication.rs"]
 mod publication;
 pub use publication::RetainedProcedures;
+#[path = "lowering_memo/verify_policy.rs"]
+mod verify_policy;
 pub struct ProcedureMemo {
+    pub(crate) verification: verify_policy::VerifyPolicy,
     pub policy: u128,
     resident_retention: ResidentRetention,
     rich_attempt: Option<
@@ -230,6 +233,7 @@ impl ProcedureMemo {
     }
     pub fn new(policy: u128) -> Self {
         Self {
+            verification: verify_policy::VerifyPolicy::from_environment(),
             policy,
             resident_retention: ResidentRetention::Enabled,
             rich_attempt: None,
@@ -283,6 +287,7 @@ impl ProcedureMemo {
         limits: MemoLimits,
     ) -> Self {
         Self {
+            verification: verify_policy::VerifyPolicy::from_environment(),
             policy,
             resident_retention: ResidentRetention::Enabled,
             rich_attempt: None,
@@ -358,6 +363,7 @@ impl ProcedureMemo {
                         parsed: context.parsed,
                         bindings: context.bindings,
                         selections_only: context.selections_only,
+                        verify: context.verify,
                         modified: context.modified,
                     },
                     host,

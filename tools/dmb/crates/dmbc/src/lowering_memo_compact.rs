@@ -293,6 +293,13 @@ fn valid_plain_instances(instances: &[(SymbolId, SymbolId)], reads: &[ReadWire<'
         })
 }
 impl Payload<'_> {
+    pub(crate) fn verification_reads(&self) -> Vec<(ResolveQuery, Vec<u8>)> {
+        self.reads
+            .0
+            .iter()
+            .map(|r| (r.query, r.answer.to_vec()))
+            .collect()
+    }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
         let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);
         self.reads.0.iter().find_map(|r| {
