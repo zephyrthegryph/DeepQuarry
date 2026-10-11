@@ -126,6 +126,7 @@ TRACKED(/obj/machinery/dq_native_appearance_probe, label)
 	return
 
 /datum/unit_test/dq_sys_appearance_mask/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/machinery/dq_native_appearance_probe/P = allocate(/obj/machinery/dq_native_appearance_probe)
 	dq_machine_clear(P)
 	refresh_look(P)
