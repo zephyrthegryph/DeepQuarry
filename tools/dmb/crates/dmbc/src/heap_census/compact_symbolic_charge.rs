@@ -94,8 +94,15 @@ impl HeapCensus {
                 } else {
                     "frozen_code.shared_word_bytes"
                 };
-                self.buffer(category, backing.address, backing.bytes, backing.bytes);
-                self.unknown(category, "byte-owner control block/private metadata excluded; mapped extent is file-backed, not measured private memory");
+                if backing.memory_mapped {
+                    self.file_backed(category, backing.address, backing.bytes);
+                }
+                let complete = code.visit_shared_word_heap_storage(|address, length, capacity| {
+                    self.buffer("frozen_code.word_owner_heap", address, length, capacity);
+                });
+                if complete != Some(true) {
+                    self.unknown(category, "byte-owner nested heap backing is unknown");
+                }
             }
             code.visit_storage(|address, length, capacity| {
                 self.buffer("frozen_code", address, length, capacity);
@@ -199,3 +206,7 @@ mod tests {
         assert!(unknown.finish_compact_pressure_allocations().is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "shared_word_charge_tests.rs"]
+mod shared_word_charge_tests;

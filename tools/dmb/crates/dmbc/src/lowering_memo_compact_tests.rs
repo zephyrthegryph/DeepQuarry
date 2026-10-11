@@ -527,6 +527,25 @@ fn check_replay_features(
     ));
     drop(snapshot);
     drop(cache);
+    let retained_frozen = Arc::new(
+        dm_codegen_byond::FrozenProc::restore(
+            mapped.shared_artifact().code().code().clone(),
+            mapped.shared_artifact().code().labels().to_vec(),
+        )
+        .unwrap(),
+    );
+    let mut charge = crate::heap_census::HeapCensus::compact_symbolic_charge(8192);
+    charge.shared_frozen_code(&retained_frozen);
+    assert!(
+        charge.finish_compact_symbolic_charge().is_some(),
+        "known mapped word owner must not decline resident retention"
+    );
+    let mut report = crate::heap_census::HeapCensus::new("mapped-retention-test");
+    report.shared_frozen_code(&retained_frozen);
+    report.shared_frozen_code(&retained_frozen);
+    let report = report.finish();
+    assert!(report.unique_file_backed_bytes > 0);
+    assert!(report.owners.iter().all(|owner| owner.unknown.is_empty()));
     let restored = payload.rebind(context(), ready).unwrap();
     assert_eq!(
         mapped.shared_artifact().code().code().canonical_bytes(),

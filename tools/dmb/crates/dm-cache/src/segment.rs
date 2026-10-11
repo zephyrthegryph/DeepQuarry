@@ -102,7 +102,7 @@ struct Entry {
     checksum: u128,
 }
 pub struct Segment {
-    map: Mmap,
+    map: Arc<Mmap>,
     id: u128,
     supersedes: Vec<u128>,
     index: BTreeMap<RecordKey, Entry>,
@@ -201,7 +201,7 @@ impl Segment {
             return Err(invalid("unindexed segment bytes"));
         }
         Ok(Self {
-            map,
+            map: Arc::new(map),
             id,
             supersedes,
             index,

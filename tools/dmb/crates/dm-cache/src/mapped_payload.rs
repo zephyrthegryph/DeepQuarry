@@ -6,13 +6,14 @@ use std::{ops::Range, sync::Arc};
 /// Immutable bytes with a checked container lifetime. Acceptance is a separate
 /// caller proof: callback-local backing can exist before typed/current admission.
 /// This owns only its
-/// existing segment, never a snapshot, source tree or additional cache. It
+/// existing immutable mapping, never its Segment index, snapshot, source tree
+/// or additional cache. It
 /// preserves byte lifetime; callers must reissue semantic/current-source proofs
 /// on reuse. Supersession does not mutate escaped owners. No alignment or native
 /// endian layout is promised, so word consumers must read little-endian bytes.
 #[derive(Clone)]
 pub struct MappedPayload {
-    segment: Arc<Segment>,
+    map: Arc<memmap2::Mmap>,
     key: RecordKey,
     range: Range<usize>,
 }
@@ -29,13 +30,13 @@ impl MappedPayload {
             .expect("mapped range overflow");
         assert!(end <= segment.map.len(), "accepted mapped payload extent");
         Self {
-            segment: Arc::clone(segment),
+            map: Arc::clone(&segment.map),
             key,
             range: start..end,
         }
     }
     pub fn bytes(&self) -> &[u8] {
-        &self.segment.map[self.range.clone()]
+        &self.map[self.range.clone()]
     }
     pub fn key(&self) -> RecordKey {
         self.key
@@ -47,7 +48,7 @@ impl MappedPayload {
             return None;
         }
         Some(Self {
-            segment: Arc::clone(&self.segment),
+            map: Arc::clone(&self.map),
             key: self.key,
             range: self.range.start.checked_add(range.start)?
                 ..self.range.start.checked_add(range.end)?,
@@ -59,10 +60,17 @@ impl MappedPayload {
         let start = (bytes.as_ptr() as usize).checked_sub(self.bytes().as_ptr() as usize)?;
         self.subrange(start..start.checked_add(bytes.len())?)
     }
-    /// Physical mapping owner/count for deduplicated retention accounting.
-    /// Arc control blocks and private index backing remain outside this count.
+    /// Exact fixed heap owner of this mapping. The file-backed extent is
+    /// reported separately; it is not a Rust heap buffer or private-byte sample.
+    /// Arc control/allocator allowance is the caller's existing policy.
+    pub fn visit_owned_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        let size = std::mem::size_of::<memmap2::Mmap>();
+        visit(Arc::as_ptr(&self.map) as usize, size, size);
+    }
+    /// File-backed extent and shared mapping identity, separate from heap.
+    /// No Segment index/rejection state is retained by this byte owner.
     pub fn mapping_storage(&self) -> (usize, usize) {
-        (Arc::as_ptr(&self.segment) as usize, self.segment.map.len())
+        (Arc::as_ptr(&self.map) as usize, self.map.len())
     }
 }
 impl CacheSnapshot {

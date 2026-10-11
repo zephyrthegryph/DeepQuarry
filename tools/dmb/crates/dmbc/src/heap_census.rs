@@ -1,13 +1,12 @@
 //! Opt-in retained-owner census. This observes container payloads/capacities,
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
+mod abi_certificates;
 #[path = "heap_census/body_contexts.rs"]
 mod body_contexts;
-use serde::Serialize;
-mod abi_certificates;
 mod cache_batch;
-mod compact_symbolic_charge;
 mod cold_boundary;
+mod compact_symbolic_charge;
 mod declaration_syntax;
 mod dmb_image;
 mod effective_metadata;
@@ -65,35 +64,15 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
-#[derive(Default, Serialize)]
-pub struct OwnerReport {
-    pub owner: String,
-    pub unique_payload_bytes: u64,
-    pub unique_known_capacity_bytes: u64,
-    pub unknown_capacity_payload_bytes: u64,
-    pub unique_allocations: u64,
-    pub shared_encounters: u64,
-    pub observed_items: u64,
-    pub unknown: BTreeSet<String>,
-}
-#[derive(Serialize)]
-pub struct HeapCensusReport {
-    pub schema: u32,
-    pub stage: String,
-    pub scope: &'static str,
-    pub unique_known_capacity_bytes: u64,
-    pub unknown_capacity_payload_bytes: u64,
-    pub rust_requested_live_bytes: Option<u64>,
-    pub owners: Vec<OwnerReport>,
-    pub limitations: Vec<&'static str>,
-    pub frozen_code_metrics: relocation_metrics::RelocationMetrics,
-}
+mod reports;
+pub use reports::{HeapCensusReport, OwnerReport};
 pub struct HeapCensus {
     rust_requested_live_bytes: Option<u64>,
     stage: String,
     owners: BTreeMap<String, OwnerReport>,
     // Addresses stay private to this diagnostic, never become output identities.
     allocations: HashSet<usize>,
+    file_mappings: HashSet<usize>,
     buffer_encounters: usize,
     collections: HashSet<usize>,
     frozen_code_metrics: relocation_metrics::RelocationMetrics,
@@ -129,6 +108,7 @@ impl HeapCensus {
             stage: stage.into(),
             owners: BTreeMap::new(),
             allocations: HashSet::new(),
+            file_mappings: HashSet::new(),
             buffer_encounters: 0,
             collections: HashSet::new(),
             frozen_code_metrics: Default::default(),
@@ -165,6 +145,17 @@ impl HeapCensus {
     pub fn unknown(&mut self, owner: &str, reason: &str) {
         self.reject_compact_unknown(owner, reason);
         self.owner(owner).unknown.insert(reason.into());
+    }
+    /// Mapping extent is reported independently from heap payload/capacity and
+    /// never charged as private memory. Its fixed Rust owners are visited normally.
+    fn file_backed(&mut self, owner: &str, pointer: usize, bytes: usize) {
+        let first = self.file_mappings.insert(pointer);
+        let row = self.owner(owner);
+        if first {
+            row.unique_file_backed_bytes += bytes as u64;
+        } else {
+            row.shared_encounters += 1;
+        }
     }
     fn buffer(&mut self, owner: &str, pointer: usize, payload: usize, capacity: usize) -> bool {
         if !self.admit_compact_buffer(pointer, capacity) {
@@ -224,7 +215,11 @@ impl HeapCensus {
                 "backing capacity unavailable; logical slice length is a lower bound",
             );
         }
-        if self.compact_charge.as_ref().is_some_and(|budget| budget.declined) {
+        if self
+            .compact_charge
+            .as_ref()
+            .is_some_and(|budget| budget.declined)
+        {
             return false;
         }
         let bytes = values.len().saturating_mul(size_of::<T>());
@@ -410,7 +405,9 @@ impl HeapCensus {
         );
         self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
         self.body_occurrences("frontend.body_index", &frontend.bodies);
-        if let Some(mapping)=frontend.source_export_mapping() {self.source_export_mapping(mapping);}
+        if let Some(mapping) = frontend.source_export_mapping() {
+            self.source_export_mapping(mapping);
+        }
         frontend.visit_body_code_storage(|address, logical, capacity| {
             self.buffer("frontend.body_code", address, logical, capacity);
         });
@@ -945,6 +942,7 @@ impl HeapCensus {
                 .iter()
                 .map(|owner| owner.unique_known_capacity_bytes)
                 .sum(),
+            unique_file_backed_bytes: owners.iter().map(|owner| owner.unique_file_backed_bytes).sum(),
             unknown_capacity_payload_bytes: owners
                 .iter()
                 .map(|owner| owner.unknown_capacity_payload_bytes)
@@ -956,6 +954,7 @@ impl HeapCensus {
                 "Vec capacities include inline element descriptors; nested heap buffers are counted separately, never those descriptors twice.",
                 "Arc control blocks, allocator size-class rounding/metadata, stack storage, private indexes, and explicitly unknown backing are excluded.",
                 "Slices without exposed capacity contribute logical-length lower bounds, marked in their owner; this is not a complete heap or RSS total.",
+                "File-backed mapping extents are deduplicated separately and excluded from heap capacity/compact retention charge; they are not measured private pages.",
                 "The census is diagnostic-only, opt-in, and O(accessible retained nodes); its temporary pointer ledger is excluded.",
                 "rust_requested_live_bytes samples successful Rust GlobalAlloc Layout requested bytes before census allocation; null when allocation-counting is disabled. It excludes direct native C allocations, allocator pages/metadata, and OS private memory.",
             ],

@@ -15,6 +15,13 @@ pub struct ByteOwnerStorage {
 pub trait ImmutableByteOwner: Send + Sync {
     fn bytes(&self) -> &[u8];
     fn storage(&self) -> ByteOwnerStorage;
+    /// Describe every nested Rust heap allocation beyond this trait object's
+    /// fixed payload. Default is unknown and must decline bounded retention.
+    /// Mapping extents are not heap allocations and belong in storage(), while
+    /// their fixed mapping-handle owner is an ordinary known allocation here.
+    fn visit_heap_storage(&self, _visit: &mut dyn FnMut(usize, usize, usize)) -> bool {
+        false
+    }
 }
 impl ImmutableByteOwner for Vec<u8> {
     fn bytes(&self) -> &[u8] {
@@ -26,6 +33,10 @@ impl ImmutableByteOwner for Vec<u8> {
             bytes: self.capacity(),
             memory_mapped: false,
         }
+    }
+    fn visit_heap_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) -> bool {
+        visit(self.as_ptr() as usize, self.len(), self.capacity());
+        true
     }
 }
 #[derive(Clone)]
@@ -117,6 +128,17 @@ impl WordStorage {
     /// inspection/canonical hashing should iterate rather than allocate a copy.
     pub fn to_vec(&self) -> Vec<u32> {
         self.iter().collect()
+    }
+    pub fn visit_shared_heap_storage(
+        &self,
+        mut visit: impl FnMut(usize, usize, usize),
+    ) -> Option<bool> {
+        let Self::Shared(words) = self else {
+            return None;
+        };
+        let size = std::mem::size_of_val(words.owner.as_ref());
+        visit(Arc::as_ptr(&words.owner) as *const () as usize, size, size);
+        Some(words.owner.visit_heap_storage(&mut visit))
     }
     pub fn storage(&self) -> WordStorageView {
         match self {

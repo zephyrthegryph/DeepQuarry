@@ -364,6 +364,12 @@ impl SymbolicCode {
     pub fn word_iter(&self) -> crate::WordIter<'_> {
         self.words.iter()
     }
+    pub fn visit_shared_word_heap_storage(
+        &self,
+        visit: impl FnMut(usize, usize, usize),
+    ) -> Option<bool> {
+        self.words.visit_shared_heap_storage(visit)
+    }
     pub fn word_storage(&self) -> crate::WordStorageView {
         self.words.storage()
     }

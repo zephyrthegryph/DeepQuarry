@@ -578,6 +578,11 @@ impl ReusableProcedureArtifact {
 /// compact replay; this owner simply keeps its immutable mapped bytes alive.
 struct MappedWords(dm_cache::MappedPayload);
 impl dm_ir::ImmutableByteOwner for MappedWords {
+    fn visit_heap_storage(&self, visit: &mut dyn FnMut(usize, usize, usize)) -> bool {
+        self.0.visit_owned_storage(visit);
+        true
+    }
+
     fn bytes(&self) -> &[u8] {
         self.0.bytes()
     }
