@@ -857,13 +857,14 @@ impl HeapCensus {
             });
         }
     }
-    /// Logical payload charge only; private allocator/index backing is an
-    /// allowance, never a measured process-memory bound.
+    /// Logical payload charge only. A per-exposed-allocation allocator/control
+    /// allowance is not measured private memory; the shared core charges its
+    /// own bucket, claim, lease and incidence bookkeeping separately.
     pub(crate) fn finish_compact_symbolic_charge(mut self) -> Option<usize> {
         self.owner("procedure_metadata.recipe").unknown.remove(
             "Arc control block and allocator overhead are unavailable",
         );
-        let encounters = self.buffer_encounters;
+        let allocations = self.allocations.len();
         let report = self.finish();
         if report.unknown_capacity_payload_bytes != 0
             || report.owners.iter().any(|owner| !owner.unknown.is_empty())
@@ -871,8 +872,7 @@ impl HeapCensus {
             return None;
         }
         usize::try_from(report.unique_known_capacity_bytes).ok()?
-            .checked_add(encounters.checked_mul(64)?)?
-            .checked_add(4096)
+            .checked_add(allocations.checked_mul(64)?)
     }
     fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
         if !self.arc_object("frozen_code", code) {

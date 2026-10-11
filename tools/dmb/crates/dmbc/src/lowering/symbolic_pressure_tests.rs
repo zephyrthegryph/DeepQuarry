@@ -56,7 +56,7 @@ fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
     let record = record();
     let key = Arc::clone(&record.key);
     let weight = charge(&key, &record).expect("all immutable payloads are exposed");
-    assert!(weight > 4096);
+    assert!(weight > 0);
     let memo = SessionSymbolicMemo::current_revision();
     let request = memo.for_request(true);
     let artifact = match &record.value {
@@ -76,7 +76,12 @@ fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
     assert!(request.publish_successful());
     let kept = memo.compact_for_pressure(usize::MAX);
     assert_eq!(kept.retained_entries, 1);
-    assert!(kept.charged_bytes >= weight);
+    assert!(kept.payload_bytes >= weight);
+    assert!(kept.index_logical_bytes > 0);
+    assert_eq!(
+        kept.charged_bytes,
+        kept.payload_bytes + kept.index_logical_bytes
+    );
     assert_eq!(memo.retention_stats().records, 1);
     let evicted = memo.compact_for_pressure(kept.charged_bytes - 1);
     assert_eq!(evicted.evicted_entries, 1);
@@ -96,4 +101,36 @@ fn debug_payload_capacity_is_charged_before_retention() {
         .relative_debug
         .reserve(10000);
     assert!(charge(&key, &record).unwrap() > before + 10000);
+}
+
+#[test]
+fn payload_allocation_allowance_deduplicates_shared_and_empty_encounters() {
+    let bytes = vec![7u8; 11];
+    let make = |repeat: bool| {
+        let mut census = HeapCensus::new("payload");
+        census.exposed_buffer(
+            "payload",
+            bytes.as_ptr() as usize,
+            bytes.len(),
+            bytes.capacity(),
+        );
+        if repeat {
+            census.exposed_buffer(
+                "payload",
+                bytes.as_ptr() as usize,
+                bytes.len(),
+                bytes.capacity(),
+            );
+            census.exposed_buffer("empty", 1, 0, 0);
+        }
+        census.finish_compact_symbolic_charge().unwrap()
+    };
+    assert_eq!(make(false), bytes.capacity() + 64);
+    assert_eq!(make(true), make(false));
+}
+#[test]
+fn unknown_nested_payload_still_declines_pressure_retention() {
+    let mut census = HeapCensus::new("unknown");
+    census.unknown("nested", "private nested capacity is not exposed");
+    assert!(census.finish_compact_symbolic_charge().is_none());
 }
