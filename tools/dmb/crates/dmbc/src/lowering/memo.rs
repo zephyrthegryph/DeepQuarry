@@ -1,25 +1,30 @@
 //! Exact procedure memo replay and source-ordered cold fallback.
+#[path = "memo_admission.rs"]
+mod admission;
 #[path = "memo_verify.rs"]
 mod verify;
 use super::*;
+pub(super) use admission::lower_one_input;
+pub(super) use admission::map_stage;
+pub(super) use admission::Admission;
 #[path = "rich_sidecars.rs"]
 mod rich_sidecars;
 #[allow(clippy::too_many_arguments)]
-pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
-    body: &BodyOccurrence,
-    host: &R,
-    request_admission: Option<&symbolic_input::RequestAdmission<'_, R>>,
-    policy: &P,
-    startup: Option<&crate::startup::CapturedStartup>,
-    memo: Option<&crate::lowering_memo::ProcedureMemo>,
-    bodies: &dm_tree::frontend::BodyArena<'_>,
+pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    body: &'a BodyOccurrence,
+    host: &'a R,
+    request_admission: Option<&'a symbolic_input::RequestAdmission<'_, R>>,
+    policy: &'a P,
+    startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
+    memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+    bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
     symbolic: bool,
     capture_references: bool,
     selections_only: bool,
-    disk_replay_bindings: Option<DiskReplayBindings<'_>>,
-    prepared_body: Option<&PreparedBody<'_>>,
-) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
+    disk_replay_bindings: Option<DiskReplayBindings<'a>>,
+    prepared_body: Option<&'a PreparedBody<'frontend>>,
+) -> Result<Admission<'a>, Vec<LoweringDiagnostic>> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
     if symbolic && capture_references {
         if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
@@ -28,31 +33,35 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     }
     let symbolic = symbolic && !capture_references;
     let Some(memo) = memo else {
-        return lower_one(
-            frontend,
-            body,
-            host,
-            policy,
-            startup,
-            bodies,
-            capture_references,
-            prepared_body.map(PreparedBody::source),
-        )
-        .map(CompletedInput::lowered);
+        return Ok(Admission::NeedsLowering(Box::new(move || {
+            lower_one(
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                prepared_body.map(PreparedBody::source),
+            )
+            .map(CompletedInput::lowered)
+        })));
     };
     let key_start = std::time::Instant::now();
     if startup.is_some_and(|capture| capture.validate_for(frontend).is_err()) {
-        return lower_one(
-            frontend,
-            body,
-            host,
-            policy,
-            startup,
-            bodies,
-            capture_references,
-            prepared_body.map(PreparedBody::source),
-        )
-        .map(CompletedInput::lowered);
+        return Ok(Admission::NeedsLowering(Box::new(move || {
+            lower_one(
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                prepared_body.map(PreparedBody::source),
+            )
+            .map(CompletedInput::lowered)
+        })));
     }
     let owned_body = if prepared_body.is_none() {
         PreparedBody::issue(frontend, body).ok()
@@ -69,17 +78,19 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             selections_only,
         )
     }) else {
-        return lower_one(
-            frontend,
-            body,
-            host,
-            policy,
-            startup,
-            bodies,
-            capture_references,
-            None,
-        )
-        .map(CompletedInput::lowered);
+        return Ok(Admission::NeedsLowering(Box::new(move || {
+            lower_one(
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                None,
+            )
+            .map(CompletedInput::lowered)
+        })));
     };
     let current_body = current_body.expect("current key was issued from this row");
     // Frozen ABI policies are prepared before this stage. Their actual folded
@@ -141,17 +152,20 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         ))
     })();
     let Some((needs_parsed, prepared, prepared_tail, identity)) = ready else {
-        return lower_one(
-            frontend,
-            body,
-            host,
-            policy,
-            startup,
-            bodies,
-            capture_references,
-            Some(current_body.source()),
-        )
-        .map(CompletedInput::lowered);
+        let current_source = current_body.source();
+        return Ok(Admission::NeedsLowering(Box::new(move || {
+            lower_one(
+                frontend,
+                body,
+                host,
+                policy,
+                startup,
+                bodies,
+                capture_references,
+                Some(current_source),
+            )
+            .map(CompletedInput::lowered)
+        })));
     };
     memo.counts.key_preparation_ns.fetch_add(
         key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
@@ -212,7 +226,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                     .resident_hits
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 note(MemoOutcome::ResidentHit, None, None);
-                return Ok(input);
+                return Ok(Admission::Admitted(input));
             }
         }
     }
@@ -286,8 +300,10 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 .resident_hits
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             note(MemoOutcome::ResidentHit, None, None);
-            return Ok(CompletedInput::lowered(unit).with_admission(
-                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+            return Ok(Admission::Admitted(
+                CompletedInput::lowered(unit).with_admission(
+                    admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+                ),
             ));
         }
         miss = MemoMissReason::UnrebasablePrivateSidecar;
@@ -384,12 +400,12 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 &facts,
             );
         }
-        return Ok(CompletedInput::selections(
+        return Ok(Admission::Admitted(CompletedInput::selections(
             current.identity,
             current.effective,
             body.clone(),
             facts,
-        ));
+        )));
     }
     if let Some(value) = disk.prepared {
         let admission = disk.resident.as_ref().and_then(|promotion| {
@@ -423,8 +439,9 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .compact_disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(input
-            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));
+        return Ok(Admission::Admitted(input.with_admission(
+            admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+        )));
     }
     if let Some(unit) = disk
         .unit
@@ -461,8 +478,11 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(CompletedInput::lowered(unit)
-            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata)))));
+        return Ok(Admission::Admitted(
+            CompletedInput::lowered(unit).with_admission(
+                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+            ),
+        ));
     }
     if let Some(reason) = disk.miss {
         miss = reason;
@@ -475,95 +495,100 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     memo.counts
         .recomputed
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    // Replay validates the stored complete read ledger (or its trusted domain
-    // receipt). Issue mandatory reads only when producing a new executable.
-    let occurrence_start = std::time::Instant::now();
-    {
-        let _profile = dm_profile::item("lowering.occurrence_reads");
-        recording.record_declaration_occurrence(identity);
-    }
-    memo.counts.occurrence_reads_ns.fetch_add(
-        occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-        std::sync::atomic::Ordering::Relaxed,
-    );
-    let capture = RefCell::new(MemoCapture::default());
-    let result = lower_one_captured(
-        frontend,
-        body,
-        &recording,
-        policy,
-        bodies,
-        LoweringCapture {
-            startup,
-            capture: Some(&capture),
-            ready: needs_parsed.then_some(prepared),
-            capture_references,
-            current: Some(current_body.source()),
-        },
-    );
-    let mut admission = None;
-    if let Ok(unit) = &result {
-        let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
-        let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
-        let relative_debug = capture.borrow().debug.clone();
-        if relative_debug.len() == unit.debug_origins.entries.len()
-            && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
-                == Some(&unit.debug_origins)
+    let current_source = current_body.source();
+    Ok(Admission::NeedsLowering(Box::new(move || {
+        // Replay validates the stored complete read ledger (or its trusted domain
+        // receipt). Issue mandatory reads only when producing a new executable.
+        let occurrence_start = std::time::Instant::now();
         {
-            let compact_eligible = symbolic
-                && disk_replay_bindings
-                    .is_some_and(|bindings| crate::lowering_memo_compact::eligible(unit, bindings));
-            let compact = compact_eligible && memo.completion_writer().is_some();
-            if symbolic {
-                admission = symbolic_input::admission(
-                    memo,
-                    Arc::from(key.as_slice()),
-                    Arc::clone(&reads),
-                    Arc::clone(&versions),
-                    relative_debug.clone(),
-                    compact,
-                );
-            }
-            if !compact {
-                if symbolic && memo.completion_writer().is_some() {
-                    memo.counts
-                        .compact_fallback_ineligible
-                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                }
-                if selections_only {
-                    memo.queue_selections(&key, &reads, unit, &versions);
-                } else {
-                    memo.queue_disk(&key, &reads, unit, &relative_debug, &versions);
-                }
-            }
-            // The completion producer retains the reusable symbolic artifact.
-            // Keeping another RichIR graph for the same compact-eligible unit
-            // duplicates its instructions, origins and dependency ledger and
-            // walks that graph solely to charge a second cache. Noncompact
-            // units and compatibility callers retain the rich fallback. A
-            // declined symbolic completion remains a normal cold miss.
-            let symbolic_resident = compact_eligible && memo.symbolic.is_some();
-            if memo.retains_resident() && !symbolic_resident {
-                let retained_key = admission.as_ref().map_or_else(
-                    || Arc::from(key.as_slice()),
-                    |admission| admission.shared_key(),
-                );
-                memo.remember_shared(retained_key, reads, unit, relative_debug, versions);
-            }
+            let _profile = dm_profile::item("lowering.occurrence_reads");
+            recording.record_declaration_occurrence(identity);
         }
-    } else if let Some(errors) = &capture.borrow().errors {
-        memo.remember_failure(
-            &key,
-            Some(identity),
-            &recording.reads(),
-            errors,
-            &recording.domain_receipts(),
+        memo.counts.occurrence_reads_ns.fetch_add(
+            occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            std::sync::atomic::Ordering::Relaxed,
         );
-    }
-    result.map(|unit| {
-        CompletedInput::lowered(unit)
-            .with_admission(admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))))
-    })
+        let capture = RefCell::new(MemoCapture::default());
+        let result = lower_one_captured(
+            frontend,
+            body,
+            &recording,
+            policy,
+            bodies,
+            LoweringCapture {
+                startup,
+                capture: Some(&capture),
+                ready: needs_parsed.then_some(prepared),
+                capture_references,
+                current: Some(current_source),
+            },
+        );
+        let mut admission = None;
+        if let Ok(unit) = &result {
+            let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
+            let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
+            let relative_debug = capture.borrow().debug.clone();
+            if relative_debug.len() == unit.debug_origins.entries.len()
+                && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
+                    == Some(&unit.debug_origins)
+            {
+                let compact_eligible = symbolic
+                    && disk_replay_bindings.is_some_and(|bindings| {
+                        crate::lowering_memo_compact::eligible(unit, bindings)
+                    });
+                let compact = compact_eligible && memo.completion_writer().is_some();
+                if symbolic {
+                    admission = symbolic_input::admission(
+                        memo,
+                        Arc::from(key.as_slice()),
+                        Arc::clone(&reads),
+                        Arc::clone(&versions),
+                        relative_debug.clone(),
+                        compact,
+                    );
+                }
+                if !compact {
+                    if symbolic && memo.completion_writer().is_some() {
+                        memo.counts
+                            .compact_fallback_ineligible
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    }
+                    if selections_only {
+                        memo.queue_selections(&key, &reads, unit, &versions);
+                    } else {
+                        memo.queue_disk(&key, &reads, unit, &relative_debug, &versions);
+                    }
+                }
+                // The completion producer retains the reusable symbolic artifact.
+                // Keeping another RichIR graph for the same compact-eligible unit
+                // duplicates its instructions, origins and dependency ledger and
+                // walks that graph solely to charge a second cache. Noncompact
+                // units and compatibility callers retain the rich fallback. A
+                // declined symbolic completion remains a normal cold miss.
+                let symbolic_resident = compact_eligible && memo.symbolic.is_some();
+                if memo.retains_resident() && !symbolic_resident {
+                    let retained_key = admission.as_ref().map_or_else(
+                        || Arc::from(key.as_slice()),
+                        |admission| admission.shared_key(),
+                    );
+                    memo.remember_shared(retained_key, reads, unit, relative_debug, versions);
+                }
+            }
+        } else if let Some(errors) = &capture.borrow().errors {
+            memo.remember_failure(
+                &key,
+                Some(identity),
+                &recording.reads(),
+                errors,
+                &recording.domain_receipts(),
+            );
+        }
+        result.map(|unit| {
+            CompletedInput::lowered(unit).with_admission(
+                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
+            )
+        })
+    })))
 }
 
 fn body_diagnostic(

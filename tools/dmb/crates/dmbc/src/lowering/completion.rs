@@ -1,4 +1,4 @@
-//! Same-worker consuming completion, after all memo capture, before aggregation.
+//! Bounded admission and consuming cold completion before source-ordered aggregation.
 use super::*;
 
 pub struct CompletedUnit<T> {
@@ -84,7 +84,6 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
         .filter(|_| !host.observes_reads())
         .map(|_| symbolic_input::RequestAdmission::new(host));
     let request_admission = request_admission.as_ref();
-    let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
         || {
@@ -140,126 +139,122 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
             )
         });
     }
-    // Only final outputs occupy indexed slots. Each worker holds at most one
-    // bounded chunk; publication remains inside the existing memo producer.
-    let slices: Vec<_> = bodies.chunks(chunk).collect();
-    let results: Vec<_> = (0..slices.len())
-        .map(|_| std::sync::Mutex::new(None))
-        .collect();
-    let next = std::sync::atomic::AtomicUsize::new(0);
-    let scheduling = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        executor.scope(|scope| {
-            for _ in 0..workers.min(slices.len()) {
-                let slices = &slices;
-                let results = &results;
-                let next = &next;
-                scope.spawn(move |_| {
-                    let _profile = dm_profile::stage("cold.procedure_lowering");
-                    loop {
-                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(slice) = slices.get(index) else {
-                            break;
-                        };
-                        let outcomes =
-                            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                                slice
-                                    .iter()
-                                    .map(|(body, prepared_body)| {
-                                        if let Err(error) = crate::daemon::control::checkpoint() {
-                                            return Err(vec![LoweringDiagnostic {
-                                                related: Vec::new(),
-                                                kind: DiagnosticKind::Internal,
-                                                identity: None,
-                                                origin: body.source.clone(),
-                                                message: error.to_string(),
-                                            }]);
-                                        }
-
-                                        memo::lower_one_input(
-                                            frontend,
-                                            body,
-                                            host,
-                                            request_admission,
-                                            policy,
-                                            startup,
-                                            memo,
-                                            execution.bodies,
-                                            symbolic,
-                                            execution.capture_references,
-                                            execution.selections_only,
-                                            execution.disk_replay_bindings,
-                                            *prepared_body,
-                                        )
-                                        .map(|unit| {
-                                            // Memo capture/remember already completed. The
-                                            // consuming mapper cannot mutate persisted IR.
-                                            let identity = unit.identity();
-                                            let effective = unit.effective();
-                                            let origin = (**body).clone();
-                                            complete(unit)
-                                                .map(|value| CompletedUnit {
-                                                    identity,
-                                                    effective,
-                                                    value,
-                                                })
-                                                .map_err(|error| Box::new((origin, error)))
-                                        })
-                                    })
-                                    .collect::<Vec<_>>()
-                            }))
-                            .unwrap_or_else(|_| {
-                                slice
-                                    .iter()
-                                    .map(|(body, _)| {
-                                        Err(vec![LoweringDiagnostic {
-                                            related: Vec::new(),
-                                            kind: DiagnosticKind::Internal,
-                                            identity: None,
-                                            origin: body.source.clone(),
-                                            message: "procedure lowering worker panicked".into(),
-                                        }])
-                                    })
-                                    .collect()
-                            });
-                        *results[index]
-                            .lock()
-                            .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
-                    }
-                });
-            }
+    let internal = |body: &BodyOccurrence, message: String| {
+        vec![LoweringDiagnostic {
+            related: Vec::new(),
+            kind: DiagnosticKind::Internal,
+            identity: None,
+            origin: body.source.clone(),
+            message,
+        }]
+    };
+    let consume = |position: usize, input: Result<CompletedInput, Vec<LoweringDiagnostic>>| {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            input.map(|unit| {
+                let identity = unit.identity();
+                let effective = unit.effective();
+                complete(unit)
+                    .map(|value| CompletedUnit {
+                        identity,
+                        effective,
+                        value,
+                    })
+                    .map_err(|error| Box::new((bodies[position].0.clone(), error)))
+            })
+        }))
+        .unwrap_or_else(|_| {
+            Err(internal(
+                bodies[position].0,
+                "procedure lowering worker panicked".into(),
+            ))
         })
-    }));
-    // Every sibling job has joined before the scope propagates a panic. Missing
-    // slots become source-ordered internal diagnostics rather than escaping.
-    let scheduling_failed = scheduling.is_err();
-    let mut batch = CompletedLoweringBatch::default();
-    for (index, slot) in results.into_iter().enumerate() {
-        let outcomes = slot.into_inner().unwrap_or_else(|error| error.into_inner());
-        let outcomes = outcomes.unwrap_or_else(|| {
-            slices[index]
-                .iter()
-                .map(|(body, _)| {
-                    Err(vec![LoweringDiagnostic {
-                        related: Vec::new(),
-                        kind: DiagnosticKind::Internal,
-                        identity: None,
-                        origin: body.source.clone(),
-                        message: if scheduling_failed {
-                            "procedure scheduling worker panicked"
-                        } else {
-                            "procedure lowering job did not complete"
-                        }
-                        .into(),
-                    }])
-                })
-                .collect()
+    };
+    let mut outcomes: Vec<_> = (0..bodies.len()).map(|_| None).collect();
+    // Bound live miss preparation to one worker-sized window. Cold requests
+    // must not retain every parsed body and proof ledger before producing code.
+    let window_size = chunk.saturating_mul(executor.workers().max(1)).max(1);
+    for (window_index, window) in bodies.chunks(window_size).enumerate() {
+        let start = window_index * window_size;
+        // Current admission remains exhaustive. Only declined candidates enter the
+        // cold lowering queue; neither phase creates another cache or model.
+        let indexed: Vec<_> = window.iter().enumerate().collect();
+        let admitted = memo::map_stage(executor, &indexed, chunk, &|(
+            local_position,
+            (body, prepared_body),
+        )| {
+            crate::daemon::control::checkpoint()
+                .map_err(|error| internal(body, error.to_string()))?;
+            memo::admit_one_input(
+                frontend,
+                body,
+                host,
+                request_admission,
+                policy,
+                startup,
+                memo,
+                execution.bodies,
+                symbolic,
+                execution.capture_references,
+                execution.selections_only,
+                execution.disk_replay_bindings,
+                *prepared_body,
+            )
+            .map(|attempt| match attempt {
+                memo::Admission::Admitted(input) => {
+                    (Some(consume(start + *local_position, Ok(input))), None)
+                }
+                pending @ memo::Admission::NeedsLowering(_) => (None, Some(pending)),
+            })
         });
-        for outcome in outcomes {
-            match outcome {
-                Ok(Ok(unit)) => batch.units.push(unit),
-                Ok(Err(error)) => batch.completion_errors.push(*error),
-                Err(errors) => batch.diagnostics.extend(errors),
+        let mut pending = Vec::new();
+        for (local_position, input) in admitted.into_iter().enumerate() {
+            let position = start + local_position;
+            match input {
+                Some(Ok((Some(completed), None))) => outcomes[position] = Some(completed),
+                Some(Ok((None, Some(attempt)))) => {
+                    pending.push((position, std::sync::Mutex::new(Some(attempt))))
+                }
+                Some(Err(errors)) => outcomes[position] = Some(Err(errors)),
+                None | Some(Ok(_)) => {
+                    outcomes[position] = Some(Err(internal(
+                        bodies[position].0,
+                        "procedure admission worker panicked".into(),
+                    )))
+                }
             }
+        }
+        let produced = memo::map_stage(executor, &pending, chunk, &|(position, slot)| {
+            let _profile = dm_profile::stage("cold.procedure_lowering");
+            let attempt = slot
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .take()
+                .expect("each pending producer runs once");
+            let input = crate::daemon::control::checkpoint()
+                .map_err(|error| internal(bodies[*position].0, error.to_string()))
+                .and_then(|_| attempt.finish());
+            consume(*position, input)
+        });
+        for ((position, _), result) in pending.into_iter().zip(produced) {
+            outcomes[position] = Some(result.unwrap_or_else(|| {
+                Err(internal(
+                    bodies[position].0,
+                    "procedure lowering worker panicked".into(),
+                ))
+            }));
+        }
+    }
+    let mut batch = CompletedLoweringBatch::default();
+    for (position, outcome) in outcomes.into_iter().enumerate() {
+        match outcome.unwrap_or_else(|| {
+            Err(internal(
+                bodies[position].0,
+                "procedure lowering job did not complete".into(),
+            ))
+        }) {
+            Ok(Ok(unit)) => batch.units.push(unit),
+            Ok(Err(error)) => batch.completion_errors.push(*error),
+            Err(errors) => batch.diagnostics.extend(errors),
         }
     }
     batch
