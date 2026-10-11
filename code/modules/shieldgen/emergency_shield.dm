@@ -37,7 +37,6 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	destroyed(src)
 
 /obj/machinery/shield/Initialize(mapload)
-	src.set_dir(pick(1,2,3,4))
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
@@ -50,6 +49,7 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	..()
 
 CAPABILITIES(/obj/machinery/shield)
+	rolls(nameof(dir), pick_one(list(1, 2, 3, 4)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
 	extend(/datum/act/hit, instead(then(PROC_REF(shield_thrown_hit))))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))

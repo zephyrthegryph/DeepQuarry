@@ -114,7 +114,6 @@ CAPABILITIES(/obj/item/shield_projector)
 TRACKED(/obj/item/shield_projector, regenerating)
 
 /obj/item/shield_projector/Initialize(mapload)
-	max_integrity = max_integrity
 	dq_add_recursive_move(src)
 	return ..()
 

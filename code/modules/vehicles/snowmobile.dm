@@ -37,9 +37,8 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile)
 	op("snowmobile_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Buckle"), then(PROC_REF(interaction_snowmobile_drag)))
 	op("snowmobile_hand", hand(), then(PROC_REF(interaction_snowmobile_hand)))
 
-/obj/vehicle/train/engine/quadbike/snowmobile/built/Initialize(mapload)
-	dir = 2 //To match the under construction frame
-	. = ..()
+/obj/vehicle/train/engine/quadbike/snowmobile/built
+	dir = SOUTH // to match the under-construction frame
 
 /obj/vehicle/train/engine/quadbike/snowmobile/get_turf_speeds(atom/prev_loc)
 	// Same speed if turf type doesn't change
