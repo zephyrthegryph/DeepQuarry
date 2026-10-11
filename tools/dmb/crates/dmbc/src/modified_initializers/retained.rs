@@ -63,6 +63,7 @@ pub(super) fn lower<R: Resolver>(
         Some(calls) => calls.immutable_policy_bytes(),
     };
     let proof_host = ResourceProofHost { host, descriptor };
+    let mut disk_attempt = crate::initializer_lowering::disk::TransportAttempt::default();
     if let (Some(store), Some(binding)) = (fragments, &binding) {
         current_keys.push(Arc::clone(&binding.key));
         // This request-local root memo is populated only after exact admission,
@@ -104,7 +105,7 @@ pub(super) fn lower<R: Resolver>(
             verify(reads, code).map_err(dm_codegen_byond::initializer::InitializerError::Invalid)
         };
         if let Some((code, encoding)) = store
-            .modified_verified_with_disk(
+            .modified_verified_with_attempt(
                 binding,
                 symbols,
                 &proof_host,
@@ -112,6 +113,7 @@ pub(super) fn lower<R: Resolver>(
                 if selected { Some(&mut verifier) } else { None },
                 descriptor.fields().len(),
                 portable_policy,
+                &mut disk_attempt,
             )
             .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?
         {
@@ -142,7 +144,14 @@ pub(super) fn lower<R: Resolver>(
         .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?,
     );
     let encoding = if let (Some(store), Some(binding)) = (fragments, &binding) {
-        store.remember_modified_with_disk(binding, &recorder, &code, &fields, portable_policy)
+        store.remember_modified_with_attempt(
+            binding,
+            &recorder,
+            &code,
+            &fields,
+            portable_policy,
+            &mut disk_attempt,
+        )
     } else {
         None
     };

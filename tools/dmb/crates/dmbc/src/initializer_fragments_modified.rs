@@ -47,6 +47,39 @@ impl InitializerFragments {
         key: &receipts::Binding,
         symbols: &dm_ir::SymbolTable,
         host: &R,
+        root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
+        verify: Option<
+            &mut dyn FnMut(
+                &verify::Receipt,
+                &crate::InitializerCode,
+            ) -> Result<(), InitializerError>,
+        >,
+        root_count: usize,
+        modified_policy: Option<&[u8]>,
+    ) -> Result<
+        Option<(
+            crate::InitializerCode,
+            Arc<crate::symbolic::InitializerEncoding>,
+        )>,
+        InitializerError,
+    > {
+        self.modified_verified_with_attempt(
+            key,
+            symbols,
+            host,
+            root,
+            verify,
+            root_count,
+            modified_policy,
+            &mut super::disk::TransportAttempt::default(),
+        )
+    }
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
+    pub(crate) fn modified_verified_with_attempt<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        symbols: &dm_ir::SymbolTable,
+        host: &R,
         mut root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
         mut verify: Option<
             &mut dyn FnMut(
@@ -56,6 +89,7 @@ impl InitializerFragments {
         >,
         root_count: usize,
         modified_policy: Option<&[u8]>,
+        disk_attempt: &mut super::disk::TransportAttempt,
     ) -> Result<
         Option<(
             crate::InitializerCode,
@@ -80,9 +114,14 @@ impl InitializerFragments {
                 let roots = (0..root_count).map(&mut root).collect::<Option<Vec<_>>>();
                 if let Some(roots) = roots {
                     let refs = roots.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
-                    if let Some((code, reads, modified)) =
-                        disk.lookup_with_modified_policy(key, &refs, host, symbols, modified_policy)
-                    {
+                    if let Some((code, reads, modified)) = disk.lookup_attempt(
+                        key,
+                        &refs,
+                        host,
+                        symbols,
+                        modified_policy,
+                        disk_attempt,
+                    ) {
                         let (root_indexes, recipes): (Vec<_>, Vec<_>) =
                             modified.into_iter().unzip();
                         let references = recipes.iter().map(|r| r.reference()).collect();
@@ -180,6 +219,24 @@ impl InitializerFragments {
         fields: &[(String, dm_syntax::Expr)],
         modified_policy: Option<&[u8]>,
     ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
+        self.remember_modified_with_attempt(
+            key,
+            recorder,
+            code,
+            fields,
+            modified_policy,
+            &mut super::disk::TransportAttempt::default(),
+        )
+    }
+    pub(crate) fn remember_modified_with_attempt(
+        &self,
+        key: &receipts::Binding,
+        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
+        code: &Arc<ResolverProc>,
+        fields: &[(String, dm_syntax::Expr)],
+        modified_policy: Option<&[u8]>,
+        disk_attempt: &mut super::disk::TransportAttempt,
+    ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
         for (reference, captured) in &code.modified_instances {
@@ -201,12 +258,13 @@ impl InitializerFragments {
         if modified_policy.is_some() {
             if let Some(disk) = &self.disk {
                 let roots = fields.iter().map(|(_, root)| root).collect::<Vec<_>>();
-                disk.stage_with_modified_policy(
+                disk.stage_attempt(
                     key,
                     &roots,
                     &recorder.reads(),
                     code,
                     modified_policy,
+                    disk_attempt,
                 );
             }
         }

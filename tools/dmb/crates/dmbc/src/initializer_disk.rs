@@ -14,6 +14,35 @@ struct Policy {
     engine: Option<(u128, bool, u128)>,
     engine_record: Option<dm_cache::Record>,
 }
+/// One current initializer operation, never retained or shared between units.
+/// Its caller keeps the issued binding, normalized roots and policy unchanged
+/// from lookup through staging. Declines are remembered as well as recipes.
+#[derive(Default)]
+pub(crate) struct TransportAttempt {
+    captured: bool,
+    #[cfg(test)]
+    captures: usize,
+    recipe: Option<disk_recipe::Recipe>,
+}
+impl TransportAttempt {
+    fn recipe<'a>(
+        &'a mut self,
+        transport: &Transport,
+        key: &receipts::Binding,
+        roots: &[&dm_syntax::Expr],
+        modified_policy: Option<&[u8]>,
+    ) -> Option<&'a disk_recipe::Recipe> {
+        if !self.captured {
+            #[cfg(test)]
+            {
+                self.captures += 1;
+            }
+            self.recipe = transport.recipe(key, roots, modified_policy);
+            self.captured = true;
+        }
+        self.recipe.as_ref()
+    }
+}
 pub(crate) struct Transport {
     disk: Arc<LazyDisk>,
     engine: Option<Arc<crate::runner_host::EnginePayload>>,
@@ -144,7 +173,29 @@ impl Transport {
         Vec<dm_session::ResolverRead>,
         Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
     )> {
-        let recipe = self.recipe(key, roots, modified_policy)?;
+        self.lookup_attempt(
+            key,
+            roots,
+            host,
+            symbols,
+            modified_policy,
+            &mut TransportAttempt::default(),
+        )
+    }
+    pub(super) fn lookup_attempt<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        roots: &[&dm_syntax::Expr],
+        host: &R,
+        symbols: &dm_ir::SymbolTable,
+        modified_policy: Option<&[u8]>,
+        attempt: &mut TransportAttempt,
+    ) -> Option<(
+        dm_codegen_byond::lower_resolver::ResolverProc,
+        Vec<dm_session::ResolverRead>,
+        Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
+    )> {
+        let recipe = attempt.recipe(self, key, roots, modified_policy)?;
         if !self.engine_matches() {
             return None;
         }
@@ -232,10 +283,28 @@ impl Transport {
         code: &dm_codegen_byond::lower_resolver::ResolverProc,
         modified_policy: Option<&[u8]>,
     ) {
+        self.stage_attempt(
+            key,
+            roots,
+            reads,
+            code,
+            modified_policy,
+            &mut TransportAttempt::default(),
+        );
+    }
+    pub(super) fn stage_attempt(
+        &self,
+        key: &receipts::Binding,
+        roots: &[&dm_syntax::Expr],
+        reads: &[dm_session::ResolverRead],
+        code: &dm_codegen_byond::lower_resolver::ResolverProc,
+        modified_policy: Option<&[u8]>,
+        attempt: &mut TransportAttempt,
+    ) {
         if !self.writable {
             return;
         }
-        let Some(recipe) = self.recipe(key, roots, modified_policy) else {
+        let Some(recipe) = attempt.recipe(self, key, roots, modified_policy) else {
             return;
         };
         let mut modified = Vec::new();

@@ -225,6 +225,38 @@ impl InitializerAssemblies {
         &self,
         key: &receipts::Binding,
         root_count: usize,
+        root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
+        symbols: &SymbolTable,
+        host: &R,
+        verify: Option<
+            &mut dyn FnMut(
+                &super::fragments::verify::Receipt,
+                &crate::InitializerCode,
+            )
+                -> Result<(), dm_codegen_byond::initializer::InitializerError>,
+        >,
+    ) -> Result<
+        Option<(
+            crate::InitializerCode,
+            Arc<crate::symbolic::InitializerEncoding>,
+        )>,
+        dm_codegen_byond::initializer::InitializerError,
+    > {
+        self.lookup_with_current_roots_attempt(
+            key,
+            root_count,
+            root,
+            symbols,
+            host,
+            verify,
+            &mut super::disk::TransportAttempt::default(),
+        )
+    }
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
+    pub(super) fn lookup_with_current_roots_attempt<'expr, R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        root_count: usize,
         mut root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
         symbols: &SymbolTable,
         host: &R,
@@ -235,6 +267,7 @@ impl InitializerAssemblies {
             )
                 -> Result<(), dm_codegen_byond::initializer::InitializerError>,
         >,
+        disk_attempt: &mut super::disk::TransportAttempt,
     ) -> Result<
         Option<(
             crate::InitializerCode,
@@ -262,7 +295,7 @@ impl InitializerAssemblies {
                 if let Some(roots) = roots {
                     let refs = roots.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
                     if let Some((code, semantic_reads, modified)) =
-                        disk.lookup(key, &refs, host, symbols)
+                        disk.lookup_attempt(key, &refs, host, symbols, None, disk_attempt)
                     {
                         let (root_indexes, recipes): (Vec<_>, Vec<_>) =
                             modified.into_iter().unzip();
@@ -365,6 +398,24 @@ impl InitializerAssemblies {
         recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
         admitted: Option<Vec<(usize, ExpressionRecipe)>>,
     ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
+        self.remember_shared_with_attempt(
+            key,
+            code,
+            roots,
+            recorder,
+            admitted,
+            &mut super::disk::TransportAttempt::default(),
+        )
+    }
+    pub(super) fn remember_shared_with_attempt(
+        &self,
+        key: &receipts::Binding,
+        code: &std::sync::Arc<ResolverProc>,
+        roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
+        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
+        admitted: Option<Vec<(usize, ExpressionRecipe)>>,
+        disk_attempt: &mut super::disk::TransportAttempt,
+    ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
@@ -412,7 +463,7 @@ impl InitializerAssemblies {
         let semantic_reads = recorder.reads();
         if let Some(disk) = &self.disk {
             let roots = roots.iter().map(|root| root.value).collect::<Vec<_>>();
-            disk.stage(key, &roots, &semantic_reads, code);
+            disk.stage_attempt(key, &roots, &semantic_reads, code, None, disk_attempt);
         }
         let reads = receipts::reads(key, semantic_reads);
         let versions = receipts::versions(recorder.domain_receipts());

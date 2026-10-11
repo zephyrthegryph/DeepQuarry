@@ -622,6 +622,7 @@ fn lower_group<R: Resolver>(
             }
         }
     };
+    let mut assembly_disk_attempt = disk::TransportAttempt::default();
     if let Some((store, key)) = assembly {
         let selected = memo.is_some_and(|memo| memo.verification.select());
         let mut verify = |old_reads: &fragments::verify::Receipt, old: &crate::InitializerCode| {
@@ -644,7 +645,7 @@ fn lower_group<R: Resolver>(
             )
         };
         if let Some((code, encoding)) = store
-            .lookup_with_current_roots_verified(
+            .lookup_with_current_roots_attempt(
                 key,
                 group.writes.len(),
                 |index| {
@@ -654,6 +655,7 @@ fn lower_group<R: Resolver>(
                 symbols,
                 host,
                 if selected { Some(&mut verify) } else { None },
+                &mut assembly_disk_attempt,
             )
             .map_err(map_error)?
         {
@@ -855,12 +857,13 @@ fn lower_group<R: Resolver>(
     let code = Arc::new(code);
     let encoding =
         if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
-            store.remember_shared_with_recipes(
+            store.remember_shared_with_attempt(
                 key,
                 &code,
                 &assignment_views,
                 recorder,
                 assembled_recipes,
+                &mut assembly_disk_attempt,
             )
         } else {
             None

@@ -275,12 +275,18 @@ impl InitializerFragments {
         } else {
             self.values.lookup(&key.key, &admission_host)
         };
+        let mut disk_attempt = super::disk::TransportAttempt::default();
         if candidate.is_none() {
-            if let Some((code, semantic_reads, modified)) = self
-                .disk
-                .as_ref()
-                .and_then(|disk| disk.lookup(key, &[root], host, prepared.symbols()))
-            {
+            if let Some((code, semantic_reads, modified)) = self.disk.as_ref().and_then(|disk| {
+                disk.lookup_attempt(
+                    key,
+                    &[root],
+                    host,
+                    prepared.symbols(),
+                    None,
+                    &mut disk_attempt,
+                )
+            }) {
                 let recipes = modified
                     .into_iter()
                     .map(|(_, recipe)| recipe)
@@ -360,7 +366,14 @@ impl InitializerFragments {
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let semantic_reads = recorder.reads();
         if let Some(disk) = &self.disk {
-            disk.stage(key, &[root], &semantic_reads, fragment.code());
+            disk.stage_attempt(
+                key,
+                &[root],
+                &semantic_reads,
+                fragment.code(),
+                None,
+                &mut disk_attempt,
+            );
         }
         let reads = receipts::reads(key, semantic_reads);
         let versions = receipts::versions(recorder.domain_receipts());

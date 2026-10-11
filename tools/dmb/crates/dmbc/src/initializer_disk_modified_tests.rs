@@ -80,7 +80,37 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
     .unwrap();
     let refs = vec![&fields[0].1];
     let proof = b"modified-no-pure-calls-v1";
-    writer.stage_with_modified_policy(&key, &refs, &recorder.reads(), &code, Some(proof));
+    let mut attempt = TransportAttempt::default();
+    assert!(writer
+        .lookup_attempt(&key, &refs, &host, &symbols, Some(proof), &mut attempt)
+        .is_none());
+    let recipe_owner = attempt.recipe.as_ref().unwrap().bytes.as_ptr();
+    writer.stage_attempt(
+        &key,
+        &refs,
+        &recorder.reads(),
+        &code,
+        Some(proof),
+        &mut attempt,
+    );
+    assert_eq!(
+        attempt.captures, 1,
+        "miss and staging share one exact capture"
+    );
+    assert_eq!(
+        attempt.recipe.as_ref().unwrap().bytes.as_ptr(),
+        recipe_owner
+    );
+    let mut declined = TransportAttempt::default();
+    assert!(writer
+        .lookup_attempt(&key, &refs, &host, &symbols, None, &mut declined)
+        .is_none());
+    writer.stage_attempt(&key, &refs, &recorder.reads(), &code, None, &mut declined);
+    assert_eq!(
+        declined.captures, 1,
+        "an uncovered recipe is not serialized twice"
+    );
+    assert!(declined.recipe.is_none());
     assert_eq!(disk.finish_batch().unwrap().records, 1);
     let reader = Transport::new(Arc::new(LazyDisk::new(root.0.clone())), None, 37, false);
     reader.configure(Some(crate::initializer_policy::ParallelEvaluator {
