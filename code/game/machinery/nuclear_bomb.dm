@@ -88,7 +88,7 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 /obj/machinery/nuclearbomb/proc/panel_auth_refusal(datum/act/op/A)
 	if(read_once(auth()))
 		return null
-	return "	he [src] emits a buzzing noise, the panel staying locked in"
+	return "\the [src] emits a buzzing noise, the panel staying locked in"
 
 /obj/machinery/nuclearbomb/proc/panel_opened(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 50, 1)

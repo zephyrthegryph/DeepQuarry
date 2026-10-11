@@ -92,7 +92,7 @@
 
 /// The canister can be relabelled now (its window's can_relabel).
 /proc/am_canister_relabelable(obj/machinery/portable_atmospherics/canister/C)
-	return !!C.can_relabel(null)
+	return isnull(C.can_relabel(null))
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
