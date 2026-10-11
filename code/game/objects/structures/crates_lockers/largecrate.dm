@@ -8,9 +8,6 @@
 
 /obj/structure/largecrate/Initialize(mapload)
 	. = ..()
-	if(starts_with)
-		create_objects_in_loc(src, starts_with)
-		starts_with = null
 	for(var/obj/I in src.loc)
 		if(I.density || I.anchored || I == src || !I.simulated)
 			continue
@@ -22,6 +19,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/structure/largecrate)
+	initial_contents(nameof(starts_with)) // type = count
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
@@ -189,32 +187,33 @@ CAPABILITIES(/obj/structure/largecrate)
 
 /obj/structure/largecrate/animal/pred
 	name = "Predator carrier"
-	starts_with = list(/mob/living/simple_mob/vore/catgirl)
+	starts_with = null // rolled (rolls())
 
-/obj/structure/largecrate/animal/pred/Initialize(mapload) //This is nessesary to get a random one each time.
-	starts_with = list(pick(/mob/living/simple_mob/vore/bee,
-						/mob/living/simple_mob/vore/catgirl;3,
-						/mob/living/simple_mob/vore/aggressive/frog,
-						/mob/living/simple_mob/vore/horse,
-						/mob/living/simple_mob/vore/aggressive/panther,
-						/mob/living/simple_mob/vore/aggressive/giant_snake,
-						/mob/living/simple_mob/vore/wolf,
-						/mob/living/simple_mob/animal/space/bear;0.5,
-						/mob/living/simple_mob/animal/space/carp,
-						/mob/living/simple_mob/vore/aggressive/mimic,
-						/mob/living/simple_mob/vore/aggressive/rat,
-						/mob/living/simple_mob/vore/aggressive/rat/tame,
-						/mob/living/simple_mob/vore/aggressive/rat/labrat,
-						/mob/living/simple_mob/vore/zorgoia, //CHOMPstation edit
-						/mob/living/simple_mob/vore/rabbit,
-						/mob/living/simple_mob/vore/weretiger;0.5,
-//						/mob/living/simple_mob/vore/otie;0.5
-						))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/pred)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which predator is in the crate.
+/obj/structure/largecrate/animal/pred/proc/roll_starts_with(datum/roller/R)
+	return list(R.weighted(list(/mob/living/simple_mob/vore/bee = 1,
+		/mob/living/simple_mob/vore/catgirl = 3,
+		/mob/living/simple_mob/vore/aggressive/frog = 1,
+		/mob/living/simple_mob/vore/horse = 1,
+		/mob/living/simple_mob/vore/aggressive/panther = 1,
+		/mob/living/simple_mob/vore/aggressive/giant_snake = 1,
+		/mob/living/simple_mob/vore/wolf = 1,
+		/mob/living/simple_mob/animal/space/bear = 0.5,
+		/mob/living/simple_mob/animal/space/carp = 1,
+		/mob/living/simple_mob/vore/aggressive/mimic = 1,
+		/mob/living/simple_mob/vore/aggressive/rat = 1,
+		/mob/living/simple_mob/vore/aggressive/rat/tame = 1,
+		/mob/living/simple_mob/vore/aggressive/rat/labrat = 1,
+		/mob/living/simple_mob/vore/zorgoia = 1, //CHOMPstation edit
+		/mob/living/simple_mob/vore/rabbit = 1,
+		/mob/living/simple_mob/vore/weretiger = 0.5)))
 
 /obj/structure/largecrate/animal/dangerous
 	name = "Dangerous Predator carrier"
-	starts_with = list(/mob/living/simple_mob/animal/space/alien)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/dangerous)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
@@ -228,7 +227,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/dangerous)
 	desc = "The VARMAcorp bioengineering division flagship product on trained optimal snowflake guard dogs."
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "sotiecrate"
-	starts_with = list(/mob/living/simple_mob/vore/otie/security)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/guardbeast)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
@@ -242,7 +241,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/guardbeast)
 	desc = "The VARMAcorp bioengineering division flagship product on trained optimal snowflake guard dogs. This one can survive hostile atmosphere."
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "sotiecrate"
-	starts_with = list(/mob/living/simple_mob/vore/otie/security/phoron)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/guardmutant)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
@@ -256,7 +255,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/guardmutant)
 	desc = "A warning on the side says the creature inside was returned to the supplier after injuring or devouring several unlucky members of the previous adoption family. It was given a second chance with the next customer. Godspeed and good luck with your new pet!"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "otiecrate2"
-	starts_with = list(/mob/living/simple_mob/vore/otie/cotie)
+	starts_with = null // rolled (rolls())
 	var/taped = 1
 
 CAPABILITIES(/obj/structure/largecrate/animal/otie)
@@ -269,7 +268,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/otie)
 /obj/structure/largecrate/animal/otie/phoron
 	name = "VARMAcorp adaptive beta subject (Experimental)"
 	desc = "VARMAcorp experimental hostile environment adaptive breeding development kit. WARNING, DO NOT RELEASE IN WILD!"
-	starts_with = list(/mob/living/simple_mob/vore/otie/cotie/phoron)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/otie/phoron)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
@@ -299,7 +298,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/otie/phoron)
 /obj/structure/largecrate/animal/fennec
 	name = "Fennec Crate"
 	desc = "Bounces around a lot. Looks messily packaged, were they in a hurry?"
-	starts_with = list(/mob/living/simple_mob/vore/fennec)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/fennec)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
@@ -328,6 +327,3 @@ CAPABILITIES(/obj/structure/largecrate/animal/fennec)
 	starts_with = list(/obj/structure/musician/piano)
 	desc = "*Grand piano may end up being a minimoog."
 
-/obj/structure/largecrate/piano/Initialize(mapload) //This is nessesary to get a random one each time.
-	starts_with = list(/obj/structure/musician/piano)
-	return ..()

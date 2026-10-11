@@ -98,16 +98,12 @@ CAPABILITIES(/obj/item/storage/bible)
 	name = "bible"
 	desc = "To be applied to the head repeatedly."
 	icon_state ="bible"
-
-/obj/item/storage/bible/booze/Initialize(mapload)
-	. = ..()
 	starts_with = list(
 		/obj/item/reagent_containers/food/drinks/bottle/small/beer,
 		/obj/item/reagent_containers/food/drinks/bottle/small/beer,
 		/obj/item/spacecash/c100,
 		/obj/item/spacecash/c100,
-		/obj/item/spacecash/c100
-	)
+		/obj/item/spacecash/c100)
 
 /obj/item/storage/bible/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity) return

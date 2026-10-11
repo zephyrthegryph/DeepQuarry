@@ -42,13 +42,13 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 
 CAPABILITIES(/obj/item/storage/box/donut)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut)))
+	initial_contents(PROC_REF(roll_donuts), when = cond_not(nameof(empty)))
 
-/obj/item/storage/box/donut/Initialize(mapload)
-	if(!empty)
-		for(var/i in 1 to 6)
-			var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
-			new type_to_spawn(src)
-	. = ..()
+/// Rolled contents (initial_contents()): six donuts of the weighted kinds.
+/obj/item/storage/box/donut/proc/roll_donuts(datum/roller/R)
+	. = list()
+	for(var/i in 1 to 6)
+		. += R.weighted(GLOB.random_weighted_donuts)
 
 /obj/item/storage/box/donut/draw(datum/look/look)
 	. = ..()

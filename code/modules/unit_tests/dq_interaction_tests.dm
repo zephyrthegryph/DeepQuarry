@@ -49,7 +49,7 @@
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)
 
 	TEST_ASSERT(H.put_in_active_hand(crowbar), "the human holds a crowbar")
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
 	test_time(1)
 	TEST_ASSERT(!QDELETED(lathe), "a crowbar on a closed panel is blocked, not a deconstruction")
@@ -58,14 +58,14 @@
 
 	H.drop_from_inventory(crowbar, T)
 	TEST_ASSERT(H.put_in_active_hand(screwdriver), "the human holds a screwdriver")
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
 	test_time(1)
 	TEST_ASSERT(panel_open(lathe), "Use with a screwdriver opens the panel")
 
 	H.drop_from_inventory(screwdriver, T)
 	TEST_ASSERT(H.put_in_active_hand(crowbar), "the human holds the crowbar again")
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, lathe, null, null, "left=1"))
 	test_time(1)
 	TEST_ASSERT(QDELETED(lathe), "Use with a crowbar on an open panel deconstructs")

@@ -751,9 +751,9 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	activate_protean_power(/datum/protean_power/transparency)
 
 /mob/living/carbon/human/proc/toggle_limb_transparency(include_head)
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 5 SECONDS)
+	cooldown_start(src, last_special, 5 SECONDS)
 	for(var/obj/item/organ/external/limb as anything in organs)
 		if(!include_head && limb.organ_tag == BP_HEAD)
 			continue
@@ -771,9 +771,9 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	verb_path = /mob/living/carbon/human/proc/absorb_implant
 
 /datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/forms/protean/F)
-	if(!COOLDOWN_FINISHED(H, last_special))
+	if(!cooldown_ready(H, last_special))
 		return
-	COOLDOWN_START(H, last_special, 5 SECONDS)
+	cooldown_start(H, last_special, 5 SECONDS)
 	var/obj/item/organ/internal/augment/A = H.get_active_hand()
 	if(!istype(A))
 		to_chat(H, span_danger("You cannot integrate this into your body."))

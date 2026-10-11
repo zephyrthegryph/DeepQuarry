@@ -7,7 +7,7 @@
 	TEST_ASSERT_EQUAL(clamp.target_ref(), pipe, "The real clamp constructor must attach to its supplied pipe")
 	TEST_ASSERT(!pipe.in_stasis, "The unclamped pipe must initially allow normal flow")
 	test_driver_begin()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, clamp)
 	test_time(1 SECOND)
 	test_driver_end()

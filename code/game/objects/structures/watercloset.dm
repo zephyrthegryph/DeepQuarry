@@ -563,8 +563,6 @@ CAPABILITIES(/obj/machinery/shower)
 
 MSG_DEF_SELF(shower/adjusting, span_notice("You begin to adjust the temperature..."))
 
-/obj/machinery/shower/Initialize(mapload)
-	. = ..()
 
 /// Washes its tile every machine step while running.
 MSG_DEF_SELF(toilet/replacing_lid, span_notice("You start to replace the lid on the cistern."))

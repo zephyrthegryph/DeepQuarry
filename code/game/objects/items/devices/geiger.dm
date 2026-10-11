@@ -27,7 +27,8 @@ TRACKED(/obj/item/geiger, scanning)
 TRACKED(/obj/item/geiger, last_perceived_radiation_danger)
 
 CAPABILITIES(/obj/item/geiger)
-	owns_one(nameof(geiger_sound), /datum/geiger_sound)
+	owns_one(nameof(geiger_sound), /datum/geiger_sound, starts = PROC_REF(starting_sound))
+	on_notice(/datum/notice/in_range_of_irradiation, then(PROC_REF(on_pre_potential_irradiation)))
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 	op("reset", hand(), gesture(GESTURE_ALT), label("Reset"), needs(req(PROC_REF(is_scanning))), then(PROC_REF(reset_counts)))
 
@@ -35,9 +36,9 @@ MSG_DEF_SELF(geiger/off, "It must be on to reset its radiation level.")
 
 REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
-/obj/item/geiger/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
+/// The clicking sound it starts with (owns_one(starts =)): none, until it is switched on.
+/obj/item/geiger/proc/starting_sound(current, mapload)
+	return null
 
 /obj/item/geiger/examine(mob/user)
 	. = ..()
@@ -189,11 +190,9 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 	var/wiresexposed = FALSE
 	mounted = TRUE
 
-/obj/item/geiger/wall/Initialize(mapload)
-	. = ..()
-	if(scanning)
-		if(!geiger_sound)
-			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): the sound is made only while the geiger is scanning, which a declaration cannot condition
+/// A wall counter mapped switched on starts clicking.
+/obj/item/geiger/wall/starting_sound(current, mapload)
+	return scanning ? /datum/geiger_sound/wall : null
 
 CAPABILITIES(/obj/item/geiger/wall)
 	op("wall_toggle", inputs(hand(), remote()), then(PROC_REF(wall_toggled)))

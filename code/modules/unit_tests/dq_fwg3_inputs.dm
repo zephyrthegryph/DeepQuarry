@@ -39,7 +39,7 @@
 
 /// A player's click (ClickOn: the telekinesis adapter at range, as a player's click reaches it).
 /datum/unit_test/dq_fwg3/proc/player_click(mob/actor, atom/target)
-	COOLDOWN_RESET(actor, next_click)
+	cooldown_reset(actor, next_click)
 	input_submit(new /datum/input_event/click(actor, target, null, null, "left=1"))
 	test_time(1)
 

@@ -46,76 +46,39 @@
 /obj/structure/closet/syndicate/resources
 	desc = "An old, dusty locker."
 
-/obj/structure/closet/syndicate/resources/Initialize(mapload)
-	. = ..()
-	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
-		var/common_min = 30 //Minimum amount of minerals in the stack for common minerals
-		var/common_max = 50 //Maximum amount of HONK in the stack for HONK common minerals
-		var/rare_min = 5  //Minimum HONK of HONK in the stack HONK HONK rare minerals
-		var/rare_max = 20 //Maximum HONK HONK HONK in the HONK for HONK rare HONK
+CAPABILITIES(/obj/structure/closet/syndicate/resources)
+	initial_contents(PROC_REF(roll_stash))
 
-		var/pickednum = rand(1, 50)
-
-		//Sad trombone
-		if(pickednum == 1)
-			var/obj/item/paper/P = new /obj/item/paper(src)
-			P.name = "IOU"
-			P.set_info("Sorry man, we needed the money so we sold your stash. It's ok, we'll double our money for sure this time!")
-
-		//Metal (common ore)
-		if(pickednum >= 2)
-			new /obj/item/stack/material/steel(src, rand(common_min, common_max))
-
-		//Glass (common ore)
-		if(pickednum >= 5)
-			new /obj/item/stack/material/glass(src, rand(common_min, common_max))
-
-		//Plasteel (common ore) Because it has a million more uses then phoron
-		if(pickednum >= 10)
-			new /obj/item/stack/material/plasteel(src, rand(common_min, common_max))
-
-		//Phoron (rare ore)
-		if(pickednum >= 15)
-			new /obj/item/stack/material/phoron(src, rand(rare_min, rare_max))
-
-		//Silver (rare ore)
-		if(pickednum >= 20)
-			new /obj/item/stack/material/silver(src, rand(rare_min, rare_max))
-
-		//Gold (rare ore)
-		if(pickednum >= 30)
-			new /obj/item/stack/material/gold(src, rand(rare_min, rare_max))
-
-		//Uranium (rare ore)
-		if(pickednum >= 40)
-			new /obj/item/stack/material/uranium(src, rand(rare_min, rare_max))
-
-		//Diamond (rare HONK)
-		if(pickednum >= 45)
-			new /obj/item/stack/material/diamond(src, rand(rare_min, rare_max))
-
-		//Jetpack (You hit the jackpot!)
-		if(pickednum == 50)
-			new /obj/item/tank/jetpack/carbondioxide(src)
+/// Rolled contents (initial_contents()): one roll of 1-50 decides how deep into the stash list it goes. A mapper who filled the locker
+/// keeps their contents alone.
+/obj/structure/closet/syndicate/resources/proc/roll_stash(datum/roller/R)
+	if(length(starts_with))
+		return null
+	var/pickednum = R.number(1, 50)
+	if(pickednum == 1) // Sad trombone
+		return list(make(/obj/item/paper, name = "IOU", info = "Sorry man, we needed the money so we sold your stash. It's ok, we'll double our money for sure this time!"))
+	. = list()
+	// minimum depth, stack type, common (30-50) or rare (5-20)
+	for(var/list/row in list(list(2, /obj/item/stack/material/steel, TRUE), list(5, /obj/item/stack/material/glass, TRUE),
+			list(10, /obj/item/stack/material/plasteel, TRUE), list(15, /obj/item/stack/material/phoron, FALSE),
+			list(20, /obj/item/stack/material/silver, FALSE), list(30, /obj/item/stack/material/gold, FALSE),
+			list(40, /obj/item/stack/material/uranium, FALSE), list(45, /obj/item/stack/material/diamond, FALSE)))
+		if(pickednum >= row[1])
+			var/stack_type = row[2]
+			. += new stack_type(null, row[3] ? R.number(30, 50) : R.number(5, 20))
+	if(pickednum == 50) // You hit the jackpot!
+		. += /obj/item/tank/jetpack/carbondioxide
 
 /obj/structure/closet/syndicate/resources/everything
 	desc = "It's an emergency storage closet for repairs."
 
-/obj/structure/closet/syndicate/resources/everything/Initialize(mapload)
-	var/static/list/resources = list(
-		/obj/item/stack/material/steel,
-		/obj/item/stack/material/glass,
-		/obj/item/stack/material/gold,
-		/obj/item/stack/material/silver,
-		/obj/item/stack/material/phoron,
-		/obj/item/stack/material/uranium,
-		/obj/item/stack/material/diamond,
-		/obj/item/stack/material/plasteel,
-		/obj/item/stack/rods
-	)
-
-	for(var/i = 0, i<2, i++)
-		for(var/res in resources)
-			new res(src, -1)
-
-	return ..()
+CAPABILITIES(/obj/structure/closet/syndicate/resources/everything)
+	initial_contents(/obj/item/stack/material/steel, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/glass, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/gold, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/silver, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/phoron, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/uranium, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/diamond, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/material/plasteel, count = 2, args = list(-1))
+	initial_contents(/obj/item/stack/rods, count = 2, args = list(-1))

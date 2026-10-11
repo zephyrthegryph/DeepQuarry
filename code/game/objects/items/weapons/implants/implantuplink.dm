@@ -7,11 +7,8 @@
 CAPABILITIES(/obj/item/implant/uplink)
 	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
 
-/obj/item/implant/uplink/Initialize(mapload)
-	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	//hidden_uplink.uses = 5
-	//Code currently uses a mind var for telecrystals, balancing is currently an issue. Will investigate.
-	. = ..()
+CAPABILITIES(/obj/item/implant/uplink)
+	rolls(nameof(activation_emote), pick_one(list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")))
 
 /obj/item/implant/uplink/post_implant(mob/source, mob/user = null)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")

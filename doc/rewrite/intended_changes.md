@@ -4536,6 +4536,43 @@ trait (no instance var to name as its state var). `protection_of(null)` answers 
 still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
 as a body temperature).
 
+## Objects init burn-down (rewrite/init-objects, October 2026)
+
+`code/game/objects/` Initialize() jobs moved to forms (`initial_contents()` with rolled sources, `rolls()`, `reagents()`, `derives()`,
+`lives_for()`, `keeps_if()`, `name_prefix()`, `setup()`, var defaults). What changed beyond the draws now coming from the instance's seeded
+stream (a converted `rand()`/`pick()`/`prob()` no longer draws from the world RNG):
+
+* **Closets and crates whose `rolls(nameof(starts_with))` never ran now get their rolled extras.** A roll writes only a target still at its
+  compiled default, and `initial()` of a list var is null, so a type whose `starts_with` is a list never rolled (the head of security's, the
+  warden's and the officers' backpacks, the botanist's apron, the cargo, engineering, science and misc lockers' extras, the animal crates'
+  random animal). The closets roll their extras through `initial_contents(PROC_REF(roll_starts_with))`; the crates' `starts_with` defaults
+  to null, so their roll runs. Rolled closet extras are made at init instead of staying latent.
+* **The legacy emergency closet keeps its own contents.** Its `starts_with` was overwritten by the random kit in Initialize(); the kit is now a
+  roll, which a declared list suppresses (as a map edit of `starts_with` does).
+* **The booze bible holds its beer and cash.** It assigned `starts_with` after the storage had already read it, so it started empty.
+* **A map edit wins over a roll.** Rolled vars (a gift's wrapping, a pizza voucher's slogan, a drone
+  circuit's name, a dragon plushie's phrase, a lipstick's colour) keep a mapper's value instead of being overwritten.
+* **`/obj/structure/largecrate` makes its `starts_with` through `initial_contents(nameof(starts_with))`** (in nullspace, then moved in) and
+  keeps the var set afterwards.
+* **Timed effects (`lives_for()`)** arm their lifetime when the instance's init is complete: a map-loaded one counts from the end of the map
+  load. A temporary visual whose duration is 0 no longer lapses at once (none exists).
+* **Rolls replaced `TYPE_TABLE` selectors** (scrap material sprites, intercom channel sets became a `starting_channels()` override derived at
+  init), so a map edit of the sprite or channels is kept.
+* **A plushie restores its own current name after speaking** when it was never renamed, instead of the name it had at init.
+* **Beds, chairs and bedsheets turn through `rotatable()`** (the library's menu ops `rotatable.turn_around`, and for chairs
+  `rotatable.clockwise` / `rotatable.counterclockwise`) instead of the rotation verbs `make_rotatable()` granted at init. A fastened bed or chair
+  shows the ops refused ("It is fastened to the floor!"); a bed type with `flippable = FALSE` keeps the op key but its `when(flippable)` hides it.
+  Pins re-blessed: `dq_conversion_pin`, `dq_interaction_domain_snapshot/i7_structures_bulk`.
+* **Rolled reagents and contents are seeded per instance.** A gum's or lollipop's flavour and a random vial's recipe now come from the instance's
+  stream, so `dq_reagents_start_snapshot` records other (equally likely) picks. The snapshot also gained the frost grenade beakers it had no row for.
+* **Random DNA injectors' gene is rolled before init** from the type's pools (`random_pools`), the same pools the selector table named.
+* **ID cards take their starting access through `derives()` at init** (a `starting_access()` override per kind) instead of after `..()`.
+* **A one-tank bomb's fill is a plain per-type default** (`/full` 2, `/small` 0): a fill given to its constructor now wins over the type's.
+* **A material weapon's forced material, a radio's starting channels, a loaded RCD's matter, a statue's release delay, an eruption's life and a
+  foam's spread delay derive at init**, during the root of Initialize() instead of before or after the type's own code; nothing reads them in between.
+* **`derives()` no longer breaks after a holder that used it is destroyed**: `GLOB.derives_running` was LAZYREMOVE()d to null, and every later
+  derives() runtimed (bad index) — the "param_write" failure framework_gaps.md noted for the fusion field.
+
 ## Mob screen elements on the client HUD (base_vars lane B, bv-hud)
 
 The 20 screen refs (`hands`, `healths`, `internals`, `pain`, `zone_sel`, the gun, ling, borer, wizard, shadekin, lleill, xenochimera and
@@ -4548,6 +4585,20 @@ autowhisper displays, ...), `plane_holder`, `vis_enabled` and `planes_visible` l
   have raised a runtime error (it was already null without a client). Vision toggles on a client-less mob (`plane_holder?.set_vis()`) do
   nothing until a client logs in, as before for a mob that never had one.
 * Test mobs get an empty hud with `dq_test_hud(M)`.
+
+## Sparse slots and base-type cooldown tables (base_vars lane B, bv-hud)
+
+`sparse()` slots replace the per-instance vars of `code/datums/sparse_vars/` (belly cycles, recursive listeners, moved-recently stamp,
+dynamic lights, cloak, parachute, softfall/hovering overrides, catalogue delay, chat colour cache, observer listeners, z-update images)
+and `special_voice`, `custom_heat`/`custom_cold`, the buildmode selection marker and the vomit-in-progress flag (was `lastpuke`).
+Seventeen base-type cooldowns (`next_click`, `next_move`, `last_special`, `resist_cooldown`, `cpr_time`, `slip_protect`, the taste,
+spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move into the cooldown table (`cooldown_start`/`cooldown_ready`;
+161 macro and 142 raw sites, `tools/dx/codemods/var_to_table.py`). The darksight overlay moves onto the client hud.
+
+* **A per-instance catalogue delay is no longer saved** with the atom (sparse slots are runtime state); the per-type default still applies.
+* **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
+  adjustment for a client-less mob (it adjusted an image nobody saw).
+* **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.
 
 ## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
 

@@ -12,7 +12,6 @@
 	var/max_nutrition = MAX_NUTRITION
 
 
-	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
 	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
 
 
@@ -34,12 +33,10 @@
 	var/fire_stack_decay_rate = -0.05
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
-	var/lastpuke = 0
 
 	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
 	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
 
-	var/image/dsoverlay = null //Overlay used for darksight eye adjustments
 
 	// Last params applied by the light life system, so we can skip redundant set_light() calls each tick.
 	var/last_glow_range = null
@@ -56,7 +53,6 @@
 
 	var/makes_dirt = TRUE	//FALSE if the mob shouldn't be making dirt on the ground when it walks
 
-	var/image/selected_image = null // Used for buildmode AI control stuff.
 
 	var/allow_self_surgery = FALSE	// Used to determine if the mob can perform surgery on itself.
 
@@ -64,10 +60,8 @@
 	var/flying = 0				// Allows flight
 	var/inventory_panel_type = /datum/inventory_panel
 	var/datum/inventory_panel/inventory_panel
-	COOLDOWN_DECLARE(resist_cooldown) // world.time the next resist is allowed.
 	var/tiredness = 0					//For vore draining
 	var/fear = 0 						//For fear effects and phobias
-	COOLDOWN_DECLARE(fear_sound_cooldown)				//For making sure the heartbeats don't play over each other
 
 	var/static/list/fear_message_self = list(
 									"Your heart is racing, it feels like it's going burst from your chest.",
@@ -116,11 +110,6 @@
 	var/custom_ask = null
 	var/custom_exclaim = null
 	var/custom_whisper = null
-//custom temperature discomfort vars
-	/// Lazy list (null when empty) of custom heat-discomfort messages. Null-safe reads only.
-	var/list/custom_heat
-	/// Lazy list (null when empty) of custom cold-discomfort messages. Null-safe reads only.
-	var/list/custom_cold
 
 /mob
 	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
@@ -143,6 +132,9 @@ PUBLISHED_BY(/mob/living, hud_updateflag, MOB_KEY_HUD_FLAGS)
 /// The body's derived state (injury, pain, factors) changes through body.invalidate(), which publishes MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)
 
+/// Custom heat- and cold-discomfort messages (character preferences); unset for most mobs. Lists, read null-safe.
+sparse(/mob/living, custom_heat, type = list)
+sparse(/mob/living, custom_cold, type = list)
 // Shapeshift forms and nests are sparse links, not vars on /mob/living (code/combat_ai/integration/mob_living.dm declares them).
 /// The form a shapeshifter took (Shapeshifter shenanigans), or null.
 /proc/tf_form_of(mob/living/L) as /mob/living

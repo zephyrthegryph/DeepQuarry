@@ -311,7 +311,7 @@
 /// Clicks `victim` with the grab `G` in `user`'s hand; when the click does not reach the grab's attack, the grab attacks as the click would.
 /datum/unit_test/dq_timed_pin_w7/proc/h_grab_click(mob/living/carbon/human/user, mob/living/carbon/human/victim, obj/item/grab/G, zone, stance)
 	hud_of(user)?.zone_sel.selecting = zone
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, victim, G)
 	if(isnull(running(user)))
 		G.attack(victim, user, zone, 1, stance)
@@ -684,7 +684,7 @@
 	weapon.w_class = ITEMSIZE_HUGE
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
-	attacker.next_click = 0
+	cooldown_set_end(attacker, next_click, 0)
 	return list(attacker, victim, weapon)
 
 /datum/unit_test/dq_timed_pin_w7/h_melee_swing

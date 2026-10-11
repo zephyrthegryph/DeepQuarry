@@ -28,9 +28,12 @@ CAPABILITIES(/obj/item/radio/headset)
 	without("ui_open")
 	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds))), then(PROC_REF(interaction_item)))
 
+/// A headset starts with no internal channels: its keys give it its channels (recalculateChannels()).
+/obj/item/radio/headset/starting_channels()
+	return list()
+
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
-	internal_channels.Cut()
 	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)

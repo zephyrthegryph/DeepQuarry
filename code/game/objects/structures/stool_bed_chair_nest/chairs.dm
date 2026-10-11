@@ -23,6 +23,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
 		needs(req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
 	op("interaction_tk", tk(), label("Rotate"), then(PROC_REF(interaction_tk)))
+	configure(rotatable(only_flip = FALSE))
 
 /obj/structure/bed/chair/proc/kit_ready(datum/act/op/A)
 	var/obj/item/assembly/shock_kit/SK = A.held

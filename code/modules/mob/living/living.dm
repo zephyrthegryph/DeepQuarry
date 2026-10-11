@@ -337,8 +337,8 @@
 	set name = "Resist"
 	set category = VERB_CAT_IC_GAME
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
-		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (cooldown_ready(src, resist_cooldown)))
+		cooldown_start(src, resist_cooldown, RESIST_COOLDOWN)
 		resist_grab()
 		if(!has_status(STAT_WEAKENED))
 			process_resist()
@@ -479,16 +479,19 @@
 	if(deaf >= 0)
 		status_set(STAT_DEAFENED, deaf)
 
+/// Set while a vomit is on its way (between the first wave of nausea and puke_recovered()).
+sparse(/mob/living, vomiting, type = bool)
+
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
-	if(!lastpuke)
-		lastpuke = TRUE
+	if(!sparse_get(src, vomiting))
+		sparse_set(src, vomiting, TRUE)
 		to_chat(src, span_warning("You feel nauseous..."))
 		after(src, 15 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(src, span_warning("You feel like you're about to throw up!")))
 		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
 /// after() target: able to vomit again.
 /mob/living/proc/puke_recovered()
-	lastpuke = FALSE
+	sparse_set(src, vomiting, null)
 
 /mob/living/proc/do_vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 
@@ -1169,16 +1172,6 @@ SETTER(/mob/living, nutrition)
 		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
-
-	//I'll just hang my coat up over here
-	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-	dsma.alpha = 0
-	dsma.plane = PLANE_LIGHTING
-	dsma.blend_mode = BLEND_ADD
-	dsoverlay.appearance = dsma
-
-	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
 	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args

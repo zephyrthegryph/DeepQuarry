@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
 	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
 	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)
 	links(LINK_END(/mob/living, LK_NEST), LINK_END(/atom, LK_NEST_SPAWNS), sparse = TRUE, b_many = TRUE)

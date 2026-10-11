@@ -870,7 +870,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Select a target to pounce at."
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, "Your legs need some more rest.")
 		return
 
@@ -892,14 +892,14 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 1 SECOND)
+	cooldown_start(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 

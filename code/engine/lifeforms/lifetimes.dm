@@ -35,6 +35,22 @@
 // or observe()), and runs the thing's on_ending() hooks. qdel() is the engine's: the qdel lint hard-bans it in content once its count reaches 0
 // (tools/analyze/src/lints/lifecycle_counts.rs; code/engine, code/library and code/datums/lifecycle are the engine).
 
+/// lives_for(delay): the holder lapses `delay` after its init is complete (a number of deciseconds, or nameof(var) read then; a var
+/// that is 0 or null when it is due means it never lapses). It replaces an Initialize() that did `if(time_to_die) expire(time_to_die)`:
+///
+///	CAPABILITIES(/obj/effect/temporary_effect)
+///		lives_for(nameof(time_to_die))
+///
+/// A constant lifetime needs no entry: set /atom/movable's lifecycle_lifetime (code/datums/lifecycle/verbs.dm).
+/proc/lives_for(delay)
+	if(istext(delay))
+		return when(delay, after_init(delay, then(TYPE_PROC_REF(/datum, lives_for_over))))
+	return after_init(delay, then(TYPE_PROC_REF(/datum, lives_for_over)))
+
+/// lives_for(): its time ran out.
+/datum/proc/lives_for_over(datum/act/timer/A)
+	lapsed(src)
+
 /proc/lives_while(scope, watches = null)
 	if(isnull(scope))
 		declare_report("lives_while(): needs a scope")

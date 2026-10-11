@@ -23,7 +23,7 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/list/visuals_before = turf_contents_of_type(T, /obj/effect/temp_visual/resonance_crush)
 	TEST_ASSERT(assert_resolves(actor, T, tool, GESTURE_CLICK, "resonate"), "The actual held resonator resolves its native field operation: [explain_click(actor, T, tool)]")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/input_event/click/click = new(actor, T, null, "mapwindow.map", "left=1")
 	input_submit(click)
 	TEST_ASSERT_EQUAL(click.result?.key, "resonate", "The actual player click selects the native resonator operation")
