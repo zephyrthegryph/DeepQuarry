@@ -235,7 +235,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
-		rel_clear(assy, nameof(assy.master))
+		set_item_master(assy, null)
 		rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	else
 		if(!src.proxyassembly.assembly.a_left)
@@ -626,7 +626,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 	var/obj/item/assembly_holder/H = new(src)
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
-	rel_set(H, nameof(H.master), src.proxyassembly)
+	set_item_master(H, src.proxyassembly)
 
 
 	add_overlay("bomb_assembly")
@@ -692,7 +692,7 @@ CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
-	rel_set(S, nameof(S.master), src.proxyassembly) //Tell the assembly about its new owner
+	set_item_master(S, src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
 
@@ -712,7 +712,7 @@ CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
 
 	other.dropInto(get_turf(src))
 	destroyed(ign)
-	rel_clear(assy, nameof(assy.master))
+	set_item_master(assy, null)
 	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	destroyed(assy)
 	src.update_gauge()

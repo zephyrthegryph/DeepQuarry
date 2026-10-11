@@ -65,7 +65,7 @@
 /mob/living/simple_mob/vore/fennec/load_default_bellies()
 	. = ..()
 
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Warm, slick, and wet. You're somewhere hot, tight, and very cramped, unless you happen to somehow be smaller than the fennec you're in! It's hard to see, as rippling pink walls clench and smother over your form. If you don't want to be here, a newspaper from a friend ought to get you out. ...right?"
 	B.vore_sound = "Tauric Swallow"
@@ -132,7 +132,7 @@
 
 /mob/living/simple_mob/vore/fennec/huge/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "The slimy wet insides of a rather large fennec! Not quite as clean as the fen on the outside."
 	B.human_prey_swallow_time = 5

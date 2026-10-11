@@ -612,7 +612,7 @@ CAPABILITIES(/obj/structure/closet)
 	if(get_dist(src, target) >= 1 || get_dist(src, user) >= 1) //in case they leave the locker
 		return OP_REFUSED
 	playsound(src, vore_sound, 25)
-	user.begin_instant_nom(user, target, user, user.vore_selected)
+	user.begin_instant_nom(user, target, user, vore_selected_of(user))
 	return OP_OK
 
 CAPABILITIES(/obj/structure/closet/bluespace)

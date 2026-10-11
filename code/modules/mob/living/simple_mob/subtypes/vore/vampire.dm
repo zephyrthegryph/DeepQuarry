@@ -50,7 +50,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vampire)
 
 /mob/living/simple_mob/vore/vampire/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Having been rapidly gulped up by the vampire, you find yourself tightly contained with a set of groaning, wrinkled walls. It seems that the beast has decided against draining your lifeforce through you blood, and instead taking a more direct approach as it saps your strength from all around you. Your attacker seems content to just take that essence for now, but it is a gut afterall and struggling may set it off."
 	B.mode_flags = DM_FLAG_THICKBELLY

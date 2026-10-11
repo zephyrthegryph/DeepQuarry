@@ -1284,7 +1284,7 @@ CAPABILITIES(/obj/structure/toilet/item)
 		return
 	if(muffin_mode)
 		if(muffinmonster())
-			move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, thing)
+			move_into(vore_selected_of(muffinmonster()), BELLY_SLOT_INTERIOR, thing)
 		else
 			muffin_mode = FALSE
 
@@ -1324,7 +1324,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 				for(var/atom/movable/C in contents)
 					if(C == muffinmonster())
 						continue
-					move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, C)
+					move_into(vore_selected_of(muffinmonster()), BELLY_SLOT_INTERIOR, C)
 			else
 				muffinmonster().name = "Activate Muffin Monster"
 				muffinmonster().release_vore_contents(include_absorbed = TRUE, silent = TRUE)
@@ -1362,7 +1362,7 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "waste hopper"
 	B.desc = "With a resounding CRUNCH, your form has gotten snagged by the Muffin Monster's rotational interlocking cutters indiscriminately crunching away at anything unlucky enough to end up in its hopper, only for the insatiable machine to grind it all down into a slurry mulch fine enough to pass through the narrow sewage lines trouble-free..."
 	B.digest_brute = 20
