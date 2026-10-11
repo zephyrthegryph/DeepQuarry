@@ -33,6 +33,9 @@
 	var/list/excludes
 	/// Owned compiled holder-only simulation condition.
 	var/datum/simulation_condition/compiled_condition
+	/// Temporary compilers are owned until compilation cleanup, including a crashing visit.
+	var/datum/simulation_condition_compiler/native_compiler
+	var/datum/rule_compiler/trigger_compiler
 	var/effect_kind = RULE_EFFECT_BEHAVIOUR
 	/// Behaviour: proc on the object, called with (rule).
 	var/effect_proc
@@ -72,6 +75,8 @@
 
 CAPABILITIES(/datum/rule)
 	owns_one(nameof(compiled_condition), /datum/simulation_condition)
+	owns_one(nameof(native_compiler), /datum/simulation_condition_compiler)
+	owns_one(nameof(trigger_compiler), /datum/rule_compiler)
 	owns_many(nameof(triggers))
 
 /datum/rule/proc/compile(datum/property_registry/property_registry = null)
@@ -95,28 +100,38 @@ CAPABILITIES(/datum/rule)
 	rel_clear(src, nameof(compiled_condition))
 	rel_clear(src, nameof(triggers))
 	var/spec = rule_condition()
-	var/datum/simulation_condition_compiler/native_compiler = new(property_registry)
-	var/datum/simulation_condition/compiled = native_compiler.compile(spec)
-	if(length(native_compiler.errors))
-		errors += native_compiler.errors
-	qdel(native_compiler)
-	if(length(errors) || !compiled)
-		qdel(compiled)
-	else
-		rel_set(src, nameof(compiled_condition), compiled)
-		var/datum/rule_compiler/compiler = new(src, property_registry)
-		compiler.visit(compiled_condition)
-		// The rule takes the triggers the (transient) compiler built.
-		for(var/datum/rule_trigger/trigger as anything in compiler.triggers?.Copy())
-			rel_add(src, nameof(triggers), rel_take(compiler, nameof(compiler.triggers), trigger))
-		errors += compiler.errors
-		qdel(compiler)
-		if(!length(triggers))
-			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
-		heat_only = length(triggers) > 0
-		for(var/datum/rule_trigger/trigger as anything in triggers)
-			if(trigger.kind == RULE_TRIGGER_KEY)
-				heat_only = FALSE
+	// Retire any interrupted previous compilation before acquiring new temporary owners.
+	rel_clear(src, nameof(native_compiler))
+	rel_clear(src, nameof(trigger_compiler))
+	try
+		rel_set(src, nameof(native_compiler), new /datum/simulation_condition_compiler(property_registry))
+		// The returned root is owned immediately, before any validation branch.
+		rel_set(src, nameof(compiled_condition), native_compiler.compile(spec))
+		if(length(native_compiler.errors))
+			errors += native_compiler.errors
+		rel_clear(src, nameof(native_compiler))
+		if(length(errors) || !compiled_condition)
+			rel_clear(src, nameof(compiled_condition))
+		else
+			rel_set(src, nameof(trigger_compiler), new /datum/rule_compiler(src, property_registry))
+			trigger_compiler.visit(compiled_condition)
+			// Transfer each trigger before deleting its temporary compiler owner.
+			for(var/datum/rule_trigger/trigger as anything in trigger_compiler.triggers?.Copy())
+				rel_add(src, nameof(triggers), rel_take(trigger_compiler, nameof(trigger_compiler.triggers), trigger))
+			errors += trigger_compiler.errors
+			rel_clear(src, nameof(trigger_compiler))
+			if(!length(triggers))
+				errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
+			heat_only = length(triggers) > 0
+			for(var/datum/rule_trigger/trigger as anything in triggers)
+				if(trigger.kind == RULE_TRIGGER_KEY)
+					heat_only = FALSE
+	catch(var/exception/fault)
+		rel_clear(src, nameof(native_compiler))
+		rel_clear(src, nameof(trigger_compiler))
+		rel_clear(src, nameof(compiled_condition))
+		rel_clear(src, nameof(triggers))
+		throw fault
 	if(!length(errors))
 		errors = null
 	return !errors

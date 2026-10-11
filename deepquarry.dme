@@ -335,6 +335,7 @@
 #include "code\__defines\engine\actions.dm"
 #include "code\__defines\engine\forms.dm"
 #include "code\__defines\engine\parts.dm"
+#include "code\__defines\engine\simulation_conditions.dm"
 #include "code\__defines\engine\present.dm"
 #include "code\__defines\engine\lifeforms.dm"
 // The ids the declaration markers declare, written by `analyze gen declare_ids` (code/engine/_generated/ids.dm): before everything that names one.

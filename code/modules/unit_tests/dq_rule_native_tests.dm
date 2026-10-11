@@ -5,6 +5,19 @@
 #define DQ_RULE_RIGHT_KEY "dq-rule-right-key"
 
 // Native simulation condition compiler and lifetime tests.
+// Records are borrowed test observations, never a second owner of compiler nodes.
+/datum/simulation_condition_compiler/dq_scratch_cleanup_fixture
+	var/list/created
+	var/throw_after_attach = FALSE
+
+/datum/simulation_condition_compiler/dq_scratch_cleanup_fixture/allocate_node(datum/simulation_condition/parent)
+	var/datum/simulation_condition/N = ..()
+	LAZYADD(created, N)
+	if(throw_after_attach)
+		throw new /exception("dq compiler attached-node fault")
+	return N
+
+
 /datum/unit_test/dq_simulation_condition_native/proc/compiled(spec)
 	var/datum/simulation_condition_compiler/C = new
 	var/datum/simulation_condition/N = C.compile(spec)
@@ -53,6 +66,40 @@
 	rejected(cond_measure(PROP_TEMPERATURE, "invalid-op", KELVIN(300)), "unknown comparison")
 	rejected(cond_band(PROP_TEMPERATURE, KELVIN(400), KELVIN(300)), "reversed")
 	rejected(cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GT, KELVIN(300), subject = "actor"), "no actor")
+	// Compiler scratch owns the whole partial tree on every failure path.
+	var/datum/simulation_condition_compiler/dq_scratch_cleanup_fixture/C = new
+	N = C.compile(cond_all(cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(0)), cond_all(cond_measure("dq-scratch-unknown", SIM_COMPARE_GT, KG(1)))))
+	TEST_ASSERT_NULL(N, "Malformed nested group returns no partial root")
+	TEST_ASSERT_NULL(C.scratch, "Malformed nested group clears scratch")
+	TEST_ASSERT_EQUAL(length(C.created), 3, "Root, valid leaf and nested group were allocated before rejection")
+	for(var/datum/simulation_condition/partial as anything in C.created)
+		TEST_ASSERT(QDELETED(partial), "Every recorded partial node is deleted through declared ownership")
+	C.created = null
+	C.throw_after_attach = TRUE
+	var/caught = FALSE
+	try
+		N = C.compile(cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(0)))
+	catch(var/exception/fault)
+		caught = TRUE
+		TEST_ASSERT_EQUAL(fault.name, "dq compiler attached-node fault", "Exact fixture fault propagated")
+	TEST_ASSERT(caught, "Attached-node exception was caught by the test")
+	TEST_ASSERT_NULL(C.scratch, "Exception clears scratch")
+	TEST_ASSERT_EQUAL(length(C.created), 1, "Fault occurred after exactly one allocation")
+	for(var/datum/simulation_condition/partial as anything in C.created)
+		TEST_ASSERT(QDELETED(partial), "Exception deletes the attached root")
+	C.created = null
+	C.throw_after_attach = FALSE
+	N = C.compile(cond_all(cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(0))))
+	TEST_ASSERT(N && !QDELETED(N), "Failed compiler can be reused successfully despite retained diagnostics")
+	TEST_ASSERT_NULL(C.scratch, "Success transfers root out of scratch")
+	TEST_ASSERT_EQUAL(length(C.created), 2, "Successful retry owns root and child while building")
+	qdel(C)
+	TEST_ASSERT(!QDELETED(N), "Transferred root survives compiler deletion")
+	TEST_ASSERT(N.holds(I), "Transferred root remains operational")
+	var/list/success_children = N.children.Copy()
+	qdel(N)
+	for(var/datum/simulation_condition/child as anything in success_children)
+		TEST_ASSERT(QDELETED(child), "Deleting transferred root still deletes its children")
 /datum/unit_test/dq_simulation_condition_native/empty_groups/Run()
 	var/datum/simulation_condition/N = compiled(cond_all())
 	var/obj/item/dq_rule_test/I = allocate(/obj/item/dq_rule_test)

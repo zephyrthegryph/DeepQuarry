@@ -10,7 +10,7 @@ CAPABILITIES(/datum)
 	owns_one(nameof(rule_binding), /datum/rule_binding)
 
 
-/proc/dq_rule_binding_of(datum/thing)
+/proc/dq_rule_binding_of(datum/thing) as /datum/rule_binding
 	var/datum/rule_binding/binding = thing?.rule_binding
 	return QDELETED(binding) ? null : binding
 
