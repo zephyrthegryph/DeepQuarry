@@ -102,11 +102,11 @@ mod tests {
     use super::*;
     struct Host {
         opaque: bool,
-        queries: std::cell::RefCell<Vec<dm_ir::ResolveQuery>>,
+        queries: std::sync::Mutex<Vec<dm_ir::ResolveQuery>>,
     }
     impl dm_ir::Resolver for Host {
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
-            self.queries.borrow_mut().push(query);
+            self.queries.lock().unwrap().push(query);
             if self.opaque {
                 return dm_ir::ResolvedMeaning::Unsupported(query);
             }
@@ -171,13 +171,14 @@ mod tests {
         );
         assert!(!host
             .queries
-            .borrow()
+            .lock()
+            .unwrap()
             .iter()
             .any(|q| matches!(q, dm_ir::ResolveQuery::RuntimeType(_))));
-        host.queries.borrow_mut().clear();
+        host.queries.lock().unwrap().clear();
         let local = dm_syntax::parse_expression("present").expr.unwrap();
         assert!(observe_reference_source_features(&local, &bindings, &symbols, &host).is_ok());
-        assert!(host.queries.borrow().is_empty());
+        assert!(host.queries.lock().unwrap().is_empty());
         let opaque = Host {
             opaque: true,
             queries: Default::default(),
