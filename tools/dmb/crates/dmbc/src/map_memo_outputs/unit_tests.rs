@@ -67,7 +67,7 @@ fn one_changed_map_unit_keeps_other_program_with_current_origins_and_fresh_order
             assert_eq!(actual.debug_origins, fresh.debug_origins);
         }
         if step == 0 {
-            memo.finish_revision();
+            assert!(memo.publish_successful());
             let unchanged = MapMemo::with_resident(1, owner.clone(), None);
             prepare(
                 &unchanged,
@@ -80,7 +80,7 @@ fn one_changed_map_unit_keeps_other_program_with_current_origins_and_fresh_order
             assert_eq!(unchanged.counts.output_hits.load(Ordering::Relaxed), 1);
             // An unchanged bundle must keep its per-unit claims, otherwise the
             // subsequent structural edit would lose the unchanged program.
-            unchanged.finish_revision();
+            assert!(unchanged.publish_successful());
         }
         if let Some(previous) = previous {
             assert_eq!(memo.counts.unit_hits.load(Ordering::Relaxed), 2);

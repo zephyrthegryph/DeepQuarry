@@ -210,10 +210,6 @@ impl MapMemo {
     ) -> Option<T> {
         self.pending_maps.as_ref()?.with_pending(operation)
     }
-    /// Explicit successful-stage compatibility API. Drop never commits.
-    pub fn finish_revision(&self) {
-        self.publish_successful();
-    }
     pub(super) fn retained_parse(
         &self,
         key: &Arc<[u8]>,

@@ -45,7 +45,7 @@ fn current_map_artifacts_share_payloads_rebind_occurrences_and_replay_reads() {
     let projected = first
         .project(std::slice::from_ref(&plan), defaults(), &Host(false))
         .unwrap();
-    first.finish_revision();
+    assert!(first.publish_successful());
     let second = MapMemo::with_resident(1, owner.clone(), None);
     let current = second.parse(captured(9)).unwrap();
     assert_eq!(current.captured.include_occurrence, 9);
@@ -60,9 +60,9 @@ fn current_map_artifacts_share_payloads_rebind_occurrences_and_replay_reads() {
         .unwrap();
     assert_eq!(second.counts.projected.load(Ordering::Relaxed), 1);
     assert_ne!(projected.instances[2].kind, changed.instances[2].kind);
-    second.finish_revision();
+    assert!(second.publish_successful());
     let empty = MapMemo::with_resident(1, owner.clone(), None);
-    empty.finish_revision();
+    assert!(empty.publish_successful());
     assert_eq!(owner.artifact_admitted_bytes(), 0);
 }
 #[test]
@@ -95,7 +95,7 @@ fn accepted_resident_parse_and_geometry_leave_lazy_disk_unopened() {
     let projection = first
         .project(std::slice::from_ref(&plan), defaults(), &Host(false))
         .unwrap();
-    first.finish_revision();
+    assert!(first.publish_successful());
     let disk = Arc::new(crate::runner_disk::LazyDisk::new(PathBuf::from(
         "E:/dq-cache/unused-resident-map-fixture",
     )));
