@@ -68,6 +68,7 @@ import { compilerMode } from './lib/compiler_selection';
 import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
+import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -760,7 +761,7 @@ function linkOrCopy(from: string, to: string): void {
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
-type IsolatedRun = WorldRun & { logDir: string; inventory?: IssuedSuiteInventory };
+type IsolatedRun = WorldRun & { logDir: string; rawLogs?: RuntimeLogArchive; inventory?: IssuedSuiteInventory };
 
 /**
  * Boots `dmbFile` in its own run slot (see above). `focus` lists test type
@@ -782,6 +783,9 @@ async function runIsolatedTestWorld(
   const base = dmbFile.replace(/\.dmb$/, '');
   const runBase = `${base}.${slot.tag}`;
   const logDir = `data/logs/${slot.tag}`;
+  const rawLogs: RuntimeLogArchive = {};
+  let logDirectoryCleared = false;
+  let worldSpawned = false;
   const resultsFile = `${slot.dir}/unit_tests.json`;
   const inventoryFile = `${slot.dir}/normal_inventory.json`;
   let runtimeIdentity: RuntimeIdentity | undefined;
@@ -789,6 +793,7 @@ async function runIsolatedTestWorld(
   let escapedFailure = false;
   try {
     fs.rmSync(logDir, { recursive: true, force: true });
+    logDirectoryCleared = true;
     // DreamDaemon keeps icons made at runtime in <world>.dyn.rsc beside the
     // .dmb. Run slots are reused, so without this a world inherited the last
     // one's cache, possibly from another build ("failed to write new icon").
@@ -839,7 +844,7 @@ async function runIsolatedTestWorld(
           namedDmVersion: dmVersion,
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
-          onSpawn: options.sampler ? (pid) => options.sampler?.start(pid) : undefined,
+          onSpawn: (pid) => { worldSpawned = true; options.sampler?.start(pid); },
           onPreparedOutput: (dmb) => { options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
           watchdogMaximumMs: options.issueInventory || options.exactBatch ? 300_000 : undefined,
           onRuntimeIdentity: identity => { runtimeIdentity = identity; },
@@ -885,6 +890,7 @@ async function runIsolatedTestWorld(
       samples: options.sampler?.samples ?? [],
       killedByWatchdog,
       logDir,
+      rawLogs,
     };
   } catch (error) {
     escapedFailure = true;
@@ -892,6 +898,14 @@ async function runIsolatedTestWorld(
     throw error;
   } finally {
     try {
+      try {
+        if (!logDirectoryCleared) throw new Error('world log directory was not cleared; refusing stale evidence');
+        Object.assign(rawLogs, archiveRuntimeLogs(logDir, worldSpawned ? `${runBase}.log` : null), { worldSpawned });
+        Juke.logger.info(`Runtime raw logs: ${rawLogs.manifest} SHA256 ${rawLogs.sha256} complete=${rawLogs.complete}`);
+      } catch (error) {
+        Object.assign(rawLogs, { complete: false, error: String(error) });
+        Juke.logger.error(`Runtime raw log archival failed: ${error}`);
+      }
       try { compilerReceipt.finalize(receiptOutcome); }
       catch (error) {
         if (!escapedFailure) throw error;
@@ -1663,9 +1677,9 @@ async function runSuiteBatches(get: any, batchSize: number, generalized = false)
   writeJson(evidenceFile, evidence);
   try {
     const issued = resume?.inventory ?? await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, null,
-      { compiledOutput: output, issueInventory: true, watchdogTimeoutMs: 300_000, label: 'normal inventory' });
+      { compiledOutput: output, issueInventory: true, watchdogTimeoutMs: 300_000, label: `${tier} inventory` });
     evidence.inventory = issued; writeJson(evidenceFile, evidence);
-    if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error('runtime inventory admission failed');
+    if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error(`${tier} runtime inventory admission failed`);
     if (issued.inventory.tier !== tier) throw new Error('runtime issued another suite tier');
     let plan = resume?.plan ?? issued.inventory;
     const previousPath = get(NormalPlanParameter);
@@ -1686,17 +1700,17 @@ async function runSuiteBatches(get: any, batchSize: number, generalized = false)
       const requested = batches[index];
       const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, requested,
         { compiledOutput: output, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
-          watchdogTimeoutMs: 300_000, label: `normal batch${index + 1}/${batches.length}` });
+          watchdogTimeoutMs: 300_000, label: `${tier} batch${index + 1}/${batches.length}` });
       evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
       if (!sameSuiteRuntime(run.runtimeIdentity, issued.runtimeIdentity)) throw new Error('DreamDaemon identity/security changed');
       if (!run.results || run.killedByWatchdog) throw new Error('batch exited without complete results');
-      recordTestRun(run, `normal-batch${index + 1}`, get(DefineParameter));
+      recordTestRun(run, `${tier}-batch${index + 1}`, get(DefineParameter));
     }
     if (resume) loadSuiteResume<IsolatedRun>(resume.checkpointPath, resume.checkpointSha256, batchSize);
     const union = exactSuiteUnion(plan, evidence.batches.map(({ requested, run }) => ({ requested, results: run.results })));
     if (evidence.batches.some(({ run }) => !run.clean)
         || Object.values(union.tests).some(row => !suiteRowSucceeded(row))
-        || union.frameworkFindings.some(row => !suiteRowSucceeded(row))) throw new Error('normal suite contains test/runtime/framework failures');
+        || union.frameworkFindings.some(row => !suiteRowSucceeded(row))) throw new Error(`${tier} suite contains test/runtime/framework failures`);
     evidence.status = 'passed';
   } catch (error) {
     evidence.status = 'failed'; evidence.error = String(error); throw error;
