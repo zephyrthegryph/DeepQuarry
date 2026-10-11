@@ -149,7 +149,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
             if admission.allows_certificate_reuse() {
                 admission.first_changed_receipted(reads, versions, |_| {})
             } else {
-                admission.first_changed(reads, |_| {})
+                admission.first_changed_receipted(reads, &[], |_| {})
             }
         };
         let (accepted, changed) = match &self.attempt {

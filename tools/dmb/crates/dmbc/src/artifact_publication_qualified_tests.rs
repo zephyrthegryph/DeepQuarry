@@ -182,3 +182,52 @@ fn wave_context_shares_current_cells_across_stores_without_provider_mixing() {
     assert!(observable.versions.lock().unwrap().is_empty());
     assert_eq!(*observable.queries.lock().unwrap(), vec![1, 2, 1, 2]);
 }
+
+#[test]
+fn observable_wave_replays_every_answer_for_the_same_shared_receipt_leaf() {
+    let leaf: Arc<[Observation<u8, Option<u8>, u8>]> = vec![
+        Observation {
+            domain: 1,
+            query: 1,
+            answer: None,
+        },
+        Observation {
+            domain: 2,
+            query: 2,
+            answer: None,
+        },
+    ]
+    .into();
+    let receipt: Receipt<u8, Option<u8>, u8> = Arc::clone(&leaf).into();
+    let left = Values::current_revision();
+    let right = Values::current_revision();
+    for store in [&left, &right] {
+        store
+            .insert_current_qualified_with(
+                Arc::from(b"key".as_slice()),
+                receipt.clone(),
+                Arc::from([(1, 7)]),
+                1,
+                || vec![1],
+            )
+            .unwrap();
+        assert!(store.publish_successful());
+    }
+    let left = left.for_request(true);
+    let right = right.for_request(true);
+    let provider = host(7, None, None, true);
+    let admission = dm_session::observations::ReceiptAdmission::new(&provider);
+    for _ in 0..2 {
+        for store in [&left, &right] {
+            assert!(store
+                .visit_current_qualified_in(b"key", &admission, &mut |_| true)
+                .0
+                .is_some());
+        }
+    }
+    assert_eq!(
+        *provider.queries.lock().unwrap(),
+        vec![1, 2, 1, 2, 1, 2, 1, 2]
+    );
+    assert!(provider.versions.lock().unwrap().is_empty());
+}
