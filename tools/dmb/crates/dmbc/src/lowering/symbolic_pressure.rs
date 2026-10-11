@@ -32,25 +32,7 @@ fn charge(
     let mut census = HeapCensus::new("compact_symbolic_charge");
     census.slice("compact_symbolic.locator", key, true);
     census_record(record, &mut census);
-    // This one annotation concerns allocator/control bookkeeping only, not
-    // omitted nested payload. Charge each encountered owner conservatively below.
-    census
-        .owner("procedure_metadata.recipe")
-        .unknown
-        .remove("Arc control block and allocator overhead are unavailable");
-    let encounters = census.buffer_encounters;
-    let report = census.finish();
-    if report.unknown_capacity_payload_bytes != 0
-        || report.owners.iter().any(|owner| !owner.unknown.is_empty())
-    {
-        return None;
-    }
-    usize::try_from(report.unique_known_capacity_bytes)
-        .ok()?
-        .checked_add(encounters.checked_mul(64)?)?
-        // Per-record logical index/lease bookkeeping allowance. Private BTree
-        // and incidence backing is not a measured allocation or a physical cap.
-        .checked_add(4096)
+    census.finish_compact_symbolic_charge()
 }
 
 #[cfg(test)]

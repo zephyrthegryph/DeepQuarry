@@ -666,8 +666,11 @@ impl HeapCensus {
         }
     }
     pub fn startup(&mut self, startup: &crate::startup::CapturedStartup<'_>) {
-        let facts = startup.facts();
-        if !self.arc_object("startup", &facts) {
+        self.startup_facts(&startup.facts());
+    }
+    pub(crate) fn startup_facts(&mut self, startup: &Arc<crate::startup::StartupFacts>) {
+        let facts = startup;
+        if !self.arc_object("startup", facts) {
             return;
         }
         let units = startup.unit_members();
@@ -853,6 +856,23 @@ impl HeapCensus {
                 self.buffer("frozen_code", address, length, capacity);
             });
         }
+    }
+    /// Logical payload charge only; private allocator/index backing is an
+    /// allowance, never a measured process-memory bound.
+    pub(crate) fn finish_compact_symbolic_charge(mut self) -> Option<usize> {
+        self.owner("procedure_metadata.recipe").unknown.remove(
+            "Arc control block and allocator overhead are unavailable",
+        );
+        let encounters = self.buffer_encounters;
+        let report = self.finish();
+        if report.unknown_capacity_payload_bytes != 0
+            || report.owners.iter().any(|owner| !owner.unknown.is_empty())
+        {
+            return None;
+        }
+        usize::try_from(report.unique_known_capacity_bytes).ok()?
+            .checked_add(encounters.checked_mul(64)?)?
+            .checked_add(4096)
     }
     fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
         if !self.arc_object("frozen_code", code) {
