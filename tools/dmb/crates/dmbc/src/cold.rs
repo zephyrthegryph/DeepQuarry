@@ -22,6 +22,9 @@ pub enum ColdStage {
     Initializers,
     InitializerClassification,
     InitializerCodegen,
+    InitializerFragmentKeys,
+    InitializerAssemblyKeys,
+    InitializerGroupExecution,
     ProcedureLowering,
     RequiredTypeAdmission,
     SymbolicLinking,
@@ -36,6 +39,9 @@ impl crate::stage_measurements::StageName for ColdStage {
             Self::Initializers => "cold.initializers",
             Self::InitializerClassification => "initializer.classification",
             Self::InitializerCodegen => "initializer.codegen",
+            Self::InitializerFragmentKeys => "initializer.fragment_keys",
+            Self::InitializerAssemblyKeys => "initializer.assembly_keys",
+            Self::InitializerGroupExecution => "initializer.group_execution",
             Self::ProcedureLowering => "cold.procedure_lowering",
             Self::RequiredTypeAdmission => "cold.required_type_admission",
             Self::SymbolicLinking => "cold.symbolic_linking",
@@ -481,6 +487,15 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                     }
                     crate::initializer_lowering::InitializerStage::Codegen => {
                         ColdStage::InitializerCodegen
+                    }
+                    crate::initializer_lowering::InitializerStage::FragmentKeys => {
+                        ColdStage::InitializerFragmentKeys
+                    }
+                    crate::initializer_lowering::InitializerStage::AssemblyKeys => {
+                        ColdStage::InitializerAssemblyKeys
+                    }
+                    crate::initializer_lowering::InitializerStage::GroupExecution => {
+                        ColdStage::InitializerGroupExecution
                     }
                 },
                 elapsed: event.elapsed,

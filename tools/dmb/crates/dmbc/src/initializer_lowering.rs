@@ -27,6 +27,9 @@ mod disk_recipe;
 pub enum InitializerStage {
     Classification,
     Codegen,
+    FragmentKeys,
+    AssemblyKeys,
+    GroupExecution,
 }
 pub type InitializerMeasurement = crate::stage_measurements::Measurement<InitializerStage>;
 impl crate::stage_measurements::StageName for InitializerStage {
@@ -34,6 +37,9 @@ impl crate::stage_measurements::StageName for InitializerStage {
         match self {
             Self::Classification => "initializer.classification",
             Self::Codegen => "initializer.codegen",
+            Self::FragmentKeys => "initializer.fragment_keys",
+            Self::AssemblyKeys => "initializer.assembly_keys",
+            Self::GroupExecution => "initializer.group_execution",
         }
     }
 }
@@ -415,6 +421,8 @@ fn lower_plan<R: Resolver>(
     if let Some(store) = assembly_store {
         store.configure_disk(disk_context);
     }
+    let keys_measurement =
+        crate::stage_measurements::Scope::new(observer, InitializerStage::FragmentKeys);
     let fragment_keys =
         if let Some(memo) = memo.filter(|_| fragment_store.is_some() || assembly_store.is_some()) {
             let keys = fragments::current_keys(&classified, memo.policy, resource_search_context)?;
@@ -425,6 +433,9 @@ fn lower_plan<R: Resolver>(
         } else {
             None
         };
+    keys_measurement.complete();
+    let keys_measurement =
+        crate::stage_measurements::Scope::new(observer, InitializerStage::AssemblyKeys);
     let assembly_keys = assembly_store
         .zip(fragment_keys.as_ref())
         .map(|(store, keys)| {
@@ -433,6 +444,7 @@ fn lower_plan<R: Resolver>(
             Ok::<_, String>(keys)
         })
         .transpose()?;
+    keys_measurement.complete();
     let lower_one = |index: usize| {
         let _profile = dm_profile::stage("initializer.codegen_group");
         lower_group(
@@ -449,6 +461,11 @@ fn lower_plan<R: Resolver>(
                 .map(|(store, keys)| (store, &keys[index])),
         )
     };
+    // Includes current provenance binding, receipt admission and any actual
+    // lowering/reissue. Keep this enclosing parallel phase separate from key
+    // construction without collecting per-worker overlapping wall times.
+    let groups_measurement =
+        crate::stage_measurements::Scope::new(observer, InitializerStage::GroupExecution);
     let units =
         match executor.filter(|executor| executor.workers() > 1 && classified.groups.len() > 1) {
             Some(executor) => {
@@ -461,6 +478,7 @@ fn lower_plan<R: Resolver>(
                 .map(lower_one)
                 .collect::<Result<Vec<_>, _>>()?,
         };
+    groups_measurement.complete();
     measurement.complete();
     Ok(LoweredInitializers { classified, units })
 }
