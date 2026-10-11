@@ -1208,3 +1208,10 @@ global absence policy through the existing issuer is being implemented.
 - Pinned BYOND compile-only iterator-word capture confirms root obj requires IsType after IterLoad category mask2. Source correction and resident/disk key invalidation are frozen but Rust/output admission remains pending.
 - Structural adjacency migration is committed after eight focused metadata stable-key tests passed: E:/dq-cache/dmb-native-v2/integration-gates/20261010-232727-bcdabe01-focused.json. It avoids candidate edge-list allocation before exact old-owner reuse; current roster/projection/order scans and O(member-count) scalar scratch remain. No timing improvement claimed without a measured actual build.
 - Existing lexical-type controls pass again (two checks, receipt E:/dq-cache/dmb-native-v2/integration-gates/20261010-232736-713cb855-focused.json). Ordinary-global negative lowering remains under repair because the production partial predefined catalog rejects missing names before final variable selection. A narrow separately tagged pinned absence hook is now queued for combined Rust validation with the iterator correction.
+
+
+## 2026-10-11 iterator correction and integration follow-through
+
+- Committed 5d4eefac78: exact /obj inheritance filtering in typed iteration, authenticated BYOND bytecode fixture, and procedure memo epoch invalidation. Three focused codegen checks and five key-recipe checks passed. Actual corrected runtime capture and the two medical test repairs remain pending.
+- Committed 7cf8949909: captured shadow invocations now use their actual manifest, cwd and ordered defines with private native outputs and stable BYOND copies. Twenty-five focused Bun checks pass. Input-closure authority remains incomplete; no whole-game parity is inferred.
+- Committed d7439099c0: bounded six-worktree materialization, committed tracked-byte checks before root creation, authenticated missing-file private copies, normalized E-only containment and 300-second overall deadline. Three Python policy checks pass. No six-worktree compile or acceptance benchmark has been run for this change.
