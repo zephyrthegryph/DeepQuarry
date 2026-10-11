@@ -210,7 +210,7 @@ impl<R: Resolver> dm_session::ObservationHost<Query, Answer, Domain> for Host<'_
         match (a, b) {
             (Answer::Input(a), Answer::Input(b)) => Arc::ptr_eq(a, b) || a == b,
             (Answer::Semantic(a), Answer::Semantic(b)) => {
-                a.canonical_bytes() == b.canonical_bytes()
+                a == b || a.canonical_bytes() == b.canonical_bytes()
             }
             _ => false,
         }
@@ -238,4 +238,48 @@ pub(crate) fn versions(values: Vec<(ReadDomain, u128)>) -> Vec<(Domain, u128)> {
         .into_iter()
         .map(|(domain, version)| (Domain::Semantic(domain), version))
         .collect()
+}
+
+#[cfg(test)]
+mod equivalence_tests {
+    use super::*;
+    use dm_session::ObservationHost;
+    struct UnusedResolver;
+    impl Resolver for UnusedResolver {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            panic!("equivalence must not resolve {query:?}")
+        }
+    }
+    #[test]
+    fn exact_semantic_answers_and_canonical_relocated_answers_remain_equivalent() {
+        let binding = Binding::fixture(b"equivalence");
+        let host = Host {
+            binding: &binding,
+            resolver: &UnusedResolver,
+        };
+        let exact = Answer::Semantic(ResolvedMeaning::Missing);
+        assert!(host.equivalent(&exact, &exact));
+        let retained = |wire_proc, engine_identity| {
+            Answer::Semantic(ResolvedMeaning::RetainedProc {
+                declaring_owner: dm_ir::SymbolId::of("/datum/native"),
+                name: dm_ir::SymbolId::of("method"),
+                verb: false,
+                engine_identity,
+                wire_proc,
+            })
+        };
+        let old = retained(1, 7);
+        let relocated = retained(9, 7);
+        assert_ne!(old, relocated, "physical proc index differs");
+        assert!(
+            host.equivalent(&old, &relocated),
+            "canonical comparison remains required for relocated answers"
+        );
+        assert!(
+            !host.equivalent(&old, &retained(9, 8)),
+            "changed engine authority cannot be normalized away"
+        );
+        assert!(!host.equivalent(&exact, &Answer::Semantic(ResolvedMeaning::Presence(false))));
+        assert!(!host.equivalent(&exact, &Answer::Input(Arc::clone(&binding.inputs))));
+    }
 }
