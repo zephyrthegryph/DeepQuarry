@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
-CASES = ('for_typed_list_copy', 'for_typed_list_add', 'for_typed_source', 'for_untyped_dot', 'ordinary_typed_control')
+CASES = ('for_typed_list_copy', 'for_typed_list_add', 'for_typed_source', 'for_untyped_dot', 'ordinary_typed_control', 'for_receiver_after_loop', 'for_outer_typed_shadow', 'for_nested_outer_receiver', 'for_typed_source_explicit_new')
 
 
 def driver():
