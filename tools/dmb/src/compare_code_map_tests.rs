@@ -460,3 +460,26 @@ fn independent_constant_map_writes_ignore_order_but_detect_values() {
     actual.lists[code as usize][1] = 3;
     assert!(!compare_maps_semantic(&expected, &actual, 10).is_empty());
 }
+
+#[test]
+fn unresolved_fixed_string_ids_remain_exact_numeric_differences() {
+    let dmb = template();
+    let context = memo::NormalizationContext::new(&dmb);
+    for opcode in [0x02, 0x04, 0x84] {
+        let make = |id| bytecode::Instruction {
+            offset: 0,
+            opcode,
+            name: "fixed string reference",
+            operands: if opcode == 0x84 {
+                vec![id]
+            } else {
+                vec![id, 0]
+            },
+        };
+        let left = instruction(&context, &make(u32::MAX)).unwrap();
+        let right = instruction(&context, &make(u32::MAX - 1)).unwrap();
+        assert_eq!(left.operands[0], NormalOperand::Word(u32::MAX));
+        assert_ne!(left, right);
+        assert_eq!(left, instruction(&context, &make(u32::MAX)).unwrap());
+    }
+}

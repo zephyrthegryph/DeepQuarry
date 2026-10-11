@@ -133,7 +133,11 @@ pub(super) fn instruction(
     if matches!(input.opcode, 0x2 | 0x4 | 0x84) {
         // Format, OutputFormat, and DbgFile carry a StringID first.
         if let Some(NormalOperand::Word(id)) = operands.first() {
-            operands[0] = NormalOperand::String(bytes(dmb, *id));
+            // An unresolved table reference is not a semantic string. Keep its
+            // numeric identity so distinct malformed operands cannot compare equal.
+            if let Some(value) = bytes(dmb, *id) {
+                operands[0] = NormalOperand::String(Some(value));
+            }
         }
     }
     let proc_operand = match input.opcode {
