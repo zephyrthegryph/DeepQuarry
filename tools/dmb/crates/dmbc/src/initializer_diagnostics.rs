@@ -251,7 +251,7 @@ pub fn map_lower_errors(
             },
             identity: None,
             origin,
-            message: if error.statement.is_empty() { error.reason }
+            message: if error.kind == LowerErrorKind::SourceError || error.statement.is_empty() { error.reason }
                 else { format!("{}: {}", error.statement, error.reason) },
         })
     }).collect()
@@ -272,6 +272,29 @@ mod tests {
             include_occurrence: occurrence,
             include_chain: [0, occurrence].into(),
             macro_expansions: Arc::new(Vec::new()),
+        }
+    }
+    #[test]
+    fn typed_source_error_keeps_authored_message_and_current_assignment_provenance() {
+        let sources = [source("included.dm", 7, 4), source("included.dm", 31, 9)];
+        for kind in [LowerErrorKind::SourceError, LowerErrorKind::UnsupportedModel, LowerErrorKind::Internal] {
+            let error = LowerError { statement: "initializer assignment".into(),
+                reason: "formerly_missing_initializer: undefined proc".into(), kind,
+                span: Some(LowerSpan { start: 1, end: 1 }),
+                related: vec![dm_codegen_byond::LowerRelated { span: LowerSpan { start: 0, end: 0 },
+                    message: "current related occurrence".into() }], ..Default::default() };
+            let diagnostics = map_lower_errors(vec![error], &sources).unwrap();
+            assert_eq!(diagnostics[0].origin, sources[1]);
+            assert_eq!(diagnostics[0].related[0].origin, sources[0]);
+            assert_eq!(diagnostics[0].related[0].message, "current related occurrence");
+            assert_eq!(diagnostics[0].message, if kind == LowerErrorKind::SourceError {
+                "formerly_missing_initializer: undefined proc"
+            } else { "initializer assignment: formerly_missing_initializer: undefined proc" });
+            assert_eq!(diagnostics[0].kind, match kind {
+                LowerErrorKind::SourceError => DiagnosticKind::SourceError,
+                LowerErrorKind::UnsupportedModel => DiagnosticKind::UnsupportedModel,
+                LowerErrorKind::Internal => DiagnosticKind::Internal,
+            });
         }
     }
     #[test]
