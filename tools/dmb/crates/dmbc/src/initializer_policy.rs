@@ -745,15 +745,15 @@ pub fn classify_with_token_mode_on_executor(
 
 /// Exact immutable classification admitted by the existing semantic store.
 #[derive(Clone)]
-pub(crate) struct ClassificationOwner(Arc<classification::artifact::SemanticClassification>);
+pub(crate) struct ClassificationOwner(Arc<u8>);
 impl ClassificationOwner {
     pub(crate) fn new(value: Arc<classification::artifact::SemanticClassification>) -> Self {
-        Self(value)
+        Self(value.identity())
     }
-    pub(crate) fn visit(
-        &self,
-        visit: impl FnOnce(&Arc<classification::artifact::SemanticClassification>),
-    ) {
+    pub(crate) fn from_identity(identity: Arc<u8>) -> Self {
+        Self(identity)
+    }
+    pub(crate) fn visit(&self, visit: impl FnOnce(&Arc<u8>)) {
         visit(&self.0);
     }
 }

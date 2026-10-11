@@ -9,6 +9,7 @@ fn runtime_binding_preserves_current_tokens_ordinals_and_exact_syntax() {
     let source = "list(1, list(2, 3))";
     let expression = Arc::new(dm_syntax::parse_expression(source).expr.unwrap());
     let payload = SemanticClassification {
+        identity: Arc::new(0),
         source_features: Default::default(),
         input: None,
         default: DefaultValue::Scalar(SemanticValue::Null),
@@ -52,4 +53,20 @@ fn runtime_binding_preserves_current_tokens_ordinals_and_exact_syntax() {
     };
     Arc::make_mut(&mut tokens.tokens)[0].relative_span.end += 1;
     assert!(payload.bind(&current, &symbols, 0).is_none());
+    let payload = Arc::new(payload);
+    let weak = Arc::downgrade(&payload);
+    let identity = ClassificationOwner::new(Arc::clone(&payload));
+    let same = ClassificationOwner::new(Arc::clone(&payload));
+    assert_eq!(identity, same);
+    let other = ClassificationOwner::from_identity(Arc::new(0));
+    assert_ne!(
+        identity, other,
+        "equal marker bytes do not license another result"
+    );
+    drop(payload);
+    assert!(
+        weak.upgrade().is_none(),
+        "placement identities must not pin recreatable classification payloads"
+    );
+    assert_eq!(identity, same);
 }

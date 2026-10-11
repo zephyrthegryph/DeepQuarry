@@ -100,7 +100,7 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
                         );
                         for (_, _, _, classification) in &owner.input.classifications {
                             classification.visit(|owner| {
-                                super::initializer_artifacts::classification(census, owner)
+                                census.arc_object("initializer_classification.identity", owner);
                             });
                         }
                         if census.arc_object("startup.allocation_ordered", &owner.ordered) {

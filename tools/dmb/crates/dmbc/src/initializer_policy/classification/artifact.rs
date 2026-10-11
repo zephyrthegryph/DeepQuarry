@@ -22,6 +22,9 @@ enum RuntimeRecipe {
     },
 }
 pub(crate) struct SemanticClassification {
+    // This token identifies one admitted immutable result without retaining its
+    // recreatable syntax/input payload through downstream placement receipts.
+    identity: Arc<u8>,
     source_features: dm_codegen_byond::SourceFeatures,
     input: Option<ClassificationInput>,
     default: DefaultValue,
@@ -197,11 +200,7 @@ impl InitializerArtifacts {
     }
     pub(crate) fn visit_token_roster(
         &self,
-        mut visitor: impl FnMut(
-            &Vec<Arc<SemanticClassification>>,
-            &Vec<Option<(u32, Arc<[u8]>)>>,
-            &Vec<RuntimeGroup>,
-        ),
+        mut visitor: impl FnMut(&Vec<Arc<u8>>, &Vec<Option<(u32, Arc<[u8]>)>>, &Vec<RuntimeGroup>),
     ) {
         self.roster.visit(&mut visitor);
         self.roster_publication.with_published(|roster| {
@@ -317,6 +316,9 @@ pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Arc<[u8]>]) {
         .retain_current_keys(keys.iter().map(AsRef::as_ref));
 }
 impl SemanticClassification {
+    pub(crate) fn identity(&self) -> Arc<u8> {
+        Arc::clone(&self.identity)
+    }
     pub(crate) fn input_write(&self) -> Option<&Arc<InitializerWrite>> {
         self.input.as_ref().map(|input| &input.write)
     }
@@ -415,6 +417,7 @@ impl SemanticClassification {
             }
         };
         Some(Self {
+            identity: Arc::new(0),
             input: None,
             source_features: pending.write.source_features,
             default: pending.write.default.clone(),

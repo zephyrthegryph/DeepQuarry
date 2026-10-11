@@ -18,7 +18,7 @@ pub(super) struct CurrentRoster {
 struct Roster {
     debug_defined: bool,
     canonical: crate::initializer_tokens::CanonicalTokens,
-    accepted: Vec<Arc<artifact::SemanticClassification>>,
+    accepted: Vec<Arc<u8>>,
     tokens: Vec<Option<(u32, Arc<[u8]>)>>,
     groups: Vec<RuntimeGroup>,
 }
@@ -90,11 +90,7 @@ impl CurrentRoster {
     #[allow(clippy::type_complexity)]
     pub(super) fn visit(
         &self,
-        visitor: impl FnOnce(
-            &Vec<Arc<artifact::SemanticClassification>>,
-            &Vec<Option<(u32, Arc<[u8]>)>>,
-            &Vec<RuntimeGroup>,
-        ),
+        visitor: impl FnOnce(&Vec<Arc<u8>>, &Vec<Option<(u32, Arc<[u8]>)>>, &Vec<RuntimeGroup>),
     ) {
         let guard = self.value.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(value) = guard.as_ref() {
@@ -121,7 +117,7 @@ impl CurrentRoster {
     ) -> Result<ClassifiedInitializers, String> {
         let accepted = pending
             .iter()
-            .map(|write| write.accepted.clone())
+            .map(|write| write.accepted.as_ref().map(|value| value.identity()))
             .collect::<Option<Vec<_>>>();
         if let Some(accepted) = &accepted {
             let guard = self.value.lock().unwrap_or_else(|error| error.into_inner());
@@ -153,7 +149,7 @@ impl CurrentRoster {
                     accepted: accepted
                         .iter()
                         .cloned()
-                        .map(ClassificationOwner::new)
+                        .map(ClassificationOwner::from_identity)
                         .map(Some)
                         .collect(),
                     writes,

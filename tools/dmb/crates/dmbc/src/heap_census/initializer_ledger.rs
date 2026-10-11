@@ -6,7 +6,9 @@ impl HeapCensus {
         let owner = "initializer_ledger";
         if self.vec_payload(owner, &classified.accepted) {
             for accepted in classified.accepted.iter().flatten() {
-                accepted.visit(|value| super::initializer_artifacts::classification(self, value));
+                accepted.visit(|value| {
+                    self.arc_object("initializer_classification.identity", value);
+                });
             }
         }
         if self.vec_payload(owner, &classified.writes) {

@@ -50,6 +50,7 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
     if !c.arc_object("initializer_classification.payload", value) {
         return;
     }
+    c.arc_object("initializer_classification.identity", &value.identity());
     if let Some(write) = value.input_write() {
         c.shared_initializer_write("initializer_classification.inputs", write);
     }
@@ -156,7 +157,7 @@ impl HeapCensus {
         store.visit_token_roster(|accepted, tokens, groups| {
             if self.vec_payload("initializer_token_roster.accepted", accepted) {
                 for value in accepted {
-                    classification(self, value);
+                    self.arc_object("initializer_classification.identity", value);
                 }
             }
             if self.vec_payload("initializer_token_roster.tokens", tokens) {

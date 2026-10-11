@@ -98,8 +98,9 @@ impl HeapCensus {
                     self.slice(owner, dimensions, true);
                 }
                 if let Some(accepted) = &input.accepted {
-                    accepted
-                        .visit(|value| super::initializer_artifacts::classification(self, value));
+                    accepted.visit(|value| {
+                        self.arc_object("initializer_classification.identity", value);
+                    });
                 }
             }
             Inputs::Assembly { writes, .. } => {
