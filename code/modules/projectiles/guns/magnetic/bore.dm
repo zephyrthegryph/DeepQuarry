@@ -13,7 +13,8 @@ TRACKED(/obj/item/gun/magnetic/matfed, mat_storage)
 
 CAPABILITIES(/obj/item/gun/magnetic/matfed)
 	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
-	op("matfed_interaction_hand", hand(), then(PROC_REF(matfed_interaction_hand)))
+	// Its own cell removal answers ahead of the magnetic gun's hand op (it declines to it when there is nothing to take out).
+	op("matfed_interaction_hand", hand(), priority(above("interaction_hand")), then(PROC_REF(matfed_interaction_hand)))
 	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
 	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
