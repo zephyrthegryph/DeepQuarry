@@ -4883,3 +4883,72 @@ Only the exact listed semantic rows are refreshed; shared-root files retain unre
 - Miasma grenade starting-fill subtypes: master `d863720479258144cda7572de7b280fa37b32deb` preserves 30 miasma + 5 potassium and 5 sugar + 5 phosphorus in 60-unit beakers. Their initial fill bands 40 and 10 match the existing draw thresholds.
 
 Rifle-cabinet content counts, slime shiny coverage, status overlays and other unproved random appearance rows are excluded. STATE LEAK is a separate fixture failure and is not excused by pin refreshes.
+
+# Native creature/blob/turf look rows: source-only narrow review
+
+Reviewed 238 fresh differing rows: 210 source-attributed exact-row candidates; 28 explicitly held. Only the reviewed 210 rows are refreshed; held rows retain their previous expectations. The new fixture isolates native round_seed/roll_serial and seeds each type before allocation (0e147c0b42), so no runtime or blanket file copy is authorized.
+
+## d863720479 (2026-10-10 23:55:32 -0500)
+
+72 exact rows across `/mob/living/simple_mob/animal/passive/chicken`, `/mob/living/simple_mob/animal/passive/fish/rockfish`, `/mob/living/simple_mob/animal/passive/lizard`, `/mob/living/simple_mob/animal/passive/lizard/large/defensive`, `/mob/living/simple_mob/animal/passive/mouse`, `/mob/living/simple_mob/animal/passive/mouse/event`, `/mob/living/simple_mob/animal/space/carp/station`, `/mob/living/simple_mob/animal/space/mouse_army`, `/mob/living/simple_mob/humanoid/astral_collective`, `/mob/living/simple_mob/humanoid/astral_collective/body`, `/mob/living/simple_mob/humanoid/astral_collective/body/dagger`, `/mob/living/simple_mob/humanoid/astral_collective/body/juggernaught`, `/mob/living/simple_mob/humanoid/astral_collective/mind`, `/mob/living/simple_mob/humanoid/astral_collective/mind/gravity`, `/mob/living/simple_mob/humanoid/astral_collective/purity`, `/mob/living/simple_mob/humanoid/astral_collective/ranged`, `/mob/living/simple_mob/humanoid/astral_collective/ranged/lizard`, `/mob/living/simple_mob/humanoid/astral_collective/ranged/zaddat`, `/mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer`, `/mob/living/simple_mob/shadekin/green`, `/mob/living/simple_mob/shadekin/purple`, `/mob/living/simple_mob/shadekin/red`, `/mob/living/simple_mob/shadekin/yellow`, `/mob/living/simple_mob/shadekin/yellow/retaliate`, `/mob/living/simple_mob/vore/alienanimals/spooky_ghost`, `/mob/living/simple_mob/vore/catgirl`, `/mob/living/simple_mob/vore/lamia/random`, `/mob/living/simple_mob/vore/peasant`, `/mob/living/simple_mob/vore/rabbit`, `/mob/living/simple_mob/vore/raptor`, `/mob/living/simple_mob/vore/squirrel`, `/mob/living/simple_mob/vore/succubus`, `/mob/living/simple_mob/vore/wolftaur`.
+
+Native icon/color roll migration directly changes initialization of this type; exact selected row remains constrained to declared native choices.
+
+native rolls / look_from replaces per-instance world RNG skin/color; repaired type-seeded native fixture now determines repeatable base realization.
+
+roll_coat replaces map_example random world pick with per-type R.choose; repaired type-seeded native fixture now determines repeatable base realization.
+
+rolled experiment_effect now applied through body_effect entry; actual modifier appearance/size follows effect; repaired type-seeded native fixture now determines repeatable base realization.
+
+seeded body color and pixel rolls; repaired type-seeded native fixture now determines repeatable base realization.
+
+seeded lamia kind with matching native look fields; repaired type-seeded native fixture now determines repeatable base realization.
+
+seeded mouse rank roll with matching look_from; repaired type-seeded native fixture now determines repeatable base realization.
+
+## d863720479 (2026-10-10 23:55:32 -0500)
+
+88 exact rows across `/mob/living/simple_mob/animal/passive/fish/icebass`, `/mob/living/simple_mob/animal/sif/glitterfly`, `/mob/living/simple_mob/animal/sif/glitterfly/tidy`, `/mob/living/simple_mob/vore/bigdragon`, `/mob/living/simple_mob/vore/bigdragon/friendly`, `/mob/living/simple_mob/vore/bigdragon/friendly/maintpred`, `/mob/living/simple_mob/vore/zorgoia`, `/mob/living/simple_mob/vore/zorgoia/tamed`.
+
+actual roll handler switches world pick/rand to per-declaration R.choose/R.number; palettes/body styles are newly deterministic, not fixture unseeded randomness; repaired type-seeded native fixture now determines repeatable base realization.
+
+## abdeeddb24 (2026-10-11 00:24:14 -0500)
+
+44 exact rows across `/obj/structure/blob`, `/obj/structure/blob/core/blazing_oil`, `/obj/structure/blob/core/classic`, `/obj/structure/blob/core/ectoplasmic_horror`, `/obj/structure/blob/core/electromagnetic_web`, `/obj/structure/blob/core/energized_jelly`, `/obj/structure/blob/core/explosive_lattice`, `/obj/structure/blob/core/fabrication_swarm`, `/obj/structure/blob/core/fulminant_organism`, `/obj/structure/blob/core/grey_goo`, `/obj/structure/blob/core/living_agate`, `/obj/structure/blob/core/player`, `/obj/structure/blob/core/pressurized_slime`, `/obj/structure/blob/core/radioactive_ooze`, `/obj/structure/blob/core/random_easy`, `/obj/structure/blob/core/random_medium`, `/obj/structure/blob/core/reactive_spines`, `/obj/structure/blob/core/shifting_fragments`, `/obj/structure/blob/core/volatile_alluvium`, `/obj/structure/blob/factory/turret`, `/obj/structure/blob/shield`, `/obj/structure/blob/shield/core`.
+
+Inherited native rolls(dir,pick_one(NORTH,SOUTH,EAST,WEST)) replaces constructor pick(GLOB.cardinal); repaired type-seeded native stream selects another valid cardinal.
+
+## 11357e0b79 (2026-10-10 23:19:25 -0500)
+
+6 exact rows across `/turf/simulated/floor/outdoors/newdirt`, `/turf/simulated/floor/outdoors/newdirt/virgo3c`, `/turf/simulated/floor/outdoors/sidewalk/slab`.
+
+Dirt/sidewalk weighted flooring selection becomes native rolls; type-seeded fixture changes selected variant, preserving declared weights.
+
+## 3463e8ac1f (2026-10-10 17:20:28 -0500)
+
+6 exact rows across `/turf/simulated/floor/glass`, `/turf/simulated/floor/glass/reinforced`, `/turf/simulated/floor/glass/reinforced/virgo3c`.
+
+Native draw explicitly emits empty base state while transparent-level and blending effects remain; inherited glass subtypes lose old temporary base sprite.
+
+## 68e9f5ae83 (2026-10-10 16:07:23 -0500)
+
+2 exact rows across `/turf/simulated/shuttle/floor/alien`.
+
+Native roll_look uses R.number(1,9) instead of constructor world rand; alienpod state selection is now type-seeded.
+
+## Held producer/harness distinctions
+
+`/mob/living/simple_mob/animal/passive/bird/parrot/eclectus`: Existing native sex roll predates current master migration (85f8779132). This lane intentionally adds type-seeded native isolation, changing deterministic fixture choice from male to female; not a new master content change.
+
+`/mob/living/simple_mob/vore/alienanimals/teppi/baby`: Number/name rolls moved before setup; setup still picks actual palette through world RNG. Eye overlay now has no color, unlike old nonnull eye palette; ordering alone has not proved why eye_color is null.
+
+`/mob/living/simple_mob/vore/alienanimals/teppi/mutant`: Number/name rolls moved before setup; setup still picks actual palette through world RNG. Eye overlay now has no color, unlike old nonnull eye palette; ordering alone has not proved why eye_color is null.
+
+`/mob/living/simple_mob/vore/alienanimals/teppi`: Number/name rolls moved before setup; setup still picks actual palette through world RNG. Eye overlay now has no color, unlike old nonnull eye palette; ordering alone has not proved why eye_color is null.
+
+`/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube`: Existing saturated-colour native producer predates current master migration (85f8779132). Type-seeded native isolation chooses another valid saturated color; own harness cause, not d863 master migration.
+
+Teppi needs actual setup and tracked eye field investigation: neither relocation to setup nor native numbered-name sampling on its own explains a colorless eye overlay. Eclectus and gelatinous cube are own harness seed differences; do not cite a new master source change for them.
+
+
+Additional HOLD: all eight /mob/living/simple_mob/animal/sif/glitterfly/tidy rows are new whole-type coverage (including AI debug/win32 overlays), not only a rolled color. They need constructor/type-coverage attribution before acceptance. Final exact candidates210; held28.
