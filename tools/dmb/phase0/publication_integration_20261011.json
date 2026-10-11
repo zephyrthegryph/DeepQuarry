@@ -648,7 +648,20 @@
     "relative_diagnostics_agree": false,
     "relative_gap": "Missing relative reference correctly rejects, but ordinary procedure omits nameof and return recovery diagnostics",
     "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-130426-88c2a001/receipt.json",
-    "cohort_status": "running; no admitted complete benchmark",
-    "scope": "Prototype profile, no full runtime or six-worktree acceptance"
+    "cohort_status": "passed all four fresh native DMB/RSC byte oracles; BYOND structural admission remains open",
+    "scope": "Prototype profile, no full runtime or six-worktree acceptance",
+    "end_to_end_client_seconds": {
+      "initial": 127.48482779995538,
+      "unchanged": 2.0282464999472722,
+      "body": 76.0277628999902,
+      "new_variable": 92.40090869995765
+    },
+    "measured_profile": "dmbc opt0, tree/codegen opt2, two workers; prototype, acceptance_profile=false",
+    "sampled_owned_peak_private_bytes": 6366347264,
+    "strict_private_peak_proved": false,
+    "byond_structural_admission": "open; complete=false, positional differences not classified semantic bug count",
+    "list_index_runtime_receipt": "E:/dq-cache/dmb-list-index-runtime/20261011-a7d86b/929cac15d50341c7a8edfb89a63cee29/receipt.json",
+    "list_index_runtime_matches": true,
+    "focused11_status": "running latest real source, two workers, owned6GiB job, compile/runtime child watchdogs; no full runtime baseline"
   }
 }
