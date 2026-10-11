@@ -204,8 +204,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FIT
 	icon_state = "tesh_cloak_hos"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
@@ -215,8 +217,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_
 	icon_state = "tesh_cloak_sec"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
@@ -499,8 +503,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak, fit_spec, list(REQ
 	icon_state = "tesh_beltcloak_sec"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 
@@ -530,8 +536,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_stor
 	icon_state = "tesh_beltcloak_hos"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.6
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
 

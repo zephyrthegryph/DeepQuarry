@@ -284,6 +284,9 @@ CAPABILITIES(/obj/machinery/item_bank)
 	persist_storable = FALSE
 /obj/item/clothing/head/helmet/space/void
 	persist_storable = FALSE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 /obj/item/clothing/suit/space/void
 	persist_storable = FALSE
 /obj/item/grab

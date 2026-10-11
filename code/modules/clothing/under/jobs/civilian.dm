@@ -98,8 +98,10 @@
 	name = "botanist's jumpsuit"
 	icon_state = "hydroponics"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	permeability_coefficient = 0.50
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/hydroponics/alt
 	icon_state = "hydro"

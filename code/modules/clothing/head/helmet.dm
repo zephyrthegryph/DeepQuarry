@@ -7,9 +7,6 @@
 	flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	flags_inv = HIDEEARS|BLOCKHEADHAIR
-	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 	resistance_flags = FIRE_PROOF
@@ -46,14 +43,18 @@
 	desc = "A tan helmet made from advanced ceramic. Comfortable and robust."
 	icon_state = "helmet_tac"
 	armor_spec = "melee=50;bullet=60;laser=60;energy=45;bomb=30"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/head/helmet/tac)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/head/helmet/merc
 	name = "combat helmet"
 	desc = "A heavily reinforced helmet painted with red markings. Feels like it could take a lot of punishment."
 	icon_state = "helmet_merc"
 	armor_spec = "melee=70;bullet=70;laser=70;energy=35;bomb=30"
-	siemens_coefficient = 0.5
+
+CAPABILITIES(/obj/item/clothing/head/helmet/merc)
+	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/head/helmet/riot
 	name = "riot helmet"
@@ -61,13 +62,13 @@
 	icon_state = "riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
-	siemens_coefficient = 0.7
 	valid_accessory_slots = null
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 	var/name_descriptor = "riot helmet" // for visor toggle messages
 
 CAPABILITIES(/obj/item/clothing/head/helmet/riot)
+	configure(item_protection(siemens = 0.7))
 	op("riot_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(riot_visor_self)))
 
 /// Old attack_self.
@@ -87,8 +88,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	icon_state = "helmet_reflec"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
 	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
-	siemens_coefficient = 0.1
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/laserproof)
+	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/head/helmet/bulletproof
 	name = "bullet-resistant helmet"
@@ -96,8 +99,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	icon_state = "helmet_bulletproof"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
 	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
-	siemens_coefficient = 0.7
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/bulletproof)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/helmet/combat
 	name = "combat helmet"
@@ -106,29 +111,32 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
-	siemens_coefficient = 0.6
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/combat)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/head/helmet/flexitac
 	name = "tactical light helmet"
 	desc = "A tan helmet made from advanced ceramic with an integrated tactical flashlight."
 	icon_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
-	siemens_coefficient = 0.6
 	light_range = 6
 	light_overlay = "helmet_light_dual_green"
 	actions_types = list(/datum/action/item_action/toggle_head_light)
-	min_cold_protection_temperature = T0C - 20
-	cold_protection = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/helmet/flexitac)
+	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = HEAD))
 
 /obj/item/clothing/head/helmet/explorer
 	name = "explorer hood"
 	desc = "An armoured hood for exploring harsh environments."
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/explorer)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.9))
 
 /obj/item/clothing/head/helmet/swat
 	name = "\improper SWAT helmet"
@@ -136,17 +144,19 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	icon_state = "swat"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.5
+
+CAPABILITIES(/obj/item/clothing/head/helmet/swat)
+	configure(item_protection(cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.5))
 
 /obj/item/clothing/head/helmet/alien
 	name = "alien helmet"
 	desc = "It's quite larger than your head, but it might still protect it."
 	icon_state = "alienhelmet"
-	siemens_coefficient = 0.4
 	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/alien)
+	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/head/helmet/alien/tank
 	name = "alien warhelm"
@@ -157,9 +167,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	desc = span_italics("'Let the battle commence!'")
 	icon_state = "thunderdome"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=10;bomb=25;bio=10"
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/head/helmet/thunderdome)
+	configure(item_protection(cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 1))
 
 /obj/item/clothing/head/helmet/gladiator
 	name = "gladiator helmet"
@@ -167,8 +177,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	icon_state = "gladiator"
 	item_state_slots = list(slot_r_hand_str = "vhelmet", slot_l_hand_str = "vhelmet")
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
-	siemens_coefficient = 1
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/gladiator)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/head/helmet/tactical
 	name = "tactical helmet"
@@ -182,8 +194,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 
 	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 	flags_inv = HIDEEARS|BLOCKHAIR
-	siemens_coefficient = 0.7
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/tactical)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/helmet/augment
 	name = "Augment Array"
@@ -192,10 +206,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	item_state_slots = list(slot_r_hand_str = "head_m", slot_l_hand_str = "head_m")
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.5
 	valid_accessory_slots = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/augment)
+	configure(item_protection(cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.5))
 
 //Non-hardsuit ERT helmets.
 /obj/item/clothing/head/helmet/ert
@@ -260,7 +274,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	desc = "ye olde armored helmet"
 	icon_state = "crusader"
 	armor_spec = "melee=80;bullet=50;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/head/helmet/combat/crusader)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/helmet/combat/bedevere
 	name = "bedevere's helmet"
@@ -268,13 +284,13 @@ CAPABILITIES(/obj/item/clothing/head/helmet/riot)
 	icon_state = "bedevere_helmet"
 	armor_spec = "melee=80;bullet=50;laser=10"
 	tint = TINT_HEAVY
-	siemens_coefficient = 2
 
 	var/base_state
 	var/up = FALSE
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
+	configure(item_protection(siemens = 2))
 	op("bedevere_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(bedevere_visor_self)))
 	op("bedevere_toggle_verb", menu(), label("Adjust helmet visor"), needs(carried()), then(PROC_REF(bedevere_toggle_verb_op)))
 
@@ -322,7 +338,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 	desc = "ye olde armored helmet"
 	icon_state = "crusader"
 	armor_spec = ""
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/head/helmet/combat/crusader_costume)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/head/helmet/combat/bedevere_costume
 	name = "bedevere's costume helmet"
@@ -330,13 +348,13 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 	icon_state = "bedevere_helmet"
 	armor_spec = ""
 	tint = TINT_HEAVY
-	siemens_coefficient = 1
 
 	var/base_state
 	var/up = FALSE
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
+	configure(item_protection(siemens = 1))
 	op("bedevere_costume_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(bedevere_costume_visor_self)))
 	op("bedevere_costume_toggle_verb", menu(), label("Adjust helmet visor"), needs(carried()), then(PROC_REF(bedevere_costume_toggle_verb_op)))
 

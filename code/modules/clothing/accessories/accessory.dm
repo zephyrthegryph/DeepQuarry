@@ -178,9 +178,10 @@ CAPABILITIES(/obj/item/clothing/accessory)
 	desc = "Cylindrical looking tubes that go over your arms, weird."
 	slot_flags = SLOT_OCLOTHING | SLOT_GLOVES | SLOT_TIE
 	body_parts_covered = ARMS
-	heat_protection = ARMS
-	cold_protection = ARMS
 	icon_state = "maid_arms"
+
+CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
+	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
 /obj/item/clothing/accessory/stethoscope
 	name = "stethoscope"

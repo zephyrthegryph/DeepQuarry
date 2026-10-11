@@ -88,10 +88,11 @@
 	desc = "A basic armor plate made of steel-reinforced synthetic fibers. Attaches to a plate carrier."
 	icon_state = "armor_light"
 	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
 	armor_spec = "melee=30;bullet=15;laser=40;energy=10;bomb=25"
 	slot = ACCESSORY_SLOT_ARMOR_C
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate)
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST))
 
 /obj/item/clothing/accessory/armor/armorplate/explorer
 	name = "explorer armor plate"
@@ -135,7 +136,9 @@
 	icon_state = "armor_ballistic"
 	slowdown = 0.5
 	armor_spec = "melee=10;bullet=70;laser=10;energy=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armorplate/riot
 	name = "riot armor plate"
@@ -143,7 +146,9 @@
 	icon_state = "armor_riot"
 	slowdown = 0.5
 	armor_spec = "melee=70;bullet=10;laser=10;energy=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/riot)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armorplate/laserproof
 	name = "ablative armor plate"
@@ -151,7 +156,9 @@
 	icon_state = "armor_ablative"
 	slowdown = 0.5
 	armor_spec = "melee=10;bullet=10;laser=70;energy=50"
-	siemens_coefficient = 0.1
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/laserproof)
+	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/accessory/armor/armorplate/laserproof/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(istype(damage_source, /obj/item/projectile/energy) || istype(damage_source, /obj/item/projectile/beam))
@@ -185,10 +192,11 @@
 	icon_state = "armguards"
 	gender = PLURAL
 	body_parts_covered = ARMS
-	heat_protection = ARMS
-	cold_protection = ARMS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_A
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards)
+	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
 /obj/item/clothing/accessory/armor/armguards/blue
 	desc = "A pair of blue arm pads reinforced with armor plating. Attaches to a plate carrier."
@@ -223,24 +231,30 @@
 	desc = "These arm guards will protect your arms from energy weapons."
 	icon_state = "armguards_ablative"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	siemens_coefficient = 0.1 //These don't cover the hands, so the siemens doesn't need to be worse than normal ablative.
 	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/laserproof)
+	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/accessory/armor/armguards/bulletproof
 	name = "bullet resistant arm guards"
 	desc = "These arm guards will protect your arms from ballistic weapons."
 	icon_state = "armguards_ballistic"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	siemens_coefficient = 0.7
 	armor_spec = "melee=10;bullet=80;laser=10;energy=50"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/bulletproof)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armguards/riot
 	name = "riot arm guards"
 	desc = "These arm guards will protect your arms from close combat weapons."
 	icon_state = "armguards_riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	siemens_coefficient = 0.5
 	armor_spec = "melee=80;bullet=10;laser=10;energy=50"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/riot)
+	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/accessory/armor/armguards/security
 	name = "security arm guards"
@@ -263,10 +277,11 @@
 	icon_state = "legguards"
 	gender = PLURAL
 	body_parts_covered = LEGS
-	heat_protection = LEGS
-	cold_protection = LEGS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_L
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards)
+	configure(item_protection(heat_parts = LEGS, cold_parts = LEGS))
 
 /obj/item/clothing/accessory/armor/legguards/blue
 	desc = "A pair of armored leg pads in blue. Attaches to a plate carrier."
@@ -301,24 +316,30 @@
 	desc = "These will protect your legs from energy weapons."
 	icon_state = "legguards_ablative"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	siemens_coefficient = 0.1
 	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/laserproof)
+	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/accessory/armor/legguards/bulletproof
 	name = "bullet resistant leg guards"
 	desc = "These will protect your legs from ballistic weapons."
 	icon_state = "legguards_ballistic"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	siemens_coefficient = 0.7
 	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/bulletproof)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/legguards/riot
 	name = "riot leg guards"
 	desc = "These will protect your legs from close combat weapons."
 	icon_state = "legguards_riot"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	siemens_coefficient = 0.5
 	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/riot)
+	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/accessory/armor/legguards/security
 	name = "security leg guards"

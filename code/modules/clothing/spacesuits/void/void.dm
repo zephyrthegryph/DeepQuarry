@@ -5,9 +5,6 @@
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 10 * ONE_ATMOSPHERE
 
 
 	//Species-specific stuff.
@@ -26,9 +23,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BO
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
 	slowdown = 0.5
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 10 * ONE_ATMOSPHERE
 	special_hood_handling = TRUE
 	actions_types = list(/datum/action/item_action/toggle_helmet)
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
@@ -62,6 +56,7 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
 	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
@@ -335,8 +330,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.6
 	camera_networks = list(NETWORK_MERCENARY)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/syndicate_contract)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/syndicate_contract
 	name = "syndicate contract suit"
@@ -344,7 +341,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/head/helmet/space/void/chrono
 	name = "chrono-helmet"
@@ -366,13 +365,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"
 	slowdown = 0.5
-	siemens_coefficient = 1
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = null
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
+	configure(item_protection(siemens = 1))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 

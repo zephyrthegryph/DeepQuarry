@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_replika, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/replika)
+	configure(item_protection(siemens = 0.9))
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

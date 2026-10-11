@@ -22,9 +22,11 @@
 	name = "security undersuit"
 	desc = "A reinforced undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for those in Security, and has slight protective capabilities against simple melee attacks."
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	icon_state = "bodysuit_sec"
 	item_state = "bodysuit_sec"
+
+CAPABILITIES(/obj/item/clothing/under/undersuit/sec)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/undersuit/sec/hos
 	name = "security command undersuit"

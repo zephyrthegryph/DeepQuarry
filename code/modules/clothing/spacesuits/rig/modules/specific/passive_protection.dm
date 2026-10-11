@@ -135,25 +135,25 @@
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
-	stored_max_pressure = holder.max_pressure_protection
-	stored_max_temp = holder.max_heat_protection_temperature
+	stored_max_pressure = protection_of(holder).max_pressure
+	stored_max_temp = protection_of(holder).max_heat
 
 	to_chat(H, span_boldnotice("You activate your suit's powered atmospheric shielding."))
 
 	if(boots)
-		boots.max_pressure_protection = INFINITY
-		boots.max_heat_protection_temperature = INFINITY
+		boots.set_max_pressure_protection(INFINITY)
+		boots.set_max_heat_protection_temperature(INFINITY)
 	if(chest)
-		chest.max_pressure_protection = INFINITY
-		chest.max_heat_protection_temperature = INFINITY
+		chest.set_max_pressure_protection(INFINITY)
+		chest.set_max_heat_protection_temperature(INFINITY)
 	if(helmet)
-		helmet.max_pressure_protection = INFINITY
-		helmet.max_heat_protection_temperature = INFINITY
+		helmet.set_max_pressure_protection(INFINITY)
+		helmet.set_max_heat_protection_temperature(INFINITY)
 	if(gloves)
-		gloves.max_pressure_protection = INFINITY
-		gloves.max_heat_protection_temperature = INFINITY
-	holder.max_pressure_protection = INFINITY
-	holder.max_heat_protection_temperature = INFINITY
+		gloves.set_max_pressure_protection(INFINITY)
+		gloves.set_max_heat_protection_temperature(INFINITY)
+	holder.set_max_pressure_protection(INFINITY)
+	holder.set_max_heat_protection_temperature(INFINITY)
 	H?.worn_protection_changed()
 
 /obj/item/rig_module/atmos_shield/deactivate(forced = FALSE, mob/user)
@@ -170,19 +170,19 @@
 	to_chat(H, span_boldnotice("You deactivate your suit's powered atmospheric shielding."))
 
 	if(boots)
-		boots.max_pressure_protection = stored_max_pressure
-		boots.max_heat_protection_temperature = stored_max_temp
+		boots.set_max_pressure_protection(stored_max_pressure)
+		boots.set_max_heat_protection_temperature(stored_max_temp)
 	if(chest)
-		chest.max_pressure_protection = stored_max_pressure
-		chest.max_heat_protection_temperature = stored_max_temp
+		chest.set_max_pressure_protection(stored_max_pressure)
+		chest.set_max_heat_protection_temperature(stored_max_temp)
 	if(helmet)
-		helmet.max_pressure_protection = stored_max_pressure
-		helmet.max_heat_protection_temperature = stored_max_temp
+		helmet.set_max_pressure_protection(stored_max_pressure)
+		helmet.set_max_heat_protection_temperature(stored_max_temp)
 	if(gloves)
-		gloves.max_pressure_protection = stored_max_pressure
-		gloves.max_heat_protection_temperature = stored_max_temp
-	holder.max_pressure_protection = stored_max_pressure
-	holder.max_heat_protection_temperature = stored_max_temp
+		gloves.set_max_pressure_protection(stored_max_pressure)
+		gloves.set_max_heat_protection_temperature(stored_max_temp)
+	holder.set_max_pressure_protection(stored_max_pressure)
+	holder.set_max_heat_protection_temperature(stored_max_temp)
 
 	stored_max_pressure = 0
 	stored_max_temp = 0
@@ -231,18 +231,18 @@
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
 	to_chat(H, span_boldnotice("You activate your suit's powered faraday shielding."))
-	stored_siemens_coefficient = holder.siemens_coefficient
+	stored_siemens_coefficient = protection_of(holder).siemens
 	if(gloves)
-		stored_gloves_siemens_coefficient = gloves.siemens_coefficient
+		stored_gloves_siemens_coefficient = protection_of(gloves).siemens
 	if(boots)
-		boots.siemens_coefficient = 0
+		boots.set_siemens_coefficient(0)
 	if(chest)
-		chest.siemens_coefficient = 0
+		chest.set_siemens_coefficient(0)
 	if(helmet)
-		helmet.siemens_coefficient = 0
+		helmet.set_siemens_coefficient(0)
 	if(gloves)
-		gloves.siemens_coefficient = 0
-	holder.siemens_coefficient = 0
+		gloves.set_siemens_coefficient(0)
+	holder.set_siemens_coefficient(0)
 	H?.worn_protection_changed()
 
 /obj/item/rig_module/faraday_shield/deactivate(forced = FALSE, mob/user)
@@ -259,14 +259,14 @@
 	to_chat(H, span_boldnotice("You deactivate your suit's powered faraday shielding."))
 
 	if(boots)
-		boots.siemens_coefficient = stored_siemens_coefficient
+		boots.set_siemens_coefficient(stored_siemens_coefficient)
 	if(chest)
-		chest.siemens_coefficient = stored_siemens_coefficient
+		chest.set_siemens_coefficient(stored_siemens_coefficient)
 	if(helmet)
-		helmet.siemens_coefficient = stored_siemens_coefficient
+		helmet.set_siemens_coefficient(stored_siemens_coefficient)
 	if(gloves)
-		gloves.siemens_coefficient = stored_gloves_siemens_coefficient
-	holder.siemens_coefficient = stored_siemens_coefficient
+		gloves.set_siemens_coefficient(stored_gloves_siemens_coefficient)
+	holder.set_siemens_coefficient(stored_siemens_coefficient)
 
 	stored_siemens_coefficient = 0
 	H?.worn_protection_changed()

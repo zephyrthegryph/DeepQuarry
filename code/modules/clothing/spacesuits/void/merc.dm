@@ -5,9 +5,11 @@
 	icon_state = "rig0-syndie"
 	item_state_slots = list(slot_r_hand_str = "syndie_helm", slot_l_hand_str = "syndie_helm")
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.6
 	camera_networks = list(NETWORK_MERCENARY)
 	light_overlay = "helmet_light_green" //todo: species-specific light overlays
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/merc
 	icon_state = "rig-syndie"
@@ -16,9 +18,11 @@
 	item_state_slots = list(slot_r_hand_str = "syndie_voidsuit", slot_l_hand_str = "syndie_voidsuit")
 	w_class = ITEMSIZE_NORMAL
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.6
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/merc)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/merc, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY))))
 
@@ -27,23 +31,21 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/merc, suit_storage_spec, list(HOLD
 	name = "soot-covered voidsuit helmet"
 	desc = "A blackened helmet that has had many of its protective plates coated in or replaced with high-grade thermal insulation, to protect against incineration. Property of Gorlex Marauders."
 	armor_spec = "melee=40;bullet=40;laser=60;energy=20;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 20* ONE_ATMOSPHERE
-	siemens_coefficient = 0.7
 	light_overlay = "helmet_light_fire"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc/fire)
+	configure(item_protection(max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/merc/fire
 	icon_state = "rig-firebug"
 	name = "soot-covered voidsuit"
 	desc = "A blackened suit that has had many of its protective plates coated in or replaced with high-grade thermal insulation, to protect against incineration. Property of Gorlex Marauders."
 	armor_spec = "melee=50;bullet=40;laser=60;energy=20;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 20* ONE_ATMOSPHERE
-	siemens_coefficient = 0.7
 	breach_threshold = 18 //Super Extra Thicc
 	slowdown = 1
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/merc/fire)
+	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.7))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/merc/fire, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, /obj/item/material/twohanded/fireaxe, /obj/item/flamethrower))))
 

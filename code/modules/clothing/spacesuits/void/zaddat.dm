@@ -6,7 +6,9 @@
 	body_parts_covered = HEAD|FACE|EYES
 	slowdown = 0.5
 	armor_spec = "bio=100;rad=70;cold=60" //realistically would have some armor but balance.
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
+	configure(item_protection(siemens = 1))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN))))
 
@@ -16,7 +18,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/zaddat, fit_spec, list(REQ_
 	desc = "A Hegemony environment suit, still favored by the Spacer Zaddat because of its durability and ease of manufacture."
 	slowdown = 1
 	armor_spec = "bio=100;rad=70;cold=60"
-	siemens_coefficient = 1
 	icon_state = "zaddat_hegemony"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat //shrouds come with helmets built-in
 	var/has_been_customized = FALSE
@@ -30,6 +31,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, suit_storage_spec, list(HO
 MSG_DEF_SELF(zaddat/has_been_customized, "This shroud has already been customized.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
+	configure(item_protection(siemens = 1))
 	op("zaddat_custom_suit_verb", menu(), label("Customize Shroud"), needs(carried(), req_is(nameof(has_been_customized), FALSE, because = MSG(zaddat/has_been_customized))), then(PROC_REF(zaddat_custom_suit_verb)))
 
 /// Old verb "Customize Shroud": ask which style, then zaddat_customize() applies it.

@@ -164,16 +164,16 @@
 	var/pressure_adjustment_coefficient = 1 // Assume no protection at first.
 
 	// Check suit
-	if(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).max_pressure_protection != null && get_equipped_item(SLOT_ID_SUIT).min_pressure_protection != null)
+	if(get_equipped_item(SLOT_ID_SUIT) && protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure != null && protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure != null)
 		pressure_adjustment_coefficient = 0
 		// Pressure is too high
-		if(get_equipped_item(SLOT_ID_SUIT).max_pressure_protection < pressure)
+		if(protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure < pressure)
 			// Protection scales down from 100% at the boundary to 0% at 10% in excess of the boundary
-			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_SUIT).max_pressure_protection) / (get_equipped_item(SLOT_ID_SUIT).max_pressure_protection/10))
+			pressure_adjustment_coefficient += round((pressure - protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure) / (protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure/10))
 
 		// Pressure is too low
-		if(get_equipped_item(SLOT_ID_SUIT).min_pressure_protection > pressure)
-			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_SUIT).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_SUIT).min_pressure_protection/10))
+		if(protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure > pressure)
+			pressure_adjustment_coefficient += round((protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure - pressure) / (protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure/10))
 
 		// Handles breaches in your space suit. 10 suit damage equals a 100% loss of pressure protection.
 		if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space))
@@ -186,15 +186,15 @@
 		pressure_adjustment_coefficient = 1
 
 	// Check hat
-	if(get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).max_pressure_protection != null && get_equipped_item(SLOT_ID_HEAD).min_pressure_protection != null)
+	if(get_equipped_item(SLOT_ID_HEAD) && protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure != null && protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure != null)
 		// Pressure is too high
-		if(get_equipped_item(SLOT_ID_HEAD).max_pressure_protection < pressure)
+		if(protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure < pressure)
 			// Protection scales down from 100% at the boundary to 0% at 20% in excess of the boundary
-			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_HEAD).max_pressure_protection) / (get_equipped_item(SLOT_ID_HEAD).max_pressure_protection/20))
+			pressure_adjustment_coefficient += round((pressure - protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure) / (protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure/20))
 
 		// Pressure is too low
-		if(get_equipped_item(SLOT_ID_HEAD).min_pressure_protection > pressure)
-			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_HEAD).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_HEAD).min_pressure_protection/20))
+		if(protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure > pressure)
+			pressure_adjustment_coefficient += round((protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure - pressure) / (protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure/20))
 
 	else
 		// Missing key protection
@@ -1043,8 +1043,8 @@
 	var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
 	var/obj/item/suit = src.get_equipped_item(SLOT_ID_SUIT)
 	var/obj/item/helmet = src.get_equipped_item(SLOT_ID_HEAD)
-	if(suit?.min_pressure_protection && helmet?.min_pressure_protection)
-		exposure *= max(suit.min_pressure_protection, helmet.min_pressure_protection) / ONE_ATMOSPHERE
+	if(protection_of(suit).min_pressure && protection_of(helmet).min_pressure)
+		exposure *= max(protection_of(suit).min_pressure, protection_of(helmet).min_pressure) / ONE_ATMOSPHERE
 	src.body?.add_restriction(src, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 
 /// MED-6: at its set point, with no heat source of its own, the body has nothing to regulate.

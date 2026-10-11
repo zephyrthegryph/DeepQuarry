@@ -409,6 +409,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 //Secbot Construction
 
 CAPABILITIES(/obj/item/clothing/head/helmet)
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("helmet_secbot_signaler", item(/obj/item/assembly/signaler), label("Add signaler"), then(PROC_REF(helmet_secbot_signaler)))
 

@@ -18,8 +18,10 @@
 	icon_state = "altevian-pants-sec"
 	worn_state = "altevian-pants-sec"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian/security)
+
+CAPABILITIES(/obj/item/clothing/under/pants/altevian/security)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/pants/altevian/engineering
 	name = "Altevian Hegemony Engineering Pants"
@@ -69,9 +71,11 @@
 /obj/item/clothing/under/altevian/sec
 	name = "Altevian Security Duty Jumpsuit"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	icon_state = "altevian-specialist-sec"
 	worn_state = "altevian-specialist-sec"
+
+CAPABILITIES(/obj/item/clothing/under/altevian/sec)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/altevian/eng
 	name = "Altevian Engineering Duty Jumpsuit"

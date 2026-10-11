@@ -70,11 +70,11 @@
 	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian)
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/hawaiian/blue
 	name = "blue hawaiian shirt"
@@ -129,11 +129,11 @@ CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
 	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/tropical)
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/tropical/green
 	name = "puke-green tropical shirt"
@@ -184,18 +184,17 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	icon_state = "classicponcho"
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
-	max_heat_protection_temperature = T0C+100
 	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST|ARMS|LEGS
-	heat_protection = CHEST|ARMS|LEGS
-	cold_protection = CHEST|ARMS|LEGS
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi'
 	)
+
+CAPABILITIES(/obj/item/clothing/accessory/poncho)
+	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
 
 //This is really scuffed and needs fixing sometime.
 
@@ -278,8 +277,9 @@ TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONL
 	icon_state = "qmcloak"
 	item_state = "qmcloak"
 	body_parts_covered = null
-	heat_protection = null
-	cold_protection = null
+
+CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
+	configure(item_protection(heat_parts = TRAIT_NONE, cold_parts = TRAIT_NONE))
 
 /obj/item/clothing/accessory/poncho/roles/cloak/ce
 	name = "chief engineer's cloak"
@@ -388,11 +388,11 @@ TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONL
 	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/wcoat)
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -452,13 +452,11 @@ TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY
 	icon_state = "sweater"
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = CHEST|ARMS
-	heat_protection = CHEST|ARMS
-	cold_protection = CHEST|ARMS
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE-275 //325k/125F
-	min_cold_protection_temperature = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE+80 //240K/-27F
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/sweater)
+	configure(item_protection(heat_parts = CHEST|ARMS, cold_parts = CHEST|ARMS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE-275, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE+80, siemens = 0.9))
 
 /obj/item/clothing/accessory/sweater/pink
 	name = "pink sweater"
@@ -578,7 +576,6 @@ TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY
 	item_state_slots = list(SLOT_ID_RIGHT_HAND = "armor", SLOT_ID_LEFT_HAND = "armor")
 	slot_flags = SLOT_OCLOTHING | SLOT_TIE
 	body_parts_covered = UPPER_TORSO|ARMS
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 

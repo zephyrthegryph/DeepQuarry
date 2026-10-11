@@ -93,6 +93,8 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 /proc/type_trait_of(datum/holder, kind)
 	READS_FROM() // the domain's reader names the key it reads as (READS_AS), and its setters publish it
 	RETURN_TYPE(/datum/type_trait)
+	if(isnull(holder))
+		return type_trait_default(kind) // a read through an empty slot (worn?.x): the kind's defaults
 	var/datum/type_trait/own = holder.type_trait_overrides?[kind]
 	if(own)
 		return own

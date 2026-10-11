@@ -33,7 +33,9 @@
 /obj/item/clothing/shoes/white
 	name = "white shoes"
 	icon_state = "white"
-	permeability_coefficient = 0.01
+
+CAPABILITIES(/obj/item/clothing/shoes/white)
+	configure(item_protection(permeability = 0.01))
 
 /obj/item/clothing/shoes/rainbow
 	name = "rainbow shoes"

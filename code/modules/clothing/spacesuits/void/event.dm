@@ -30,9 +30,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb, suit_storage_spec, list(HO
 	icon_state = "rig0-vintageengi"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
-	min_pressure_protection = 0  * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
+	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 /obj/item/clothing/suit/space/void/refurb/engineering
 	name = "vintage engineering voidsuit"
@@ -41,10 +41,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb, suit_storage_spec, list(HO
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	slowdown = 1
 	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
-	min_pressure_protection = 0  * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 	breach_threshold = 14 //These are kinda thicc
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
+	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 //Medical Crewsuit (GREEN, CROSS)
 //This thing is basically tissuepaper, but it has very solid rad protection for its age
@@ -80,7 +80,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/medical, suit_storage_spec,
 	icon_state = "rig0-vintagemarine"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/suit/space/void/refurb/marine
 	name = "vintage marine's voidsuit"
@@ -91,7 +93,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/medical, suit_storage_spec,
 	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/marine)
+	configure(item_protection(siemens = 0.8))
 
 //Officer Crewsuit (GOLD, X)
 //The best of the bunch - at the time, this would have been almost cutting edge
@@ -104,7 +108,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/marine, suit_storage_spec, 
 	icon_state = "rig0-vintageofficer"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/refurb/officer
 	name = "vintage officer's voidsuit"
@@ -115,7 +121,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/marine, suit_storage_spec, 
 	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/officer)
+	configure(item_protection(siemens = 0.7))
 
 //Pilot Crewsuit (ROYAL BLUE, I)
 //The lightest weight of the lot, but protection is about the same as the crew variant's. It has an extra helmet variant for those who prefer that design.
@@ -127,7 +135,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/officer, suit_storage_spec,
 	icon_state = "rig0-vintagepilot"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
+	configure(item_protection(siemens = 0.9))
 
 //fluff alt-variant helmet, no changes to protection or anything despite the desc (and it wouldn't matter unless you found a base-type since armor values aren't transferred during refits)
 /obj/item/clothing/head/helmet/space/void/refurb/pilot/alt
@@ -142,7 +152,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/officer, suit_storage_spec,
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	slowdown = 0
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
+	configure(item_protection(siemens = 0.9))
 
 //Scientist Crewsuit (PURPLE, O)
 //Baseline values are slightly worse than the gray crewsuit, but it has significantly better Energy protection and is the only other suit with 100% rad immunity besides the engi suit
@@ -154,7 +166,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/pilot, suit_storage_spec, l
 	icon_state = "rig0-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/research)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/helmet/space/void/refurb/research/alt
 	name = "vintage research voidsuit bubble helmet"
@@ -167,7 +181,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/pilot, suit_storage_spec, l
 	icon_state = "rig-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
+	configure(item_protection(siemens = 0.8))
 
 //Miner's Crewsuit (BROWN)
 //Basically just the basic suit, but with brown markings. If anyone wants to tweak this, go wild.
@@ -198,7 +214,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mining, suit_storage_spec, 
 	icon_state = "rig0-vintagemerc"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/refurb/mercenary
 	name = "vintage mercenary voidsuit"
@@ -209,7 +227,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mining, suit_storage_spec, 
 	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
+	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mercenary, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 

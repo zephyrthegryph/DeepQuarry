@@ -9,7 +9,9 @@
 	rolled_down = 0
 	rolled_sleeves = 0
 	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/under/solgov)
+	configure(item_protection(siemens = 0.8))
 
 //PT
 /obj/item/clothing/under/solgov/pt
@@ -18,8 +20,10 @@
 	icon_state = "miami"
 	worn_state = "miami"
 	armor_spec = ""
-	siemens_coefficient = 0.9
 	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/solgov/pt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/solgov/pt/sifguard
 	name = "\improper NDF pt uniform"
@@ -49,7 +53,9 @@
 	worn_state = "blackutility"
 	rolled_sleeves = 0
 	armor_spec = ""
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/utility)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/utility/blue
 	name = "utility uniform"
@@ -163,7 +169,9 @@
 	icon_state = "navyutility"
 	worn_state = "navyutility"
 	armor_spec = "energy=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/under/solgov/utility/fleet)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/under/solgov/utility/fleet/command
 	starting_accessories = list(/obj/item/clothing/accessory/solgov/department/command/fleet)
@@ -287,8 +295,9 @@
 	icon_state = "whiteservice"
 	worn_state = "whiteservice"
 	armor_spec = "melee=5;bio=5"
-	siemens_coefficient = 0.9
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/solgov/service)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/solgov/service/sifguard
 	name = "\improper NDF service uniform"
@@ -498,17 +507,20 @@
 	desc = "A high visibility jumpsuit made from heat and radiation resistant materials."
 	icon_state = "hazard"
 	worn_state = "hazard"
-	siemens_coefficient = 0.8
 	armor_spec = "bomb=20;rad=20"
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/under/hazard)
+	configure(item_protection(siemens = 0.8, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/under/sterile
 	name = "sterile jumpsuit"
 	desc = "A sterile white jumpsuit with medical markings. Protects against all manner of biohazards."
 	icon_state = "sterile"
 	worn_state = "sterile"
-	permeability_coefficient = 0.50
 	armor_spec = "bio=30"
+
+CAPABILITIES(/obj/item/clothing/under/sterile)
+	configure(item_protection(permeability = 0.50))
 
 //SAARE
 
@@ -518,7 +530,9 @@
 	icon = 'icons/inventory/uniform/item.dmi'
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi')
 	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/under/saare)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/under/saare/utility
 	name = "SAARE utility uniform"
@@ -532,7 +546,9 @@
 	icon_state = "terranservice"
 	worn_state = "terranservice"
 	armor_spec = "melee=5;bio=5"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/saare/service)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/saare/service/command
 	name = "SAARE command service uniform"

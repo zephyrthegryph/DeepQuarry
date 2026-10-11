@@ -11,7 +11,6 @@
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ert
 
 	req_access = list(ACCESS_CENT_SPECOPS)
-	siemens_coefficient= 0.5
 
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 
@@ -20,6 +19,9 @@
 		/obj/item/rig_module/maneuvering_jets,
 		/obj/item/rig_module/datajack,
 		)
+
+CAPABILITIES(/obj/item/rig/ert)
+	configure(item_protection(siemens = 0.5))
 
 TYPE_TABLE(/obj/item/rig/ert, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))))
 
@@ -70,11 +72,9 @@ TYPE_TABLE(/obj/item/rig/ert, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENE
 	suit_type = "heavy asset protection"
 	icon_state = "asset_protection_rig"
 	armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"
-	siemens_coefficient= 0.3
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE
 	rigsuit_min_pressure = 0
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,
@@ -87,6 +87,9 @@ TYPE_TABLE(/obj/item/rig/ert, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENE
 		/obj/item/rig_module/device/rcd,
 		/obj/item/rig_module/datajack
 		)
+
+CAPABILITIES(/obj/item/rig/ert/assetprotection)
+	configure(item_protection(siemens = 0.3, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/rig/ert/janitor
 	name = "ERT-J suit control module"
