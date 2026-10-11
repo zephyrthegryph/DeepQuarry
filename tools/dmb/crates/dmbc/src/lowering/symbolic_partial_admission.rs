@@ -1,6 +1,19 @@
 //! Candidate-specific certificate replay through the existing admission core.
 use super::*;
 
+/// Share only the immutable current issuer lookup, never a candidate verdict.
+/// Stored versions are still compared separately for every candidate.
+pub(super) fn matching_domains<R: Resolver>(
+    versions: &[(dm_ir::ReadDomain, u128)],
+    host: &R,
+    admission: Option<&RequestAdmission<'_, R>>,
+) -> std::collections::BTreeSet<dm_ir::ReadDomain> {
+    match admission {
+        Some(admission) => admission.certified_domains(versions),
+        None => crate::lowering_memo::matching_domains(versions, host),
+    }
+}
+
 pub(super) fn changed<R: Resolver>(
     admission: &RequestAdmission<'_, R>,
     reads: &receipt_groups::ProcedureReceipt,
@@ -20,12 +33,14 @@ mod tests {
         certified_calls: AtomicUsize,
         opaque_calls: AtomicUsize,
         appeared: bool,
+        version_calls: AtomicUsize,
     }
     impl Resolver for Host {
         fn observes_reads(&self) -> bool {
             false
         }
         fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+            self.version_calls.fetch_add(1, Ordering::Relaxed);
             (domain == self.certified.domain()).then_some(7)
         }
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
@@ -50,7 +65,33 @@ mod tests {
             certified_calls: AtomicUsize::new(0),
             opaque_calls: AtomicUsize::new(0),
             appeared,
+            version_calls: AtomicUsize::new(0),
         }
+    }
+    #[test]
+    fn candidate_domain_checks_share_current_issuer_but_not_stored_versions() {
+        let host = host(false);
+        let request = RequestAdmission::new(&host);
+        let versions = [(host.certified.domain(), 7), (host.opaque.domain(), 99)];
+        for _ in 0..3 {
+            let matching = matching_domains(&versions, &host, Some(&request));
+            assert!(matching.contains(&host.certified.domain()));
+            assert!(!matching.contains(&host.opaque.domain()));
+        }
+        assert_eq!(
+            host.version_calls.load(Ordering::Relaxed),
+            2,
+            "each current issuer, including absent authority, is queried once"
+        );
+        assert!(
+            matching_domains(&[(host.certified.domain(), 6)], &host, Some(&request)).is_empty()
+        );
+        assert_eq!(host.version_calls.load(Ordering::Relaxed), 2);
+        assert_eq!(host.certified_calls.load(Ordering::Relaxed), 0);
+        assert_eq!(host.opaque_calls.load(Ordering::Relaxed), 0);
+        // Compatibility callers still request their current host's authority.
+        assert!(matching_domains(&versions, &host, None).contains(&host.certified.domain()));
+        assert_eq!(host.version_calls.load(Ordering::Relaxed), 4);
     }
     #[test]
     fn mixed_certificates_skip_current_domains_but_replay_negative_opaque_edges() {

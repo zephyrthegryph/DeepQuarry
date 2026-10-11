@@ -552,7 +552,7 @@ impl SessionSymbolicMemo {
         let changed = if reads_validated {
             false
         } else {
-            let matching = crate::lowering_memo::matching_domains(&record.versions, host);
+            let matching = partial_admission::matching_domains(&record.versions, host, request_admission);
             let fully_certified = !host.observes_reads()
                 && record.reads.iter().all(|read| {
                     read.domain == read.query.domain() && matching.contains(&read.domain)
