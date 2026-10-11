@@ -30,7 +30,7 @@
 CAPABILITIES(/obj/structure/fence)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut through"), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), begins(PROC_REF(cut_begins)), wait(CUT_TIME), then(PROC_REF(wirecutter_act_tool_done)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut through"), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), begins(PROC_REF(cut_begins)), wait(10 SECONDS), then(PROC_REF(wirecutter_act_tool_done))) // CUT_TIME
 	op("touch", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
