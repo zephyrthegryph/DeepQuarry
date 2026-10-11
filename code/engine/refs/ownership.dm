@@ -480,15 +480,13 @@
 	if(value == D)
 		H.vars[var_name] = null // ALLOW(api): the ownership accessor clears the var as part of releasing the owned value
 		own_field_changed(H, var_name)
-		return
-	if(var_name == "contents")
-		return // built in: the dying thing leaves by moving, never by a cut or an index
-	if(islist(value))
+	else if(var_name != "contents" && islist(value)) // contents: the dying thing leaves by moving, never by a cut or an index
 		var/list/L = value
 		L -= D
 		for(var/key in L.Copy())
 			if(!isnum(key) && L[key] == D)
 				L -= key
+	own_lost(H, var_name, D)
 
 /// A contained or spilled owned movable left its owner's contents (the ledger's note_exit()): the
 /// contents slot was its ownership, so the owner's var lets it go (no dispose: it is intact and
@@ -506,6 +504,13 @@
 	holder.on_owned_release(var_name, thing)
 	own_release_member(holder, var_name, thing)
 	own_unstamp(thing)
+	own_lost(holder, var_name, thing)
+
+/// owns_*(on_lost = PROC_REF(x)): the holder hears x(thing) when an occupant leaves the var (deleted, or moved out of a contained slot).
+/proc/own_lost(datum/holder, var_name, datum/thing)
+	var/handler = own_table_of(holder).lost_handlers?[var_name]
+	if(handler && !QDELETED(holder))
+		call(holder, handler)(thing)
 
 /// Phase 3, for a movable: SPILL-policy owned movables still inside go to the drop location.
 /proc/own_spill_phase(atom/movable/AM)

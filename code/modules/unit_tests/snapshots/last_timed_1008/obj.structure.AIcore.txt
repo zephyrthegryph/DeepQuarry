@@ -3,12 +3,21 @@
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
+-click: Click: Use
++4 menu: Use screwdriver
++5 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
+-click: Click: Use
++4 menu: Use crowbar
++5 click: Click: Use crowbar
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Anchor frame
 +5 click: Click: Anchor frame
 @obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++4 menu: Use wirecutter
++5 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
@@ -19,4 +28,4 @@
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 @obj.structure human|/obj/item/stack/material
-keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, welder_wrong_stage, wrench_wrong_stage
+keys: add_cables, add_panel, ai_core_install, anchor, dismantle, drag_buckle, melee_hit, unanchor, use_crowbar, use_screwdriver, use_wirecutter, welder_wrong_stage, wrench_wrong_stage
