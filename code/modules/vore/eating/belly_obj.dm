@@ -281,6 +281,8 @@
 			. += var_name
 
 CAPABILITIES(/obj/belly)
+	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
+	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
 	// a belly is an organ of its owner, never a thing on the floor to hit
 	without("melee_hit")
 	reagents(300) // So we can have some liquids in bellies

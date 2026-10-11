@@ -106,9 +106,9 @@ TRACKED(/datum/robot_belly, sleeper_state)
 	var/belly_class = event.belly_class
 	var/list/fullness_ref = event.fullness_ref
 	var/mob/living/silicon/robot/R = owner
-	if(belly_class != "sleeper" || !R.vore_selected)
+	if(belly_class != "sleeper" || !vore_selected_of(R))
 		return
-	var/preference = R.vore_selected.silicon_belly_overlay_preference
+	var/preference = vore_selected_of(R).silicon_belly_overlay_preference
 	if(sleeper_state == SLEEPER_STATE_EMPTY)
 		if(preference == "Sleeper")
 			fullness_ref[1] = 0

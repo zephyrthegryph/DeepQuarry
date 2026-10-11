@@ -130,7 +130,7 @@
 	user.name = "Pin Tester"
 	var/obj/belly/B = test.allocate(/obj/belly, user)
 	B.name = "Stomach"
-	rel_set(user, nameof(user.vore_selected), B)
+	set_vore_selected(user, B)
 	var/datum/vore_look/panel = new(user)
 	host = panel
 	watch_host()

@@ -2,17 +2,17 @@
 
 /// Soul links, nests and vore death flags: everything a living mob is bound to hears once.
 /mob/living/death_links(gibbed)
-	if(nest) //Ew.
-		if(istype(nest, /obj/structure/prop/nest))
-			var/obj/structure/prop/nest/N = nest
+	if(nest_of(src)) //Ew.
+		if(istype(nest_of(src), /obj/structure/prop/nest))
+			var/obj/structure/prop/nest/N = nest_of(src)
 			N.remove_creature(src)
-		if(istype(nest, /obj/structure/blob/factory))
-			var/obj/structure/blob/factory/F = nest
+		if(istype(nest_of(src), /obj/structure/blob/factory))
+			var/obj/structure/blob/factory/F = nest_of(src)
 			rel_remove(F, nameof(F.spores), src) // pair: clears our factory view too
-		if(istype(nest, /obj/structure/mob_spawner))
-			var/obj/structure/mob_spawner/S = nest
+		if(istype(nest_of(src), /obj/structure/mob_spawner))
+			var/obj/structure/mob_spawner/S = nest_of(src)
 			S.get_death_report(src)
-		nest = null
+		set_nest(src, null)
 
 	if(isbelly(loc) && tf_mob_holder)
 		mind?.vore_death = TRUE
