@@ -851,3 +851,19 @@ fn break_inside_switch_exits_enclosing_loop() {
         .filter(|instruction| instruction.opcode == opcode::JMP)
         .any(|instruction| instruction.operands[0] == loop_exit));
 }
+
+#[test]
+fn protected_entry_gotos_are_exact_native_bad_link_source_errors() {
+    for source in [
+        include_str!("../../../../../fixtures/native/protected_entry_diagnostics/goto_into_try.dm"),
+        include_str!("../../../../../fixtures/native/protected_entry_diagnostics/goto_into_iterator.dm"),
+    ] {
+        let parsed = dm_syntax::parse(source);
+        assert!(parsed.diagnostics.is_empty());
+        let errors = compile_simple_proc(&parsed.items[0].children).unwrap_err();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
+        assert_eq!(errors[0].reason, "goto inside: bad link");
+        assert_eq!(errors[0].span.unwrap().start, source.find("goto inside").unwrap());
+    }
+}

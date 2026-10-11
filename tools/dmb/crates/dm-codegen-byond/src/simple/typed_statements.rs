@@ -133,10 +133,12 @@ impl Compiler<'_> {
                         .ok_or_else(|| error(&statement.raw_header, "undefined goto label"))?;
                     let depth = *self.label_try_depths.get(&label).unwrap_or(&0);
                     if depth > self.try_depth {
-                        return Err(error(
+                        let mut failure = error(
                             &statement.raw_header,
-                            "goto into protected try body is unsupported",
-                        ));
+                            &format!("goto {name}: bad link"),
+                        );
+                        failure.kind = LowerErrorKind::SourceError;
+                        return Err(failure);
                     }
                     let target_iterator_depth =
                         *self.user_label_iterator_depths.get(name).ok_or_else(|| {
@@ -146,10 +148,12 @@ impl Compiler<'_> {
                             )
                         })?;
                     if target_iterator_depth > self.iterator_depth {
-                        return Err(error(
+                        let mut failure = error(
                             &statement.raw_header,
-                            "goto into iterator body is unsupported",
-                        ));
+                            &format!("goto {name}: bad link"),
+                        );
+                        failure.kind = LowerErrorKind::SourceError;
+                        return Err(failure);
                     }
                     for _ in target_iterator_depth.max(1)..self.iterator_depth {
                         self.emit(opcode::ITER_POP, vec![]);
