@@ -141,7 +141,40 @@ impl Decl {
     /// One file's sites as `(rule index, line)`, in emission order. ALLOW questions are recorded
     /// (the cache replays them).
     fn judge(&self, f: &SourceFile, refs: &BTreeSet<String>) -> Vec<(u8, u32)> {
+        self.judge_spans(f, refs, &text_spans(f))
+    }
+}
+
+/// The text rule's bodies: from a `/type/proc(` header to the next column-0 line.
+fn text_spans(f: &SourceFile) -> Vec<(&'static str, std::ops::Range<usize>)> {
         let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
+        let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = Vec::new();
+        let mut open: Option<(&'static str, usize)> = None;
+        let mut last = 0;
+        for (number, line) in f.raw().numbered() {
+            last = number;
+            if let Some(m) = header.captures(line) {
+                if let Some((p, start)) = open.take() {
+                    spans.push((p, start..number));
+                }
+                open = Some((proc_kind(m.s(2)), number + 1));
+                continue;
+            }
+            if col0(line) {
+                if let Some((p, start)) = open.take() {
+                    spans.push((p, start..number));
+                }
+            }
+        }
+        if let Some((p, start)) = open.take() {
+            spans.push((p, start..last + 1));
+        }
+        spans
+}
+
+impl Decl {
+    /// The sites of the given bodies (`(proc, 1-based line range)`), in line order.
+    fn judge_spans(&self, f: &SourceFile, refs: &BTreeSet<String>, spans: &[(&'static str, std::ops::Range<usize>)]) -> Vec<(u8, u32)> {
         let new_into = pat_match!(r#"^\s*(?:own|rel)_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
         let qdel_var = crate::pat!(
             r#"\b(?:own_(?:clear|take|take_all)|rel_clear)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
@@ -151,21 +184,15 @@ impl Decl {
         let rule_index = |name: &str| META.rules.iter().position(|r| r.name == name).unwrap_or(0) as u8;
 
         let mut out: Vec<(u8, u32)> = Vec::new();
-        let mut proc: Option<&str> = None;
-        for (number, line) in f.raw().numbered() {
-            if let Some(m) = header.captures(line) {
-                proc = Some(match m.s(2) {
-                    "Initialize" => "Initialize",
-                    "on_materialize" => "on_materialize",
-                    _ => "on_destroy",
-                });
+        let raw = f.raw();
+        let mut lines: Vec<(usize, &'static str)> = spans.iter().flat_map(|(p, r)| r.clone().map(move |n| (n, *p))).collect();
+        lines.sort();
+        lines.dedup_by_key(|(n, _)| *n);
+        for (number, proc) in lines {
+            if number == 0 || number > raw.num_lines() {
                 continue;
             }
-            if col0(line) {
-                proc = None;
-                continue;
-            }
-            let Some(proc) = proc else { continue };
+            let line = raw.line(number);
             if py_strip(line).is_empty() {
                 continue;
             }
@@ -205,6 +232,14 @@ impl Decl {
     }
 }
 
+fn proc_kind(name: &str) -> &'static str {
+    match name {
+        "Initialize" => "Initialize",
+        "on_materialize" => "on_materialize",
+        _ => "on_destroy",
+    }
+}
+
 impl Lint for Decl {
     fn meta(&self) -> &Meta {
         &META
@@ -215,8 +250,37 @@ impl Lint for Decl {
         let owned = incr::facts("decl-owned", &all, |f| Owned { names: owned_vars_of(f) });
         let refs: BTreeSet<String> = owned.into_iter().flat_map(|o| o.names).collect();
         let files = cx.files();
-        let key = incr::ctx_key(&refs);
-        let results = recorded_into(out, || incr::keyed("decl-judge", key, &files, |f| self.judge(f, &refs)));
+        // The bodies come from the typed tree (`sem::procs::proc_defs`: every definition, whatever its syntax), bounded by
+        // indentation; the text rule's headers when the model is unavailable.
+        let tree_key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
+        let typed: Option<Vec<(String, u32, String)>> = incr::cached("decl-typed-defs", tree_key, || {
+            cx.sem().map(|sem| {
+                crate::sem::procs::proc_defs(&sem, &["Initialize", "on_materialize", "on_destroy"]).into_iter().map(|d| (d.rel, d.header, d.name)).collect()
+            })
+        });
+        let mut by_rel: std::collections::HashMap<&str, Vec<(u32, &'static str)>> = std::collections::HashMap::new();
+        if let Some(defs) = &typed {
+            for (rel, header, name) in defs {
+                by_rel.entry(rel.as_str()).or_default().push((*header, proc_kind(name)));
+            }
+        }
+        // A typed body depends on the model (macros from other files), so any change re-judges every file (cheap: lines only).
+        let key = incr::ctx_key(&(&refs, typed.is_some().then_some(tree_key)));
+        let results = recorded_into(out, || {
+            incr::keyed("decl-judge", key, &files, |f| {
+                if typed.is_none() {
+                    return self.judge(f, &refs);
+                }
+                let no_defs = Vec::new();
+                let defs = by_rel.get(f.rel.as_str()).unwrap_or(&no_defs);
+                let raw = f.raw();
+                let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n)).collect();
+                // The model's bodies, and the text rule's too: a file the model does not compile still counts as it did.
+                let mut spans: Vec<(&'static str, std::ops::Range<usize>)> = defs.iter().map(|(h, p)| (*p, crate::sem::procs::body_lines(&lines, *h))).collect();
+                spans.extend(text_spans(f));
+                self.judge_spans(f, &refs, &spans)
+            })
+        });
         for (f, res) in files.iter().zip(results) {
             for (rule, line) in res {
                 out.site_in(META.rules[rule as usize].name, &f.rel, line as usize);
