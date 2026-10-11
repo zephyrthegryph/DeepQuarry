@@ -18,6 +18,7 @@ impl Compiler<'_> {
             let [arg] = args else {
                 return Err(error(statement, "nameof() requires one reference"));
             };
+            self.source_feature_reference(arg, true, statement)?;
             let leaf = nameof_reference(arg).ok_or_else(|| {
                 error(
                     statement,

@@ -22,25 +22,7 @@ impl HeaderFeatures {
         parents: &[u32],
         classes: &HashMap<SymbolId, usize>,
     ) -> Result<(), ProjectionError> {
-        let inherits = |owner| -> Result<bool, ProjectionError> {
-            let Some(&root) = classes.get(&SymbolId::of(owner)) else {
-                return Ok(false);
-            };
-            let mut at = class;
-            for _ in 0..parents.len() {
-                if at == root {
-                    return Ok(true);
-                }
-                let parent = *parents.get(at).ok_or(ProjectionError::MissingMember)?;
-                if parent == NONE {
-                    return Ok(false);
-                }
-                at = parent as usize;
-            }
-            Err(ProjectionError::Unsupported(
-                "cyclic callback header ancestry".into(),
-            ))
-        };
+        let inherits = |owner| inherits(owner, class, parents, classes);
         let client = inherits("/client")?;
         if !client && !inherits("/atom")? {
             return Ok(());
@@ -50,15 +32,64 @@ impl HeaderFeatures {
         self.extended |= extended;
         Ok(())
     }
+    pub(super) fn observe_graphics(
+        &mut self,
+        class: usize,
+        parents: &[u32],
+        classes: &HashMap<SymbolId, usize>,
+    ) -> Result<(), ProjectionError> {
+        for root in [
+            "/atom",
+            "/obj",
+            "/mob",
+            "/turf",
+            "/area",
+            "/image",
+            "/mutable_appearance",
+        ] {
+            if inherits(root, class, parents, classes)? {
+                self.flags |= 0x40;
+                return Ok(());
+            }
+        }
+        Ok(())
+    }
     pub(super) fn apply(self, dmb: &mut Dmb) {
         // Captured engine bits remain authoritative; only current authored
         // definitions add negotiation requirements. No old generation is read.
-        dmb.header.flags |= self.flags;
+        dmb.header.flags |= self.flags & !0x40;
+        if self.flags & 0x40 != 0 {
+            dmb.header.flags &= !0x40;
+        }
         if self.extended != 0 {
             dmb.header.extended_flags =
                 Some(dmb.header.extended_flags.unwrap_or(0) | self.extended);
         }
     }
+}
+fn inherits(
+    owner: &str,
+    class: usize,
+    parents: &[u32],
+    classes: &HashMap<SymbolId, usize>,
+) -> Result<bool, ProjectionError> {
+    let Some(&root) = classes.get(&SymbolId::of(owner)) else {
+        return Ok(false);
+    };
+    let mut at = class;
+    for _ in 0..parents.len() {
+        if at == root {
+            return Ok(true);
+        }
+        let parent = *parents.get(at).ok_or(ProjectionError::MissingMember)?;
+        if parent == NONE {
+            return Ok(false);
+        }
+        at = parent as usize;
+    }
+    Err(ProjectionError::Unsupported(
+        "cyclic header feature ancestry".into(),
+    ))
 }
 fn callback(name: SymbolId, client: bool) -> (u32, u32) {
     for (spelling, flags) in [

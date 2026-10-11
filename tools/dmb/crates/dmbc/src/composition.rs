@@ -397,7 +397,8 @@ fn compose_records_access(
     // The existing binding owner proves exact assignment contents. The floor is
     // the only engine input selecting these three raw emission rosters. Current
     // artifact order is independently checked before admitting the bound plan.
-    let admitted_plan = generation.and_then(|owner| owner.admit_assignment_plan(&batch, engine_procs));
+    let admitted_plan =
+        generation.and_then(|owner| owner.admit_assignment_plan(&batch, engine_procs));
     let mut plan = procedure_plan::CompositionPlan::default();
     let mut stage_keys = BTreeSet::new();
     let mut builtin_global_vars = None;
@@ -440,7 +441,12 @@ fn compose_records_access(
                 if admitted_plan.is_none() {
                     plan.procedures.push((
                         index,
-                        crate::lowering::UnitIdentity { owner, name, namespace, occurrence },
+                        crate::lowering::UnitIdentity {
+                            owner,
+                            name,
+                            namespace,
+                            occurrence,
+                        },
                     ));
                 }
             }
@@ -624,7 +630,10 @@ fn compose_records_access(
         let unit = &batch.units[unit_index];
         feature_images.insert(
             index,
-            (std::sync::Arc::clone(&linked_words), unit.bytecode_features()),
+            (
+                std::sync::Arc::clone(&linked_words),
+                unit.bytecode_features(),
+            ),
         );
         frame_contribution::emit(
             &mut dmb,
@@ -651,7 +660,10 @@ fn compose_records_access(
             .map_err(CompositionError::Link)?;
         feature_images.insert(
             index,
-            (std::sync::Arc::clone(&words), batch.helpers[helper_index].bytecode_features()),
+            (
+                std::sync::Arc::clone(&words),
+                batch.helpers[helper_index].bytecode_features(),
+            ),
         );
         emit_anonymous(
             &mut dmb,
@@ -680,7 +692,10 @@ fn compose_records_access(
             .map_err(CompositionError::Link)?;
         feature_images.insert(
             index,
-            (std::sync::Arc::clone(&words), batch.initializers[unit_index].bytecode_features()),
+            (
+                std::sync::Arc::clone(&words),
+                batch.initializers[unit_index].bytecode_features(),
+            ),
         );
         emit_anonymous(
             &mut dmb,
@@ -784,11 +799,18 @@ fn compose_records_access(
     }
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
     let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
+    let source_features = final_instructions::source_features(&dmb, &feature_images)?;
     drop(feature_images);
     drop(final_validation);
     // All output-stage and final instruction checks are complete. Consuming
     // requests release frozen IR/table inventories before encode/decode overlap.
     drop(batch);
+    if source_features.world_cpu {
+        dmb.header.flags |= 1;
+    }
+    if source_features.native_graphics {
+        dmb.header.flags &= !0x40;
+    }
     if external {
         dmb.header.flags |= 0x2000_0000;
     }

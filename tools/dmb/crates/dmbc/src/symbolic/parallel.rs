@@ -205,7 +205,7 @@ pub(super) fn freeze_unit(
                 frozen: Arc::new(frozen_helper),
                 current_image: None,
                 image_owner: Arc::new(Default::default()),
-                features: BytecodeFeatures::of(&helper.code.procedure.code),
+                features: BytecodeFeatures::from_procedure(&helper.code.procedure),
                 debug_origins: helper.debug_origins.into(),
                 local_names: Arc::new(helper.code.procedure.local_names),
             },
@@ -228,7 +228,7 @@ pub(super) fn freeze_unit(
         .collect();
     let unit = FrozenUnit {
         metadata_recipe: Arc::new(metadata_recipe),
-        features: BytecodeFeatures::of(&lowered.code.procedure.code),
+        features: BytecodeFeatures::from_procedure(&lowered.code.procedure),
         lowered: FrozenUnitMetadata::consume(lowered),
         frozen: Arc::new(frozen),
         current_image: None,

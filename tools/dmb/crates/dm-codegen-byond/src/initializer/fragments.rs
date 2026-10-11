@@ -219,6 +219,10 @@ pub(super) fn assemble_continuations(
             .checked_add(fragment.label_count)
             .ok_or_else(|| invalid("initializer assembled label count exceeds u32"))?;
         let mut code = fragment.code;
+        result
+            .procedure
+            .source_features
+            .union(code.procedure.source_features);
         strings
             .merge(code.procedure.strings)
             .map_err(|error| invalid(&format!("initializer string collision: {error}")))?;

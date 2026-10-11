@@ -122,6 +122,7 @@ mod tests {
                 BytecodeFeatures {
                     external: true,
                     debug: true,
+                    source_features: Default::default(),
                 },
             ),
         );
@@ -196,4 +197,25 @@ mod tests {
             );
         }
     }
+}
+
+/// Semantic facts travel with the exact installed image certificate. A later
+/// output mutation cannot silently attach an old source fact to different code.
+pub(super) fn source_features(
+    dmb: &Dmb,
+    certificates: &Certificates,
+) -> Result<dm_codegen_byond::SourceFeatures, CompositionError> {
+    let mut result = dm_codegen_byond::SourceFeatures::default();
+    for (&index, (words, features)) in certificates {
+        if features.source_features == Default::default() {
+            continue;
+        }
+        if dmb.proc_code_words(index as usize) != Some(words.as_slice()) {
+            return Err(unsupported(
+                "source feature certificate differs from current procedure image",
+            ));
+        }
+        result.union(features.source_features);
+    }
+    Ok(result)
 }

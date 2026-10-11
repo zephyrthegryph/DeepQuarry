@@ -3,6 +3,11 @@ use super::*;
 
 impl Compiler<'_> {
     pub(super) fn expression(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
+        self.source_feature_reference(
+            expr,
+            self.discarded_call_root != Some(expr as *const Expr),
+            statement,
+        )?;
         if let Some(number) = fold_number(expr) {
             if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
                 self.emit(opcode::PUSH_INT, vec![Word::Immediate(number as u32)]);

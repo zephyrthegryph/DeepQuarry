@@ -484,7 +484,8 @@ fn feature_facts_inspect_instruction_boundaries_not_immediate_operands() {
         BytecodeFeatures::of(&features),
         BytecodeFeatures {
             external: true,
-            debug: true
+            debug: true,
+            source_features: Default::default(),
         }
     );
 }

@@ -161,6 +161,7 @@ impl Compiler<'_> {
             } else {
                 self.named_arguments(args, statement)?;
             }
+            self.result.source_features.native_graphics = true;
             self.emit(0x13b, vec![]);
             return Ok(true);
         }
@@ -302,6 +303,7 @@ impl Compiler<'_> {
                     "initial() requires one variable reference",
                 ));
             };
+            self.source_feature_reference(target, true, statement)?;
             let direct = match &target.kind {
                 ExprKind::Ident(name) => self.variable(name, statement).ok().filter(|variable| {
                     matches!(
@@ -388,6 +390,7 @@ impl Compiler<'_> {
                     "issaved() requires one variable reference",
                 ));
             };
+            self.source_feature_reference(target, true, statement)?;
             let variable = self.assignment_variable(target, statement)?;
             let variable = match variable {
                 VariableWord::SetCache(owner, field) => {

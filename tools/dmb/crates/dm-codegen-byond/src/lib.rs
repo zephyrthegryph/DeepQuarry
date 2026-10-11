@@ -34,7 +34,7 @@ pub use simple::{
     typed_statement_view_supported, typed_statements_supported,
     typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider,
     DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan,
-    ProcedureWarning, SharedLowerBindings, SimpleProc,
+    ProcedureWarning, SharedLowerBindings, SimpleProc, SourceFeatures,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

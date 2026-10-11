@@ -87,8 +87,15 @@ impl FrozenHelper {
 pub(crate) struct BytecodeFeatures {
     pub external: bool,
     pub debug: bool,
+    pub source_features: dm_codegen_byond::SourceFeatures,
 }
 impl BytecodeFeatures {
+    fn from_procedure(procedure: &dm_codegen_byond::SimpleProc) -> Self {
+        Self {
+            source_features: procedure.source_features,
+            ..Self::of(&procedure.code)
+        }
+    }
     fn of(code: &dm_codegen_byond::SymbolicProc) -> Self {
         use byond_dmb::bytecode::opcode;
         let mut value = Self::default();
@@ -633,7 +640,7 @@ fn finish_frozen_inventory(
             frozen,
             current_image: None,
             image_owner: Arc::clone(&contribution.image_owner),
-            features: BytecodeFeatures::of(&unit.code.procedure.code),
+            features: BytecodeFeatures::from_procedure(&unit.code.procedure),
             debug_origins: unit.debug_origins.into(),
             local_names: unit.code.procedure.local_names.clone(),
         });
@@ -857,9 +864,9 @@ pub(crate) use initializer_contribution::InitializerEncoding;
 mod helper_reuse_tests;
 pub(crate) mod origin_roster;
 mod parallel;
-mod procedure_order;
 mod prepared_contribution;
 pub(crate) mod procedure_artifact;
+mod procedure_order;
 pub use prepared_contribution::{
     link_prepared_artifact_tables, link_prepared_artifact_tables_on_executor,
     link_prepared_artifact_tables_on_executor_with_bindings, prepare_contribution,

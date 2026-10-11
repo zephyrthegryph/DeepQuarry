@@ -233,6 +233,11 @@ impl Compiler<'_> {
         statement: &str,
     ) -> Result<VariableWord, LowerError> {
         let word = self.variable_expr_inner(expr, statement)?;
+        self.source_feature_reference(
+            expr,
+            self.discarded_call_root != Some(expr as *const Expr),
+            statement,
+        )?;
         if let ExprKind::Member { selector, .. } = &expr.kind {
             self.record_property_selection(expr, selector, &word, false);
         }

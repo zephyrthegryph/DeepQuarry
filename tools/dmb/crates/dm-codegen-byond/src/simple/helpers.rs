@@ -335,3 +335,13 @@ pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
         _ => None,
     }
 }
+
+pub(super) fn is_output_target(expr: &Expr) -> bool {
+    matches!(&expr.kind, ExprKind::Ident(name) if name == "world")
+        || matches!(
+            &expr.kind,
+            ExprKind::Member { object, selector, via_colon: false }
+                if matches!(&object.kind, ExprKind::Ident(name) if name == "world")
+                    && selector == "log"
+        )
+}

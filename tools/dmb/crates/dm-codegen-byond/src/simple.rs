@@ -25,6 +25,8 @@ pub struct ProcedureWarning {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SimpleProc {
+    #[serde(default)]
+    pub source_features: SourceFeatures,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<ProcedureWarning>,
     pub code: SymbolicProc,
@@ -601,7 +603,9 @@ fn compile_with_lookup_mode(
                         continuation,
                     );
                     crate::typed_scopes::assignment_result(
-                        lowered, compiler.resolver_failure.take(), occurrence,
+                        lowered,
+                        compiler.resolver_failure.take(),
+                        occurrence,
                     )
                 }
             };
@@ -895,16 +899,6 @@ fn local_array_dimensions(declaration: &str) -> Option<Vec<&str>> {
         .then_some(dimensions)
 }
 
-fn is_output_target(expr: &Expr) -> bool {
-    matches!(&expr.kind, ExprKind::Ident(name) if name == "world")
-        || matches!(
-            &expr.kind,
-            ExprKind::Member { object, selector, via_colon: false }
-                if matches!(&object.kind, ExprKind::Ident(name) if name == "world")
-                    && selector == "log"
-        )
-}
-
 struct Compiler<'a> {
     result: SimpleProc,
     reference_capture: Option<reference_facts::ReferenceCapture>,
@@ -943,6 +937,9 @@ struct Compiler<'a> {
     iterator_depth: usize,
 }
 
+#[path = "simple/source_features.rs"]
+mod source_features;
+pub use source_features::SourceFeatures;
 #[path = "simple/assignments.rs"]
 mod assignments;
 #[path = "simple/predefined_resolution.rs"]
@@ -978,8 +975,8 @@ mod typed_statements;
 #[path = "simple/typed_switch.rs"]
 mod typed_switch;
 use helpers::{
-    class_tag, error, fold_number, member_proc_selector, parenthesized, parse_interpolated_string,
-    parse_text_template,
+    class_tag, error, fold_number, is_output_target, member_proc_selector, parenthesized,
+    parse_interpolated_string, parse_text_template,
 };
 pub use helpers::{decode_constant_string_literal, nameof_reference};
 

@@ -45,8 +45,35 @@ pub fn materialize_callback_flags(
                 .map(|p| (SymbolId::of_bytes(p), i))
         })
         .collect();
-    let parents: Vec<_> = dmb.classes.iter().map(|c| c.parent_class_id()).collect();
+    let mut parents: Vec<_> = dmb.classes.iter().map(|c| c.parent_class_id()).collect();
+    // Native client records do not encode their source subtype ancestry in the
+    // atom appearance parent slot. Use the same admitted source topology which
+    // created these classes, rebound through current class identities.
+    for ty in projection.types.iter() {
+        let Some(&class) = classes.get(&ty.path) else {
+            continue;
+        };
+        if let Some(parent) = ty.parent {
+            parents[class] =
+                u32::try_from(*classes.get(&parent).ok_or(ProjectionError::MissingMember)?)
+                    .map_err(|_| ProjectionError::IncompleteOrder)?;
+        }
+    }
     let mut header = header_features::HeaderFeatures::default();
+    // Authored builtin graphics field declarations/assignments are semantic
+    // uses even when no procedure evaluates them (declaration_only specimen).
+    for field in projection.fields.iter() {
+        if !field.shared
+            && ["icon", "overlays", "underlays"]
+                .iter()
+                .any(|name| field.name == SymbolId::of(name))
+        {
+            let &class = classes
+                .get(&field.owner)
+                .ok_or(ProjectionError::MissingMember)?;
+            header.observe_graphics(class, &parents, &classes)?;
+        }
+    }
     let mut direct: Vec<_> = dmb.classes.iter().map(|c| c.flags & CALLBACKS).collect();
     for chain in projection.chains.iter().filter(|c| !c.verb) {
         let bits = callback_bits(chain.name);
