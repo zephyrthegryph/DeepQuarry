@@ -12,16 +12,45 @@
 	EXPIRY_DECLARE(last_process_time)
 
 	var/list/construction
-	var/list/tgui_construction
 	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table
 	var/list/stored_materials = list() // ALLOW(instance_list): d: consumed with pop() in step with spawning_types
 
 	var/fail_message
 
-/obj/machinery/replicator/Initialize(mapload)
-	. = ..()
+/// The machine's buttons: button text -> list("type", "background", "icon", "foreground"), rolled from what this kind makes (button_candidates()).
+/obj/machinery/replicator/proc/roll_construction(datum/roller/R)
+	var/static/list/icons = list(
+		"round" = "circle",
+		"square" = "square",
+		"diamond" = "gem",
+		"heart" = "heart",
+		"dog" = "dog",
+		"human" = "user",
+	)
+	var/static/list/colors = list(
+		"toggle" = "pink",
+		"switch" = "yellow",
+		"lever" = "red",
+		"button" = "black",
+		"pad" = "white",
+		"hole" = "black",
+	)
+	var/list/candidates = button_candidates()
+	. = list()
+	for(var/i in 1 to button_count(R))
+		if(!length(candidates))
+			break
+		var/background = R.choose(list("yellow","purple","green","blue","red","orange","white"))
+		var/icon = R.choose(icons)
+		var/color = R.choose(colors)
+		var/type = R.choose(candidates)
+		candidates -= type
+		.["a [background], [icon] shaped [color]"] = list("type" = type, "background" = background, "icon" = icons[icon], "foreground" = colors[color])
 
-	var/static/list/viables = list(
+/// What this kind of replicator can make (a fresh list: roll_construction() takes from it).
+/obj/machinery/replicator/proc/button_candidates()
+	// /mob/living/simple_mob/mimic/crate, // // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
+	return list(
 	/obj/item/roller,
 	/obj/structure/closet/crate,
 	/obj/structure/closet/acloset,
@@ -63,46 +92,19 @@
 	/obj/item/grenade/chem_grenade/cleaner,
 	/obj/item/grenade/chem_grenade/metalfoam)
 
-// /mob/living/simple_mob/mimic/crate, // // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
-	var/quantity = rand(5, 15)
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/static/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/static/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/type = pick(viables)
-		viables.Remove(type)
-		LAZYSET(construction, button_desc, type)
-		LAZYINITLIST(tgui_construction); tgui_construction.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/// How many buttons it has.
+/obj/machinery/replicator/proc/button_count(datum/roller/R)
+	return R.number(5, 15)
 
-	fail_message = span_notice("[icon2html(src,viewers(src))] a [pick("loud","soft","sinister","eery","triumphant","depressing","cheerful","angry")] \
-		[pick("horn","beep","bing","bleep","blat","honk","hrumph","ding")] sounds and a \
-		[pick("yellow","purple","green","blue","red","orange","white")] \
-		[pick("light","dial","meter","window","protrusion","knob","antenna","swirly thing")] \
-		[pick("swirls","flashes","whirrs","goes schwing","blinks","flickers","strobes","lights up")] on the \
-		[pick("front","side","top","bottom","rear","inside")] of [src]. A [pick("slot","funnel","chute","tube")] opens up in the \
-		[pick("front","side","top","bottom","rear","inside")].")
+/// What it says when it cannot make something.
+/obj/machinery/replicator/proc/roll_fail_message(datum/roller/R)
+	return span_notice("[icon2html(src,viewers(src))] a [R.choose(list("loud","soft","sinister","eery","triumphant","depressing","cheerful","angry"))] \
+		[R.choose(list("horn","beep","bing","bleep","blat","honk","hrumph","ding"))] sounds and a \
+		[R.choose(list("yellow","purple","green","blue","red","orange","white"))] \
+		[R.choose(list("light","dial","meter","window","protrusion","knob","antenna","swirly thing"))] \
+		[R.choose(list("swirls","flashes","whirrs","goes schwing","blinks","flickers","strobes","lights up"))] on the \
+		[R.choose(list("front","side","top","bottom","rear","inside"))] of [src]. A [R.choose(list("slot","funnel","chute","tube"))] opens up in the \
+		[R.choose(list("front","side","top","bottom","rear","inside"))].")
 
 /obj/machinery/replicator/proc/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
@@ -145,6 +147,8 @@
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
 CAPABILITIES(/obj/machinery/replicator)
+	rolls(nameof(construction), PROC_REF(roll_construction))
+	rolls(nameof(fail_message), PROC_REF(roll_fail_message))
 	configure(uses_power(idle = 100, active = 1000))
 	started_work(step = PROC_REF(work_step))
 	interface("XenoarchReplicator")
@@ -155,7 +159,11 @@ CAPABILITIES(/obj/machinery/replicator)
 /// /obj/machinery/replicator's window data.
 /obj/machinery/replicator/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["tgui_construction"] = (tgui_construction || list())
+	var/list/buttons = list()
+	for(var/key in construction)
+		var/list/button = construction[key]
+		buttons += list(list("key" = key, "background" = button["background"], "icon" = button["icon"], "foreground" = button["foreground"]))
+	data["tgui_construction"] = buttons
 	return data
 
 /obj/machinery/replicator/proc/ui_act_construct(datum/act/op/A, key_arg)
@@ -166,7 +174,8 @@ CAPABILITIES(/obj/machinery/replicator)
 				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 			else
 				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(construction, key))
+			var/list/button = construction[key]
+			spawning_types.Add(button["type"])
 			spawn_progress_time = 0
 			set_use_power(USE_POWER_ACTIVE)
 			icon_state = "borgcharger1(old)"
@@ -211,8 +220,6 @@ CAPABILITIES(/obj/machinery/replicator)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_mobs
-	var/list/tgui_vore_selection
 	var/list/viable_mobs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/mob/living/simple_mob/animal/passive/fox,
 	/mob/living/simple_mob/animal/passive/cow,
@@ -238,40 +245,11 @@ CAPABILITIES(/obj/machinery/replicator)
 	//So if xenoarch isn't careful and is just shoving items willy-nilly without taking the proper precautions they can end up in a bit of trouble!
 
 
-// ALLOW(init/INSTANCE_STATE): rolls its control buttons and what each one makes
-/obj/machinery/replicator/vore/Initialize(mapload) //This replicator turns people into mobs!
-	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
+/obj/machinery/replicator/vore/button_candidates()
+	return viable_mobs.Copy()
 
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/static/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/static/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/generated_mob = pick(viable_mobs)
-		viable_mobs.Remove(generated_mob)
-		LAZYSET(created_mobs, button_desc, generated_mob)
-		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/obj/machinery/replicator/vore/button_count(datum/roller/R)
+	return quantity
 
 /obj/machinery/replicator/vore/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
@@ -445,39 +423,6 @@ CAPABILITIES(/obj/machinery/replicator)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
-/obj/machinery/replicator/vore/ui_data(datum/act/eval/A)
-	var/list/data = ..()
-	var/list/merged_1 = ui_data_obj_machinery_replicator_vore(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// /obj/machinery/replicator/vore's window data.
-/obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-	data["tgui_construction"] = (tgui_vore_selection || list())
-	return data
-
-CAPABILITIES(/obj/machinery/replicator/vore)
-	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
-/obj/machinery/replicator/vore/ui_act_construct(datum/act/op/A, key_arg)
-	. = ..()
-	if(.)
-		return
-	var/key = key_arg
-	if(key in created_mobs)
-		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-			if(LAZYLEN(spawning_types))
-				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-			else
-				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(created_mobs, key))
-			spawn_progress_time = 0
-			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
-		else
-			visible_message(fail_message)
 
 
 
@@ -491,8 +436,6 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_items
-	var/list/tgui_vore_selection
 	var/list/viable_items = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/obj/item/clothing/accessory/ring,
 	/obj/item/clothing/gloves/evening,
@@ -530,40 +473,11 @@ CAPABILITIES(/obj/machinery/replicator/vore)
 	) 	// Currently: 3 gloves, 5 undersuits, 3 oversuits, 5 plushies, 5 headwear, 7 shoes, 7 misc. = 35
 		//Fishing hat was going to be added, but it was simply too powerful for this world.
 
-// ALLOW(init/INSTANCE_STATE): rolls its control buttons and what each one makes
-/obj/machinery/replicator/clothing/Initialize(mapload) //The specific thing about the VORE replicator is that it will only contain obj/items. Only things that can be picked up, used, and worn!
-	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
+/obj/machinery/replicator/clothing/button_candidates()
+	return viable_items.Copy()
 
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/static/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/static/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/generated_item = pick(viable_items)
-		viable_items.Remove(generated_item)
-		LAZYSET(created_items, button_desc, generated_item)
-		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/obj/machinery/replicator/clothing/button_count(datum/roller/R)
+	return quantity
 
 /obj/machinery/replicator/clothing/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
@@ -734,37 +648,7 @@ CAPABILITIES(/obj/machinery/replicator/clothing)
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
-/obj/machinery/replicator/clothing/ui_data(datum/act/eval/A)
-	var/list/data = ..()
-	var/list/merged_1 = ui_data_obj_machinery_replicator_clothing(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
 
-/// /obj/machinery/replicator/clothing's window data.
-/obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-	data["tgui_construction"] = (tgui_vore_selection || list())
-	return data
-
-/obj/machinery/replicator/clothing/ui_act_construct(datum/act/op/A, key_arg)
-	. = ..()
-	if(.)
-		return
-	var/key = key_arg
-	if(key in created_items)
-		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-			if(LAZYLEN(spawning_types))
-				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-			else
-				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(created_items, key))
-			spawn_progress_time = 0
-			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
-		else
-			visible_message(fail_message)
 
 /// Original insertion arguments remain weak while the prospective transformed mob answers.
 /datum/prompt/choice/replicator_consent

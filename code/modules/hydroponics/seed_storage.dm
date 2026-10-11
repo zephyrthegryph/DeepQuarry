@@ -51,6 +51,7 @@ CAPABILITIES(/datum/seed_pile)
 STAT(/obj/machinery/seed_storage, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/seed_storage)
+	rolls(nameof(contraband_seeds), PROC_REF(roll_contraband_seeds))
 	configure(uses_power(idle = 100))
 	started_work(step = PROC_REF(work_step))
 	owns_many(nameof(piles), /datum/seed_pile)
@@ -108,50 +109,53 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
 	lockdown = !lockdown
 
-// ALLOW(init/INSTANCE_STATE): rolls its contraband seed batch
-/obj/machinery/seed_storage/Initialize(mapload)
-	. = ..()
-	if(!length(contraband_seeds))
-		contraband_seeds = pick( 	/// Some form of ambrosia in all lists.
-			prob(30);list( /// General produce
-				/obj/item/seeds/ambrosiavulgarisseed = 3,
-				/obj/item/seeds/greengrapeseed = 3,
-				/obj/item/seeds/icepepperseed = 2,
-				/obj/item/seeds/kudzuseed = 1
-			),
-			prob(30);list( ///Mushroom batch
-				/obj/item/seeds/ambrosiavulgarisseed = 1,
-				/obj/item/seeds/glowberryseed = 2,
-				/obj/item/seeds/libertymycelium = 1,
-				/obj/item/seeds/reishimycelium = 2,
-				/obj/item/seeds/sporemycelium = 1
-			),
-			prob(15);list( /// Survivalist
-				/obj/item/seeds/ambrosiadeusseed = 2,
-				/obj/item/seeds/redtowermycelium = 2,
-				/obj/item/seeds/vale = 2,
-				/obj/item/seeds/siflettuce = 2
-			),
-			prob(20);list( /// Cold plants
-				/obj/item/seeds/ambrosiavulgarisseed = 2,
-				/obj/item/seeds/thaadra = 2,
-				/obj/item/seeds/icepepperseed = 2,
-				/obj/item/seeds/siflettuce = 1
-			),
-			prob(10);list( ///Poison party
-				/obj/item/seeds/ambrosiavulgarisseed = 3,
-				/obj/item/seeds/surik = 1,
-				/obj/item/seeds/telriis = 1,
-				/obj/item/seeds/nettleseed = 2,
-				/obj/item/seeds/poisonberryseed = 1
-			),
-			prob(5);list( /// Extra poison party!
-				/obj/item/seeds/ambrosiainfernusseed = 1,
-				/obj/item/seeds/amauri = 1,
-				/obj/item/seeds/surik = 1,
-				/obj/item/seeds/deathberryseed = 1 /// Very ow.
-			)
-		)
+/// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
+/obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
+	switch(R.weighted(list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)))
+		if("produce")
+			return list(
+						/obj/item/seeds/ambrosiavulgarisseed = 3,
+						/obj/item/seeds/greengrapeseed = 3,
+						/obj/item/seeds/icepepperseed = 2,
+						/obj/item/seeds/kudzuseed = 1
+					)
+		if("mushrooms")
+			return list(
+						/obj/item/seeds/ambrosiavulgarisseed = 1,
+						/obj/item/seeds/glowberryseed = 2,
+						/obj/item/seeds/libertymycelium = 1,
+						/obj/item/seeds/reishimycelium = 2,
+						/obj/item/seeds/sporemycelium = 1
+					)
+		if("survivalist")
+			return list(
+						/obj/item/seeds/ambrosiadeusseed = 2,
+						/obj/item/seeds/redtowermycelium = 2,
+						/obj/item/seeds/vale = 2,
+						/obj/item/seeds/siflettuce = 2
+					)
+		if("cold")
+			return list(
+						/obj/item/seeds/ambrosiavulgarisseed = 2,
+						/obj/item/seeds/thaadra = 2,
+						/obj/item/seeds/icepepperseed = 2,
+						/obj/item/seeds/siflettuce = 1
+					)
+		if("poison")
+			return list(
+						/obj/item/seeds/ambrosiavulgarisseed = 3,
+						/obj/item/seeds/surik = 1,
+						/obj/item/seeds/telriis = 1,
+						/obj/item/seeds/nettleseed = 2,
+						/obj/item/seeds/poisonberryseed = 1
+					)
+		if("extra_poison")
+			return list(
+						/obj/item/seeds/ambrosiainfernusseed = 1,
+						/obj/item/seeds/amauri = 1,
+						/obj/item/seeds/surik = 1,
+						/obj/item/seeds/deathberryseed = 1 /// Very ow.
+					)
 
 /// Seed storage has no timed work of its own (its shock is a timed hold).
 /obj/machinery/seed_storage/proc/work_step(datum/act/timer/A)

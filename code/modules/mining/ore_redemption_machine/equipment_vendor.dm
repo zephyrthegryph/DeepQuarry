@@ -16,19 +16,13 @@
 	var/icon_vend = "minevend-vend"
 	circuit = /obj/item/circuitboard/mining_equipment_vendor
 	var/obj/item/card/id/inserted_id
-	var/list/prize_list //Generated during Initialize
+	var/list/prize_list // per_type(): one table per vendor type, built by build_prize_list()
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
 /obj/machinery/mineral/equipment_vendor/ownership()
 	. = ..()
 	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
-// prize entries are nested per category.
-/obj/machinery/mineral/equipment_vendor/on_destroy(force)
-	for(var/key, value in prize_list)
-		var/list/item_list = value
-		QDEL_LIST_ASSOC_VAL(item_list)
-	..()
 
 /datum/data/mining_equipment
 	var/equipment_name = "generic"
@@ -40,12 +34,10 @@
 	src.equipment_path = path
 	src.cost = cost
 
-/obj/machinery/mineral/equipment_vendor/Initialize(mapload)
-	. = ..()
-	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
-	// record, freed in on_destroy()). Rebuilt per vendor type here.
-	prize_list = list()
-	prize_list["Gear"] = list(
+/obj/machinery/mineral/equipment_vendor/proc/build_prize_list()
+	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost record), one table per vendor type.
+	. = list()
+	.["Gear"] = list(
 		EQUIPMENT("Brown Webbing",								/obj/item/clothing/accessory/storage/brown_vest,			500),
 		EQUIPMENT("Defense Equipment - Plasteel Machete",		/obj/item/material/knife/machete,							500),
 		EQUIPMENT("Defense Equipment - Razor Drone Deployer",	/obj/item/grenade/spawnergrenade/manhacks/station/locked,	1000),
@@ -76,7 +68,7 @@
 		EQUIPMENT("Advanced Ore Scanner",						/obj/item/mining_scanner/advanced,							500),
 		EQUIPMENT("Exotic Sample Container",					/obj/item/storage/sample_container,							100),
 	)
-	prize_list["Consumables"] = list(
+	.["Consumables"] = list(
 		EQUIPMENT("1 Marker Beacon",		/obj/item/stack/marker_beacon,													1),
 		EQUIPMENT("10 Marker Beacons",		/obj/item/stack/marker_beacon/ten,												10),
 		EQUIPMENT("30 Marker Beacons",		/obj/item/stack/marker_beacon/thirty,											30),
@@ -91,7 +83,7 @@
 		EQUIPMENT("Oxy Medipen",			/obj/item/reagent_containers/hypospray/autoinjector/oxy,						250),
 		EQUIPMENT("Trauma Medipen",			/obj/item/reagent_containers/hypospray/autoinjector/trauma,						250),
 	)
-	prize_list["Kinetic Accelerator"] = list(
+	.["Kinetic Accelerator"] = list(
 		EQUIPMENT("Kinetic Accelerator",		/obj/item/gun/energy/kinetic_accelerator,									900),
 		EQUIPMENT("KA AoE Damage",				/obj/item/borg/upgrade/modkit/aoe/mobs,										2000),
 		EQUIPMENT("KA Damage Increase",			/obj/item/borg/upgrade/modkit/damage,										1000),
@@ -106,7 +98,7 @@
 		EQUIPMENT("KA White Tracer Rounds",		/obj/item/borg/upgrade/modkit/tracer,										125),
 		EQUIPMENT("Premium Kinetic Accelerator",/obj/item/gun/energy/kinetic_accelerator/premiumka,							12000),
 	)
-	prize_list["Digging Tools"] = list(
+	.["Digging Tools"] = list(
 		EQUIPMENT("Resonator",									/obj/item/resonator,										900),
 		EQUIPMENT("Silver Pickaxe",								/obj/item/pickaxe/silver,									1200),
 		EQUIPMENT("Diamond Pickaxe",							/obj/item/pickaxe/diamond,									2000),
@@ -118,7 +110,7 @@
 		EQUIPMENT("Industrial Equipment - Phoron Bore",			/obj/item/gun/magnetic/matfed/phoronbore/loaded,			3000),
 		EQUIPMENT("Industrial Equipment - Inducer",				/obj/item/inducer,											3500),
 	)
-	prize_list["Hardsuit"] = list(
+	.["Hardsuit"] = list(
 		EQUIPMENT("Hardsuit - Cheap Control Module",		/obj/item/rig/industrial/vendor,								2000),
 		EQUIPMENT("Hardsuit - Premium Control Module",		/obj/item/rig/industrial,										5000),
 		EQUIPMENT("Hardsuit - Drill",						/obj/item/rig_module/device/drill,								2500),
@@ -134,7 +126,7 @@
 		EQUIPMENT("Hardsuit - Smoke Bomb Deployer",			/obj/item/rig_module/grenade_launcher/smoke,					2000),
 		EQUIPMENT("Hardsuit - Proto-Kinetic Gauntlets",		/obj/item/rig_module/gauntlets,									2000),
 	)
-	prize_list["Shelter Capsules"] = list(
+	.["Shelter Capsules"] = list(
 		EQUIPMENT("Shelter Capsule - Shelter (5x5)",				/obj/item/survivalcapsule,									500),
 		EQUIPMENT("Shelter Capsule - Pocket Dorm (5x5)",			/obj/item/survivalcapsule/pocketdorm,						500),
 		EQUIPMENT("Shelter Capsule - Kitchen (7x7)",				/obj/item/survivalcapsule/kitchen,							3100),
@@ -148,7 +140,7 @@
 		EQUIPMENT("Shelter Capsule - Deluxe Cabin (11x11)",			/obj/item/survivalcapsule/luxurycabin,						10000),
 		EQUIPMENT("Shelter Capsule - Cafe (11x11)",					/obj/item/survivalcapsule/cafe,								10000),
 	)
-	prize_list["Miscellaneous"] = list(
+	.["Miscellaneous"] = list(
 		EQUIPMENT(REAGENT_ABSINTHE,				/obj/item/reagent_containers/food/drinks/bottle/absinthe,					125),
 		EQUIPMENT("Cigar",						/obj/item/clothing/mask/smokable/cigarette/cigar/havana,					150),
 		EQUIPMENT("Digital Tablet - Standard",	/obj/item/modular_computer/tablet/preset/custom_loadout/standard,			500),
@@ -161,7 +153,7 @@
 		EQUIPMENT("Umbrella",					/obj/item/melee/umbrella/random,											200),
 		EQUIPMENT(REAGENT_WHISKEY,				/obj/item/reagent_containers/food/drinks/bottle/whiskey,					125),
 	)
-	prize_list["Extra"] = list() // Used in child vendors
+	.["Extra"] = list() // Used in child vendors
 
 /obj/machinery/mineral/equipment_vendor/power_change()
 	. = ..()
@@ -228,6 +220,7 @@
 	return ..()
 
 CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
+	per_type(nameof(prize_list), PROC_REF(build_prize_list))
 	interface("MiningVendor")
 	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
@@ -406,17 +399,18 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	// Entries live in the "Extra" category (prize_list is category -> name -> entry).
-	if(!prize_list)
-		prize_list = list()
-	var/list/extra = prize_list["Extra"]
+	// Entries live in the "Extra" category (prize_list is category -> name -> entry). prize_list is the type's shared
+	// per_type() table, so this vendor takes its own copy before adding to it.
+	var/list/mine = list()
+	for(var/cat in prize_list)
+		var/list/entries = prize_list[cat]
+		mine[cat] = entries.Copy()
+	var/list/extra = mine["Extra"]
 	if(!islist(extra))
 		extra = list()
-		prize_list["Extra"] = extra
-	var/datum/data/mining_equipment/old_entry = extra[name]
-	if(old_entry)
-		spent(old_entry)
+		mine["Extra"] = extra
 	extra[name] = new /datum/data/mining_equipment(name, path, cost)
+	prize_list = mine
 	dirty_items = TRUE
 
 

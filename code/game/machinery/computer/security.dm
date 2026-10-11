@@ -21,12 +21,12 @@
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
-	var/static/list/field_edit_questions
-	var/static/list/field_edit_choices
+	var/list/field_edit_questions
+	var/list/field_edit_choices
 
-/obj/machinery/computer/secure_data/Initialize(mapload)
-	. = ..()
-	field_edit_questions = list(
+/// The field_edit_questions table, one per type (per_type()).
+/obj/machinery/computer/secure_data/proc/build_field_edit_questions()
+	. = list(
 		// General
 		"name" = "Please enter new name:",
 		"id" = "Please enter new id:",
@@ -44,7 +44,10 @@
 		"ma_crim_d" = "Please input new major crime summary.",
 		"notes" = "Please input new important notes:",
 	)
-	field_edit_choices = list(
+
+/// The field_edit_choices table, one per type (per_type()).
+/obj/machinery/computer/secure_data/proc/build_field_edit_choices()
+	. = list(
 		// General
 		"sex" = all_genders_text_list,
 		// Security
@@ -74,6 +77,8 @@
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
+	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
+	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active2), /datum/data/record)
 	interface("SecurityRecords", title = "Security Records")
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(record_open_touch)))

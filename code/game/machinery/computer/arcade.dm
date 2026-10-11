@@ -350,11 +350,13 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	var/gameStatus = ORION_STATUS_START
 	var/canContinueEvent = 0
 
-/obj/machinery/computer/arcade/orion_trail/Initialize(mapload)
-	. = ..()
-	// Sets up the main trail
-	stops = list("Pluto","Asteroid Belt","Proxima Centauri","Dead Space","Rigel Prime","Tau Ceti Beta","Black Hole","Space Outpost Beta-9","Orion Prime")
-	stopblurbs = list(
+/// The stops table, one per type (per_type()).
+/obj/machinery/computer/arcade/orion_trail/proc/build_stops()
+	. = list("Pluto","Asteroid Belt","Proxima Centauri","Dead Space","Rigel Prime","Tau Ceti Beta","Black Hole","Space Outpost Beta-9","Orion Prime")
+
+/// The stopblurbs table, one per type (per_type()).
+/obj/machinery/computer/arcade/orion_trail/proc/build_stopblurbs()
+	. = list(
 		"Pluto, long since occupied with long-range sensors and scanners, stands ready to, and indeed continues to probe the far reaches of the galaxy.",
 		"At the edge of the Sol system lies a treacherous asteroid belt. Many have been crushed by stray asteroids and misguided judgement.",
 		"The nearest star system to Sol, in ages past it stood as a reminder of the boundaries of sub-light travel, now a low-population sanctuary for adventurers and traders.",

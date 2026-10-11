@@ -28,12 +28,12 @@
 	var/printing = null
 	var/can_change_id = 0
 	// The below are used to make modal generation more convenient
-	var/static/list/field_edit_questions
-	var/static/list/field_edit_choices
+	var/list/field_edit_questions
+	var/list/field_edit_choices
 
-/obj/machinery/computer/skills/Initialize(mapload)
-	. = ..()
-	field_edit_questions = list(
+/// The field_edit_questions table, one per type (per_type()).
+/obj/machinery/computer/skills/proc/build_field_edit_questions()
+	. = list(
 		// General
 		"name" = "Please input new name:",
 		"id" = "Please input new ID:",
@@ -48,7 +48,10 @@
 		"faction" = "Please input the corrected employer:",
 		"religion" = "Please input new religion:",
 	)
-	field_edit_choices = list(
+
+/// The field_edit_choices table, one per type (per_type()).
+/obj/machinery/computer/skills/proc/build_field_edit_choices()
+	. = list(
 		// General
 		"sex" = all_genders_text_list,
 		"p_stat" = list("*Deceased*", "*SSD*", "Active", "Physically Unfit", "Disabled"),
@@ -230,6 +233,8 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/skills)
+	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
+	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active1), /datum/data/record)
 	interface("GeneralRecords", title = "Department Management")
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), needs(req(PROC_REF(within_contact_range))))

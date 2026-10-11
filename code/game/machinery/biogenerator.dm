@@ -54,28 +54,22 @@
 	src.reagent_amt = amt
 	src.cost = cost
 
-/obj/machinery/biogenerator/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(1000)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-
-	default_apply_parts()
-
-	item_list = list()
-	item_list["Food Items"] = list(
+/// The item_list table, one per type (per_type()).
+/obj/machinery/biogenerator/proc/build_item_list()
+	. = list()
+	.["Food Items"] = list(
 		BIOGEN_REAGENT("Milk", REAGENT_ID_MILK, 50, 2), //2 for each 1u
 		BIOGEN_REAGENT("Cream", REAGENT_ID_CREAM, 50, 3), //3 for each 1u
 		BIOGEN_ITEM("Slab of meat", /obj/item/reagent_containers/food/snacks/meat, 5, 50),
 		BIOGEN_ITEM("Algae Sheets", /obj/item/stack/material/algae, 50, 100),
 	)
-	item_list["Cooking Ingredients"] = list(
+	.["Cooking Ingredients"] = list(
 		BIOGEN_REAGENT("Universal Enzyme", REAGENT_ID_ENZYME, 50, 3),
 		BIOGEN_ITEM("Nutri-spread", /obj/item/reagent_containers/food/snacks/spreads, 5, 30),
 		BIOGEN_REAGENT("Salt", REAGENT_ID_SODIUMCHLORIDE, 50, 2),
 		BIOGEN_REAGENT("Soy Sauce", REAGENT_ID_SOYSAUCE, 50, 3),
 	)
-	item_list["Gardening Nutrients"] = list(
+	.["Gardening Nutrients"] = list(
 		BIOGEN_ITEM("E-Z-Nutrient", /obj/item/reagent_containers/glass/bottle/eznutrient, 5, 30),
 		BIOGEN_ITEM("Left 4 Zed", /obj/item/reagent_containers/glass/bottle/left4zed, 5, 50),
 		BIOGEN_ITEM("Robust Harvest", /obj/item/reagent_containers/glass/bottle/robustharvest, 5, 50),
@@ -83,11 +77,11 @@
 		BIOGEN_ITEM("Mutagen", /obj/item/reagent_containers/glass/bottle/mutagen, 15, 50),
 		BIOGEN_ITEM("Plant-B-Gone", /obj/item/reagent_containers/spray/plantbgone, 5, 50),
 	)
-	item_list["Exotic Seeds"] = list(
+	.["Exotic Seeds"] = list(
 		BIOGEN_ITEM("Mystery seed pack", /obj/item/seeds/random, 5, 150),
 		BIOGEN_ITEM("Kudzu seed pack", /obj/item/seeds/kudzuseed, 5, 100),
 	)
-	item_list["Leather Products"] = list(
+	.["Leather Products"] = list(
 		BIOGEN_ITEM("Wallet", /obj/item/storage/wallet, 1, 100),
 		BIOGEN_ITEM("Botanical gloves", /obj/item/clothing/gloves/botanic_leather, 1, 250),
 		BIOGEN_ITEM("Plant bag", /obj/item/storage/bag/plants, 1, 320),
@@ -133,6 +127,9 @@
 	return data
 
 CAPABILITIES(/obj/machinery/biogenerator)
+	reagents(1000)
+	default_parts()
+	per_type(nameof(item_list), PROC_REF(build_item_list))
 	configure(uses_power(idle = 40))
 	interface("Biogenerator")
 	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
