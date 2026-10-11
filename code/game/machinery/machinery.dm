@@ -151,8 +151,8 @@ CAPABILITIES(/obj/machinery)
 	// Non-harm clicks reach matching machine interactions, never the inherited item strike.
 	extend("melee_hit", when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))))
 	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
-		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req_bool(PROC_REF(robot_remote_blocked))))),
-		needs(req_on_origin(ORIGIN_MENU, req_bool(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))
+		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
+		needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
@@ -389,7 +389,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /obj/machinery/proc/robot_remote_blocked(datum/act/op/A)
 	// Sample the current input actor; menu samples are rebuilt rather than cached.
-	return read_once(A.actor.is_remote_viewing())
+	return (read_once(A.actor.is_remote_viewing())) ? null : /datum/msg/req_failed
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)
@@ -571,10 +571,10 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 /// With no board the click is taken and nothing happens. Declared by each display: op("disconnect_display", ...) below.
 /proc/display_disconnect_op()
 	return op("disconnect_display", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(2 SECONDS), label("Disconnect monitor"),
-		needs(req_bool(TYPE_PROC_REF(/obj/machinery, has_board), silent = TRUE)), begins(MSG(machine/display_disconnecting)), then(TYPE_PROC_REF(/obj/machinery, display_disconnected)))
+		needs(req(TYPE_PROC_REF(/obj/machinery, has_board), silent = TRUE)), begins(MSG(machine/display_disconnecting)), then(TYPE_PROC_REF(/obj/machinery, display_disconnected)))
 
 /obj/machinery/proc/has_board(datum/act/op/A)
-	return !!circuit
+	return (!!circuit) ? null : /datum/msg/req_silent
 
 /obj/machinery/proc/display_disconnected(datum/act/op/A)
 	if(broken_now())

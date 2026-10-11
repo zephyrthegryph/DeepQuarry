@@ -98,7 +98,7 @@
 
 CAPABILITIES(/datum/tgui_module/ship/nav)
 	interface("OvermapNavigation")
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
 
 /datum/tgui_module/ship/nav/ui_data(datum/act/eval/A)
@@ -126,7 +126,7 @@ CAPABILITIES(/datum/tgui_module/ship/nav)
 
 /// A navigation display with no ship linked answers nothing (silently).
 /datum/tgui_module/ship/nav/proc/ui_gate(datum/act/op/A)
-	return !!linked()
+	return (!!linked()) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/ship/nav/proc/ui_act_viewing(datum/act/op/A)
 	var/mob/user = A.actor

@@ -64,7 +64,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("race", ui_act("race", arg("race", schema_text(4096))), then(PROC_REF(ui_act_race)))
 	op("gender", ui_act("gender", arg("gender")), then(PROC_REF(ui_act_gender)))
 	op("gender_id", ui_act("gender_id", arg("gender_id", schema_text(4096))), then(PROC_REF(ui_act_gender_id)))
-	op("skin_tone", ui_act("skin_tone"), needs(req_bool(PROC_REF(can_tone), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Skin Tone", "question" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "default" = computed(PROC_REF(skin_tone_default)), "max_value" = 220, "min_value" = 1)), then(PROC_REF(ui_act_skin_tone)))
+	op("skin_tone", ui_act("skin_tone"), needs(req(PROC_REF(can_tone), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Skin Tone", "question" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "default" = computed(PROC_REF(skin_tone_default)), "max_value" = 220, "min_value" = 1)), then(PROC_REF(ui_act_skin_tone)))
 	op("skin_color", ui_act("skin_color"), then(PROC_REF(ui_act_skin_color)))
 	op("hair", ui_act("hair", arg("name")), then(PROC_REF(ui_act_hair)))
 	op("hair_grad", ui_act("hair_grad", arg("picked")), then(PROC_REF(ui_act_hair_grad)))
@@ -99,8 +99,8 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("rename", ui_act("rename"), needs(req(PROC_REF(has_owner), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Sleeve Name", "question" = "Choose the a name:", "encode" = FALSE)), then(PROC_REF(ui_act_rename)))
 	op("char_name", ui_act("char_name"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = "Input character's name:", "default" = computed(PROC_REF(char_name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE)), then(PROC_REF(ui_act_char_name)))
 	op("race_name", ui_act("race_name"), then(PROC_REF(ui_act_race_name)))
-	op("base_icon", ui_act("base_icon"), needs(req_bool(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Body Shape", "question" = "Please select basic shape.", "choices" = computed(PROC_REF(custom_species_bases)))), then(PROC_REF(ui_act_base_icon)))
-	op("blood_reagent", ui_act("blood_reagent"), needs(req_bool(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Character Preference", "question" = "Please select blood restoration reagent:", "choices" = computed(PROC_REF(valid_blood_reagents)))), then(PROC_REF(ui_act_blood_reagent)))
+	op("base_icon", ui_act("base_icon"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Body Shape", "question" = "Please select basic shape.", "choices" = computed(PROC_REF(custom_species_bases)))), then(PROC_REF(ui_act_base_icon)))
+	op("blood_reagent", ui_act("blood_reagent"), needs(req(PROC_REF(can_misc), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Character Preference", "question" = "Please select blood restoration reagent:", "choices" = computed(PROC_REF(valid_blood_reagents)))), then(PROC_REF(ui_act_blood_reagent)))
 	op("blood_color", ui_act("blood_color"), then(PROC_REF(ui_act_blood_color)))
 	op("weight", ui_act("weight"), asks(/datum/prompt/number, fields = list("title" = "Character Preference", "question" = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", "max_value" = WEIGHT_MAX, "min_value" = WEIGHT_MIN, "step" = 0.01), step = "amount"), asks(/datum/prompt/choice, fields = list("title" = "Confirmation", "question" = "Is that number in pounds (lb) or kilograms (kg)?", "choices" = list("Pounds", "Kilograms")), step = "unit", when = PROC_REF(weight_given)), then(PROC_REF(ui_act_weight)))
 	op("size_scale", ui_act("size_scale"), then(PROC_REF(ui_act_size_scale)))
@@ -189,7 +189,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return OP_OK
 
 /datum/tgui_module/appearance_changer/proc/can_misc(datum/act/op/A)
-	return can_change(owner(), APPEARANCE_MISC)
+	return (can_change(owner(), APPEARANCE_MISC)) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/appearance_changer/proc/can_race(datum/act/op/A)
 	return can_change(owner(), APPEARANCE_RACE)
@@ -198,7 +198,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return (!!owner()) ? null : /datum/msg/req_failed
 
 /datum/tgui_module/appearance_changer/proc/can_tone(datum/act/op/A)
-	return can_change_skin_tone(owner())
+	return (can_change_skin_tone(owner())) ? null : /datum/msg/req_silent
 
 /// The body designer's console, when the changer is the designer's.
 /datum/tgui_module/appearance_changer/proc/designer_console()

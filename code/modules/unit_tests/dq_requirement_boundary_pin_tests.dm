@@ -555,3 +555,26 @@
 /datum/unit_test/dq_requirement_eighth_pin
 	parent_type = /datum/unit_test/dq_conversion_pin
 	capture_roots = list(/datum/edit_player_panel, /datum/eventkit/player_effects, /datum/newscaster_panel, /datum/tgui_module/appearance_changer, /datum/tgui_module/cardmod, /datum/tgui_module/crew_monitor, /datum/tgui_module/late_choices, /datum/tgui_module/law_manager, /datum/tgui_module/rcon, /datum/tgui_module/ship/nav, /obj/structure/ghost_pod/ghost_activated/maint_lurker, /obj/structure/ghost_pod/ghost_activated/unified_hole, /obj/item/communicator, /obj/item/areaeditor, /obj/item/rcd, /obj/item/sleevemate, /obj/mecha/working/ripley, /obj/item/mecha_parts/mecha_equipment/tool/passenger, /obj/machinery/syndicate_beacon, /obj/item/flashlight, /obj/item/radio/headset, /obj/item/paicard, /obj/structure/ghost_pod/manual, /obj/structure/ghost_pod/ghost_activated, /obj/structure/trash_pile, /obj/machinery/computer/specops_shuttle, /obj/machinery/magnetic_controller, /obj/structure/smoleruins, /obj/structure/smolebuilding)
+
+/datum/unit_test/dq_requirement_eighth_boundary/topic_inherited_parent/Run()
+	var/mob/living/carbon/human/external = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/pilot = allocate(/mob/living/carbon/human, external.loc)
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, external.loc)
+	TEST_ASSERT_NULL(external.client, "The external actor really has no attached client")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.actor = external
+	A.holder = mech
+	A.target = mech
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A real nonpilot preserves parent denial")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot, pilot), "The real containment API establishes a pilot")
+	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), pilot, "The real slot identifies that pilot")
+	A.actor = pilot
+	TEST_ASSERT_NULL(mech.topic_usable(A), "The actual pilot is allowed through the pilot exception")
+	A.actor = external
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A different actor remains refused after boarding")
+	for(var/type in list(/obj/item/rcd, /obj/item/areaeditor, /obj/item/sleevemate))
+		var/obj/item/I = allocate(type, external.loc)
+		A.holder = I
+		A.target = I
+		TEST_ASSERT_EQUAL(I.topic_usable(A), MSG(op/topic_gate), "[type] must preserve its real parent client denial")
+	A.release()

@@ -74,18 +74,18 @@ CAPABILITIES(/datum/tgui_module)
 	op("pc_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
 	op("pc_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
 	// A button works while its window does: checked when it is pressed and again when the answer to its question arrives.
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_usable), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_usable), silent = TRUE)))
 
 /// The window the viewer works this module through is still interactive. A button press arrives from that window; the answer to a question it
 /// asked needs the window to be still open (a question is dropped once the window is gone, as the re-run of the old handler was).
 /datum/tgui_module/proc/ui_usable(datum/act/op/A)
 	var/mob/user = A.actor
 	if(QDELETED(src) || !istype(user))
-		return FALSE
+		return /datum/msg/req_silent
 	var/datum/tgui/ui = SStgui.get_open_ui(user, src)
 	if(!ui)
-		return !A.answer
-	return ui.status == STATUS_INTERACTIVE
+		return (!A.answer) ? null : /datum/msg/req_silent
+	return (ui.status == STATUS_INTERACTIVE) ? null : /datum/msg/req_silent
 
 /// The answer to a question a button asked still counts: its window is still open and interactive for the one who answers.
 /datum/tgui_module/proc/request_usable(datum/request/R)

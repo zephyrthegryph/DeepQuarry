@@ -225,9 +225,9 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 // Every scan link works only from the active hand.
 /obj/item/sleevemate/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
-	return A.actor.get_active_hand() == src
+	return A.actor.get_active_hand() == src ? null : MSG(op/topic_gate)
 
 /// Every scan link spends a click, held or not (it was the gate's first act).
 /obj/item/sleevemate/proc/topic_click_spent(datum/act/op/A)

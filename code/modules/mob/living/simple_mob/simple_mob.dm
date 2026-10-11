@@ -202,7 +202,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE)
 	// a ghost becomes a ghost-joinable mob after a yes (the old attack_ghost; a mob nobody may join is not offered)
-	op("ghost_join", observer(), label("Inhabit"), when(nameof(ghostjoin)), needs(req_bool(PROC_REF(can_ghost_join), because = PROC_REF(ghost_join_reason))),
+	op("ghost_join", observer(), label("Inhabit"), when(nameof(ghostjoin)), needs(req(PROC_REF(can_ghost_join))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Become Mob", "question" = computed(PROC_REF(ghost_join_question)), "timeout" = 20 SECONDS), keeps = TARGET_PRESENT),
 		then(PROC_REF(reply_ghost_join)))
 
