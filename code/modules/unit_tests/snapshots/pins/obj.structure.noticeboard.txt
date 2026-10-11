@@ -8,8 +8,8 @@ ai|none click: Click: Examine
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
++2 menu: Offset
++5 click: Click: Offset
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use

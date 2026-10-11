@@ -22,4 +22,4 @@ ai|none click: Click: Use
 -menu: Climb
 -menu: Place on wall
 -menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
-keys: add_glass, drag_buckle, item, melee_hit, silicon_use, use, use_wrench
+keys: add_glass, drag_buckle, item, melee_hit, remove_frame, silicon_use, use, use_wrench

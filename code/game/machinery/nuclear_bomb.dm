@@ -11,7 +11,7 @@ GLOBAL_VAR(bomb_set)
 	var/deployable = 0.0
 	var/extended = 0.0
 	var/lighthack = 0
-	var/opened = 0.0
+	var/opened = 0
 	var/timeleft = 60.0
 	var/timing = 0.0
 	var/r_code = "ADMIN"
@@ -84,28 +84,25 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 	rel_set(src, nameof(auth), disk)
 	return TRUE
 
-/obj/machinery/nuclearbomb/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, 1)
-	add_fingerprint(user)
-	if(auth())
-		if(opened == 0)
-			opened = 1
-			add_overlay("npanel_open")
-			to_chat(user, "You unscrew the control panel of [src].")
+/// Without the authentication disk in, the panel stays locked in (and buzzes).
+/obj/machinery/nuclearbomb/proc/panel_auth_refusal(datum/act/op/A)
+	if(read_once(auth()))
+		return null
+	return "	he [src] emits a buzzing noise, the panel staying locked in"
 
-		else
-			opened = 0
-			cut_overlay("npanel_open")
-			to_chat(user, "You screw the control panel of [src] back on.")
-	else
-		if(opened == 0)
-			to_chat(user, "The [src] emits a buzzing noise, the panel staying locked in.")
-		if(opened == 1)
-			opened = 0
-			cut_overlay("npanel_open")
-			to_chat(user, "You screw the control panel of [src] back on.")
+/obj/machinery/nuclearbomb/proc/panel_opened(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	add_fingerprint(A.actor)
+	add_overlay("npanel_open")
+	to_chat(A.actor, "You unscrew the control panel of [src].")
+	return OP_OK
+
+/obj/machinery/nuclearbomb/proc/panel_closed(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	add_fingerprint(A.actor)
+	cut_overlay("npanel_open")
+	to_chat(A.actor, "You screw the control panel of [src] back on.")
+	if(!auth())
 		flick("nuclearbombc", src)
 	return OP_OK
 
@@ -170,6 +167,7 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 	return TRUE
 
 TRACKED(/obj/machinery/nuclearbomb, removal_stage)
+TRACKED(/obj/machinery/nuclearbomb, opened)
 
 CAPABILITIES(/obj/machinery/nuclearbomb)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
@@ -191,7 +189,10 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 		stage_step(2, 3, lit_welder(fuel = 5), label("Cut the anchoring sealant"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(sealant_cut_begins)), wait(4 SECONDS), says(MSG(nuclearbomb/sealant_cut))),
 		stage_step(3, 4, tool(TOOL_WRENCH), label("Unwrench the anchoring bolts"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(bolts_unwrenched_begins)), wait(5 SECONDS), says(MSG(nuclearbomb/bolts_unwrenched))),
 		stage_step(4, 5, tool(TOOL_CROWBAR), label("Lift it off the anchors"), when(req_is(nameof(anchored), TRUE)), starts(PROC_REF(removal_started)), begins(PROC_REF(lift_begins)), wait(8 SECONDS), says(MSG(nuclearbomb/lifted)), then(PROC_REF(lifted_off))))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	// the control panel: an authorised screwdriver unscrews it (the wires behind it are then reachable); any screwdriver screws it back on
+	stages(nameof(opened),
+		stage_step(0, 1, tool(TOOL_SCREWDRIVER), label("Unscrew the control panel"), needs(req(PROC_REF(panel_auth_refusal))), wait(0), then(PROC_REF(panel_opened)), key = "open_panel"),
+		stage_step(1, 0, tool(TOOL_SCREWDRIVER), label("Screw the control panel on"), wait(0), then(PROC_REF(panel_closed)), key = "close_panel"))
 	op("insert_disk", item(/obj/item/disk/nuclear), priority(OP_PRIORITY_DEFAULT - 1), label("Insert authentication disk"), when(req(PROC_REF(is_extended))), then(PROC_REF(interaction_insert_disk)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("make_deployable", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Make Deployable"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act)), req(PROC_REF(can_make_deployable))), then(PROC_REF(interaction_make_deployable)))

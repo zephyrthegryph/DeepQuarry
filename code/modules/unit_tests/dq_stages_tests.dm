@@ -166,3 +166,46 @@
 	TEST_ASSERT_EQUAL(N.removal_stage, 5, "and it is lifted")
 	TEST_ASSERT(!N.anchored, "off its anchors")
 	test_driver_end()
+
+/// A grenade's timer turns round by its stages() steps; the hailer's restrictor turns round and breaks.
+/datum/unit_test/dq_stages_cycles
+
+/datum/unit_test/dq_stages_cycles/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.teleop = H
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	var/obj/item/tool/wirecutters/cutters = dq_fast_tool(/obj/item/tool/wirecutters, T)
+	var/obj/item/grenade/G = allocate(/obj/item/grenade, T)
+	G.set_det_time(1)
+	for(var/expected in list(10, 30, 50, 1))
+		dq_stages_use(H, G, screwdriver)
+		TEST_ASSERT_EQUAL(G.det_time, expected, "the grenade timer turns to [expected]")
+	var/obj/item/clothing/mask/gas/sechailer/M = allocate(/obj/item/clothing/mask/gas/sechailer, T)
+	dq_stages_use(H, M, screwdriver)
+	TEST_ASSERT_EQUAL(M.aggressiveness, 2, "the restrictor turns to the second position")
+	TEST_ASSERT_EQUAL(M.phrase, 7, "with its opening phrase")
+	dq_stages_use(H, M, cutters)
+	TEST_ASSERT_EQUAL(M.aggressiveness, 5, "the wirecutters break it")
+	dq_stages_use(H, M, screwdriver)
+	TEST_ASSERT_EQUAL(M.aggressiveness, 5, "a broken restrictor stays broken")
+	test_driver_end()
+
+/// A hand-built chemical grenade is locked and unlocked by the screwdriver, ahead of its timer.
+/datum/unit_test/dq_stages_chem_grenade
+
+/datum/unit_test/dq_stages_chem_grenade/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.teleop = H
+	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	var/obj/item/grenade/chem_grenade/C = allocate(/obj/item/grenade/chem_grenade, T)
+	C.set_stage(1)
+	dq_stages_use(H, C, screwdriver)
+	TEST_ASSERT_EQUAL(C.stage, 2, "the assembly is locked (1 -> 2)")
+	TEST_ASSERT_EQUAL(C.name, "fake grenade", "an empty locked casing is a fake grenade")
+	dq_stages_use(H, C, screwdriver)
+	TEST_ASSERT_EQUAL(C.stage, 1, "and unlocked again (2 -> 1)")
+	test_driver_end()

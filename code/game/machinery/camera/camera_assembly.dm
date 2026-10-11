@@ -44,7 +44,10 @@ CAPABILITIES(/obj/item/camera_assembly)
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), when(req_is(nameof(state), 3)), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Configure"), wait(0), when(req_stage(nameof(state), 3)), starts(PROC_REF(configure_started)),
+		asks(/datum/prompt/text, fields = list("title" = "Set Network", "question" = computed(PROC_REF(networks_question)), "default" = computed(PROC_REF(networks_default)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "networks"),
+		asks(/datum/prompt/text, fields = list("title" = "Set Camera Name", "question" = "How would you like to name the camera?", "default" = computed(PROC_REF(name_default)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "name", when = PROC_REF(networks_given)),
+		then(PROC_REF(camera_configured)))
 
 
 /// Old attackby.
@@ -114,52 +117,49 @@ CAPABILITIES(/obj/item/camera_assembly)
 		upgrade.forceMove(get_turf(src))
 	return OP_OK
 
-/obj/item/camera_assembly/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	playsound(src, sounds_of(tool).use, 50, TRUE)
-	ask_camera_networks(user)
-	return OP_OK
+/obj/item/camera_assembly/proc/configure_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/// The wired assembly's first configuration question (its networks); the answer asks for the name.
-/obj/item/camera_assembly/proc/ask_camera_networks(mob/user)
-	open_request(src, /datum/prompt/text, PROC_REF(camera_networks_entered), answerer = user, title = "Set Network", question = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+/obj/item/camera_assembly/proc/networks_question(datum/act/op/A)
+	return "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: [using_map.station_short],Security,Secret "
 
-/obj/item/camera_assembly/proc/camera_networks_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	if(!A.answer.value)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return
-	var/list/tempnetwork = splittext(A.answer.value, ",")
-	if(tempnetwork.len < 1)
-		to_chat(user, "No network found please hang up and try your call again.")
-		return
+/obj/item/camera_assembly/proc/networks_default(datum/act/op/A)
+	return camera_network ? camera_network : NETWORK_DEFAULT
+
+/// The networks answer, as a list (empty when none was given).
+/obj/item/camera_assembly/proc/networks_answered(datum/act/op/A)
+	var/answer = A.step_value("networks")
+	return answer ? splittext(answer, ",") : list()
+
+/// The name is asked only once some network was given.
+/obj/item/camera_assembly/proc/networks_given(datum/act/op/A)
+	return length(networks_answered(A)) > 0
+
+/obj/item/camera_assembly/proc/name_default(datum/act/op/A)
+	if(camera_name)
+		return camera_name
 	var/area/camera_area = get_area(src)
-	var/temptag = "[sanitize(camera_area.name)] ([rand(1, 999)])"
-	open_request(src, /datum/prompt/text/camera_name, PROC_REF(camera_configured), valid = PROC_REF(camera_state_ok), answerer = user, title = "Set Camera Name", question = "How would you like to name the camera?", default = camera_name ? camera_name : temptag, max_len = MAX_NAME_LEN, encode = FALSE, networks = tempnetwork, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+	return "[sanitize(camera_area.name)] ([rand(1, 999)])"
 
-/// The camera's naming question: the networks chosen so far are kept on it.
-/datum/prompt/text/camera_name
-	var/list/networks
-
-/// Re-checked on the answer: the assembly is still wired and not yet closed up.
-/obj/item/camera_assembly/proc/camera_state_ok(datum/request/R)
-	return state == 3
-
-/obj/item/camera_assembly/proc/camera_configured(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/camera_name/R = A.request
+/// Networks and a name given, the assembly closes up into a camera, and the builder turns it.
+/obj/item/camera_assembly/proc/camera_configured(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/networks = networks_answered(A)
+	if(!length(networks))
+		to_chat(user, "No network found please hang up and try your call again.")
+		return OP_OK
+	var/camera_tag = A.step_value("name")
+	if(isnull(camera_tag))
+		return OP_OK
 	set_state(4)
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
 	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
-	C.replace_networks(uniqueList(R.networks))
-	C.c_tag = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
-	ask_camera_direction(R.answerer, C, 5)
+	C.replace_networks(uniqueList(networks))
+	C.c_tag = sanitizeSafe(camera_tag, MAX_NAME_LEN)
+	ask_camera_direction(user, C, 5)
+	return OP_OK
 
 /// Turns the new camera until the builder is happy, with up to `chances` more tries.
 /obj/item/camera_assembly/proc/ask_camera_direction(mob/user, obj/machinery/camera/C, chances)

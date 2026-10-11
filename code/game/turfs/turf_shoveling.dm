@@ -6,10 +6,19 @@
 		shovel_dig_grave(user, our_shovel)
 		return
 
-	// Loot and garden digging
-	use_tool(user, our_shovel, src, delay = 3 SECONDS, volume = 0, start_self = "\The [user] begins digging into \the [src] with \the [our_shovel].", receiver = src, on_done = PROC_REF(handle_turf_dig_tool_done), done_args = list(user, our_shovel))
+	// Loot and garden digging is the turf's "dig" op (a shovel not in grave mode).
 
-/turf/proc/handle_turf_dig_tool_done(mob/user, obj/item/shovel/our_shovel)
+/// A diggable floor takes a shovel that is not digging a grave.
+/turf/proc/diggable_by(datum/act/op/A)
+	var/obj/item/shovel/our_shovel = A.held
+	return istype(our_shovel) && !our_shovel.grave_mode && read_once((flags & TURF_CAN_DIG_SHOVEL) && !density)
+
+/turf/proc/dig_begins(datum/act/op/A)
+	return msg_text("\The [A.actor] begins digging into \the [src] with \the [A.held].")
+
+/turf/proc/handle_turf_dig_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/shovel/our_shovel = A.held
 	if(shovel_can_cultivate() && !(locate_within(src, /obj/machinery/portable_atmospherics/hydroponics/soil)) && !(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = new(src)
 		user.visible_message(span_notice("\The [src] digs \a [soil] into \the [src]."))

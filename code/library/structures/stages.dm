@@ -41,5 +41,5 @@
 	. = list()
 	for(var/datum/stage_step/S in list(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16))
 		var/key = S.key || "[var_key]_[S.from_stage]_[S.to_stage]"
-		. += op(key, when(req_stage(var_key, S.from_stage)), S.parts, sets(var_key, S.to_stage))
+		. += op(key, when(req_stage(var_key, S.from_stage)), sets(var_key, S.to_stage), S.parts)
 

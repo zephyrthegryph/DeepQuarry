@@ -57,6 +57,14 @@
 +1 menu: Graffiti
 +7 menu: Wall item
 +8 click: Click: Wall item
+human|/obj/item/shovel menu: Crawl
+human|/obj/item/shovel menu: Graffiti
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Turf item
+human|/obj/item/shovel menu: Wall item
+human|/obj/item/shovel click: Click: Wall item
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
@@ -90,4 +98,4 @@ human|/obj/item/pickaxe/plasmacutter menu: Touch
 human|/obj/item/pickaxe/plasmacutter menu: Turf item
 human|/obj/item/pickaxe/plasmacutter menu: Wall item
 human|/obj/item/pickaxe/plasmacutter click: Click: Cut through the outer plating
-keys: burn_rot, crawl_drag, cut_grille, cut_plain, cut_plain_blade, cut_plain_pickaxe, dig_grave, graffiti, light_thermite, loosen_bolts, mend_grille, pry_cover, pry_sheath, screw_lines, silicon_hand, slice_cover, slice_cover_cutter, slice_rods, slice_rods_cutter, turf_crawl, turf_item, turf_touch, unscrew_lines, wall_dissolve, wall_graffiti, wall_item, wall_touch, weld_repair
+keys: burn_rot, crawl_drag, cut_grille, cut_plain, cut_plain_blade, cut_plain_pickaxe, dig, dig_grave, graffiti, light_thermite, loosen_bolts, mend_grille, pry_cover, pry_sheath, screw_lines, silicon_hand, slice_cover, slice_cover_cutter, slice_rods, slice_rods_cutter, turf_crawl, turf_item, turf_touch, unscrew_lines, wall_dissolve, wall_graffiti, wall_item, wall_touch, weld_repair

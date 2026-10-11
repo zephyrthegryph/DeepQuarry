@@ -18674,7 +18674,7 @@
 /obj/structure/cable/ender	870632bd8f098605	d1,d2,id,power_entity
 /obj/structure/cable/generated_station	42b9bed59e6e466b	d1,d2,power_entity
 /obj/structure/cable/green	761290df74fc3b18	d1,d2,power_entity
-/obj/structure/cable/heavyduty	110af072389425fb	d1,d2,power_entity
+/obj/structure/cable/heavyduty	9d0d37873beb2653	d1,d2,power_entity
 /obj/structure/cable/orange	da481a600c5068d6	d1,d2,power_entity
 /obj/structure/cable/pink	4cd248891e4f1403	d1,d2,power_entity
 /obj/structure/cable/white	57e7db615c03cf9d	d1,d2,power_entity
@@ -19626,8 +19626,8 @@
 /obj/structure/micro_tunnel	2983767fa95f5837	
 /obj/structure/micro_tunnel/magic	a3b75fcd19a8fb15	
 /obj/structure/micro_tunnel/random	04d5e8b39d83d7b4	
-/obj/structure/mirror	a42d0e76d43a5914	M,building,glass
-/obj/structure/mirror/raider	b96e9d5eeba99fb3	M,building,glass
+/obj/structure/mirror	4ac7461dc8e84bc6	M,building,glass
+/obj/structure/mirror/raider	b1d9b78fa4ba4a27	M,building,glass
 /obj/structure/mob_spawner	0b5f0cda99173a55	mob_faction,simultaneous_spawns,spawn_cooldown,spawn_delay,spawned_mobs,total_spawns
 /obj/structure/mob_spawner/ant_hill	eb30aab45630e0eb	mob_faction,simultaneous_spawns,spawn_cooldown,spawn_delay,spawned_mobs,total_spawns
 /obj/structure/mob_spawner/ant_hill/creatable	236b5f773c6f7e0b	mob_faction,simultaneous_spawns,spawn_cooldown,spawn_delay,spawned_mobs,total_spawns
@@ -19967,8 +19967,8 @@
 /obj/structure/reagent_dispensers/peppertank	58bcc40aaaffd7b7	possible_transfer_amounts
 /obj/structure/reagent_dispensers/space_cleaner	513f6805884fc422	possible_transfer_amounts
 /obj/structure/reagent_dispensers/virusfood	a8c5ca957e579017	possible_transfer_amounts
-/obj/structure/reagent_dispensers/water_cooler	7fd96a6e27d64fe7	bottle,cupholder,possible_transfer_amounts
-/obj/structure/reagent_dispensers/water_cooler/full	54e6a4b214c16036	bottle,cupholder,possible_transfer_amounts
+/obj/structure/reagent_dispensers/water_cooler	f6aaea50fb4a6a93	bottle,cupholder,possible_transfer_amounts
+/obj/structure/reagent_dispensers/water_cooler/full	b736f1048ca37240	bottle,cupholder,possible_transfer_amounts
 /obj/structure/reagent_dispensers/watertank	9ddb9d3e91f18fad	possible_transfer_amounts
 /obj/structure/reagent_dispensers/watertank/barrel	fe088dda4dc8c00b	possible_transfer_amounts
 /obj/structure/reagent_dispensers/watertank/high	a54c1f6f5fec8470	possible_transfer_amounts

@@ -49,10 +49,10 @@ human|none click: Click: Use
 -click: nothing
 +0 menu: Force Eject
 +1 menu: Insert
-+4 menu: Toggle flush
-+5 menu: Use
-+6 menu: Use welder
-+7 click: Click: Use welder
++3 menu: Slice the floorweld (refused: )
++5 menu: Toggle flush
++6 menu: Use
++7 click: Click: Slice the floorweld
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Force Eject

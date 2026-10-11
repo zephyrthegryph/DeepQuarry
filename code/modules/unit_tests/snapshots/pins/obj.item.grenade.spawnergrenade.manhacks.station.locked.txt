@@ -5,9 +5,10 @@
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Grenade interaction hand
-+3 menu: Use
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
++2 menu: Set the timer
++4 menu: Use
++5 menu: Use screwdriver
++6 click: Click: Set the timer
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Grenade interaction hand
@@ -60,4 +61,4 @@
 +0 menu: Grenade interaction hand
 @obj.item human|/obj/item/card/emag
 +0 menu: Grenade interaction hand
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, prime, toggle_digestable, use_screwdriver
+keys: collect_item, det_time_10_30, det_time_1_10, det_time_30_50, det_time_50_1, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, prime, toggle_digestable, use_screwdriver

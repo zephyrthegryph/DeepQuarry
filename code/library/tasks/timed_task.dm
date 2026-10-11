@@ -18,7 +18,7 @@
 //
 //	task_begin(/datum/task/timed/lockpick, user, list(src, "duration" = 5 SECONDS, "door" = D), src)
 //
-// A player's timed action is an op with wait() (doc/rewrite/conversion_guide.md section 12); the one user of this task is use_tool().
+// A player's timed action is an op with wait() (doc/rewrite/conversion_guide.md section 12), not this task.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Unit tests that drive gameplay procs synchronously set this: every timed action completes at once.

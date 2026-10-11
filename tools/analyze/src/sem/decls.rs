@@ -381,7 +381,7 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
 }
 
 /// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
-/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), parts..., sets(VAR, to)`. The key is `k`, else `<var>_<from>_<to>` with the var
+/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
 /// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
 pub fn stages_op_args(stages_args: &str) -> Vec<String> {
     let args = split_args(stages_args);
@@ -407,9 +407,8 @@ pub fn stages_op_args(stages_args: &str) -> Vec<String> {
                 _ => rest.push(p.to_string()),
             }
         }
-        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from)];
+        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from), format!("sets({}, {})", var, to)];
         op.extend(rest);
-        op.push(format!("sets({}, {})", var, to));
         out.push(op.join(", "));
     }
     out
@@ -656,8 +655,8 @@ mod tests {
     fn stages_desugar_to_ops() {
         let ops = stages_op_args("nameof(state), stage_step(0, 1, tool(TOOL_WRENCH), wait(0)), stage_step(1, 0, tool(TOOL_WRENCH), key = \"unanchor\")");
         assert_eq!(ops.len(), 2);
-        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), tool(TOOL_WRENCH), wait(0), sets(nameof(state), 1)");
-        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), tool(TOOL_WRENCH), sets(nameof(state), 0)");
+        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), sets(nameof(state), 1), tool(TOOL_WRENCH), wait(0)");
+        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), sets(nameof(state), 0), tool(TOOL_WRENCH)");
     }
 
     #[test]

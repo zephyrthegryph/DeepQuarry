@@ -15,10 +15,10 @@
 -click: nothing
 +0 menu: Clear Ammo Data (refused: You can't do that.)
 +1 menu: Load
-+3 menu: Smart item
-+5 menu: Use
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
++3 menu: Remove the cell (refused: )
++4 menu: Smart item
++6 menu: Use
++7 click: Click: Remove the cell
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Clear Ammo Data (refused: You can't do that.)
