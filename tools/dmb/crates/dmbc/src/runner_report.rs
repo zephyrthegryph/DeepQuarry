@@ -31,6 +31,14 @@ pub(super) fn memo_statistics(
             "checked": verification_checked,
             "mismatches": verification_mismatches
         },
+        "initializer_fragment_verification":memo.initializer_fragments.as_ref().map(|store| {
+            let (checked,mismatches)=store.fragment_verification_counts();
+            serde_json::json!({
+                "scope":"current_request_assignment_initializer_fragment_hits",
+                "checked":checked,
+                "mismatches":mismatches
+            })
+        }),
         "link_assignments":memo.link_bindings.as_ref().map(|store| serde_json::json!({
             "scope":"process_local_cumulative",
             "reuses":store.assignment_reuses()
