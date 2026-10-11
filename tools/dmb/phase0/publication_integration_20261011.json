@@ -944,5 +944,46 @@
     "retained_fresh_bytes_equal": true,
     "trusted_observations_match_byond": true,
     "scope": "Standalone bounded runtime fixtures, not full DeepQuarry suite or benchmark"
+  },
+  "latest_57_real_cohort": {
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-153802-50c556f7/receipt.json",
+    "compiler_commit": "57d5207098ad02a3c3d7f00635f26d43c7fe5ee0",
+    "status": "passed",
+    "rows": [
+      {
+        "kind": "initial",
+        "retained_end_to_end_seconds": 125.07800000000043,
+        "fresh_cache_off_end_to_end_seconds": 74.11000000000058,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "unchanged",
+        "retained_end_to_end_seconds": 7.54700000000048,
+        "fresh_cache_off_end_to_end_seconds": 71.76499999999942,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "body",
+        "retained_end_to_end_seconds": 84.82799999999952,
+        "fresh_cache_off_end_to_end_seconds": 74.26499999999942,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "structural",
+        "retained_end_to_end_seconds": 86.89100000000053,
+        "fresh_cache_off_end_to_end_seconds": 69.90599999999995,
+        "fresh_native_byte_oracle": true
+      }
+    ],
+    "oracle_scheduling": "fresh prepass before daemon startup; same source paths and ordered revisions",
+    "acceptance_profile": false,
+    "sampled_peak_private_bytes": 6060654592,
+    "strict_private_peak_proved": false,
+    "owned_job_reaped": true,
+    "byond_structural_semantic_coverage": "incomplete",
+    "initial_unclassified_fixed_words": 10,
+    "raw_positional_discrepancies_are_not_semantic_bug_counts": true,
+    "observed_pressure": "Tier3 compaction29.805s and32.721s; remaining private4.82/4.46GB exceeds soft4GB; semantic session then evicted",
+    "scope": "Captured real DeepQuarry prototype profile, compiler-cold fresh processes but not OS-cold disk; native oracle passes, throughput and full runtime gates open"
   }
 }
