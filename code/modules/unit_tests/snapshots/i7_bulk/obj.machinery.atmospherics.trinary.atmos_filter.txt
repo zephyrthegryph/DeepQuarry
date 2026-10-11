@@ -1,78 +1,82 @@
 human|none menu: Toggle power
 human|none menu: Ui open
 human|none click: Click: Ui open
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Toggle power
-robot|none menu: Ui open
-robot|none menu: Use
-robot|none click: Click: Ui open
-ai|none menu: Ui open
-ai|none menu: Use
-ai|none click: Click: Ui open
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle power
-human|/obj/item/tool/screwdriver menu: Ui open
-human|/obj/item/tool/screwdriver click: Click: Ui open
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle power
-human|/obj/item/tool/crowbar menu: Ui open
-human|/obj/item/tool/crowbar click: Click: Ui open
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle power
-human|/obj/item/tool/wrench menu: Ui open
-human|/obj/item/tool/wrench menu: Unwrench
-human|/obj/item/tool/wrench click: Click: Unwrench
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle power
-human|/obj/item/tool/wirecutters menu: Ui open
-human|/obj/item/tool/wirecutters click: Click: Ui open
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle power
-human|/obj/item/multitool menu: Ui open
-human|/obj/item/multitool click: Click: Ui open
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle power
-human|/obj/item/weldingtool menu: Ui open
-human|/obj/item/weldingtool click: Click: Ui open
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle power
-human|/obj/item/stack/cable_coil menu: Ui open
-human|/obj/item/stack/cable_coil click: Click: Ui open
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle power
-human|/obj/item/stack/material/steel menu: Ui open
-human|/obj/item/stack/material/steel click: Click: Ui open
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle power
-human|/obj/item/card/id menu: Ui open
-human|/obj/item/card/id click: Click: Ui open
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Toggle power
-human|/obj/item menu: Ui open
-human|/obj/item click: Click: Ui open
-human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material menu: Toggle power
-human|/obj/item/stack/material menu: Ui open
-human|/obj/item/stack/material click: Click: Ui open
-human|/obj/item/pipe_painter menu: Move To Top
-human|/obj/item/pipe_painter menu: Painter
-human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/pipe_painter menu: Toggle power
-human|/obj/item/pipe_painter menu: Ui open
-human|/obj/item/pipe_painter click: Click: Painter
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Toggle power
++2 menu: Ui open
++4 click: Click: Ui open
+@obj ai|none
+-click: Click: Use
++0 menu: Ui open
++2 click: Click: Ui open
+@obj ghost|none
+@obj.machinery.atmospherics human|/obj/item/tool/screwdriver
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/tool/crowbar
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/tool/wrench
+-menu: Toggle
++2 menu: Toggle power
++3 menu: Ui open
+@obj.machinery.atmospherics human|/obj/item/tool/wirecutters
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/multitool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/weldingtool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/stack/cable_coil
+-menu: Toggle
+-click: Click: Toggle
++3 menu: Toggle power
++4 menu: Ui open
++5 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/stack/material/steel
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/card/id
+-menu: Toggle
+-click: Click: Toggle
++3 menu: Toggle power
++4 menu: Ui open
++5 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery.atmospherics human|/obj/item/stack/material
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Toggle power
++3 menu: Ui open
++4 click: Click: Ui open
+@obj human|/obj/item/pipe_painter
+-menu: Toggle
++3 menu: Toggle power
++4 menu: Ui open
 keys: drag_buckle, filter, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, power, power_toggle, rate, robot_remote_blocked, silicon_hand, ui_open, unwrench
-

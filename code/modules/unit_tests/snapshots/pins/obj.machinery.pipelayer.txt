@@ -1,62 +1,42 @@
 human|none menu: Toggle (refused: It doesn't work without metal.)
 human|none click: Click: Toggle
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Toggle (refused: It doesn't work without metal.)
-robot|none menu: Use
-robot|none click: Click: Toggle
-ai|none menu: Use
-ai|none click: Click: Use
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle auto-dismantling
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Toggle auto-dismantling
-human|/obj/item/tool/wrench menu: Choose pipe type
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Choose pipe type
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Load metal
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Load metal
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: nothing
-human|/obj/item/storage/part_replacer menu: Empty contents
-human|/obj/item/storage/part_replacer menu: Move To Top
-human|/obj/item/storage/part_replacer menu: Replace parts
-human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage/part_replacer click: Click: Replace parts
-human|/obj/item/pipe menu: Flip Pipe
-human|/obj/item/pipe menu: Move To Top
-human|/obj/item/pipe menu: Recycle pipe
-human|/obj/item/pipe menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/pipe click: Click: Recycle pipe
-human|/obj/item/stack/material menu: Load metal (refused: It only takes steel.)
-human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material click: Click: Load metal
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Toggle (refused: It doesn't work without metal.)
++3 click: Click: Toggle
+@obj ai|none
+@obj ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++1 menu: Open maintenance panel
++3 click: Click: Open maintenance panel
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++1 menu: Toggle auto-dismantling
++3 click: Click: Toggle auto-dismantling
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Choose pipe type
++3 click: Click: Choose pipe type
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Load metal
++3 click: Click: Load metal
+@obj human|/obj/item/card/id
+@obj human|/obj/item
+@obj human|/obj/item/storage/part_replacer
+@obj human|/obj/item/pipe
+-menu: Put back
+-menu: Ui open
+-click: Click: Put back
++2 menu: Recycle pipe
++4 click: Click: Recycle pipe
+@obj human|/obj/item/stack/material
+-click: nothing
++0 menu: Load metal (refused: It only takes steel.)
++3 click: Click: Load metal
 keys: auto_dismantle, dismantle, drag_buckle, eject, load, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, pipe_type, recycle, robot_remote_blocked, silicon_hand, toggle
-

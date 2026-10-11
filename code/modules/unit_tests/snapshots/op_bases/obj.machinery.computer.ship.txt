@@ -1,0 +1,3 @@
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: View
+ghost|none click: Click: View

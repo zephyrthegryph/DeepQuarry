@@ -1,357 +1,345 @@
-human|none menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|none menu: Deploy Hardsuit (refused: You can't do that.)
-human|none menu: Engage Module (refused: You can't do that.)
-human|none menu: Move To Top
-human|none menu: Open Hardsuit Interface (refused: You can't do that.)
-human|none menu: Pick up
-human|none menu: Protean rig hand
-human|none menu: Remove Assimilated Rig (refused: You can't do that.)
-human|none menu: Remove Stored Bag (refused: You can't do that.)
-human|none menu: Rig shock hand
-human|none menu: Select Module (refused: You can't do that.)
-human|none menu: Switch Vision Mode (refused: You can't do that.)
-human|none menu: Toggle Boots (refused: You can't do that.)
-human|none menu: Toggle Chestpiece (refused: You can't do that.)
-human|none menu: Toggle Digestable (refused: You can't do that.)
-human|none menu: Toggle Gauntlets (refused: You can't do that.)
-human|none menu: Toggle Hardsuit (refused: You can't do that.)
-human|none menu: Toggle Helmet (refused: You can't do that.)
-human|none menu: Toggle Module (refused: You can't do that.)
-human|none menu: Toggle Visor (refused: You can't do that.)
-human|none click: Click: Protean rig hand
-robot|none menu: Configure Voice Synthesiser (refused: You can't do that.)
-robot|none menu: Deploy Hardsuit (refused: You can't do that.)
-robot|none menu: Engage Module (refused: You can't do that.)
-robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Move To Top
-robot|none menu: Open Hardsuit Interface (refused: You can't do that.)
-robot|none menu: Pick up
-robot|none menu: Protean rig hand
-robot|none menu: Remove Assimilated Rig (refused: You can't do that.)
-robot|none menu: Remove Stored Bag (refused: You can't do that.)
-robot|none menu: Rig shock hand
-robot|none menu: Select Module (refused: You can't do that.)
-robot|none menu: Switch Vision Mode (refused: You can't do that.)
-robot|none menu: Toggle Boots (refused: You can't do that.)
-robot|none menu: Toggle Chestpiece (refused: You can't do that.)
-robot|none menu: Toggle Digestable (refused: You can't do that.)
-robot|none menu: Toggle Gauntlets (refused: You can't do that.)
-robot|none menu: Toggle Hardsuit (refused: You can't do that.)
-robot|none menu: Toggle Helmet (refused: You can't do that.)
-robot|none menu: Toggle Module (refused: You can't do that.)
-robot|none menu: Toggle Visor (refused: You can't do that.)
-robot|none click: Click: Protean rig hand
-ai|none menu: Equip (refused: not possible right now)
-ai|none click: nothing
-ghost|none menu: Configure Voice Synthesiser (refused: You can't do that.)
-ghost|none menu: Deploy Hardsuit (refused: You can't do that.)
-ghost|none menu: Engage Module (refused: You can't do that.)
-ghost|none menu: Move To Top (refused: You can't reach that.)
-ghost|none menu: Open Hardsuit Interface (refused: You can't do that.)
-ghost|none menu: Remove Assimilated Rig (refused: You can't do that.)
-ghost|none menu: Remove Stored Bag (refused: You can't do that.)
-ghost|none menu: Select Module (refused: You can't do that.)
-ghost|none menu: Switch Vision Mode (refused: You can't do that.)
-ghost|none menu: Toggle Boots (refused: You can't do that.)
-ghost|none menu: Toggle Chestpiece (refused: You can't do that.)
-ghost|none menu: Toggle Digestable (refused: You can't reach that.)
-ghost|none menu: Toggle Gauntlets (refused: You can't do that.)
-ghost|none menu: Toggle Hardsuit (refused: You can't do that.)
-ghost|none menu: Toggle Helmet (refused: You can't do that.)
-ghost|none menu: Toggle Module (refused: You can't do that.)
-ghost|none menu: Toggle Visor (refused: You can't do that.)
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Engage Module (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Protean rig hand
-human|/obj/item/tool/screwdriver menu: Protean rig item
-human|/obj/item/tool/screwdriver menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Rig item
-human|/obj/item/tool/screwdriver menu: Rig shock hand
-human|/obj/item/tool/screwdriver menu: Select Module (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Protean rig hand
-human|/obj/item/tool/crowbar menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Engage Module (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Protean rig hand
-human|/obj/item/tool/crowbar menu: Protean rig item
-human|/obj/item/tool/crowbar menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Rig item
-human|/obj/item/tool/crowbar menu: Rig shock hand
-human|/obj/item/tool/crowbar menu: Select Module (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Protean rig hand
-human|/obj/item/tool/wrench menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Engage Module (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Protean rig hand
-human|/obj/item/tool/wrench menu: Protean rig item
-human|/obj/item/tool/wrench menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Rig item
-human|/obj/item/tool/wrench menu: Rig shock hand
-human|/obj/item/tool/wrench menu: Select Module (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Protean rig hand
-human|/obj/item/tool/wirecutters menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Engage Module (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Protean rig hand
-human|/obj/item/tool/wirecutters menu: Protean rig item
-human|/obj/item/tool/wirecutters menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Rig item
-human|/obj/item/tool/wirecutters menu: Rig shock hand
-human|/obj/item/tool/wirecutters menu: Select Module (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Protean rig hand
-human|/obj/item/multitool menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/multitool menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/multitool menu: Engage Module (refused: You can't do that.)
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/multitool menu: Protean rig hand
-human|/obj/item/multitool menu: Protean rig item
-human|/obj/item/multitool menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/multitool menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/multitool menu: Rig item
-human|/obj/item/multitool menu: Rig shock hand
-human|/obj/item/multitool menu: Select Module (refused: You can't do that.)
-human|/obj/item/multitool menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Protean rig hand
-human|/obj/item/weldingtool menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Engage Module (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Protean rig hand
-human|/obj/item/weldingtool menu: Protean rig item
-human|/obj/item/weldingtool menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Rig item
-human|/obj/item/weldingtool menu: Rig shock hand
-human|/obj/item/weldingtool menu: Select Module (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Protean rig hand
-human|/obj/item/stack/cable_coil menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Engage Module (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Protean rig hand
-human|/obj/item/stack/cable_coil menu: Protean rig item
-human|/obj/item/stack/cable_coil menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Rig item
-human|/obj/item/stack/cable_coil menu: Rig shock hand
-human|/obj/item/stack/cable_coil menu: Select Module (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Protean rig hand
-human|/obj/item/stack/material/steel menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Engage Module (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Protean rig hand
-human|/obj/item/stack/material/steel menu: Protean rig item
-human|/obj/item/stack/material/steel menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Rig item
-human|/obj/item/stack/material/steel menu: Rig shock hand
-human|/obj/item/stack/material/steel menu: Select Module (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Protean rig hand
-human|/obj/item/card/id menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/card/id menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/card/id menu: Engage Module (refused: You can't do that.)
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/card/id menu: Protean rig hand
-human|/obj/item/card/id menu: Protean rig item
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/card/id menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/card/id menu: Rig item
-human|/obj/item/card/id menu: Rig shock hand
-human|/obj/item/card/id menu: Select Module (refused: You can't do that.)
-human|/obj/item/card/id menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/card/id click: Click: Protean rig hand
-human|/obj/item/kit menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/kit menu: Engage Module (refused: You can't do that.)
-human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/kit menu: Protean rig hand
-human|/obj/item/kit menu: Protean rig item
-human|/obj/item/kit menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/kit menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/kit menu: Rig item
-human|/obj/item/kit menu: Rig shock hand
-human|/obj/item/kit menu: Select Module (refused: You can't do that.)
-human|/obj/item/kit menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/kit click: Click: Protean rig hand
-human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/storage menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/storage menu: Engage Module (refused: You can't do that.)
-human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/storage menu: Protean rig hand
-human|/obj/item/storage menu: Protean rig item
-human|/obj/item/storage menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/storage menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/storage menu: Rig item
-human|/obj/item/storage menu: Rig shock hand
-human|/obj/item/storage menu: Select Module (refused: You can't do that.)
-human|/obj/item/storage menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/storage click: Click: Protean rig hand
-human|/obj/item/card/emag menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item/card/emag menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item/card/emag menu: Engage Module (refused: You can't do that.)
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/card/emag menu: Protean rig hand
-human|/obj/item/card/emag menu: Protean rig item
-human|/obj/item/card/emag menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item/card/emag menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item/card/emag menu: Rig item
-human|/obj/item/card/emag menu: Rig shock hand
-human|/obj/item/card/emag menu: Select Module (refused: You can't do that.)
-human|/obj/item/card/emag menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Module (refused: You can't do that.)
-human|/obj/item/card/emag menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item menu: Configure Voice Synthesiser (refused: You can't do that.)
-human|/obj/item menu: Deploy Hardsuit (refused: You can't do that.)
-human|/obj/item menu: Engage Module (refused: You can't do that.)
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item menu: Protean rig hand
-human|/obj/item menu: Protean rig item
-human|/obj/item menu: Remove Assimilated Rig (refused: You can't do that.)
-human|/obj/item menu: Remove Stored Bag (refused: You can't do that.)
-human|/obj/item menu: Rig item
-human|/obj/item menu: Rig shock hand
-human|/obj/item menu: Select Module (refused: You can't do that.)
-human|/obj/item menu: Switch Vision Mode (refused: You can't do that.)
-human|/obj/item menu: Toggle Boots (refused: You can't do that.)
-human|/obj/item menu: Toggle Chestpiece (refused: You can't do that.)
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Toggle Gauntlets (refused: You can't do that.)
-human|/obj/item menu: Toggle Hardsuit (refused: You can't do that.)
-human|/obj/item menu: Toggle Helmet (refused: You can't do that.)
-human|/obj/item menu: Toggle Module (refused: You can't do that.)
-human|/obj/item menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item click: Click: Protean rig hand
+@obj human|none
+-click: Click: Pick up
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++6 menu: Protean rig hand
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig shock hand
++10 menu: Select Module (refused: You can't do that.)
++11 menu: Switch Vision Mode (refused: You can't do that.)
++12 menu: Toggle Boots (refused: You can't do that.)
++13 menu: Toggle Chestpiece (refused: You can't do that.)
++15 menu: Toggle Gauntlets (refused: You can't do that.)
++16 menu: Toggle Hardsuit (refused: You can't do that.)
++17 menu: Toggle Helmet (refused: You can't do that.)
++18 menu: Toggle Module (refused: You can't do that.)
++19 menu: Toggle Visor (refused: You can't do that.)
++20 click: Click: Protean rig hand
+@obj robot|none
+-click: Click: Pick up
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++5 menu: Open Hardsuit Interface (refused: You can't do that.)
++7 menu: Protean rig hand
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj.item ai|none
+@obj.item ghost|none
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Remove Assimilated Rig (refused: You can't do that.)
++6 menu: Remove Stored Bag (refused: You can't do that.)
++7 menu: Select Module (refused: You can't do that.)
++8 menu: Switch Vision Mode (refused: You can't do that.)
++9 menu: Toggle Boots (refused: You can't do that.)
++10 menu: Toggle Chestpiece (refused: You can't do that.)
++12 menu: Toggle Gauntlets (refused: You can't do that.)
++13 menu: Toggle Hardsuit (refused: You can't do that.)
++14 menu: Toggle Helmet (refused: You can't do that.)
++15 menu: Toggle Module (refused: You can't do that.)
++16 menu: Toggle Visor (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++5 menu: Open Hardsuit Interface (refused: You can't do that.)
++6 menu: Protean rig hand
++7 menu: Protean rig item
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++10 menu: Rig item
++11 menu: Rig shock hand
++12 menu: Select Module (refused: You can't do that.)
++13 menu: Switch Vision Mode (refused: You can't do that.)
++14 menu: Toggle Boots (refused: You can't do that.)
++15 menu: Toggle Chestpiece (refused: You can't do that.)
++17 menu: Toggle Gauntlets (refused: You can't do that.)
++18 menu: Toggle Hardsuit (refused: You can't do that.)
++19 menu: Toggle Helmet (refused: You can't do that.)
++20 menu: Toggle Module (refused: You can't do that.)
++21 menu: Toggle Visor (refused: You can't do that.)
++22 click: Click: Protean rig hand
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++10 menu: Rig item
++11 menu: Rig shock hand
++12 menu: Select Module (refused: You can't do that.)
++13 menu: Switch Vision Mode (refused: You can't do that.)
++14 menu: Toggle Boots (refused: You can't do that.)
++15 menu: Toggle Chestpiece (refused: You can't do that.)
++17 menu: Toggle Gauntlets (refused: You can't do that.)
++18 menu: Toggle Hardsuit (refused: You can't do that.)
++19 menu: Toggle Helmet (refused: You can't do that.)
++20 menu: Toggle Module (refused: You can't do that.)
++21 menu: Toggle Visor (refused: You can't do that.)
++22 click: Click: Protean rig hand
+@obj human|/obj/item/kit
+-click: Click: Customise
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++2 menu: Deploy Hardsuit (refused: You can't do that.)
++3 menu: Engage Module (refused: You can't do that.)
++5 menu: Open Hardsuit Interface (refused: You can't do that.)
++6 menu: Protean rig hand
++7 menu: Protean rig item
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++10 menu: Rig item
++11 menu: Rig shock hand
++12 menu: Select Module (refused: You can't do that.)
++13 menu: Switch Vision Mode (refused: You can't do that.)
++14 menu: Toggle Boots (refused: You can't do that.)
++15 menu: Toggle Chestpiece (refused: You can't do that.)
++17 menu: Toggle Gauntlets (refused: You can't do that.)
++18 menu: Toggle Hardsuit (refused: You can't do that.)
++19 menu: Toggle Helmet (refused: You can't do that.)
++20 menu: Toggle Module (refused: You can't do that.)
++21 menu: Toggle Visor (refused: You can't do that.)
++22 click: Click: Protean rig hand
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Configure Voice Synthesiser (refused: You can't do that.)
++2 menu: Deploy Hardsuit (refused: You can't do that.)
++3 menu: Engage Module (refused: You can't do that.)
++5 menu: Open Hardsuit Interface (refused: You can't do that.)
++6 menu: Protean rig hand
++7 menu: Protean rig item
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++10 menu: Rig item
++11 menu: Rig shock hand
++12 menu: Select Module (refused: You can't do that.)
++13 menu: Switch Vision Mode (refused: You can't do that.)
++14 menu: Toggle Boots (refused: You can't do that.)
++15 menu: Toggle Chestpiece (refused: You can't do that.)
++17 menu: Toggle Gauntlets (refused: You can't do that.)
++18 menu: Toggle Hardsuit (refused: You can't do that.)
++19 menu: Toggle Helmet (refused: You can't do that.)
++20 menu: Toggle Module (refused: You can't do that.)
++21 menu: Toggle Visor (refused: You can't do that.)
++22 click: Click: Protean rig hand
+@obj.item human|/obj/item/card/emag
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
+@obj.item human|/obj/item
+-menu: Use
+-click: Click: Use
++0 menu: Configure Voice Synthesiser (refused: You can't do that.)
++1 menu: Deploy Hardsuit (refused: You can't do that.)
++2 menu: Engage Module (refused: You can't do that.)
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Protean rig hand
++6 menu: Protean rig item
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++9 menu: Rig item
++10 menu: Rig shock hand
++11 menu: Select Module (refused: You can't do that.)
++12 menu: Switch Vision Mode (refused: You can't do that.)
++13 menu: Toggle Boots (refused: You can't do that.)
++14 menu: Toggle Chestpiece (refused: You can't do that.)
++16 menu: Toggle Gauntlets (refused: You can't do that.)
++17 menu: Toggle Hardsuit (refused: You can't do that.)
++18 menu: Toggle Helmet (refused: You can't do that.)
++19 menu: Toggle Module (refused: You can't do that.)
++20 menu: Toggle Visor (refused: You can't do that.)
++21 click: Click: Protean rig hand
 human|/obj/item/rig_module menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/rig_module menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/rig_module menu: Engage Module (refused: You can't do that.)
@@ -377,4 +365,3 @@ human|/obj/item/rig_module menu: Toggle Visor (refused: You can't do that.)
 human|/obj/item/rig_module click: Click: Install module
 wires: AI Override, Interface Lock, Interface Shock, Security, System Control
 keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, protean_install_module, protean_removebag_verb, protean_removerig_verb, protean_rig_hand, protean_rig_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
-

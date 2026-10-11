@@ -280,3 +280,15 @@ the list anyway. `--bless`, `--repeat=N` and `--list` are never guarded.
 
 A detached run that exits before it reaches a result (a bad test name, a signal) now marks its status file `failed` with the exit code and the log's last line,
 instead of leaving `state=running`.
+
+## 13. Op pins are factored (October 2026, `tooling-fix`)
+
+The op snapshot pins (`code/modules/unit_tests/snapshots/{pins,i7_*,*_1008}/`) no longer repeat inherited rows: a type file
+names a block in `snapshots/op_bases/<base type>.txt` per `actor|held item` group and writes only its delta (`@obj.item human|none`,
+`-menu: X`, `+2 menu: Y`). Comparison is the same (the file expands to exactly the old rows); a mismatch prints each differing row
+once with the types it differs for. Details: `doc/rewrite/snapshot_pins.md` "Factored op pins".
+
+**Re-blessing in the new format.** Nothing changes in the command: `bash tools/dq_focused_test.sh --bless <test>` writes plain rows and
+then runs `python3 tools/dq_pin_factor.py`, which factors them; commit the pin files and `op_bases/` together. A branch that blessed pins in
+the old format still passes (plain rows are read as before); run `python3 tools/dq_pin_factor.py` once to factor them before the lane-ready
+run. On a merge conflict in a pin file, take master's file (`git show origin/master:<path> > <path>`, never checkout) and re-bless the type; never hand-merge the `@`/`-`/`+` lines.

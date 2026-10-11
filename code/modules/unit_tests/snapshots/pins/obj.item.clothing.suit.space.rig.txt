@@ -1,23 +1,21 @@
-human|none menu: Alternate use
-human|none menu: Move To Top
-human|none menu: Pick up
-human|none menu: Rig suit draw knife hand
-human|none menu: Toggle Digestable (refused: You can't do that.)
-human|none menu: Use
-human|none click: Click: Rig suit draw knife hand
-robot|none menu: Alternate use
-robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Move To Top
-robot|none menu: Pick up
-robot|none menu: Rig suit draw knife hand
-robot|none menu: Toggle Digestable (refused: You can't do that.)
-robot|none menu: Use
-robot|none click: Click: Rig suit draw knife hand
-ai|none menu: Equip (refused: not possible right now)
-ai|none click: nothing
-ghost|none menu: Move To Top (refused: You can't reach that.)
-ghost|none menu: Toggle Digestable (refused: You can't reach that.)
-ghost|none click: nothing
+@obj.item.clothing.suit human|none
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-click: Click: Use
++3 menu: Rig suit draw knife hand
++6 click: Click: Rig suit draw knife hand
+@obj.item.clothing.suit robot|none
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-click: Click: Use
++4 menu: Rig suit draw knife hand
++7 click: Click: Rig suit draw knife hand
+@obj.item ai|none
+@obj.item.clothing.suit ghost|none
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Rig suit draw knife hand
@@ -60,46 +58,47 @@ human|/obj/item/weldingtool menu: Rig suit sheathe knife item
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Rig suit sheathe knife item
-human|/obj/item/stack/cable_coil menu: Alternate use
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Rig suit draw knife hand
-human|/obj/item/stack/cable_coil menu: Rig suit sheathe knife item
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Rig suit sheathe knife item
-human|/obj/item/stack/material/steel menu: Alternate use
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Rig suit draw knife hand
-human|/obj/item/stack/material/steel menu: Rig suit sheathe knife item
-human|/obj/item/stack/material/steel menu: Space suit patch item
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Space suit patch item
-human|/obj/item/card/id menu: Alternate use
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Rig suit draw knife hand
-human|/obj/item/card/id menu: Rig suit sheathe knife item
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Rig suit sheathe knife item
-human|/obj/item/kit menu: Alternate use
-human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Rig suit draw knife hand
-human|/obj/item/kit menu: Rig suit sheathe knife item
-human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit menu: Use
-human|/obj/item/kit click: Click: Customise
-human|/obj/item/storage menu: Alternate use
-human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Rig suit draw knife hand
-human|/obj/item/storage menu: Rig suit sheathe knife item
-human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage click: Click: Rig suit sheathe knife item
+@obj.item.clothing.suit human|/obj/item/stack/cable_coil
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
+-click: Click: Voidsuit install item
++3 menu: Rig suit draw knife hand
++4 menu: Rig suit sheathe knife item
++7 click: Click: Rig suit sheathe knife item
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
++2 menu: Rig suit draw knife hand
++3 menu: Rig suit sheathe knife item
+@obj.item.clothing.suit human|/obj/item/card/id
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
+-click: Click: Voidsuit install item
++3 menu: Rig suit draw knife hand
++4 menu: Rig suit sheathe knife item
++7 click: Click: Rig suit sheathe knife item
+@obj.item.clothing.suit human|/obj/item/kit
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
++3 menu: Rig suit draw knife hand
++4 menu: Rig suit sheathe knife item
+@obj.item.clothing.suit human|/obj/item/storage
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
+-click: Click: Collect
++3 menu: Rig suit draw knife hand
++4 menu: Rig suit sheathe knife item
++7 click: Click: Rig suit sheathe knife item
 human|/obj/item menu: Alternate use
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Rig suit draw knife hand
@@ -107,13 +106,11 @@ human|/obj/item menu: Rig suit sheathe knife item
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Rig suit sheathe knife item
-human|/obj/item/stack/material menu: Alternate use
-human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Rig suit draw knife hand
-human|/obj/item/stack/material menu: Rig suit sheathe knife item
-human|/obj/item/stack/material menu: Space suit patch item
-human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material menu: Use
-human|/obj/item/stack/material click: Click: Space suit patch item
+@obj.item human|/obj/item/stack/material
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
++2 menu: Rig suit draw knife hand
++3 menu: Rig suit sheathe knife item
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, rig_suit_draw_knife_hand, rig_suit_sheathe_knife_item, space_suit_patch_item, toggle_digestable
-

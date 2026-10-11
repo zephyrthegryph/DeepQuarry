@@ -77,6 +77,34 @@ clicks, wires, op keys); the legacy resolver they once recorded is retired (ix-r
 intended change with `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`; add a type by
 adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`.
 
+## Factored op pins
+
+The op pins (`pins/`, `i7_bulk/`, `i7_items_bulk/`, `i7_structures_bulk/`, `last_timed_1008/`, `machinery_timed_1008/`,
+`requirements_protocol_1008/`) record the rows a type inherits once, not in every file. A group is the rows of one
+`actor|held item` (`human|/obj/item/tool/crowbar`); `snapshots/op_bases/<base type>.txt` holds one block per group for a base
+type (a type-path prefix such as `/obj/item`), and a type file refers to the nearest recorded ancestor's block and writes only
+what differs:
+
+```
+@obj.item human|none          the rows of /obj/item's human|none block
+-menu: Pick up                minus `human|none menu: Pick up`
++2 menu: Use                  plus `human|none menu: Use`, at index 2 of the group
+keys: activate, ...           any other line is a literal row
+```
+
+Expanded (`dq_snapshot_file_rows()`, `python3 tools/dq_pin_factor.py --expand DIR`) a file is exactly the rows it was made
+from, so a test compares the same rows as before. A mismatch is reported once per row with the types it differs for: a
+changed inherited row is one line (`(412 types: ...)`), a per-type divergence names its type. An unfactored file (plain rows) is
+still read as before.
+
+- **Bless and record as before.** The world writes plain rows; `dq_focused_test.sh` then runs `python3 tools/dq_pin_factor.py`,
+  which re-encodes every op pin against the bases (refreshing a block only when fewer than half of its users still match it,
+  so a renamed inherited op changes the base file once instead of every type file). Commit `op_bases/` with the pins.
+- **`--rebase`** derives every block from scratch; **`--check`** exits 1 when a file is not in canonical factored form.
+- **A merge conflict in a pin file**: take master's version of the file, then re-bless the type
+  (`bash tools/dq_focused_test.sh --bless <test>`), or, for a conflict that is only the encoding, keep either side's rows
+  expanded and run `python3 tools/dq_pin_factor.py`. Never hand-merge `@`/`-`/`+` lines.
+
 ## Look pins
 
 A pin of how a type looks once it exists, for appearance conversions (`code/modules/unit_tests/dq_look_pins.dm`). `bash tools/dq_pin.sh --look /T`

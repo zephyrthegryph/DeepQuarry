@@ -1,0 +1,25 @@
+ai|none menu: Flicker
+ai|none menu: Toggle emergency lights
+ai|none menu: Use
+ai|none click: Click: Toggle emergency lights
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Tune
+human|/obj/item/multitool click: Click: Tune
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove shade
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Remove shade
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|none menu: Remove bulb
+human|none menu: Toggle
+human|none click: Click: Toggle
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove bulb
+robot|none menu: Toggle
+robot|none menu: Toggle emergency lights
+robot|none menu: Use
+robot|none click: Click: Toggle
