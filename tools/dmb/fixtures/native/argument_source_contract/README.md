@@ -24,3 +24,9 @@ structural discrepancy to investigate with an actual client invocation contract.
 of runtime `matches`. Raw IDs/rows and each inspector child are preserved. A
 metadata mismatch is reported, not automatically treated as a proven runtime bug.
 No cross-backend shared input closure certificate is asserted.
+
+Additional prefix controls: `first_source` has a helper on parameter zero;
+`third_source` has a typed/defaulted first parameter and dynamic allowed-values
+sources on the second and third. Raw helper rows establish prefix length and
+whether predecessor type flags/value-source selectors are copied or reset.
+No expected prefix or flags are manufactured by the capture driver.

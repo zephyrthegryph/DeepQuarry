@@ -16,6 +16,10 @@ import time
 
 HERE = Path(__file__).resolve().parent
 BENCH = HERE.parents[2] / "bench"
+EXPECTED_BINDINGS = {
+    "earlier": (1,), "argument_count": (1,), "argument_first": (1,),
+    "first_source": (0,), "third_source": (1, 2),
+}
 
 
 def load(file, name):
@@ -40,7 +44,7 @@ def observations(file):
             errors[match[1]] += 1
     if not markers or markers[-1] != "DQ_ARGFRAME finished":
         raise ValueError("fixture did not finish")
-    for prefix in ("earlier", "count", "first", "calls"):
+    for prefix in ("earlier", "count", "first", "first_source", "third_source", "calls"):
         if sum(line.startswith("DQ_ARGFRAME " + prefix + " ") for line in markers) != 1:
             raise ValueError("missing/duplicate owning frame observation")
     return {"markers": markers, "runtimes": dict(sorted(errors.items()))}
@@ -99,13 +103,13 @@ def main():
             return stdout.decode("utf-8-sig", errors="replace")
         audit = inspect(["argument-source-audit", str(dmb)], "references")
         count = re.search(r"^proc_references=(\d+)$", audit, re.MULTILINE)
-        if not count or not 3 <= int(count[1]) <= 8:
+        if not count or not sum(map(len, EXPECTED_BINDINGS.values())) <= int(count[1]) <= 8:
             raise ValueError("helper reference inventory not fully exposed by bounded inspector")
         references = re.findall(r"^reference\[(\d+)\]=(\d+) path=(.*)$", audit, re.MULTILINE)
         if len(references) != int(count[1]):
             raise ValueError("incomplete helper inventory")
         bindings = {}
-        for owner in ("earlier", "argument_count", "argument_first"):
+        for owner in EXPECTED_BINDINGS:
             locator = inspect(["proc-code", str(dmb), "/proc/" + owner], "owner-code-" + owner)
             match = re.search(r"^proc#(\d+) /proc/" + owner + r"$", locator, re.MULTILINE)
             if not match:
@@ -121,8 +125,12 @@ def main():
                 source = formals[argument * 4 + 1]
                 if source & 255 == 64:
                     bindings.setdefault(source >> 8, []).append((owner, argument))
-        if sum(map(len, bindings.values())) != 3:
-            raise ValueError("actual owning selectors did not issue three helper bindings")
+        actual_bindings = {tuple(binding) for bindings_for_reference in bindings.values()
+                           for binding in bindings_for_reference}
+        expected_bindings = {(owner, argument) for owner, arguments in EXPECTED_BINDINGS.items()
+                             for argument in arguments}
+        if actual_bindings != expected_bindings:
+            raise ValueError("actual owning selectors differ from authored helper roster")
         evidence["owning_bindings"] = bindings
         for ordinal, proc_id, path in references:
             text = inspect(["proc", str(dmb), proc_id], "proc-" + ordinal)
