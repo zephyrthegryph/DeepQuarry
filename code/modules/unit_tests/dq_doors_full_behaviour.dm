@@ -21,7 +21,7 @@
 /proc/dq_full_ctrl_click(mob/living/actor, atom/target)
 	if(actor.get_active_hand())
 		actor.drop_item()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	return test_click(actor, target, null, GESTURE_CTRL)
 
 /// Two airlocks that close each other (the map's closeOtherId pairs them).

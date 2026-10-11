@@ -12,7 +12,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(pen), "the real pen enters the actor's active hand")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "the native click uses the actual held pen")
 	TEST_ASSERT(in_range(case, actor), "the actual case is initially in reach")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, case, pen)
 	test_drain()
 	var/datum/request/request = SSrequests.open_for(actor)
@@ -28,14 +28,14 @@
 	TEST_ASSERT_EQUAL(case.name, "Glass Case - 'Surveyor'", "the actual answer writes the exact label")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the accepted label request ends")
 
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, case, pen)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(actor), "the next actual pen click opens the blank-label control")
 	test_answer(actor, "")
 	TEST_ASSERT_EQUAL(case.name, "Glass Case", "an accepted empty string resets the actual case label")
 
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, case, pen)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(actor), "the next actual pen click opens the cancellation control")
@@ -43,7 +43,7 @@
 	TEST_ASSERT_EQUAL(case.name, "Glass Case", "explicit cancellation preserves the current label")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the cancelled label request ends")
 
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, case, pen)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(actor), "the final actual pen click opens the held-pen recheck control")

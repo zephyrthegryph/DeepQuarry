@@ -147,7 +147,7 @@
 	if(held)
 		H.put_in_active_hand(held)
 	H.set_use_stance(I_HELP)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, target, null, null, gesture))
 	sb_settle()
 
@@ -160,7 +160,7 @@
 	H.drop_item()
 	H.put_in_active_hand(S)
 	H.set_use_stance(I_HELP)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, S, null, null, "left=1"))
 	sb_settle()
 
@@ -171,7 +171,7 @@
 	H.put_in_inactive_hand(S)
 	H.put_in_active_hand(item)
 	H.set_use_stance(I_HELP)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, S, null, null, "left=1"))
 	sb_settle()
 
@@ -180,7 +180,7 @@
 	sb_empty_hands(H)
 	H.put_in_inactive_hand(S)
 	H.set_use_stance(I_HELP)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, S, null, null, "left=1"))
 	sb_settle()
 
@@ -232,7 +232,7 @@
 	H.drop_from_inventory(B)
 	H.put_in_inactive_hand(B)
 	H.drop_item()
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, I, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT(sb_in_hands(H, I), "the item clicked inside an open box comes to the hand")
@@ -288,11 +288,11 @@
 	// taking one out frees a slot
 	var/obj/item/first = sb_items(B)[1]
 	sb_empty_hands(H)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
 	sb_settle()
 	H.drop_item()
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, first, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT_EQUAL(sb_count(B), limit - 1, "taking one out frees a slot")
@@ -701,7 +701,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/black(H), SLOT_ID_UNIFORM)
 	TEST_ASSERT(H.equip_to_slot_if_possible(bottle, SLOT_ID_POCKET_L), "the fixture bottle fits a pocket")
 	sb_empty_hands(H)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, bottle, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT(sb_in_hands(H, bottle), "an empty hand on a pocketed storage takes it to the hand")
@@ -777,7 +777,7 @@
 	TEST_ASSERT(count > 0, "and starts loaded")
 	sb_empty_hands(H)
 	H.put_in_inactive_hand(case)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, case, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT_EQUAL(sb_count(case), count - 1, "an empty hand on the carried case draws one thing out")
@@ -795,14 +795,14 @@
 	var/obj/item/p2_storage_probe/busy = sb_make(/obj/item/p2_storage_probe)
 	sb_empty_hands(H)
 	H.put_in_inactive_hand(busy)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	var/datum/op_result/refused = test_click(H, B)
 	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "the real lift operation refuses an occupied second hand")
 	TEST_ASSERT_EQUAL(refused?.reason, MSG(two_hands/other_hand), "lifting retains the established other-hand refusal")
 	sb_settle()
 	TEST_ASSERT(!sb_in_hands(H, B), "with the other hand full the basket is not lifted")
 	sb_empty_hands(H)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT(sb_in_hands(H, B), "with both hands free it is")
@@ -991,7 +991,7 @@
 	sb_open_held(H, B)
 	var/obj/item/first = sb_items(B)[1]
 	H.drop_item()
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, first, null, null, "left=1"))
 	sb_settle()
 	TEST_ASSERT_EQUAL(sb_icon(B), "[B.icon_type]box[count - 1]", "and one fewer after one comes out")

@@ -33,7 +33,7 @@
 
 /// The climber drags itself onto the structure, as a player does.
 /datum/unit_test/dq_climb/proc/climb_it(mob/living/climber, atom/movable/S)
-	climber.next_click = 0
+	cooldown_set_end(climber, next_click, 0)
 	return test_drag(climber, climber, S)
 
 // ---------------------------------------------------------------------------------------------------------------------

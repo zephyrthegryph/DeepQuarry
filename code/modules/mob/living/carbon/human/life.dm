@@ -732,9 +732,9 @@
 	var/obj/item/organ/internal/lungs/L = src.organ_in(O_LUNGS)
 	if(!L || L.is_robotic() || !is_below_sound_pressure(get_turf(src)))
 		return
-	if(!failed_inhale && COOLDOWN_FINISHED(src, breath_sound_cooldown)) // Were we able to inhale successfully? Play inhale.
+	if(!failed_inhale && cooldown_ready(src, breath_sound_cooldown)) // Were we able to inhale successfully? Play inhale.
 		src.play_inhale(src, failed_exhale) // Pass through if we passed exhale or not
-		COOLDOWN_START(src, breath_sound_cooldown, 7 SECONDS)
+		cooldown_start(src, breath_sound_cooldown, 7 SECONDS)
 
 /// Hot or cold breath: burns or frostbite to the airway, temperature alerts, and a little body heat exchange.
 /mob/living/carbon/human/proc/life_breathing_breath_temperature_effects(datum/gas_mixture/breath, breath_moles)
@@ -1320,9 +1320,9 @@
 		return
 	src.set_fear((src.fear - 1))
 	if(src.fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
-		if(COOLDOWN_FINISHED(src, fear_sound_cooldown))
+		if(cooldown_ready(src, fear_sound_cooldown))
 			src << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
-			COOLDOWN_START(src, fear_sound_cooldown, 51 SECONDS)
+			cooldown_start(src, fear_sound_cooldown, 51 SECONDS)
 	if(!(src.biology() & BIOLOGY_ORGANIC))
 		return
 	if(src.fear >= 80)

@@ -224,7 +224,7 @@
 	test_time(1.2 SECONDS)
 	TEST_ASSERT(!door.density, "The real delayed emag reaction must finish opening the door")
 	TEST_ASSERT(!door.opacity, "The opened door must no longer block sight")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, door, emag)
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "An already open door must consume no emag uses")
@@ -233,7 +233,7 @@
 	dq_machine_clear(unpowered)
 	unpowered.set_grid_power(FALSE)
 	actor.forceMove(locate(T.x + 3, T.y + 3, T.z))
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, unpowered, emag)
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "A closed unpowered door must consume no emag uses")

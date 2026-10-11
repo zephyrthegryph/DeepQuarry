@@ -14,7 +14,7 @@
 	TEST_ASSERT(!QDELETED(soil), "actual soil growplot initializes alive")
 	TEST_ASSERT(user.put_in_active_hand(shovel), "real actor holds the actual filling shovel")
 	user.set_use_stance(I_HURT)
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	var/datum/op_result/started = test_click(user, soil, shovel)
 	TEST_ASSERT_EQUAL(started?.key, "fill_in", "a combat-mode click with a shovel fills the plot in rather than hitting it")
 	TEST_ASSERT(length(op_pendings_of(user)) > 0, "starting the real fill begins its timed task")
@@ -45,7 +45,7 @@
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = allocate(/obj/machinery/portable_atmospherics/hydroponics/soil, T)
 	TEST_ASSERT(user.put_in_active_hand(shovel), "real actor holds the actual digging shovel")
 	user.set_use_stance(I_DISARM)
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	var/datum/op_result/started = test_click(user, soil, shovel)
 	TEST_ASSERT_EQUAL(started?.key, "dig", "a disarm-stance click with a shovel digs the plot up rather than hitting it")
 	TEST_ASSERT(!QDELETED(soil), "starting the dig preserves the growplot")
