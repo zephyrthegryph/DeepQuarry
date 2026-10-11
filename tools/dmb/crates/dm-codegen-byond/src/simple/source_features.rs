@@ -70,7 +70,18 @@ pub fn observe_reference_source_features_with_lexical_locals(
 impl Compiler<'_> {
     fn feature_inherits(&self, path: &str, roots: &[&str]) -> Result<bool, LowerError> {
         if let Some(lookup) = self.lookup {
-            let owner = self.semantic(lookup.runtime_type(path))?;
+            // Header metadata consumes semantic ancestry, not a runtime operand.
+            // Native value types may exist without an issued runtime class tag.
+            let type_query = dm_ir::ResolveQuery::Type(SymbolId::of(path));
+            let owner = match self.semantic(lookup.answer(type_query))? {
+                dm_ir::ResolvedMeaning::Symbol(owner) if owner == SymbolId::of(path) => owner,
+                dm_ir::ResolvedMeaning::Missing => return Ok(false),
+                _ => {
+                    return self.semantic(Err(
+                        lookup.error(type_query, "feature type is not positively captured")
+                    ))
+                }
+            };
             let query = dm_ir::ResolveQuery::Ancestry(owner);
             return match self.semantic(lookup.answer(query))? {
                 dm_ir::ResolvedMeaning::Symbols(owners) => Ok(owners
@@ -139,7 +150,10 @@ impl Compiler<'_> {
                 }
                 (
                     selector.as_str(),
-                    self.inferred_expression_type(object)?,
+                    dm_ir::receiver_resolution::infer_receiver_type(
+                        &receiver_resolution::ReceiverContext(self, true),
+                        object,
+                    )?,
                     !matches!(&object.kind, ExprKind::Ident(_)),
                 )
             }
