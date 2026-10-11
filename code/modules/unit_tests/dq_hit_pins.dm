@@ -51,6 +51,9 @@
 	if(isnum(value))
 		if(name && findtext(name, regex("cooldown|ready|_time|time_|next_|last_|delay|timer|_at$|stamp", "i")))
 			return value ? "<set>" : "0"
+		var/list/flags = dq_pin_bitmask_flags(name)
+		if(flags)
+			return dq_pin_flag_names(value, flags)
 		return "[round(value, 0.0001)]"
 	if(istext(value))
 		return "'[value]'"
@@ -223,3 +226,41 @@
 
 #undef DQ_HIT_FIRST_TRIGGER
 #undef DQ_HIT_PIN_DIR
+
+/**
+ * The bitmask vars a pin row writes by flag name instead of by number (`refresh_queued: DEP_ALL -> 0`, not `131071 -> 0`):
+ * var name -> an ordered list flag name -> mask, composite masks first. Null for any other var.
+ */
+/proc/dq_pin_bitmask_flags(name)
+	var/static/list/by_var
+	if(!by_var)
+		var/list/dep = list("DEP_ALL" = DEP_ALL, "DEP_OUTPUTS" = DEP_OUTPUTS, "DEP_VALUES" = DEP_VALUES,
+			"DEP_RUN" = DEP_RUN, "DEP_DRAW" = DEP_DRAW, "DEP_UI" = DEP_UI, "DEP_PUSH" = DEP_PUSH, "DEP_LEGACY" = DEP_LEGACY)
+		for(var/i in 0 to DEP_VALUE_MAX - 1)
+			dep["DEP_VALUE_[i]"] = 1 << (DEP_VALUE_SHIFT + i)
+		// The machine names, not the CHANGE_DATUM_A/B/C aliases that share their bits.
+		var/list/change = list("CHANGE_EXPLICIT" = CHANGE_EXPLICIT, "CHANGE_RELATION_ADDED" = CHANGE_RELATION_ADDED,
+			"CHANGE_RELATION_REMOVED" = CHANGE_RELATION_REMOVED, "CHANGE_RELATED" = CHANGE_RELATED,
+			"CHANGE_MACHINE_POWER" = CHANGE_MACHINE_POWER, "CHANGE_MACHINE_PANEL" = CHANGE_MACHINE_PANEL,
+			"CHANGE_MACHINE_BROKEN" = CHANGE_MACHINE_BROKEN, "CHANGE_MACHINE_ANCHORED" = CHANGE_MACHINE_ANCHORED,
+			"CHANGE_MACHINE_OCCUPANT" = CHANGE_MACHINE_OCCUPANT, "CHANGE_MACHINE_SETTINGS" = CHANGE_MACHINE_SETTINGS,
+			"CHANGE_MACHINE_MODE" = CHANGE_MACHINE_MODE, "CHANGE_POWER_GRID_RATE" = CHANGE_POWER_GRID_RATE,
+			"CHANGE_POWER_GRID_STATE" = CHANGE_POWER_GRID_STATE, "CHANGE_POWER_GRID_TOPOLOGY" = CHANGE_POWER_GRID_TOPOLOGY,
+			"CHANGE_INTEGRITY" = CHANGE_INTEGRITY)
+		by_var = list("refresh_queued" = dep, "refresh_bits" = change)
+	return name && by_var[name]
+
+/// `value` as `FLAG_A|FLAG_B` from `flags` (name -> mask, composites first); bits no flag names stay a number; 0 is `0`.
+/proc/dq_pin_flag_names(value, list/flags)
+	if(!value)
+		return "0"
+	var/list/out = list()
+	var/rest = value
+	for(var/flag in flags)
+		var/mask = flags[flag]
+		if(mask && (rest & mask) == mask)
+			out += flag
+			rest &= ~mask
+	if(rest)
+		out += "[rest]"
+	return jointext(out, "|")

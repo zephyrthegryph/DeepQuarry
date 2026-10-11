@@ -42,7 +42,7 @@ static META: Meta = Meta {
     legacy: "tools/ci/init_lint.py",
     // os.walk of code/ and maps/: dot-files and dot-directories included.
     select: Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true },
-    scan: ScanKind::Both,
+    scan: ScanKind::Tree,
     policy: Policy::Sites {
         baseline: BASELINE,
         header: &[
@@ -129,62 +129,72 @@ impl Lint for Init {
         &META
     }
 
-    /// `scan(lines)` for one non-exempt file.
-    fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-        let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-        let turf_materialize = pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\(");
-        let world_read =
-            crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
-
-        let lines = py_splitlines(f.text());
-        let mut in_init = false;
-        for (i, line) in lines.iter().enumerate() {
-            let number = i + 1;
-            let line = *line;
-            if turf_materialize.is_match(line) {
-                out.site("turf_on_materialize", number);
-            }
-            let init = init_header.is_match(line);
-            let late = late_header.is_match(line);
-            if init || late {
-                in_init = init;
-                if late {
-                    out.site("late_initialize", number);
-                    continue;
+    /// The per-file rules on the typed tree: the definitions come from the model (`sem::procs::proc_defs`), so a header the
+    /// text rule could not see (a nested block, a macro that writes the proc) counts too; the body lines a definition owns are
+    /// bounded by indentation and read as text (`world_reads` names macros the parser expands away). Without a model, the text
+    /// rule (`scan_text`).
+    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        let files = cx.files();
+        let key = incr::ctx_key(&cx.all_files().iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
+        let typed: Option<Vec<(String, u32, String, String)>> = incr::cached("init-typed-defs", key, || {
+            cx.sem().map(|sem| {
+                crate::sem::procs::proc_defs(&sem, &["Initialize", "LateInitialize", "on_materialize"])
+                    .into_iter()
+                    .map(|d| (d.rel, d.header, d.owner, d.name))
+                    .collect()
+            })
+        });
+        match typed {
+            Some(defs) => {
+                let mut by_rel: HashMap<&str, Vec<(u32, Def)>> = HashMap::new();
+                for (rel, header, owner, name) in &defs {
+                    let kind = match name.as_str() {
+                        "Initialize" => Def::Init,
+                        "LateInitialize" => Def::Late,
+                        _ if owner == "/turf" || owner.starts_with("/turf/") => Def::TurfMaterialize,
+                        _ => continue,
+                    };
+                    by_rel.entry(rel.as_str()).or_default().push((*header, kind));
                 }
-                let above = if number > 1 { lines[number - 2] } else { "" };
-                let code = init_code(line).or_else(|| if py_lstrip(above).starts_with("//") { init_code(above) } else { None });
-                match code {
-                    Some(c) if REASON_CODES.contains(&c.as_str()) => {
-                        allowed_in(out, f, &lines, number, "init"); // records the annotation as used
+                for f in &files {
+                    out.cur = f.rel.clone();
+                    // The engine's lines (universal newlines), which `proc_defs` numbers its headers by.
+                    let raw = f.raw();
+                    let lines: Vec<&str> = (1..=raw.num_lines()).map(|n| raw.line(n).trim_end_matches('\r')).collect();
+                    // The model's definitions, and the text headers too: a file the model does not compile (a map's code outside
+                    // the test .dme, a branch of an #if) still counts as it did.
+                    let mut defs: std::collections::BTreeMap<u32, Def> = by_rel.get(f.rel.as_str()).map(|d| d.iter().copied().collect()).unwrap_or_default();
+                    for (i, line) in lines.iter().enumerate() {
+                        if let Some(kind) = text_header(line) {
+                            defs.entry(i as u32 + 1).or_insert(kind);
+                        }
                     }
-                    Some(c) => out.site_msg(
-                        "initialize",
-                        number,
-                        format!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}", if c.is_empty() { String::new() } else { format!("/{c}") }, REASON_CODES.join(", ")),
-                    ),
-                    None => out.site("initialize", number),
+                    for (header, kind) in defs {
+                        self.judge_def(f, &lines, header as usize, kind, out);
+                    }
                 }
-                continue;
             }
-            if col0(line) && !line.starts_with("//") {
-                in_init = false;
-                continue;
-            }
-            if in_init {
-                let code = before_slashes(line);
-                if world_read.is_match(code) && !allowed_in(out, f, &lines, number, "init") {
-                    out.site("world_reads", number);
+            None => {
+                for f in &files {
+                    out.cur = f.rel.clone();
+                    self.scan_text(f, out);
                 }
             }
         }
+        self.table_init(cx, out);
     }
 
+    // No parity: the reason codes and the LateInitialize ban have no Python counterpart (init_lint.py is gone).
+    fn parity(&self) -> Option<Parity> {
+        None
+    }
+}
+
+impl Init {
     /// `table_init_violations(files)` over every file, exempt ones included. Per-file facts (the
     /// `init_from_table` flags and the headers the ALLOW question did not keep) are cached by content;
     /// the cross-file part (last flag in walk order wins, nearest flagged ancestor) is a cheap merge.
-    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+    fn table_init(&self, cx: &Cx, out: &mut Sink) {
         let all = cx.all_files();
         let facts = recorded_into(out, || incr::facts("init-table", &all, table_facts));
         let with: Vec<(&SourceFile, &TableFacts)> = all.iter().copied().zip(facts.iter()).filter(|(_, fa)| !fa.flags.is_empty() || !fa.headers.is_empty()).collect();
@@ -215,10 +225,73 @@ impl Lint for Init {
         }
     }
 
-    // No parity: the reason codes and the LateInitialize ban have no Python counterpart (init_lint.py is gone).
-    fn parity(&self) -> Option<Parity> {
+    /// One definition's sites: the header (its ALLOW(init/CODE) keep) and, for an Initialize(), its body's world reads.
+    fn judge_def(&self, f: &SourceFile, lines: &[&str], number: usize, kind: Def, out: &mut Sink) {
+        match kind {
+            Def::TurfMaterialize => out.site("turf_on_materialize", number),
+            Def::Late => out.site("late_initialize", number),
+            Def::Init => {
+                let line = lines.get(number - 1).copied().unwrap_or("");
+                let above = if number > 1 { lines[number - 2] } else { "" };
+                let code = init_code(line).or_else(|| if py_lstrip(above).starts_with("//") { init_code(above) } else { None });
+                match code {
+                    Some(c) if REASON_CODES.contains(&c.as_str()) => {
+                        allowed_in(out, f, lines, number, "init"); // records the annotation as used
+                    }
+                    Some(c) => out.site_msg(
+                        "initialize",
+                        number,
+                        format!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}", if c.is_empty() { String::new() } else { format!("/{c}") }, REASON_CODES.join(", ")),
+                    ),
+                    None => out.site("initialize", number),
+                }
+                let world_read = crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
+                for n in crate::sem::procs::body_lines(lines, number as u32) {
+                    let code = before_slashes(lines[n - 1]);
+                    if world_read.is_match(code) && !allowed_in(out, f, lines, n, "init") {
+                        out.site("world_reads", n);
+                    }
+                }
+            }
+        }
+    }
+
+    /// The text rule, for a tree the model cannot parse: headers found by their `/type/Initialize(` text, a body every
+    /// line up to the next column-0 line.
+    fn scan_text(&self, f: &SourceFile, out: &mut Sink) {
+        let lines = py_splitlines(f.text());
+        for (i, line) in lines.iter().enumerate() {
+            if let Some(kind) = text_header(line) {
+                self.judge_def(f, &lines, i + 1, kind, out);
+            }
+        }
+    }
+}
+
+/// A definition header as the text rule reads one (`/type/Initialize(` at column 0; a commented-out line is not one).
+fn text_header(line: &str) -> Option<Def> {
+    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
+    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
+    let turf_materialize = pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\(");
+    if line.starts_with("//") {
+        return None;
+    }
+    if turf_materialize.is_match(line) {
+        Some(Def::TurfMaterialize)
+    } else if late_header.is_match(line) {
+        Some(Def::Late)
+    } else if init_header.is_match(line) {
+        Some(Def::Init)
+    } else {
         None
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Def {
+    Init,
+    Late,
+    TurfMaterialize,
 }
 
 pub fn register(reg: &mut Registry) {

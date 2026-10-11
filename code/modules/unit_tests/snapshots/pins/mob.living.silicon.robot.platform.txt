@@ -1,156 +1,94 @@
-human|none menu: Disarm
-human|none menu: Grab
-human|none menu: Help
-human|none menu: Pet
-human|none menu: Platform hand
-human|none menu: Punch
-human|none menu: Shove
-human|none menu: Take hold
-human|none menu: Tap
-human|none click: Click: Platform hand
-robot|none menu: Disarm
-robot|none menu: Grab
-robot|none menu: Help
-robot|none menu: Pet
-robot|none menu: Platform hand
-robot|none menu: Punch
-robot|none menu: Shove
-robot|none menu: Take hold
-robot|none menu: Tap
-robot|none click: Click: Platform hand
-ai|none click: nothing
-ghost|none menu: Disarm
-ghost|none menu: Grab
-ghost|none menu: Take control
-ghost|none click: Click: Take control
-human|/obj/item/tool/screwdriver menu: Disarm
-human|/obj/item/tool/screwdriver menu: Grab
-human|/obj/item/tool/screwdriver menu: Hit
-human|/obj/item/tool/screwdriver menu: Hold with
-human|/obj/item/tool/screwdriver menu: Load into cargo
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Platform hand
-human|/obj/item/tool/screwdriver menu: Platform item
-human|/obj/item/tool/screwdriver menu: Shove with
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Use on
-human|/obj/item/tool/screwdriver menu: Work the panel (refused: )
-human|/obj/item/tool/screwdriver click: Click: Platform item
-human|/obj/item/tool/crowbar menu: Disarm
-human|/obj/item/tool/crowbar menu: Grab
-human|/obj/item/tool/crowbar menu: Hit
-human|/obj/item/tool/crowbar menu: Hold with
-human|/obj/item/tool/crowbar menu: Load into cargo
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Platform hand
-human|/obj/item/tool/crowbar menu: Platform item
-human|/obj/item/tool/crowbar menu: Pry the cover or a part
-human|/obj/item/tool/crowbar menu: Shove with
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Use on
-human|/obj/item/tool/crowbar click: Click: Platform item
-human|/obj/item/tool/wrench menu: Disarm
-human|/obj/item/tool/wrench menu: Grab
-human|/obj/item/tool/wrench menu: Hit
-human|/obj/item/tool/wrench menu: Hold with
-human|/obj/item/tool/wrench menu: Load into cargo
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Platform hand
-human|/obj/item/tool/wrench menu: Platform item
-human|/obj/item/tool/wrench menu: Remove the restraining bolt (refused: )
-human|/obj/item/tool/wrench menu: Shove with
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use on
-human|/obj/item/tool/wrench click: Click: Platform item
-human|/obj/item/tool/wirecutters menu: Disarm
-human|/obj/item/tool/wirecutters menu: Grab
-human|/obj/item/tool/wirecutters menu: Hit
-human|/obj/item/tool/wirecutters menu: Hold with
-human|/obj/item/tool/wirecutters menu: Load into cargo
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Platform hand
-human|/obj/item/tool/wirecutters menu: Platform item
-human|/obj/item/tool/wirecutters menu: Shove with
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Use on
-human|/obj/item/tool/wirecutters menu: Work the wiring (refused: You can't reach the wiring.)
-human|/obj/item/tool/wirecutters click: Click: Platform item
-human|/obj/item/multitool menu: Disarm
-human|/obj/item/multitool menu: Grab
-human|/obj/item/multitool menu: Hit
-human|/obj/item/multitool menu: Hold with
-human|/obj/item/multitool menu: Load into cargo
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Platform hand
-human|/obj/item/multitool menu: Platform item
-human|/obj/item/multitool menu: Shove with
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Use on
-human|/obj/item/multitool menu: Work the wiring (refused: You can't reach the wiring.)
-human|/obj/item/multitool click: Click: Platform item
-human|/obj/item/weldingtool menu: Disarm
-human|/obj/item/weldingtool menu: Grab
-human|/obj/item/weldingtool menu: Hit
-human|/obj/item/weldingtool menu: Hold with
-human|/obj/item/weldingtool menu: Load into cargo
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Platform hand
-human|/obj/item/weldingtool menu: Platform item
-human|/obj/item/weldingtool menu: Shove with
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Use on
-human|/obj/item/weldingtool menu: Weld the dents (refused: Nothing to fix here.)
-human|/obj/item/weldingtool click: Click: Platform item
-human|/obj/item/stack/cable_coil menu: Disarm
-human|/obj/item/stack/cable_coil menu: Grab
-human|/obj/item/stack/cable_coil menu: Hit
-human|/obj/item/stack/cable_coil menu: Hold with
-human|/obj/item/stack/cable_coil menu: Load into cargo
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Platform hand
-human|/obj/item/stack/cable_coil menu: Platform item
-human|/obj/item/stack/cable_coil menu: Shove with
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use on
-human|/obj/item/stack/cable_coil click: Click: Platform item
-human|/obj/item/stack/material/steel menu: Disarm
-human|/obj/item/stack/material/steel menu: Grab
-human|/obj/item/stack/material/steel menu: Hit
-human|/obj/item/stack/material/steel menu: Hold with
-human|/obj/item/stack/material/steel menu: Load into cargo
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Platform hand
-human|/obj/item/stack/material/steel menu: Platform item
-human|/obj/item/stack/material/steel menu: Shove with
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Use on
-human|/obj/item/stack/material/steel click: Click: Platform item
-human|/obj/item/card/id menu: Disarm
-human|/obj/item/card/id menu: Grab
-human|/obj/item/card/id menu: Hit
-human|/obj/item/card/id menu: Hold with
-human|/obj/item/card/id menu: Load into cargo
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Platform hand
-human|/obj/item/card/id menu: Platform item
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Shove with
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Use on
-human|/obj/item/card/id click: Click: Platform item
-human|/obj/item menu: Disarm
-human|/obj/item menu: Grab
-human|/obj/item menu: Hit
-human|/obj/item menu: Hold with
-human|/obj/item menu: Load into cargo
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Platform hand
-human|/obj/item menu: Platform item
-human|/obj/item menu: Shove with
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use on
-human|/obj/item click: Click: Platform item
+@mob human|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++4 menu: Platform hand
++8 menu: Tap
++9 click: Click: Platform hand
+@mob robot|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++4 menu: Platform hand
++8 menu: Tap
++9 click: Click: Platform hand
+@mob ai|none
+@mob.living.silicon ghost|none
+-click: nothing
++2 menu: Take control
++3 click: Click: Take control
+@mob.living human|/obj/item/tool/screwdriver
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 menu: Work the panel (refused: )
++12 click: Click: Platform item
+@mob.living human|/obj/item/tool/crowbar
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++8 menu: Pry the cover or a part
++12 click: Click: Platform item
+@mob.living human|/obj/item/tool/wrench
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++8 menu: Remove the restraining bolt (refused: )
++12 click: Click: Platform item
+@mob.living human|/obj/item/tool/wirecutters
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 menu: Work the wiring (refused: You can't reach the wiring.)
++12 click: Click: Platform item
+@mob.living human|/obj/item/multitool
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 menu: Work the wiring (refused: You can't reach the wiring.)
++12 click: Click: Platform item
+@mob.living human|/obj/item/weldingtool
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 menu: Weld the dents (refused: Nothing to fix here.)
++12 click: Click: Platform item
+@mob human|/obj/item/stack/cable_coil
+-click: Click: Use on
++4 menu: Load into cargo
++7 menu: Platform hand
++8 menu: Platform item
++12 click: Click: Platform item
+@mob human|/obj/item/stack/material/steel
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 click: Click: Platform item
+@mob human|/obj/item/card/id
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++12 click: Click: Platform item
+@mob human|/obj/item
+-click: Click: Use on
++4 menu: Load into cargo
++6 menu: Platform hand
++7 menu: Platform item
++11 click: Click: Platform item
 human|/obj/item/card/emag menu: Disarm
 human|/obj/item/card/emag menu: Grab
 human|/obj/item/card/emag menu: Hit
@@ -166,4 +104,3 @@ human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
 wires: AI Control, Camera, Law Check, Lockdown
 keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, break_bolt, butcher, climb_down, climb_wall, deploy_shell, dominate_predator, dominate_prey, drag_buckle, drop_hat, eat_minerals, egg_laying, emag.subvert, emag.use, extract_mmi, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, platform_drag, platform_hand, platform_item, platform_silicon_unload, platform_take_control, platform_unload, polymorph, revert_beast_form, robot_bolt_wrench, robot_hold, robot_item, robot_pet, robot_pry, robot_punch, robot_screwdriver, robot_tap, robot_weld_repair, robot_wires, shred_limb, spin, succubus_bite, take_power_part, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove
-

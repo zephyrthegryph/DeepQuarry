@@ -1,0 +1,12 @@
+ai|none menu: Toggle power
+ai|none menu: Use
+ai|none click: Click: Use
+ghost|none menu: Toggle Power (refused: You can't reach that.)
+ghost|none click: nothing
+human|none menu: Toggle Power
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Toggle Power
+robot|none menu: Use
+robot|none click: Click: Use

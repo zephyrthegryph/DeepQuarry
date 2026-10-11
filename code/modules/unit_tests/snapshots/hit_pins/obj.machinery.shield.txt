@@ -5,7 +5,7 @@ emag | opacity: 0 -> 1
 emp 1 | deleted
 emp 1 | turf: +/obj/effect/effect/sparks x5
 emp 2 | atom_integrity: down
-emp 2 | refresh_queued: 131071 -> 0
+emp 2 | refresh_queued: DEP_ALL -> 0
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted
 explosion 2 | atom_integrity: down

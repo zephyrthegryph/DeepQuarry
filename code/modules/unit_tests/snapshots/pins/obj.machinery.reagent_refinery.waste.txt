@@ -8,8 +8,7 @@ robot|none menu: Rotate Counter Clockwise
 robot|none menu: Turn Around
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none menu: Use
-ai|none click: Click: Use
+@obj ai|none
 ghost|none menu: Rotate Clockwise
 ghost|none menu: Rotate Counter Clockwise
 ghost|none menu: Turn Around
@@ -79,32 +78,28 @@ human|/obj/item menu: Rotate Counter Clockwise
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Turn Around
 human|/obj/item click: nothing
-human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)
-human|/obj/item/reagent_containers/glass menu: Move To Top
-human|/obj/item/reagent_containers/glass menu: Open or close the lid
-human|/obj/item/reagent_containers/glass menu: Rotate Clockwise
-human|/obj/item/reagent_containers/glass menu: Rotate Counter Clockwise
-human|/obj/item/reagent_containers/glass menu: Set transfer amount
-human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/reagent_containers/glass menu: Turn Around
-human|/obj/item/reagent_containers/glass click: Click: Drain
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Drain (refused: it's empty; there is nothing to drain)
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Move To Top
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rename food
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rotate Clockwise
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rotate Counter Clockwise
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Set transfer amount
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/reagent_containers/food/drinks/glass2 menu: Turn Around
-human|/obj/item/reagent_containers/food/drinks/glass2 click: Click: Drain
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Drain (refused: it's empty; there is nothing to drain)
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Move To Top
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Rename food
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Rotate Clockwise
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Rotate Counter Clockwise
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/reagent_containers/food/drinks/shaker menu: Turn Around
-human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
+-menu: Climb
+-menu: Rotate Clockwise (refused: It is fastened to the floor!)
+-menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+-menu: Turn Around (refused: It is fastened to the floor!)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++7 menu: Turn Around
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/glass2
+-menu: Climb
+-menu: Rotate Clockwise (refused: It is fastened to the floor!)
+-menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+-menu: Turn Around (refused: It is fastened to the floor!)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++7 menu: Turn Around
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/shaker
+-menu: Climb
+-menu: Rotate Clockwise (refused: It is fastened to the floor!)
+-menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+-menu: Turn Around (refused: It is fastened to the floor!)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++7 menu: Turn Around
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench
-

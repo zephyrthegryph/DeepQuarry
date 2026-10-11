@@ -11,18 +11,18 @@ robot|none menu: Toggle lid
 robot|none menu: Toggle Tray Lid
 robot|none menu: Use
 robot|none click: Click: Use
-ai|none menu: Use
-ai|none click: Click: Use
+@obj ai|none
 ghost|none menu: Harvest (refused: )
 ghost|none click: Click: Harvest
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Remove Label
-human|/obj/item/tool/screwdriver menu: Set Light
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle lid
-human|/obj/item/tool/screwdriver menu: Toggle Tray Lid
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Use
+@obj.machinery.portable_atmospherics human|/obj/item/tool/screwdriver
+-menu: Climb
+-click: nothing
++1 menu: Remove Label
++2 menu: Set Light
++4 menu: Toggle lid
++5 menu: Toggle Tray Lid
++6 menu: Use
++7 click: Click: Use
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Remove Label
 human|/obj/item/tool/crowbar menu: Set Light
@@ -58,40 +58,42 @@ human|/obj/item/multitool menu: Toggle lid
 human|/obj/item/multitool menu: Toggle Tray Lid
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Toggle cryogenic freezing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Remove Label
-human|/obj/item/weldingtool menu: Set Light
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle lid
-human|/obj/item/weldingtool menu: Toggle Tray Lid
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Use
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Remove Label
-human|/obj/item/stack/cable_coil menu: Set Light
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle lid
-human|/obj/item/stack/cable_coil menu: Toggle Tray Lid
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Use
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Remove Label
-human|/obj/item/stack/material/steel menu: Set Light
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle lid
-human|/obj/item/stack/material/steel menu: Toggle Tray Lid
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Use
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Remove Label
-human|/obj/item/card/id menu: Set Light
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle lid
-human|/obj/item/card/id menu: Toggle Tray Lid
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++1 menu: Remove Label
++2 menu: Set Light
++4 menu: Toggle lid
++5 menu: Toggle Tray Lid
++6 menu: Use
++7 click: Click: Use
+@obj.machinery.portable_atmospherics human|/obj/item/stack/cable_coil
+-menu: Climb
+-menu: Ui open
+-click: Click: Ui open
++2 menu: Remove Label
++3 menu: Set Light
++5 menu: Toggle lid
++6 menu: Toggle Tray Lid
++7 menu: Use
++8 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++1 menu: Remove Label
++2 menu: Set Light
++4 menu: Toggle lid
++5 menu: Toggle Tray Lid
++6 menu: Use
++7 click: Click: Use
+@obj.machinery.portable_atmospherics human|/obj/item/card/id
+-menu: Climb
+-menu: Ui open
+-click: Click: Ui open
++2 menu: Remove Label
++3 menu: Set Light
++5 menu: Toggle lid
++6 menu: Toggle Tray Lid
++7 menu: Use
++8 click: Click: Use
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove Label
 human|/obj/item menu: Set Light
@@ -100,14 +102,12 @@ human|/obj/item menu: Toggle lid
 human|/obj/item menu: Toggle Tray Lid
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-human|/obj/item/tank menu: Insert tank
-human|/obj/item/tank menu: Move To Top
-human|/obj/item/tank menu: Remove Label
-human|/obj/item/tank menu: Set Light
-human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tank menu: Toggle lid
-human|/obj/item/tank menu: Toggle Tray Lid
-human|/obj/item/tank menu: Use
-human|/obj/item/tank click: Click: Insert tank
+@obj human|/obj/item/tank
+-menu: Climb
+-menu: Ui open
++2 menu: Remove Label
++3 menu: Set Light
++5 menu: Toggle lid
++6 menu: Toggle Tray Lid
++7 menu: Use
 keys: bolt, close_lid, drag_buckle, freezer, ghost_harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, remove_label, robot_remote_blocked, sample, set_light, silicon_hand, tank_bay.holding.insert, tend, tk_harvest, toggle_lid, use_item
-

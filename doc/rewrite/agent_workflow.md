@@ -280,3 +280,32 @@ the list anyway. `--bless`, `--repeat=N` and `--list` are never guarded.
 
 A detached run that exits before it reaches a result (a bad test name, a signal) now marks its status file `failed` with the exit code and the log's last line,
 instead of leaving `state=running`.
+
+## 13. Op pins are factored (October 2026, `tooling-fix`)
+
+The op snapshot pins (`code/modules/unit_tests/snapshots/{pins,i7_*,*_1008}/`) no longer repeat inherited rows: a type file
+names a block in `snapshots/op_bases/<base type>.txt` per `actor|held item` group and writes only its delta (`@obj.item human|none`,
+`-menu: X`, `+2 menu: Y`). Comparison is the same (the file expands to exactly the old rows); a mismatch prints each differing row
+once with the types it differs for. Details: `doc/rewrite/snapshot_pins.md` "Factored op pins".
+
+**Re-blessing in the new format.** Nothing changes in the command: `bash tools/dq_focused_test.sh --bless <test>` writes plain rows and
+then runs `python3 tools/dq_pin_factor.py`, which factors them; commit the pin files and `op_bases/` together. A branch that blessed pins in
+the old format still passes (plain rows are read as before); run `python3 tools/dq_pin_factor.py` once to factor them before the lane-ready
+run. On a merge conflict in a pin file, take master's file (`git show origin/master:<path> > <path>`, never checkout) and re-bless the type; never hand-merge the `@`/`-`/`+` lines.
+
+## 15. Ratchet lints on the typed tree (October 2026, `tooling-fix`)
+
+`silicon_entry`, `init`, `decl`, `base_vars` and `requirement_bool` now find their sites on the analyzer's semantic model
+(`tools/analyze/src/sem/actor_tests.rs`, `sem/procs.rs`) instead of by header text. What changes for you:
+
+- **Actor tests reachable from an op handler.** `handler_actor_check` (an op handler spelling `isAI`/`issilicon`/`isrobot`/`ispAI`) is
+  still banned; `handler_actor_istype` (a literal `istype(A.actor, /mob/living/silicon...)`, or on a local holding the actor) and
+  `helper_actor_check` (the same test in any proc the handler hands the actor or the act to, up to 8 calls deep) are ratchets from the
+  15 and 89 sites that existed. A helper that branches on the caller's kind is the site: pass what the op knows (`A.authority`, the
+  provider) or split the op with `when(req(T, of = ON_ACTOR))`.
+- **Better matching, same baselines.** A definition written in a nested block or by a macro, a macro-declared var on a base type
+  (`EXPIRY_DECLARE`, `VAR_PRIVATE`), a body line after a column-0 comment and a `req_bool()` inside a macro all count now. The
+  pre-existing ones were added once (base_vars +33, decl +1; init dropped a commented-out header). Baselines stay shrink-only.
+- Line numbers are the engine's (universal newlines): `sem::procs::engine_line()` maps the parser's numbering, which differs after a
+  lone carriage return.
+- When the model cannot be built the lints fall back to the old text rules, so a parse failure never passes a site silently.
