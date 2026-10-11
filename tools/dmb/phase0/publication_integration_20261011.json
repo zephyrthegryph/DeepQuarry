@@ -997,5 +997,21 @@
     "resolved_export_full_fixture_passed": true,
     "owners_only_query_preparation_passed": true,
     "scope": "Focused30 only; no full Rust/DM suite; pressure timing improvements not yet measured;4bf allocation logging not included"
+  },
+  "actual_query_preparation_cli": {
+    "fixture_commit": "287828bf14",
+    "compiler_commit": "4bf626fc4ff660133868bad6032b21a79e105aed",
+    "receipt": "E:\\dq-cache\\dmb-query-preparation-contract\\f51387da961f4c2bafa48b6736f3234d\\receipt.json",
+    "sha256": "e6f394e292a8798ddec45bde2935377b9083194b45adfd627266c8f22921f1ad",
+    "passed": true,
+    "scope": "Owned-pipe CLI and one-shot preparation; current resolved answers, stale source pin rejection, Source exit 2, no installed executable pair. Counted diagnostic build, not performance acceptance. First two fixture assertion failures preserved separately."
+  },
+  "current_compile_error_contract": {
+    "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-4bf/df5ca5ee29e34857a489e631f4b16cc8/receipt.json",
+    "acceptance_matches": 18,
+    "exact_diagnostic_matches": 17,
+    "cases": 18,
+    "open_case": "undefined_modified_initializer_type",
+    "scope": "Native primary error stable; identical captured source and pinned BYOND raw stdout differed between one and two errors across captures. Baseline stability controls required before adding a secondary diagnostic."
   }
 }
