@@ -45,7 +45,7 @@ pub(crate) use resident_maps::{
     geometry_weight as resident_map_geometry_weight, plan_weight as resident_map_plan_weight,
 };
 mod grammar_roster;
-mod initializer_assemblies;
+pub(crate) mod initializer_assemblies;
 pub(crate) mod resident_weight;
 mod retained_declarations;
 pub(crate) use initializer_assemblies::inspect as initializer_assembly_census;
@@ -397,6 +397,7 @@ impl HeapCensus {
         );
         self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
         self.body_occurrences("frontend.body_index", &frontend.bodies);
+        if let Some(mapping)=frontend.source_export_mapping() {self.source_export_mapping(mapping);}
         frontend.visit_body_code_storage(|address, logical, capacity| {
             self.buffer("frontend.body_code", address, logical, capacity);
         });

@@ -31,6 +31,7 @@ pub(crate) struct SourceSnapshot {
     occurrences: Arc<dm_tree::OccurrenceTable>,
     /// Same immutable current producer owner; no parsed syntax or source arena.
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
+    source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
     replay_proof: Option<ReplayProof>,
@@ -62,6 +63,9 @@ impl SourceSnapshot {
         });
         if let Some(bodies) = &self.bodies {
             census.body_occurrences("query_snapshot.bodies", bodies);
+        }
+        if let Some(mapping) = &self.source_mapping {
+            census.source_export_mapping(mapping);
         }
         self.selected.census(census);
         if let Some(proof) = &self.replay_proof {
@@ -141,6 +145,7 @@ impl SourceSnapshot {
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision: dm_analysis::tree_export::source_revision(frontend),
             outcome: "frontend_analyzed",
+            source_mapping: frontend.source_export_mapping().cloned(),
             selected: Default::default(),
             replay_proof: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
@@ -194,33 +199,38 @@ impl SourceSnapshot {
                     "name":member.name.bits(),"override_depth":tree.member_occurrence(id)})
             }
         };
-        let provenance = &occurrence.provenance;
-        let path = |file| {
-            self.paths
-                .get(&file)
-                .map(|path| path.to_string_lossy().into_owned())
-                .ok_or_else(|| Error::other("unknown occurrence source path"))
-        };
-        if provenance.expansion_stack.len() > 1024 {
+        if occurrence.provenance.expansion_stack.len() > 1024 {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 "source provenance exceeds bounded definition-origin depth",
             ));
         }
-        let definitions = provenance
-            .expansion_stack
-            .iter()
-            .map(|span| {
-                Ok(serde_json::json!({"path":path(span.file)?,"start":span.start,"end":span.end}))
-            })
-            .collect::<std::io::Result<Vec<_>>>()?;
-        Ok(
-            serde_json::json!({"schema":"dm-session-source-query-v1","row":"source_occurrence",
-            "source_revision":format!("{:032x}",self.source_revision),"occurrence":ordinal,"target":target,
-            "path":path(provenance.span.file)?,"start":provenance.span.start,"end":provenance.span.end,
-            "include_occurrence":provenance.include_occurrence,"region":format!("{:032x}",provenance.region),
-            "definition_origins":definitions,"provenance_complete":false}),
+        let mapping = self.source_mapping.as_ref().ok_or_else(|| {
+            Error::new(
+                ErrorKind::NotFound,
+                "current issued source mapping unavailable",
+            )
+        })?;
+        let mut row = dm_analysis::tree_export::source_occurrence_row(
+            tree,
+            occurrence,
+            ordinal,
+            |file| {
+                self.paths
+                    .get(&file)
+                    .map(|path| path.to_string_lossy().into_owned())
+            },
+            mapping.location(dm_tree::OccurrenceId(ordinal)),
         )
+        .map_err(Error::other)?;
+        let target_key = row["target"].take();
+        row["target_key"] = target_key;
+        row["target"] = target;
+        row["schema"] = "dm-session-source-query-v1".into();
+        row["row"] = "source_occurrence".into();
+        row["source_revision"] = format!("{:032x}", self.source_revision).into();
+        row["provenance_complete"] = false.into();
+        Ok(row)
     }
 }
 pub(crate) struct QueryAttempt {

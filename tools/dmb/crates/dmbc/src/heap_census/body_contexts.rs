@@ -16,4 +16,26 @@ impl HeapCensus {
             }
         }
     }
+    pub(crate) fn source_export_mapping(
+        &mut self,
+        mapping: &Arc<dm_tree::frontend::SourceExportMapping>,
+    ) {
+        let owner = "query_snapshot.source_mapping";
+        if !self.arc_object(owner, mapping) {
+            return;
+        }
+        let (region_count, include_count, location_count) = mapping.coordinate_counts();
+        self.owner(owner).observed_items += (region_count + include_count + location_count) as u64;
+        let (regions, region_bytes, includes, include_bytes) = mapping.coordinate_storage();
+        self.buffer(owner, regions, region_bytes, region_bytes);
+        self.buffer(owner, includes, include_bytes, include_bytes);
+        mapping.origin_storage(|address, _, bytes| self.buffer(owner, address, bytes, bytes));
+        if let Some(locations) = mapping.locations_if_issued() {
+            self.slice(owner, locations, true);
+            for location in locations.iter().flatten() {
+                self.source_location(owner, location);
+            }
+        }
+        self.unknown(owner,"Arc control blocks, shared path/trace nested buffers and private shared source-path HashMap backing are not exposed");
+    }
 }

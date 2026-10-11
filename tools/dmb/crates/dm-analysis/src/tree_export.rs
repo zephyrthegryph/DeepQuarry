@@ -9,7 +9,6 @@ use dm_syntax::TokenKind;
 use dm_tree::frontend::{ColdFrontend, SourceLocation};
 use dm_tree::{DefinitionMode, MemberKind, SemanticTree, SettingOperation, Target};
 use serde_json::{json, Value};
-use std::collections::HashMap;
 use std::fmt;
 use std::io::Write;
 
@@ -241,44 +240,7 @@ fn source(location: &SourceLocation) -> Value {
 /// Identity of the exact current source/provenance projection, independent of tree identity.
 /// This is a join token, never a filesystem freshness or artifact admission proof.
 pub fn source_revision(frontend: &ColdFrontend) -> u128 {
-    use xxhash_rust::xxh3::Xxh3;
-    let mut hash = Xxh3::new();
-    hash.update(b"dm-analysis-source-revision-v1\0");
-    hash.update(&frontend.snapshot.tree.identity().to_le_bytes());
-    for file in frontend.files.iter() {
-        let path = file.path.to_string_lossy();
-        hash.update(&(path.len() as u64).to_le_bytes());
-        hash.update(path.as_bytes());
-        hash.update(&[u8::from(file.captured)]);
-        hash.update(
-            &file
-                .text
-                .span_fingerprint(0..file.text.len())
-                .expect("whole source range")
-                .to_le_bytes(),
-        );
-    }
-    hash.update(
-        &frontend
-            .expanded
-            .text
-            .span_fingerprint(0..frontend.expanded.text.len())
-            .expect("whole expanded range")
-            .to_le_bytes(),
-    );
-    for origin in frontend.expanded.origins.iter() {
-        for value in [
-            origin.output_span.start,
-            origin.output_span.end,
-            origin.source_span.start,
-            origin.source_span.end,
-            origin.region,
-            origin.origin.source_line,
-        ] {
-            hash.update(&(value as u64).to_le_bytes());
-        }
-    }
-    hash.digest128()
+    frontend.source_export_revision()
 }
 
 pub fn write_jsonl(
@@ -346,20 +308,11 @@ pub fn write_jsonl(
         )?;
         counts.semantic_rows += 1;
     }
-    let target_key = |target| match target {
-        Target::Type(id) => type_key(tree, id),
-        Target::Member(id) => member_keys
-            .get(id.index())
-            .cloned()
-            .ok_or(ExportError::InvalidModel("unknown occurrence member")),
-    };
-    let mut expanded_locations = HashMap::new();
-    for origin in frontend.expanded.origins.iter() {
-        let include = frontend.plan.regions[origin.region].occurrence;
-        expanded_locations
-            .entry((include, origin.source_span.start))
-            .or_insert(origin.output_span.start);
-    }
+    let mapping = frontend
+        .source_export_mapping()
+        .ok_or(ExportError::InvalidModel(
+            "source mapping differs from current issuance",
+        ))?;
     for (index, occurrence) in frontend
         .snapshot
         .occurrences
@@ -367,21 +320,19 @@ pub fn write_jsonl(
         .iter()
         .enumerate()
     {
-        let provenance = &occurrence.provenance;
-        let file = frontend
-            .source(provenance.span.file)
-            .ok_or(ExportError::InvalidModel("unknown occurrence source"))?;
         emit(
             writer,
-            json!({"row":"occurrence","occurrence":index,"target":target_key(occurrence.target)?,
-            "path":file.path.to_string_lossy(),"start":provenance.span.start,"end":provenance.span.end,
-            "include_occurrence":provenance.include_occurrence,"region":format!("{:032x}",provenance.region),
-            "source":expanded_locations.get(&(provenance.include_occurrence as usize,provenance.span.start as usize))
-                .and_then(|offset| frontend.location(*offset)).as_ref().map(source),
-            "definition_origins":provenance.expansion_stack.iter().map(|span| {
-                let file=frontend.source(span.file).ok_or(ExportError::InvalidModel("unknown macro definition source"))?;
-                Ok(json!({"path":file.path.to_string_lossy(),"start":span.start,"end":span.end}))
-            }).collect::<Result<Vec<_>,ExportError>>()?}),
+            source_occurrence_row(
+                tree,
+                occurrence,
+                index as u32,
+                |file| {
+                    frontend
+                        .source(file)
+                        .map(|file| file.path.to_string_lossy().into_owned())
+                },
+                mapping.location(dm_tree::OccurrenceId(index as u32)),
+            )?,
         )?;
         counts.occurrence_rows += 1;
     }
@@ -393,6 +344,30 @@ pub fn write_jsonl(
     Ok(counts)
 }
 
+/// Exact full-analysis source occurrence row from the current shared mapping.
+pub fn source_occurrence_row(
+    tree: &SemanticTree,
+    occurrence: &dm_tree::Occurrence,
+    ordinal: u32,
+    path: impl Fn(dm_ir::FileId) -> Option<String>,
+    location: Option<&SourceLocation>,
+) -> Result<Value, ExportError> {
+    let provenance = &occurrence.provenance;
+    let target = match occurrence.target {
+        Target::Type(id) => type_key(tree, id)?,
+        Target::Member(id) => member_row::member_key(tree, id)?,
+    };
+    Ok(
+        json!({"row":"occurrence","occurrence":ordinal,"target":target,
+        "path":path(provenance.span.file).ok_or(ExportError::InvalidModel("unknown occurrence source"))?,
+        "start":provenance.span.start,"end":provenance.span.end,
+        "include_occurrence":provenance.include_occurrence,"region":format!("{:032x}",provenance.region),
+        "source":location.map(source),
+        "definition_origins":provenance.expansion_stack.iter().map(|span|
+            Ok(json!({"path":path(span.file).ok_or(ExportError::InvalidModel("unknown macro definition source"))?,
+                "start":span.start,"end":span.end}))).collect::<Result<Vec<_>,ExportError>>()?}),
+    )
+}
 /// Current source envelope only: this never parses or resolves executable syntax.
 pub fn source_body_row(
     tree: &SemanticTree,

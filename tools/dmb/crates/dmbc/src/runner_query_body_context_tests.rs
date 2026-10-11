@@ -29,6 +29,12 @@ fn body_context_pages_share_current_owner_and_reject_semantic_stable_source_edit
         shifted.snapshot.tree.identity()
     );
     let snapshot = SourceSnapshot::capture(&original);
+    assert!(snapshot
+        .source_mapping
+        .as_ref()
+        .unwrap()
+        .locations_if_issued()
+        .is_none());
     assert!(Arc::ptr_eq(
         snapshot.bodies.as_ref().unwrap(),
         &original.bodies

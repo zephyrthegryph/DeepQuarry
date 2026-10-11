@@ -76,7 +76,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
     assert!(rows
         .iter()
         .any(|row| row["row"] == "member" && row["name"] == "value"));
-    assert!(rows.iter().any(|row| row["row"] == "source_occurrence"));
+    assert!(rows.iter().any(|row| row["row"] == "occurrence"));
     assert!(rows
         .iter()
         .any(|row| row["row"] == "body" && row["executable_facts_included"] == false));
@@ -96,7 +96,12 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         .unwrap()
         .lines()
         .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
-        .filter(|row| row["row"] == "member" || row["row"] == "type" || row["row"] == "body")
+        .filter(|row| {
+            row["row"] == "member"
+                || row["row"] == "type"
+                || row["row"] == "body"
+                || row["row"] == "occurrence"
+        })
     {
         let resident = rows
             .iter()
@@ -104,6 +109,8 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
                 row["row"] == full_row["row"]
                     && if full_row["row"] == "body" {
                         row["declaration"] == full_row["declaration"]
+                    } else if full_row["row"] == "occurrence" {
+                        row["occurrence"] == full_row["occurrence"]
                     } else {
                         row["id"] == full_row["id"]
                     }

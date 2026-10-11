@@ -55,7 +55,7 @@ fn export_with(
                         "semantic_revision":request.expected_revision,"source_revision":request.expected_source_revision,
                         "item_scope":SCOPE,"complete":false,"executable_facts_included":false,
                         "full_member_metadata_included":true,"source_body_contexts_included":true,"resolved_references_included":false,
-                        "provenance_complete":false}),
+                        "source_locations_included":true,"source_span_precision":"logical_line","provenance_complete":false}),
     )?;
     for catalog in [
         Catalog::Types,
@@ -84,7 +84,20 @@ fn export_with(
                 }
             },
             |item| {
-                emit(output, item)?;
+                if item["row"] == "source_occurrence" {
+                    // Preserve the original full-analysis occurrence row while
+                    // the source query API retains its established target object.
+                    let mut row = item.clone();
+                    row["row"] = "occurrence".into();
+                    let target_key = row["target_key"].take();
+                    row["target"] = target_key;
+                    row.as_object_mut()
+                        .expect("validated source row")
+                        .remove("target_key");
+                    emit(output, &row)?;
+                } else {
+                    emit(output, item)?;
+                }
                 Ok(VisitControl::Continue)
             },
             &mut execute,

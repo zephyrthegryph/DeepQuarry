@@ -231,6 +231,7 @@ pub struct ColdFrontend {
     /// Explicit linker projection. It never changes semantic override priority
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
+    source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
 }
 
 impl ColdFrontend {
@@ -727,6 +728,9 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
     })
 }
 
+#[path = "frontend_source_export_mapping.rs"]
+mod source_export_mapping;
+pub use source_export_mapping::SourceExportMapping;
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
 struct Mapping<'a> {
@@ -761,19 +765,17 @@ impl Mapping<'_> {
     fn output(&self, offset: usize) -> Option<SourceLocation> {
         let origin = self.origin(offset)?;
         let occurrence = self.plan.regions[origin.region].occurrence;
-        let file = *self.by_path.get(origin.origin.path.as_ref())?;
-        let span = source_span(file, origin.source_span).ok()?;
-        Some(SourceLocation {
-            span,
-            path: self.plan.occurrences[occurrence].path.clone(),
-            semantic_path: self.plan.occurrences[occurrence].semantic_path.clone(),
-            line: origin.origin.source_line,
-            encounter_ordinal: self.plan.regions[origin.region].encounter_ordinal,
-            include_occurrence: occurrence,
-            include_chain: self.include_chain(occurrence),
-            macro_expansions: Arc::clone(origin.macro_expansions),
-        })
+        source_export_mapping::source_location(
+            origin,
+            &self.plan.occurrences[occurrence].path,
+            &self.plan.occurrences[occurrence].semantic_path,
+            self.plan.regions[origin.region].encounter_ordinal,
+            occurrence,
+            self.include_chain(occurrence),
+            self.by_path,
+        )
     }
+
     fn line(&self, path: &Path, line: usize) -> Option<SourceLocation> {
         let file = *self.by_path.get(path)?;
         let source = &self.files[file.index()];

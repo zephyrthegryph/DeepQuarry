@@ -457,7 +457,18 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
             ),
         })
         .collect();
+    let files: Arc<[SourceFile]> = files.into();
+    let source_by_path = Arc::new(by_path);
+    let source_export_mapping = Arc::new(source_export_mapping::SourceExportMapping::capture(
+        &plan,
+        &expanded,
+        &files,
+        &source_by_path,
+        &snapshot.occurrences,
+        &snapshot.tree,
+    ));
     Ok(ColdFrontend {
+        source_export_mapping,
         callable_roster,
         abi_settings_complete,
         timings,
@@ -476,8 +487,8 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         syntax,
         allocation_ledger: Arc::new(allocation_ledger),
         snapshot,
-        files: files.into(),
-        source_by_path: Arc::new(by_path),
+        files,
+        source_by_path,
         body_by_declaration: Arc::new(
             bodies
                 .iter()
