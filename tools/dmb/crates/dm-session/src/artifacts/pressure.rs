@@ -18,12 +18,12 @@ mod tests {
         store.enable_incidence();
         let lease = store.lease();
         let known = lease
-            .insert_with(Arc::from(b"known".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"known".as_slice()), vec![], vec![], 1, || {
                 vec![7; 90]
             })
             .unwrap();
         let unknown = lease
-            .insert_with(Arc::from(b"unknown".as_slice()), vec![], vec![], 1, || {
+            .insert_with_owned(Arc::from(b"unknown".as_slice()), vec![], vec![], 1, || {
                 vec![8]
             })
             .unwrap();
