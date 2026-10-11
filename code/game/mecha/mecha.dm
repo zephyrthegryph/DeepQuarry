@@ -2987,6 +2987,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	internal_components[slot] = null // ALLOW(ownership): re-adds the empty slot marker (a null value, no entity)
 
 /// Pure: the exosuit is on a player level (working and medical exosuits made there carry a tracking beacon).
-/obj/mecha/proc/on_player_level()
+/obj/mecha/proc/on_player_level(datum/act/A)
 	var/turf/T = get_turf(src)
 	return T && isPlayerLevel(T.z)

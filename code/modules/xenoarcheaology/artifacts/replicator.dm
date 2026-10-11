@@ -50,7 +50,7 @@
 /// What this kind of replicator can make (a fresh list: roll_construction() takes from it).
 /obj/machinery/replicator/proc/button_candidates()
 	// /mob/living/simple_mob/mimic/crate, // // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
-	return list(
+	var/static/list/viables = list(
 	/obj/item/roller,
 	/obj/structure/closet/crate,
 	/obj/structure/closet/acloset,
@@ -91,6 +91,7 @@
 	/obj/item/tool/screwdriver,
 	/obj/item/grenade/chem_grenade/cleaner,
 	/obj/item/grenade/chem_grenade/metalfoam)
+	return viables.Copy()
 
 /// How many buttons it has.
 /obj/machinery/replicator/proc/button_count(datum/roller/R)

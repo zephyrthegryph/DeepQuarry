@@ -14,7 +14,7 @@
 // in a holder is stuffed into it (when it takes them: food_can_insert_micro and stuffing_refusal()). Whoever is stuffed in is in its contents, and drops
 // out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food)
-	rolls(ROLL_PIXEL, PIXEL_JITTER(6), when = PROC_REF(jitters_at_init)) // food with a centre of mass lands a little off the tile centre
+	rolls(ROLL_PIXEL, PROC_REF(roll_jitter)) // food with a centre of mass lands a little off the tile centre
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL)
 	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req_bool(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"),
@@ -97,6 +97,8 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 	to_chat(user, span_warning("You climb into \the [src]."))
 	return OP_OK
 
-/// Pure: food with a centre of mass that was not placed off-centre lands a little off the tile centre.
-/obj/item/reagent_containers/food/proc/jitters_at_init()
-	return (center_of_mass_x || center_of_mass_y) && !pixel_x && !pixel_y
+/// Food with a centre of mass that was not placed off-centre lands up to 6 pixels off the tile centre.
+/obj/item/reagent_containers/food/proc/roll_jitter(datum/roller/R)
+	if(!(center_of_mass_x || center_of_mass_y) || pixel_x || pixel_y)
+		return list(pixel_x, pixel_y)
+	return list(R.number(-6, 6), R.number(-6, 6))

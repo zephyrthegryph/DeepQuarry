@@ -111,51 +111,16 @@ CAPABILITIES(/obj/machinery/seed_storage)
 
 /// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
 /obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
-	switch(R.weighted(list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)))
-		if("produce")
-			return list(
-						/obj/item/seeds/ambrosiavulgarisseed = 3,
-						/obj/item/seeds/greengrapeseed = 3,
-						/obj/item/seeds/icepepperseed = 2,
-						/obj/item/seeds/kudzuseed = 1
-					)
-		if("mushrooms")
-			return list(
-						/obj/item/seeds/ambrosiavulgarisseed = 1,
-						/obj/item/seeds/glowberryseed = 2,
-						/obj/item/seeds/libertymycelium = 1,
-						/obj/item/seeds/reishimycelium = 2,
-						/obj/item/seeds/sporemycelium = 1
-					)
-		if("survivalist")
-			return list(
-						/obj/item/seeds/ambrosiadeusseed = 2,
-						/obj/item/seeds/redtowermycelium = 2,
-						/obj/item/seeds/vale = 2,
-						/obj/item/seeds/siflettuce = 2
-					)
-		if("cold")
-			return list(
-						/obj/item/seeds/ambrosiavulgarisseed = 2,
-						/obj/item/seeds/thaadra = 2,
-						/obj/item/seeds/icepepperseed = 2,
-						/obj/item/seeds/siflettuce = 1
-					)
-		if("poison")
-			return list(
-						/obj/item/seeds/ambrosiavulgarisseed = 3,
-						/obj/item/seeds/surik = 1,
-						/obj/item/seeds/telriis = 1,
-						/obj/item/seeds/nettleseed = 2,
-						/obj/item/seeds/poisonberryseed = 1
-					)
-		if("extra_poison")
-			return list(
-						/obj/item/seeds/ambrosiainfernusseed = 1,
-						/obj/item/seeds/amauri = 1,
-						/obj/item/seeds/surik = 1,
-						/obj/item/seeds/deathberryseed = 1 /// Very ow.
-					)
+	var/static/list/batches = list(
+		"produce" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/greengrapeseed = 3, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/kudzuseed = 1),
+		"mushrooms" = list(/obj/item/seeds/ambrosiavulgarisseed = 1, /obj/item/seeds/glowberryseed = 2, /obj/item/seeds/libertymycelium = 1, /obj/item/seeds/reishimycelium = 2, /obj/item/seeds/sporemycelium = 1),
+		"survivalist" = list(/obj/item/seeds/ambrosiadeusseed = 2, /obj/item/seeds/redtowermycelium = 2, /obj/item/seeds/vale = 2, /obj/item/seeds/siflettuce = 2),
+		"cold" = list(/obj/item/seeds/ambrosiavulgarisseed = 2, /obj/item/seeds/thaadra = 2, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/siflettuce = 1),
+		"poison" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/surik = 1, /obj/item/seeds/telriis = 1, /obj/item/seeds/nettleseed = 2, /obj/item/seeds/poisonberryseed = 1),
+		"extra_poison" = list(/obj/item/seeds/ambrosiainfernusseed = 1, /obj/item/seeds/amauri = 1, /obj/item/seeds/surik = 1, /obj/item/seeds/deathberryseed = 1)) // the deathberry: very ow
+	var/static/list/weights = list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)
+	var/list/batch = batches[R.weighted(weights)]
+	return batch.Copy()
 
 /// Seed storage has no timed work of its own (its shock is a timed hold).
 /obj/machinery/seed_storage/proc/work_step(datum/act/timer/A)

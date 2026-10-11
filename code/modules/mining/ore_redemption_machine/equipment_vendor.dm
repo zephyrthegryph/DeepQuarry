@@ -17,6 +17,8 @@
 	circuit = /obj/item/circuitboard/mining_equipment_vendor
 	var/obj/item/card/id/inserted_id
 	var/list/prize_list // per_type(): one table per vendor type, built by build_prize_list()
+	/// Entries an admin added to this one vendor (new_prize()): name -> /datum/data/mining_equipment, shown under "Extra".
+	var/list/extra_prizes
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
 /obj/machinery/mineral/equipment_vendor/ownership()
@@ -204,10 +206,14 @@
 
 	// Available items - in static data because we don't wanna compute this list every time! It hardly changes.
 	static_data["items"] = list()
-	for(var/cat in prize_list)
+	var/list/categories = prize_list.Copy()
+	if(LAZYLEN(extra_prizes))
+		categories |= "Extra"
+	for(var/cat in categories)
 		var/list/cat_items = list()
-		for(var/prize_name in prize_list[cat])
-			var/datum/data/mining_equipment/prize = prize_list[cat][prize_name]
+		var/list/prizes = prizes_in(cat)
+		for(var/prize_name in prizes)
+			var/datum/data/mining_equipment/prize = prizes[prize_name]
 			cat_items[prize_name] = list("name" = prize_name, "price" = prize.cost)
 		static_data["items"][cat] = cat_items
 
@@ -221,6 +227,7 @@
 
 CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	per_type(nameof(prize_list), PROC_REF(build_prize_list))
+	owns_many(nameof(extra_prizes))
 	interface("MiningVendor")
 	without("ui_open")
 	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
@@ -256,10 +263,11 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 		return
 	var/category = cat // meow
 	var/name = name_arg
-	if(!(category in prize_list) || !(name in prize_list[category])) // Not trying something that's not in the list, are you?
+	var/list/prizes = prizes_in(category)
+	if(!(name in prizes)) // Not trying something that's not in the list, are you?
 		flick(icon_deny, src)
 		return
-	var/datum/data/mining_equipment/prize = prize_list[category][name]
+	var/datum/data/mining_equipment/prize = prizes[name]
 	if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
 		to_chat(user, span_danger("You have insufficient Thalers."))
 		flick(icon_deny, src)
@@ -399,19 +407,16 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	// Entries live in the "Extra" category (prize_list is category -> name -> entry). prize_list is the type's shared
-	// per_type() table, so this vendor takes its own copy before adding to it.
-	var/list/mine = list()
-	for(var/cat in prize_list)
-		var/list/entries = prize_list[cat]
-		mine[cat] = entries.Copy()
-	var/list/extra = mine["Extra"]
-	if(!islist(extra))
-		extra = list()
-		mine["Extra"] = extra
-	extra[name] = new /datum/data/mining_equipment(name, path, cost)
-	prize_list = mine
+	// prize_list is the type's shared per_type() table: this vendor's own entries go in extra_prizes, shown under "Extra".
+	rel_add(src, nameof(extra_prizes), new /datum/data/mining_equipment(name, path, cost), key = name) // a name already listed is replaced
 	dirty_items = TRUE
+
+/// The prizes of `category` this vendor offers: its type's table, and its own extra entries under "Extra".
+/obj/machinery/mineral/equipment_vendor/proc/prizes_in(category)
+	var/list/listed = prize_list[category]
+	if(category == "Extra" && LAZYLEN(extra_prizes))
+		return (listed || list()) + extra_prizes
+	return listed
 
 
 /// A blast throws sparks off the vendor.

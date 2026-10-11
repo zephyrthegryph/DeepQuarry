@@ -27,16 +27,15 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 /// The stock a welder cuts from any wreck, plus up to two of the type's own parts (40% each).
 /obj/effect/decal/mecha_wreckage/proc/roll_welder_salvage(datum/roller/R)
 	. = list(/obj/item/stack/material/plasteel, /obj/item/stack/material/steel, /obj/item/stack/rods)
-	var/list/parts = salvage_parts()
+	var/list/parts = TYPE_TABLE_COPY(src, wreck_salvage_parts)
 	for(var/i in 1 to 2)
 		if(length(parts) && R.chance(40))
 			var/part = R.choose(parts)
 			. += part
 			parts -= part
 
-/// The type's own parts a wreck may hold (none for a plain wreck).
-/obj/effect/decal/mecha_wreckage/proc/salvage_parts()
-	return null
+/// The type's own parts a wreck may hold, up to two of them, 40% each (roll_welder_salvage()); none for a plain wreck.
+TYPE_TABLE_DECLARE(/obj/effect/decal/mecha_wreckage, wreck_salvage_parts, null)
 
 // Salvaging with a welder, wirecutters or a crowbar: mecha_wreckage_salvage.dm.
 
@@ -44,14 +43,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Gygax wreckage"
 	icon_state = "gygax-broken"
 
-/// The parts this wreck may still hold: up to two, 40% each (roll_welder_salvage()).
-/obj/effect/decal/mecha_wreckage/gygax/salvage_parts()
-	return list(/obj/item/mecha_parts/part/gygax_torso,
-								/obj/item/mecha_parts/part/gygax_head,
-								/obj/item/mecha_parts/part/gygax_left_arm,
-								/obj/item/mecha_parts/part/gygax_right_arm,
-								/obj/item/mecha_parts/part/gygax_left_leg,
-								/obj/item/mecha_parts/part/gygax_right_leg)
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/gygax, wreck_salvage_parts, list(/obj/item/mecha_parts/part/gygax_torso, /obj/item/mecha_parts/part/gygax_head, /obj/item/mecha_parts/part/gygax_left_arm, /obj/item/mecha_parts/part/gygax_right_arm, /obj/item/mecha_parts/part/gygax_left_leg, /obj/item/mecha_parts/part/gygax_right_leg))
 
 /obj/effect/decal/mecha_wreckage/gygax/dark
 	name = "Dark Gygax wreckage"
@@ -86,26 +78,13 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Ripley wreckage"
 	icon_state = "ripley-broken"
 
-/// The parts this wreck may still hold: up to two, 40% each (roll_welder_salvage()).
-/obj/effect/decal/mecha_wreckage/ripley/salvage_parts()
-	return list(/obj/item/mecha_parts/part/ripley_torso,
-								/obj/item/mecha_parts/part/ripley_left_arm,
-								/obj/item/mecha_parts/part/ripley_right_arm,
-								/obj/item/mecha_parts/part/ripley_left_leg,
-								/obj/item/mecha_parts/part/ripley_right_leg)
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/ripley, wreck_salvage_parts, list(/obj/item/mecha_parts/part/ripley_torso, /obj/item/mecha_parts/part/ripley_left_arm, /obj/item/mecha_parts/part/ripley_right_arm, /obj/item/mecha_parts/part/ripley_left_leg, /obj/item/mecha_parts/part/ripley_right_leg))
 
 /obj/effect/decal/mecha_wreckage/ripley/firefighter
 	name = "Firefighter wreckage"
 	icon_state = "firefighter-broken"
 
-/// The parts this wreck may still hold: up to two, 40% each (roll_welder_salvage()).
-/obj/effect/decal/mecha_wreckage/ripley/firefighter/salvage_parts()
-	return list(/obj/item/mecha_parts/part/ripley_torso,
-								/obj/item/mecha_parts/part/ripley_left_arm,
-								/obj/item/mecha_parts/part/ripley_right_arm,
-								/obj/item/mecha_parts/part/ripley_left_leg,
-								/obj/item/mecha_parts/part/ripley_right_leg,
-								/obj/item/clothing/suit/fire)
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/ripley/firefighter, wreck_salvage_parts, list(/obj/item/mecha_parts/part/ripley_torso, /obj/item/mecha_parts/part/ripley_left_arm, /obj/item/mecha_parts/part/ripley_right_arm, /obj/item/mecha_parts/part/ripley_left_leg, /obj/item/mecha_parts/part/ripley_right_leg, /obj/item/clothing/suit/fire))
 
 /obj/effect/decal/mecha_wreckage/ripley/deathripley
 	name = "Death-Ripley wreckage"
@@ -115,15 +94,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Durand wreckage"
 	icon_state = "durand-broken"
 
-/// The parts this wreck may still hold: up to two, 40% each (roll_welder_salvage()).
-/obj/effect/decal/mecha_wreckage/durand/salvage_parts()
-	return list(
-								/obj/item/mecha_parts/part/durand_torso,
-								/obj/item/mecha_parts/part/durand_head,
-								/obj/item/mecha_parts/part/durand_left_arm,
-								/obj/item/mecha_parts/part/durand_right_arm,
-								/obj/item/mecha_parts/part/durand_left_leg,
-								/obj/item/mecha_parts/part/durand_right_leg)
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/durand, wreck_salvage_parts, list(/obj/item/mecha_parts/part/durand_torso, /obj/item/mecha_parts/part/durand_head, /obj/item/mecha_parts/part/durand_left_arm, /obj/item/mecha_parts/part/durand_right_arm, /obj/item/mecha_parts/part/durand_left_leg, /obj/item/mecha_parts/part/durand_right_leg))
 
 /obj/effect/decal/mecha_wreckage/phazon
 	name = "Phazon wreckage"
@@ -134,15 +105,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Odysseus wreckage"
 	icon_state = "odysseus-broken"
 
-/// The parts this wreck may still hold: up to two, 40% each (roll_welder_salvage()).
-/obj/effect/decal/mecha_wreckage/odysseus/salvage_parts()
-	return list(
-								/obj/item/mecha_parts/part/odysseus_torso,
-								/obj/item/mecha_parts/part/odysseus_head,
-								/obj/item/mecha_parts/part/odysseus_left_arm,
-								/obj/item/mecha_parts/part/odysseus_right_arm,
-								/obj/item/mecha_parts/part/odysseus_left_leg,
-								/obj/item/mecha_parts/part/odysseus_right_leg)
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/odysseus, wreck_salvage_parts, list(/obj/item/mecha_parts/part/odysseus_torso, /obj/item/mecha_parts/part/odysseus_head, /obj/item/mecha_parts/part/odysseus_left_arm, /obj/item/mecha_parts/part/odysseus_right_arm, /obj/item/mecha_parts/part/odysseus_left_leg, /obj/item/mecha_parts/part/odysseus_right_leg))
 
 /obj/effect/decal/mecha_wreckage/odysseus/murdysseus
 	icon_state = "murdysseus-broken"
