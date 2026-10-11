@@ -671,7 +671,38 @@
   "compact_retention_implementation": {
     "procedure_commit": "dfb4073d69",
     "initializer_pressure_commit": "f3219fc06f",
-    "status": "committed; build and benchmark pending",
-    "scope": "Weak exact issuer witnesses, compact exact ABI, same-core logical pressure pruning; classification96MiB and assembly64MiB caps are not physical memory bounds"
+    "status": "committed; six-package test-target typecheck running on frozen2d784; focused execution and benchmarks pending",
+    "scope": "Weak exact issuer witnesses, compact exact ABI, same-core logical pressure pruning; classification96MiB and assembly64MiB caps are not physical memory bounds",
+    "symbolic_pressure_commit": "61068e686f",
+    "startup_and_candidate_routing_commit": "2d78415084",
+    "modifier_pressure_commit": "8238fbb2fb",
+    "limits": "procedure192MiB, initializers96MiB aggregate, assembly64MiB, startup32MiB conservative logical charges; not physical process bounds"
+  },
+  "current_validation_builds": {
+    "failed_checks": [
+      {
+        "commit": "f3219fc06f",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133256-90e5064b-job-cargo.json",
+        "cause": "source mapping census callback returned bool; fixed15d374"
+      },
+      {
+        "commit": "15d3743315",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133451-1b1d775e-job-cargo.json",
+        "cause": "private census helper calls; fixed14ee88"
+      },
+      {
+        "commit": "14ee88b416",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133702-82624426-job-cargo.json",
+        "cause": "new pressure test used boolean insertion API as Arc; fixedb301093"
+      }
+    ],
+    "scope": "Cargo check --tests is typechecking, not test execution or benchmark"
+  },
+  "benchmark_disk_blocker": {
+    "free_bytes_observed": 1978937344,
+    "minimum_free_gib": 16,
+    "cleanup": "obsolete compiler library deletion rejected by automatic review: blocked by policy; no deletion performed",
+    "user_input_requested": true,
+    "coding_continues": true
   }
 }
