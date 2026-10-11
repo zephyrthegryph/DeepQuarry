@@ -55,7 +55,7 @@ fn record() -> Arc<super::super::super::Record> {
 fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
     let record = record();
     let key = Arc::clone(&record.key);
-    let weight = charge(&key, &record).expect("all immutable payloads are exposed");
+    let weight = charge(&key, &record, usize::MAX).expect("all immutable payloads are exposed");
     assert!(weight > 0);
     let memo = SessionSymbolicMemo::current_revision();
     let request = memo.for_request(true);
@@ -95,12 +95,12 @@ fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
 fn debug_payload_capacity_is_charged_before_retention() {
     let mut record = record();
     let key = Arc::clone(&record.key);
-    let before = charge(&key, &record).unwrap();
+    let before = charge(&key, &record, usize::MAX).unwrap();
     Arc::get_mut(&mut record)
         .unwrap()
         .relative_debug
         .reserve(10000);
-    assert!(charge(&key, &record).unwrap() > before + 10000);
+    assert!(charge(&key, &record, usize::MAX).unwrap() > before + 10000);
 }
 
 #[test]
@@ -132,5 +132,27 @@ fn payload_allocation_allowance_deduplicates_shared_and_empty_encounters() {
 fn unknown_nested_payload_still_declines_pressure_retention() {
     let mut census = HeapCensus::new("unknown");
     census.unknown("nested", "private nested capacity is not exposed");
+    assert!(census.finish_compact_symbolic_charge().is_none());
+}
+
+#[test]
+fn compact_charge_matches_diagnostic_capacity_and_declines_before_pointer_growth() {
+    let record = record();
+    let key = Arc::clone(&record.key);
+    let expected = {
+        let mut census = HeapCensus::new("diagnostic");
+        census.slice("compact_symbolic.locator", &key, true);
+        census_record(&record, &mut census);
+        census.finish_compact_symbolic_charge().unwrap()
+    };
+    assert_eq!(charge(&key, &record, expected), Some(expected));
+    assert!(charge(&key, &record, expected - 1).is_none());
+    // A huge exposed capacity is refused before adding its address to the
+    // scratch ledger; later nested observations cannot regrow that ledger.
+    let mut census = HeapCensus::compact_symbolic_charge(128);
+    assert!(!census.exposed_buffer("oversized", 1, 1024, 1024));
+    for address in 2..10000 {
+        assert!(!census.exposed_buffer("later", address, 1, 1));
+    }
     assert!(census.finish_compact_symbolic_charge().is_none());
 }

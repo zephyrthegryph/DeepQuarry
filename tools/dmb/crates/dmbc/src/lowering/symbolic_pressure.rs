@@ -21,15 +21,16 @@ impl SessionSymbolicMemo {
         };
         owner
             .values
-            .prune_for_pressure(limit, |key, _, _, record| charge(key, record))
+            .prune_for_pressure(limit, |key, _, _, record| charge(key, record, limit))
     }
 }
 
 fn charge(
     key: &std::sync::Arc<[u8]>,
     record: &std::sync::Arc<super::super::Record>,
+    limit: usize,
 ) -> Option<usize> {
-    let mut census = HeapCensus::new("compact_symbolic_charge");
+    let mut census = HeapCensus::compact_symbolic_charge(limit);
     census.slice("compact_symbolic.locator", key, true);
     census_record(record, &mut census);
     census.finish_compact_symbolic_charge()

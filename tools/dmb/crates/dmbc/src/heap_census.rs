@@ -6,6 +6,7 @@ mod body_contexts;
 use serde::Serialize;
 mod abi_certificates;
 mod cache_batch;
+mod compact_symbolic_charge;
 mod cold_boundary;
 mod declaration_syntax;
 mod dmb_image;
@@ -96,6 +97,7 @@ pub struct HeapCensus {
     buffer_encounters: usize,
     collections: HashSet<usize>,
     frozen_code_metrics: relocation_metrics::RelocationMetrics,
+    compact_charge: Option<compact_symbolic_charge::Budget>,
 }
 impl HeapCensus {
     /// Borrow retained frontend owners into this boundary's pointer ledger.
@@ -130,6 +132,7 @@ impl HeapCensus {
             buffer_encounters: 0,
             collections: HashSet::new(),
             frozen_code_metrics: Default::default(),
+            compact_charge: None,
         }
     }
     /// Count logical entries without claiming their private index allocation layout.
@@ -160,9 +163,13 @@ impl HeapCensus {
         self.owners.get_mut(name).expect("census owner inserted")
     }
     pub fn unknown(&mut self, owner: &str, reason: &str) {
+        self.reject_compact_unknown(owner, reason);
         self.owner(owner).unknown.insert(reason.into());
     }
     fn buffer(&mut self, owner: &str, pointer: usize, payload: usize, capacity: usize) -> bool {
+        if !self.admit_compact_buffer(pointer, capacity) {
+            return false;
+        }
         self.buffer_encounters = self.buffer_encounters.saturating_add(1);
         if capacity == 0 {
             return false;
@@ -180,6 +187,9 @@ impl HeapCensus {
     }
     /// Collection entries are logical lower bounds, not invented allocator capacities.
     pub(crate) fn collection_entries<T>(&mut self, owner: &str, address: usize, len: usize) {
+        if len != 0 && self.reject_compact_collection() {
+            return;
+        }
         if len == 0 {
             return;
         }
@@ -213,6 +223,9 @@ impl HeapCensus {
                 owner,
                 "backing capacity unavailable; logical slice length is a lower bound",
             );
+        }
+        if self.compact_charge.as_ref().is_some_and(|budget| budget.declined) {
+            return false;
         }
         let bytes = values.len().saturating_mul(size_of::<T>());
         if exact_capacity {
@@ -846,45 +859,6 @@ impl HeapCensus {
                 }
             }
         }
-    }
-    fn symbolic_code(&mut self, code: &Arc<dm_ir::SymbolicCode>) {
-        if self.arc_object("frozen_code", code) {
-            self.frozen_code_metrics.observe(code);
-            self.owner("frozen_code").observed_items +=
-                (code.words().len() + code.relocations().len()) as u64;
-            code.visit_storage(|address, length, capacity| {
-                self.buffer("frozen_code", address, length, capacity);
-            });
-        }
-    }
-    /// Logical payload charge only. A per-exposed-allocation allocator/control
-    /// allowance is not measured private memory; the shared core charges its
-    /// own bucket, claim, lease and incidence bookkeeping separately.
-    pub(crate) fn finish_compact_symbolic_charge(mut self) -> Option<usize> {
-        self.owner("procedure_metadata.recipe").unknown.remove(
-            "Arc control block and allocator overhead are unavailable",
-        );
-        let allocations = self.allocations.len();
-        let report = self.finish();
-        if report.unknown_capacity_payload_bytes != 0
-            || report.owners.iter().any(|owner| !owner.unknown.is_empty())
-        {
-            return None;
-        }
-        usize::try_from(report.unique_known_capacity_bytes).ok()?
-            .checked_add(allocations.checked_mul(64)?)
-    }
-    fn frozen_code(&mut self, code: &Arc<dm_codegen_byond::FrozenProc>) {
-        if !self.arc_object("frozen_code", code) {
-            return;
-        }
-        self.symbolic_code(&code.shared_code());
-        self.exposed_buffer(
-            "frozen_code",
-            code.labels().as_ptr() as usize,
-            std::mem::size_of_val(code.labels()),
-            code.label_storage_capacity().saturating_mul(size_of::<Option<u32>>()),
-        );
     }
     pub fn frozen(&mut self, batch: &crate::symbolic::FrozenBatch) {
         batch.census_current_images(self);
