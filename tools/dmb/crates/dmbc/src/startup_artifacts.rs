@@ -17,8 +17,13 @@ mod inventory_receipt;
 const INVENTORY_KEY: &[u8] = b"dmbc-startup-inventory-v1\0";
 
 pub struct StartupArtifacts {
-    callables: callable_index::CallableIndex,
-    values: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Option<dm_ir::ReadDomain>>,
+    callables: Arc<callable_index::CallableIndex>,
+    values: crate::initializer_lowering::receipts::publication_store::Store<
+        Artifact,
+        Query,
+        Answer,
+        Option<dm_ir::ReadDomain>,
+    >,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -29,7 +34,8 @@ impl Default for StartupArtifacts {
     fn default() -> Self {
         Self {
             callables: Default::default(),
-            values: dm_session::ObservedArtifactStore::current_revision(),
+            values:
+                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -84,6 +90,21 @@ pub(super) fn key(identity: ProcedureIdentity, source: &str) -> Vec<u8> {
     key
 }
 impl StartupArtifacts {
+    pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
+        Arc::new(Self {
+            callables: Arc::clone(&self.callables),
+            values: self.values.for_request(publishable),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+            inventory_hits: AtomicU64::new(0),
+            inventory_recomputed: AtomicU64::new(0),
+        })
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     /// Drop only the source-neutral callable index's strong semantic root.
     /// Stored static syntax/layout payloads do not own the semantic tree.
     pub(crate) fn clear_callable_index(&self) {

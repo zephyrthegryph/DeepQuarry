@@ -82,6 +82,15 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
 }
 impl HeapCensus {
     pub(crate) fn initializer_artifacts(&mut self, store: &InitializerArtifacts) {
+        self.unknown("initializer_classification.publication", "private publication and lease control/index allocations excluded; pending and published payload owners visited together");
+        store.visit_roster_storage(|address, bytes| {
+            self.buffer(
+                "initializer_classification.roster_owner",
+                address,
+                bytes,
+                bytes,
+            );
+        });
         // Each callback finishes before the next mutex is entered. A roster
         // callback visits payloads only; it never re-enters either store.
         store.visit_storage(|view| {

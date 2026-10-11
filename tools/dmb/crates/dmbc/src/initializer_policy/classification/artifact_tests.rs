@@ -533,3 +533,22 @@ fn current_roster_skips_full_weight_but_bounded_admission_preserves_unknown_decl
     assert_eq!(bounded.admission_charge(|| None), None);
     assert_eq!(bounded.admission_charge(|| Some(123)), Some(123));
 }
+
+#[test]
+fn published_preparation_survives_failed_and_analysis_requests() {
+    let owner = InitializerArtifacts::default();
+    let first = owner.for_request(true);
+    let original = first.roster.preparation(&[]);
+    assert!(first.publish_successful());
+    let failed = owner.for_request(true);
+    failed.roster.clear();
+    drop(failed);
+    let next = owner.for_request(true);
+    assert!(Arc::ptr_eq(&original, &next.roster.preparation(&[])));
+    let analysis = owner.for_request(false);
+    analysis.roster.clear();
+    assert!(!analysis.publish_successful());
+    assert!(next.publish_successful());
+    let current = owner.for_request(true);
+    assert!(Arc::ptr_eq(&original, &current.roster.preparation(&[])));
+}

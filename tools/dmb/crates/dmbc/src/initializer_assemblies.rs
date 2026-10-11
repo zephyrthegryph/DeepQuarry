@@ -114,6 +114,18 @@ impl Default for InitializerAssemblies {
     }
 }
 impl InitializerAssemblies {
+    pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
+        Arc::new(Self {
+            values: self.values.for_request(publishable),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        })
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(crate) fn visit_storage(
         &self,
         visitor: impl FnMut(receipts::Storage<'_, RetainedAssembly>),

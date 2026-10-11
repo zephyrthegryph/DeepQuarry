@@ -142,6 +142,19 @@ fn semantic_key(
     )
 }
 impl InitializerFragments {
+    pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
+        Arc::new(Self {
+            values: self.values.for_request(publishable),
+            roster: Default::default(),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        })
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     /// Diagnostic-only borrowing; callback must not re-enter this store.
     pub(crate) fn visit_storage(&self, visit: impl FnMut(receipts::Storage<'_, RetainedFragment>)) {
         self.values.visit_storage(visit);

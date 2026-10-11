@@ -14,6 +14,7 @@ pub(super) struct CurrentRoster {
     pub(super) hits: AtomicU64,
     pub(super) recomputed: AtomicU64,
 }
+#[derive(Clone)]
 struct Roster {
     debug_defined: bool,
     canonical: crate::initializer_tokens::CanonicalTokens,
@@ -22,6 +23,25 @@ struct Roster {
     groups: Vec<RuntimeGroup>,
 }
 impl CurrentRoster {
+    pub(super) fn fork(&self) -> Self {
+        Self {
+            value: Mutex::new(
+                self.value
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .clone(),
+            ),
+            preparation: Mutex::new(
+                self.preparation
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .clone(),
+            ),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+        }
+    }
+
     pub(super) fn canonical_owner(&self) -> Option<crate::initializer_tokens::CanonicalTokens> {
         self.value
             .lock()

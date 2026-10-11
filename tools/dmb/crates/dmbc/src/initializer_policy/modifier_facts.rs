@@ -132,7 +132,12 @@ fn collect<'a>(
 }
 
 pub(super) struct ModifierArtifacts {
-    values: dm_session::ArtifactStore<ModifierArtifact>,
+    values: crate::initializer_lowering::receipts::publication_store::Store<
+        ModifierArtifact,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
     pub(super) hits: AtomicU64,
     pub(super) recomputed: AtomicU64,
 }
@@ -153,13 +158,25 @@ impl ModifierKey {
 impl Default for ModifierArtifacts {
     fn default() -> Self {
         Self {
-            values: dm_session::ArtifactStore::current_revision(),
+            values:
+                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }
     }
 }
 impl ModifierArtifacts {
+    pub(super) fn for_request(&self, publishable: bool) -> Self {
+        Self {
+            values: self.values.for_request(publishable),
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+        }
+    }
+    pub(super) fn publish_successful(&self) -> bool {
+        self.values.publish_successful()
+    }
+
     pub(super) fn visit_storage(
         &self,
         visitor: impl FnMut(dm_session::ArtifactStorageView<'_, ModifierArtifact>),
@@ -169,7 +186,9 @@ impl ModifierArtifacts {
 
     pub(super) fn with_limit(bytes: usize) -> Self {
         Self {
-            values: dm_session::ArtifactStore::with_limit(bytes),
+            values: crate::initializer_lowering::receipts::publication_store::Store::with_limit(
+                bytes,
+            ),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }
@@ -255,8 +274,10 @@ pub(super) fn modifier_facts_reused<'a>(
             .store
             .modifiers
             .values
-            .lookup(&keys[ordinal].bytes, &host)
-            .filter(|value| value.input.as_ref() == write)
+            .visit_explained(&keys[ordinal].bytes, &host, &mut |value| {
+                value.input.as_ref() == write
+            })
+            .0
         {
             let _ = keys[ordinal].admitted.set(Arc::clone(&value.input));
             reuse.store.modifiers.hits.fetch_add(1, Ordering::Relaxed);

@@ -58,9 +58,17 @@ impl ClassificationInput {
 pub struct InitializerArtifacts {
     pub(in crate::initializer_policy) modifiers:
         crate::initializer_policy::modifier_facts::ModifierArtifacts,
-    values: dm_session::ArtifactStore<SemanticClassification>,
+    values: crate::initializer_lowering::receipts::publication_store::Store<
+        SemanticClassification,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
     bounded: bool,
-    pub(super) roster: super::token_roster::CurrentRoster,
+    pub(super) roster: Arc<super::token_roster::CurrentRoster>,
+    roster_publication:
+        Arc<dm_session::ArtifactPublication<Arc<super::token_roster::CurrentRoster>>>,
+    roster_attempt: dm_session::ArtifactAttempt<Arc<super::token_roster::CurrentRoster>>,
     pub(super) roster_enabled: bool,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
@@ -68,11 +76,17 @@ pub struct InitializerArtifacts {
 }
 impl Default for InitializerArtifacts {
     fn default() -> Self {
+        let roster = Arc::new(super::token_roster::CurrentRoster::default());
+        let roster_publication = Arc::new(dm_session::ArtifactPublication::default());
+        let roster_attempt = roster_publication.begin(Arc::clone(&roster));
         Self {
-            values: dm_session::ArtifactStore::current_revision(),
+            values:
+                crate::initializer_lowering::receipts::publication_store::Store::current_revision(),
             bounded: false,
             modifiers: Default::default(),
-            roster: Default::default(),
+            roster,
+            roster_publication,
+            roster_attempt,
             roster_enabled: true,
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
@@ -81,6 +95,36 @@ impl Default for InitializerArtifacts {
     }
 }
 impl InitializerArtifacts {
+    pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
+        let previous = self
+            .roster_publication
+            .with_published(Arc::clone)
+            .unwrap_or_else(|| Arc::clone(&self.roster));
+        let roster = Arc::new(previous.fork());
+        let roster_attempt = if publishable {
+            self.roster_publication.begin(Arc::clone(&roster))
+        } else {
+            self.roster_publication.begin_ephemeral(Arc::clone(&roster))
+        };
+        Arc::new(Self {
+            values: self.values.for_request(publishable),
+            modifiers: self.modifiers.for_request(publishable),
+            bounded: self.bounded,
+            roster_enabled: self.roster_enabled,
+            roster,
+            roster_publication: Arc::clone(&self.roster_publication),
+            roster_attempt,
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        })
+    }
+    pub(crate) fn publish_successful(&self) -> bool {
+        let values = self.values.publish_successful();
+        let modifiers = self.modifiers.publish_successful();
+        let roster = self.roster_attempt.publish_successful();
+        values && modifiers && roster
+    }
     pub(crate) fn visit_storage(
         &self,
         visitor: impl FnMut(dm_session::ArtifactStorageView<'_, SemanticClassification>),
@@ -123,28 +167,58 @@ impl InitializerArtifacts {
             self.roster.recomputed.load(Ordering::Relaxed),
         )
     }
+    pub(crate) fn visit_roster_storage(&self, mut visit: impl FnMut(usize, usize)) {
+        visit(
+            Arc::as_ptr(&self.roster) as usize,
+            std::mem::size_of_val(self.roster.as_ref()),
+        );
+        self.roster_publication.with_published(|roster| {
+            if !Arc::ptr_eq(roster, &self.roster) {
+                visit(
+                    Arc::as_ptr(roster) as usize,
+                    std::mem::size_of_val(roster.as_ref()),
+                );
+            }
+        });
+    }
+
     #[allow(clippy::type_complexity)]
     pub(crate) fn visit_token_index(
         &self,
-        visitor: impl FnOnce(&crate::initializer_tokens::CanonicalTokens),
+        mut visitor: impl FnMut(&crate::initializer_tokens::CanonicalTokens),
     ) {
-        self.roster.visit_canonical(visitor);
+        self.roster.visit_canonical(&mut visitor);
+        self.roster_publication.with_published(|roster| {
+            if !Arc::ptr_eq(roster, &self.roster) {
+                roster.visit_canonical(&mut visitor);
+            }
+        });
     }
     pub(crate) fn visit_token_roster(
         &self,
-        visitor: impl FnOnce(
+        mut visitor: impl FnMut(
             &Vec<Arc<SemanticClassification>>,
             &Vec<Option<(u32, Arc<[u8]>)>>,
             &Vec<RuntimeGroup>,
         ),
     ) {
-        self.roster.visit(visitor);
+        self.roster.visit(&mut visitor);
+        self.roster_publication.with_published(|roster| {
+            if !Arc::ptr_eq(roster, &self.roster) {
+                roster.visit(&mut visitor);
+            }
+        });
     }
     pub(crate) fn visit_preparation(
         &self,
-        visitor: impl FnOnce(&Arc<super::token_roster::preparation::Preparation>),
+        mut visitor: impl FnMut(&Arc<super::token_roster::preparation::Preparation>),
     ) {
-        self.roster.visit_preparation(visitor);
+        self.roster.visit_preparation(&mut visitor);
+        self.roster_publication.with_published(|roster| {
+            if !Arc::ptr_eq(roster, &self.roster) {
+                roster.visit_preparation(&mut visitor);
+            }
+        });
     }
 
     pub fn modifier_reuse_counts(&self) -> (u64, u64) {
@@ -162,13 +236,20 @@ impl InitializerArtifacts {
         }
     }
     pub fn with_limit(bytes: usize) -> Self {
+        let roster = Arc::new(super::token_roster::CurrentRoster::default());
+        let roster_publication = Arc::new(dm_session::ArtifactPublication::default());
+        let roster_attempt = roster_publication.begin(Arc::clone(&roster));
         Self {
-            values: dm_session::ArtifactStore::with_limit(bytes),
+            values: crate::initializer_lowering::receipts::publication_store::Store::with_limit(
+                bytes,
+            ),
             bounded: true,
             // Preserve the explicit compatibility budget; the new full-current
             // modifier owner is enabled only by retained-session defaults.
             modifiers: crate::initializer_policy::modifier_facts::ModifierArtifacts::with_limit(0),
-            roster: Default::default(),
+            roster,
+            roster_publication,
+            roster_attempt,
             roster_enabled: false,
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),

@@ -56,12 +56,26 @@ pub(crate) struct Binding {
     pub inputs: Arc<Inputs>,
 }
 impl Binding {
-    pub fn modified(reference: dm_ir::SymRef, descriptor: &dm_ir::ModifiedInstance, policy: Option<u128>) -> Self {
+    pub fn modified(
+        reference: dm_ir::SymRef,
+        descriptor: &dm_ir::ModifiedInstance,
+        policy: Option<u128>,
+    ) -> Self {
         let mut key = b"initializer-modified-placement-v1".to_vec();
         // Symbolic identity locates only; full canonical input is replayed.
-        if let dm_ir::SymRef::Instance(name) = reference { symbol(&mut key, name); }
-        Self::new(key, 0, Inputs::Modified { canonical: Arc::from(descriptor.canonical_bytes()), policy,
-            lexical_owner: descriptor.lexical_owner(), resource_context: descriptor.resource_context() })
+        if let dm_ir::SymRef::Instance(name) = reference {
+            symbol(&mut key, name);
+        }
+        Self::new(
+            key,
+            0,
+            Inputs::Modified {
+                canonical: Arc::from(descriptor.canonical_bytes()),
+                policy,
+                lexical_owner: descriptor.lexical_owner(),
+                resource_context: descriptor.resource_context(),
+            },
+        )
     }
     pub fn fragment(duplicate: usize, inputs: FragmentInputs) -> Self {
         let key = fragment_locator(&inputs.write);
@@ -167,7 +181,9 @@ pub(crate) enum Domain {
     Input,
     Semantic(ReadDomain),
 }
-pub(crate) type Store<T> = dm_session::ObservedArtifactStore<T, Query, Answer, Domain>;
+#[path = "initializer_publication_store.rs"]
+pub(crate) mod publication_store;
+pub(crate) type Store<T> = publication_store::Store<T, Query, Answer, Domain>;
 pub(crate) type Storage<'a, T> =
     dm_session::ObservedArtifactStorageView<'a, T, Query, Answer, Domain>;
 pub(crate) struct Host<'a, R: Resolver> {
