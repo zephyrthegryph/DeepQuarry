@@ -17,7 +17,7 @@
 	TEST_ASSERT(!(/mob/living/simple_mob/proc/toggle_digestion in animal.verbs), "digestion remains unexposed before actual conditional belly initialization")
 	animal.init_vore(TRUE)
 	TEST_ASSERT(/mob/living/simple_mob/proc/toggle_digestion in animal.verbs, "the actual init_vore grant exposes the unchanged native proc path")
-	var/obj/belly/belly = animal.vore_selected
+	var/obj/belly/belly = vore_selected_of(animal)
 	TEST_ASSERT(belly && belly.owner == animal, "actual default belly construction produces the animal's owned selected belly")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "the fixture's actual default belly starts in hold mode")
 	rel_set(probe, nameof(probe.animal), animal)

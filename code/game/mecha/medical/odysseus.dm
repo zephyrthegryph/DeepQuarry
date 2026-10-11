@@ -106,12 +106,12 @@ TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
 
 //Meant for random spawns.
 /obj/mecha/medical/odysseus/old
+	max_integrity = 50 // just slightly worse
 	desc = "An aging combat exosuit utilized by many corporations. Originally developed to combat hostile alien lifeforms. This one is particularly worn looking and likely isn't as sturdy."
 
 // ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/medical/odysseus/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 50	//Just slightly worse.
 	update_integrity(25)
 	cell.set_charge(rand(0, (cell.charge/2)))
 

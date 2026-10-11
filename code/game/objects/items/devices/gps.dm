@@ -30,7 +30,6 @@ TRACKED(/obj/item/gps, tracking)
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
-	name = "global positioning system ([gps_tag])"
 	update_holder()
 
 /obj/item/gps/proc/check_visible_to_holder()
@@ -82,6 +81,10 @@ TRACKED(/obj/item/gps, tracking)
 /// A GPS works unless a pulse knocked it out (emp_disable() holds it down).
 STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 
+/// It is named for its tag (derives(), at init).
+/obj/item/gps/proc/tagged_name()
+	return "global positioning system ([gps_tag])"
+
 CAPABILITIES(/obj/item/gps)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
@@ -103,6 +106,7 @@ CAPABILITIES(/obj/item/gps)
 	op("startTrack", ui_act("startTrack", arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_starttrack)))
 	op("trackColor", ui_act("trackColor", arg("color", schema_text(4096)), arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_trackcolor)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	derives(nameof(name), PROC_REF(tagged_name))
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)

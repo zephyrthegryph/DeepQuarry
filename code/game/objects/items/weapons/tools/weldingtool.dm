@@ -474,13 +474,15 @@ CAPABILITIES(/obj/item/weldingtool/experimental/hybrid)
 	eye_safety_modifier = 1
 	always_process = FALSE
 
+/// A pack's nozzle exists only on its pack (keeps_if()).
+/obj/item/weldingtool/tubefed/proc/on_a_pack()
+	return istype(loc, /obj/item/weldpack)
+
 /obj/item/weldingtool/tubefed/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/weldpack))
 		var/obj/item/weldpack/holder = loc
 		rel_set(src, nameof(mounted_pack), holder)
-	else
-		return INITIALIZE_HINT_QDEL
 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 /// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
@@ -708,3 +710,4 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 CAPABILITIES(/obj/item/weldingtool/tubefed)
 	configure(item_tooling(speed = 1.25))
 	ref_one(nameof(mounted_pack))
+	keeps_if(PROC_REF(on_a_pack))

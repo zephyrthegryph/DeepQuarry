@@ -62,7 +62,7 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 

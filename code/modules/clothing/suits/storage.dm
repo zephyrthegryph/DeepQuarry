@@ -3,13 +3,9 @@
 	var/obj/item/storage/internal/pockets // owned: the internal storage object that holds the pockets' contents
 
 CAPABILITIES(/obj/item/clothing/suit/storage)
-	owns_one(nameof(pockets), starts = /obj/item/storage/internal)
+	owns_one(nameof(pockets), starts = /obj/item/storage/internal, starts_set = list("max_storage_space" = ITEMSIZE_COST_SMALL * 2))
 	op("suit_pockets_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Suit pockets hand"), then(PROC_REF(suit_pockets_hand)))
 	op("suit_pockets_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Suit pockets item"), then(PROC_REF(suit_pockets_item)))
-
-/obj/item/clothing/suit/storage/Initialize(mapload)
-	. = ..()
-	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
 
 /// Old attack_hand: the pockets get the touch first.
@@ -99,10 +95,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	look.state("[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]")
 
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.
-/obj/item/clothing/suit/storage/vest/heavy/Initialize(mapload)
-	. = ..()
-	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 4 // declared on /obj/item/clothing/suit/storage
-
 /obj/item/clothing/suit/storage/vest
 	var/icon_badge
 	var/icon_nobadge
@@ -142,3 +134,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 /obj/item/clothing/suit/storage/victcoat/red
 	name = "ladies red victorian coat"
 	icon_state = "ladiesredvictoriancoat"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
+	owns_one(nameof(pockets), starts = /obj/item/storage/internal, starts_set = list("max_storage_space" = ITEMSIZE_COST_SMALL * 4)) // four pockets
+

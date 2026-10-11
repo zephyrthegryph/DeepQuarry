@@ -142,6 +142,7 @@
 	desc = "spams world log with debugging information"
 
 CAPABILITIES(/obj/item/bananapeel/test)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
 	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(shmove)))
 
 /obj/item/bananapeel/test/proc/shmove(datum/act/notice/A)
@@ -152,6 +153,3 @@ CAPABILITIES(/obj/item/bananapeel/test)
 	var/atom/new_loc = event.new_loc
 	world.log << "the [source] moved from [old_loc]([old_loc.x],[old_loc.y],[old_loc.z]) to [new_loc]([new_loc.x],[new_loc.y],[new_loc.z])"
 
-/obj/item/bananapeel/test/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)

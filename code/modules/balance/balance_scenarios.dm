@@ -568,7 +568,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 	var/mob/living/carbon/human/pred = spawn_thing(/mob/living/carbon/human)
 	var/mob/living/carbon/human/prey = spawn_thing(/mob/living/carbon/human)
 	pred.init_vore(TRUE)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	if(!B)
 		note("[mode_id]: the predator has no belly")
 		for(var/name in TYPE_TABLE_GET(src, balance_digestion_results))

@@ -23,11 +23,6 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 		if(src.crusher())
 			crusher().hand_fed = FALSE
 			break
-	for(var/dir in GLOB.cardinal)
-		rel_set(src, nameof(button), locate(/obj/machinery/button/garbosystem, get_step(src, dir)))
-		if(src.button())
-			rel_set(button(), nameof(/obj/machinery/button/garbosystem::grinder), src)
-			break
 	return
 
 /obj/machinery/v_garbosystem/examine(mob/user, infix, suffix)
@@ -61,6 +56,7 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/v_garbosystem)
+	finds(nameof(button), /obj/machinery/button/garbosystem, back = nameof(/obj/machinery/button/garbosystem::grinder))
 	configure(uses_power(idle = 5, active = 100))
 	hose_sockets(list(/datum/hose_connector/output))
 	reagents(CARGOTANKER_VOLUME * 2)

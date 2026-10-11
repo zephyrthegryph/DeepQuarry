@@ -20,8 +20,8 @@ CAPABILITIES(/obj/item/tvcamera)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(showing))
 	every(2 SECONDS, then(PROC_REF(tvcamera_step)), when = nameof(showing))
-	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
-	owns_one(nameof(radio), starts = /obj/item/radio)
+	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder, starts_set = list("c_tag" = holder_var(nameof(channel)), "status" = FALSE))
+	owns_one(nameof(radio), starts = /obj/item/radio, starts_set = list("listening" = FALSE, "frequency" = ENT_FREQ, "icon" = holder_var(nameof(icon)), "icon_state" = holder_var(nameof(icon_state))))
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -35,14 +35,6 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	. += "Video feed is [camera.status ? "on" : "off"]"
 	. += "Audio feed is [radio.broadcasting ? "on" : "off"]"
 
-/obj/item/tvcamera/Initialize(mapload)
-	. = ..()
-	camera.c_tag = channel
-	camera.status = FALSE
-	radio.listening = FALSE
-	radio.set_frequency(ENT_FREQ)
-	radio.icon = src.icon
-	radio.icon_state = src.icon_state
 
 /obj/item/tvcamera/hear_talk(mob/M, list/message_pieces, verb)
 	radio.hear_talk(M, message_pieces, verb)
@@ -143,8 +135,8 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
 	configure(item_worn(slots = ACCESSORY_SLOT_DECOR))
 	every(2 SECONDS, then(PROC_REF(bodycam_step)), when = nameof(showing))
-	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera)
-	owns_one(nameof(bradio), starts = /obj/item/radio)
+	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera, starts_set = list("c_tag" = holder_var(nameof(channel)), "status" = FALSE))
+	owns_one(nameof(bradio), starts = /obj/item/radio, starts_set = list("listening" = FALSE, "frequency" = BDCM_FREQ, "icon" = holder_var(nameof(icon)), "icon_state" = holder_var(nameof(icon_state))))
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
 	op("toggle_audio", ui_act(), then(PROC_REF(ui_act_toggle_audio)))
 	interface("EyeBuddy", title = "Eye Buddy", state = nameof(GLOB.tgui_default_state))
@@ -157,14 +149,6 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	. += "Video feed is [bcamera.status ? "on" : "off"]"
 	. += "Audio feed is [bradio.broadcasting ? "on" : "off"]"
 
-/obj/item/clothing/accessory/bodycam/Initialize(mapload)
-	. = ..()
-	bcamera.c_tag = channel
-	bcamera.status = FALSE
-	bradio.listening = FALSE
-	bradio.set_frequency(BDCM_FREQ)
-	bradio.icon = src.icon
-	bradio.icon_state = src.icon_state
 
 /obj/item/clothing/accessory/bodycam/hear_talk(mob/M, list/message_pieces, verb)
 	bradio.hear_talk(M, message_pieces, verb)

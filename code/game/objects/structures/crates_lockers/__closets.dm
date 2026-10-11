@@ -92,10 +92,8 @@ CAPABILITIES(/obj/structure/closet)
 		needs(req(PROC_REF(has_prey))),
 		asks(/datum/prompt/choice/prey),
 		then(PROC_REF(devoured)))
+	trait(TRAIT_ALT_CLICK_BLOCKER)
 
-/obj/structure/closet/Initialize(mapload)
-	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
-	. = ..()
 
 /// Declares what it starts with and takes in the loose items on its turf, once the map around it exists.
 /obj/structure/closet/proc/closet_after_init(datum/act/timer/A)
@@ -614,7 +612,7 @@ CAPABILITIES(/obj/structure/closet)
 	if(get_dist(src, target) >= 1 || get_dist(src, user) >= 1) //in case they leave the locker
 		return OP_REFUSED
 	playsound(src, vore_sound, 25)
-	user.begin_instant_nom(user, target, user, user.vore_selected)
+	user.begin_instant_nom(user, target, user, vore_selected_of(user))
 	return OP_OK
 
 CAPABILITIES(/obj/structure/closet/bluespace)

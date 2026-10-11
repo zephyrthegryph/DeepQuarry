@@ -7,8 +7,7 @@
 	var/max_fuel = 350
 	var/obj/item/nozzle = null //Attached welder, or other spray device.
 	var/nozzle_type = /obj/item/weldingtool/tubefed
-	var/nozzle_attached = 0
-	nozzle_attached = 1
+	var/nozzle_attached = 1
 
 CAPABILITIES(/obj/item/weldpack)
 	configure(item_worn(slots = SLOT_BACK))

@@ -166,11 +166,11 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 
 //Meant for random spawns.
 /obj/mecha/combat/phazon/old
+	max_integrity = 150 // just slightly worse
 	desc = "An exosuit which can only be described as 'WTF?'. This one is particularly worn looking and likely isn't as sturdy."
 
 // ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/phazon/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 150	//Just slightly worse.
 	update_integrity(25)
 	cell.set_charge(rand(0, (cell.charge/2)))

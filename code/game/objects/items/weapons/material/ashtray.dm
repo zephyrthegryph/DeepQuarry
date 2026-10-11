@@ -25,7 +25,6 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by its look
 	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
 	color = null
-	randpixel_xy()
 	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 	sync_butts()
 
@@ -49,6 +48,7 @@ SETTER(/obj/item/material/ashtray, butts)
 
 CAPABILITIES(/obj/item/material/ashtray)
 	op("add_butt", item(/obj/item), priority(above("material_interaction_item")), when(req(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /// A click with the held item on itself is the in-hand use, not an item put in it.
 /obj/item/material/ashtray/proc/held_is_another(datum/act/op/A)

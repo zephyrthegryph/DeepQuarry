@@ -81,13 +81,13 @@
 		return
 
 	if(resting)
-		if(isbelly(vore_selected))
-			vore_selected.digest_mode = DM_UNABSORB
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = DM_UNABSORB
 		ai_brain.go_sleep()
 
 	else
-		if(isbelly(vore_selected))
-			vore_selected.digest_mode = vore_default_mode
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = vore_default_mode
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
@@ -115,7 +115,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "you land with a soft bump in what can only be described as a big soft slimy sack, the walls effortlessly stretching to match your every move with no sign of reaching any kind of elastic \
 	limit - and to add insult to injury, it seems the thing is... pressing on you, kneading over the lump you make in its midsection, as though rubbing in the fact that you've just been caught."
@@ -232,7 +232,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_mode = DM_HOLD
 	B.desc = "the lizard gently yet insistently stuffs you down her gullet - evidently enjoying this moment of playtime as you land in a sprawled heap in the stretchy, clinging sack that makes up \
 	most of her girth. Your movements are rewarded only with squeezing from outside, the skin of the reptile easily stretching out to match your movements no matter how hard you try to push. If anything, \

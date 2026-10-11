@@ -163,7 +163,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 					act_message(M, L, others = span_warning("%U% sits down on %T%!"))
 				else
 					act_message(user, M, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
-				M.begin_instant_nom(user, L, M, M.vore_selected)
+				M.begin_instant_nom(user, L, M, vore_selected_of(M))
 
 	add_fingerprint(user)
 
@@ -234,7 +234,7 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 
 	var/list/buckled_here2 = src?.buckled_mob_list()
 	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
-		if(can_do_spont_vore && is_vore_predator(M) && M.vore_selected)
+		if(can_do_spont_vore && is_vore_predator(M) && vore_selected_of(M))
 			for(var/mob/living/buckled in buckled_here2)
 				if(can_stumble_vore(prey = buckled, pred = M))
 					return TRUE

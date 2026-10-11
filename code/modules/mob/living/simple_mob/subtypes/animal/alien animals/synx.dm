@@ -132,7 +132,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /mob/living/simple_mob/animal/synx/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	//B.human_prey_swallow_time = 6 SECONDS //doesnt work
 	//B.nonhuman_prey_swallow_time = 3 SECONDS //doesnt work
 	B.vore_verb = "swallow"
@@ -704,14 +704,14 @@ TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 
 /mob/living/simple_mob/animal/synx/ai/pet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 1
 	B.digest_brute = 0
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 5
 	B.digest_brute = 5

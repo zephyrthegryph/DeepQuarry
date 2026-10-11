@@ -1966,7 +1966,7 @@
 	var/mob/living/carbon/human/pred = person()
 	var/mob/living/carbon/human/prey = person()
 	pred.init_vore(TRUE)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	TEST_ASSERT(!isnull(B), "the pred has a belly")
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom succeeds")
 	TEST_ASSERT_EQUAL(prey.loc, B, "the prey is inside")

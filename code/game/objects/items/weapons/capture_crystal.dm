@@ -278,8 +278,8 @@ TRACKED(/obj/item/capture_crystal, recharging)
 			return ITEM_INTERACT_FAILURE
 		if(hud_of(user)?.zone_sel?.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
-				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
-				M.perform_the_nom(M, bound_mob, M, M.vore_selected)
+				act_message(user, src, others = "%U% moves %T% to [M]'s [vore_selected_of(M)]...")
+				M.perform_the_nom(M, bound_mob, M, vore_selected_of(M))
 				return ITEM_INTERACT_SUCCESS
 	else if(M == user)		//You don't have a mob, you ponder the orb instead of trying to capture yourself
 		act_message(user, src, MSG_SELF("You ponder %T%..."), MSG_OTHERS("%U% ponders %T%..."))

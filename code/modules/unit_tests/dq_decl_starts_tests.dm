@@ -94,7 +94,7 @@
 	var/turf/T = dq_containment_floor()
 	for(var/path in list(/obj/item/radio/uplink, /obj/item/multitool/uplink, /obj/item/radio/headset/uplink, /obj/item/implant/uplink))
 		var/obj/item/I = allocate(path, T)
-		TEST_ASSERT(istype(I.hidden_uplink, /obj/item/uplink/hidden), "[path] starts with a hidden uplink")
+		TEST_ASSERT(istype(item_hidden_uplink(I), /obj/item/uplink/hidden), "[path] starts with a hidden uplink")
 	var/obj/machinery/reagent_refinery/reactor/R = allocate(/obj/machinery/reagent_refinery/reactor, T)
 	TEST_ASSERT(istype(R.reagents, /datum/reagents/distilling), "the reactor's holder is its reagent_type")
 	var/obj/machinery/reagent_refinery/hub/H = allocate(/obj/machinery/reagent_refinery/hub, T)

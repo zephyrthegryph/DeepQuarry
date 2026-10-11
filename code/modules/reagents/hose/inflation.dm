@@ -19,7 +19,7 @@
 		if(CHEM_INGEST)
 			return "mouth"
 		if(CHEM_VORE)
-			return human_owner()?.vore_selected?.name ? sanitize(human_owner().vore_selected.name) : "belly"
+			return vore_selected_of(human_owner())?.name ? sanitize(vore_selected_of(human_owner()).name) : "belly"
 		if(CHEM_BLOOD)
 			return "bloodstream"
 	return "something"
@@ -46,8 +46,8 @@
 
 	// Check for destinations
 	var/list/options = list("Mouth")
-	if(human_owner().vore_selected)
-		options.Add("Belly ([sanitize(human_owner().vore_selected.name)])")
+	if(vore_selected_of(human_owner()))
+		options.Add("Belly ([sanitize(vore_selected_of(human_owner()).name)])")
 	if(!HAS_SYNTHETIC_BIOLOGY(human_owner())) // Results in a lot of bad behaviors...
 		options.Add("Bloodstream")
 
@@ -70,8 +70,8 @@
 			feedback = span_danger("bloodstream")
 		else
 			connection_mode = CHEM_VORE // Anything else is a vore belly name
-			if(human_owner().vore_selected)
-				feedback = sanitize(human_owner().vore_selected.name)
+			if(vore_selected_of(human_owner()))
+				feedback = sanitize(vore_selected_of(human_owner()).name)
 
 	// Display action
 	name = "[human_owner()]'s [feedback]"
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 		if(CHEM_INGEST)
 			return human_owner().ingested
 		if(CHEM_VORE)
-			return human_owner().vore_selected?.reagents
+			return vore_selected_of(human_owner())?.reagents
 		if(CHEM_BLOOD)
 			// Inflating
 			var/datum/hose_connector/other = get_pairing()
@@ -140,13 +140,13 @@ CAPABILITIES(/datum/hose_connector/inflation)
 							return
 			if(connection_mode == CHEM_VORE)
 				if(!human_owner().receive_reagents)
-					to_chat(human_owner(), span_warning("You can't transfer reagents into your [sanitize(human_owner().vore_selected.name)], your prefs dont allow it!"))
+					to_chat(human_owner(), span_warning("You can't transfer reagents into your [sanitize(vore_selected_of(human_owner()).name)], your prefs dont allow it!"))
 					my_hose.disconnect() // Pop!
 					return
 		if(other.flow_direction == HOSE_INPUT || other.flow_direction == HOSE_NEUTRAL) // If filling mouth check prefs for belly fluid consumption.
 			if(connection_mode == CHEM_VORE)
 				if(!human_owner().give_reagents)
-					to_chat(human_owner(), span_warning("You can't transfer reagents from your [sanitize(human_owner().vore_selected.name)], your prefs dont allow it!"))
+					to_chat(human_owner(), span_warning("You can't transfer reagents from your [sanitize(vore_selected_of(human_owner()).name)], your prefs dont allow it!"))
 					my_hose.disconnect() // Pop!
 					return
 
@@ -155,7 +155,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 		if(HOSE_OUTPUT)
 			// inflating us
 			if(reagents.total_volume > 0)
-				reagents.vore_trans_to_mob(human_owner(), rate, connection_mode, 1, 0, human_owner().vore_selected)
+				reagents.vore_trans_to_mob(human_owner(), rate, connection_mode, 1, 0, vore_selected_of(human_owner()))
 		if(HOSE_INPUT)
 			// draining us
 			if(connected_to.total_volume > 0)
@@ -165,7 +165,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 			reagents.trans_to_holder(connected_to, reagents.maximum_volume) // Load our current reagents back into tank, it's mixed!
 			connected_to.trans_to_holder(reagents, rand(1,reagents.maximum_volume) ) // Fill back up to a random amount
 
-	if(connection_mode == CHEM_VORE && human_owner().vore_selected.count_liquid_for_sprite)
+	if(connection_mode == CHEM_VORE && vore_selected_of(human_owner()).count_liquid_for_sprite)
 		PUBLISH(human_owner(), belly_change)
 
 	if(prob(5) && (reagents.total_volume > 0 || connected_to.total_volume > 0))
@@ -189,7 +189,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 
 /datum/hose_connector/input/borg/connected_reagents()
 	var/mob/living/silicon/robot/R = borg_owner()
-	return R?.vore_selected?.reagents
+	return vore_selected_of(R)?.reagents
 
 /datum/hose_connector/input/borg/on_examine(datum/act/notice/N)
 	return
@@ -207,7 +207,7 @@ CAPABILITIES(/datum/hose_connector/inflation)
 
 /datum/hose_connector/output/borg/connected_reagents()
 	var/mob/living/silicon/robot/R = borg_owner()
-	return R?.vore_selected?.reagents
+	return vore_selected_of(R)?.reagents
 
 /datum/hose_connector/output/borg/on_examine(datum/act/notice/N)
 	return

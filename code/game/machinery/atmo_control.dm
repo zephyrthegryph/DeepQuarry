@@ -80,6 +80,7 @@ TRACKED(/obj/machinery/air_sensor, output)
 // The sensor broadcasts what it reads when it is placed and again whenever the rounded readings it sends change: a gas watch on the air it
 // stands in hears every change, and the broadcast goes out only when the readings differ from the last one sent.
 CAPABILITIES(/obj/machinery/air_sensor)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	gas_watch(changed = PROC_REF(air_changed))
 	after_init(0, then(PROC_REF(broadcast_after_init)))
 	op("unfasten", tool(TOOL_WRENCH), wait(0), label("Unfasten"), then(PROC_REF(unfastened)))
@@ -125,11 +126,6 @@ CAPABILITIES(/obj/machinery/air_sensor)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 	last_broadcast = null
-
-/obj/machinery/air_sensor/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/air_sensor/proc/unfastened(datum/act/op/A)
 	var/mob/user = A.actor
@@ -219,6 +215,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 	LAZYSET(sensor_information, id_tag, signal.data)
 
 CAPABILITIES(/obj/machinery/computer/general_air_control)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	interface("GeneralAtmoControl")
 	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
 		asks(/datum/prompt/choice, fields = list("title" = "Configuration", "question" = computed(PROC_REF(control_question)), "choices" = computed(PROC_REF(control_options)), "timeout" = 0), step = "option"),
@@ -386,11 +383,6 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 				LAZYREMOVE(sensors, R.sensor_names[R.to_remove])
 				to_chat(user, span_notice("Successfully removed sensor/meter with name [R.to_remove]"))
 	return OP_OK
-
-/obj/machinery/computer/general_air_control/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/computer/general_air_control/large_tank_control
 	icon = 'icons/obj/computer.dmi'

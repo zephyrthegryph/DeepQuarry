@@ -22,71 +22,44 @@
 CAPABILITIES(/obj/item/clothing/head/pilot)
 	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
-	owns_one(nameof(pilot_hud), starts = /atom/movable/screen)
+	owns_one(nameof(pilot_hud), starts = /atom/movable/screen/pilot_hud)
+	derives(nameof(images), PROC_REF(build_hud_images))
+	derives(nameof(raw_images), PROC_REF(build_raw_images))
 	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
 
-/obj/item/clothing/head/pilot/Initialize(mapload)
-	. = ..()
+/// The helmet's HUD layers over its screen, by name: the bars and boxes stay hidden until the shuttle flies (update_hud()).
+/obj/item/clothing/head/pilot/proc/build_hud_images()
+	. = list()
+	.["top_bar"] = pilot_hud_image("top_bar", 145)
+	.["topdots"] = pilot_hud_image("top_dots", 200)
+	.["top_words"] = pilot_hud_image("words_discon", 200)
+	.["charging"] = pilot_hud_image("", 200)
+	.["left_bar"] = pilot_hud_image("left_bar", 0)
+	.["right_bar"] = pilot_hud_image("right_bar", 0)
+	.["flyboxes"] = pilot_hud_image("flyboxes", 0)
+	.["horizon"] = pilot_hud_image("horizon", 0)
 
-	images = list()
-	raw_images = list()
-
-	pilot_hud.screen_loc = "1,1"
-	pilot_hud.icon = 'icons/obj/piloting_overlay.dmi'
-	pilot_hud.icon_state = "dimmer"
-	pilot_hud.layer = SCREEN_LAYER
-	pilot_hud.plane = PLANE_FULLSCREEN
-	pilot_hud.mouse_opacity = 0
-	pilot_hud.alpha = 0
-
-	var/image/I
-	I = image(pilot_hud.icon,pilot_hud,"top_bar",layer=SCREEN_LAYER+1)
+/obj/item/clothing/head/pilot/proc/pilot_hud_image(state, alpha)
+	var/image/I = image(pilot_hud.icon, pilot_hud, state, layer = SCREEN_LAYER + 1)
 	I.appearance_flags = RESET_ALPHA
-	I.alpha = 145
-	images["top_bar"] = I
-	raw_images += I
+	I.alpha = alpha
+	return I
 
-	I = image(pilot_hud.icon,pilot_hud,"top_dots",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["topdots"] = I
-	raw_images += I
+/// The same layers as a plain list, in order (the wearer's client shows them).
+/obj/item/clothing/head/pilot/proc/build_raw_images()
+	. = list()
+	for(var/key in images)
+		. += images[key]
 
-	I = image(pilot_hud.icon,pilot_hud,"words_discon",layer=SCREEN_LAYER+1) //words_standby, words_flying, words_spool, words_discon
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["top_words"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["charging"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"left_bar",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["left_bar"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"right_bar",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["right_bar"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"flyboxes",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["flyboxes"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"horizon",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["horizon"] = I
-	raw_images += I
+/// The helmet's screen: a dimmer the HUD layers sit on.
+/atom/movable/screen/pilot_hud
+	screen_loc = "1,1"
+	icon = 'icons/obj/piloting_overlay.dmi'
+	icon_state = "dimmer"
+	layer = SCREEN_LAYER
+	plane = PLANE_FULLSCREEN
+	mouse_opacity = 0
+	alpha = 0
 
 /obj/item/clothing/head/pilot/proc/update_hud(status)
 	if(last_status == status)

@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	if(!move_into(E, nameof(E.part), SK, user, ledger_slot = SLOT_ECHAIR_KIT)) // out of the hand, into the chair's kit slot (its default is the buckle seat)
 		spent(E)
 		return OP_REFUSED
-	rel_set(SK, nameof(SK.master), E)
+	set_item_master(SK, E)
 	replace_with(src, E)
 	return OP_OK
 
@@ -356,12 +356,19 @@ TRACKED(/obj/structure/bed/chair, occupied)
 	color = null
 	var/padding_color = "#CC0000"
 
-/obj/structure/bed/chair/sofa/bench/Initialize(mapload)
-	. = ..()
-	// If we're north-facing, metal goes above mob, padding overlay goes below mob.
-	if((dir & NORTH) && !corner_piece)
-		plane = MOB_PLANE
-		layer = ABOVE_MOB_LAYER
+CAPABILITIES(/obj/structure/bed/chair/sofa/bench)
+	derives(nameof(plane), PROC_REF(bench_plane))
+	derives(nameof(layer), PROC_REF(bench_layer))
+
+/// A north-facing bench's metal goes above the mob and its padding below (derives(), at init).
+/obj/structure/bed/chair/sofa/bench/proc/faces_over_mob()
+	return (dir & NORTH) && !corner_piece
+
+/obj/structure/bed/chair/sofa/bench/proc/bench_plane()
+	return faces_over_mob() ? MOB_PLANE : plane
+
+/obj/structure/bed/chair/sofa/bench/proc/bench_layer()
+	return faces_over_mob() ? ABOVE_MOB_LAYER : layer
 
 /// The padding, in its own colour: below mobs on a north-facing bench (the metal is above them), else on the bench.
 /obj/structure/bed/chair/sofa/bench/look_parts(datum/look/look)

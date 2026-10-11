@@ -69,7 +69,7 @@
 
 /mob/living/simple_mob/animal/sif/kururak/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Blue innards of a sleek creature surround you in an overwhelmingly tight pressure. Walls, coated in slick, reflective mucus reflect \
 		light from the pool of teal stomach juices, flashing you from random angles. The texture of the surroundings is only mildly soft, it feels \

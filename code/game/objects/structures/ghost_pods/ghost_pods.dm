@@ -221,7 +221,7 @@ CAPABILITIES(/obj/structure/ghost_pod/automatic)
 		return
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
-		rel_set(src, nameof(vore_selected), vore_organs[1])
+		set_vore_selected(src, vore_organs[1])
 
 /// Lets a freshly spawned character pick a new name.
 /mob/living/carbon/human/proc/offer_spawn_rename()

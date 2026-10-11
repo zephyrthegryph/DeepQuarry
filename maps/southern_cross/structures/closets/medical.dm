@@ -21,27 +21,8 @@
 		/obj/item/clothing/suit/storage/hooded/wintercoat/medical,
 		/obj/item/clothing/shoes/white)
 
-/obj/structure/closet/secure_closet/CMO_wardrobe/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/medic
-	else
-		starts_with += /obj/item/storage/backpack/satchel/med
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/med
-	switch(pick("blue", "green", "purple", "black", "navyblue"))
-		if ("blue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs
-			starts_with += /obj/item/clothing/head/surgery/blue
-		if ("green")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-			starts_with += /obj/item/clothing/head/surgery/green
-		if ("purple")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-			starts_with += /obj/item/clothing/head/surgery/purple
-		if ("black")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-			starts_with += /obj/item/clothing/head/surgery/black
-		if ("navyblue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-			starts_with += /obj/item/clothing/head/surgery/navyblue
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/CMO_wardrobe)
+	initial_contents(pick_one(list(/obj/item/storage/backpack/medic, /obj/item/storage/backpack/satchel/med)))
+	initial_contents(/obj/item/storage/backpack/dufflebag/med, chance = 50)
+	initial_contents(PROC_REF(roll_scrubs))
+

@@ -30,7 +30,7 @@ CAPABILITY_TYPE(slip_prone, CAP_SLIP_PRONE, /datum/capability/slip_prone, key = 
 			continue
 
 		for(var/mob/living/living_mob in the_turf)
-			if(living_mob == our_guy || (living_mob.vore_selected == living_guy.vore_selected))
+			if(living_mob == our_guy || (vore_selected_of(living_mob) == vore_selected_of(living_guy)))
 				continue //Don't do anything to ourselves.
 			if(living_mob.stat)
 				continue

@@ -517,11 +517,16 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
+/// Two department cartridges, each rolled on its own.
+/obj/item/storage/box/PDAs/proc/roll_department_cartridges(datum/roller/R)
+	var/static/list/carts = list(/obj/item/cartridge/engineering, /obj/item/cartridge/security, /obj/item/cartridge/medical, /obj/item/cartridge/signal/science, /obj/item/cartridge/quartermaster)
+	return list(R.choose(carts), R.choose(carts))
+
 CAPABILITIES(/obj/item/storage/box/PDAs)
 	// two Initialize() overrides ran here (pda.dm and pda_subtypes.dm, the second calling the first): two of each
 	initial_contents(/obj/item/pda, count = 8)
 	initial_contents(/obj/item/cartridge/head, count = 2)
-	initial_contents(pick_one(list(/obj/item/cartridge/engineering, /obj/item/cartridge/security, /obj/item/cartridge/medical, /obj/item/cartridge/signal/science, /obj/item/cartridge/quartermaster)), count = 2)
+	initial_contents(PROC_REF(roll_department_cartridges))
 
 // === merged from pda_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/pda

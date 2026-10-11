@@ -352,14 +352,15 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 	max_integrity = 24
 	glasstype = /obj/item/stack/material/glass
 
-/obj/structure/window/bay/Initialize(mapload)
-	. = ..()
+/// It takes its glass's colour (derives(), at init).
+/obj/structure/window/bay/proc/glass_colour()
 	var/obj/item/stack/material/glass/G = glasstype
 	var/datum/material/M = get_material_by_name(initial(G.default_type))
-	color = M.icon_colour
+	return M?.icon_colour
 
 CAPABILITIES(/obj/structure/window/bay)
 	after_init(0, then(PROC_REF(connect_after_init)))
+	derives(nameof(color), PROC_REF(glass_colour))
 
 /// Draws against its neighbours, once they exist.
 /obj/structure/window/bay/proc/connect_after_init(datum/act/timer/A)

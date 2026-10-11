@@ -172,8 +172,8 @@ CAPABILITIES(/obj/item/assembly_holder)
 			a_right.pulsed(0)
 		if(a_left != D)
 			a_left.pulsed(0)
-	if(master)
-		master.receive_signal()
+	if(item_master(src))
+		item_master(src).receive_signal()
 	return 1
 
 /obj/item/assembly_holder/hear_talk(mob/M, list/message_pieces, verb)

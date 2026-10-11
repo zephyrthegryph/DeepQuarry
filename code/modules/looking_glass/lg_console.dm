@@ -5,8 +5,8 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "holocontrol"
 
-	var/static/list/supported_programs = list()
-	var/static/list/secret_programs = list()
+	var/list/supported_programs
+	var/list/secret_programs
 
 	use_power = USE_POWER_IDLE
 
@@ -28,25 +28,33 @@
 			break
 	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
-	if(!supported_programs.len)
-		supported_programs["Off"] = null
-		supported_programs["Diagnostics"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "diagnostic")
-		supported_programs["Space 1"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space1")
-		supported_programs["Space 2"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space2")
-		supported_programs["Space 3"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space3")
-		supported_programs["Space 4"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space4")
-		supported_programs["Space 5"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space5")
-		supported_programs["Space 6"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space6")
 
-		secret_programs["Maw"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "maw")
-		secret_programs["Flesh"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "flesh")
-		secret_programs["Synth Int"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides")
-		secret_programs["Synth Int 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides_active")
-		secret_programs["Two Teshari"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "doubletesh")
-		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
-		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
+/// The programs every looking glass shows (per_type()): name -> skybox image.
+/obj/machinery/computer/looking_glass/proc/build_supported_programs()
+	. = list()
+	.["Off"] = null
+	.["Diagnostics"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "diagnostic")
+	.["Space 1"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space1")
+	.["Space 2"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space2")
+	.["Space 3"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space3")
+	.["Space 4"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space4")
+	.["Space 5"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space5")
+	.["Space 6"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space6")
+
+/// The programs an emagged looking glass adds (per_type()).
+/obj/machinery/computer/looking_glass/proc/build_secret_programs()
+	. = list()
+	.["Maw"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "maw")
+	.["Flesh"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "flesh")
+	.["Synth Int"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides")
+	.["Synth Int 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides_active")
+	.["Two Teshari"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "doubletesh")
+	.["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
+	.["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
 CAPABILITIES(/obj/machinery/computer/looking_glass)
+	per_type(nameof(supported_programs), PROC_REF(build_supported_programs))
+	per_type(nameof(secret_programs), PROC_REF(build_secret_programs))
 	configure(uses_power(active = 8000))
 	interface("LookingGlass")
 	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
