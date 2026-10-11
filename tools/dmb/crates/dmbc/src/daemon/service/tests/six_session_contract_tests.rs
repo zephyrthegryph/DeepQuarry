@@ -3,6 +3,8 @@
 use super::*;
 use crate::request::{BuildOutcome, BuildRequest};
 use std::path::Path;
+#[path = "implied_type_recovery_tests.rs"]
+mod implied_type_recovery;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 
