@@ -24,8 +24,8 @@
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
-	var/static/list/field_edit_questions
-	var/static/list/field_edit_choices
+	var/list/field_edit_questions
+	var/list/field_edit_choices
 
 MSG_DEF_SELF(records/id_required, "needs an identification card")
 MSG_DEF_SELF(records/no_provider, "you have nothing to do that with")
@@ -34,6 +34,8 @@ MSG_DEF(records/inserted_id, "You insert %I%.", "")
 MSG_DEF(records/ejected_id, "You remove %I% from %T%.", "")
 
 CAPABILITIES(/obj/machinery/computer/med_data)
+	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
+	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active2), /datum/data/record)
 	owns_one(nameof(scan), /obj/item/card/id)
 	interface("MedicalRecords", title = "Medical Records")
@@ -66,40 +68,47 @@ CAPABILITIES(/obj/machinery/computer/med_data)
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(med_data_emp)))
 
-/obj/machinery/computer/med_data/Initialize(mapload)
-	. = ..()
-	field_edit_questions = list(
-		// General
-		"sex" = "Please select new sex:",
-		"species" = "Please input new species:",
-		"age" = "Please input new age:",
-		"fingerprint" = "Please input new fingerprint hash:",
-		"p_stat" = "Please select new physical status:",
-		"m_stat" = "Please select new mental status:",
-		// Medical
-		"id_gender" = "Please select new gender identity:",
-		"blood_type" = "Please select new blood type:",
-		"blood_reagent" = "Please select new blood basis:",
-		"b_dna" = "Please input new DNA:",
-		"mi_dis" = "Please input new minor disabilities:",
-		"mi_dis_d" = "Please summarize minor disabilities:",
-		"ma_dis" = "Please input new major disabilities:",
-		"ma_dis_d" = "Please summarize major disabilities:",
-		"alg" = "Please input new allergies:",
-		"alg_d" = "Please summarize allergies:",
-		"cdi" = "Please input new current diseases:",
-		"cdi_d" = "Please summarize current diseases:",
-		"notes" = "Please input new important notes:",
-	)
-	field_edit_choices = list(
-		// General
-		"sex" = all_genders_text_list,
-		"p_stat" = list("*Deceased*", "*SSD*", "Active", "Physically Unfit", "Disabled"),
-		"m_stat" = list("*Insane*", "*Unstable*", "*Watch*", "Stable"),
-		// Medical
-		"id_gender" = all_genders_text_list,
-		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
-	)
+TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_questions, list(
+	// General
+	"sex" = "Please select new sex:",
+	"species" = "Please input new species:",
+	"age" = "Please input new age:",
+	"fingerprint" = "Please input new fingerprint hash:",
+	"p_stat" = "Please select new physical status:",
+	"m_stat" = "Please select new mental status:",
+	// Medical
+	"id_gender" = "Please select new gender identity:",
+	"blood_type" = "Please select new blood type:",
+	"blood_reagent" = "Please select new blood basis:",
+	"b_dna" = "Please input new DNA:",
+	"mi_dis" = "Please input new minor disabilities:",
+	"mi_dis_d" = "Please summarize minor disabilities:",
+	"ma_dis" = "Please input new major disabilities:",
+	"ma_dis_d" = "Please summarize major disabilities:",
+	"alg" = "Please input new allergies:",
+	"alg_d" = "Please summarize allergies:",
+	"cdi" = "Please input new current diseases:",
+	"cdi_d" = "Please summarize current diseases:",
+	"notes" = "Please input new important notes:",
+))
+
+/// The field_edit_questions table, one per type (per_type()).
+/obj/machinery/computer/med_data/proc/build_field_edit_questions()
+	return TYPE_TABLE_GET(src, med_field_questions)
+
+TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
+	// General
+	"sex" = all_genders_text_list,
+	"p_stat" = list("*Deceased*", "*SSD*", "Active", "Physically Unfit", "Disabled"),
+	"m_stat" = list("*Insane*", "*Unstable*", "*Watch*", "Stable"),
+	// Medical
+	"id_gender" = all_genders_text_list,
+	"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
+))
+
+/// The field_edit_choices table, one per type (per_type()).
+/obj/machinery/computer/med_data/proc/build_field_edit_choices()
+	return TYPE_TABLE_GET(src, med_field_choices)
 
 /// Physical slots retain the console's declared silicon reach, independently of window access.
 /obj/machinery/computer/med_data/proc/records_slot_reachable(datum/act/op/A)

@@ -19,10 +19,9 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 	w_class = ITEMSIZE_SMALL
 	instrument_range = 1
 
-/obj/item/instrument/piano_synth/headphones/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/instrument_start, src, then(PROC_REF(start_playing)))
-	observe(src, /datum/notice/instrument_end, src, then(PROC_REF(stop_playing)))
+CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
+	on_notice(/datum/notice/instrument_start, then(PROC_REF(start_playing)))
+	on_notice(/datum/notice/instrument_end, then(PROC_REF(stop_playing)))
 
 /**
  * Called by a component signal when our song starts playing.

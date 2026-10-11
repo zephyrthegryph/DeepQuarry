@@ -34,12 +34,8 @@ CAPABILITIES(/obj/item/storage/toolbox)
 		/obj/item/extinguisher/mini,
 		/obj/item/radio
 	)
-/obj/item/storage/toolbox/emergency/Initialize(mapload)
-	if(prob(50))
-		new /obj/item/flashlight(src)
-	else
-		new /obj/item/flashlight/flare(src)
-	. = ..()
+CAPABILITIES(/obj/item/storage/toolbox/emergency)
+	initial_contents(pick_one(list(/obj/item/flashlight, /obj/item/flashlight/flare)))
 
 //Mechanical
 /obj/item/storage/toolbox/mechanical
@@ -70,13 +66,12 @@ CAPABILITIES(/obj/item/storage/toolbox)
 		/obj/item/stack/cable_coil/random_belt,
 		/obj/item/stack/cable_coil/random_belt
 	)
-/obj/item/storage/toolbox/electrical/Initialize(mapload)
-	. = ..()
-	if(prob(5))
-		new /obj/item/clothing/gloves/yellow(src)
-	else
-		new /obj/item/stack/cable_coil/random(src,30)
-	calibrate_size()
+CAPABILITIES(/obj/item/storage/toolbox/electrical)
+	initial_contents(PROC_REF(roll_gloves_or_cable))
+
+/// Rolled contents (initial_contents()): insulated gloves one time in twenty, else thirty lengths of cable.
+/obj/item/storage/toolbox/electrical/proc/roll_gloves_or_cable(datum/roller/R)
+	return R.chance(5) ? /obj/item/clothing/gloves/yellow : new /obj/item/stack/cable_coil/random(null, 30)
 
 //Syndicate
 /obj/item/storage/toolbox/syndicate
@@ -153,21 +148,14 @@ CAPABILITIES(/obj/item/storage/toolbox)
 
 CAPABILITIES(/obj/item/storage/toolbox/lunchbox)
 	configure(storage(max_size = ITEMSIZE_SMALL))
+	initial_contents(PROC_REF(roll_lunch), when = nameof(filled))
 
-/obj/item/storage/toolbox/lunchbox/Initialize(mapload)
-	if(filled)
-		var/list/lunches = lunchables_lunches()
-		var/lunch = lunches[pick(lunches)]
-		new lunch(src)
-
-		var/list/snacks = lunchables_snacks()
-		var/snack = snacks[pick(snacks)]
-		new snack(src)
-
-		var/list/drinks = lunchables_drinks()
-		var/drink = drinks[pick(drinks)]
-		new drink(src)
-	. = ..()
+/// Rolled contents (initial_contents()): a lunch, a snack and a drink.
+/obj/item/storage/toolbox/lunchbox/proc/roll_lunch(datum/roller/R)
+	var/list/lunches = lunchables_lunches()
+	var/list/snacks = lunchables_snacks()
+	var/list/drinks = lunchables_drinks()
+	return list(lunches[R.choose(lunches)], snacks[R.choose(snacks)], drinks[R.choose(drinks)])
 
 /obj/item/storage/toolbox/lunchbox/filled
 	filled = TRUE

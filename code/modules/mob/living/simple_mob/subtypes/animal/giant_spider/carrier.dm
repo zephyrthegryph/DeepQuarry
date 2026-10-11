@@ -38,11 +38,13 @@
 	var/swarmling_type = /mob/living/simple_mob/animal/giant_spider/hunter
 	var/swarmling_prob = 10 // Odds that a spiderling will be a swarmling instead.
 
-// ALLOW(init/INSTANCE_STATE): rolls how many spiderlings it carries
-/mob/living/simple_mob/animal/giant_spider/carrier/Initialize(mapload)
-	spiderling_count = rand(5, 10)
-	adjust_scale(1.2)
-	return ..()
+// It carries five to ten spiderlings, and is a size bigger.
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/carrier)
+	rolls(nameof(spiderling_count), range_of(5, 10))
+
+/mob/living/simple_mob/animal/giant_spider/carrier
+	icon_scale_x = 1.2
+	icon_scale_y = 1.2
 
 /mob/living/simple_mob/animal/giant_spider/carrier/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s abdomen splits as it rolls over, spiderlings crawling from the wound.")))

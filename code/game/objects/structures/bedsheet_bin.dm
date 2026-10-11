@@ -21,9 +21,6 @@ LINEN BINS
 /// Custom nouns to act as the subject of dreams.
 TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 
-/obj/item/bedsheet/Initialize(mapload)
-	. = ..()
-	make_rotatable(only_flip = TRUE)
 
 /// Old attack_self: lay the sheet out or pick its layer back up. A kind with its own use (a pillow) re-declares the op.
 /obj/item/bedsheet/proc/bedsheet_self(datum/act/op/A)
@@ -40,6 +37,7 @@ CAPABILITIES(/obj/item/bedsheet)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	op("use_item", item(/obj/item), when(req(PROC_REF(held_is_sharp))), begins(MSG(bedsheet/cutting)), wait(5 SECONDS), then(PROC_REF(cut_up)))
 	op("lay_out", in_hand(), label("Lay out"), then(PROC_REF(bedsheet_self)))
+	rotatable(only_flip = TRUE)
 
 MSG_DEF(bedsheet/cutting, span_notice("You begin cutting up %T% with %I%."), span_infoplain(span_bold("%U%") + " begins cutting up %T% with %I%."))
 

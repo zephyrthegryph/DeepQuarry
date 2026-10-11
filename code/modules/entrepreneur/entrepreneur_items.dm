@@ -123,71 +123,24 @@
 	var/pisces = ""
 	var/static/list/zodiacs = list("aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces")
 
-// ALLOW(init/INSTANCE_STATE): rolls this chart's horoscope readings
-/obj/item/entrepreneur/horoscope/Initialize(mapload)
-	. = ..()
-	var/stars = pick(stars_list)
-	var/prediction = pick(prediction_list)
-	var/advice = pick(advice_list)
-	aries = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	taurus = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	gemini = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	cancer = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	leo = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	virgo = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	libra = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	scorpio = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	sagittarius = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	capricorn = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	aquarius = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	pisces = "[stars] [prediction] [advice]"
+/// One sign's reading: a star alignment, a prediction and a piece of advice.
+/obj/item/entrepreneur/horoscope/proc/roll_reading(datum/roller/R)
+	return "[R.choose(stars_list)] [R.choose(prediction_list)] [R.choose(advice_list)]"
 
 CAPABILITIES(/obj/item/entrepreneur/horoscope)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = nameof(zodiacs), "timeout" = 0), step = "zodiac"), then(PROC_REF(interaction_self)))
+	rolls(nameof(aries), PROC_REF(roll_reading))
+	rolls(nameof(taurus), PROC_REF(roll_reading))
+	rolls(nameof(gemini), PROC_REF(roll_reading))
+	rolls(nameof(cancer), PROC_REF(roll_reading))
+	rolls(nameof(leo), PROC_REF(roll_reading))
+	rolls(nameof(virgo), PROC_REF(roll_reading))
+	rolls(nameof(libra), PROC_REF(roll_reading))
+	rolls(nameof(scorpio), PROC_REF(roll_reading))
+	rolls(nameof(sagittarius), PROC_REF(roll_reading))
+	rolls(nameof(capricorn), PROC_REF(roll_reading))
+	rolls(nameof(aquarius), PROC_REF(roll_reading))
+	rolls(nameof(pisces), PROC_REF(roll_reading))
 
 /// Old attack_self.
 /obj/item/entrepreneur/horoscope/proc/interaction_self(datum/act/op/A)

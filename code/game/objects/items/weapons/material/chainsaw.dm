@@ -14,12 +14,6 @@
 /obj/item/chainsaw/var/on = FALSE
 TRACKED(/obj/item/chainsaw, on)
 
-/obj/item/chainsaw/Initialize(mapload)
-	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	. = ..()
 
 /obj/item/chainsaw/proc/turnOff(mob/user as mob)
 	if(!on) return
@@ -40,6 +34,7 @@ CAPABILITIES(/obj/item/chainsaw)
 	op("refuel", at_target(/obj/structure/reagent_dispensers/fueltank), begins(MSG(chainsaw/refilling)), wait(1.5 SECONDS), then(PROC_REF(refueled)), on_interrupt(PROC_REF(refuel_abandoned)))
 	/// Burns fuel every 2 s while running.
 	every(2 SECONDS, then(PROC_REF(chainsaw_step)), when = nameof(on))
+	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel)))
 
 /obj/item/chainsaw/proc/stopped(datum/act/op/A)
 	return !on

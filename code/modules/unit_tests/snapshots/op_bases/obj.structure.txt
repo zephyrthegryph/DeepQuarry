@@ -28,6 +28,12 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/disk menu: Hit
+human|/obj/item/disk menu: Move To Top
+human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/disk menu: Tuck disk
+human|/obj/item/disk menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/disk click: Click: Tuck disk
 human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -68,6 +74,12 @@ human|/obj/item/shovel menu: Take a present
 human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/shovel menu: Use
 human|/obj/item/shovel click: Click: Use
+human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Move To Top
+human|/obj/item/stack menu: Repair (refused: )
+human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack menu: Use
+human|/obj/item/stack click: Click: Repair
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top

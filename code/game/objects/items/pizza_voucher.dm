@@ -7,9 +7,9 @@
 	var/special_delivery = FALSE
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/pizzavoucher/Initialize(mapload)
-	. = ..()
-	var/list/descstrings = list("24/7 PIZZA PIE HEAVEN",
+/// Rolled before init (rolls()): the slogan on the back.
+/obj/item/pizzavoucher/proc/roll_desc(datum/roller/R)
+	var/static/list/descstrings = list("24/7 PIZZA PIE HEAVEN",
 	"WE ALWAYS DELIVER!",
 	"24-HOUR PIZZA PIE POWER!",
 	"TOMATO SAUCE, CHEESE, WE'VE BOTH OF THESE!",
@@ -18,11 +18,12 @@
 	"WHEN YOU NEED A DISK OF OVEN BAKED BLISS!",
 	"EVERY TIME YOU DREAM OF CIRCULAR CUISINE!",
 	"WE ALWAYS DELIVER! WE ALWAYS DELIVER! WE ALWAYS DELIVER!")
-	desc = "A pocket-sized plastic slip with a button in the middle. \"[pick(descstrings)]\" is written on the back."
+	return "A pocket-sized plastic slip with a button in the middle. \"[R.choose(descstrings)]\" is written on the back."
 
 CAPABILITIES(/obj/item/pizzavoucher)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	rolls(nameof(desc), PROC_REF(roll_desc))
 
 /// Old attack_self.
 /obj/item/pizzavoucher/proc/interaction_self(datum/act/op/A)

@@ -64,18 +64,11 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
 
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
-/mob/living/simple_mob/vore/raptor/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		initial_icon = icon_living
-		set_icon_rest("[icon_living]")
-		set_icon_dead("[icon_living]_dead")
-
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	rolls(nameof(initial_icon), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(initial_icon), living = "*", rest = "*", dead = "*_dead", only_if = nameof(random_skin))
 
 /mob/living/simple_mob/vore/raptor/Login()
 	. = ..()

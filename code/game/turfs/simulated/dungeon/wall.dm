@@ -5,9 +5,6 @@
 	var/rock_side = "rock_side"
 	block_tele = TRUE
 
-/turf/simulated/wall/solidrock/Initialize(mapload)
-	. = ..(mapload, MAT_ALIEN_BEDROCK)
-
 /turf/simulated/wall/solidrock/update_material()
 	name = "solid rock"
 	desc = "This rock seems dense, impossible to drill."

@@ -197,13 +197,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
  * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
  * list(path = count). Children are created with `new type(D)` and adopted through rel_set() / rel_add().
  */
-/proc/own_init_starts(datum/D, datum/own_table/T, mapload = FALSE)
+/proc/own_init_starts(datum/D, datum/own_table/T, mapload = FALSE, early_pass = FALSE)
 	if(!T)
 		T = own_table_of(D)
 	var/list/starts = T.start_vars
 	if(!starts)
 		return
+	var/list/early = T.early_vars
 	for(var/var_name in starts)
+		if(!!early?[var_name] != !!early_pass)
+			continue // the early occupants are built before the Initialize() chain (InitAtom()), the others at its root
 		var/current = D.vars[var_name]
 		var/default = starts[var_name]
 		var/list/start_args = null
@@ -234,6 +237,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			lifecycle_decl_adopt_child(D, var_name, starts_construct(path, D, start_args), FALSE)
 	if(T.start_sets)
 		for(var/var_name in T.start_sets)
+			if(!!early?[var_name] != !!early_pass)
+				continue
 			own_apply_starts_set(D, var_name, T.start_sets[var_name])
 
 /// owns_*(starts_set = list(var = value)): each occupant of D.var_name gets each value, through its set_<var>() when it has one.

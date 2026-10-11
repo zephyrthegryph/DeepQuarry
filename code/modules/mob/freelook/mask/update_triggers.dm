@@ -20,7 +20,8 @@
 
 #undef CULT_UPDATE_BUFFER
 
-/mob/living/Initialize(mapload)
+/// The cult's net sees a living mob come, when it is placed in the world.
+/mob/living/on_materialize()
 	. = ..()
 	GLOB.cultnet.updateVisibility(src, 0)
 

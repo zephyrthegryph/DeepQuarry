@@ -4,6 +4,9 @@
 // is the source of truth for per-line diff context.
 
 /obj/machinery/atmospherics/trinary/atmos_filter
+	air3_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air2_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air1_volume = ATMOS_DEFAULT_VOLUME_FILTER
 	icon = 'icons/atmos/filter.dmi'
 	icon_state = "map"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -45,9 +48,6 @@
 /obj/machinery/atmospherics/trinary/atmos_filter/Initialize(mapload)
 	. = ..()
 
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air3.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 	if(frequency)
 		set_frequency(frequency)
 

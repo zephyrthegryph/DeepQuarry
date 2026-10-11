@@ -2,6 +2,11 @@ CAPABILITIES(/mob/living/carbon/alien)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(alien_blast)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(instance_num), range_of(1, 1000))
+	rolls(nameof(name), PROC_REF(numbered_name), from = list(nameof(instance_num)))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	knows(nameof(language))
+	setup(PROC_REF(stamp_birth))
 
 /// Aliens take the blast through their own ladder (the mob explosion entry delivers no damage).
 /mob/living/carbon/alien/proc/alien_blast(datum/act/A)

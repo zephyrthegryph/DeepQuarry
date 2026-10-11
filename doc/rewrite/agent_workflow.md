@@ -306,7 +306,9 @@ run. On a merge conflict in a pin file, take master's file (`git show origin/mas
   written by `dq_merge_gates.sh` when its test world ran) on exactly that commit, with `"ok":true`;
 - it is already in `origin/master`;
 - it is a merge of master into one stamped parent and **the stamp carries across the re-merge**: (a) the merge is clean (`git merge-tree`
-  of the two parents has no conflict and the merge commit's tree is that result, regenerated files aside); (b) what master changed since
+  of the two parents has no conflict outside the regenerated files, `look_keys.txt` and `snapshots/op_bases/`, which `dq_merge_master.sh`
+  regenerates after the merge, and the merge commit's tree is that result, regenerated files aside; `bash tools/ci/test_push_stamp.sh`
+  checks this in a scratch repository); (b) what master changed since
   the stamp's master base is disjoint from what the stamp depends on, judged by `tools/dq_lane_check.js --master <master parent>`: the
   lane's files and their directories, the files defining its tests, the snapshot directories those read
   (`code/modules/unit_tests/snapshots/<dir>/`), its `--covers` globs and `tools/ci/lane_ready_global.txt`; `look_keys.txt` and
@@ -356,3 +358,14 @@ All four are hard errors. `python3 tools/dx/codemods/ctor_args.py --apply` rewri
 removed, a dead one before a live one written `null`, forward-only parameters dropped with an exact `..(params)` becoming `..()`, and
 `overrides = TRUE` added); anything it cannot do exactly it prints as residue. The first run removed 22 dead arguments, 37 forward-only
 parameter lists and marked 33 position takeovers.
+
+## 17. Tests write tracked state through setters too (October 2026, `tooling-fix`)
+
+A test that writes a tracked var raw (`A.equipment = POWERCHAN_ON_AUTO` on the map's APC) changes shared state with no
+`state_changed()` mark, and a later test's refresh sweep reports `REFRESH DRIFT` on it, far from the cause (it took the grid tests
+followed by the lights tests to show). The `tracked` lint exempts the test trees, so a second lint, `tracked_tests`, reads
+`code/modules/unit_tests/`, `code/modules/benchmarks/` and `code/tests/` for the same writes: `TRACKED`/`SETTER` vars, `derive()`
+values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-only over `tools/ci/tracked_tests_baseline.txt`
+(225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
+`A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the
+current one part, which names the part that moved.

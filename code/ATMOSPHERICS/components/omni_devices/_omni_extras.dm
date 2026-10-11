@@ -36,8 +36,7 @@
 	dir = direction
 	if(istype(M))
 		rel_set(src, nameof(master), M)
-	atmos_air_set(src, nameof(air), new /datum/gas_mixture)
-	air.set_volume(200)
+	atmos_air_set(src, nameof(air), new /datum/gas_mixture(istype(M) ? M.port_volume : 200))
 
 /datum/omni_port/proc/connect()
 	if(node)

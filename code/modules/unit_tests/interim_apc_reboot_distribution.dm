@@ -3,15 +3,15 @@
 	var/obj/machinery/power/apc/apc = interim_apc_make(run_loc_floor_bottom_left)
 	var/obj/item/cell/cell = apc.cell
 	TEST_ASSERT_NOTNULL(cell, "the actual APC has its installed cell")
-	cell.charge = cell.maxcharge / 2
+	cell.set_charge(cell.maxcharge / 2)
 	var/charge_before = cell.charge
 	apc.set_lighting(POWERCHAN_OFF)
 	apc.set_equipment(POWERCHAN_ON)
 	apc.set_environ(POWERCHAN_OFF_AUTO)
 	apc.set_operating(TRUE)
 	apc.set_chargemode(FALSE)
-	apc.charging = 2
-	apc.main_status = APC_EXTERNAL_POWER_GOOD
+	apc.set_charging(2)
+	apc.set_main_status(APC_EXTERNAL_POWER_GOOD)
 	apc.energy_fail(3) // This API counts machine-service intervals, rather than deciseconds.
 	TEST_ASSERT(apc.failure_left() > 0, "the actual power-failure entry establishes a pending failure")
 	TEST_ASSERT(hold_left(apc, STAT_OPERABLE, SRC_POWER_FAILURE) > 0, "the actual failure has an outstanding revert")

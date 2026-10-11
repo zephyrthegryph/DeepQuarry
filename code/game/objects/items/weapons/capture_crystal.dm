@@ -998,11 +998,12 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 		list(/mob/living/simple_mob/vore/devil)
 		)
 
-/obj/item/capture_crystal/random/Initialize(mapload)
-	var/subchoice = pickweight(possible_mob_types)		//Some of the lists have nested lists, so let's pick one of them
-	var/choice = pickweight(subchoice)					//And then we'll pick something from whatever's left
-	set_spawn_mob_type(choice)								//Now when someone uses this, we'll spawn whatever we picked!
-	return ..()
+CAPABILITIES(/obj/item/capture_crystal/random)
+	rolls(nameof(spawn_mob_type), PROC_REF(roll_mob_type))
+
+/// Rolled before init (rolls()): one of the nested lists, then a mob from it; using the crystal spawns it.
+/obj/item/capture_crystal/random/proc/roll_mob_type(datum/roller/R)
+	return R.weighted(R.weighted(possible_mob_types))
 
 /mob/living
 	var/capture_crystal = TRUE		//If TRUE, the mob is capturable. Otherwise it isn't.

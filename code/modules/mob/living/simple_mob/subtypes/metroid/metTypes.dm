@@ -104,7 +104,8 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	is_juvenile = TRUE
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/baby
+	arrival_sound = SFX_METROID_METROIDSEE
 
 
 
@@ -165,7 +166,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, 
 
 	is_juvenile = TRUE
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/super
+	arrival_sound = SFX_METROID_METROIDSEE
 
 /mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	..()
@@ -205,7 +207,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/alpha
+	arrival_sound = SFX_METROID_METROIDSEE
 
 /mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	..()
@@ -269,7 +272,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound, SFX_METROID_METROIDGAMMA)
+/mob/living/simple_mob/metroid/juvenile/gamma
+	arrival_sound = SFX_METROID_METROIDGAMMA
 
 /mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	..()
@@ -354,7 +358,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, SFX_METROID_METROIDZETA)
+/mob/living/simple_mob/metroid/juvenile/zeta
+	arrival_sound = SFX_METROID_METROIDZETA
 
 /mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	..()
@@ -440,7 +445,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 
 	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound, SFX_METROID_METROIDOMEGA)
+/mob/living/simple_mob/metroid/juvenile/omega
+	arrival_sound = SFX_METROID_METROIDOMEGA
 
 /mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	..()

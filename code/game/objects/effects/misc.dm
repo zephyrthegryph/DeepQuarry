@@ -14,10 +14,8 @@
 	invisibility = INVISIBILITY_NONE
 	var/time_to_die = 10 SECONDS // Afer which, it will delete itself.
 
-/obj/effect/temporary_effect/Initialize(mapload)
-	. = ..()
-	if(time_to_die)
-		expire(time_to_die)
+CAPABILITIES(/obj/effect/temporary_effect)
+	lives_for(nameof(time_to_die))
 
 // Shown really briefly when attacking with axes.
 /obj/effect/temporary_effect/cleave_attack
@@ -57,8 +55,14 @@
 	time_to_die = 1 SECOND
 	pixel_x = -32
 
+/// Rolled before init (rolls()): one of the two lightning sprites.
+/obj/effect/temporary_effect/lightning_strike/proc/roll_variant(datum/roller/R)
+	return "[icon_state][R.number(1, 2)]"
+
+CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
+	rolls(nameof(icon_state), PROC_REF(roll_variant))
+
 /obj/effect/temporary_effect/lightning_strike/Initialize(mapload)
-	icon_state += "[rand(1,2)]" // To have two variants of lightning sprites.
 	animate(src, alpha = 0, time = time_to_die - 1)
 	. = ..()
 

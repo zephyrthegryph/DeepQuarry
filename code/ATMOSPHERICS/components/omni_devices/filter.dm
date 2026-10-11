@@ -7,6 +7,7 @@
 // Gas filter - omni variant
 //--------------------------------------------
 /obj/machinery/atmospherics/omni/atmos_filter
+	port_volume = ATMOS_DEFAULT_VOLUME_FILTER
 	name = "omni gas filter"
 	desc = "An advanced version of the gas filter, able to be configured for filtering of multiple gasses."
 	icon_state = "map_filter"
@@ -23,12 +24,6 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
-
-/obj/machinery/atmospherics/omni/atmos_filter/Initialize(mapload)
-	. = ..()
-
-	for(var/datum/omni_port/P in ports)
-		P.air.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
 /obj/machinery/atmospherics/omni/atmos_filter/sort_ports()
 	var/any_updated = FALSE

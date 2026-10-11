@@ -31,6 +31,10 @@
 
 	var/hudmode = null
 	var/idcard_type = /obj/item/card/id/synthetic
+	// footsteps (footstep() in its CAPABILITIES)
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
 
 /mob/living/silicon/fire_stack_decay_rate()
 	return -0.55
@@ -39,33 +43,42 @@ CAPABILITIES(/mob/living/silicon)
 	immune_to(STAT_DIZZY)
 	immune_to(STAT_JITTERY)
 	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)
-	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot)
-	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot)
-	owns_one(nameof(crew_manifest), /datum/tgui_module/crew_manifest/robot)
-	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor/robot)
-	owns_one(nameof(idcard), /obj/item/card/id)
-	owns_one(nameof(law_manager), /datum/tgui_module/law_manager/robot)
+	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/alarm_monitor/all/robot))
+	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/atmos_control/robot))
+	owns_one(nameof(crew_manifest), /datum/tgui_module/crew_manifest/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/crew_manifest/robot))
+	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/crew_monitor/robot))
+	owns_one(nameof(idcard), /obj/item/card/id, starts = PROC_REF(start_idcard))
+	owns_one(nameof(law_manager), /datum/tgui_module/law_manager/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/law_manager/robot))
 	owns_one(nameof(laws), /datum/ai_laws)
-	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot)
-	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
-	owns_many(nameof(queued_alarms))
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/power_monitor/robot))
+	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/rcon/robot))
+	owns_many(nameof(queued_alarms), starts = PROC_REF(start_alarm_queues))
+	// a silicon that is not a decoy speaks galactic common; its subsystems and ID are above
+	knows(LANGUAGE_GALCOM, when = cond_not(nameof(decoy)), default = TRUE)
+	per_type(nameof(silicon_subsystems), TYPE_PROC_REF(/datum, per_type_own))
+	footstep()
 	param(nameof(decoy), pos = 1)
 
 /// A decoy silicon (its constructor param): no ID, language or subsystems.
 /mob/living/silicon/var/decoy = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a silicon that is not a decoy gets its ID, its language and its subsystems at init
-/mob/living/silicon/Initialize(mapload)
-	if(silicon_subsystems)
-		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
-	. = ..()
-	if(!decoy)
-		init_id(idcard_type)
-		add_language(LANGUAGE_GALCOM)
-		apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-		init_subsystems()
+/// Its ID card (owns_one(starts =)): the one it already has (a robot's module issues one before its parents' init), else its type's,
+/// filled in with its name; a decoy has none.
+/mob/living/silicon/proc/start_idcard(current, mapload)
+	if(current || decoy || !idcard_type)
+		return current
+	var/obj/item/card/id/card = new idcard_type(src)
+	set_id_info(card)
+	return card
 
-		enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6)
+/// It listens to every alarm handler, one queue each, in handler order (owns_many(starts =)); a decoy or a silent type does not.
+/mob/living/silicon/proc/start_alarm_queues(current, mapload)
+	. = list()
+	if(decoy || !register_alarms)
+		return
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
+		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
+		.["[AH.type]"] = new /datum/silicon_alarm_queue(AH.category)	// Makes sure alarms remain listed in consistent order
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
@@ -211,6 +224,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	if (can_speak && (added_language in languages) && !(added_language in speech_synthesizer_langs))
 		speech_synthesizer_langs += added_language
 		return 1
+
+/// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
+/mob/living/silicon/lifeform_learn(language, speaks = TRUE)
+	return add_language(language, speaks)
 
 /mob/living/silicon/remove_language(rem_language)
 	var/datum/language/removed_language = GLOB.all_languages[rem_language]

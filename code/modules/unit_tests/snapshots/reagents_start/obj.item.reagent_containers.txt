@@ -62,8 +62,8 @@
 /obj/item/reagent_containers/glass/beaker vol=60 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/vial vol=30 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/vial/vaccine vol=15 holder=/datum/reagents 
-/obj/item/reagent_containers/glass/beaker/vial/random vol=30 holder=/datum/reagents water=15
-/obj/item/reagent_containers/glass/beaker/vial/random/toxin vol=30 holder=/datum/reagents carpotoxin=15
+/obj/item/reagent_containers/glass/beaker/vial/random vol=30 holder=/datum/reagents cleaner=15
+/obj/item/reagent_containers/glass/beaker/vial/random/toxin vol=30 holder=/datum/reagents zombiepowder=10
 /obj/item/reagent_containers/glass/beaker/vial/sustenance vol=30 holder=/datum/reagents a_sustenance=30
 /obj/item/reagent_containers/glass/beaker/vial/bicaridine vol=30 holder=/datum/reagents bicaridine=30
 /obj/item/reagent_containers/glass/beaker/vial/dylovene vol=30 holder=/datum/reagents anti_toxin=30
@@ -106,6 +106,8 @@
 /obj/item/reagent_containers/glass/beaker/large/borg vol=120 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/noreact vol=60 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/bluespace vol=300 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a vol=300 holder=/datum/reagents cryoslurry=150,potassium=150
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b vol=300 holder=/datum/reagents phosphorus=150,sugar=150
 /obj/item/reagent_containers/glass/beaker/cryoxadone vol=60 holder=/datum/reagents cryoxadone=30
 /obj/item/reagent_containers/glass/beaker/sulphuric vol=60 holder=/datum/reagents sacid=60
 /obj/item/reagent_containers/glass/beaker/stopperedbottle vol=120 holder=/datum/reagents 

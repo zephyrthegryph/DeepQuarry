@@ -1,6 +1,7 @@
 // The top-level metroid defines. Xenobio slimes and feral slimes will inherit from this. Stolen from as much slime code as possible.
 
 /mob/living/simple_mob/metroid
+	nutrition = 100 //Have them start off pretty hungry still.
 	name = "metroid"
 	desc = "Some sort of person eaty thing! This is the prototype mob and shouldn't be spawned. If you see this, yell at your local dev or event manager who spawned this one >.>"
 	tt_desc = "Headamus Suckumus"
@@ -65,17 +66,17 @@
 	pain_emote_1p = list("skree")
 	pain_emote_3p = list("skrees")
 
+/// The screech it gives as it appears (after_init()), or null for a quiet kind.
+/mob/living/simple_mob/metroid/var/arrival_sound = null
+
+/mob/living/simple_mob/metroid/proc/screech_on_arrival(datum/act/timer/A)
+	if(arrival_sound)
+		play_sfx(src, arrival_sound)
+
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	after_init(0, then(PROC_REF(screech_on_arrival)))
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
-TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
-
-/mob/living/simple_mob/metroid/Initialize(mapload)
-	set_nutrition(100) //Have them start off pretty hungry still.
-	. = ..()
-	var/initial_sound = TYPE_TABLE_GET(src, metroid_initial_sound)
-	if(initial_sound)
-		play_sfx(src, initial_sound)
 
 /datum/say_list/metroid
 	speak = list("Skree.", "Eree.", "Errer?")
