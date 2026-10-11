@@ -70,6 +70,35 @@ class Contracts(unittest.TestCase):
         self.assertEqual(runner.finalize_code(124, {'reaped': False}), 124)
         self.assertEqual(runner.finalize_code(0, {'reaped': True}), 0)
 
+    def test_captured_focused_output_is_explicit_bounded_and_excludes_suite_modes(self):
+        flags = ['--focus', '/datum/unit_test/a', '--seconds', '300',
+                 '--focused-compiled-output', 'E:/dq-cache/capture.json',
+                 '--focused-compiled-output-sha256', 'd' * 64]
+        args = self.args(*flags)
+        self.assertFalse(runner.validate(args))
+        command = runner.command(args, False)
+        self.assertIn('--focused-compiled-output=' + str(args.focused_compiled_output), command)
+        self.assertIn('--focused-compiled-output-sha256=' + 'd' * 64, command)
+        for change in [{'focused_compiled_output_sha256': None}, {'seconds': 301},
+                       {'tier': 'normal'}, {'batch_size': 1}, {'resume': Path('E:/resume.json')},
+                       {'plan_sha256': 'a' * 64}]:
+            invalid = self.args(*flags)
+            for key, value in change.items(): setattr(invalid, key, value)
+            with self.assertRaises(ValueError): runner.validate(invalid)
+        with self.assertRaises(ValueError):
+            runner.validate(self.args('--focus', '/datum/unit_test/a', '--seconds', '300',
+                '--focused-compiled-output-sha256', 'd' * 64))
+
+    def test_captured_descriptor_pin_detects_modified_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            capture = Path(directory) / 'capture.json'
+            capture.write_text('{"pair":"original"}', encoding='utf8')
+            digest = runner.hash_file(capture)
+            self.assertEqual(runner.pin(capture, digest)['sha256'], digest)
+            capture.write_text('{"pair":"changed"}', encoding='utf8')
+            with self.assertRaisesRegex(ValueError, 'bytes differ'):
+                runner.pin(capture, digest)
+
     def test_actual_fallback_never_counts_as_native(self):
         args = self.args('--tier', 'all', '--batch-size', '32')
         with self.assertRaises(ValueError): runner.admitted_compile({'compilation': {
