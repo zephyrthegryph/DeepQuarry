@@ -832,10 +832,13 @@ impl Candidates<'_> {
                 if !matches_key(v.key.as_ref()) || v.identity != identity {
                     continue;
                 }
-                if let Some(query) = v.changed_read(host) {
-                    result.changed_query.get_or_insert(query);
-                    continue;
-                }
+                let pending_reads = match v.transparent_reads(host) {
+                    Ok(reads) => reads,
+                    Err(query) => {
+                        result.changed_query.get_or_insert(query);
+                        continue;
+                    }
+                };
                 let promotion = v.promotion();
                 let verification_reads = context.verify.then(|| v.verification_reads());
                 match v.rebind_with_backing(
@@ -852,6 +855,19 @@ impl Candidates<'_> {
                     backing,
                 ) {
                     Ok(value) => {
+                        if let (Some(reads), Some(observer)) =
+                            (pending_reads, host.transparent_receipt_observer())
+                        {
+                            for read in reads {
+                                let version = observer.provider().domain_version(read.domain);
+                                observer.record_answer(
+                                    read.query,
+                                    &read.answer,
+                                    read.domain,
+                                    version,
+                                );
+                            }
+                        }
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);

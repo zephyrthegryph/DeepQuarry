@@ -340,6 +340,31 @@ impl Payload<'_> {
             .then_some(r.query)
         })
     }
+    /// Compact answers are canonical bytes, so a transparent observer still
+    /// needs typed hydration from its exact provider. Keep delivery pending until
+    /// the caller has admitted the complete executable/current-source binding.
+    pub(crate) fn transparent_reads<R: Resolver>(
+        &self,
+        host: &R,
+    ) -> Result<Option<Vec<ResolverRead>>, ResolveQuery> {
+        let Some(observer) = host.transparent_receipt_observer() else {
+            return self.changed_read(host).map_or(Ok(None), Err);
+        };
+        let provider = observer.provider();
+        let mut pending = Vec::with_capacity(self.reads.0.len());
+        for read in &self.reads.0 {
+            let answer = provider.resolve(read.query);
+            if answer.canonical_bytes() != read.answer.as_ref() {
+                return Err(read.query);
+            }
+            pending.push(ResolverRead {
+                query: read.query,
+                domain: read.query.domain(),
+                answer,
+            });
+        }
+        Ok(Some(pending))
+    }
     pub(crate) fn promotion(&self) -> crate::lowering_memo_wire::ResidentPromotion {
         crate::lowering_memo_wire::ResidentPromotion {
             queries: self.reads.0.iter().map(|r| r.query).collect(),

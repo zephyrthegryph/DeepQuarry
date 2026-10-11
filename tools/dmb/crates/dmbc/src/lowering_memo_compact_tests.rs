@@ -302,6 +302,36 @@ fn check_replay_features(
     );
     let payload = decode(&bytes).unwrap();
     assert!(payload.changed_read(&host).is_none());
+    // An explicitly nonobserving provider remains the authority even when its
+    // answers include the fixture's ordinary instance selection overlay.
+    struct Quiet<'a>(&'a dyn Resolver);
+    impl Resolver for Quiet<'_> {
+        fn observes_reads(&self) -> bool {
+            false
+        }
+        fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
+            self.0.resolve(q)
+        }
+        fn domain_version(&self, d: dm_ir::ReadDomain) -> Option<u128> {
+            self.0.domain_version(d)
+        }
+    }
+    let quiet = Quiet(&host);
+    let transparent = crate::lowering_memo::RecordingResolver::new(&quiet);
+    let pending = payload.transparent_reads(&transparent).unwrap().unwrap();
+    assert_eq!(pending.len(), payload.reads.0.len());
+    assert!(
+        transparent.reads().is_empty(),
+        "byte admission cannot publish pending typed reads"
+    );
+    let mut corrupt = decode(&bytes).unwrap();
+    corrupt.reads.0.last_mut().unwrap().answer = Cow::Borrowed(b"changed last answer");
+    assert!(corrupt.transparent_reads(&transparent).is_err());
+    assert!(
+        transparent.reads().is_empty(),
+        "rejected candidates cannot import earlier accepted edges"
+    );
+
     for missing in [
         ResolveQuery::Ancestry(payload.identity.owner),
         ResolveQuery::DeclarationChain {
