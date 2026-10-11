@@ -177,12 +177,15 @@
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
 CAPABILITIES(/obj/structure/disposalpipe)
-	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), when(PROC_REF(on_bare_plating)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
+	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 
 /// Only a pipe under bare plating is sliced (a T-scanner shows the hidden ones; they are not reached).
 /obj/structure/disposalpipe/proc/on_bare_plating(datum/act/op/A)
 	var/turf/T = get_turf(src)
 	return istype(T) && read_once(T.is_plating())
+
+/obj/structure/disposalpipe/proc/plating_refusal(datum/act/op/A)
+	return on_bare_plating(A) ? null : "the plating is covered"
 
 /obj/structure/disposalpipe/proc/slice_started(datum/act/op/A)
 	add_fingerprint(A.actor)

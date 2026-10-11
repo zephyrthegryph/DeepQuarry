@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/ammo_magazine/smart)
 	op("smart_cell_out", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), label("Remove the cell"), when(req(PROC_REF(cell_removable))),
 		starts(PROC_REF(realize_rounds)), begins(PROC_REF(struggle_text)), wait(4 SECONDS), then(PROC_REF(cell_removed)))
 	op("clear_data", menu(), label("Clear Ammo Data"), needs(carried(), req_empty(nameof(stored_ammo), because = MSG(smartmag/not_empty))), then(PROC_REF(smartmag_verb_clear_data)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Remove the cell"), when(PROC_REF(has_cell)), begins(PROC_REF(cell_removal_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Remove the cell"), needs(req(PROC_REF(cell_refusal), silent = TRUE)), begins(PROC_REF(cell_removal_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
 
 MSG_DEF_SELF(smartmag/not_empty, "you can't reset it unless it's empty")
 MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
@@ -107,6 +107,9 @@ MSG_DEF_SELF(smartmag/inserting, "You begin inserting %I% into %T%.")
 
 /obj/item/ammo_magazine/smart/proc/has_cell(datum/act/op/A)
 	return !!read_once(attached_cell())
+
+/obj/item/ammo_magazine/smart/proc/cell_refusal(datum/act/op/A)
+	return has_cell(A) ? null : "it has no cell"
 
 /obj/item/ammo_magazine/smart/proc/cell_removal_begins(datum/act/op/A)
 	return msg_text("You begin removing \the [attached_cell()] from \the [src].")

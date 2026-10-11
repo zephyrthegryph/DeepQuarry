@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE, overrides = TRUE)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
-	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), label("Slice the floorweld"), when(PROC_REF(unweldable_mode)), needs(req(PROC_REF(empty_refusal))), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), label("Slice the floorweld"), needs(req(PROC_REF(mode_refusal), silent = TRUE), req(PROC_REF(empty_refusal))), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("disposal_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_insert)))
 	op("disposal_dunk", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT), label("Put in"), when(req(PROC_REF(grabs_mob))), needs(req(PROC_REF(not_broken), silent = TRUE)), starts(PROC_REF(dunk_started)), begins(PROC_REF(dunk_begins)), wait(2 SECONDS), then(PROC_REF(dunk_done)))
@@ -293,9 +293,12 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
 	return OP_OK
 
-/// The floorweld is sliced off a unit that is switched to eject-only.
+/// The floorweld is sliced off a unit that is switched to eject-only (any other unit takes the welder silently).
 /obj/machinery/disposal/proc/unweldable_mode(datum/act/op/A)
 	return read_once(mode) == DISPOSALMODE_EJECTONLY
+
+/obj/machinery/disposal/proc/mode_refusal(datum/act/op/A)
+	return unweldable_mode(A) ? null : "it is not switched to eject-only"
 
 /obj/machinery/disposal/proc/empty_refusal(datum/act/op/A)
 	return read_once(length(slot_contents(CONTAINER_SLOT_DISPOSAL))) ? "eject the items first" : null

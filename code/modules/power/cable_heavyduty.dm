@@ -23,6 +23,9 @@
 	var/turf/T = read_once(loc)
 	return istype(T) && read_once(T.is_plating())
 
+/obj/structure/cable/heavyduty/proc/plating_refusal(datum/act/op/A)
+	return on_bare_plating(A) ? null : "the plating is covered"
+
 /obj/structure/cable/heavyduty/proc/cut_refusal(datum/act/op/A)
 	return read_once(allow_cutting) ? null : "something in these cables makes them too strong to cut"
 
@@ -49,7 +52,7 @@ MSG_DEF_SELF(heavy_cable/needs_heavier, "you will need heavier cables to connect
 
 CAPABILITIES(/obj/structure/cable/heavyduty)
 	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req(PROC_REF(heavy_coil_holds))), then(PROC_REF(heavyduty_interaction_item)))
-	op("use_welder", lit_welder(fuel = 2), label("Cut the cable"), when(PROC_REF(on_bare_plating)), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), wait(25 SECONDS), then(PROC_REF(welder_act_tool_done)))
+	op("use_welder", lit_welder(fuel = 2), label("Cut the cable"), needs(req(PROC_REF(plating_refusal), silent = TRUE), req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), wait(25 SECONDS), then(PROC_REF(welder_act_tool_done)))
 
 /// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
 /obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(datum/act/op/A)
