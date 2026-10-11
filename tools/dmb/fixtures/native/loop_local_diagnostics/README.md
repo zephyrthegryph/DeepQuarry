@@ -19,3 +19,16 @@ normalized away. A paired run exits successfully only when acceptance, source
 error classification and exact diagnostics all agree. A complete receipt can
 therefore accompany a nonzero exit when a diagnostic gap remains. No runtime
 or full source-closure claim is made.
+
+Additional bodyless-loop controls are opt-in through `--cases`. Pinned BYOND
+516.1687 observations distinguish an explicit `{}` or `;` (accepted), a following
+statement (accepted), and exhaustion or a following procedure declaration
+(`: invalid expression`). An included file ending does not alone establish a
+missing body: the parent can provide the next statement. The error location is
+the current lexer cursor, including the parent manifest after an include returns.
+These captures establish compile diagnostics only; they do not establish which
+body an accepted following statement executes in.
+
+`--backend byond-only` exits successfully when capture completes. It does not
+certify native parity. The original default roster remains separate from these
+additional controls so existing captures remain reproducible.

@@ -66,6 +66,29 @@ describe('historical normal continuation', () => {
       allNative.selectionProtocol = 'suite-select-v1'; allNative.plan!.path = allReferencePath; allNative.plan!.sha256 = hash(allReferenceBytes);
       const allNativeBytes = Buffer.from(JSON.stringify(allNative)); const allNativePath = write('all-native.json', allNativeBytes);
       const allSeed = issueNativeSuiteResume(allNativePath, hash(allNativeBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'all-seed.json'));
+      const partialReference = structuredClone(allReference);
+      partialReference.status = 'running'; partialReference.batches.pop();
+      const partialBytes = Buffer.from(JSON.stringify(partialReference));
+      const partialPath = write('partial-reference.json', partialBytes);
+      const partialNative = structuredClone(allNative);
+      partialNative.plan = { ...allNative.plan!, path: partialPath, sha256: hash(partialBytes) };
+      const partialNativeBytes = Buffer.from(JSON.stringify(partialNative));
+      const partialNativePath = write('partial-native.json', partialNativeBytes);
+      const partialSeed = issueNativeSuiteResume(partialNativePath, hash(partialNativeBytes), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'partial-seed.json'));
+      expect(loadSuiteResume(partialSeed.path, partialSeed.sha256, 1).completed).toHaveLength(1);
+      expect(() => issueNativeSuiteResume(partialNativePath, '0'.repeat(64), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'wrong-evidence-sha.json'))).toThrow();
+      const badOrder = structuredClone(partialNative);
+      badOrder.plan!.eligibleOrder = [...badOrder.plan!.eligibleOrder].reverse();
+      const badOrderBytes = Buffer.from(JSON.stringify(badOrder)); const badOrderPath = write('wrong-order.json', badOrderBytes);
+      expect(() => issueNativeSuiteResume(badOrderPath, hash(badOrderBytes), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'bad-order-seed.json'))).toThrow('reference order');
+      const badPlan = structuredClone(partialNative); badPlan.plan!.sha256 = '0'.repeat(64);
+      const badPlanBytes = Buffer.from(JSON.stringify(badPlan)); const badPlanPath = write('wrong-plan-sha.json', badPlanBytes);
+      expect(() => issueNativeSuiteResume(badPlanPath, hash(badPlanBytes), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'bad-plan-seed.json'))).toThrow();
+
       expect(loadSuiteResume(allSeed.path, allSeed.sha256, 1).plan.tier).toBe('all');
       expect(loadSuiteResume(allSeed.path, allSeed.sha256, 1).originalPlan?.sha256).toBe(hash(allReferenceBytes));
       expect(() => issueNativeNormalResume(allNativePath, hash(allNativeBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'not-normal.json'))).toThrow('normal');

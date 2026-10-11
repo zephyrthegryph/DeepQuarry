@@ -176,15 +176,17 @@ export function issueNativeSuiteResume<R extends ResumeRun>(evidencePath: string
   const reference = authenticatedJson(evidence.plan.path, evidence.plan.sha256) as ResumeEvidence<R>;
   if (reference.compilation?.actualBackend !== 'byond' || reference.compilation.requestedBackend !== 'byond'
     || reference.compilation.fallback !== null || !reference.inventory?.inventory
-    || !['passed', 'failed'].includes(reference.status ?? '') || reference.batchSize !== evidence.batchSize
+    || !['running', 'passed', 'failed'].includes(reference.status ?? '') || reference.batchSize !== evidence.batchSize
     || JSON.stringify(reference.compilation.orderedDefines) !== JSON.stringify(compilation.orderedDefines)) {
-    throw new Error('native seed reference is not the completed matching BYOND plan');
+    throw new Error('native seed reference is not the authenticated matching BYOND inventory plan');
   }
   const referencePlan = { ...reference.inventory.inventory, eligible: reference.plan?.eligibleOrder ?? reference.inventory.inventory.eligible };
-  const referenceBatches = suiteBatches(referencePlan, reference.batchSize);
-  if (reference.batches.length !== referenceBatches.length || !evidence.inventory.inventory
+  suiteBatches(referencePlan, reference.batchSize);
+  // Continuation binds the original inventory/order, not completed reference
+  // runtime results. Final comparison retains its independent completion gate.
+  if (!evidence.inventory.inventory
     || JSON.stringify(bindSuitePlan(evidence.inventory.inventory, referencePlan).eligible) !== JSON.stringify(evidence.plan.eligibleOrder)) {
-    throw new Error('native seed changed reference order or reference is incomplete');
+    throw new Error('native seed changed authenticated reference order');
   }
   const acquired = authenticatedJson(acquisitionPath, acquisitionSha256) as { slot?: unknown };
   if (!acquired || typeof acquired.slot !== 'string' || !path.isAbsolute(acquired.slot)) throw new Error('native seed acquisition slot unavailable');

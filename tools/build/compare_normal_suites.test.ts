@@ -174,3 +174,13 @@ test('historical reference continuation authenticates preserved pair and rejects
     fs.writeFileSync(rsc, 'rsc'); fs.writeFileSync(priorFile, 'tampered'); expect(compare).toThrow('resume JSON identity differs');
   } finally { fs.rmSync(directory, { recursive: true }); }
 });
+
+
+test('incomplete reference inventory cannot pass final comparison', () => fixture(({ native, referenceFile, nativeFile, write }) => {
+  const reference = JSON.parse(fs.readFileSync(referenceFile, 'utf8'));
+  reference.status = 'running';
+  const referenceBytes = JSON.stringify(reference); fs.writeFileSync(referenceFile, referenceBytes);
+  native.plan.sha256 = sha(referenceBytes);
+  const nativeHash = write();
+  expect(() => compareEvidence(referenceFile, sha(referenceBytes), nativeFile, nativeHash)).toThrow();
+}));
