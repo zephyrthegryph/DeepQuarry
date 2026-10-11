@@ -172,21 +172,29 @@ export function issueNativeSuiteResume<R extends ResumeRun>(evidencePath: string
   const compilation = evidence.compilation;
   if (!compilation || compilation.actualBackend !== 'native' || compilation.requestedBackend !== 'native'
     || compilation.fallback !== null || !evidence.nativeOutput || !evidence.inventory?.runtimeIdentity
-    || !evidence.plan?.path || !evidence.plan.sha256) throw new Error('native seed lacks actual native output/reference plan/runtime');
-  const reference = authenticatedJson(evidence.plan.path, evidence.plan.sha256) as ResumeEvidence<R>;
-  if (reference.compilation?.actualBackend !== 'byond' || reference.compilation.requestedBackend !== 'byond'
+    || !evidence.inventory.inventory || !evidence.plan) throw new Error('native seed lacks actual native output/issued plan/runtime');
+  const referencePath = evidence.plan.path;
+  const referenceSha256 = evidence.plan.sha256;
+  if (Boolean(referencePath) !== Boolean(referenceSha256)) throw new Error('native seed reference requires both path and SHA256');
+  const reference = referencePath && referenceSha256
+    ? authenticatedJson(referencePath, referenceSha256) as ResumeEvidence<R> : undefined;
+  if (reference && (reference.compilation?.actualBackend !== 'byond' || reference.compilation.requestedBackend !== 'byond'
     || reference.compilation.fallback !== null || !reference.inventory?.inventory
     || !['running', 'passed', 'failed'].includes(reference.status ?? '') || reference.batchSize !== evidence.batchSize
-    || JSON.stringify(reference.compilation.orderedDefines) !== JSON.stringify(compilation.orderedDefines)) {
+    || JSON.stringify(reference.compilation.orderedDefines) !== JSON.stringify(compilation.orderedDefines))) {
     throw new Error('native seed reference is not the authenticated matching BYOND inventory plan');
   }
-  const referencePlan = { ...reference.inventory.inventory, eligible: reference.plan?.eligibleOrder ?? reference.inventory.inventory.eligible };
-  suiteBatches(referencePlan, reference.batchSize);
-  // Continuation binds the original inventory/order, not completed reference
-  // runtime results. Final comparison retains its independent completion gate.
+  const issuedPlan = evidence.inventory.inventory;
+  const referencePlan = reference
+    ? { ...reference.inventory!.inventory!, eligible: reference.plan?.eligibleOrder ?? reference.inventory!.inventory!.eligible }
+    : issuedPlan;
+  suiteBatches(referencePlan, evidence.batchSize);
+  // Without a reference, preserve this generation's own issued order exactly.
+  // This permits continuation, not comparison acceptance: the final comparator
+  // still requires an independently completed BYOND baseline.
   if (!evidence.inventory.inventory
     || JSON.stringify(bindSuitePlan(evidence.inventory.inventory, referencePlan).eligible) !== JSON.stringify(evidence.plan.eligibleOrder)) {
-    throw new Error('native seed changed authenticated reference order');
+    throw new Error('native seed changed authenticated reference order or own issued order');
   }
   const acquired = authenticatedJson(acquisitionPath, acquisitionSha256) as { slot?: unknown };
   if (!acquired || typeof acquired.slot !== 'string' || !path.isAbsolute(acquired.slot)) throw new Error('native seed acquisition slot unavailable');
@@ -200,19 +208,21 @@ export function issueNativeSuiteResume<R extends ResumeRun>(evidencePath: string
       dmbSha256: hashFile(pair.dmb), rscSha256: hashFile(pair.rsc) } };
   resumeOutput(checkpoint);
   const admitted = validateCompletedPrefix(evidence, checkpoint, evidence.batchSize);
-  const referenceAdmission = validateCompletedPrefix(reference, { ...checkpoint,
-    compilation: reference.compilation!, runtimeIdentity: reference.inventory.runtimeIdentity! }, reference.batchSize);
-  const boundReference = bindSuitePlan(admitted.plan, referenceAdmission.plan);
-  if (!sameSuiteRuntime(checkpoint.runtimeIdentity, reference.inventory.runtimeIdentity)
-    || JSON.stringify(boundReference.eligible) !== JSON.stringify(admitted.plan.eligible)
-    || JSON.stringify(boundReference.automaticRows) !== JSON.stringify(admitted.plan.automaticRows)) {
-    throw new Error('native seed runtime/reference plan differs');
+  if (reference) {
+    const referenceAdmission = validateCompletedPrefix(reference, { ...checkpoint,
+      compilation: reference.compilation!, runtimeIdentity: reference.inventory!.runtimeIdentity! }, reference.batchSize);
+    const boundReference = bindSuitePlan(admitted.plan, referenceAdmission.plan);
+    if (!sameSuiteRuntime(checkpoint.runtimeIdentity, reference.inventory!.runtimeIdentity)
+      || JSON.stringify(boundReference.eligible) !== JSON.stringify(admitted.plan.eligible)
+      || JSON.stringify(boundReference.automaticRows) !== JSON.stringify(admitted.plan.automaticRows)) {
+      throw new Error('native seed runtime/reference plan differs');
+    }
   }
   if (!path.isAbsolute(destination) || process.platform === 'win32' && !/^e:[\\/]/i.test(destination)) throw new Error('seed destination must be an owned absolute E: path');
   assertDirectoryChain(path.dirname(destination));
   authenticatedJson(evidencePath, evidenceSha256);
   authenticatedJson(acquisitionPath, acquisitionSha256);
-  authenticatedJson(evidence.plan.path, evidence.plan.sha256);
+  if (referencePath && referenceSha256) authenticatedJson(referencePath, referenceSha256);
   verifyResumeAcquiredPair(checkpoint, pair.dmb);
   const bytes = Buffer.from(`${JSON.stringify(checkpoint, null, 2)}\n`);
   fs.writeFileSync(destination, bytes, { flag: 'wx' });

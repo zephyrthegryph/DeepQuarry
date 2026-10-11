@@ -57,6 +57,37 @@ describe('historical normal continuation', () => {
       const acquisitionBytes = Buffer.from(JSON.stringify(acquisition)); const acquisitionPath = write('acquisition.json', acquisitionBytes);
       const seeded = issueNativeNormalResume(evidencePath, hash(evidenceBytes), acquisitionPath, hash(acquisitionBytes), path.join(root, 'seed.json'));
       expect(loadNormalResume(seeded.path, seeded.sha256, 1).originalPlan?.sha256).toBe(hash(referenceBytes));
+      // A fresh captured generation issues its own inventory before any paired
+      // baseline exists. Continue that exact generation without inventing one.
+      const independent = structuredClone(nativeEvidence);
+      independent.plan = { path: null, sha256: null, eligibleOrder: independent.inventory!.inventory!.eligible };
+      const independentBytes = Buffer.from(JSON.stringify(independent));
+      const independentPath = write('independent-native.json', independentBytes);
+      const independentSeed = issueNativeNormalResume(independentPath, hash(independentBytes), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'independent-seed.json'));
+      const own = loadNormalResume(independentSeed.path, independentSeed.sha256, 1);
+      expect(own.completed).toHaveLength(1);
+      expect(own.completed[0].run.results!['/datum/unit_test/a'].status).toBe(1);
+      expect(own.originalPlan?.path).toBeNull();
+      expect(own.checkpoint.inputClosureAuthenticated).toBe(false);
+      const independentNext = issueNormalContinuation(independentSeed.path, independentSeed.sha256,
+        independentPath, hash(independentBytes), 1, path.join(root, 'independent-next.json'));
+      expect(loadNormalResume(independentNext.path, independentNext.sha256, 1).completed).toHaveLength(1);
+      const rejectIndependent = (change: (value: typeof independent) => void, name: string) => {
+        const altered = structuredClone(independent); change(altered);
+        const bytes = Buffer.from(JSON.stringify(altered)); const file = write(`${name}.json`, bytes);
+        expect(() => issueNativeNormalResume(file, hash(bytes), acquisitionPath, hash(acquisitionBytes),
+          path.join(root, `${name}-seed.json`))).toThrow();
+      };
+      rejectIndependent(value => { value.plan!.eligibleOrder = [...value.plan!.eligibleOrder].reverse(); }, 'own-order');
+      rejectIndependent(value => { value.plan!.sha256 = hash(referenceBytes); }, 'half-reference');
+      rejectIndependent(value => { value.batches[0].run.runtimeIdentity = { ...runtime, security: 'safe' }; }, 'own-runtime');
+      rejectIndependent(value => { value.batches[0].run.compilation = compilation; }, 'own-config');
+      rejectIndependent(value => { value.nativeOutput!.pairId = '4'.repeat(32); }, 'own-pair');
+      expect(() => issueNativeNormalResume(independentPath, '0'.repeat(64), acquisitionPath,
+        hash(acquisitionBytes), path.join(root, 'own-bad-sha.json'))).toThrow();
+      expect(() => issueNativeNormalResume(independentPath, hash(independentBytes), acquisitionPath,
+        '0'.repeat(64), path.join(root, 'own-bad-acquisition-sha.json'))).toThrow();
       const allReference = structuredClone(reference); allReference.inventory!.inventory!.tier = 'all';
       Object.assign(allReference.inventory!.inventory!, { preTierCount: 2, tierExcluded: [] });
       allReference.selectionProtocol = 'suite-select-v1';

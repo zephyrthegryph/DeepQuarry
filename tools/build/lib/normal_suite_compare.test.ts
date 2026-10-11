@@ -5,6 +5,12 @@ const row = { name, status: 0, runtimes: 0, runtime_errors: [], runtime_errors_t
 const suite: ComparableNormalSuite = { inventory: { schema: 1, tier: 'normal', eligible: [name], automaticRows: [], excluded: [] },
   runtime: { executable: 'dd.exe', sha256: 'pinned', version: null, security: '-trusted' },
   batches: [{ requested: [name], results: { [name]: row } }] };
+
+test('a resumable incomplete prefix is not a completed comparison baseline', () => {
+  const incomplete = { ...suite, batches: [] };
+  expect(() => compareNormalSuiteResults(incomplete, suite)).toThrow();
+  expect(() => compareNormalSuiteResults(suite, incomplete)).toThrow();
+});
 test('fewer runtimes is a behavioral difference even when both tests pass', () => {
   const baseline = { ...suite, batches: [{ requested: [name], results: { [name]: { ...row, runtimes: 1,
     runtime_errors: [{ name: 'list index out of bounds', file: 'power_bridge.dm', line: 154, description: 'stack' }] } } }] };
