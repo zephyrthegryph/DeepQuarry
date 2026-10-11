@@ -34,6 +34,17 @@
 	qdel(C)
 
 /datum/unit_test/dq_simulation_condition_native/Run()
+	// Compiler borrowing must not query a registry which may still be building.
+	var/datum/rule/dq_compiler_registry_trap/borrowed_rule = new
+	var/datum/rule_compiler/borrower = new(borrowed_rule)
+	TEST_ASSERT_EQUAL(borrower.rule(), borrowed_rule, "Compiler resolves its live borrowed rule")
+	TEST_ASSERT_EQUAL(borrowed_rule.registry_queries, 0, "Construction and access never enter rule registry")
+	qdel(borrower)
+	TEST_ASSERT_EQUAL(borrowed_rule.registry_queries, 0, "Compiler cleanup never enters rule registry")
+	borrower = new(borrowed_rule)
+	qdel(borrowed_rule)
+	TEST_ASSERT_NULL(borrower.rule(), "Deleted borrowed rule cannot resolve through compiler handle")
+	qdel(borrower)
 	var/obj/item/dq_rule_test/I = allocate(/obj/item/dq_rule_test)
 	var/datum/simulation_condition/N = compiled(cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(ITEMSIZE_SMALL)))
 	TEST_ASSERT(N.holds(I), "Inclusive equal-size boundary allows")
@@ -158,14 +169,17 @@
 	var/right = 1
 	var/fires = 0
 	var/exits = 0
+	var/key_deliveries = 0
 TRACKED(/obj/item/dq_rule_private, left)
 TRACKED(/obj/item/dq_rule_private, right)
 CAPABILITIES(/obj/item/dq_rule_private)
 	on_change(nameof(left), ANY, then(PROC_REF(left_changed)))
 	on_change(nameof(right), ANY, then(PROC_REF(right_changed)))
 /obj/item/dq_rule_private/proc/left_changed(datum/act/A)
+	key_deliveries++
 	dq_rule_binding_of(src)?.key_published(DQ_RULE_LEFT_KEY)
 /obj/item/dq_rule_private/proc/right_changed(datum/act/A)
+	key_deliveries++
 	dq_rule_binding_of(src)?.key_published(DQ_RULE_RIGHT_KEY)
 /obj/item/dq_rule_private/proc/fired_rule(datum/rule/R)
 	fires++
@@ -211,6 +225,15 @@ CAPABILITIES(/obj/item/dq_rule_private)
 /datum/rule/dq_private_difference/hold
 	hold_for = 2 SECONDS
 
+/// Wait for actual TRACKED notification and timer delivery, never invoke evaluation directly.
+/proc/dq_rule_native_wait_key(obj/item/dq_rule_private/I, datum/rule_binding/B, deliveries)
+	for(var/attempt in 1 to 300)
+		if(I.key_deliveries >= deliveries && !B.key_wake_pending)
+			return TRUE
+		sleep(world.tick_lag)
+		dq_rx_flush()
+	return FALSE
+
 /datum/unit_test/dq_rule_native_private_wakes/Run()
 	var/datum/property_def/L = new /datum/property_def/dq_rule_left
 	var/datum/property_def/R = new /datum/property_def/dq_rule_right
@@ -227,16 +250,20 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	TEST_ASSERT_EQUAL(second.property, DQ_RULE_RIGHT, "Dynamic RHS has separate dependency")
 	var/obj/item/dq_rule_private/I = allocate(/obj/item/dq_rule_private)
 	var/datum/rule_binding/B = new(I, list(rule))
+	var/key_changes = 0
 	I.set_left(2)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT_EQUAL(I.fires, 1, "Changing tracked left fires false-to-true")
 	I.set_right(3)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT_EQUAL(I.exits, 1, "Changing tracked dynamic RHS produces exit")
 	I.set_right(1)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT_EQUAL(I.fires, 2, "RHS recovery re-arms and fires again")
 	qdel(B)
@@ -266,12 +293,15 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	TEST_ASSERT_EQUAL(second.property, DQ_RULE_RIGHT, "Dynamic RHS has separate dependency")
 	var/obj/item/dq_rule_private/I = allocate(/obj/item/dq_rule_private)
 	var/datum/rule_binding/B = new(I, list(rule))
+	var/key_changes = 0
 	I.set_left(2)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(0.8 SECONDS)
 	TEST_ASSERT_EQUAL(I.fires, 0, "Short first hot segment does not fire")
 	I.set_right(3)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT(!after_pending(B, "hold:1"), "False condition cancels counting timer")
 	var/remaining = B.hold_left[1]
@@ -280,23 +310,28 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	TEST_ASSERT_EQUAL(I.fires, 0, "Cold time does not count")
 	I.set_right(1)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(remaining + 3 TICKS)
 	TEST_ASSERT_EQUAL(I.fires, 1, "Remaining true duration completes first fire")
 	TEST_ASSERT_EQUAL(B.hold_left[1], RULE_HOLD_SPENT, "Repeatable hold is spent for current true spell")
 	I.set_right(3)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT_EQUAL(I.exits, 1, "False transition exits exactly once")
 	TEST_ASSERT_NULL(B.hold_left[1], "False transition re-arms next full hold")
 	I.set_right(1)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 SECONDS + 3 TICKS)
 	TEST_ASSERT_EQUAL(I.fires, 2, "Second true spell fires after full duration")
 	I.set_right(3)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	I.set_right(1)
 	act_drain_point()
+	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 TICKS)
 	TEST_ASSERT(after_pending(B, "hold:1"), "Mid-count destruction fixture has a live keyed timer")
 	qdel(B)
@@ -310,3 +345,10 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	qdel(R)
 	qdel(LP)
 	qdel(RP)
+
+/datum/rule/dq_compiler_registry_trap
+	test_only = TRUE
+	var/registry_queries = 0
+/datum/rule/dq_compiler_registry_trap/registry_getter()
+	registry_queries++
+	return null

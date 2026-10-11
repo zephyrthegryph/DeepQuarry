@@ -205,7 +205,7 @@ CAPABILITIES(/datum/rule)
 // ---- Compiler ----
 
 /datum/rule_compiler
-	var/datum/rule/rule_static
+	var/rule_handle
 	var/datum/property_registry/registry_static
 	var/list/triggers = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
 	var/list/errors = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
@@ -216,7 +216,7 @@ CAPABILITIES(/datum/rule_compiler)
 
 /datum/rule_compiler/New(datum/rule/rule, datum/property_registry/property_registry = null)
 	..()
-	src.rule_static = rule
+	rule_handle = entity_handle(rule)
 	rel_set(src, nameof(registry_static), property_registry ? property_registry : dq_property_registry())
 
 /datum/rule_compiler/proc/error(text)
@@ -457,9 +457,9 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
 	return provider_b
 
-/// A shared definition/flyweight (implicitly shared), never cleared.
+/// Borrowed handle: safe even while the rule registry is still being compiled.
 /datum/rule_compiler/proc/rule() as /datum/rule
-	return rule_static
+	return resolve_handle(rule_handle)
 
 /// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
