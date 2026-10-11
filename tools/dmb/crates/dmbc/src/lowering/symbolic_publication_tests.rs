@@ -31,6 +31,87 @@ fn selected(store: &SessionSymbolicMemo, key: &[u8]) -> Option<Arc<Record>> {
     });
     result
 }
+
+#[test]
+fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_edges() {
+    struct Current {
+        calls: std::sync::atomic::AtomicUsize,
+        version: Option<u128>,
+        answer: bool,
+        observing: bool,
+    }
+    impl Resolver for Current {
+        fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+            self.calls.fetch_add(1, Ordering::Relaxed);
+            dm_ir::ResolvedMeaning::Presence(self.answer)
+        }
+        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
+            self.version
+        }
+        fn observes_reads(&self) -> bool {
+            self.observing
+        }
+    }
+    let owner = SessionSymbolicMemo::current_revision();
+    let first = owner.for_request(true);
+    let query = dm_ir::ResolveQuery::MemberCallableName(dm_ir::SymbolId::of("absent"));
+    let mut produced = record(
+        b"qualified",
+        vec![ResolverRead {
+            query,
+            domain: query.domain(),
+            answer: dm_ir::ResolvedMeaning::Presence(false),
+        }],
+    );
+    produced.versions = Arc::from([(query.domain(), 7)]);
+    assert!(first.insert_record(identity(), produced));
+    assert!(first.publish_successful());
+    drop(first);
+    for (version, answer, observing, expected_hit, expected_calls) in [
+        (Some(7), false, false, true, 0),
+        (Some(8), false, false, true, 1),
+        (None, true, false, false, 1),
+        (Some(7), true, true, false, 1),
+    ] {
+        let next = owner.for_request(false);
+        let host = Current {
+            calls: Default::default(),
+            version,
+            answer,
+            observing,
+        };
+        let admission = (!host.observes_reads()).then(|| RequestAdmission::new(&host));
+        let observer = crate::lowering_memo::RecordingResolver::new(&host);
+        let accepted = next
+            .attempt
+            .as_ref()
+            .unwrap()
+            .with_pending(|leases| {
+                leases
+                    .records
+                    .visit_receipted_with_value(
+                        &locator(identity(), b"qualified"),
+                        &mut |reads, versions, candidate| {
+                            assert!(versions.is_empty());
+                            validate_published_record(
+                                reads,
+                                candidate,
+                                admission.as_ref(),
+                                &observer,
+                            )
+                        },
+                        &mut |_| true,
+                    )
+                    .0
+            })
+            .flatten();
+        assert_eq!(accepted.is_some(), expected_hit);
+        assert_eq!(host.calls.load(Ordering::Relaxed), expected_calls);
+        assert_eq!(observer.reads().len(), 1);
+        // Analysis claims do not supersede or prune the published producer.
+        drop(next);
+    }
+}
 #[test]
 fn symbolic_success_failed_and_ephemeral_attempts_keep_exact_recipe_owners() {
     let owner = SessionSymbolicMemo::current_revision();

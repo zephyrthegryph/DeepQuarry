@@ -389,21 +389,22 @@ impl SessionSymbolicMemo {
                 .with_pending(|leases| {
                     leases
                         .records
-                        .visit_receipted_with(
+                        .visit_receipted_with_value(
                             &symbolic_publication::locator(
                                 identity,
                                 &key.materialize(prepared_tail),
                             ),
-                            &mut |reads, _| {
-                                if let Some(admission) = request_admission {
-                                    admission
-                                        .first_changed(reads, |leaf| observer.record_admitted(leaf))
-                                } else {
-                                    reads.iter().find_map(|read| {
-                                        (!same_meaning(&observer.resolve(read.query), &read.answer))
-                                            .then_some(read.query)
-                                    })
-                                }
+                            &mut |reads, _, record| {
+                                // The private publication producer stages a clone
+                                // of this SAME record.reads owner. Lease versions
+                                // stay empty; qualified producer versions remain
+                                // on the actual immutable candidate record.
+                                validate_published_record(
+                                    reads,
+                                    record,
+                                    request_admission,
+                                    observer,
+                                )
                             },
                             &mut accept,
                         )
@@ -581,6 +582,23 @@ impl SessionSymbolicMemo {
                     .map(|r| (r.query, r.answer.canonical_bytes()))
                     .collect()
             }),
+        })
+    }
+}
+
+fn validate_published_record<R: Resolver>(
+    reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
+    record: &Record,
+    admission: Option<&RequestAdmission<'_, R>>,
+    observer: &crate::lowering_memo::RecordingResolver<'_, R>,
+) -> Option<dm_ir::ResolveQuery> {
+    if let Some(admission) = admission {
+        admission.first_changed_receipted(reads, &record.versions, |leaf| {
+            observer.record_admitted(leaf)
+        })
+    } else {
+        reads.iter().find_map(|read| {
+            (!same_meaning(&observer.resolve(read.query), &read.answer)).then_some(read.query)
         })
     }
 }

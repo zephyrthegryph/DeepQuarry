@@ -251,7 +251,21 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
-        let (receipt, changed) = self.store.visit_receipted_with(key, validate, accept);
+        self.visit_receipted_with_value(
+            key,
+            &mut |reads, versions, _| validate(reads, versions),
+            accept,
+        )
+    }
+    /// Use the same candidate loop and pending claim rule with producer payload
+    /// certificates. Declined validation/acceptance never claims a variant.
+    pub fn visit_receipted_with_value(
+        &self,
+        key: &[u8],
+        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        let (receipt, changed) = self.store.visit_receipted_with_value(key, validate, accept);
         let accepted = receipt.and_then(|receipt| {
             self.claim(
                 key,

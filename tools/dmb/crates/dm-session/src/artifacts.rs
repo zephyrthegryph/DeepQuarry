@@ -14,6 +14,8 @@ mod incidence;
 #[cfg(test)]
 mod incidence_tests;
 mod leased;
+#[cfg(test)]
+mod payload_validation_tests;
 pub use leased::ObservedArtifactLease;
 pub const DEFAULT_RESIDENT_BYTES: usize = 8 * 1024 * 1024;
 /// Exact key/read acceptance issued by this store; the ledger shares its backing.
@@ -341,6 +343,21 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        self.visit_receipted_with_value(
+            key,
+            &mut |reads, versions, _| validate(reads, versions),
+            accept,
+        )
+    }
+    /// The actual immutable candidate payload may carry producer-qualified
+    /// certificates. Validate every receipt observation before returning None;
+    /// payload access is not admission. Both callbacks run outside store locks.
+    pub fn visit_receipted_with_value(
+        &self,
+        key: &[u8],
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Resolver work takes place outside the store lock, allowing parallel units.
         let candidates = {
@@ -363,7 +380,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         };
         let mut changed = None;
         for (reads, versions, value, weight) in candidates.into_iter().rev() {
-            let mismatch = validate(&reads, &versions);
+            let mismatch = validate(&reads, &versions, &value);
             if let Some(query) = mismatch {
                 changed = Some(query.clone());
             } else if accept(&value) {
