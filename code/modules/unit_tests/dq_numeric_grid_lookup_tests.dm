@@ -492,4 +492,37 @@ CAPABILITIES(/obj/item/dq_lookup_probe)
 	power_grid_registry().drop(id)
 	test_driver_end()
 
+/obj/dq_lookup_grid_fixture/public_read/surplus
+
+/obj/dq_lookup_grid_fixture/public_read/surplus/grid_ready(datum/act/A)
+	return power_netexcess(grid_id) > 0 ? null : "The grid has no surplus supply."
+
+/// Neither native sample refuses, but serial publication used to expose -40 W
+/// between avail=50 and load=0, canceling an otherwise valid timed operation.
+/datum/unit_test/dq_lookup_grid_atomic_native_sample/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/obj/dq_lookup_grid_fixture/public_read/surplus/holder = allocate(/obj/dq_lookup_grid_fixture/public_read/surplus, T)
+	var/id = power_test_grid(0)
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	grid.apply_native_sample(list(100, 90, FALSE))
+	holder.set_grid_id(id)
+	TEST_ASSERT_EQUAL(power_netexcess(id), 10, "the real initial grid sample is not a valid surplus")
+	test_menu(actor, holder, "lookup_wait")
+	var/datum/pending_op/pending = op_pending_for(actor, "lookup_wait")
+	TEST_ASSERT_NOTNULL(pending, "the actual surplus requirement did not start its timed op")
+	grid.apply_native_sample(list(50, 0, FALSE))
+	TEST_ASSERT_EQUAL(power_netexcess(id), 50, "the real final sample did not preserve positive surplus")
+	TEST_ASSERT_EQUAL(op_pending_for(actor, "lookup_wait"), pending, "a transient field prefix falsely canceled a valid surplus wait")
+	TEST_ASSERT_EQUAL(holder.uses, 0, "publishing a native sample prematurely ran the timed effect")
+	grid.apply_native_sample(list(0, 0, FALSE))
+	TEST_ASSERT_EQUAL(power_netexcess(id), 0, "the genuinely refused final sample was not installed")
+	TEST_ASSERT_NULL(op_pending_for(actor, "lookup_wait"), "the completed no-surplus sample did not cancel its real pending requirement")
+	TEST_ASSERT_EQUAL(holder.uses, 0, "the truly refused wait ran its effect")
+	holder.set_grid_id(0)
+	op_menu_cache_clear()
+	power_test_drop_grid(id)
+	test_driver_end()
+
 #endif

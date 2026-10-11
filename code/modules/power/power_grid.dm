@@ -127,6 +127,14 @@ CAPABILITIES(/datum/power_grid_registry)
 	var/list/info = vg_power_region_read(id)
 	if(!info)
 		return FALSE
+	return apply_native_sample(info)
+
+/// A Rust ledger sample is one coherent state: every field is set before any
+/// observer rechecks, with each actual changed key published once afterward.
+/datum/power_grid/proc/apply_native_sample(list/info)
+	return state_batch(src, PROC_REF(write_native_sample), list(info))
+
+/datum/power_grid/proc/write_native_sample(list/info)
 	set_avail(info[1])
 	set_load(info[2])
 	set_brownout(!!info[3])
