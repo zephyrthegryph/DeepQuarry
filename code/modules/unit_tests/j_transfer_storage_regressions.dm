@@ -31,6 +31,15 @@ TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 	rel_set(P, nameof(P.candidate), item)
 	rel_set(P, nameof(P.mover), mover)
 	observe(box, /datum/act/insert, P, needs(req(TYPE_PROC_REF(/datum/dq_native_transfer_query_probe, admission))))
+	var/datum/act/op/acceptance/query = acceptance_act(box, box, item, null, mover, "s1_picky")
+	var/lease_count = GLOB.act_taken
+	TEST_ASSERT_EQUAL(act_context(query.type, P, query.target, query.actor, query), query, "Receiver rebind preserves the existing query lease")
+	TEST_ASSERT_EQUAL(query.holder, P, "Receiver rebind uses the real listener")
+	TEST_ASSERT_EQUAL(query.destination, box, "Receiver rebind preserves physical destination")
+	TEST_ASSERT_EQUAL(query.target, item, "Receiver rebind preserves the candidate")
+	TEST_ASSERT_EQUAL(query.mover, mover, "Receiver rebind preserves the mover")
+	TEST_ASSERT_EQUAL(GLOB.act_taken, lease_count, "Receiver rebind does not begin a world action")
+	acceptance_act_release(query)
 	var/datum/rx_state/S = rx_of(box)
 	var/before_generation = S.hooks_generation
 	TEST_ASSERT_NULL(op_transfer_precheck(box, /datum/act/insert, item, "s1_picky", mover), "Query sees actual candidate, destination, mover, listener and activation")
@@ -291,7 +300,7 @@ CAPABILITIES(/obj/s1_fixture/picky/query_guard)
 	ref_one(nameof(gate), /datum/dq_transfer_guard_gate)
 	when(PROC_REF(guard_enabled), extend(/datum/act/insert, needs(req(PROC_REF(guard_refusal)))))
 
-/obj/s1_fixture/picky/query_guard/proc/guard_enabled()
+/obj/s1_fixture/picky/query_guard/proc/guard_enabled(datum/act/op/A)
 	return gate?.enabled
 
 /obj/s1_fixture/picky/query_guard/proc/guard_refusal(datum/act/op/A)

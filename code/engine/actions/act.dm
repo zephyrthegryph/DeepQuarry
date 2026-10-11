@@ -87,8 +87,11 @@ GLOBAL_VAR(act_next_authority)
 
 /// Takes one pooled context and binds borrowed entities. Queries share this binding
 /// without beginning a world action, consuming authority, or incrementing metrics.
-/proc/act_context(act_type, datum/holder, datum/target, mob/actor)
-	var/datum/act/action/A = take(act_type)
+/proc/act_context(act_type, datum/holder, datum/target, mob/actor, datum/act/action/context = null)
+	// Rebinding a borrowed query uses its existing lease; it never checks out another pooled act.
+	if(context && context.type != act_type)
+		CRASH("A borrowed act can only be rebound with its declared type")
+	var/datum/act/action/A = context || take(act_type)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.target = target // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.actor = actor // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

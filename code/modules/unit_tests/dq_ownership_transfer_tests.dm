@@ -178,11 +178,11 @@
 	told.Cut()
 
 	// can_unequip: an item that can't be removed.
-	W.canremove = FALSE
+	W.set_canremove(FALSE)
 	TEST_ASSERT(!move_into(M, nameof(M.beaker), W, H), "an item that can't be removed is refused")
 	TEST_ASSERT_EQUAL(H.inventory_slot_id(W), slot, "it stays in its hand")
 	TEST_ASSERT(length(told) == 1 && findtext(told[1][2], "take off"), "the user is told why: [json_encode(told)]")
-	W.canremove = TRUE
+	W.set_canremove(TRUE)
 	told.Cut()
 
 	// Storage refusal: the destination box is full.

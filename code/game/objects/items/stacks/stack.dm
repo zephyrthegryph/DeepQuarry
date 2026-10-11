@@ -310,7 +310,7 @@ CAPABILITIES(/obj/item/stack)
 
 	if(amount != new_amount)
 		amount = new_amount
-		ledger_refresh_cost()
+		ledger_refresh_contribution()
 		tracked_changed(src, nameof(amount))
 
 	// Can set it to 0 without qdel if you really want
@@ -573,7 +573,7 @@ CAPABILITIES(/obj/item/stack)
 	if(uses_charge == value)
 		return FALSE
 	uses_charge = value
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 	tracked_changed(src, nameof(uses_charge))
 	return TRUE
 SETTER(/obj/item/stack, uses_charge)
@@ -581,7 +581,7 @@ SETTER(/obj/item/stack, uses_charge)
 	if(charge_costs == value)
 		return FALSE
 	charge_costs = value ? value.Copy() : null
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 	tracked_changed(src, nameof(charge_costs))
 	return TRUE
 SETTER(/obj/item/stack, charge_costs)
@@ -591,13 +591,13 @@ SETTER(/obj/item/stack, charge_costs)
 		. += list(list(S, nameof(S.energy)))
 
 /obj/item/stack/proc/synth_unlinked(datum/matter_synth/other)
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 /obj/item/stack/proc/synth_cost_changed(datum/act/A)
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 
 /// Model mutation keeps charged units and actual containment accounting coherent.
 /obj/item/stack/proc/add_synth(datum/matter_synth/S)
 	. = rel_add(src, nameof(synths), S)
 	if(.)
-		ledger_refresh_cost()
+		ledger_refresh_contribution()
 

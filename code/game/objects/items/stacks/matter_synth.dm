@@ -74,7 +74,7 @@
 			continue
 		var/obj/item/stack/S = D
 		if(!QDELETED(S) && S.synths && (src in S.synths))
-			S.ledger_refresh_cost()
+			S.ledger_refresh_contribution()
 	tracked_changed(src, nameof(energy))
 	return TRUE
 SETTER(/datum/matter_synth, energy)

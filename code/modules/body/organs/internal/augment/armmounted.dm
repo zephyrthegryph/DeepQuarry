@@ -169,7 +169,7 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 
 	toolspeed = 0.8
 
-	/// Tool path -> each stowed tool this augment carries (owned), built in Initialize() from
+	/// Tool path -> each stowed tool this augment carries (owned), built from
 	/// tool_types(). The deployed tool is owned by integrated_object instead, and moves back here
 	/// when another is picked (select_integrated_tool()).
 	var/list/integrated_tools
@@ -180,6 +180,7 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/list/synths
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
+	setup(PROC_REF(configure_integrated_tools))
 	owns_many(nameof(synths), starts = PROC_REF(starting_synths))
 	owns_many(nameof(integrated_tools), starts = PROC_REF(starting_tools))
 
@@ -211,8 +212,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 /// Matter synthesizers feeding the augment's stack tools (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, synth_types, list(/datum/matter_synth/wire))
 
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/configure_integrated_tools()
 
 	var/list/tools = all_integrated_tools()
 	if(!length(tools))

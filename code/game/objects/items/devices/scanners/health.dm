@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/healthanalyzer)
 		return null
 	if(istype(A.actor, /mob/living/simple_mob))
 		var/mob/living/simple_mob/S = A.actor
-		return (S.has_hands) ? null : span_warning("You don't have the dexterity to do this!") // ALLOW(reads): this simple mob's hand policy is fixed type data, queried before instant scanning rather than used as a cached permission
+		return (S.has_hands) ? null : span_warning("You don't have the dexterity to do this!")
 	return span_warning("You don't have the dexterity to do this!")
 
 /obj/item/healthanalyzer/proc/patient_scanned(datum/act/op/A)

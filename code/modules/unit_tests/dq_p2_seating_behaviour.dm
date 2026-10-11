@@ -567,12 +567,12 @@ CAPABILITIES(/obj/structure/p2_bare_seat)
 	var/obj/structure/bed/chair/wheelchair/small = allocate(/obj/structure/bed/chair/wheelchair/smallmotor, at)
 	var/mob/living/carbon/human/grabber = actor(floor_at(1, 0))
 	var/mob/living/carbon/human/big = patient(floor_at(0, 0))
-	big.mob_size = MOB_LARGE
+	big.set_mob_size(MOB_LARGE)
 	var/obj/item/grab/G = grab(grabber, big, GRAB_AGGRESSIVE)
 	p2_seat_click(grabber, small, G)
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(length(p2_seat_occupants(small)), 0, "a large person is too large for the small electric chair")
-	big.mob_size = MOB_MEDIUM
+	big.set_mob_size(MOB_MEDIUM)
 	if(!istype(grabber.get_active_hand(), /obj/item/grab))
 		G = grab(grabber, big, GRAB_AGGRESSIVE)
 	else

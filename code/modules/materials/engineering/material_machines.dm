@@ -117,7 +117,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 /obj/machinery/material_furnace/proc/can_load_stock(mob/user, atom/target, obj/item/stack/material/held)
 	if(firing || output_stock())
 		return "the furnace must be idle and its output removed first"
-	if(istype(held) && held.uses_charge) // ALLOW(reads): a stack's synthesiser link is set when its module builds it and never changes after
+	if(istype(held) && held.uses_charge)
 		return "[held] is drawn from a matter synthesiser and can't be charged into the furnace as physical stock"
 	return null
 

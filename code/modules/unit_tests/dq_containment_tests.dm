@@ -167,7 +167,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	rel_add(src, nameof(things), H)
 	if(istype(H, /obj/structure/closet))
 		var/obj/structure/closet/C = H
-		C.storage_capacity = istype(C, /obj/structure/closet/crate) ? 6 : 200
+		C.set_storage_capacity(istype(C, /obj/structure/closet/crate) ? 6 : 200)
 	return H
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/make_thing(atom/where)
@@ -396,7 +396,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(bolted, closet), "it is fastened down", "anchored things stay out")
 
 	// Capacity: a crate holds storage_capacity objects.
-	crate.storage_capacity = 2
+	crate.set_storage_capacity(2)
 	var/obj/item/dq_containment_test/one = allocate(/obj/item/dq_containment_test, T)
 	var/obj/item/dq_containment_test/two = allocate(/obj/item/dq_containment_test, T)
 	var/obj/item/dq_containment_test/three = allocate(/obj/item/dq_containment_test, T)
@@ -431,16 +431,16 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	// Pre signals block, and a block leaves everything in place.
 	var/datum/dq_containment_listener/listener = allocate(/datum/dq_containment_listener)
 	listener.watch(crate)
-	listener.block_remove = TRUE
+	listener.set_block_remove(TRUE)
 	TEST_ASSERT(!crate.slot_remove(one, T), "a blocked removal fails")
 	TEST_ASSERT_EQUAL(one.loc, crate, "and leaves it inside")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(one, folder), "it won't come out", "both sides are checked before anything moves")
-	listener.block_remove = FALSE
+	listener.set_block_remove(FALSE)
 	TEST_ASSERT(crate.slot_remove(one, T), "unblocked removal")
-	listener.block_insert = TRUE
+	listener.set_block_insert(TRUE)
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(three, crate), "it won't go in", "a blocked insert")
 	TEST_ASSERT(!move_into(crate, null, three), "and the move fails")
-	listener.block_insert = FALSE
+	listener.set_block_insert(FALSE)
 	TEST_ASSERT(move_into(crate, null, three), "room again")
 	TEST_ASSERT_EQUAL(jointext(listener.events || list(), ","), "out:[CONTAINER_SLOT_INTERIOR],in:[CONTAINER_SLOT_INTERIOR]", "inserted and removed signals")
 
@@ -456,7 +456,7 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	var/turf/B = get_step(T, EAST)
 	var/obj/structure/closet/locker = allocate(/obj/structure/closet, B)
 	locker.open()
-	locker.storage_capacity = 2
+	locker.set_storage_capacity(2)
 	var/obj/item/dq_containment_test/small1 = allocate(/obj/item/dq_containment_test, B)
 	var/obj/item/dq_containment_test/small2 = allocate(/obj/item/dq_containment_test, B)
 	var/obj/item/dq_containment_test/small3 = allocate(/obj/item/dq_containment_test, B)
@@ -539,8 +539,8 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 	// must not be refusable, so it still leaves.
 	var/datum/dq_containment_listener/listener = allocate(/datum/dq_containment_listener)
 	listener.watch(closet)
-	listener.block_remove = TRUE
-	listener.block_insert = TRUE
+	listener.set_block_remove(TRUE)
+	listener.set_block_insert(TRUE)
 	qdel(closet)
 	TEST_ASSERT(QDELETED(closet), "closet with a blocking listener still deletes")
 	TEST_ASSERT_EQUAL(steel.loc, T, "steel spilled to the drop location despite the blocks")

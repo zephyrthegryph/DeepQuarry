@@ -249,6 +249,7 @@ CAPABILITIES(/mob)
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
+	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
 	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
@@ -352,14 +353,16 @@ TRACKED(/mob, status_flags)
 	if(mob_size == value)
 		return FALSE
 	mob_size = value
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 	tracked_changed(src, nameof(mob_size))
 	return TRUE
 SETTER(/mob, mob_size)
 /mob/proc/set_pinned(list/value)
 	if(pinned == value)
 		return FALSE
-	pinned = value ? value.Copy() : null
-	tracked_changed(src, nameof(pinned))
+	var/list/new_pins = value ? value.Copy() : null
+	rel_clear(src, nameof(pinned))
+	for(var/obj/item/pin as anything in new_pins)
+		rel_add(src, nameof(pinned), pin)
 	return TRUE
 SETTER(/mob, pinned)

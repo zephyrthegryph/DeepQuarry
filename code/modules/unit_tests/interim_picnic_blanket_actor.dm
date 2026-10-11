@@ -40,7 +40,7 @@
 	TEST_ASSERT(user.put_in_inactive_hand(other), "the other hand contains an independent item")
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	TEST_ASSERT(!test_op_handler(carried, "can_unfold", user), "the requirement rejects real source release refusal")
 	test_op_handler(carried, "picnic_blankets_carried_fold_out_effect", user)
 	own_turf_contents(T)

@@ -31,7 +31,7 @@
 	TEST_ASSERT(user.put_in_active_hand(box), "the actual box is carried")
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	TEST_ASSERT(box.loc.release_refusal(box, user), "the real box refuses release")
 	hci_click(user, box, box)
 	test_time(10 SECONDS)

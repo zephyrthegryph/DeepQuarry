@@ -49,6 +49,7 @@
 	var/security_emotes = FALSE
 
 CAPABILITIES(/obj/item/robot_module)
+	setup(PROC_REF(configure_robot_module))
 	owns_many(nameof(emag))
 	owns_many(nameof(modules))
 	owns_many(nameof(synths), /datum/matter_synth)
@@ -57,9 +58,7 @@ CAPABILITIES(/obj/item/robot_module)
 /obj/item/robot_module/proc/hide_on_manifest()
 	. = hide_on_manifest
 
-// ALLOW(init/INSTANCE_STATE): binds to the robot it is made inside and fits that robot out
-/obj/item/robot_module/Initialize(mapload)
-	. = ..()
+/obj/item/robot_module/proc/configure_robot_module()
 
 	if(!isrobot(loc))
 		return
@@ -594,12 +593,12 @@ CAPABILITIES(/obj/item/robot_module)
 	metal.name = "Steel reserves"
 	metal.recharge_rate = 0
 	metal.max_energy = 50000
-	metal.energy = 0
+	metal.set_energy(0)
 	var/datum/matter_synth/glass = new /datum/matter_synth/glass()
 	glass.name = "Glass reserves"
 	glass.recharge_rate = 0
 	glass.max_energy = 50000
-	glass.energy = 0
+	glass.set_energy(0)
 
 	rel_add(src, nameof(synths), metal)
 	rel_add(src, nameof(synths), glass)

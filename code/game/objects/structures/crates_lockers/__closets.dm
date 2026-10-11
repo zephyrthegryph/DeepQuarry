@@ -634,7 +634,7 @@ TRACKED(/obj/structure/closet, storage_capacity)
 	if(storage_cost == value)
 		return FALSE
 	storage_cost = value
-	ledger_refresh_cost()
+	ledger_refresh_contribution()
 	tracked_changed(src, nameof(storage_cost))
 	return TRUE
 SETTER(/obj/structure/closet, storage_cost)

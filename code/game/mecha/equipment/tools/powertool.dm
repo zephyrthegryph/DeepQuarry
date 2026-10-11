@@ -13,10 +13,10 @@
 	var/tooltype = /obj/item/tool/wrench/power
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool)
+	setup(PROC_REF(configure_power_tool))
 	owns_one(nameof(my_tool), /obj/item, starts = nameof(tooltype))
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/Initialize(mapload)
-	. = ..()
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/proc/configure_power_tool()
 	my_tool.name = name
 	my_tool.set_anchored(TRUE)
 	my_tool.set_canremove(FALSE)

@@ -33,10 +33,10 @@
 
 
 CAPABILITIES(/obj/item/organ/internal/augment)
+	setup(PROC_REF(configure_augment))
 	owns_one(nameof(integrated_object), starts = nameof(integrated_object_type))
 
-/obj/item/organ/internal/augment/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/augment/proc/configure_augment()
 	setup_radial_icon()
 	if(integrated_object) // declared child
 		integrated_object.set_canremove(FALSE)

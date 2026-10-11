@@ -42,3 +42,9 @@ invalidate through the existing edit dispatcher.
 Before the later compiler retirement, this landing also records real old-consent ordering and folder/closet admission boundaries. These tests run against unchanged consent and custom-slot production policies; no passing result is claimed until the combined focused gate completes.
 
 Additional old-code boundaries capture real wield state, drake/horse shapes, saddlebag and Avida query effects, and twelve offline named-owner denials. They do not claim authenticated positive identity coverage. Production remains unchanged for these remaining semantic tables until their old-code gate is green.
+
+Merge repair: current master replaced the ledger refresh API; resident-cost setters now call `ledger_refresh_contribution()` before publishing. Existing tests use real tracked setters, and marking-map keys remain associative keys rather than organ writes. A borrowed `pinned` relation preserves objects rather than deleting them. Transient hook plans finish with `spent()`, and receiver rebinding uses the existing leased context binder without acquiring a second query.
+
+The setter conversion exposed thirteen changed initialization fingerprints. Complete tool/module configurations now run through ordered setup hooks. Malignant and stump identity setters run through preinit capabilities before organ placement; constructor tests cover forced tag/site, engineered growth, dead fallback and stump placement. Malignant's internal random-call order is unchanged, although moving it past ancestor setup may change the global RNG sequence. This does not authorize re-blessing unexplained snapshot changes.
+
+The first combined gate failed compilation and ratchets and ran no runtime tests. Verification remains pending until the repair gate completes.

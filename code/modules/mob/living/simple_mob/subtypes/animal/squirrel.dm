@@ -204,7 +204,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	swallowTime = 1 SECOND
 	vore_capacity = 3
 	vore_bump_chance = 5
-	mob_size = MOB_LARGE
+	set_mob_size(MOB_LARGE)
 
 /mob/living/simple_mob/vore/squirrel/verb/squirrel_color()
 	set name = "Pick Color"

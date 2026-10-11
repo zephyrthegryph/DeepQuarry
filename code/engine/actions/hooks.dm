@@ -322,7 +322,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		any = TRUE
 		hook_plan_add(P, H)
 	if(!any)
-		qdel(P)
+		spent(P)
 		P = null
 	for_table[act_type] = P || FALSE
 	return P || FALSE
