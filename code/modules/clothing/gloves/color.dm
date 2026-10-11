@@ -21,13 +21,11 @@ CAPABILITIES(/obj/item/clothing/gloves/yellow)
 CAPABILITIES(/obj/item/clothing/gloves/fyellow)
 	configure(item_protection(siemens = 1, permeability = 0.05))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	after_init(0, then(PROC_REF(roll_insulation)))
 
-// ALLOW(init/INSTANCE_STATE): rolls how well these gloves insulate
-/obj/item/clothing/gloves/fyellow/Initialize(mapload)
-	. = ..()
-	// Picks a value between 0 and 1.25, in 5% increments //
-	var/shock_pick = rand(0,15)
-	set_siemens_coefficient(shock_pick * 0.05)
+/// How well these gloves insulate: a value between 0 and 0.75, in 5% steps, rolled once made.
+/obj/item/clothing/gloves/fyellow/proc/roll_insulation(datum/act/timer/A)
+	set_siemens_coefficient(rand(0, 15) * 0.05)
 
 /obj/item/clothing/gloves/black
 	desc = "These work gloves are thick and fire-resistant."
