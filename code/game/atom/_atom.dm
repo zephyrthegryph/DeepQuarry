@@ -35,8 +35,6 @@
 	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
 	var/tmp/list/managed_vis_overlays
 
-	//Detective Work, used for the duplicate data points kept in the scanners
-	var/tmp/list/original_atom
 	// Track if we are already had initialize() called to prevent double-initialization.
 	//var/initialized = FALSE // using the atom flags
 
@@ -93,8 +91,6 @@
 	priority_overlays = null
 	if (length(managed_vis_overlays))
 		rel_clear(src, nameof(managed_vis_overlays))
-	if (length(original_atom))
-		original_atom.Cut()
 	return ..()
 
 /// Shift this atom's surface germ count (never below 0). Organs override it
