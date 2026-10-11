@@ -258,5 +258,19 @@
       "malformed signature line1 versus BYOND line2"
     ],
     "runtime": "not run"
+  },
+  "focused_validation_5ec311": {
+    "source_commit": "5ec311bfe8915da60b7124fb3cf9ab35a588a91f",
+    "archive_sha256": "d8869a76022ae078faa22d40bfbdeedf0c7afa05f02410e7d63348a899486cdc",
+    "build_receipt": "20261011-092923-f9df44a4-job-cargo.json",
+    "passed": 35,
+    "failed": 1,
+    "receipts": [
+      "20261011-093335-d7c74101-focused.json",
+      "20261011-093335-2dfdee18-focused.json",
+      "20261011-093354-6550bcff-focused.json"
+    ],
+    "failure": "nested implicit constructor fixture rejected by parser before evaluator; agent correction pending",
+    "scope": "focused shared initializer, all map memo fixtures, constructor diagnostics and shared callable index; not full suite"
   }
 }
