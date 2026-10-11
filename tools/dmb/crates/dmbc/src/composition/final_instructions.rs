@@ -95,6 +95,56 @@ fn weighted_ranges(dmb: &Dmb, workers: usize) -> Vec<std::ops::Range<usize>> {
 mod tests {
     use super::*;
     #[test]
+    fn semantic_feature_certificate_rejects_equal_length_installed_image_mutation() {
+        use byond_dmb::bytecode::opcode;
+        let mut dmb = Dmb::from_bytes(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/native_template.bin"
+        )))
+        .unwrap();
+        let index = (0..dmb.procs.len())
+            .find(|&index| {
+                !dmb.is_reserved_proc_slot(index) && dmb.proc_code_words(index).is_some()
+            })
+            .unwrap();
+        let list = dmb.procs[index].code_locals_args[0] as usize;
+        let words = std::sync::Arc::new(vec![opcode::END as u32]);
+        dmb.lists[list] = words.as_ref().clone();
+        let issued = dm_codegen_byond::SourceFeatures {
+            world_cpu: true,
+            native_graphics: true,
+        };
+        let certificates = [(
+            index as u32,
+            (
+                std::sync::Arc::clone(&words),
+                BytecodeFeatures {
+                    source_features: issued,
+                    ..Default::default()
+                },
+            ),
+        )]
+        .into_iter()
+        .collect();
+        assert_eq!(source_features(&dmb, &certificates).unwrap(), issued);
+        assert_eq!(
+            procedure(&dmb, &certificates, index).unwrap(),
+            (false, false)
+        );
+        // Equal size and a valid independent instruction are insufficient to
+        // attach the old semantic source facts to the new installed image.
+        dmb.lists[list] = vec![opcode::POP as u32];
+        assert_eq!(dmb.proc_code_words(index).unwrap().len(), words.len());
+        assert_eq!(
+            procedure(&dmb, &certificates, index).unwrap(),
+            (false, false)
+        );
+        assert!(source_features(&dmb, &certificates).is_err());
+        assert_eq!(words.as_slice(), &[opcode::END as u32]);
+        dmb.lists[list] = words.as_ref().clone();
+        assert_eq!(source_features(&dmb, &certificates).unwrap(), issued);
+    }
+    #[test]
     fn installed_word_certificate_rejects_post_mob_stage_mutation() {
         let mut dmb = Dmb::from_bytes(include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),

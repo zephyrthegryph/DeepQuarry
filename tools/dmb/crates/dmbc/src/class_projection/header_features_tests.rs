@@ -2,6 +2,8 @@ use super::*;
 use crate::class_projection::{project, CapturedFieldEvaluator};
 use dm_ir::{SemanticValue, SymbolicExpression};
 use std::{collections::BTreeMap, path::Path, sync::Arc};
+#[path = "graphics_header_tests.rs"]
+mod graphics;
 struct Source(String);
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, _: &Path) -> Result<String, String> {
