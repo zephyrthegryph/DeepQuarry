@@ -55,7 +55,7 @@
 
 CAPABILITIES(/datum/tgui_module/late_choices)
 	interface("LateChoices")
-	op("join", ui_act("join", arg("job", schema_text(4096))), needs(req_bool(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_join)))
+	op("join", ui_act("join", arg("job", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_join)))
 
 /datum/tgui_module/late_choices/ui_data(datum/act/eval/A)
 	var/mob/new_player/user = A.actor
@@ -115,7 +115,7 @@ CAPABILITIES(/datum/tgui_module/late_choices)
 
 /// Only somebody still in the lobby joins (silently: anyone else is just not answered).
 /datum/tgui_module/late_choices/proc/ui_gate(datum/act/op/A)
-	return isnewplayer(A.actor)
+	return (isnewplayer(A.actor)) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/late_choices/proc/ui_act_join(datum/act/op/A, job_arg)
 	var/mob/user = A.actor

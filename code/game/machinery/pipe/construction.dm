@@ -151,10 +151,10 @@ MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 
 CAPABILITIES(/obj/item/pipe)
 	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
-	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req_bool(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
+	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
 	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req(PROC_REF(unlined))), then(PROC_REF(lined)))
 	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0),
-		needs(req_bool(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req_bool(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
+		needs(req(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req(PROC_REF(tile_free))),
 		says(MSG(pipe_item/fastened)), then(PROC_REF(fastened)))
 	param(nameof(pipe_type), pos = 1)
 	param(nameof(dir), pos = 2)
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/pipe)
 
 /obj/item/pipe/proc/actor_able(datum/act/op/A)
 	var/mob/user = A.actor
-	return !user.stat && !user.restrained() && user.canmove // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (!user.stat && !user.restrained() && user.canmove) ? null : MSG(pipe_item/cannot_flip) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 
 /obj/item/pipe/proc/flipped(datum/act/op/A)
 	do_a_flip()
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/pipe)
 	return OP_OK
 
 /obj/item/pipe/proc/on_floor(datum/act/A)
-	return isturf(loc) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (isturf(loc)) ? null : MSG(pipe_item/not_on_floor) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 
 /// What stands in the way of building it here (null: nothing): a dense device's tile, or a pipe already on its layer and directions.
 /obj/item/pipe/proc/tile_blocker()
@@ -214,9 +214,6 @@ CAPABILITIES(/obj/item/pipe)
 		SSmachines.get_init_dirs(pipe_type, d)
 
 /obj/item/pipe/proc/tile_free(datum/act/A)
-	return isnull(tile_blocker())
-
-/obj/item/pipe/proc/tile_refusal(datum/act/A)
 	return tile_blocker()
 
 /obj/item/pipe/proc/fastened(datum/act/op/A)
@@ -294,13 +291,13 @@ MSG_DEF_SELF(pipe_meter/no_pipe, "You need to fasten it to a pipe!")
 MSG_DEF_SELF(pipe_meter/fastened, "You fasten the meter to the pipe.")
 
 CAPABILITIES(/obj/item/pipe_meter)
-	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req_bool(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
+	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
 
 /obj/item/pipe_meter/proc/pipe_here(datum/act/A)
 	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 		if(P.piping_layer == piping_layer) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
-			return TRUE
-	return FALSE
+			return null
+	return MSG(pipe_meter/no_pipe)
 
 /obj/item/pipe_meter/proc/fastened(datum/act/op/A)
 	replace_with(src, /obj/machinery/meter, piping_layer)

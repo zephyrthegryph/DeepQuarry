@@ -10,7 +10,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/interim_micro_probe/topic_usable(datum/act/op/A)
-	return !!A.actor && !A.actor.stat
+	return (!!A.actor && !A.actor.stat) ? null : MSG(op/topic_gate)
 
 /datum/unit_test/interim_micro_passenger_actor/Run()
 	test_driver_begin()

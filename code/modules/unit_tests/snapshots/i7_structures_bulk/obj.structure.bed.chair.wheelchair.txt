@@ -58,24 +58,14 @@ robot|none click: Click: Use
 -click: Click: Disassemble
 +3 menu: Use
 +4 click: Click: Use
-@obj.structure human|/obj/item/stack
--menu: Repair (refused: )
--click: Click: Repair
+@obj human|/obj/item/stack
+-menu: Pad (refused: You cannot pad that with that.)
 +2 menu: Pad (refused: You cannot pad that.)
-+5 click: Click: Pad
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk menu: Use
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie menu: Use
-human|/obj/item/toy/plushie click: Click: Tuck plushie
++4 menu: Use
+@obj human|/obj/item/disk
++4 menu: Use
+@obj human|/obj/item/toy/plushie
++5 menu: Use
 human|/obj/item/assembly/shock_kit menu: Attach kit (refused: The kit is not ready to be attached!)
 human|/obj/item/assembly/shock_kit menu: Hit
 human|/obj/item/assembly/shock_kit menu: Move To Top

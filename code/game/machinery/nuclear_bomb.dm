@@ -182,7 +182,7 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 	op("anchor", ui_act("anchor"), then(PROC_REF(ui_act_anchor)))
 	op("wire", ui_act("wire", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_wire)))
 	op("pulse", ui_act("pulse", arg("wire", schema_text(4096))), then(PROC_REF(ui_act_pulse)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
+	extend(TAG_UI, needs(req(PROC_REF(bomb_reachable), because = MSG(nuclearbomb/unreachable))))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
 	// taking an anchored bomb off the floor: cut the bolt covers, force them open, cut the sealant, unwrench the bolts, lift it off
 	stages(nameof(removal_stage),
@@ -204,12 +204,12 @@ MSG_DEF(nuclearbomb/sealant_cut, "You cut apart the anchoring system's sealant."
 MSG_DEF(nuclearbomb/bolts_unwrenched, "You unwrench the anchoring bolts.", "%U% unwrenches the anchoring bolts on %T%.")
 MSG_DEF(nuclearbomb/lifted, "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!", "%U% crowbars %T% off of the anchors. It can now be moved.")
 
-/// The panel answers someone who can move and act and stands next to the bomb (an AI works it from anywhere).
+/// The panel answers someone who can move and act and stands next to the bomb (a remote link, an AI's, works it from anywhere).
 /obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
-		return FALSE
-	return get_dist(src, user) <= 1 || istype(user, /mob/living/silicon/ai)
+		return MSG(nuclearbomb/unreachable)
+	return (get_dist(src, user) <= 1 || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(nuclearbomb/unreachable)
 
 /// Whoever presses a button leaves their prints on the bomb.
 /obj/machinery/nuclearbomb/proc/ui_fingerprint(datum/act/op/A)

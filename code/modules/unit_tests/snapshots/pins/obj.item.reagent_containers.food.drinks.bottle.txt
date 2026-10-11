@@ -7,8 +7,7 @@
 +5 menu: Smash Bottle (refused: You can't do that.)
 +6 menu: Spin The Bottle
 @obj.item ai|none
-@obj.item.reagent_containers ghost|none
-+2 menu: Set transfer amount
+@obj.item.reagent_containers.food.drinks ghost|none
 +3 menu: Smash Bottle (refused: You can't do that.)
 +4 menu: Spin The Bottle
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver

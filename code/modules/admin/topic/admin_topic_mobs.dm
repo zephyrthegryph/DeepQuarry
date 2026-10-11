@@ -131,11 +131,11 @@ MSG_DEF_SELF(admin_topic/lobby_no_client, "That player doesn't seem to have an a
 MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 
 /datum/admins/proc/lobby_target_observer(datum/act/op/A)
-	return isobserver(A.args["sendbacktolobby"])
+	return (isobserver(A.args["sendbacktolobby"])) ? null : MSG(admin_topic/lobby_not_ghost)
 
 /datum/admins/proc/lobby_target_client(datum/act/op/A)
 	var/mob/M = A.args["sendbacktolobby"]
-	return !!M?.client
+	return (!!M?.client) ? null : MSG(admin_topic/lobby_no_client)
 
 /datum/admins/proc/lobby_question(datum/act/op/A)
 	return "Send [key_name(A.args["sendbacktolobby"])] back to Lobby?"

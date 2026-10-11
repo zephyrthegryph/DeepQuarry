@@ -68,25 +68,13 @@ robot|none click: nothing
 +2 menu: Tear down
 +4 menu: Use
 +5 click: Click: Use
-@obj.structure human|/obj/item/stack
--menu: Repair (refused: )
--click: Click: Repair
-+2 menu: Pad (refused: You cannot pad that with that.)
+@obj human|/obj/item/stack
 +3 menu: Tear down
-+6 click: Click: Pad
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Tear down
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk menu: Use
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tear down
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie menu: Use
-human|/obj/item/toy/plushie click: Click: Tuck plushie
++5 menu: Use
+@obj human|/obj/item/disk
++2 menu: Tear down
++5 menu: Use
+@obj human|/obj/item/toy/plushie
++3 menu: Tear down
++6 menu: Use
 keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, tear_down, tuck_disk, tuck_plushie, unpad, weaversilk_nest_interaction_item

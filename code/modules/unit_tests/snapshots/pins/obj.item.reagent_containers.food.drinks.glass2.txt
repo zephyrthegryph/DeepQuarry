@@ -9,8 +9,7 @@
 +6 menu: Use
 +7 click: Click: Use
 @obj.item ai|none
-@obj.item.reagent_containers ghost|none
-+2 menu: Set transfer amount
+@obj.item.reagent_containers.food.drinks ghost|none
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Glass2 item
