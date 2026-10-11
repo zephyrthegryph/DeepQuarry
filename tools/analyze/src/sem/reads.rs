@@ -537,6 +537,15 @@ impl<'a, 'e> Walk<'a, 'e> {
             let o = &p.ty().get().path;
             if o.is_empty() { "/".to_string() } else { o.clone() }
         };
+        // A declared accessor contract applies equally to a direct handler root and
+        // a call reached from another handler. Inherited contracts bind this receiver.
+        if let Some((key, via)) = self.reads_as_for(this.ty.as_deref().unwrap_or(&owner), p.name()).cloned() {
+            let mut hops = this.hops.clone();
+            if let Some(via) = via { hops.push(via); }
+            let rel = self.rel_of(p);
+            self.add_read(Read { root: this.root_name(), hops, var: key, owner: String::new(), kind: ReadKind::Accessor, hop_ok: this.hop_ok }, &rel, p.get().location.line);
+            return;
+        }
         let vkey = (owner.clone(), p.name().to_string(), this.root.clone(), this.hops.clone());
         if !self.visited.insert(vkey) {
             return;

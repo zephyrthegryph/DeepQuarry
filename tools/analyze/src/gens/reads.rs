@@ -23,11 +23,34 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
+use crate::sem::hooks::{Ctx, HandlerRef, Role};
+use crate::sem::Sem;
 use crate::sem::reads::{Annotations, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the walk does not enter. The Verdigris bindings (code/__defines/verdigris/) read Rust-owned values: a condition that
 /// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
 pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+
+// Standard outputs and explicit accessor contracts are engine read roots even
+// when no CAPABILITIES entry spells their proc name. Only real local definitions
+// are enumerated; runtime parent lookup supplies inherited output metadata.
+fn add_implicit_read_handlers(sem: &Sem, ann: &Annotations, handlers: &mut Vec<HandlerRef>) {
+    for ty in sem.objtree.iter_types() {
+        let owner = &ty.get().path;
+        if owner.is_empty() { continue; }
+        for name in ty.get().procs.keys() {
+            let output = matches!(name.as_str(), "draw" | "hidden_verbs" | "ui_data" | "tgui_data" | "push_to_rust" | "should_run");
+            let accessor = ann.reads_as.contains_key(&(owner.clone(), name.clone()));
+            if !output && !accessor { continue; }
+            let Some(p) = sem.proc_ref(owner, name) else { continue };
+            if p.is_builtin() { continue; }
+            let rel = sem.rel(p.get().location);
+            // Internal output plumbing remains opaque, as in the ordinary walk.
+            if !accessor && OPAQUE.iter().any(|dir| rel.starts_with(dir)) { continue; }
+            handlers.push(HandlerRef { owner: owner.clone(), cap_proc: false, cap_type: String::new(), proc: name.clone(), form: "outputs", ctx: Ctx::Eval, role: Role::Output, rel: rel.to_string(), line: p.get().location.line, notice: String::new(), ui_args: None });
+        }
+    }
+}
 
 struct Reads;
 
@@ -64,16 +87,17 @@ impl Generator for Reads {
     }
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
-        let handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
+        let mut handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
         let mut rows: BTreeMap<String, Vec<Row>> = BTreeMap::new();
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
         let mut capability_keys = BTreeSet::new();
         let defines = Decls::get(cx.tree).defines.iter().cloned().collect();
-        if !handlers.is_empty() {
+        {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
+                add_implicit_read_handlers(&sem, &ann, &mut handlers);
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
                 for h in &handlers {
                     let id = format!("{}::{}", h.owner, h.proc);
@@ -252,5 +276,33 @@ mod tests {
         for chunk in text.split("/proc/generated_reads_chunk_").skip(1) {
             assert_eq!(chunk.matches(" = list(0, list(1, 0,").count(), 300);
         }
+    }
+
+    #[test]
+    fn native_outputs_and_direct_inherited_accessor_roots_have_real_read_metadata() {
+        use crate::sem::{Sem, decls::Decls, reads::{Annotations, ReadsEngine}};
+        use crate::tree::{SourceFile, Tree};
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("dq-native-read-roots-{}-{nonce}", std::process::id()));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let text = "#define READS_AS(P,K)\n#define TRACKED(T,V)\n/datum/probe\n\tvar/charge = 0\nTRACKED(/datum/probe, charge)\nREADS_AS(/datum/probe/proc/power_lost, stat:power)\n/datum/probe/proc/power_lost()\n\treturn FALSE\n/datum/probe/draw(look)\n\treturn charge\n/datum/probe/child\n";
+        std::fs::write(root.join("code/content/probe.dm"), text).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", text)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let mut handlers = Vec::new();
+        super::add_implicit_read_handlers(&sem, &ann, &mut handlers);
+        assert!(handlers.iter().any(|h| h.owner == "/datum/probe" && h.proc == "draw"), "native draw without a declaration reference is still a read root");
+        assert!(handlers.iter().any(|h| h.owner == "/datum/probe" && h.proc == "power_lost"), "annotated accessor may be queried directly");
+        let eng = ReadsEngine::new(&sem, &decls, &ann);
+        let drawn = eng.analyze("/datum/probe", "draw");
+        assert!(drawn.reads.iter().any(|r| r.var == "charge" && r.root == "holder"));
+        for owner in ["/datum/probe", "/datum/probe/child"] {
+            let reads = eng.analyze_handler(owner, "power_lost", "/datum/act/eval");
+            assert!(reads.reads.iter().any(|r| r.var == "stat:power" && r.root == "holder"), "root annotation binds the real inherited receiver: {owner}");
+        }
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
