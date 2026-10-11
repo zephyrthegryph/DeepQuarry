@@ -236,12 +236,12 @@ CAPABILITIES(/obj/machinery/nuclearbomb)
 
 MSG_DEF_SELF(nuclearbomb/unreachable, "You can't work the bomb's panel.")
 
-/// The panel answers someone who can move and act and stands next to the bomb (an AI works it from anywhere).
+/// The panel answers someone who can move and act and stands next to the bomb (a remote link, an AI's, works it from anywhere).
 /obj/machinery/nuclearbomb/proc/bomb_reachable(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained()) // ALLOW(reads): the person is read when a button is pressed, never from a cached menu
 		return MSG(nuclearbomb/unreachable)
-	return (get_dist(src, user) <= 1 || istype(user, /mob/living/silicon/ai)) ? null : MSG(nuclearbomb/unreachable)
+	return (get_dist(src, user) <= 1 || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(nuclearbomb/unreachable)
 
 /// Whoever presses a button leaves their prints on the bomb.
 /obj/machinery/nuclearbomb/proc/ui_fingerprint(datum/act/op/A)
