@@ -15,9 +15,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric)
 /mob/living/simple_mob/animal/giant_spider //tank, old 200
 	endurance = 80
 
-CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
-	configure(mob_movement(no_pull_when_living = TRUE))
-
 /mob/living/simple_mob/animal/giant_spider/ion //disrupter, old 90
 	endurance = 45
 

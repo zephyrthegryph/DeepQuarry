@@ -236,12 +236,10 @@ CAPABILITIES(/turf/simulated/floor/outdoors/sidewalk)
 	throw_range = 20
 	no_variants = FALSE
 
-	configure(item_thrown(force = 15.0))
-	configure(item_combat(force = 6.0))
-
 CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 6.0))
+
 /turf/simulated/floor/outdoors/sidewalk/side
 	icon_state = "side-walk"
 	initial_flooring = /datum/decl/flooring/outdoors/sidewalk/side
