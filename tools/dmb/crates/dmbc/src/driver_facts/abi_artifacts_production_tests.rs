@@ -446,7 +446,7 @@ fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
             for read in reads {
                 if let observations::Answer::Inputs(current) = &read.answer {
                     assert!(!matches!(current.boundary, observations::Boundary::Absent));
-                    assert!(Arc::ptr_eq(&current.engine, &engine_owner));
+    assert!(Arc::ptr_eq(&current.engine.upgrade().unwrap(), &engine_owner));
                     inputs += 1;
                 }
             }
