@@ -171,7 +171,10 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         &warm_collection.artifacts[0].code,
         &fresh_collection.artifacts[0].code
     ));
-    assert_ne!(warm_collection.artifacts[0].debug_origins.as_ref(), &old_origins);
+    assert_ne!(
+        warm_collection.artifacts[0].debug_origins.as_ref(),
+        &old_origins
+    );
     let nested = dm_syntax::parse_expression("/datum/example{value=11}")
         .expr
         .unwrap();
@@ -235,13 +238,15 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         true,
     )
     .expect("modified-only nested ref uses field ordinal one");
-    let decoded = crate::lowering_memo_wire::initializer::decode_bucket(&payload).unwrap();
+    let bucket = dm_cache::encode_variants(&[payload.clone()]).unwrap();
+    let decoded = crate::lowering_memo_wire::initializer::decode_bucket(&bucket).unwrap();
     assert!(decoded[0].modified_only);
     assert_eq!(decoded[0].modified.len(), 1);
     for duplicate in [false, true] {
         let bad =
             crate::lowering_memo_wire::initializer::corrupt_modified_roster(&payload, duplicate);
-        assert!(Transport::current_candidates(&bad, &nested_recipe).is_err());
+        let bucket = dm_cache::encode_variants(&[payload.clone(), bad]).unwrap();
+        assert!(Transport::current_candidates(&bucket, &nested_recipe).is_err());
     }
     // A corrupt mandatory answer is rejected structurally, before any host replay.
     let mut missing_runtime = recorder.reads();

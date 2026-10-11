@@ -76,13 +76,20 @@ impl Transport {
         modified_policy: Option<&[u8]>,
     ) -> Option<disk_recipe::Recipe> {
         let policy = self.policy.get()?.as_ref()?;
-        disk_recipe::capture_with_modified_policy(
+        let mut recipe = disk_recipe::capture_with_modified_policy(
             key,
             &policy.bytes,
             policy.engine,
             roots,
             modified_policy,
-        )
+        )?;
+        // Caller semantic policy remains a partition, in addition to the exact
+        // portable factory/engine proof. It never licenses admission alone.
+        let mut bytes = b"initializer-transport-policy-v1".to_vec();
+        bytes.extend_from_slice(&self.memo_policy.to_le_bytes());
+        bytes.extend_from_slice(&recipe.bytes);
+        recipe.bytes = bytes;
+        Some(recipe)
     }
     fn engine_matches(&self) -> bool {
         *self.engine_admitted.get_or_init(|| {
@@ -108,7 +115,7 @@ impl Transport {
     fn key(recipe: &disk_recipe::Recipe) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: if recipe.assembly { 12 } else { 11 },
-            version: 3,
+            version: 4,
             content: xxhash_rust::xxh3::xxh3_128(&recipe.bytes),
         }
     }
