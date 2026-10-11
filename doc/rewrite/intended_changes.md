@@ -4312,6 +4312,10 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **Rotation is a menu op** on the types whose `Initialize()` only granted the rotation verbs (crate, frame, circulator, pipe turbine and motor, TEG, chemical dispenser, water cooler, floor-tube frame, disposal construct, refinery machines): `rotatable()` replaces `make_rotatable()`, so the pins list Rotate Clockwise / Counter Clockwise / Turn Around (refused while fastened) for those types. Types with their own rotation rules (window, windoor assembly, railing, pipe, bed, bedsheet, smole track) keep the verbs.
 - **Bot settings panels** refuse a locked panel's buttons through `needs(settings_unlocked)` (silently, as before: the op is not a candidate); a silicon is let in by its link (`A.authority & AUTH_REMOTE_ACCESS`) rather than by its type, so a bolted cyborg no longer changes a locked bot.
 
+### Requirement protocol pin follows master's rotation migration (2026-10-10)
+
+* **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
+* **/obj/item/floor_light:** the Oct 9 `Click: Equip` evidence was stale, predating `45a7c1225d`; fresh runs never reproduce it. Later robot/AI `Use` rows follow rf-silicon `1b7d651912`, accepted by master snapshot refresh `13f4c81362`. This is separate from Equip and is not a resolver defect.
 ### rf-silicon lane (2026-10-10)
 
 - **`silicon_use` is deleted; every machine and turf has a silicon op.** `/obj/machinery` declares `silicon_hand(tier = OP_PRIORITY_DEFAULT - 100)`
@@ -4339,10 +4343,99 @@ i7 item and structure snapshots recorded an empty resolver row for every type an
 - **after_init() timers** replace `after(src, ...)` in `Initialize()` for foam hardening, an always-on shield projector and the integrated signaler's retune: a map-loaded instance counts the delay from the close of its map-load frame instead of from its own `Initialize()`.
 - **Declared destroy messages** (`DESTROY_EFFECTS`): the crystal, micro tunnel and artifact blade show their destruction message in phase 6, after `on_destroy()` (the blade's message now follows its lightning strike instead of preceding it).
 - The frost grenade's beakers are typed fills (`grenade_fill_frost_a/b`) made by `owns_many(starts =)`, like every other premade chem grenade.
+
+### Requirement E pins follow merged master (2026-10-10)
+
+These refreshes accept only changes from master, not requirement refusal or effect changes. No Equip row is refreshed.
+
+* **Native silicon Use (1b7d651912):** inherited silicon_hand() replaces silicon_use; the listed machinery types gain robot/AI Use menu rows, fallback clicks and the silicon_hand key. All other keys and rows are preserved. Each class below has that same documented cause.
+
+In `pins` (45 class files):
+
+- `/obj/machinery/access_button`
+- `/obj/machinery/alarm`
+- `/obj/machinery/atmospherics/binary/passive_gate`
+- `/obj/machinery/atmospherics/binary/pump`
+- `/obj/machinery/atmospherics/binary/volume_pump`
+- `/obj/machinery/atmospherics/omni/atmos_filter`
+- `/obj/machinery/atmospherics/omni/mixer`
+- `/obj/machinery/atmospherics/omni`
+- `/obj/machinery/atmospherics/pipe`
+- `/obj/machinery/atmospherics/portables_connector`
+- `/obj/machinery/atmospherics/trinary`
+- `/obj/machinery/atmospherics/unary/cryo_cell`
+- `/obj/machinery/atmospherics/unary/heat_exchanger`
+- `/obj/machinery/atmospherics/unary/vent_pump`
+- `/obj/machinery/atmospherics/unary/vent_scrubber`
+- `/obj/machinery/body_scanconsole`
+- `/obj/machinery/botany/editor`
+- `/obj/machinery/botany/extractor`
+- `/obj/machinery/button/remote/airlock/survival_pod`
+- `/obj/machinery/button/remote/blast_door/single_use`
+- `/obj/machinery/button/remote/noemag`
+- `/obj/machinery/computer/card`
+- `/obj/machinery/computer/telecomms/server`
+- `/obj/machinery/computer/telecomms`
+- `/obj/machinery/door/blast`
+- `/obj/machinery/door/unpowered`
+- `/obj/machinery/door/window`
+- `/obj/machinery/door_timer`
+- `/obj/machinery/embedded_controller`
+- `/obj/machinery/light/flamp`
+- `/obj/machinery/light`
+- `/obj/machinery/meter`
+- `/obj/machinery/pipedispenser/disposal`
+- `/obj/machinery/porta_turret`
+- `/obj/machinery/power/apc`
+- `/obj/machinery/power/port_gen/large_altevian`
+- `/obj/machinery/power/smes/batteryrack`
+- `/obj/machinery/power/smes`
+- `/obj/machinery/recharger`
+- `/obj/machinery/sleeper`
+- `/obj/machinery/smartfridge/secure`
+- `/obj/machinery/telecomms/relay`
+- `/obj/machinery/telecomms`
+- `/obj/machinery/vending`
+- `/turf/simulated/mineral/floor`
+
+In `requirements_protocol_1008` (26 class files):
+
+- `/obj/machinery/bomb_tester`
+- `/obj/machinery/cablelayer`
+- `/obj/machinery/camera`
+- `/obj/machinery/computer/aifixer`
+- `/obj/machinery/computer/aiupload`
+- `/obj/machinery/computer/arcade/clawmachine`
+- `/obj/machinery/computer/borgupload`
+- `/obj/machinery/computer/guestpass`
+- `/obj/machinery/computer/pandemic`
+- `/obj/machinery/computer/pod/old/syndicate`
+- `/obj/machinery/computer/prison_shuttle`
+- `/obj/machinery/computer/skills`
+- `/obj/machinery/computer/supplycomp`
+- `/obj/machinery/cryopod`
+- `/obj/machinery/food_replicator`
+- `/obj/machinery/gear_painter`
+- `/obj/machinery/nuclearbomb`
+- `/obj/machinery/organ_printer`
+- `/obj/machinery/particle_smasher`
+- `/obj/machinery/partslathe`
+- `/obj/machinery/recharge_station`
+- `/obj/machinery/robotic_fabricator`
+- `/obj/machinery/suit_cycler`
+- `/obj/machinery/suit_storage_unit`
+- `/obj/machinery/vr_sleeper/alien`
+- `/obj/machinery/vr_sleeper`
+
+* **Holder construction error source location (b744bd7644):** /obj/item/holder, /obj/item/holder/micro and /obj/item/holder/mouse retain exactly the same missing-mob refusal. The NO_LOC parameter support inserts three source lines, so the recorded params.dm location changes from 234 to 237.
+
+**Not refreshed:** /obj/item/rig/nikki has an existing order-dependent constructor error (OWN reporting throws once, then a later capture reaches null.adopt_constraint); /obj/structure/extinguisher_cabinet now offers Unwrench instead of Use after the starting occupant was moved to conditional starts in b744bd7644. These are not accepted behavior changes and require owner review.
+
+The floor-light protocol golden is left exactly as it was, per the user's stale-output correction. Its previous Equip output is not accepted or used as evidence.
 ### Requirement protocol pin follows master's rotation migration (2026-10-10)
 
 * **/obj/structure/frame:** `b1c5e768b7` replaces Initialize-granted rotation verbs with `rotatable()`. The protocol pin records Rotate Clockwise, Rotate Counter Clockwise and Turn Around in the native Menu and the three rotatable keys (46 differing rows). This is the same class already recorded in master's general frame pin, not a requirement conversion or refusal change. Only this protocol snapshot is refreshed.
-* **/obj/item/floor_light:** the AI `nothing` -> `Click: Equip` difference is not accepted. `45a7c1225d` intentionally excludes AI plain clicks while retaining disabled menu Equip; `2e4cbdfd1d` edits keeps_if and does not explain it. Silicon Use ops originate in `505f46f025`. The AI row remains unchanged pending resolver-owner investigation.
+* **/obj/item/floor_light:** the Oct 9 `Click: Equip` evidence was stale, predating `45a7c1225d`; fresh runs never reproduce it. Later robot/AI `Use` rows follow rf-silicon `1b7d651912`, accepted by master snapshot refresh `13f4c81362`. This is separate from Equip and is not a resolver defect.
 
 ### Batch 42 merge of requirements-zero-1010-d (2026-10-10)
 
@@ -4407,3 +4500,12 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **The Southern Cross omni mixer's map edit `active_power_usage = 7500` is gone** (a type trait cannot be var-edited on a map); the mixer draws
   its type's declared power.
 * **View Variables** edits the three by their old names through `vv_edit_var()`; they no longer show as vars.
+
+### Requirement E constructor pin isolation (2026-10-10)
+
+* **/obj/item/rig/nikki:** the producer now captures the lifecycle framework's primary ownership diagnostic during each real construction and cleans up failed-constructor products. The existing cape-type rejection remains recorded, rather than changing to a downstream `null.adopt_constraint()` error after another probe logged it once. Its one diagnostic row loses the incidental runtime source-location trailer because it comes directly from the existing report-capture API. No successful constructor, interaction or ownership declaration is fabricated or blessed. This test-fixture correction does not retire the underlying invalid chest declaration.
+* **Master refreshes:** merging `13f4c81362` accepts the verified silicon Use protocol rows, including floor light. Merging `19329aee16` carries master's controller/cabinet pin refreshes. The cabinet wrench difference depends on its starting occupant, not rf-silicon; E does not change its declaration or insert fake contents.
+
+### Requirement E: isolated embedded airlock controller pin
+
+The full conversion capture after fixture-cleanup repair restores `/obj/machinery/embedded_controller/radio/airlock` to the exact 68 rows recorded before master `a5f0148bfd` (2026-10-10 17:31 CDT). That master commit replaced the normal menu with a constructor-runtime row. The controller registers on the radio before its program is instantiated, and the program broadcasts during construction. Radio delivery excludes the sender; a truthy type-path program on another partial receiver can therefore make this capture fail. The previous constructor catch skipped per-target cleanup. The repaired producer always removes partial fixture products. The precise former recipient is not identified; this record does not claim a production ownership fix. The refreshed file is identical row-for-row to the pre-`a5f0148bfd` golden; no new menu, key, refusal or click behavior is blessed. The docking-port runtime remains unchanged. Production controller code is untouched by this repair.

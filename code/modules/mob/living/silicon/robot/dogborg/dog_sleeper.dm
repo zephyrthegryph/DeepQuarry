@@ -64,10 +64,10 @@ MSG_DEF_SELF(sleeper/buckled, "%T% is buckled and can not be put into your sleep
 CAPABILITIES(/obj/item/dogborg/sleeper)
 	ref_many(nameof(items_preserved))
 	// ingestion: the plain sleeper takes a person (5 seconds), the compactor an item, a mouse or a person (3 seconds)
-	op("sleeper_take_patient", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_plain)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled)), req_bool(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(5 SECONDS), then(PROC_REF(intake_patient_done)))
-	op("sleeper_compact_item", at_target(/obj/item), at_target(/obj/effect/decal/remains), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req_bool(PROC_REF(sleeper_fits), because = MSG(sleeper/too_large))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
-	op("sleeper_compact_mouse", at_target(/mob/living/simple_mob/animal/passive/mouse), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
-	op("sleeper_compact_person", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req_bool(PROC_REF(sleeper_target_free), silent = TRUE), req_bool(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req_bool(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req_bool(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied)), req_bool(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_person)))
+	op("sleeper_take_patient", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_plain)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled)), req(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(5 SECONDS), then(PROC_REF(intake_patient_done)))
+	op("sleeper_compact_item", at_target(/obj/item), at_target(/obj/effect/decal/remains), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req(PROC_REF(sleeper_fits), because = MSG(sleeper/too_large))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
+	op("sleeper_compact_mouse", at_target(/mob/living/simple_mob/animal/passive/mouse), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
+	op("sleeper_compact_person", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied)), req(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_person)))
 	every(2 SECONDS, then(PROC_REF(sleeper_step)), when = nameof(working))
 	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
@@ -131,7 +131,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /// Anchored things and the cyborg's own module items are not ingested (the click is refused without a word).
 /obj/item/dogborg/sleeper/proc/sleeper_target_free(datum/act/op/A)
 	var/atom/movable/target = A.target
-	return read_once(istype(target) && !target.anchored && !sleeper_holds_module_item(target))
+	return (read_once(istype(target) && !target.anchored && !sleeper_holds_module_item(target))) ? null : /datum/msg/req_silent
 
 /// The target is one of the carrying cyborg's own module items.
 /obj/item/dogborg/sleeper/proc/sleeper_holds_module_item(atom/movable/target)
@@ -139,21 +139,21 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	return istype(R) && R.module && (target in R.module.modules)
 
 /obj/item/dogborg/sleeper/proc/sleeper_has_room(datum/act/op/A)
-	return read_once(contents_count(src) < max_item_count)
+	return (read_once(contents_count(src) < max_item_count)) ? null : MSG(sleeper/full)
 
 /obj/item/dogborg/sleeper/proc/sleeper_may_ingest(datum/act/op/A)
-	return read_once(!is_type_in_list(A.target, GLOB.item_vore_blacklist))
+	return (read_once(!is_type_in_list(A.target, GLOB.item_vore_blacklist))) ? null : MSG(sleeper/blacklisted)
 
 /obj/item/dogborg/sleeper/proc/sleeper_fits(datum/act/op/A)
 	var/obj/target_obj = A.target
-	return read_once(target_obj.w_class <= ITEMSIZE_LARGE)
+	return (read_once(target_obj.w_class <= ITEMSIZE_LARGE)) ? null : MSG(sleeper/too_large)
 
 /obj/item/dogborg/sleeper/proc/sleeper_vacant(datum/act/op/A)
-	return read_once(!patient)
+	return (read_once(!patient)) ? null : MSG(sleeper/occupied)
 
 /obj/item/dogborg/sleeper/proc/sleeper_target_loose(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
-	return read_once(!H.buckled_to())
+	return (read_once(!H.buckled_to())) ? null : MSG(sleeper/buckled)
 
 /obj/item/dogborg/sleeper/proc/sleeper_ingest_text(datum/act/op/A)
 	return msg_text(span_notice("You start ingesting %T% into your [name]..."), span_warning("%U% is ingesting %T% into their [name]."))

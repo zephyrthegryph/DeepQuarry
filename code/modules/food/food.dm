@@ -17,15 +17,15 @@
 // out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food)
 	owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL)
-	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req_bool(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"),
+	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"),
 		then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested)))
-	op("rename", menu(), label("Rename food"), needs(req_bool(PROC_REF(can_cook), because = MSG(food/cannot_cook))),
+	op("rename", menu(), label("Rename food"), needs(req(PROC_REF(can_cook), because = MSG(food/cannot_cook))),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(renamed)))
 	extend("rename", needs(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot), because = MSG(food/cannot_cook))))
-	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(req_bool(PROC_REF(small_self_drag))), label("Climb in"), then(PROC_REF(climbed_in)))
-	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(takes_micro))), label("Put in"),
-		needs(req_bool(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), then(PROC_REF(micro_stuffed)))
+	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(req(PROC_REF(small_self_drag))), label("Climb in"), then(PROC_REF(climbed_in)))
+	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_micro))), label("Put in"),
+		needs(req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), then(PROC_REF(micro_stuffed)))
 
 MSG_DEF_SELF(food/cannot_cook, "You can't cook!")
 MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without opening it first.")
@@ -33,7 +33,7 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 /// Anyone alive who has hands for it, or a robot, can give a food a name.
 /obj/item/reagent_containers/food/proc/can_cook(datum/act/op/A)
 	var/mob/user = A.actor
-	return user.stat != DEAD
+	return (user.stat != DEAD) ? null : MSG(food/cannot_cook)
 
 /obj/item/reagent_containers/food/proc/rename_question(datum/act/op/A)
 	return "What would you like to name \the [src]? Leave blank to reset."
@@ -52,11 +52,11 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 
 /// The held holder carries a tiny person or a mouse, and this food takes them.
 /obj/item/reagent_containers/food/proc/takes_micro(datum/act/op/A)
-	return food_can_insert_micro && (istype(A.held, /obj/item/holder/micro) || istype(A.held, /obj/item/holder/mouse))
+	return (food_can_insert_micro && (istype(A.held, /obj/item/holder/micro) || istype(A.held, /obj/item/holder/mouse))) ? null : /datum/msg/req_failed
 
 /// Whether a micro may be put in now: a food that is shut (a wrapper, a lid) does not take them.
 /obj/item/reagent_containers/food/proc/stuffing_free(datum/act/op/A)
-	return TRUE
+	return null
 
 /// What is said when whoever is stuffed in is put in: the one stuffing, and the one stuffed.
 /obj/item/reagent_containers/food/proc/micro_stuffed_messages(mob/user, mob/living/micro)
@@ -95,7 +95,7 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 /// A tiny person who drags themselves onto the food.
 /obj/item/reagent_containers/food/proc/small_self_drag(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && A.held == user && food_can_insert_micro && user.get_effective_size(TRUE) <= 0.50
+	return (istype(user) && A.held == user && food_can_insert_micro && user.get_effective_size(TRUE) <= 0.50) ? null : /datum/msg/req_failed
 
 /// They climb in.
 /obj/item/reagent_containers/food/proc/climbed_in(datum/act/op/A)

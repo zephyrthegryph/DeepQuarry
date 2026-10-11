@@ -11,7 +11,7 @@
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich)
 	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden)))
 	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"),
-		needs(req_bool(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
+		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
 	owns_many(nameof(ingredients))
 
 MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to collapse.")
@@ -25,7 +25,7 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 	return limit
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/not_collapsing(datum/act/op/A)
-	return length(contents) <= sandwich_limit() // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
+	return (length(contents) <= sandwich_limit()) ? null : MSG(snack/collapses) // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/shard_hidden(datum/act/op/A)
 	var/mob/user = A.actor

@@ -271,13 +271,11 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		/obj/item/seeds/wurmwoad = 3
 		)
 
-/obj/machinery/seed_storage/proc/not_locked_down(mob/actor, atom/target, obj/item/held)
-	return !lockdown // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/// Requirement (was REQ_* not_locked_down): the legacy check answers TRUE to pass.
+
+/// The seed bay refuses while it is locked down.
 /obj/machinery/seed_storage/proc/not_locked_down_holds(datum/act/op/A)
-	var/answer = not_locked_down(A.actor, src, A.held)
-	return (!istext(answer) && !!answer) ? null : req_refusal_value(istext(answer) ? answer : "it's locked down")
+	return lockdown ? "it's locked down" : null // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
 /obj/machinery/seed_storage/proc/interaction_insert_seeds(datum/act/op/A)
 	var/mob/user = A.actor

@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe)
 		fills = TRUE)
 	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(syringe_pick_up)))
 	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"),
-		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req_bool(PROC_REF(may_stab), because = MSG(syringe/too_big))),
+		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
 		then(PROC_REF(stabbed)))
 	owns_many(nameof(viruses))
 	every(2 SECONDS, then(PROC_REF(syringe_step)), when = nameof(used))
@@ -75,7 +75,7 @@ MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
 
 /// The syringe may be used to stab: the giant ones may not.
 /obj/item/reagent_containers/syringe/proc/may_stab(datum/act/op/A)
-	return TRUE
+	return null
 
 /// A hostile click on a person: a stab (a clumsy hand stabs its own).
 /obj/item/reagent_containers/syringe/proc/stabbed(datum/act/op/A)
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe)
 	return (FALSE) ? null : MSG(syringe/no_blood)
 
 /obj/item/reagent_containers/syringe/ld50_syringe/may_stab(datum/act/op/A)
-	return FALSE
+	return MSG(syringe/too_big)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Syringes. END

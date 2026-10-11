@@ -67,7 +67,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 
 // Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.
 /obj/item/clothing/suit/space/void/responseteam/has_removable_component(datum/act/op/A)
-	return !!(boots || tank || cooler)
+	return (!!(boots || tank || cooler)) ? null : MSG(void/nothing_installed)
 
 /obj/item/clothing/suit/space/void/responseteam/removable_components(datum/act/A)
 	var/list/choices = list()

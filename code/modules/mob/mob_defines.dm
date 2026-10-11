@@ -365,7 +365,7 @@ CAPABILITIES(/mob)
 	op("vv_buildmode", topic_in(VV_TOPIC, VV_HK_BUILDMODE), needs(req_rights(R_BUILDMODE)), then(PROC_REF(vv_topic_buildmode)))
 	op("vv_dropall", topic_in(VV_TOPIC, VV_HK_DROP_ALL), then(PROC_REF(vv_topic_drop_all)))
 	op("vv_direct_control", topic_in(VV_TOPIC, VV_HK_DIRECT_CONTROL), then(PROC_REF(vv_topic_direct_control)))
-	op("vv_give_ai", topic_in(VV_TOPIC, VV_HK_GIVE_AI), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_rights(R_HOLDER), req_is(MOB_STATE_PLAYED, FALSE, because = MSG(vv/player_mob)), req_bool(PROC_REF(vv_not_remote_driven), because = MSG(vv/player_mob))), asks(/datum/prompt/text/vv_ai_faction, step = "faction"), asks(/datum/prompt/choice/vv_ai_stance, step = "stance"), asks(/datum/prompt/choice/vv_ai_wake, step = "wake"), then(TYPE_PROC_REF(/mob/living, vv_topic_give_ai)))
+	op("vv_give_ai", topic_in(VV_TOPIC, VV_HK_GIVE_AI), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_rights(R_HOLDER), req_is(MOB_STATE_PLAYED, FALSE, because = MSG(vv/player_mob)), req(PROC_REF(vv_not_remote_driven), because = MSG(vv/player_mob))), asks(/datum/prompt/text/vv_ai_faction, step = "faction"), asks(/datum/prompt/choice/vv_ai_stance, step = "stance"), asks(/datum/prompt/choice/vv_ai_wake, step = "wake"), then(TYPE_PROC_REF(/mob/living, vv_topic_give_ai)))
 
 
 /mob

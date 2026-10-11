@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_one(nameof(container), /obj/item/reagent_containers)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
 	interface("ChemDispenser", observe = TRUE)
-	extend("ui_observe", needs(req_bool(PROC_REF(not_broken), silent = TRUE)))
+	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
 	op("remove", ui_act("remove", arg("amount", num()), arg("reagent")), then(PROC_REF(ui_act_remove)))
@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 		then(PROC_REF(ui_act_save_recording)))
 	op("dispense_recipe", ui_act("dispense_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_dispense_recipe)))
 	op("remove_recipe", ui_act("remove_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_remove_recipe)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(not_broken), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(not_broken), silent = TRUE)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
 	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
 	// A chemical canister refills the cartridge under its label (it was the canister's afterattack, which the dispenser's ops now answer first).
@@ -189,7 +189,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// Requirement: a broken dispenser ignores its buttons (silently, as the old ui_act_allowed() did).
 /obj/machinery/chemical_dispenser/proc/not_broken(datum/act/op/A)
-	return !broken_now()
+	return (!broken_now()) ? null : /datum/msg/req_silent
 
 /// The save question's second step: a recipe of that name exists already.
 /obj/machinery/chemical_dispenser/proc/recipe_name_taken(datum/act/op/A)

@@ -659,17 +659,11 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	op("shoes_shake_out_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes shake out self"), then(PROC_REF(shoes_shake_out_self)))
 	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
 	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
-	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req_bool(PROC_REF(pred_holding_knife_holds), because = PROC_REF(pred_holding_knife_refusal))), then(PROC_REF(shoes_draw_knife_verb)))
+	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds))), then(PROC_REF(shoes_draw_knife_verb)))
 
-/// Requirement (was REQ_ON pred_holding_knife): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
-	var/answer = pred_holding_knife(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_holding_knife refuses: the legacy check text, else the clause reason.
-/obj/item/clothing/shoes/proc/pred_holding_knife_refusal(datum/act/op/A)
-	var/answer = pred_holding_knife(A.actor, src, A.held)
-	return istext(answer) ? answer : "there is no knife in it"
+	return holding ? null : "there is no knife in it"
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -688,10 +682,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	var/mob/user = A.actor
 	if(isliving(user))
 		draw_knife(user)
-
-/// Requirement: a knife is tucked in these shoes.
-/obj/item/clothing/shoes/proc/pred_holding_knife(mob/actor, atom/target, obj/item/held)
-	return !!holding
 
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	if(user.stat || user.restrained() || user.incapacitated())
@@ -1147,19 +1137,15 @@ CAPABILITIES(/obj/item/clothing/under)
 	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
 	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
 	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
-	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req_bool(PROC_REF(pred_has_holster_holds), because = PROC_REF(pred_has_holster_refusal))), then(PROC_REF(under_holster_verb)))
+	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds))), then(PROC_REF(under_holster_verb)))
 
 
 
-/// Requirement (was REQ_ON pred_has_holster): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/clothing/under/proc/pred_has_holster_holds(datum/act/op/A)
-	var/answer = pred_has_holster(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_has_holster refuses: the legacy check text, else the clause reason.
-/obj/item/clothing/under/proc/pred_has_holster_refusal(datum/act/op/A)
-	var/answer = pred_has_holster(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no holster"
+	for(var/obj/item/clothing/accessory/holster/H in accessories)
+		return null
+	return "it has no holster"
 
 
 /// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
@@ -1169,12 +1155,6 @@ CAPABILITIES(/obj/item/clothing/under)
 /// Requirement: the sleeves can be rolled (replaces removing the verb at Initialize).
 /obj/item/clothing/under/proc/pred_can_roll_sleeves(mob/actor, atom/target, obj/item/held)
 	return rolled_sleeves != -1
-
-/// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
-/obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
-	for(var/obj/item/clothing/accessory/holster/H in accessories)
-		return TRUE
-	return FALSE
 
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
 /obj/item/clothing/under/proc/under_holster_verb(datum/act/op/A)

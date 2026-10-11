@@ -77,7 +77,7 @@ TRACKED(/obj/item/lightpainter, resetmode)
 CAPABILITIES(/obj/item/lightreplacer)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),
-		needs(req_bool(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req_bool(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in)))
+		needs(req(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in)))
 	op("add_light", item(/obj/item/light), wait(0), then(PROC_REF(light_in)))
 	op("fill_from_box", item(/obj/item/storage), wait(0), then(PROC_REF(fill_from_box)))
 	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at)))
@@ -93,10 +93,10 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 
 /// Reinforced glass is no glass for the replacer.
 /obj/item/lightreplacer/proc/plain_glass(datum/act/op/A)
-	return !istype(A.held, /obj/item/stack/material/glass/reinforced)
+	return (!istype(A.held, /obj/item/stack/material/glass/reinforced)) ? null : MSG(lightreplacer/bad_glass)
 
 /obj/item/lightreplacer/proc/has_room(datum/act/op/A)
-	return uses < max_uses
+	return (uses < max_uses) ? null : MSG(lightreplacer/full)
 
 /// A sheet of glass makes sixteen lights.
 /obj/item/lightreplacer/proc/glass_in(datum/act/op/A)
