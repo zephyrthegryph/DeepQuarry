@@ -1,6 +1,28 @@
 use super::*;
 use crate::{build, MemberKind, OccurrenceTable};
 #[test]
+fn empty_formal_slots_and_missing_defaults_are_source_errors() {
+    for prefix in ["", "// shifted\n\n"] {
+        for arguments in [",value", "value,,second"] {
+            let source = format!("{prefix}/proc/probe({arguments})\n    return 1\n");
+            let errors = from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).unwrap_err();
+            assert_eq!(errors.len(), 1);
+            assert_eq!(errors[0].kind, dm_syntax::DiagnosticKind::Expression);
+            assert_eq!(errors[0].message, "bad argument definition");
+            assert_eq!(errors[0].span.start as usize, source.find("return").unwrap());
+        }
+        let source = format!("{prefix}/proc/probe(value = )\n    return 1\n");
+        let errors = from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).unwrap_err();
+        assert_eq!(errors[0].kind, dm_syntax::DiagnosticKind::Expression);
+        assert_eq!(errors[0].message, "missing expression");
+        assert_eq!(&source[errors[0].span.start as usize..errors[0].span.end as usize], "=");
+    }
+    for arguments in ["", "value,"] {
+        let source = format!("/proc/probe({arguments})\n    return 1\n");
+        assert!(from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).is_ok());
+    }
+}
+#[test]
 fn numeric_parameter_is_a_typed_source_error_at_its_current_token() {
     for prefix in ["", "// shifted source\n\n"] {
         let source = format!("{prefix}/proc/work(1)\n    return 1\n");

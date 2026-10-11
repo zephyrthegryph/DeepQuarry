@@ -362,7 +362,15 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         context.symbols,
                     )
                     .map_err(|error| {
-                        source_argument_span = error.source_span.map(|argument| {
+                        source_argument_span = if error.after_header {
+                            // DreamMaker reports an empty formal at the next
+                            // declaration/body token after reading the header.
+                            let cursor = item.children.first().map_or(
+                                item.header_span.end,
+                                |child| child.header_span.start,
+                            );
+                            Some(Span { file, start: cursor as u32, end: cursor as u32 })
+                        } else { error.source_span.map(|argument| {
                             let offset =
                                 arguments.as_ptr() as usize - item.header.as_ptr() as usize;
                             Span {
@@ -370,7 +378,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                                 start: (item.header_span.start + offset + argument.start) as u32,
                                 end: (item.header_span.start + offset + argument.end) as u32,
                             }
-                        });
+                        }) };
                         error.message
                     })?;
                     header_declarations = parsed_signature.declarations;

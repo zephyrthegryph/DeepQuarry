@@ -173,3 +173,17 @@ pub(crate) fn assignment_error(mut error: LowerError, occurrence: Span) -> Lower
     }
     error
 }
+
+/// Resolver failures raised during an assignment obey that same issued
+/// coordinate contract, including when the fallback emitter returned success.
+pub(crate) fn assignment_result(
+    lowered: Result<(), LowerError>,
+    resolver_failure: Option<LowerError>,
+    occurrence: Span,
+) -> Result<(), LowerError> {
+    match resolver_failure {
+        Some(error) => Err(error),
+        None => lowered,
+    }
+    .map_err(|error| assignment_error(error, occurrence))
+}

@@ -71,12 +71,14 @@ fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
 pub(crate) struct SignatureError {
     pub(crate) message: String,
     pub(crate) source_span: Option<Span>,
+    pub(crate) after_header: bool,
 }
 impl From<String> for SignatureError {
     fn from(message: String) -> Self {
         Self {
             message,
             source_span: None,
+            after_header: false,
         }
     }
 }
@@ -147,6 +149,7 @@ fn parameter(
                 return Err(SignatureError {
                     message: "bad argument definition".into(),
                     source_span: Some(Span::new(start + offset, start + offset + part.len())),
+                    after_header: false,
                 });
             }
         }
@@ -204,11 +207,20 @@ fn parameter(
     }
     let default = equal
         .map(|index| {
+            let limit = end(&positions, index, text.len());
+            if text[index + 1..limit].trim().is_empty() {
+                return Err(SignatureError {
+                    message: "missing expression".into(),
+                    source_span: Some(Span::new(start + index, start + limit)),
+                    after_header: false,
+                });
+            }
             expression_view(
-                view.slice(index + 1, end(&positions, index, text.len()))
+                view.slice(index + 1, limit)
                     .trim(),
                 symbols,
             )
+            .map_err(SignatureError::from)
         })
         .transpose()?;
     let input_annotation = annotation
@@ -280,6 +292,15 @@ pub(crate) fn parse_signature_declarations(
         let untrimmed = &arguments[start..stop];
         let leading = untrimmed.len() - untrimmed.trim_start().len();
         let text = untrimmed.trim();
+        // BYOND accepts an empty signature and a final comma, but an empty
+        // slot before a comma is an invalid formal, not an omitted parameter.
+        if text.is_empty() && stop < arguments.len() {
+            return Err(SignatureError {
+                message: "bad argument definition".into(),
+                source_span: Some(Span::new(start, stop)),
+                after_header: true,
+            });
+        }
         if text == "..." {
             variadic = true
         } else if !text.is_empty() {

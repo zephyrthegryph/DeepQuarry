@@ -592,14 +592,18 @@ fn compile_with_lookup_mode(
                     value,
                     occurrence,
                     double_receiver,
-                } => compiler.typed_assignment_continuation(
-                    target,
-                    value,
-                    occurrence,
-                    double_receiver,
-                    continuation,
-                )
-                .map_err(|error| crate::typed_scopes::assignment_error(error, occurrence)),
+                } => {
+                    let lowered = compiler.typed_assignment_continuation(
+                        target,
+                        value,
+                        occurrence,
+                        double_receiver,
+                        continuation,
+                    );
+                    crate::typed_scopes::assignment_result(
+                        lowered, compiler.resolver_failure.take(), occurrence,
+                    )
+                }
             };
             if result.is_err() {
                 break;

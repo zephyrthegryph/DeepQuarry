@@ -33,6 +33,30 @@ impl Resolver for Host {
     }
 }
 #[test]
+fn resolver_failure_uses_issued_assignment_coordinate() {
+    let mut symbols = SymbolTable::default();
+    for text in ["/", "first", "unknown_call"] {
+        symbols.intern(text).unwrap();
+    }
+    let target = InitializerTarget::Shared {
+        slot: SymbolId::of("first"), owner: SymbolId::of("/"), name: SymbolId::of("first"),
+    };
+    let value = dm_syntax::parse_expression("unknown_call()").expr.unwrap();
+    let assignments = [AssignmentView {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: &target, lexical_owner: SymbolId::of("/"), value: &value,
+        occurrence: dm_syntax::Span::new(7, 7),
+    }];
+    let error = lower_assignment_views(&assignments, InitializerContext {
+        symbols: &symbols, resource_search_context: None, debug: None,
+    }, &Host).unwrap_err();
+    let InitializerError::Lowering(errors) = error else { panic!("expected a typed lowering error") };
+    assert_eq!(errors.len(), 1);
+    assert_eq!(errors[0].span, Some(crate::LowerSpan { start: 7, end: 7 }));
+    assert_eq!(errors[0].kind, crate::LowerErrorKind::UnsupportedModel);
+}
+
+#[test]
 fn modified_instance_fragments_are_fresh_only_and_keep_current_first_origin() {
     let mut symbols = SymbolTable::default();
     for text in ["/", "first", "second", "/obj/item", "amount"] {
