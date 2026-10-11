@@ -89,3 +89,6 @@ fn pinned_native_proven_storage_reads_survive_opaque_declared_type_knowledge() {
         );
     }
 }
+
+#[path = "declared_read_validity_tests/typed_list.rs"]
+mod typed_list;
