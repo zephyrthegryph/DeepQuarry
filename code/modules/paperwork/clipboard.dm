@@ -4,13 +4,11 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "clipboard"
 	item_state = "clipboard"
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
 	var/tmp/obj/item/pen/haspen	//The stored pen.
 	var/tmp/obj/item/toppaper	//The topmost piece of paper.
-	slot_flags = SLOT_BELT
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/clipboard/proc/mousedrop_input(datum/act/input/A)
@@ -85,6 +83,8 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/clipboard)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 0))
 	interface("Clipboard", title = "Clipboard")
 	without("ui_open")
 	op("remove_pen", ui_act("remove_pen"), then(PROC_REF(ui_act_remove_pen)))

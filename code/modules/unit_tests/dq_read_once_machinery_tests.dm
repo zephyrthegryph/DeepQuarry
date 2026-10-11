@@ -95,7 +95,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/camera/C = mach(/obj/machinery/camera, tile(3, 2))
 	var/obj/item/weapon = allocate(/obj/item, H.loc)
-	weapon.force = 20
+	weapon.set_force(20)
 	weapon.injury_kinds = null
 	weapon.injury_kind = INJURY_PAIN
 	TEST_ASSERT(H.put_in_active_hand(weapon), "The real damaging item is held")

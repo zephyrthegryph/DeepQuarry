@@ -94,7 +94,7 @@
 	/* We don't have abstract items yet
 	if(isitem(arrived))
 		var/obj/item/I = arrived
-		if(I.item_flags & ABSTRACT)
+		if(worn_of(I).flags & ABSTRACT)
 			return
 	//Annoyingly, our flight code doesn't set the movement_type, nor do we have a define for it. So I'm not adding it yet.
 	//if(arrived.movement_type & (FLYING|FLOATING) || !arrived.get_gravity())

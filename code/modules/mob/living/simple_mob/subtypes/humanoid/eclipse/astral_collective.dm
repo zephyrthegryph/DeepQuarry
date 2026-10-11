@@ -407,7 +407,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(30))
 			visible_message(span_boldwarning(span_orange("[O] is pulled to the ground!.")))
 			user.drop_item()

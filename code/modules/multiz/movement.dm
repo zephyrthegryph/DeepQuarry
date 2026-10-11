@@ -826,10 +826,10 @@
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
-		if(H.can_climb || H.species.can_climb)
+		if(movement_of(H).can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
@@ -840,7 +840,7 @@
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
-	else if(!L.can_climb)
+	else if(!movement_of(L).can_climb)
 		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return
@@ -975,10 +975,10 @@
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
-		if(H.can_climb || H.species.can_climb)
+		if(movement_of(H).can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
@@ -989,7 +989,7 @@
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
-	else if(!src.can_climb)
+	else if(!movement_of(src).can_climb)
 		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return

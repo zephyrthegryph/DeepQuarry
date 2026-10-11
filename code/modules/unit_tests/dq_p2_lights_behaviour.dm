@@ -777,7 +777,7 @@
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	I.flags |= NOCONDUCT
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BROKEN, "smashed")
@@ -791,7 +791,7 @@
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 0
+	I.set_force(0)
 	I.flags |= NOCONDUCT
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "not smashed")
@@ -806,7 +806,7 @@
 	p2l_make_empty(L)
 	settle()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "still empty")
 	TEST_ASSERT(I.loc != L, "the item stays out")
@@ -1094,6 +1094,17 @@
 	set_area_switch(0)
 	set_area_switch(1)
 	TEST_ASSERT(QDELETED(L), "the fixture exploded")
+	// The blast resolves on the explosion system's own step, which the injected clock does not reach: drive it to the end here and take
+	// what it left (floor and wall debris) as this test's. Before, it resolved between later tests and dropped steel on whatever test
+	// held the block then (dq_p2_lights/wrench_takes_a_bare_frame_apart_into_sheets reported it as its own leak).
+	for(var/i in 1 to 50)
+		if(!SSexplosions.has_work())
+			break
+		SSexplosions.explosion_step(0)
+	var/list/mine = block_turfs(test_block)
+	for(var/turf/T in range(3, tile(4, 4)))
+		if(T in mine)
+			own_turf_contents(T)
 
 /// A tube that has been switched very many times burns out sooner or later.
 /datum/unit_test/dq_p2_lights/an_overused_tube_burns_out
@@ -1195,7 +1206,7 @@
 	var/obj/machinery/light/small/torch/T = light(/obj/machinery/light/small/torch)
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	click(H, T, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(T), LIGHT_OK, "not smashed")
 	p2l_make_empty(T)
@@ -1232,17 +1243,17 @@
 	var/obj/item/light/tube/B = bulb()
 	B.throw_impact(tile(1, 1))
 	TEST_ASSERT_EQUAL(B.status, LIGHT_BROKEN, "broken")
-	TEST_ASSERT(B.sharp, "sharp")
-	TEST_ASSERT_EQUAL(B.force, 5, "it cuts")
+	TEST_ASSERT(combat_of(B).sharp, "sharp")
+	TEST_ASSERT_EQUAL(combat_of(B).force, 5, "it cuts")
 
 /// A broken light does not shatter twice.
 /datum/unit_test/dq_p2_lights/broken_light_stays_broken
 
 /datum/unit_test/dq_p2_lights/broken_light_stays_broken/run_gate()
 	var/obj/item/light/tube/B = bulb(/obj/item/light/tube, LIGHT_BROKEN)
-	B.force = 2
+	B.set_force(2)
 	B.throw_impact(tile(1, 1))
-	TEST_ASSERT_EQUAL(B.force, 2, "nothing changed")
+	TEST_ASSERT_EQUAL(combat_of(B).force, 2, "nothing changed")
 
 /// A light used to hit something in a harm stance shatters; in any other stance it does not; against a fixture it does not.
 /datum/unit_test/dq_p2_lights/light_hit_in_harm_stance_shatters

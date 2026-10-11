@@ -4,8 +4,10 @@
 /obj/item/clothing/mask/masquerade
 	name = "masquerade mask"
 	desc = "You'll never guess who's under that mask, it's the perfect disguise!"
-	flags_inv = HIDEFACE
 	icon_state = "masquerade"
+
+CAPABILITIES(/obj/item/clothing/mask/masquerade)
+	configure(item_worn(hides = HIDEFACE))
 
 
 /obj/item/clothing/mask/masquerade/feathered

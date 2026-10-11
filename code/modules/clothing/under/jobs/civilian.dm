@@ -40,8 +40,10 @@
 	name = "cargo technician's jumpsuit"
 	desc = "Shooooorts! They're comfy and easy to wear!"
 	icon_state = "cargo"
-	body_parts_covered = CHEST|ARMS
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/rank/cargotech)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/rank/cargotech/jeans
 	name = "cargo technician's jumpjeans"
@@ -219,5 +221,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	name = "mailman's suit"
 	desc = "A good looking suit for the delivery person!"
 	icon_state = "mailman2"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|ARMS
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/rank/mailman2)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|ARMS))

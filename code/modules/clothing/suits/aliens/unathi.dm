@@ -3,11 +3,14 @@
 	name = "roughspun robes"
 	desc = "A traditional Unathi garment."
 	icon_state = "robe-unathi"
-	body_parts_covered = CHEST|LEGS
-	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/unathi/robe)
+	configure(item_worn(covers = CHEST|LEGS, hides = HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/unathi/mantle
 	name = "hide mantle"
 	desc = "A rather grisly selection of cured hides and skin, sewn together to form a ragged mantle."
 	icon_state = "mantle-unathi"
-	body_parts_covered = UPPER_TORSO
+
+CAPABILITIES(/obj/item/clothing/suit/unathi/mantle)
+	configure(item_worn(covers = UPPER_TORSO))

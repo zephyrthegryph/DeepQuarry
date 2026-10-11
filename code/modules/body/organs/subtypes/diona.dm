@@ -248,7 +248,9 @@ CAPABILITIES(/obj/item/organ/internal/brain/cephalon)
 	joint = "structural ligament"
 	dislocated = -1
 	vital = FALSE
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/organ/external/head/no_eyes/diona)
+	configure(item_worn(slots = SLOT_BELT))
 
 // This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/diona/life_step_idle()

@@ -7,9 +7,6 @@
 /obj/item/material/kitchen/utensil
 	w_class = ITEMSIZE_TINY
 	thrown_force_divisor = 1
-	attack_verb = list("attacked", "stabbed", "poked")
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
@@ -21,6 +18,7 @@
 
 
 CAPABILITIES(/obj/item/material/kitchen/utensil)
+	configure(item_combat(attack_verbs = list("attacked", "stabbed", "poked"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 	reagents(nameof(scoop_volume))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
@@ -142,9 +140,10 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	name = "fork"
 	desc = "It's a fork. Sure is pointy."
 	icon_state = "fork"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/fork)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/fork/plastic
 	default_material = MAT_PLASTIC
@@ -153,9 +152,10 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	name = "foon"
 	desc = "It's a foon. The forgotten cousin of the spork."
 	icon_state = "foon"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/foon/plastic
 	default_material = MAT_PLASTIC
@@ -164,9 +164,10 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	name = "spork"
 	desc = "It's a spork. The (un)holy merger of a spoon and fork."
 	icon_state = "spork"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/spork)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/spork/plastic
 	default_material = MAT_PLASTIC
@@ -175,11 +176,11 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	name = "spoon"
 	desc = "It's a spoon. You can see your own upside-down face in it."
 	icon_state = "spoon"
-	attack_verb = list("attacked", "poked")
-	edge = FALSE
-	sharp = FALSE
 	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1 //2 when wielded with weight 20 (steel)
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/spoon)
+	configure(item_combat(attack_verbs = list("attacked", "poked"), edge = FALSE, sharp = FALSE))
 
 /obj/item/material/kitchen/utensil/spoon/plastic
 	default_material = MAT_PLASTIC
@@ -207,13 +208,13 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	name = "rolling pin"
 	desc = "Used to knock out the " + JOB_BARTENDER+ "."
 	icon_state = "rolling_pin"
-	attack_verb = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")
 	default_material = MAT_WOOD
 	force_divisor = 0.7 // 10 when wielded with weight 15 (wood)
 	dulled_divisor = 0.75	// Still a club
 	thrown_force_divisor = 1 // as above
 
 CAPABILITIES(/obj/item/material/kitchen/rollingpin)
+	configure(item_combat(attack_verbs = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

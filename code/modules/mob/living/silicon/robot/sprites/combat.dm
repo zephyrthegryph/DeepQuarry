@@ -107,7 +107,7 @@
 		BCS.desc = "Shockingly chompy!"
 		BCS.icon_state = "ertjaws"
 		BCS.set_hitsound('sound/weapons/bite.ogg')
-		BCS.attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+		BCS.set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 		BCS.dogborg = TRUE
 
 /datum/robot_sprite/dogborg/tall/combat/derg
@@ -226,7 +226,7 @@
 		BCS.desc = "Shockingly chompy!"
 		BCS.icon_state = "ertjaws"
 		BCS.set_hitsound('sound/weapons/bite.ogg')
-		BCS.attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+		BCS.set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 		BCS.dogborg = TRUE
 
 /datum/robot_sprite/dogborg/wide/combat/blade

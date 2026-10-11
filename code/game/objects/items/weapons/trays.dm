@@ -6,8 +6,6 @@
 	icon = 'icons/obj/food.dmi'
 	icon_state = "tray"
 	desc = "A metal tray to lay food on."
-	throwforce = 12.0
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -49,7 +47,7 @@
 		face_hit = TRUE //Our head is being hit! Let's presume we got hit in the face until we are told otherwise.
 		for(var/slot in list(SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES))
 			var/obj/item/protection = M.get_equipped_item(slot)
-			if(istype(protection) && (protection.body_parts_covered & FACE))
+			if(istype(protection) && (worn_of(protection).covers & FACE))
 				face_hit = FALSE
 				break
 
@@ -86,6 +84,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/tray)
+	configure(item_thrown(force = 10.0))
 	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

@@ -14,7 +14,6 @@
 	movement_cooldown = -1
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
-	mob_bump_flag = SLIME
 
 	min_oxy = 0
 	max_oxy = 0
@@ -60,6 +59,7 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	configure(mob_movement(bump = SLIME))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)

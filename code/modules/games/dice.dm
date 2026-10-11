@@ -9,7 +9,6 @@
 	var/loaded = null //Set to an integer when the die is loaded
 	var/cheater = FALSE //TRUE if the die is able to be weighted by hand
 	var/tamper_proof = FALSE //Set to TRUE if the die needs to be unable to be weighted, such as for events
-	attack_verb = list("diced")
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/dice/proc/roll_icon_state(datum/roller/R)
@@ -119,6 +118,7 @@
 	result = 10
 
 CAPABILITIES(/obj/item/dice)
+	configure(item_combat(attack_verbs = list("diced")))
 	op("roll", in_hand(), label("Roll die"), then(PROC_REF(dice_roll_requested)))
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))

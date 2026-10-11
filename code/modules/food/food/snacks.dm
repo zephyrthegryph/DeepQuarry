@@ -7,7 +7,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	volume = 80
 
 	var/bitesize = 1
@@ -148,6 +147,7 @@
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
 	edible( 
 		bite = nameof(bitesize),
@@ -5964,7 +5964,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "admint_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
 	use_sound = SFX_ITEMS_DROP_PAPER
@@ -5974,6 +5973,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 

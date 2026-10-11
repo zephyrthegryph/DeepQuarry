@@ -4,8 +4,6 @@
 	gender = PLURAL
 	icon = 'icons/obj/items.dmi'
 	icon_state = "handcuff"
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
@@ -63,6 +61,8 @@
 
 /// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
 CAPABILITIES(/obj/item/handcuffs)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("cuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(attempt_to_cuff_timed_done)))
 
@@ -315,7 +315,9 @@ CAPABILITIES(/obj/item/handcuffs/legcuffs)
 	use_time = 0
 	breakouttime = 30
 	cuff_sound = SFX_WEAPONS_TOWELWIPE //Is there anything this sound can't do?
-	item_flags = DROPDEL
+
+CAPABILITIES(/obj/item/handcuffs/legcuffs/bola)
+	configure(item_worn(flags = DROPDEL))
 
 /obj/item/handcuffs/legcuffs/bola/can_place(mob/target, mob/user)
 	if(user) //A ranged legcuff, until proper implementation as items it remains a projectile-only thing.

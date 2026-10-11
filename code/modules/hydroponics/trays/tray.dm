@@ -644,11 +644,11 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 		consume(O, user)
 		check_health()
 
-	else if(O.force && seed)
+	else if(combat_of(O).force && seed)
 		user.setClickCooldown(user.get_attack_speed(O))
 		act_message(user, null, others = span_danger("\The [seed.display_name] has been attacked by %U% with %I%!"), item = O)
 		if(!dead)
-			set_health(health - (O.force))
+			set_health(health - (combat_of(O).force))
 			check_health()
 
 	return OP_OK

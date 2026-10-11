@@ -6,7 +6,7 @@
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife, T)
 	TEST_ASSERT(!QDELETED(flower) && flower.seed(), "actual sunflower registry initializes a live grown flower")
 	TEST_ASSERT_EQUAL(flower.seed().kitchen_tag, PLANT_SUNFLOWERS, "actual seed is the sunflower ingredient")
-	TEST_ASSERT(knife.sharp, "actual canonical material knife reaches sharp-tool harvest route")
+	TEST_ASSERT(combat_of(knife).sharp, "actual canonical material knife reaches sharp-tool harvest route")
 	TEST_ASSERT(user.put_in_inactive_hand(flower), "actor holds exact original sunflower in inactive hand")
 	TEST_ASSERT(user.put_in_active_hand(knife), "actor holds exact original knife in active hand")
 	TEST_ASSERT_NULL(locate_within(T, /obj/item/reagent_containers/food/snacks/rawsunflower), "fixture floor starts without harvested seeds")

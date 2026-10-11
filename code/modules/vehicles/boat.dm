@@ -38,7 +38,6 @@ TYPE_TABLE(/obj/vehicle/boat/dragon/sifwood, boat_forced_material, MAT_SIFWOOD)
 	desc = "Used to provide propulsion to a boat."
 	icon_state = "oar"
 	item_state = "oar"
-	force = 12
 	var/tmp/datum/material/material_static
 
 TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
@@ -46,6 +45,7 @@ TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
 TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
 
 CAPABILITIES(/obj/item/oar)
+	configure(item_combat(force = 12))
 	param(nameof(oar_material), pos = 1, apply = PROC_REF(carve))
 
 /// The material an oar is made of (its constructor param), or the type's forced one, or wood.

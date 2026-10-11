@@ -18,9 +18,11 @@
 	caliber = "macrobat"
 	icon_override = 'icons/vore/custom_guns_vr.dmi'
 	item_state = "multicannon"
-	slot_flags = SLOT_BACK
 	recoil = FALSE
 	fire_sound = SFX_WEAPONS_ENERGY_LASER_STRONG // New firesound, overwrites the sfx from the macrobatteries.
+
+CAPABILITIES(/obj/item/gun/projectile/multi_cannon)
+	configure(item_worn(slots = SLOT_BACK))
 
 /// The look: the charge indicator in the chambered macrobattery's colour.
 /obj/item/gun/projectile/multi_cannon/draw(datum/look/look)

@@ -281,14 +281,14 @@ CAPABILITIES(/mob/living/bot/cleanbot)
 	name = "proxy bucket"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "bucket_proxy"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Cleanbot"
 
 CAPABILITIES(/obj/item/bucket_sensor)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

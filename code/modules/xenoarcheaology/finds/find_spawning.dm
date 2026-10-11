@@ -4,7 +4,6 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "ano01"
 	var/find_type = 0
-	item_flags = ABSTRACT
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
 /proc/artifact_spawn_debug_tool(mob/target)
@@ -21,6 +20,7 @@
 	new /obj/item/archaeological_find(target.loc, A.answer.value)
 
 CAPABILITIES(/obj/item/archaeological_find)
+	configure(item_worn(flags = ABSTRACT))
 	param(nameof(find_type), pos = 1)
 	rolls(nameof(find_type), range_of(1, MAX_ARCHAEO))
 
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_CLAYMORE)
 			apply_prefix = FALSE
 			new_item = new /obj/item/material/sword(src.loc)
-			new_item.force = 10
+			new_item.set_force(10)
 			new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 			item_type = new_item.name
 			if(prob(30))
@@ -342,7 +342,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_KATANA)
 			apply_prefix = FALSE
 			new_item = new /obj/item/material/sword/katana(src.loc)
-			new_item.force = 10
+			new_item.set_force(10)
 			new_item.name = "katana"
 			item_type = new_item.name
 		if(ARCHAEO_LASER)
@@ -687,7 +687,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			TH.force_unwielded *= 0.7
 			TH.force_wielded *= 0.5
 		else
-			MW.force *= 0.3
+			MW.set_force(combat_of(MW).force * (0.3))
 
 	if(istype(secondary_item, /obj/item/material))
 		var/possible_object_paths = list()
@@ -708,7 +708,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			TH.force_unwielded *= 0.7
 			TH.force_wielded *= 0.5
 		else
-			MW.force *= 0.3
+			MW.set_force(combat_of(MW).force * (0.3))
 
 	//Why is ring/material and item/material two different things (and have the same /datum/material var) instead of datum/material being on /obj ? Hell if I know. Someone should fix that eventually. Outside of the scope of this PR.
 	if(istype(new_item, /obj/item/clothing/accessory/ring/material))

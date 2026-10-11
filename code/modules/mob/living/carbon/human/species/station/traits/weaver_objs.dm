@@ -24,8 +24,8 @@ CAPABILITIES(/obj/effect/weaversilk)
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
-	if(W.force)
-		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
+	if(combat_of(W).force)
+		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with %I% by %U%."), item = W)
 		consume(src, user)
 	return OP_PASS
 
@@ -153,10 +153,11 @@ CAPABILITIES(/obj/effect/weaversilk/trap)
 	name = "weaversilk bindings"
 	desc = "A webbed cocoon that completely restrains the wearer."
 	icon_state = "web_bindings"
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
 	// Teshari sprite, this was originally aof the old web bindings
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/vore/custom_onmob_yw.dmi'
 		)
 	// end
+
+CAPABILITIES(/obj/item/clothing/suit/weaversilk_bindings)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))

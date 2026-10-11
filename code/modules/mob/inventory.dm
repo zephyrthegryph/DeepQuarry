@@ -72,7 +72,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 		if(!length(things))
 			continue
 		var/obj/item/I = things[1]
-		if((zone in def.required_parts) || (zone in def.any_parts) || (part_flag && (I.body_parts_covered & part_flag)))
+		if((zone in def.required_parts) || (zone in def.any_parts) || (part_flag && (worn_of(I).covers & part_flag)))
 			. += I
 
 /// The SLOT_ID_* id `I` is equipped in, or null (not ours, in the interior, or
@@ -310,7 +310,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	if(!istype(def) || !def.covered_by)
 		return TRUE
 	var/obj/item/covering = get_equipped_item(def.covered_by)
-	if(covering && (covering.body_parts_covered & (I.body_parts_covered | def.cover_flags)))
+	if(covering && (worn_of(covering).covers & (worn_of(I).covers | def.cover_flags)))
 		to_chat(user, span_warning("\The [covering] is in the way."))
 		return FALSE
 	return TRUE
@@ -335,7 +335,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 	if(!istype(W))
 		return FALSE
 	if(QDELETED(W))
-		if(!(W.item_flags & DROPDEL))
+		if(!(worn_of(W).flags & DROPDEL))
 			log_runtime("[src] tried to pick up a qdeleted object [W]")
 		return FALSE
 	if(get_equipped_item(id))

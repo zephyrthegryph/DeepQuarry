@@ -642,7 +642,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /// A prying weapon that is no crowbar: it forces an unpowered door.
 /obj/machinery/door/airlock/proc/prying_weapon(datum/act/op/A)
 	var/obj/item/held = A.held
-	return istype(held) && held.pry && !held.has_tool_quality(TOOL_CROWBAR) && !power_systems_on() // ALLOW(reads): an item's pry is fixed for its life
+	return istype(held) && tooling_of(held).pry && !held.has_tool_quality(TOOL_CROWBAR) && !power_systems_on()
 
 /obj/machinery/door/airlock/proc/pry_weapon_forced(datum/act/op/A)
 	var/mob/user = A.actor

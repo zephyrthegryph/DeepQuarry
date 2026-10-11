@@ -94,7 +94,7 @@
 		var/can_grab = 1
 		if(ishuman(victim))
 			var/mob/living/carbon/human/H = victim
-			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				can_grab = 0
 		if(can_grab)
 			src.visible_message(span_danger("Tendrils lash out from \the [src] and drag \the [victim] in!"))

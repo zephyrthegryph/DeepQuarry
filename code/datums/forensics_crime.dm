@@ -159,13 +159,13 @@
 	if(M.get_equipped_item(SLOT_ID_SUIT))
 		if(prob(10*item_multiplier))
 			fibertext = "Material from \a [M.get_equipped_item(SLOT_ID_SUIT)]."
-		suit_coverage = M.get_equipped_item(SLOT_ID_SUIT).body_parts_covered
+		suit_coverage = worn_of(M.get_equipped_item(SLOT_ID_SUIT)).covers
 
-	if(M.get_equipped_item(SLOT_ID_UNIFORM) && (M.get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_UNIFORM) && (worn_of(M.get_equipped_item(SLOT_ID_UNIFORM)).covers & ~suit_coverage))
 		if(prob(15*item_multiplier))
 			fibertext = "Fibers from \a [M.get_equipped_item(SLOT_ID_UNIFORM)]."
 
-	if(M.get_equipped_item(SLOT_ID_GLOVES) && (M.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(M.get_equipped_item(SLOT_ID_GLOVES)).covers & ~suit_coverage))
 		if(prob(20*item_multiplier))
 			fibertext = "Material from a pair of [M.get_equipped_item(SLOT_ID_GLOVES).name]."
 

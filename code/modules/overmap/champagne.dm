@@ -10,10 +10,12 @@
 	desc = "Made from grapes grown in the champagne asteroid belt, the bubbly liquid inside is softly glowing.  Suitable for christening boats, not so much for drinking."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "champagne"
-	attack_verb = list("attacked", "bonked", "hit")
 	var/min_name_len = 4		// Refuse if shuttle tag is shorter than this.
 	var/max_name_len = 32		// Refuse if shuttle tag is longer than this.
 	var/max_area_turfs = 256	// Refuse if area has more than this many turfs.
+
+CAPABILITIES(/obj/item/champagne)
+	configure(item_combat(attack_verbs = list("attacked", "bonked", "hit")))
 
 /obj/item/champagne/afterattack(atom/A, mob/user, proximity)
 	if(!proximity)

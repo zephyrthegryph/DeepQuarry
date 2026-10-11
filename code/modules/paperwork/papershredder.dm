@@ -142,12 +142,12 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 	name = "shredded paper"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "shredp"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_range = 3
 	throw_speed = 1
 
 CAPABILITIES(/obj/item/shreddedp)
+	configure(item_thrown(force = 0))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))
 	op("burn", item(/obj/item/flame/lighter), label("Burn"), needs(req(PROC_REF(can_burn), silent = TRUE), req(PROC_REF(lighter_lit))),

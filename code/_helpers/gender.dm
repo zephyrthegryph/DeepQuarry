@@ -451,7 +451,7 @@
 // CARBON GENDER
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
-	if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT) && (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE) || isobj(get_equipped_item(SLOT_ID_HEAD)) && (get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
+	if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT) && (get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || isobj(get_equipped_item(SLOT_ID_HEAD)) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE)))
 		return PLURAL
 	return gender
 

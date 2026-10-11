@@ -5,9 +5,6 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "syringe-cartridge"
 	var/icon_flight = "syringe-cartridge-flight" //so it doesn't look so weird when shot
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 3
-	force = 3
 	w_class = ITEMSIZE_TINY
 	var/tmp/obj/item/reagent_containers/syringe/syringe
 	/// Flying after being fired from a syringe gun: shows the flight sprite and no syringe, until it lands.
@@ -41,11 +38,14 @@ TRACKED(/obj/item/syringe_cartridge, in_flight)
 		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
 		user.remove_from_mob(syringe())
 		syringe().forceMove(src)
-		sharp = TRUE
+		set_sharp(TRUE)
 		name = "syringe dart"
 	return OP_PASS
 
 CAPABILITIES(/obj/item/syringe_cartridge)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 3))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.put_in_hands(syringe())
 		rel_clear(src, nameof(syringe))
-		sharp = initial(sharp)
+		set_sharp(combat_of_type(type).sharp)
 		name = initial(name)
 	return TRUE
 
@@ -90,9 +90,7 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 	icon_state = "syringegun"
 	item_state = "syringegun"
 	w_class = ITEMSIZE_NORMAL
-	force = 7
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 
 	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic thunk"
@@ -140,6 +138,8 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 	add_fingerprint(user)
 
 CAPABILITIES(/obj/item/gun/launcher/syringe)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
+	configure(item_combat(force = 7))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.

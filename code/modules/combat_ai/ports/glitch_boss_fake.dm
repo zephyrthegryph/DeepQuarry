@@ -7,6 +7,9 @@
 /mob/living/simple_mob/glitch_boss_fake
 	use_modern_ai = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/glitch_boss_fake)
+	configure(mob_kind(attack_cooldown = 2.5 SECONDS))
+
 TYPE_TABLE(/mob/living/simple_mob/glitch_boss_fake, get_ai_behaviors, list( \
 	/datum/ai_behavior/threaten, \
 	/datum/ai_behavior/approach_threat, \

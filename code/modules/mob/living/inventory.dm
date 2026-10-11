@@ -151,8 +151,6 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	if(ismecha(loc))
 		return
 
-	if(INCAPACITATED_IGNORING(src, INCAPABLE_GRAB))
-		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED))
 		return
@@ -195,11 +193,12 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	return FALSE
 
 /mob/living/proc/show_inventory_panel(mob/user, datum/tgui_state/state)
-	if(!inventory_panel_type)
+	if(!kind_of(src).inventory_panel)
 		return FALSE
 
 	if(!inventory_panel)
-		rel_set(src, nameof(inventory_panel), new inventory_panel_type(src))
+		var/panel_type = kind_of(src).inventory_panel
+		rel_set(src, nameof(inventory_panel), new panel_type(src))
 	inventory_panel.tgui_interact(user, custom_state = state)
 
 	return TRUE

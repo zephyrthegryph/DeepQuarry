@@ -121,7 +121,7 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 	var/obj/item/projectile/projectile = new projectile_type(src)
 	if(output_envelope > 1)
 		projectile.damage *= output_envelope
-		projectile.armor_penetration += round((output_envelope - 1) * 20)
+		projectile.set_armor_penetration(combat_of(projectile).armor_penetration + (round((output_envelope - 1) * 20)))
 		projectile.color = "#88ddff"
 	return projectile
 

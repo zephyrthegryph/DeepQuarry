@@ -437,7 +437,7 @@ TRACKED(/area, always_unpowered)
 		var/mob/living/carbon/human/H = mob
 		if(H?.buckled_to())
 			return // Being buckled to something solid keeps you in place.
-		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 			return
 		if(H.is_incorporeal()) // Phaseshifted beings should not be affected by gravity
 			return

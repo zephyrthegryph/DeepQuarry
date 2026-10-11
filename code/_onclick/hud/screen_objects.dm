@@ -351,9 +351,9 @@ CAPABILITIES(/atom/movable/screen)
 					else
 
 						var/no_mask
-						if(!(C.get_equipped_item(SLOT_ID_MASK) && C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+						if(!(C.get_equipped_item(SLOT_ID_MASK) && worn_of(C.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 							var/mob/living/carbon/human/H = C
-							if(!(H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+							if(!(H.get_equipped_item(SLOT_ID_HEAD) && worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 								no_mask = 1
 
 						if(no_mask)

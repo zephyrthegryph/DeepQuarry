@@ -22,6 +22,9 @@
 /mob/living/simple_mob/animal/giant_spider/broodmother
 	use_modern_ai = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodmother)
+	configure(mob_kind(death_message = "falls over and makes its last twitches as its birthing sack bursts!"))
+
 /mob/living/simple_mob/animal/giant_spider/broodmother/initialize_ai_brain()
 	. = ..()
 	if(. && ai_brain)

@@ -4,7 +4,6 @@
 	suit_type = "advanced"
 	desc = "A lightweight suit combining the utility of a RIG with the wearability of a voidsuit."
 	icon_state = "void_explorer2"
-	slot_flags = SLOT_BELT
 	armor_spec = "melee=40;bullet=30;laser=20;energy=15;bomb=30;bio=100;rad=50"
 	slowdown = 0.5
 	offline_slowdown = 1
@@ -23,6 +22,7 @@
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/robotics)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/rig/robotics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact))))
@@ -32,7 +32,7 @@ TYPE_TABLE(/obj/item/rig/robotics, suit_storage_spec, list(HOLD_ONLY(list(POCKET
 
 /obj/item/clothing/suit/space/rig/advsuit
 	name = "Hardsuit" // Replcing Void with Hard to fit the naming convention. Specced down hardsuit for comfort
-	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/advsuit)
+	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET))
 	configure(item_protection(heat_parts = CHEST|LEGS|ARMS|HANDS|FEET, cold_parts = CHEST|LEGS|ARMS|HANDS|FEET))

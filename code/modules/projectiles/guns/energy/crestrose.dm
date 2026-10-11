@@ -8,10 +8,8 @@
 	item_state = "laser" //placeholder
 
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = null
 	fire_sound = SFX_WEAPONS_GUNSHOT_LIGHT
 	load_method = MAGAZINE
-	force = 3
 	recoil = 2
 	auto_eject = 1
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
@@ -25,6 +23,8 @@
 	)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/fluff/crestrose)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_combat(force = 3))
 	configure(item_sounds(hit = TRAIT_NONE))
 
 /obj/item/gun/projectile/automatic/fluff/crestrose/switch_firemodes(mob/user)

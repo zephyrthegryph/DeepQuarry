@@ -2,10 +2,10 @@
 	name = "chrome manipulation suit"
 	desc = "It's a very shiny and somewhat protective suit, built to help carry cores on the user's back."
 	icon_state = "technomancer"
-	body_parts_covered = CHEST|ARMS|LEGS|FEET|HANDS
 	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 
 CAPABILITIES(/obj/item/clothing/suit/technomancer)
+	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
 	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS))))

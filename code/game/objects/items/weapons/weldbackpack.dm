@@ -1,7 +1,6 @@
 /obj/item/weldpack
 	name = "Welding kit"
 	desc = "A heavy-duty, portable welding fluid carrier."
-	slot_flags = SLOT_BACK
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "welderpack"
 	w_class = ITEMSIZE_LARGE
@@ -11,6 +10,7 @@
 	var/nozzle_attached = 1
 
 CAPABILITIES(/obj/item/weldpack)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	owns_one(nameof(nozzle), /obj/item, starts = nameof(nozzle_type))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -154,13 +154,15 @@ CAPABILITIES(/obj/item/weldpack)
 /obj/item/weldpack/survival
 	name = "emergency welding kit"
 	desc = "A heavy-duty, portable welding fluid carrier."
-	slot_flags = SLOT_BACK
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "welderpack-e"
 	item_state = "welderpack"
 	w_class = ITEMSIZE_LARGE
 	max_fuel = 100
 	nozzle_type = /obj/item/weldingtool/tubefed/survival
+
+CAPABILITIES(/obj/item/weldpack/survival)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/weldpack
 	sprite_sheets = list(

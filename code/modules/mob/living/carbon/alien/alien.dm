@@ -8,7 +8,6 @@
 	mob_size = 4
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
-	inventory_panel_type = null // Disable inventory
 
 	var/adult_form
 	var/dead_icon
@@ -16,7 +15,6 @@
 	var/max_grown = 200
 	EXPIRY_DECLARE(time_of_birth)
 	var/language
-	death_message = "lets out a waning guttural screech, green blood bubbling from its maw."
 	var/can_namepick_as_adult = 0
 	var/adult_name
 	var/instance_num

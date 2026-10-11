@@ -4,9 +4,7 @@
 	desc = "A maintenance panel"
 	singular_name = "panel"
 	icon_state = "maintpanel"
-	force = 6.0
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	can_weld = TRUE
@@ -15,6 +13,8 @@
 MSG_DEF_SELF(maintenance_panel/clumsy, "this task is too complex for your clumsy hands")
 
 CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 6.0))
 	without("ui_open")
 	op("maintenance_panel_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Build panel"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(maintenance_panel/clumsy))), then(PROC_REF(maintenance_panel_self)))
 

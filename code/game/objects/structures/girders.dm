@@ -197,7 +197,7 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 /// A plasmacutter's slice takes as long as its tool speed makes it.
 /obj/structure/girder/proc/slice_time(datum/act/op/A)
 	var/obj/item/W = A.held
-	return 3 SECONDS * W.toolspeed
+	return 3 SECONDS * tooling_of(W).speed
 
 /obj/structure/girder/proc/sliced(datum/act/op/A)
 	to_chat(A.actor, span_notice("You slice apart the girder!"))

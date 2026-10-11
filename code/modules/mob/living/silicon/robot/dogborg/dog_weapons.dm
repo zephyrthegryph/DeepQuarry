@@ -27,12 +27,14 @@
 	cell_type = /obj/item/cell/device/weapon
 	charge_cost = 600
 	fire_delay = 6
-	force = 5
 	icon_state = "medbeam"
 	accuracy = 100
 	fire_sound = SFX_WEAPONS_ELUGER
 	self_recharge = 1
 	use_external_power = 1
+
+CAPABILITIES(/obj/item/gun/energy/robotic/smallmedigun)
+	configure(item_combat(force = 5))
 
 /obj/item/projectile/beam/medical_cell/borg
 	range = 4
@@ -48,17 +50,18 @@
 /obj/item/melee/robotic/blade/explotailspear
 	name = "energy tail"
 	desc = "A glowing tail spear with a moderate range. It appears to be extremely sharp."
-	force = 45
-	armor_penetration = 25 //30 to try and make it not useless against armored mobs but not fully nullify it.
-	reach = 3
 	projectile_parry_chance = 15.
+
+CAPABILITIES(/obj/item/melee/robotic/blade/explotailspear)
+	configure(item_combat(force = 45, armor_penetration = 25, reach = 3))
 
 /obj/item/melee/robotic/jaws/big/explojaws
 	name = "explo jaws"
 	desc = "Highly lethal jaws for close range combat."
-	force = 60
-	armor_penetration = 25 //To try and make it not useless against armored mobs but not fully nullify it
 	projectile_parry_chance = 15
+
+CAPABILITIES(/obj/item/melee/robotic/jaws/big/explojaws)
+	configure(item_combat(force = 60, armor_penetration = 25))
 
 /obj/item/gun/energy/robotic/phasegun
 	name = "EW26 Artemis Mounted"

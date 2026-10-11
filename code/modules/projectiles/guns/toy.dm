@@ -42,8 +42,6 @@
 	item_state = "shotgun"
 	max_shells = 6
 	w_class = ITEMSIZE_LARGE
-	force = 2
-	slot_flags = null
 	caliber = "foam"
 	load_method = SINGLE_CASING
 	ammo_type = /obj/item/ammo_casing/afoam_dart
@@ -52,6 +50,10 @@
 	handle_casings = null
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_combat(force = 2))
 
 /*
  * Moist Nugget
@@ -186,7 +188,6 @@
 	caliber = "foam"
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
-	slot_flags = SLOT_BELT
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg
 	allowed_magazines = list(/obj/item/ammo_magazine/mfoam_dart/smg)
 	projectile_type = /obj/item/projectile/bullet/foam_dart
@@ -198,6 +199,9 @@
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=2,    burst_accuracy=list(0,-2,-2), dispersion=null)
 	)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/toy)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/projectile/automatic/toy/riot
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg/riot

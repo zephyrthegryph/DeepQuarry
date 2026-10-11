@@ -18,9 +18,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit" //Placeholder
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_HUGE //It's a giant shield generator!!!
 	unacidable = TRUE
@@ -38,6 +35,9 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
@@ -429,8 +429,10 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit"
 	w_class = ITEMSIZE_LARGE //No putting these in backpacks!
-	slot_flags = SLOT_BELT
 	has_weapon = 0 //No gun with the belt!
+
+CAPABILITIES(/obj/item/personal_shield_generator/belt)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/personal_shield_generator/belt/loaded
 	bcell = /obj/item/cell/device/shield_generator

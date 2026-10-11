@@ -103,9 +103,6 @@ TRACKED(/obj/item/leash, leashed)
 	icon_state = "leash"
 	item_state = "leash"
 	throw_range = 4
-	slot_flags = SLOT_TIE
-	force = 1
-	throwforce = 1
 	w_class = ITEMSIZE_SMALL
 
 /// Every 2 s while leashed: the pet and holder must still be there, sentient, not absorbed and collared.
@@ -224,6 +221,9 @@ TRACKED(/obj/item/leash, leashed)
 //Called when the leash is used in hand
 //Tugs the pet closer
 CAPABILITIES(/obj/item/leash)
+	configure(item_worn(slots = SLOT_TIE))
+	configure(item_thrown(force = 1))
+	configure(item_combat(force = 1))
 	every(2 SECONDS, then(PROC_REF(leash_step)), when = nameof(leashed))
 	ref_one(nameof(pet), /mob/living, on_unlink = PROC_REF(pet_ended))
 	ref_one(nameof(holder), /mob/living, on_unlink = PROC_REF(holder_ended))

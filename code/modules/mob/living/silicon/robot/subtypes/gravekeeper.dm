@@ -1,8 +1,10 @@
 /mob/living/silicon/robot/malf/gravekeeper
 	icon_state = "drone-lost"
 	modtype = "Gravekeeper"
-	can_be_antagged = FALSE
 	restrict_modules_to = list("Gravekeeper")
+
+CAPABILITIES(/mob/living/silicon/robot/malf/gravekeeper)
+	configure(mob_kind(can_be_antagged = FALSE))
 
 /mob/living/silicon/robot/malf/gravekeeper/setup_laws()
 	..()

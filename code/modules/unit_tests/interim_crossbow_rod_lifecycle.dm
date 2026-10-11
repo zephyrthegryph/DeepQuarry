@@ -6,7 +6,7 @@
 		var/obj/item/gun/launcher/crossbow/bow = allocate(/obj/item/gun/launcher/crossbow, T)
 		var/obj/item/arrow/rod/rod = allocate(/obj/item/arrow/rod, T)
 		if(heated)
-			rod.throwforce = 15
+			rod.set_throwforce(15)
 		TEST_ASSERT(user.put_in_inactive_hand(bow), "the actual crossbow occupies the actor's inactive hand")
 		TEST_ASSERT(user.put_in_active_hand(rod), "the actual loading rod occupies the actor's active hand")
 		test_op_handler(bow, "gun_item", user, rod)

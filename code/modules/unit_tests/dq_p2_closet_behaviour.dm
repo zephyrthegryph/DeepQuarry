@@ -1679,7 +1679,7 @@
 	var/mob/living/carbon/human/H = person(tile(1, 2))
 	dq_give_zone_sel(H)
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, H.loc)
-	bar.force = 40 // enough to get through the sheet metal
+	bar.set_force(40)// enough to get through the sheet metal
 	var/before = C.get_integrity()
 	p2cl_click(H, C, bar, "left=1", I_HURT)
 	settle()

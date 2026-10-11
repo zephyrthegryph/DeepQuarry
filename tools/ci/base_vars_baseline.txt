@@ -159,25 +159,9 @@ base_var	code/game/objects/items.dm	var/abstract = 0
 base_var	code/game/objects/items.dm	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 base_var	code/game/objects/items.dm	var/burning = null
 base_var	code/game/objects/items.dm	var/storage_cost = null
-base_var	code/game/objects/items.dm	var/slot_flags = 0 //This is used to determine on which slots an item can fit.
 base_var	code/game/objects/items.dm	var/no_attack_log = 0 //If it's an item we don't want to log attack_logs with, set this to 1
-base_var	code/game/objects/items.dm	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
-base_var	code/game/objects/items.dm	var/force = 0
-base_var	code/game/objects/items.dm	var/throwforce = 0
-base_var	code/game/objects/items.dm	var/sharp = FALSE // whether this object cuts
-base_var	code/game/objects/items.dm	var/edge = FALSE // whether this object is more likely to dismember
-base_var	code/game/objects/items.dm	var/armor_penetration = 0
-base_var	code/game/objects/items.dm	var/melee_windup = 0 // Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
-base_var	code/game/objects/items.dm	var/melee_recovery = 0 // Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
-base_var	code/game/objects/items.dm	var/melee_sweep = null // TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
-base_var	code/game/objects/items.dm	var/catchable = TRUE
-base_var	code/game/objects/items.dm	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
-base_var	code/game/objects/items.dm	var/pry = 0 //Used in attackby() to open doors
 base_var	code/game/objects/items.dm	var/tmp/list/actions //list of /datum/action's that this item has.
 base_var	code/game/objects/items.dm	var/list/actions_types //list of paths of action datums to give to the item on New().
-base_var	code/game/objects/items.dm	var/flags_inv = 0
-base_var	code/game/objects/items.dm	var/body_parts_covered = 0 //see setup.dm for appropriate bit flags
-base_var	code/game/objects/items.dm	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 base_var	code/game/objects/items.dm	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
@@ -188,14 +172,9 @@ base_var	code/game/objects/items.dm	var/list/item_state_slots //overrides the de
 base_var	code/game/objects/items.dm	var/list/item_icons
 base_var	code/game/objects/items.dm	var/list/sprite_sheets
 base_var	code/game/objects/items.dm	var/list/sprite_sheets_obj
-base_var	code/game/objects/items.dm	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works. e.g. setting this to 0.5 will make the tool work twice as fast.
-base_var	code/game/objects/items.dm	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
-base_var	code/game/objects/items.dm	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 base_var	code/game/objects/items.dm	var/addblends // Icon overlay for ADD highlights when applicable.
-base_var	code/game/objects/items.dm	var/default_worn_icon //Default on-mob icon
 base_var	code/game/objects/items.dm	var/worn_layer //Default on-mob layer
 base_var	code/game/objects/items.dm	var/no_random_knockdown = FALSE //stops item from being able to randomly knock people down in combat
-base_var	code/game/objects/items.dm	var/rock_climbing = FALSE //If true, allows climbing cliffs using click drag for single Z, walls if multiZ
 base_var	code/game/objects/items.dm	var/climbing_delay = 1 //If rock_climbing, lower better.
 base_var	code/game/objects/items.dm	var/digestable = TRUE
 base_var	code/game/objects/items.dm	var/item_tf_spawn_allowed = FALSE
@@ -502,16 +481,10 @@ base_var	code/modules/mob/living/life/life_om.dm	var/life_set = LIFE_SET_LIVING
 base_var	code/modules/mob/living/life/life_om.dm	var/tmp/life_z = 0
 base_var	code/modules/mob/living/life/living_systems.dm	var/tmp/list/global_hud_claims
 base_var	code/modules/mob/living/living.dm	/mob/living/var/datum/character_setup_button/character_setup_button
-base_var	code/modules/mob/living/living_defines.dm	var/mob_class = null // A mob's "class", e.g. human, mechanical, animal, etc. Used for certain projectile effects. See __defines/mob.dm for available classes.
 base_var	code/modules/mob/living/living_defines.dm	var/hud_updateflag = 0
 base_var	code/modules/mob/living/living_defines.dm	var/nutrition = 400
 base_var	code/modules/mob/living/living_defines.dm	var/max_nutrition = MAX_NUTRITION
-base_var	code/modules/mob/living/living_defines.dm	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
 base_var	code/modules/mob/living/living_defines.dm	var/now_pushing = null
-base_var	code/modules/mob/living/living_defines.dm	var/mob_bump_flag = 0
-base_var	code/modules/mob/living/living_defines.dm	var/mob_swap_flags = 0
-base_var	code/modules/mob/living/living_defines.dm	var/mob_push_flags = 0
-base_var	code/modules/mob/living/living_defines.dm	var/mob_always_swap = 0
 base_var	code/modules/mob/living/living_defines.dm	var/tod = null // Time of death
 base_var	code/modules/mob/living/living_defines.dm	var/tmp/revival_in_progress = FALSE
 base_var	code/modules/mob/living/living_defines.dm	var/fire_stacks
@@ -524,10 +497,7 @@ base_var	code/modules/mob/living/living_defines.dm	var/last_glow_intensity = nul
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_color = null
 base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list
-base_var	code/modules/mob/living/living_defines.dm	var/makes_dirt = TRUE //FALSE if the mob shouldn't be making dirt on the ground when it walks
-base_var	code/modules/mob/living/living_defines.dm	var/allow_self_surgery = FALSE // Used to determine if the mob can perform surgery on itself.
 base_var	code/modules/mob/living/living_defines.dm	var/flying = 0 // Allows flight
-base_var	code/modules/mob/living/living_defines.dm	var/inventory_panel_type = /datum/inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	var/datum/inventory_panel/inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	var/touch_reaction_flags
 base_var	code/modules/mob/living/living_defines.dm	var/tf_form_holds_key = FALSE
@@ -543,7 +513,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/custom_say = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_ask = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_exclaim = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_whisper = null
-base_var	code/modules/mob/living/living_defines.dm	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 base_var	code/modules/mob/living/living_defines.dm	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 base_var	code/modules/mob/living/living_defines.dm	var/eggs = 0
 base_var	code/modules/mob/living/living_fire.dm	/mob/living/var/fire_reaction = FIRE_REACTION_BURN
@@ -563,11 +532,8 @@ base_var	code/modules/mob/mob.dm	var/tmp/user_vars_to_edit //fun times :3 - pret
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
 base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/persistent_client/persistent_client
 base_var	code/modules/mob/mob_defines.dm	var/datum/mind/mind
-base_var	code/modules/mob/mob_defines.dm	var/stat = CONSCIOUS //Whether a mob is alive or dead.
-base_var	code/modules/mob/mob_defines.dm	VAR_FINAL/incapacitated = NONE
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
 base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/movable/ability_master/ability_master = null
-base_var	code/modules/mob/mob_defines.dm	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 base_var	code/modules/mob/mob_defines.dm	var/damageoverlaytemp = 0
 base_var	code/modules/mob/mob_defines.dm	var/computer_id = null
 base_var	code/modules/mob/mob_defines.dm	var/list/logging
@@ -598,33 +564,27 @@ base_var	code/modules/mob/mob_defines.dm	var/list/language_keys = list() // List
 base_var	code/modules/mob/mob_defines.dm	var/species_language = null // For species who want reset to use a specified default.
 base_var	code/modules/mob/mob_defines.dm	var/only_species_language = 0 // For species who can only speak their default and no other languages. Does not affect understanding.
 base_var	code/modules/mob/mob_defines.dm	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
-base_var	code/modules/mob/mob_defines.dm	var/emote_type = 1 // Define emote default type, 1 for seen emotes, 2 for heard emotes
 base_var	code/modules/mob/mob_defines.dm	var/facing_dir = null // Used for the ancient art of moonwalking.
 base_var	code/modules/mob/mob_defines.dm	var/name_archive //For admin things like possession
 base_var	code/modules/mob/mob_defines.dm	EXPIRY_DECLARE(timeofdeath) //Living
-base_var	code/modules/mob/mob_defines.dm	var/death_message = "seizes up and falls limp..."
 base_var	code/modules/mob/mob_defines.dm	var/bodytemperature = BODYTEMP_NORMAL
 base_var	code/modules/mob/mob_defines.dm	var/charges = 0.0
 base_var	code/modules/mob/mob_defines.dm	var/losebreath = 0.0//Carbon
 base_var	code/modules/mob/mob_defines.dm	var/m_int = null//Living
 base_var	code/modules/mob/mob_defines.dm	var/m_intent = I_RUN//Living
 base_var	code/modules/mob/mob_defines.dm	var/lastKnownIP = null
-base_var	code/modules/mob/mob_defines.dm	var/no_pull_when_living = FALSE //Test for if it can be pulled when alive
 base_var	code/modules/mob/mob_defines.dm	var/tmp/skip_buckled_move_redirect = FALSE
 base_var	code/modules/mob/mob_defines.dm	var/seer = 0 //for cult//Carbon, probably Human
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/mapobjs // Lazylist of overview screen objects. Usually empty/null.
 base_var	code/modules/mob/mob_defines.dm	var/in_throw_mode = 0
 base_var	code/modules/mob/mob_defines.dm	var/inertia_dir = 0
 base_var	code/modules/mob/mob_defines.dm	var/job = null//Living
-base_var	code/modules/mob/mob_defines.dm	var/can_pull_size = ITEMSIZE_NO_CONTAINER // Maximum w_class the mob can pull.
-base_var	code/modules/mob/mob_defines.dm	var/can_pull_mobs = MOB_PULL_LARGER // Whether or not the mob can pull other mobs.
 base_var	code/modules/mob/mob_defines.dm	var/datum/dna/dna = null//Carbon
 base_var	code/modules/mob/mob_defines.dm	var/radiation = 0.0//Carbon
 base_var	code/modules/mob/mob_defines.dm	var/list/mutations //Carbon -- Doohl
 base_var	code/modules/mob/mob_defines.dm	var/voice_name = "unidentifiable voice"
 base_var	code/modules/mob/mob_defines.dm	var/list/ventcraw_item_admin_allow = null // If this is a list, it will be appended to the default list of items the mob is allowed to ventcrawl with
 base_var	code/modules/mob/mob_defines.dm	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
-base_var	code/modules/mob/mob_defines.dm	var/can_be_antagged = FALSE // To prevent pAIs/mice/etc from getting antag in autotraitor and future auto- modes. Uses inheritance instead of a bunch of typechecks.
 base_var	code/modules/mob/mob_defines.dm	var/away_from_keyboard = FALSE //are we at, or away, from our keyboard?
 base_var	code/modules/mob/mob_defines.dm	var/manual_afk = FALSE //did we set afk manually or was it automatic?
 base_var	code/modules/mob/mob_defines.dm	var/tmp/mob/living/carbon/LAssailant = null
@@ -647,8 +607,6 @@ base_var	code/modules/mob/mob_defines.dm	var/custom_speech_bubble = "default"
 base_var	code/modules/mob/mob_defines.dm	var/low_priority = FALSE //Skip processing life() if there's just no players on this Z-level
 base_var	code/modules/mob/mob_defines.dm	var/default_pixel_x = 0 //For offsetting mobs
 base_var	code/modules/mob/mob_defines.dm	var/default_pixel_y = 0
-base_var	code/modules/mob/mob_defines.dm	var/attack_icon //Icon to use when attacking w/o anything in-hand
-base_var	code/modules/mob/mob_defines.dm	var/attack_icon_state //State for above
 base_var	code/modules/mob/mob_defines.dm	var/registered_z
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/progressbars = null //for stacking do_after bars
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/do_afters

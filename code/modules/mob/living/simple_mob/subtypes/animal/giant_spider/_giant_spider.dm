@@ -125,10 +125,10 @@
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
 	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	no_pull_when_living = TRUE
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	configure(mob_movement(no_pull_when_living = TRUE))
 	swarming()
 
 /mob/living/simple_mob/animal/giant_spider/CanPass(atom/movable/mover, turf/target)

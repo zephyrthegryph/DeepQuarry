@@ -80,11 +80,11 @@
 	var/list/slots = list()
 
 	for(var/name in GLOB.string_part_flags)
-		if(body_parts_covered & GLOB.string_part_flags[name])
+		if(worn_of(src).covers & GLOB.string_part_flags[name])
 			covers += name
 
 	for(var/name in GLOB.string_slot_flags)
-		if(slot_flags & GLOB.string_slot_flags[name])
+		if(worn_of(src).slots & GLOB.string_slot_flags[name])
 			slots += name
 
 	if(covers.len)

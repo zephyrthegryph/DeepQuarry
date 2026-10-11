@@ -1,13 +1,13 @@
 /obj/item/clothing/gloves/arm_guard
 	name = DEVELOPER_WARNING_NAME // "arm guards"
 	desc = "These arm guards will protect your hands and arms."
-	body_parts_covered = HANDS|ARMS
 	overgloves = 1
 	punch_force = 3
 	w_class = ITEMSIZE_NORMAL
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
+	configure(item_worn(covers = HANDS|ARMS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
 
 TYPE_TABLE(/obj/item/clothing/gloves/arm_guard, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/gloves/arm_guard/proc/suit_clearance, null))))
@@ -15,10 +15,10 @@ TYPE_TABLE(/obj/item/clothing/gloves/arm_guard, equip_spec, dq_spec_join(..(), l
 /obj/item/clothing/gloves/arm_guard/proc/suit_clearance(mob/living/carbon/human/H)
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
 		return TRUE
-	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & ARMS)
+	if(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & ARMS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
 	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
-		if(A.body_parts_covered & ARMS)
+		if(worn_of(A).covers & ARMS)
 			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
 	return TRUE
 

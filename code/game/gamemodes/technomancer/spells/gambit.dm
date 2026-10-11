@@ -90,7 +90,7 @@
 					hostile_mobs++
 					continue
 				// Strong melee weapons are scary as well.
-				else if(I.force >= 15)
+				else if(combat_of(I).force >= 15)
 					hostile_mobs++
 					continue
 
