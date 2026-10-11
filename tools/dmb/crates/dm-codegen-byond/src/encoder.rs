@@ -11,6 +11,21 @@ pub struct OperandSite {
     pub kind: RelocationKind,
     pub encoding: OperandEncoding,
 }
+/// Facts privately issued only by a successful independent restore validator.
+/// They describe decoded instruction boundaries, never semantic/source authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RestoredInstructionFacts {
+    external: bool,
+    debug: bool,
+}
+impl RestoredInstructionFacts {
+    pub fn external(&self) -> bool {
+        self.external
+    }
+    pub fn debug(&self) -> bool {
+        self.debug
+    }
+}
 pub struct FrozenProc {
     code: std::sync::Arc<SymbolicCode>,
     labels: Vec<Option<u32>>,
@@ -19,11 +34,22 @@ impl FrozenProc {
     /// Restore persisted encoded code through the independent decoder grammar.
     /// Semantic reference authority remains the caller's current-source duty.
     pub fn restore(code: SymbolicCode, labels: Vec<Option<u32>>) -> Result<Self, String> {
-        restored::validate(&code, &labels)?;
-        Ok(Self {
-            code: std::sync::Arc::new(code),
-            labels,
-        })
+        Self::restore_with_instruction_facts(code, labels).map(|(code, _)| code)
+    }
+    /// Return boundary facts from the SAME grammar/site/label validation. No
+    /// facts escape when any validation fails; nothing is trusted from disk.
+    pub fn restore_with_instruction_facts(
+        code: SymbolicCode,
+        labels: Vec<Option<u32>>,
+    ) -> Result<(Self, RestoredInstructionFacts), String> {
+        let facts = restored::validate(&code, &labels)?;
+        Ok((
+            Self {
+                code: std::sync::Arc::new(code),
+                labels,
+            },
+            facts,
+        ))
     }
     pub fn code(&self) -> &SymbolicCode {
         &self.code

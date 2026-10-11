@@ -418,7 +418,9 @@ impl Encoded<'_> {
                 _ => None,
             })
             .collect::<Option<Vec<_>>>()?;
-        let frozen = Arc::new(FrozenProc::restore(code, labels).ok()?);
+        let (frozen, instruction_facts) =
+            FrozenProc::restore_with_instruction_facts(code, labels).ok()?;
+        let frozen = Arc::new(frozen);
         let frame = FrozenFrame {
             local_count: self.local_count,
             local_names: self.locals.0.into_iter().map(Cow::into_owned).collect(),
@@ -453,20 +455,11 @@ impl Encoded<'_> {
         if self.prefix.as_ref() != prefix.as_ref() || self.suffix.as_ref() != suffix.as_ref() {
             return None;
         }
-        let linked = frozen.code().link(|_| Some(0)).ok()?;
-        let mut features = BytecodeFeatures::default();
-        features.source_features = self.source_features;
-        byond_dmb::bytecode::visit_instructions(
-            &linked,
-            |instruction| {
-                use byond_dmb::bytecode::opcode;
-                features.external |=
-                    matches!(instruction.opcode, opcode::LOAD_EXT | opcode::CALL_EXT);
-                features.debug |= matches!(instruction.opcode, opcode::DBG_FILE | opcode::DBG_LINE);
-            },
-            |_| {},
-        )
-        .ok()?;
+        let features = BytecodeFeatures {
+            external: instruction_facts.external(),
+            debug: instruction_facts.debug(),
+            source_features: self.source_features,
+        };
         let recipe = crate::composition::ProcedureMetadataRecipe::capture(
             identity,
             frontend.snapshot.tree.symbols(),

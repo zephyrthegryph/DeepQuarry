@@ -11,7 +11,10 @@ enum Site {
     Typed(RelocationKind, OperandEncoding),
     Primitive(RelocationKind, OperandEncoding),
 }
-pub(super) fn validate(code: &SymbolicCode, labels: &[Option<u32>]) -> Result<(), String> {
+pub(super) fn validate(
+    code: &SymbolicCode,
+    labels: &[Option<u32>],
+) -> Result<RestoredInstructionFacts, String> {
     let words = code.link(|_| Some(0)).map_err(|e| format!("{e:?}"))?;
     let decoded = byond_dmb::bytecode::decode(&words).map_err(|e| format!("{e:?}"))?;
     let starts: BTreeSet<_> = decoded.iter().map(|i| i.offset as u32).collect();
@@ -23,7 +26,14 @@ pub(super) fn validate(code: &SymbolicCode, labels: &[Option<u32>]) -> Result<()
         return Err("invalid restored label roster".into());
     }
     let mut sites = BTreeMap::new();
+    let mut facts = RestoredInstructionFacts {
+        external: false,
+        debug: false,
+    };
     for instruction in &decoded {
+        use byond_dmb::bytecode::opcode;
+        facts.external |= matches!(instruction.opcode, opcode::LOAD_EXT | opcode::CALL_EXT);
+        facts.debug |= matches!(instruction.opcode, opcode::DBG_FILE | opcode::DBG_LINE);
         if instruction
             .branch_targets()
             .map_err(|e| format!("{e:?}"))?
@@ -93,7 +103,7 @@ pub(super) fn validate(code: &SymbolicCode, labels: &[Option<u32>]) -> Result<()
     if sites.values().any(|site| matches!(site, Site::Typed(..))) {
         return Err("restored semantic operand has no relocation".into());
     }
-    Ok(())
+    Ok(facts)
 }
 
 #[cfg(test)]
@@ -135,6 +145,69 @@ mod tests {
         );
     }
 
+    #[test]
+    fn restored_instruction_facts_match_owned_and_shared_validated_boundaries() {
+        use byond_dmb::bytecode::opcode;
+        for external in [false, true] {
+            let mut items = vec![Item::Instruction(Instruction {
+                opcode: opcode::PUSH_INT,
+                operands: vec![Word::Immediate(opcode::LOAD_EXT)],
+            })];
+            if external {
+                items.push(Item::Instruction(Instruction {
+                    opcode: opcode::LOAD_EXT,
+                    operands: vec![],
+                }));
+                items.push(Item::Instruction(Instruction {
+                    opcode: opcode::CALL_EXT,
+                    operands: vec![Word::Immediate(0)],
+                }));
+                items.push(Item::Instruction(Instruction {
+                    opcode: opcode::DBG_LINE,
+                    operands: vec![Word::SourceLine(0)],
+                }));
+            }
+            let fresh = freeze_proc(&SymbolicProc { items }).unwrap();
+            let mut bytes = vec![255];
+            for word in fresh.code().word_iter() {
+                bytes.extend_from_slice(&word.to_le_bytes());
+            }
+            let end = bytes.len();
+            let shared = dm_ir::WordStorage::shared(std::sync::Arc::new(bytes), 1..end).unwrap();
+            let shared =
+                SymbolicCode::from_word_storage(shared, fresh.code().relocations().collect())
+                    .unwrap();
+            let (owned, owned_facts) = FrozenProc::restore_with_instruction_facts(
+                fresh.code().clone(),
+                fresh.labels().to_vec(),
+            )
+            .unwrap();
+            let (mapped, mapped_facts) =
+                FrozenProc::restore_with_instruction_facts(shared, fresh.labels().to_vec())
+                    .unwrap();
+            assert_eq!(owned_facts, mapped_facts);
+            assert_eq!(owned_facts.external(), external);
+            assert_eq!(owned_facts.debug(), external);
+            assert_eq!(
+                owned.code().canonical_bytes(),
+                mapped.code().canonical_bytes()
+            );
+            // Existing traversal is an independent oracle for flags; immediate
+            // opcode-looking words cannot masquerade as instructions.
+            let linked = owned.code().link(|_| Some(0)).unwrap();
+            let mut expected = (false, false);
+            byond_dmb::bytecode::visit_instructions(
+                &linked,
+                |instruction| {
+                    expected.0 |= matches!(instruction.opcode, opcode::LOAD_EXT | opcode::CALL_EXT);
+                    expected.1 |= matches!(instruction.opcode, opcode::DBG_FILE | opcode::DBG_LINE);
+                },
+                |_| {},
+            )
+            .unwrap();
+            assert_eq!((owned_facts.external(), owned_facts.debug()), expected);
+        }
+    }
     #[test]
     fn restore_rejects_relocation_in_opcode_or_branch_target() {
         for offset in [0, 1] {
