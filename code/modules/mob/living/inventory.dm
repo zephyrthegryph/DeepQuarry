@@ -151,8 +151,6 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	if(ismecha(loc))
 		return
 
-	if(INCAPACITATED_IGNORING(src, INCAPABLE_GRAB))
-		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED))
 		return

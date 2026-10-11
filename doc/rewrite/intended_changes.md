@@ -4699,3 +4699,9 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+
+## Mob stat is TRACKED; the incapacitated var goes (base_vars lane B, bv-hud)
+
+`stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
+subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
+the answer). No behaviour change intended.

@@ -175,8 +175,6 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 	if(user.intercept_use(A, params, user.input_stance()))
 		return
 
-	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
-		return
 
 	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED))
 		return
