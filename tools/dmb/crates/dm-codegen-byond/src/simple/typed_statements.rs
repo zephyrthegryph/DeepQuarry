@@ -260,15 +260,7 @@ impl Compiler<'_> {
                         )?;
                         continue;
                     }
-                    if let Some((path, _)) = declaration
-                        .strip_prefix("var/")
-                        .and_then(|raw| raw.rsplit_once('/'))
-                    {
-                        self.local_types
-                            .insert(name.into(), runtime_declaration_path(path));
-                    } else if declaration.trim_end().ends_with("[]") {
-                        self.local_types.insert(name.into(), "/list".into());
-                    }
+                    self.register_local_declaration_type(name, declaration);
                     if let Some(value) = value {
                         self.local_declaration_initializer(
                             value,
@@ -717,8 +709,13 @@ impl Compiler<'_> {
                                 self.locals.push(name.into());
                                 self.local_slots.insert(name.into(), slot);
                                 self.record_local_header(slot, statement.header_span);
+                                self.register_local_declaration_type(name, declaration);
                                 if let Some(value) = value {
-                                    self.expression(value, &statement.raw_header)?;
+                                    self.local_declaration_initializer(
+                                        value,
+                                        declaration,
+                                        &statement.raw_header,
+                                    )?;
                                     self.emit(
                                         opcode::SET_VAR,
                                         vec![Word::Variable(VariableWord::Local(slot))],

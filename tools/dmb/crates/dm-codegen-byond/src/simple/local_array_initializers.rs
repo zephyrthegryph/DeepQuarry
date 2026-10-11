@@ -2,6 +2,22 @@
 use super::*;
 
 impl Compiler<'_> {
+    pub(in crate::simple) fn register_local_declaration_type(
+        &mut self,
+        name: &str,
+        declaration: &str,
+    ) {
+        if let Some((path, _)) = declaration
+            .strip_prefix("var/")
+            .and_then(|raw| raw.rsplit_once('/'))
+        {
+            self.local_types
+                .insert(name.into(), runtime_declaration_path(path));
+        } else if declaration.trim_end().ends_with("[]") {
+            self.local_types.insert(name.into(), "/list".into());
+        }
+    }
+
     pub(in crate::simple) fn local_declaration_initializer(
         &mut self,
         value: &Expr,
