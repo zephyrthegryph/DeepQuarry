@@ -421,3 +421,19 @@ CAPABILITIES(/obj/item/dq_forms_set_holder)
 	qdel(H.child)
 	TEST_ASSERT_NULL(H.child, "a deleted occupant leaves the var")
 	TEST_ASSERT_EQUAL(H.lost_count, 1, "on_lost hears it")
+
+/// owns_one(starts_after =): a declared dependency builds first, whatever the declaration order.
+/obj/item/dq_forms_order_holder
+	var/obj/item/dq_forms_set_child/second
+	var/obj/item/dq_forms_set_child/first
+
+CAPABILITIES(/obj/item/dq_forms_order_holder)
+	owns_one(nameof(second), /obj/item/dq_forms_set_child, starts = /obj/item/dq_forms_set_child, starts_after = nameof(first))
+	owns_one(nameof(first), /obj/item/dq_forms_set_child, starts = /obj/item/dq_forms_set_child)
+
+/datum/unit_test/dq_forms_starts_after/Run()
+	var/obj/item/dq_forms_order_holder/H = allocate(/obj/item/dq_forms_order_holder, dq_containment_floor())
+	var/list/order = own_table_of(H).start_vars
+	TEST_ASSERT_EQUAL(order.Find(nameof(H.first)), 1, "the dependency builds first")
+	TEST_ASSERT_EQUAL(order.Find(nameof(H.second)), 2, "then the occupant that names it")
+	TEST_ASSERT_NOTNULL(H.second, "both are built")

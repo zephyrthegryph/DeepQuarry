@@ -388,7 +388,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
 	for(var/var_name in legacy_lost)
 		LAZYSET(T.lost_handlers, var_name, legacy_lost[var_name])
-	// owns_*(starts_set =, on_lost =) of the type's CAPABILITIES lists.
+	// owns_*(starts_set =, on_lost =, starts_after =) of the type's CAPABILITIES lists.
+	var/list/start_after = null
 	for(var/datum/centry/C as anything in table_of(D).items)
 		var/datum/entry/E = C.item
 		if(!istype(E) || (E.kind != ENTRY_OWNS_ONE && E.kind != ENTRY_OWNS_MANY))
@@ -397,6 +398,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			LAZYSET(T.start_sets, E.args["var"], E.args["starts_set"])
 		if(E.args["on_lost"])
 			LAZYSET(T.lost_handlers, E.args["var"], E.args["on_lost"])
+		if(E.args["starts_after"])
+			LAZYSET(start_after, E.args["var"], E.args["starts_after"])
+	if(start_after && T.start_vars)
+		T.start_vars = own_order_starts(D, T.start_vars, start_after)
 	if(T.keyed_key && !(T.keyed_key in D.vars))
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
@@ -548,3 +553,27 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/datum/D = value
 	OWN_REPORT("[holder.type].[var_name] is declared [type], refused [isdatum(value) ? "a [D.type]" : "[value]"]")
 	return FALSE
+
+/// The starting occupants in build order: each var after the one its starts_after = names (a cycle, or a name that builds nothing, is reported
+/// and falls back to declaration order).
+/proc/own_order_starts(datum/D, list/starts, list/after)
+	var/list/ordered = list()
+	var/list/visiting = list()
+	for(var/var_name in starts)
+		own_order_visit(D, var_name, starts, after, ordered, visiting)
+	return ordered
+
+/proc/own_order_visit(datum/D, var_name, list/starts, list/after, list/ordered, list/visiting)
+	if(var_name in ordered)
+		return
+	if(visiting[var_name])
+		OWN_REPORT("[D.type]: starts_after makes a cycle through '[var_name]'")
+		return
+	visiting[var_name] = TRUE
+	var/first = after[var_name]
+	if(first)
+		if(first in starts)
+			own_order_visit(D, first, starts, after, ordered, visiting)
+		else
+			OWN_REPORT("[D.type].[var_name]: starts_after = '[first]', which has no starting occupant")
+	ordered[var_name] = starts[var_name]

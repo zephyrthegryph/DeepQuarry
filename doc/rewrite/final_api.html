@@ -1241,6 +1241,17 @@ starts_args = list(...)                    <span class="c">// constructor argume
       <tr><td>9</td><td>On deletion: <code>on_holder_destroy(A)</code> of each capability, <code>lifecycle_prerelease()</code>, <code>on_destroy(force)</code>, then the destroy transaction</td></tr>
     </tbody>
   </table></div>
+  <div class="prose"><p><strong>The init phase contract.</strong> An instance's init runs in four phases, and each phase may read what the earlier ones made:</p>
+    <ol>
+      <li><strong>Params:</strong> <code>make()</code> arguments, <code>param(pos =)</code> constructor arguments, <code>per_type</code> tables and <code>rolls()</code> (preinit).</li>
+      <li><strong>Declared children and gas:</strong> every <code>owns_one</code>/<code>owns_many(starts =)</code> occupant, <code>gas_store()</code> and <code>reagents()</code>, built at the root of
+        <code>/atom/Initialize()</code> (<code>lifecycle_decls_init()</code>) before any subtype's code after <code>..()</code>, in declaration order with ancestors first;
+        <code>starts_after = nameof(other)</code> builds an occupant after another. <code>starts_set = list(var = value)</code> configures each occupant once built
+        (through its <code>set_&lt;var&gt;()</code> when it has one), and <code>on_lost = PROC_REF(x)</code> runs <code>x(thing)</code> on the holder whenever an occupant leaves the var,
+        however the var was filled (deleted, or moved out of a contained slot). Capability <code>on_holder_init(A)</code> hooks and the lifecycle forms see them.</li>
+      <li><strong>The type's own setup:</strong> its code after <code>..()</code> (and named <code>setup()</code> hooks); every child above already exists.</li>
+      <li><strong>After init:</strong> <code>after_init()</code> parts, when the instance's init is complete (after the whole map load for a map-loaded one).</li>
+    </ol></div>
   <div class="note"><p><strong>Replaces:</strong></p>
     <ul>
       <li>Ownership declarations: <code>ownership()</code>, <code>OWN</code>/<code>OWN_SPILL</code>/<code>OWN_CONTAINED</code>, <code>PROTO</code>, <code>REL</code>/<code>REL_LIST</code>/<code>REL_PAIR</code>/<code>REL_PAIR_LIST</code>/<code>REL_KEYED</code>, <code>owns()</code>/<code>shares()</code>/<code>proto()</code>.</li>
