@@ -1069,8 +1069,10 @@ GLOBAL_VAR(dq_test_select_names)
 		var/list/eligible = list()
 		var/list/excluded = list()
 		var/list/tier_excluded = list()
-		for(var/datum/unit_test/test_path in pre_tier_tests)
-			var/test_tier = initial(test_path.tier) == TEST_TIER_EXHAUSTIVE ? "exhaustive" : "normal"
+		// This roster holds type paths, not instantiated unit-test datums.
+		for(var/test_path in pre_tier_tests)
+			var/datum/unit_test/test_type = test_path
+			var/test_tier = initial(test_type.tier) == TEST_TIER_EXHAUSTIVE ? "exhaustive" : "normal"
 			if(tier_param != "all" && test_tier != tier_param)
 				tier_excluded += list(list("name" = "[test_path]", "tier" = test_tier))
 		for(var/test_path in tests_to_run)

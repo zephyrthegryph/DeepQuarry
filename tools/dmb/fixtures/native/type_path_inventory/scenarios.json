@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "steps": [
+    { "name": "initial", "expected": [0, 2, 1] }
+  ]
+}
