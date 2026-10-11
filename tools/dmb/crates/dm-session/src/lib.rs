@@ -5,7 +5,8 @@ mod publication;
 mod reads;
 pub use artifacts::{
     AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact, ObservedArtifactLease,
-    ObservedArtifactStorageView, ObservedArtifactStore, UnchangedCandidate, DEFAULT_RESIDENT_BYTES,
+    ObservedArtifactStorageView, ObservedArtifactStore, UnchangedCandidate, UnchangedCandidates,
+    DEFAULT_RESIDENT_BYTES,
 };
 pub use publication::{ArtifactAttempt, ArtifactGeneration, ArtifactPublication};
 pub use reads::{matching_domains, RecordingResolver, ResolverRead};

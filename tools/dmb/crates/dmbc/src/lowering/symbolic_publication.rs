@@ -82,6 +82,13 @@ impl SessionSymbolicMemo {
             .is_some_and(|attempt| attempt.publish_successful())
     }
     pub(super) fn insert_record(&self, identity: UnitIdentity, record: Record) -> bool {
+        if record
+            .reads
+            .iter()
+            .any(|read| read.domain != read.query.domain())
+        {
+            return false;
+        }
         if let Some(attempt) = &self.attempt {
             let key = locator(identity, &record.key);
             let reads = record.reads.clone();

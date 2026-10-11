@@ -14,7 +14,7 @@ mod certified;
 #[cfg(test)]
 mod certified_tests;
 mod incidence;
-pub use certified::UnchangedCandidate;
+pub use certified::{UnchangedCandidate, UnchangedCandidates};
 #[cfg(test)]
 mod incidence_tests;
 mod leased;

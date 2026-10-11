@@ -105,3 +105,37 @@ fn bulk_capability_requires_exact_key_and_independent_local_input_license() {
     store.insert_with_receipt(Arc::from([1]), reads(), Arc::from([(2, 8)]), 1, || 33);
     assert!(store.unchanged_candidates(&request).is_empty());
 }
+
+#[test]
+fn request_roster_consumes_exact_keys_once_and_keeps_variant_precedence() {
+    let store = Store::with_limit(8);
+    store.enable_incidence();
+    store.insert_with_receipt(Arc::from([1]), reads(), Arc::from([(2, 7)]), 1, || 11);
+    store.insert_with_receipt(Arc::from([1]), reads(), Arc::from([(2, 7)]), 1, || 12);
+    store.insert_with_receipt(Arc::from([3]), reads(), Arc::from([(2, 7)]), 1, || 33);
+    let host = Host {
+        version: Some(7),
+        observing: false,
+        calls: AtomicUsize::new(0),
+    };
+    let request = crate::ReceiptAdmission::new(&host);
+    let mut roster = store.unchanged_candidate_roster(&request);
+    assert!(roster.take(&[2]).is_empty());
+    let first = roster.take(&[1]);
+    let values: Vec<_> = first
+        .into_iter()
+        .map(|candidate| *candidate.admit(&[1], |_| true, |_| {}).unwrap().value)
+        .collect();
+    assert_eq!(values, vec![12, 11]);
+    assert!(roster.take(&[1]).is_empty());
+    assert_eq!(
+        *roster
+            .take(&[3])
+            .pop()
+            .unwrap()
+            .admit(&[3], |_| true, |_| {})
+            .unwrap()
+            .value,
+        33
+    );
+}

@@ -96,6 +96,12 @@ pub fn lower_frontend_completed_input_on_execution<
         .filter(|_| !host.observes_reads())
         .map(|_| symbolic_input::RequestAdmission::new(host));
     let request_admission = request_admission.as_ref();
+    let candidate_roster = request_admission
+        .filter(|_| (symbolic || execution.selections_only) && !execution.capture_references)
+        .and_then(|admission| {
+            memo.and_then(|memo| memo.symbolic.as_ref())?
+                .candidate_roster(admission)
+        });
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
         || {
@@ -201,6 +207,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 body,
                 host,
                 request_admission,
+                candidate_roster.as_ref(),
                 policy,
                 startup,
                 memo,

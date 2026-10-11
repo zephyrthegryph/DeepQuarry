@@ -7,25 +7,26 @@ use crate::ReceiptAdmission;
 /// The value remains private until exact key and current local inputs are licensed.
 pub struct UnchangedCandidate<'request, 'host, T, Q, A: Eq, D, H> {
     key: Arc<[u8]>,
-    artifact: ObservedArtifact<T, Q, A, D>,
+    artifact: Option<ObservedArtifact<T, Q, A, D>>,
     _request: &'request ReceiptAdmission<'host, Q, A, D, H>,
 }
 impl<T, Q, A: Eq, D, H> UnchangedCandidate<'_, '_, T, Q, A, D, H> {
     pub fn admit(
-        self,
+        mut self,
         key: &[u8],
         locally_current: impl FnOnce(&Arc<T>) -> bool,
         mut observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
     ) -> Option<ObservedArtifact<T, Q, A, D>> {
-        if self.key.as_ref() != key || !locally_current(&self.artifact.value) {
+        let artifact = self.artifact.take()?;
+        if self.key.as_ref() != key || !locally_current(&artifact.value) {
             return None;
         }
-        self.artifact.reads.visit_storage(|view| {
+        artifact.reads.visit_storage(|view| {
             if let crate::ReceiptStorageView::Flat(leaf) = view {
                 observed(leaf);
             }
         });
-        Some(self.artifact)
+        Some(artifact)
     }
 }
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
@@ -68,16 +69,56 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 }
                 candidates.push(UnchangedCandidate {
                     key: Arc::clone(&entry.key),
-                    artifact: ObservedArtifact {
+                    artifact: Some(ObservedArtifact {
                         value: Arc::clone(&entry.value),
                         reads: entry.reads.clone(),
                         versions: Arc::clone(&entry.versions),
                         weight: entry.weight,
-                    },
+                    }),
                     _request: request,
                 });
             }
         }
         candidates
+    }
+}
+
+/// A request-local snapshot, not retained history or another artifact cache.
+/// Taken candidates keep their exact locator slot; unrelated workers can consume
+/// different keys without reconstructing the store's canonical read ledgers.
+pub struct UnchangedCandidates<'request, 'host, T, Q, A: Eq, D, H> {
+    candidates: Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>>,
+}
+impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+    pub fn take(&mut self, key: &[u8]) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
+        let start = self
+            .candidates
+            .partition_point(|candidate| candidate.key.as_ref() < key);
+        let end = self
+            .candidates
+            .partition_point(|candidate| candidate.key.as_ref() <= key);
+        self.candidates[start..end]
+            .iter_mut()
+            .rev()
+            .filter_map(|candidate| {
+                Some(UnchangedCandidate {
+                    key: Arc::clone(&candidate.key),
+                    artifact: Some(candidate.artifact.take()?),
+                    _request: candidate._request,
+                })
+            })
+            .collect()
+    }
+}
+impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
+    ObservedArtifactStore<T, Q, A, D>
+{
+    pub fn unchanged_candidate_roster<'request, 'host, H: ObservationHost<Q, A, D>>(
+        &self,
+        request: &'request ReceiptAdmission<'host, Q, A, D, H>,
+    ) -> UnchangedCandidates<'request, 'host, T, Q, A, D, H> {
+        let mut candidates = self.unchanged_candidates(request);
+        candidates.sort_by(|a, b| a.key.cmp(&b.key));
+        UnchangedCandidates { candidates }
     }
 }

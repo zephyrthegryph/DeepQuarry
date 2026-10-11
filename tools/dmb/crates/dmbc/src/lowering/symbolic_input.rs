@@ -11,8 +11,11 @@ mod receipt_groups;
 mod retained;
 pub(super) use receipt_groups::RequestAdmission;
 pub use retained::SymbolicRetentionStats;
+#[path = "symbolic_candidates.rs"]
+mod candidates;
 #[path = "symbolic_publication.rs"]
 mod symbolic_publication;
+pub(super) use candidates::RequestCandidates;
 
 #[derive(Default)]
 pub(crate) struct SessionSymbolicMemo {
@@ -354,6 +357,7 @@ impl SessionSymbolicMemo {
         prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
         host: &R,
         request_admission: Option<&RequestAdmission<'_, R>>,
+        candidates: Option<&RequestCandidates<'_, '_, R>>,
         observer: &crate::lowering_memo::RecordingResolver<'_, R>,
         frontend: &ColdFrontend,
         body: &BodyOccurrence,
@@ -366,6 +370,50 @@ impl SessionSymbolicMemo {
         let identity = current.source().identity;
         if let Some(attempt) = &self.attempt {
             let mut completed = None;
+            if let Some(candidates) = candidates {
+                let locator =
+                    symbolic_publication::locator(identity, &key.materialize(prepared_tail));
+                // Extraction holds only the request roster lock. Rebind/observer
+                // callbacks and pending claims execute after that guard drops.
+                for candidate in candidates.take(&locator) {
+                    let accepted = attempt
+                        .with_pending(|leases| {
+                            leases.records.claim_unchanged(
+                                candidate,
+                                &locator,
+                                |record| {
+                                    completed = self.lookup_record(
+                                        record,
+                                        key,
+                                        prepared_tail,
+                                        host,
+                                        request_admission,
+                                        observer,
+                                        frontend,
+                                        body,
+                                        prepared,
+                                        bodies,
+                                        selections_only,
+                                        verify,
+                                        current,
+                                        true,
+                                    );
+                                    completed.is_some()
+                                },
+                                |leaf| observer.record_admitted(leaf),
+                            )
+                        })
+                        .flatten();
+                    if accepted.is_some() {
+                        let mut input = completed.take()?;
+                        if let Input::Reused(value) = &mut input.inner {
+                            self.share_current_code(value);
+                        }
+                        return Some(input);
+                    }
+                    completed = None;
+                }
+            }
             let mut accept = |record: &Arc<Record>| {
                 completed = self.lookup_record(
                     record,
@@ -466,35 +514,36 @@ impl SessionSymbolicMemo {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
-        let matching = crate::lowering_memo::matching_domains(&record.versions, host);
-        let fully_certified = !host.observes_reads()
-            && record
-                .reads
-                .iter()
-                .all(|read| read.domain == read.query.domain() && matching.contains(&read.domain));
         let changed = if reads_validated {
             false
-        } else if fully_certified {
-            // Candidate-specific complete certificates do not populate a shared
-            // leaf verdict. Each accepted leaf still reaches the observer.
-            record.reads.visit_storage(|view| {
-                if let dm_session::ReceiptStorageView::Flat(leaf) = view {
-                    observer.record_admitted(leaf);
-                }
-            });
-            false
-        } else if let Some(admission) = request_admission {
-            // Partial candidate certificates cannot authorize this leaf. First
-            // use resolves the entire exact leaf; later request-local hits share
-            // that full proof and preserve every observer edge.
-            admission
-                .first_changed(&record.reads, |leaf| observer.record_admitted(leaf))
-                .is_some()
         } else {
-            record
-                .reads
-                .iter()
-                .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
+            let matching = crate::lowering_memo::matching_domains(&record.versions, host);
+            let fully_certified = !host.observes_reads()
+                && record.reads.iter().all(|read| {
+                    read.domain == read.query.domain() && matching.contains(&read.domain)
+                });
+            if fully_certified {
+                // Candidate-specific complete certificates do not populate a shared
+                // leaf verdict. Each accepted leaf still reaches the observer.
+                record.reads.visit_storage(|view| {
+                    if let dm_session::ReceiptStorageView::Flat(leaf) = view {
+                        observer.record_admitted(leaf);
+                    }
+                });
+                false
+            } else if let Some(admission) = request_admission {
+                // Partial candidate certificates cannot authorize this leaf. First
+                // use resolves the entire exact leaf; later request-local hits share
+                // that full proof and preserve every observer edge.
+                admission
+                    .first_changed(&record.reads, |leaf| observer.record_admitted(leaf))
+                    .is_some()
+            } else {
+                record
+                    .reads
+                    .iter()
+                    .any(|read| !same_meaning(&observer.resolve(read.query), &read.answer))
+            }
         };
         if changed {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
