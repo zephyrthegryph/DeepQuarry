@@ -17,18 +17,6 @@ impl PreparedKey {
     pub fn issued(prepared: &crate::procedure_policy::PreparedUnit) -> Option<Self> {
         Some(Self::Issued(prepared.canonical_metadata()?))
     }
-    fn append(&self, key: &mut Vec<u8>) {
-        match self {
-            Self::Parsed(bytes) => key.extend_from_slice(bytes),
-            Self::Issued(bytes) => {
-                key.extend_from_slice(bytes);
-                key.push(1);
-                let transform = crate::procedure_policy::PreparedReplay::TRANSFORM;
-                key.extend_from_slice(&(transform.len() as u64).to_le_bytes());
-                key.extend_from_slice(transform);
-            }
-        }
-    }
     fn matches(&self, bytes: &[u8]) -> bool {
         match self {
             Self::Parsed(expected) => bytes == expected,
@@ -98,25 +86,6 @@ impl<'a> CurrentKey<'a> {
             references,
             selections,
         })
-    }
-    pub fn materialize(&self, prepared: &PreparedKey) -> Vec<u8> {
-        let metadata = self.metadata.canonical_bytes();
-        let mut key = PREFIX.to_vec();
-        key.extend_from_slice(&self.prefix[..41]);
-        for part in [metadata.as_slice(), self.source] {
-            key.extend_from_slice(&(part.len() as u64).to_le_bytes());
-            key.extend_from_slice(part);
-        }
-        key.push(self.termination);
-        if self.references {
-            key.push(0);
-            key.extend_from_slice(dm_ir::SELECTED_REFERENCES_POLICY);
-        }
-        if self.selections {
-            key.extend_from_slice(b"selected-facts-only-v1");
-        }
-        prepared.append(&mut key);
-        key
     }
     pub fn matches(&self, key: &[u8], recipe: Option<&KeyRecipe>, prepared: &PreparedKey) -> bool {
         let Some(layout) = Layout::parse(key) else {
@@ -212,3 +181,6 @@ impl KeyRecipe {
 #[cfg(test)]
 #[path = "key_recipe_tests.rs"]
 mod tests;
+
+#[path = "key_fragments.rs"]
+mod fragments;

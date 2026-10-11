@@ -141,3 +141,23 @@ fn immutable_rebind_declines_changed_ledger_key_version_or_foreign_value() {
     }
     assert_eq!(store.admitted_bytes(), 7);
 }
+
+#[test]
+fn empty_membership_is_independent_of_zero_payload_charge() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    assert!(store.is_empty());
+    let lease = store.lease();
+    lease
+        .insert_with_qualified_receipt(
+            Arc::from(b"zero".as_slice()),
+            reads(1).into(),
+            Arc::from([]),
+            0,
+            || 7,
+        )
+        .unwrap();
+    assert_eq!(store.admitted_bytes(), 0);
+    assert!(!store.is_empty());
+    drop(lease);
+    assert!(store.is_empty());
+}

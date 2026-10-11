@@ -111,8 +111,16 @@ impl Payload<'_> {
             relative_debug: Vec::new(),
         }
     }
+    #[cfg(test)]
     pub(crate) fn matches(&self, key: &[u8], identity: ProcedureIdentity) -> bool {
-        self.key.as_ref() == key && self.identity == identity
+        self.matches_with(&|candidate| candidate == key, identity)
+    }
+    pub(crate) fn matches_with(
+        &self,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        identity: ProcedureIdentity,
+    ) -> bool {
+        matches_key(self.key.as_ref()) && self.identity == identity
     }
     pub(crate) fn changed_read<R: Resolver>(&self, host: &R) -> Option<ResolveQuery> {
         let matching = crate::lowering_memo::matching_domains(&self.versions.0, host);

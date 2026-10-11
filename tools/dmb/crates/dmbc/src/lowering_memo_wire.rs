@@ -756,9 +756,26 @@ mod anonymous;
 #[cfg(test)]
 pub(crate) use anonymous::AnonymousLookup;
 impl Candidates<'_> {
+    #[cfg(test)]
     pub(crate) fn procedure<R: Resolver>(
         self,
         key: &[u8],
+        identity: ProcedureIdentity,
+        context: ProcedureReplayContext<'_>,
+        host: &R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> ProcedureLookup {
+        self.procedure_matching(
+            &|candidate| candidate == key,
+            identity,
+            context,
+            host,
+            prepared,
+        )
+    }
+    pub(crate) fn procedure_matching<R: Resolver>(
+        self,
+        matches_key: &dyn Fn(&[u8]) -> bool,
         identity: ProcedureIdentity,
         context: ProcedureReplayContext<'_>,
         host: &R,
@@ -770,7 +787,7 @@ impl Candidates<'_> {
         };
         for value in self.0.into_iter().rev() {
             if let Candidate::Selections(v) = value {
-                if !context.selections_only || !v.matches(key, identity) {
+                if !context.selections_only || !v.matches_with(matches_key, identity) {
                     continue;
                 }
                 if let Some(query) = v.changed_read(host) {
@@ -800,7 +817,7 @@ impl Candidates<'_> {
                 continue;
             }
             if let Candidate::Compact(v) = value {
-                if v.key.as_ref() != key || v.identity != identity {
+                if !matches_key(v.key.as_ref()) || v.identity != identity {
                     continue;
                 }
                 if let Some(query) = v.changed_read(host) {
@@ -840,7 +857,7 @@ impl Candidates<'_> {
                 Candidate::Failure(v) => (v.key.as_ref(), v.identity),
                 Candidate::Compact(_) | Candidate::Selections(_) => unreachable!(),
             };
-            if candidate != key || owner != Some(identity) {
+            if !matches_key(candidate) || owner != Some(identity) {
                 continue;
             }
             result.miss = Some(crate::lowering_memo::MemoMissReason::NoExactVariant);

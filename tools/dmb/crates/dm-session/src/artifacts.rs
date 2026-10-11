@@ -213,6 +213,14 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             .map(|entry| entry.weight)
             .sum();
     }
+    /// Advisory membership only; callers still perform ordinary exact admission.
+    pub fn is_empty(&self) -> bool {
+        self.state
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .buckets
+            .is_empty()
+    }
     pub fn admitted_bytes(&self) -> usize {
         self.state
             .lock()

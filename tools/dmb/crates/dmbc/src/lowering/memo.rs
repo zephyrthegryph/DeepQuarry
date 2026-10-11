@@ -261,30 +261,36 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             }
         }
     }
-    let key = current_key.materialize(&prepared_tail);
+    let key = std::cell::OnceCell::new();
+    let current_bytes = || key.get_or_init(|| current_key.materialize(&prepared_tail));
     let mut rebound_current = None;
     let (value, changed_query) = {
         let _profile = dm_profile::item("lowering.resident_validate");
-        memo.visit_resident(&key, host, &mut |value| {
-            let previous = &value.unit;
-            if capture_references && previous.selected_references.is_none() {
-                return false;
-            }
-            let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-            rebound_current = rebased.and_then(|origins| {
-                rich_sidecars::rebind(
-                    previous, frontend, body, bodies, &recording, &prepared, origins,
-                )
-            });
-            rebound_current.is_some()
-        })
+        if memo.values.is_empty() {
+            (None, None)
+        } else {
+            memo.visit_resident(current_bytes(), host, &mut |value| {
+                let previous = &value.unit;
+                if capture_references && previous.selected_references.is_none() {
+                    return false;
+                }
+                let rebased =
+                    crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
+                rebound_current = rebased.and_then(|origins| {
+                    rich_sidecars::rebind(
+                        previous, frontend, body, bodies, &recording, &prepared, origins,
+                    )
+                });
+                rebound_current.is_some()
+            })
+        }
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
         MemoMissReason::ReadMeaningChanged
     });
     if let Some(accepted) = value {
         let admission = if symbolic {
-            symbolic_input::accepted_admission(memo, key.clone(), &accepted)
+            symbolic_input::accepted_admission(memo, current_bytes().clone(), &accepted)
         } else {
             None
         };
@@ -347,7 +353,8 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             parsed: active,
         };
         memo.lookup_procedure(
-            &key,
+            &current_key,
+            &prepared_tail,
             identity,
             crate::lowering_memo_wire::ProcedureReplayContext {
                 frontend,
@@ -418,10 +425,10 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
         let current = current_body.source();
-        if let Some(promotion) = &disk.resident {
+        if let Some(promotion) = disk.resident.as_ref().filter(|_| memo.symbolic.is_some()) {
             symbolic_input::remember_selections(
                 memo,
-                key.clone(),
+                current_bytes().clone(),
                 host,
                 promotion,
                 current.identity,
@@ -437,9 +444,13 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         )));
     }
     if let Some(value) = disk.prepared {
-        let admission = disk.resident.as_ref().and_then(|promotion| {
-            symbolic_input::disk_admission(memo, key.clone(), host, promotion)
-        });
+        let admission = disk
+            .resident
+            .as_ref()
+            .filter(|_| memo.symbolic.is_some())
+            .and_then(|promotion| {
+                symbolic_input::disk_admission(memo, current_bytes().clone(), host, promotion)
+            });
         bodies
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
@@ -478,7 +489,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     {
         let admission = if symbolic {
             disk.resident.as_ref().and_then(|promotion| {
-                symbolic_input::disk_admission(memo, key.clone(), host, promotion)
+                symbolic_input::disk_admission(memo, current_bytes().clone(), host, promotion)
             })
         } else {
             None
@@ -526,6 +537,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
         .flatten();
     let current_source = current_body.source();
+    let key = key
+        .into_inner()
+        .unwrap_or_else(|| current_key.materialize(&prepared_tail));
     Ok(Admission::NeedsLowering(Box::new(move || {
         // Replay validates the stored complete read ledger (or its trusted domain
         // receipt). Issue mandatory reads only when producing a new executable.

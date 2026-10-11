@@ -333,7 +333,8 @@ impl ProcedureMemo {
     }
     pub(crate) fn lookup_procedure<R: Resolver>(
         &self,
-        key: &[u8],
+        key: &key_recipe::CurrentKey<'_>,
+        tail: &key_recipe::PreparedKey,
         identity: dm_ir::ProcedureIdentity,
         context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
         host: &R,
@@ -346,7 +347,7 @@ impl ProcedureMemo {
             };
         };
         let replay = std::cell::RefCell::new(None);
-        let view = snapshot.get_candidate(Self::record_key(key), |bytes, _symbols| {
+        let view = snapshot.get_candidate(key.record_key(tail), |bytes, _symbols| {
             let candidates = {
                 let _profile = dm_profile::item("lowering.disk_lookup_decode");
                 crate::lowering_memo_wire::candidates(bytes)?
@@ -355,8 +356,8 @@ impl ProcedureMemo {
             // Only exact semantic admission makes this mapped record reachable.
             let result = {
                 let _profile = dm_profile::item("lowering.disk_validate_replay");
-                candidates.procedure(
-                    key,
+                candidates.procedure_matching(
+                    &|candidate| key.matches(candidate, None, tail),
                     identity,
                     crate::lowering_memo_wire::ProcedureReplayContext {
                         frontend: context.frontend,
@@ -408,7 +409,7 @@ impl ProcedureMemo {
                     })
                     .collect();
                 self.remember(
-                    key.to_vec(),
+                    key.materialize(tail),
                     reads,
                     unit,
                     promotion.relative_debug.clone(),
