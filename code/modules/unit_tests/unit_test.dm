@@ -559,6 +559,9 @@ GLOBAL_VAR(dq_test_select_names)
 	// their actual prior values so failed fixtures restore them at normal teardown.
 	set_global(nameof(GLOB.act_last_reply), GLOB.act_last_reply)
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
+	if(islist(GLOB.test_prompts))
+		var/list/prior_prompts = GLOB.test_prompts
+		GLOB.test_prompts = prior_prompts.Copy()
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
