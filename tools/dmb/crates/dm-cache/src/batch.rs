@@ -2,6 +2,7 @@
 //! disk; index descriptors grow with record/variant/symbol count, not payload size.
 //! Producers serialize append through their request owner. Only finish publishes.
 use crate::{Cache, CacheError, Record, RecordKey};
+use fs2::FileExt;
 use std::{
     collections::BTreeMap,
     fs::{File, OpenOptions},
@@ -10,6 +11,9 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 use xxhash_rust::xxh3::Xxh3;
+#[cfg(test)]
+mod orphan_tests;
+mod orphans;
 #[cfg(test)]
 mod tests;
 mod write;
@@ -59,20 +63,36 @@ fn invalid(message: &str) -> CacheError {
 }
 impl Cache {
     pub fn batch_spool(&self) -> Result<BatchSpool, CacheError> {
+        orphans::validate_root(self.root())?;
+        // Advisory, bounded maintenance of only lifetime-locked v2 spools.
+        let _ = orphans::reap(self.root(), orphans::Bounds::default());
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_err(|error| invalid(&error.to_string()))?
             .as_nanos();
         let path = self.root().join(format!(
-            ".batch-{}-{stamp}-{}.tmp",
+            ".batch-v2-{}-{stamp}-{}.tmp",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
+        // Publish the recognizable name only after acquiring its lifetime lock.
+        // A killed opening leaves at most an empty, unrecognized file.
+        let opening = path.with_extension("opening");
         let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create_new(true)
-            .open(&path)?;
+            .open(&opening)?;
+        if let Err(error) = FileExt::try_lock_exclusive(&file) {
+            drop(file);
+            let _ = std::fs::remove_file(&opening);
+            return Err(error.into());
+        }
+        if let Err(error) = std::fs::rename(&opening, &path) {
+            drop(file);
+            let _ = std::fs::remove_file(&opening);
+            return Err(error.into());
+        }
         Ok(BatchSpool {
             cache: Cache {
                 root: self.root.clone(),
