@@ -4559,3 +4559,16 @@ stream (a converted `rand()`/`pick()`/`prob()` no longer draws from the world RN
 * **Rolls replaced `TYPE_TABLE` selectors** (scrap material sprites, intercom channel sets became a `starting_channels()` override derived at
   init), so a map edit of the sprite or channels is kept.
 * **A plushie restores its own current name after speaking** when it was never renamed, instead of the name it had at init.
+* **Beds, chairs and bedsheets turn through `rotatable()`** (the library's menu ops `rotatable.turn_around`, and for chairs
+  `rotatable.clockwise` / `rotatable.counterclockwise`) instead of the rotation verbs `make_rotatable()` granted at init. A fastened bed or chair
+  shows the ops refused ("It is fastened to the floor!"); a bed type with `flippable = FALSE` keeps the op key but its `when(flippable)` hides it.
+  Pins re-blessed: `dq_conversion_pin`, `dq_interaction_domain_snapshot/i7_structures_bulk`.
+* **Rolled reagents and contents are seeded per instance.** A gum's or lollipop's flavour and a random vial's recipe now come from the instance's
+  stream, so `dq_reagents_start_snapshot` records other (equally likely) picks. The snapshot also gained the frost grenade beakers it had no row for.
+* **Random DNA injectors' gene is rolled before init** from the type's pools (`random_pools`), the same pools the selector table named.
+* **ID cards take their starting access through `derives()` at init** (a `starting_access()` override per kind) instead of after `..()`.
+* **A one-tank bomb's fill is a plain per-type default** (`/full` 2, `/small` 0): a fill given to its constructor now wins over the type's.
+* **A material weapon's forced material, a radio's starting channels, a loaded RCD's matter, a statue's release delay, an eruption's life and a
+  foam's spread delay derive at init**, during the root of Initialize() instead of before or after the type's own code; nothing reads them in between.
+* **`derives()` no longer breaks after a holder that used it is destroyed**: `GLOB.derives_running` was LAZYREMOVE()d to null, and every later
+  derives() runtimed (bad index) — the "param_write" failure framework_gaps.md noted for the fusion field.
