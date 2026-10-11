@@ -448,5 +448,34 @@
       "actual current CLI paired BYOND and real DeepQuarry cohort",
       "full runtime parity"
     ]
+  },
+  "migration_followup_d36": {
+    "source_commit": "d36af91e3136e9910c316a7bb3da59670ae8b830",
+    "archive_sha256": "a063413d6fa1da2a75092f95b0a5ddd0d9573ef95aef1ecfadc5bde9c3090d44",
+    "check_receipt": "20261011-112421-51904524-job-cargo.json",
+    "check_exit_code": 101,
+    "production_check": "passed before lib-test fixture compilation failed",
+    "fixture_failure": "Modified local candidate test called verification_equal on shared artifact instead of PreparedContribution; corrected source in80e1eae7aa, not yet executed",
+    "changes": [
+      "Current lexical locals carried through ProcedureStatic canonical answer and same stored-declaration walk",
+      "Reflective receiver and feature ancestry use semantic type authority",
+      "Modified candidate uses existing current recipe rebind path"
+    ],
+    "body_owner_prior_failure": "Fixture expected unchanged owner while mutating same chunk; corrected to genuine unchanged included chunk in39d3153e23; execution pending",
+    "scope": "Source implementation and compile check only; not compiler performance or full migration acceptance",
+    "remaining": [
+      "Execute corrected lexical/native-engine/body-owner/modified fixtures",
+      "New typed folded SourceError repair1f098c513b check",
+      "Real compiler paired BYOND gates and DeepQuarry end-to-end iterations",
+      "Latest normal DM tests and matched BYOND runtime closure",
+      "Six registered worktree protocol acceptance and non-daemon disk-cache gates"
+    ]
+  },
+  "header_feature_driver_parser_gate": {
+    "source_commit": "2547bf259c",
+    "command": "python -m unittest discover -s tools/dmb/fixtures/native/loop_local_diagnostics -p test_header_features.py",
+    "passed": 3,
+    "failed": 0,
+    "scope": "Decoded-header parser controls only; paired compiler feature flag comparison not yet run"
   }
 }
