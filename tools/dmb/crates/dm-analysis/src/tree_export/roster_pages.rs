@@ -40,7 +40,8 @@ pub fn write_roster_page(
                 let node=tree.type_node(id).ok_or(ExportError::InvalidModel("unknown page type"))?;
                 json!({"ordinal":ordinal,"row":"type","id":type_key(tree,id)?,
                     "path":spelling(symbols,node.path)?,"symbol":format!("{:016x}",node.path.bits()),
-                    "parent":node.parent.map(|parent|type_key(tree,parent)).transpose()?})
+                    "parent":node.parent.map(|parent|type_key(tree,parent)).transpose()?,
+                    "explicit_parent":node.explicit_parent,"synthetic":node.synthetic})
             }
             SemanticRoster::Intrinsics => {
                 let member=&tree.intrinsic_members()[ordinal as usize];
@@ -56,12 +57,15 @@ pub fn write_roster_page(
                 let id=dm_tree::MemberId(ordinal);
                 let member=tree.member(id).ok_or(ExportError::InvalidModel("unknown page member"))?;
                 let owner=tree.type_node(member.owner).ok_or(ExportError::InvalidModel("unknown page member owner"))?.path;
-                let occurrence=tree.member_occurrence(id).ok_or(ExportError::InvalidModel("unknown page member occurrence"))?;
-                json!({"ordinal":ordinal,"row":"member","id":format!("member:{:016x}:{}:{:016x}:{occurrence}",owner.bits(),kind(member.kind),member.name.bits()),
-                    "owner":type_key(tree,member.owner)?,"owner_path":spelling(symbols,owner)?,"owner_symbol":format!("{:016x}",owner.bits()),
-                    "name":spelling(symbols,member.name)?,"name_symbol":format!("{:016x}",member.name.bits()),
-                    "kind":kind(member.kind),"definition":definition(member.definition),"occurrence":occurrence,
-                    "previous_ordinal":member.previous.map(|id|id.0)})
+                let mut row=member_row::member_row(tree,id)?;
+                let fields=row.as_object_mut().ok_or(ExportError::InvalidModel("invalid member row"))?;
+                fields.insert("ordinal".into(),json!(ordinal));
+                fields.insert("owner_path".into(),json!(spelling(symbols,owner)?));
+                fields.insert("owner_symbol".into(),json!(format!("{:016x}",owner.bits())));
+                fields.insert("name_symbol".into(),json!(format!("{:016x}",member.name.bits())));
+                fields.insert("occurrence".into(),json!(tree.member_occurrence(id).ok_or(ExportError::InvalidModel("unknown page member occurrence"))?));
+                fields.insert("previous_ordinal".into(),json!(member.previous.map(|id|id.0)));
+                row
             }
         });
     }

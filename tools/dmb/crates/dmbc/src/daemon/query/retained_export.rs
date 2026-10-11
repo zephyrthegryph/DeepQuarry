@@ -6,7 +6,7 @@ use super::{Catalog, QueryRequest, TraversalLimits, VisitControl};
 use std::io::{self, Read, Write};
 use std::time::Instant;
 const SCHEMA: &str = "dm-session-retained-export-v1";
-const SCOPE: &str = "semantic type selectors, authored member selectors, captured engine intrinsic selectors, and current parser-issued source occurrences";
+const SCOPE: &str = "semantic type facts, authored member metadata, captured engine intrinsic selectors, and current parser-issued source occurrences";
 
 pub fn run_export_file(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut bytes = Vec::new();
@@ -54,7 +54,7 @@ fn export_with(
                         "compiler_version":env!("CARGO_PKG_VERSION"),"query_schema":"dm-session-query-v2",
                         "semantic_revision":request.expected_revision,"source_revision":request.expected_source_revision,
                         "item_scope":SCOPE,"complete":false,"executable_facts_included":false,
-                        "full_member_metadata_included":false,"resolved_references_included":false,
+                        "full_member_metadata_included":true,"resolved_references_included":false,
                         "provenance_complete":false}),
     )?;
     for catalog in [

@@ -6,7 +6,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {
-            Ok("/datum/example\n    var/value = 7\n    proc/read()\n        return value\n".into())
+            Ok("/datum/example\n    var/value = 7\n    proc/read(amount = 3)\n        set waitfor = 0\n        return value\n".into())
         }
     }
     let frontend = dm_tree::frontend::build_with_config(
@@ -63,7 +63,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         .collect();
     assert_eq!(rows[0]["schema"], SCHEMA);
     assert_eq!(rows[0]["complete"], false);
-    assert_eq!(rows[0]["full_member_metadata_included"], false);
+    assert_eq!(rows[0]["full_member_metadata_included"], true);
     assert_eq!(
         rows.iter()
             .filter(|row| row["row"] == "retained_roster_complete")
@@ -86,6 +86,24 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         rows.iter().filter(|row| row["row"] == "member").count(),
         frontend.snapshot.tree.members().len()
     );
+    // Every pre-existing full semantic field comes from the identical serializer,
+    // while retained selectors add their current dense ordinal separately.
+    let mut full = Vec::new();
+    dm_analysis::tree_export::write_jsonl(&frontend, &mut full).unwrap();
+    for full_row in std::str::from_utf8(&full)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .filter(|row| row["row"] == "member" || row["row"] == "type")
+    {
+        let resident = rows
+            .iter()
+            .find(|row| row["row"] == full_row["row"] && row["id"] == full_row["id"])
+            .unwrap();
+        for (field, value) in full_row.as_object().unwrap() {
+            assert_eq!(&resident[field], value, "current semantic field {field}");
+        }
+    }
     assert_eq!(rows.last().unwrap()["row"], "retained_export_finished");
     request.expected_source_revision = Some("1".repeat(32));
     bytes.clear();
