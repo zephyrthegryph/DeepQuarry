@@ -78,6 +78,12 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 						return TRUE
 				return FALSE
 		return FALSE
+	if(istype(cond, /datum/simulation_condition))
+		return FALSE // Simulation trees are evaluated by their rule consumer, not opaque op conditions.
+	if(istype(cond, /datum/entry))
+		var/datum/entry/simulation_entry = cond
+		if(simulation_entry.kind == SIM_ENTRY_KIND)
+			return FALSE
 	if(istype(cond, /datum/entry/part/req) || istype(cond, /datum/requirement))
 		return op_req_holds(A, cond)
 	if(isnum(cond))

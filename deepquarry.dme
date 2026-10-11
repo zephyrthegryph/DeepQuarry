@@ -5306,6 +5306,7 @@
 #include "code\engine\state\properties\registry.dm"
 #include "code\engine\state\properties\state_adapter.dm"
 #include "code\datums\rules\binding.dm"
+#include "code\engine\parts\property_conditions.dm"
 #include "code\datums\rules\declarations.dm"
 #include "code\datums\rules\world_adapter.dm"
 #include "code\datums\rules\rule.dm"

@@ -1,6 +1,6 @@
 # Properties, rules, constraints and abilities (track P)
 
-This engine answers four questions. Containment, interactions, damage, temperature and abilities all ask them the same way, through one predicate language:
+This engine answers four questions. Properties support two distinct consumers: legacy acceptance predicates still serve containment/equipment, while simulation rules use native unit-aware property conditions:
 - **What is this thing?** Its properties.
 - **What does a container imply?** Aggregates of its contents' properties.
 - **Is this allowed?** Constraints.
@@ -87,7 +87,7 @@ The code is in `code/datums/properties/constraints.dm` (API), `code/datums/prope
 - **Trigger:**
   - a property crossing a value (temperature, integrity, pressure, charge, radiation dose, time);
   - or an event: damage packet, EMP, contact, entered, exited.
-- **Condition:** a predicate (§2).
+- **Condition:** a native holder-only simulation tree, returned by rule_condition(). Equipment acceptance still uses the separate predicate consumer (§2–3).
 - **Effect**, one of two kinds:
   - **Data transform.** Works on latent entries without creating an object: set a delta, swap the type (cooked, ash, shards), remove, add entries, add heat.
   - **Behaviour.** A proc on the real object. The ledger materializes the object first, then calls it.
@@ -116,14 +116,17 @@ The code is in `code/datums/properties/constraints.dm` (API), `code/datums/prope
 | Glass | When integrity hits 0, transform into shards |
 | Any object | At integrity thresholds, show the matching damage flavour text (generated, replacing about 26 hand-written lines) |
 
-### Implementation (P4)
+### Current native rules implementation
 
-Code: `code/datums/rules/`, defines in `code/__defines/rules.dm`, tests in `code/modules/unit_tests/dq_rule_tests.dm`.
-- **Declaring.** A `/datum/rule` subtype names `applies_to` types (inherited by subtypes; `excludes` opts out), a `condition` (a predicate spec over `PRED_TARGET`), and an effect: `RULE_EFFECT_DATA` with a `transform` (`RULE_SET_STATE`, `RULE_SWAP_TYPE`, `RULE_REMOVE`), or `RULE_EFFECT_BEHAVIOUR` with an `effect_proc` (and an `exit_proc` for repeatable rules). `hold_for` makes it a time-above-threshold rule; `replaces` tells the legacy path it takes over to stand down.
-- **Compiling.** Every property clause becomes a trigger: a channel-backed measure against a literal or a static property is a Threshold watch (a native heat watch), a band a Band watch, two channel-backed sides change watches, and a DM-owned property (`dm_key_kind` on its definition) a key subscription (`om_world_on_key()`). A rule with no trigger, or one reading the actor or held item, fails boot validation (SSproperties).
-- **Running.** Rules are singletons. An object subscribes in `on_materialize()` and unsubscribes in `on_dematerialize()`, holding one `/datum/rule_binding` while live. Every wake re-checks the whole predicate; a rule fires on the false-to-true edge. `hold_for` runs on a rate model with an `om_world_on_rate()` watch, never polling.
-- **World coupling.** Only `world_adapter.dm` touches the Rust world (object_model_core.md §4.8). A heat node is the object's M4 heat body (H3): its watches are heat-domain Threshold/Band watches on the body, kept in DM while the object has no body and relinked when it gets one (`dq_rx_heat_body_created()`). An object whose rules are all heat-only (`heat_only`) subscribes when it first gets a body, not at materialize, and rules that already hold then fire (it crossed while unwatched). The probe-cell pool is gone.
-- **Tests.** `dq_rule_thresholds` generates one case per declared threshold per declaring type: just on the quiet side nothing fires, just across it fires once, further across it doesn't fire again.
+Code: `code/engine/parts/property_conditions.dm` (immutable leaves, owned compiled trees and unit checks), `code/engine/state/properties/registry.dm` (property reads), and `code/datums/rules/` (trigger compilation and binding). Tests are `dq_rule_tests.dm`, `dq_rule_native_tests.dm` and the preserved old-metadata proof.
+
+- **Declaring.** A rule subtype implements `rule_condition()`. Return `cond_measure(property, SIM_COMPARE_GTE, KELVIN(value))`, `cond_compare(property, operator, other_property)` or `cond_band(property, KELVIN(low), KELVIN(high))`, composed with `cond_all`, `cond_any` and `cond_not`. Leaves are actual `entry_make` flyweights. They are shared and never deleted. A factory is required: content does not create datums inside static initializers. These simulation forms are not player refusal requirements and are not generic op conditions until provider read subscriptions support them.
+- **Compiling.** The native compiler validates known numeric properties, compatible units, operators and band bounds. It creates a rule-owned immutable tree with declared owned children. All/any/not preserve metadata from every branch; NOT inverts operators and groups. A missing measurement remains false under negated comparisons, preserving previous rule behavior. Empty AND is true and empty OR false. Any invalid child rejects and releases the entire partial group.
+- **Dependencies.** `leaves()` and `dependency_properties()` enumerate both sides in declaration order, independently of short-circuit evaluation. The rule compiler derives the existing thermal threshold/band/change watches and DM key subscriptions. Static clauses add no wake. Static-only rules, unavailable threshold levels and unsupported actor/held subjects reject. No legacy predicate compiler is invoked.
+- **Running.** An object holds one rule binding while materialized. Heat-only rules defer subscription until the heat body exists. A wake evaluates the entire native tree on the object. False-to-true fires; repeatable true-to-false calls exit. `hold_for` uses keyed `after()` timers, preserving elapsed true time while false and restarting a fresh duration after a fired spell ends. DM key changes are merged until the next kernel tick. Destruction releases subscriptions and timers.
+- **Native mapping.** Rule operators are DM strings `>`, `>=`, `<`, `<=`, `==`, `!=`. Thermal subscriptions map direction to numeric `WORLD_CMP_ABOVE`/`BELOW`; operator strings never cross FFI. Strict thresholds shift by the existing epsilon; inclusive bands preserve the high-end epsilon. Dynamic/dynamic domain comparisons watch both sides; current adapter exposes temperature nodes, so arbitrary multi-property domain fixtures require a separate adapter contract. Dynamic DM-key comparisons subscribe both keys.
+- **Registry lifetime.** Compilation accepts an optional actual property registry. Compiled nodes and triggers borrow it through declared references; deleting it fails conditions closed and makes threshold levels unavailable. Private unit tests do not mutate the global registry.
+- **Proof.** Existing threshold, materialization, cumulative hold, paper/plastic and grille tests remain. New focused tests cover unit errors, operators, empty groups, missing-NOT semantics, invalid partial groups, deleted borrowed registries, two tracked dynamic-key dependencies and repeatable hold exit/rearm/cleanup. Old metadata assertions remain a separate unique fixture, with unchanged numeric/operator values; no pin re-bless accompanies this consumer migration.
 
 ## 5. Abilities
 
