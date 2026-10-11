@@ -440,11 +440,14 @@ fi
 LOOK_PARAMS=""
 LOOK_PLAN_FILE=""
 LOOK_STALE_COUNT=-1
+look_prepared=0
 look_prepare() {
 	# The analyzer's plan: a key and a probe list per type. Without it (no engine, an old one) the pins run full and unnarrowed.
 	local bin plan keys stale universe
 	plan="data/look-plan.tsv"
-	keys="code/modules/unit_tests/snapshots/look_keys.txt"
+	keys="data/look-verified-base.$$.tsv"
+	focus_files+=("$keys")
+	python tools/dq_look_verified_anchor.py select "$keys" || true
 	if bin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$bin" look-keys --out "$plan" >/dev/null 2>&1 && [ -s "$plan" ]; then
 		LOOK_PLAN_FILE="$plan"
 		LOOK_PARAMS="look-plan=$plan"
@@ -466,7 +469,7 @@ look_prepare() {
 	if [ -n "$look_order" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-order=$look_order"; fi
 	if [ -n "$look_dump" ]; then LOOK_PARAMS="${LOOK_PARAMS:+$LOOK_PARAMS&}look-dump=$look_dump"; fi
 }
-if [ "$look_world" -eq 1 ]; then look_prepare; fi
+if [ ${#look_group[@]} -gt 0 ]; then look_prepare; look_prepared=1; fi
 
 # Only runs that will probe appearances need the machine-wide look slot.
 # A prepared incremental plan with zero stale types still runs its main tests.
@@ -527,7 +530,11 @@ combined_log="data/focused-runs/last.$$.log"
 run_once() {
 	# Git Bash can use the same worktree-pinned entry point and system Bun as
 	# the POSIX runner; avoid the batch bootstrap's separate tool download.
-	tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
+	if [ -n "$LOOK_PARAMS" ]; then
+		DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}$LOOK_PARAMS" tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
+	else
+		tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
+	fi
 }
 
 # Several worlds from one compiled .dmb. The first world compiles; once it has launched its world ("Test world runN"), the rest start,
@@ -582,7 +589,7 @@ run_worlds() {
 		done
 	elif [ "$look_world" -ne 1 ] && [ ${#look_group[@]} -gt 0 ]; then
 		# Unprepared look runs stay full; an incremental plan with zero stale types needs no look world.
-		add_world look "" "" "${look_group[@]}"
+		add_world look "" "$LOOK_PARAMS" "${look_group[@]}"
 	fi
 	for ((i = 0; i < ${#W_LABEL[@]}; i++)); do echo "== worlds: ${W_LABEL[$i]}${W_SHARD[$i]:+ (slice ${W_SHARD[$i]})}"; done
 	export DQ_KEEP_DERIVED_DME=1
@@ -687,9 +694,12 @@ look_dump_merge() {
 
 # A passing run that covered both pins records the plan's keys: those types' rows are what the snapshots say.
 look_keys_record() {
-	if [ "$look_world" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
+	if [ "$look_prepared" -ne 1 ] || [ -z "$LOOK_PLAN_FILE" ] || [ ! -f "$LOOK_PLAN_FILE" ] || [ -n "$look_order" ]; then return 0; fi
 	if [[ " ${look_group[*]} " != *" dq_look_state_pin "* || " ${look_group[*]} " != *" dq_look_tree_pin "* ]]; then return 0; fi
 	# One writer format: the analyzer's plan verbatim (type, key, probes), byte-identical to `analyze look-keys` output.
+	local results="${SPLIT_JSON:-}"
+	if [ -z "$results" ]; then results="$(sed -n 's/.*(saved \(data\/test-runs\/[^)]*\.json\)).*/\1/p' "$combined_log" | tail -n 1)"; fi
+	python tools/dq_look_verified_anchor.py record "$LOOK_PLAN_FILE" "$results" || return 1
 	cp "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt
 	if ! cmp -s "$LOOK_PLAN_FILE" code/modules/unit_tests/snapshots/look_keys.txt; then
 		echo "== look pins: FAIL: recorded look_keys.txt differs from the analyzer plan"
@@ -712,7 +722,7 @@ if [ "$do_split" -eq 1 ]; then
 	run_worlds
 	rc=$?
 	look_dump_merge
-	if [ "$rc" -eq 0 ]; then look_keys_record; fi
+	if [ "$rc" -eq 0 ]; then look_keys_record || rc=$?; fi
 	print_result "$combined_log" "$rc" "$SPLIT_JSON"
 	rm -f "$combined_log" data/focused-runs/split."$$".*.log
 	exit "$rc"
@@ -721,14 +731,7 @@ fi
 if [ "$repeat" -eq 1 ]; then
 	run_once 2>&1 | tee "$combined_log"
 	rc=${PIPESTATUS[0]}
-	if [ "$rc" -eq 0 ] && [ "$bless" -eq 1 ] && [ ${#look_group[@]} -gt 0 ]; then
-		# A blessed (unsharded, full, unnarrowed) run rewrote every look row: the keys now describe them.
-		look_world=1
-		if bin="$(bash tools/ci/analyze.sh 2>/dev/null)" && "$bin" look-keys --out data/look-plan.tsv >/dev/null 2>&1 && [ -s data/look-plan.tsv ]; then
-			LOOK_PLAN_FILE=data/look-plan.tsv
-			look_keys_record
-		fi
-	fi
+	if [ "$rc" -eq 0 ] && [ ${#look_group[@]} -gt 0 ]; then look_keys_record || rc=$?; fi
 	print_result "$combined_log" "$rc"
 	rm -f "$combined_log"
 	exit "$rc"

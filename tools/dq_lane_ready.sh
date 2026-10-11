@@ -106,6 +106,8 @@ stamp_json="$(node -e '
 		ok: Number(newFailed) === 0, passed: Number(passed), failed: Number(failed), new_failed: Number(newFailed), tests_json: testsJson,
 		gate_seconds: timings, created: new Date().toISOString(), host: require("os").hostname(),
 	}));' "$branch" "$head_sha" "$tested" "$master" "$(IFS=,; echo "${list[*]-}")" "$(IFS=,; echo "${covers[*]-}")" "${passed:-0}" "${failed:-0}" "$tests_json" "data/merge-gates/${tested:0:12}.timings" "$t_start" "$new_failed")" || die "could not build the stamp"
+look_coverage="$(python tools/dq_look_verified_anchor.py export "$tests_json")"
+stamp_json="$(node -e 'const n=JSON.parse(process.argv[1]), c=JSON.parse(process.argv[2]); if(c) n.look_coverage=c; console.log(JSON.stringify(n));' "$stamp_json" "$look_coverage")" || exit 1
 printf '%s\n' "$stamp_json" >"data/lane-ready/${branch//\//_}.json"
 git notes --ref=lane-ready add -f -m "$stamp_json" HEAD || die "could not write the stamp note"
 

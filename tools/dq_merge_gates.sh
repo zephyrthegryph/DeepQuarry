@@ -255,6 +255,8 @@ fi
 if [ "$run_tests" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
 	gate_note="$(printf '{"version":1,"kind":"merge-gates","commit":"%s","ok":true,"passed":%s,"failed":%s,"new_failed":0,"lanes":"%s","tests_json":"%s","created":"%s"}' \
 		"$sha" "$passed" "${nfailed:-0}" "$lanes" "$tests_json" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+	look_coverage="$(python tools/dq_look_verified_anchor.py export "$tests_json")"
+	gate_note="$(node -e 'const n=JSON.parse(process.argv[1]), c=JSON.parse(process.argv[2]); if(c) n.look_coverage=c; console.log(JSON.stringify(n));' "$gate_note" "$look_coverage")" || exit 1
 	if git notes --ref=merge-gates add -f -m "$gate_note" "$sha"; then
 		echo "dq_merge_gates: stamped ${short} (git notes --ref=merge-gates show $short)"
 		if [ "${DQ_LANE_NOTES_PUSH:-1}" != "0" ]; then

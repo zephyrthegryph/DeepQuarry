@@ -369,3 +369,19 @@ values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-on
 (225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
 `A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the
 current one part, which names the part that moved.
+# Verified appearance coverage
+
+Combined focused runs prepare and pass the analyzer's appearance probe plan,
+just as separate appearance worlds do. Regenerated `look_keys.txt` describes the
+current declarations; it does not prove that those declarations passed a pin.
+
+Incremental coverage therefore starts from a verified appearance anchor. The
+normal gate note records the tested commit, plan hash, result-file hash and
+fixture/tool source identities only when both appearance pins actually passed.
+Missing, failed or skipped pins do not establish coverage, including known
+failures accepted by the general gate. A changed fixture or tool invalidates the
+anchor. Missing trustworthy evidence falls back to full planned probing.
+
+The helper records coverage evidence, not a stamp. Only the existing normal
+lane-ready and merge-gate paths issue stamps after their checks complete.
+
