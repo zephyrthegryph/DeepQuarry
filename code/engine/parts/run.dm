@@ -991,7 +991,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		watch_collect(next, pair)
 	for(var/index in watch_extra?.Copy())
 		var/list/extra = watch_extra[index]
-		if(length(extra) != 2 || !extra[1] || QDELETED(extra[1]))
+		var/datum/extra_owner = length(extra) == 2 && isdatum(extra[1]) ? extra[1] : null
+		if(length(extra) != 2 || !extra_owner || QDELETED(extra_owner))
 			watch_extra -= index
 			continue
 		watch_collect(next, extra)
@@ -1026,7 +1027,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		LAZYADD(watching, list(watch_index[index]))
 
 /datum/pending_op/proc/watch_collect(list/rows, list/pair)
-	if(length(pair) != 2 || !pair[1] || QDELETED(pair[1]))
+	var/datum/read_owner = length(pair) == 2 && isdatum(pair[1]) ? pair[1] : null
+	if(length(pair) != 2 || !read_owner || QDELETED(read_owner))
 		return
 	rows["[REF(pair[1])]|[pair[2]]"] = pair.Copy()
 

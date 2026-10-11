@@ -331,11 +331,8 @@ fn emit_query(out: &mut GenOut, a: &Action) {
         out.line(format!("\tif(istype({}, /datum/pooled) || (isdatum({}) && QDELETED({})))", name, name, name));
         out.line("\t\tCRASH(\"query inputs must be live world entities, not transient contexts\")");
     }
-    out.line(format!("\tvar/{}/A = take(query_type)", path_of(&a.name).trim_start_matches('/')));
-    out.line("\tA.holder = holder");
-    out.line("\tA.target = target");
+    out.line(format!("\tvar/{}/A = act_context(query_type, holder, target, actor)", path_of(&a.name).trim_start_matches('/')));
     out.line("\tA.target_atom = target");
-    out.line("\tA.actor = actor");
     for (ty, name) in &a.fields {
         out.line(format!("\tA.{} = {}{}", name, if ty == "list" { "copied_" } else { "" }, name));
     }
@@ -461,7 +458,7 @@ ACTION(poke, atom/x)
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(text.contains("parent_type = /datum/act/op"));
         assert!(text.contains("query_admission_query("));
-        assert!(text.contains("take(query_type)"));
+        assert!(text.contains("act_context(query_type, holder, target, actor)"));
         assert!(text.contains("A.wearer = wearer"));
         assert!(text.contains("op_query_input_copy(query_options)"));
         assert!(!text.contains("act_begin("));
@@ -477,8 +474,8 @@ ACTION(poke, atom/x)
     fn query_binding_validates_all_inputs_before_pool_checkout() {
         let (text, diags) = gen(QUERY_SRC);
         assert!(diags.is_empty(), "{:?}", diags);
-        let checkout = text.find("take(query_type)").expect("one pooled checkout");
-        assert_eq!(text.matches("take(query_type)").count(), 1);
+        let checkout = text.find("act_context(query_type, holder, target, actor)").expect("one pooled checkout");
+        assert_eq!(text.matches("act_context(query_type, holder, target, actor)").count(), 1);
         for validation in ["!ispath(query_type", "!holder || !istype(holder, /datum)", "!istype(target, /atom/movable)", "!istype(actor, /mob)", "!istype(wearer, /mob)", "!istype(mover, /mob)", "!istype(destination, /datum)", "op_query_input_copy(query_options", "istype(holder, /datum/pooled)", "istype(target, /datum/pooled)", "istype(actor, /datum/pooled)", "istype(wearer, /datum/pooled)", "istype(mover, /datum/pooled)", "istype(destination, /datum/pooled)"] {
             assert!(text.find(validation).expect(validation) < checkout, "{} must not leak a checkout on invalid input", validation);
         }
@@ -514,7 +511,7 @@ ACTION(poke, atom/x)
             let (text, diags) = gen(src);
             assert!(diags.iter().any(|d| d.contains(diagnostic)), "{}: {:?}", src, diags);
             assert!(!text.contains("/proc/query_bad"), "invalid schema cannot enter runtime: {}", text);
-            assert!(!text.contains("take(query_type)"), "invalid schema cannot acquire pooled inputs");
+            assert!(!text.contains("act_context(query_type, holder, target, actor)"), "invalid schema cannot acquire pooled inputs");
         }
     }
 

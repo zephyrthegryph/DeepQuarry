@@ -76,14 +76,20 @@ ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requi
 					for(var/member_key in members)
 						// Plain relation lists carry datums directly. Associative owned
 						// relations carry the datum as the value of a stable key.
-						if(isdatum(member_key) && !QDELETED(member_key))
-							next |= member_key
+						if(isdatum(member_key))
+							var/datum/key_owner = member_key
+							if(!QDELETED(key_owner))
+								next |= key_owner
 						if(istext(member_key) || ispath(member_key) || isdatum(member_key))
 							var/member_value = members[member_key]
-							if(isdatum(member_value) && !QDELETED(member_value))
-								next |= member_value
-				else if(isdatum(value) && !QDELETED(value))
-					next |= value
+							if(isdatum(member_value))
+								var/datum/value_owner = member_value
+								if(!QDELETED(value_owner))
+									next |= value_owner
+				else if(isdatum(value))
+					var/datum/value_owner = value
+					if(!QDELETED(value_owner))
+						next |= value_owner
 			owners = next
 		var/key = GLOB.generated_read_names[read[3]]
 		for(var/datum/owner as anything in owners)

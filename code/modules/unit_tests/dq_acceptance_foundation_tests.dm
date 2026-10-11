@@ -607,3 +607,62 @@ CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	TEST_ASSERT_NULL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "Actual destination setter allows")
 	declarer.set_query_ready(FALSE)
 	TEST_ASSERT_NULL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "Declaration owner is not silently substituted for destination")
+
+/datum/unit_test/dq_acceptance_world_action_binding/Run()
+	var/obj/item/holder = allocate(/obj/item)
+	var/obj/item/candidate = allocate(/obj/item)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	set_global(nameof(GLOB.act_next_actor), actor)
+	set_global(nameof(GLOB.act_next_authority), AUTH_ADMIN)
+	var/acts_before = GLOB.act_taken
+	var/notices_before = GLOB.notice_taken
+	var/datum/act/action/A = act_begin(/datum/act/insert, holder)
+	TEST_ASSERT_NOTNULL(A, "Real world act begins below the depth cap")
+	var/bound_holder = A.holder
+	var/bound_target = A.target
+	var/bound_actor = A.actor
+	var/bound_authority = A.authority
+	A.release()
+	TEST_ASSERT_EQUAL(bound_holder, holder, "World action binds the actual holder")
+	TEST_ASSERT_EQUAL(bound_target, holder, "World action keeps target equal to holder")
+	TEST_ASSERT_EQUAL(bound_actor, actor, "World action consumes the next actor")
+	TEST_ASSERT_EQUAL(bound_authority, AUTH_ADMIN, "World action consumes next authority")
+	TEST_ASSERT_NULL(GLOB.act_next_actor, "World action clears next actor")
+	TEST_ASSERT_NULL(GLOB.act_next_authority, "World action clears next authority")
+	TEST_ASSERT_EQUAL(GLOB.act_taken, acts_before + 1, "World action increments its cumulative counter exactly once")
+	TEST_ASSERT_EQUAL(GLOB.notice_taken, notices_before, "Binding alone publishes no notice")
+	set_global(nameof(GLOB.act_next_actor), actor)
+	set_global(nameof(GLOB.act_next_authority), AUTH_ADMIN)
+	var/query_acts_before = GLOB.act_taken
+	var/query_notices_before = GLOB.notice_taken
+	var/violations_before = length(GLOB.op_pure_violations)
+	op_pure_begin()
+	var/datum/act/op/acceptance/Q = acceptance_act(holder, holder, candidate, actor, actor)
+	var/query_holder = Q.holder
+	var/query_target = Q.target
+	var/query_actor = Q.actor
+	acceptance_act_release(Q)
+	op_pure_end()
+	TEST_ASSERT_EQUAL(query_holder, holder, "Query binder retains its declarer")
+	TEST_ASSERT_EQUAL(query_target, candidate, "Query target remains candidate rather than destination")
+	TEST_ASSERT_EQUAL(query_actor, actor, "Query receives its explicit mover")
+	TEST_ASSERT_EQUAL(GLOB.act_next_actor, actor, "Pure query does not consume next world actor")
+	TEST_ASSERT_EQUAL(GLOB.act_next_authority, AUTH_ADMIN, "Pure query does not consume next world authority")
+	TEST_ASSERT_EQUAL(GLOB.act_taken, query_acts_before, "Pure query does not begin a world act")
+	TEST_ASSERT_EQUAL(GLOB.notice_taken, query_notices_before, "Pure query publishes no notice")
+	TEST_ASSERT_EQUAL(length(GLOB.op_pure_violations), violations_before, "Query binder stays within pure context contract")
+
+/datum/unit_test/dq_acceptance_real_constructor_fields/Run()
+	var/obj/item/clothing/mask/chewable/candy/lolli/candy = allocate(/obj/item/clothing/mask/chewable/candy/lolli, run_loc_floor_bottom_left)
+	TEST_ASSERT(candy.wrapped, "Concrete lollipop starts wrapped")
+	TEST_ASSERT_NULL(candy.slot_flags, "Actual wrapped setup clears wearable slots")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	H.pdachoice = 6
+	var/obj/item/pda/P = allocate(/obj/item/pda, H)
+	TEST_ASSERT_EQUAL(P.pdachoice, 6, "Real PDA constructor reads its human holder's wrist choice")
+	TEST_ASSERT_EQUAL(P.slot_flags, SLOT_ID | SLOT_BELT | SLOT_GLOVES, "Actual wrist setup preserves all three wearable slots")
+	TEST_ASSERT_EQUAL(P.sprite_sheets[SPECIES_TESHARI], 'icons/mob/species/teshari/pda_wrist.dmi', "Actual wrist setup installs Teshari sheet")
+	TEST_ASSERT_EQUAL(P.sprite_sheets[SPECIES_VR_TESHARI], 'icons/mob/species/teshari/pda_wrist.dmi', "Actual wrist setup installs VR Teshari sheet")
+	var/obj/item/computer_hardware/hardware = allocate(/obj/item/computer_hardware, run_loc_floor_bottom_left)
+	TEST_ASSERT(initial(hardware.w_class) != hardware.hardware_size, "Concrete hardware needs an initial size derivation")
+	TEST_ASSERT_EQUAL(hardware.w_class, hardware.hardware_size, "Real hardware initialization derives its configured physical size")

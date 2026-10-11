@@ -98,10 +98,16 @@
 	. = list()
 	for(var/datum/entry/part/req/R as anything in children)
 		for(var/list/pair as anything in R.read_keys(A))
-			if(length(pair) == 2 && pair[1] && !QDELETED(pair[1]))
+			if(length(pair) != 2 || !isdatum(pair[1]))
+				continue
+			var/datum/read_owner = pair[1]
+			if(!QDELETED(read_owner))
 				. += list(pair.Copy())
 	for(var/list/pair as anything in A.holder.acceptance_override_reads())
-		if(length(pair) == 2 && pair[1] && !QDELETED(pair[1]))
+		if(length(pair) != 2 || !isdatum(pair[1]))
+			continue
+		var/datum/read_owner = pair[1]
+		if(!QDELETED(read_owner))
 			. += list(pair.Copy())
 
 // Direct fields use the existing bounded pooled act contract.
