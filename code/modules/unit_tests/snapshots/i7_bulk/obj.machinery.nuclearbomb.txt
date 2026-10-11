@@ -24,14 +24,12 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Make Deployable
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Make Deployable
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -52,7 +50,6 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Ui open
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Deployable
@@ -86,5 +83,5 @@ human|/obj/item/disk/nuclear menu: Toggle Digestable (refused: You can't do that
 human|/obj/item/disk/nuclear menu: Ui open
 human|/obj/item/disk/nuclear menu: Use
 human|/obj/item/disk/nuclear click: Click: Ui open
-keys: anchor, auth, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, pulse, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wire_tools, use_wrench, wire
+keys: anchor, auth, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, pulse, removal_stage_0_1, removal_stage_1_2, removal_stage_2_3, removal_stage_3_4, removal_stage_4_5, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_screwdriver, use_wire_tools, wire
 
