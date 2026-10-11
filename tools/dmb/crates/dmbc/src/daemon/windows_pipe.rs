@@ -49,6 +49,7 @@ unsafe extern "system" {
         timeout: *const u32,
     ) -> i32;
     fn ConnectNamedPipe(pipe: Handle, overlapped: Handle) -> i32;
+    fn WaitNamedPipeW(name: *const u16, timeout: u32) -> i32;
     fn CreateFileW(
         name: *const u16,
         access: u32,
@@ -245,23 +246,53 @@ pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
     })
 }
 pub(in crate::daemon) fn connect(endpoint: &Endpoint) -> io::Result<Stream> {
-    unsafe {
-        let handle = CreateFileW(
-            endpoint.name.as_ptr(),
-            0xc0000000,
-            0,
-            ptr::null_mut(),
-            3,
-            0,
-            ptr::null_mut(),
-        );
-        if handle as isize == -1 {
-            Err(io::Error::last_os_error())
-        } else {
-            Stream::new(File::from_raw_handle(handle))
+    // The listener issues its next instance after accepting the previous one.
+    // Busy is transient contention, not proof that the existing daemon is absent.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+    loop {
+        let handle = unsafe {
+            CreateFileW(
+                endpoint.name.as_ptr(),
+                0xc0000000,
+                0,
+                ptr::null_mut(),
+                3,
+                0,
+                ptr::null_mut(),
+            )
+        };
+        if handle as isize != -1 {
+            return Stream::new(unsafe { File::from_raw_handle(handle) });
         }
+        let error = io::Error::last_os_error();
+        if error.raw_os_error() != Some(231) {
+            // ERROR_PIPE_BUSY only.
+            return Err(error);
+        }
+        let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+        if remaining.is_zero() {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "existing daemon pipe remained busy",
+            ));
+        }
+        let milliseconds = remaining.as_millis().max(1).min(2000) as u32;
+        if unsafe { WaitNamedPipeW(endpoint.name.as_ptr(), milliseconds) } == 0 {
+            let error = io::Error::last_os_error();
+            if error.raw_os_error() == Some(121) {
+                // ERROR_SEM_TIMEOUT.
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "existing daemon pipe remained busy",
+                ));
+            }
+            return Err(error);
+        }
+        // Another client may win the newly available instance. Retry within the
+        // same deadline, without autostart or a different endpoint.
     }
 }
+
 impl Listener {
     pub(in crate::daemon) fn accept(&self) -> io::Result<Stream> {
         unsafe {
@@ -341,6 +372,44 @@ mod acl_tests {
         assert!(endpoint.sid.starts_with("S-1-"));
         let name = String::from_utf16(&endpoint.name[..endpoint.name.len() - 1]).unwrap();
         assert_eq!(name, format!(r"\\.\pipe\dmbd-{}", endpoint.sid));
+    }
+    #[test]
+    fn busy_existing_pipe_waits_for_next_instance() {
+        use std::io::{Read, Write};
+        let mut endpoint = Endpoint::current().unwrap();
+        endpoint.name = wide(&format!(
+            r"\\.\pipe\dmbd-busy-test-{}-{}",
+            endpoint.sid,
+            std::process::id()
+        ));
+        let listener = listener(&endpoint).unwrap();
+        let (send, receive) = std::sync::mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let _first = listener.accept().unwrap();
+            send.send(()).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let mut second = listener.accept().unwrap();
+            let mut byte = [0];
+            second.read_exact(&mut byte).unwrap();
+            assert_eq!(byte, [7]);
+        });
+        let ready = std::time::Instant::now() + std::time::Duration::from_secs(2);
+        let _first = loop {
+            match connect(&endpoint) {
+                Ok(stream) => break stream,
+                Err(error)
+                    if error.raw_os_error() == Some(2) && std::time::Instant::now() < ready =>
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(2))
+                }
+                Err(error) => panic!("first instance unavailable: {error}"),
+            }
+        };
+        receive
+            .recv_timeout(std::time::Duration::from_secs(2))
+            .unwrap();
+        connect(&endpoint).unwrap().write_all(&[7]).unwrap();
+        worker.join().unwrap();
     }
     #[test]
     fn connected_idle_pipe_waits_for_bytes_instead_of_reporting_eof() {
