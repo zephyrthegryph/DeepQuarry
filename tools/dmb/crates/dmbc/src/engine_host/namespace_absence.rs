@@ -48,6 +48,17 @@ impl<R: Resolver + Send> EngineResolverHost<R> {
         if coverage.source.resolve(owner, name, kind).is_some() {
             return None;
         }
+        // HasMemberProc is the union namespace used by the shared resolver.
+        // A verb positive must also prevent issuing a negative proc-presence
+        // answer, even if an outer semantic layer declined that positive.
+        if presence
+            && coverage
+                .source
+                .resolve(owner, name, dm_tree::MemberKind::Verb)
+                .is_some()
+        {
+            return None;
+        }
         Some(if presence {
             M::Presence(false)
         } else {

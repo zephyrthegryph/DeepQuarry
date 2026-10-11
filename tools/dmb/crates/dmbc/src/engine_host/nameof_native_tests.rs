@@ -6,7 +6,7 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
-            Ok("/obj/probe\n/proc/probe(world/W, list/L, icon/I)\n    return 1\n/datum/base/proc/known()\n    return 1\n/datum/base/child\n".into())
+            Ok("/obj/probe\n/proc/probe(world/W, list/L, icon/I)\n    return 1\n/datum/base/proc/known()\n    return 1\n/datum/base/verb/known_verb()\n    return 1\n/datum/base/child\n".into())
         }
     }
     let engine = crate::engine::EngineSnapshot::from_bytes(
@@ -155,6 +155,16 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
     assert_eq!(
         host.resolve(Q::Type(SymbolId::of("/list"))),
         M::Symbol(SymbolId::of("/list"))
+    );
+    let verb_presence = Q::HasMemberProc {
+        owner: SymbolId::of("/datum/base/child"),
+        name: SymbolId::of("known_verb"),
+    };
+    assert_eq!(host.resolve(verb_presence), M::Presence(true));
+    assert_eq!(
+        host.pinned_namespace_absence(verb_presence),
+        None,
+        "the absence issuer must protect the verb half of the union namespace"
     );
     assert!(
         matches!(
