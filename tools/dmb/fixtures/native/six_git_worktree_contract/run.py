@@ -15,6 +15,7 @@ def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
+REJECTED = "/proc/probe()\n    return formerly_missing()\n"
 BASE = "/datum/control\n    var/value = 7\n/proc/probe()\n    return 7\n"
 def revision(index, changed):
     if not changed: return BASE
@@ -72,11 +73,11 @@ def main():
         environment["DMB_DAEMON_SOFT_PRIVATE_BYTES"]=str(2*1024**3)
         receipt["namespace"]=namespace;endpoint.probe()
         job=OwnedJob(receipt["job_memory_bytes"]);h._owned_job=job
-        def compile_one(i,changed,retained):
+        def compile_one(i,changed,retained,phase=None):
             path=registered[i];source=revision(i,changed)
             if (path/"probe.dm").read_text()!=source: raise ValueError("source admission mismatch")
             before={name:h.sha(path/name) for name in ("probe.dm","probe.dme")}
-            label=("edited" if changed else "initial")+"/"+("retained" if retained else "fresh")+str(i)
+            label=(phase or ("edited" if changed else "initial"))+"/"+("retained" if retained else "fresh")+str(i)
             output=root/label;output.mkdir(parents=True)
             arguments=core.compile_arguments(path/"probe.dme",output,args.template,retained)
             arguments[arguments.index("--workers")+1]="1"
@@ -93,11 +94,31 @@ def main():
             hashes=fresh.admit_pair(published,acquired,output/"artifacts/probe.dme",output/"store",slots,h.regular,h.sha)
             receipt["children"][label]["pair"]={"published":published,"acquired":acquired,"outputs":hashes}
             return {extension:{key:row[key] for key in ("sha256","bytes")} for extension,row in hashes.items()}
+        def reject_one(retained):
+            path=registered[0]
+            if (path/"probe.dm").read_text()!=REJECTED: raise ValueError("rejected source admission mismatch")
+            label="source-error/"+("retained" if retained else "fresh")
+            output=root/label;output.mkdir(parents=True)
+            before={name:h.sha(path/name) for name in ("probe.dm","probe.dme")}
+            arguments=core.compile_arguments(path/"probe.dme",output,args.template,retained)
+            arguments[arguments.index("--workers")+1]="1"
+            result=h.run_child(args.native,arguments,output/"logs",min(deadline,time.monotonic()+30),require_owned=retained,cache_directory=cache)
+            diagnostics=(output/"logs/stderr.log").read_text(encoding="utf-8")
+            errors=[line for line in diagnostics.splitlines() if ":error:" in line]
+            receipt["children"][label]={"result":result,"arguments":arguments,"source_sha256":before,"source_errors":errors}
+            if result["exit"]!=2 or not errors: raise ValueError("source rejection class/diagnostics differs")
+            if any(h.sha(path/name)!=digest for name,digest in before.items()): raise ValueError("rejected source moved")
+            pairs=output/"store/pairs"
+            if (output/"compile-result.json").exists() or (pairs.exists() and any(pairs.iterdir())):
+                raise ValueError("source failure published a pair")
+            return errors
         # Independent serial fresh oracles precede daemon startup; no shared source edits race.
         oracles={}
         for changed in (False,True):
             for i,path in enumerate(registered):
                 (path/"probe.dm").write_text(revision(i,changed));oracles[(i,changed)]=compile_one(i,changed,False)
+        (registered[0]/"probe.dm").write_text(REJECTED)
+        rejected_oracle=reject_one(False)
         for path in registered: (path/"probe.dm").write_text(BASE)
         with (root/"daemon.stdout").open("xb") as out,(root/"daemon.stderr").open("xb") as err:
             daemon=subprocess.Popen([str(args.native),"--serve-daemon"],stdout=out,stderr=err,env=environment,creationflags=subprocess.CREATE_NO_WINDOW|0x4)
@@ -113,6 +134,25 @@ def main():
                 for i,future in enumerate(futures):
                     if future.result()!=oracles[(i,changed)]: raise ValueError("fresh byte oracle differs")
             if daemon.poll() is not None or not endpoint.probe(daemon): raise ValueError("daemon ownership lost")
+        # A genuine source failure must not poison independent roots or the
+        # previous successful pair; restored source then uses the ordinary path.
+        previous_outputs=receipt["children"]["edited/retained0"]["pair"]["outputs"]
+        (registered[0]/"probe.dm").write_text(REJECTED)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            failed=pool.submit(reject_one,True)
+            unaffected=[pool.submit(compile_one,i,True,True,"during-error") for i in range(1,6)]
+            if failed.result()!=rejected_oracle: raise ValueError("retained/fresh source diagnostics differ")
+            for i,future in enumerate(unaffected,1):
+                if future.result()!=oracles[(i,True)]: raise ValueError("source error contaminated another root")
+        for row in previous_outputs.values():
+            path=Path(row["acquired_path"]);h.regular(path)
+            if h.sha(path)!=row["sha256"]: raise ValueError("source failure changed previous pair")
+        (registered[0]/"probe.dm").write_text(revision(0,True))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            recovered=[pool.submit(compile_one,i,True,True,"recovery") for i in range(6)]
+            for i,future in enumerate(recovered):
+                if future.result()!=oracles[(i,True)]: raise ValueError("source-error recovery differs from fresh")
+        if daemon.poll() is not None or not endpoint.probe(daemon): raise ValueError("daemon lost after recovery")
         for name in ("native","template"):
             if h.sha(getattr(args,name))!=receipt["pins"][name]["sha256"]: raise ValueError("pin moved")
         receipt["complete"]=True
