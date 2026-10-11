@@ -31,22 +31,18 @@ use crate::sem::reads::{Annotations, ReadKind, ReadsEngine};
 /// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
 pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
-// Standard outputs and explicit accessor contracts are engine read roots even
-// when no CAPABILITIES entry spells their proc name. Only real local definitions
-// are enumerated; runtime parent lookup supplies inherited output metadata.
+// Explicit accessor contracts are read roots even when a capability entry does
+// not name their proc. Ordinary outputs retain the derived-read generator path.
 fn add_implicit_read_handlers(sem: &Sem, ann: &Annotations, handlers: &mut Vec<HandlerRef>) {
     for ty in sem.objtree.iter_types() {
         let owner = &ty.get().path;
         if owner.is_empty() { continue; }
         for name in ty.get().procs.keys() {
-            let output = matches!(name.as_str(), "draw" | "hidden_verbs" | "ui_data" | "tgui_data" | "push_to_rust" | "should_run");
             let accessor = ann.reads_as.contains_key(&(owner.clone(), name.clone()));
-            if !output && !accessor { continue; }
+            if !accessor { continue; }
             let Some(p) = sem.proc_ref(owner, name) else { continue };
             if p.is_builtin() { continue; }
             let rel = sem.rel(p.get().location);
-            // Internal output plumbing remains opaque, as in the ordinary walk.
-            if !accessor && OPAQUE.iter().any(|dir| rel.starts_with(dir)) { continue; }
             handlers.push(HandlerRef { owner: owner.clone(), cap_proc: false, cap_type: String::new(), proc: name.clone(), form: "outputs", ctx: Ctx::Eval, role: Role::Output, rel: rel.to_string(), line: p.get().location.line, notice: String::new(), ui_args: None });
         }
     }
@@ -279,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn native_outputs_and_direct_inherited_accessor_roots_have_real_read_metadata() {
+    fn direct_inherited_accessor_roots_have_real_read_metadata() {
         use crate::sem::{Sem, decls::Decls, reads::{Annotations, ReadsEngine}};
         use crate::tree::{SourceFile, Tree};
         let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
@@ -294,7 +290,7 @@ mod tests {
         let ann = Annotations::get(&sem, &decls);
         let mut handlers = Vec::new();
         super::add_implicit_read_handlers(&sem, &ann, &mut handlers);
-        assert!(handlers.iter().any(|h| h.owner == "/datum/probe" && h.proc == "draw"), "native draw without a declaration reference is still a read root");
+        assert!(!handlers.iter().any(|h| h.owner == "/datum/probe" && h.proc == "draw"), "ordinary output discovery remains owned by derived reads");
         assert!(handlers.iter().any(|h| h.owner == "/datum/probe" && h.proc == "power_lost"), "annotated accessor may be queried directly");
         let eng = ReadsEngine::new(&sem, &decls, &ann);
         let drawn = eng.analyze("/datum/probe", "draw");
