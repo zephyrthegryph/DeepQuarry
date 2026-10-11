@@ -17,25 +17,30 @@ impl BuildHost {
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
         if let Some((_, owner)) = &self.symbolic {
+            eprintln!("dmbd compact symbolic procedures begin");
             let report = owner.compact_for_pressure(192 * 1024 * 1024);
             eprintln!("dmbd compact symbolic procedures {report:?}");
         }
         // Preserve only fully charged source-neutral initializer nodes. This is
         // a logical retention cap, not a claim about process private memory.
         if let Some((_, owner)) = &self.initializers {
+            eprintln!("dmbd compact initializer classification begin");
             let report = owner.compact_for_pressure(96 * 1024 * 1024);
             eprintln!("dmbd compact initializer classification {report:?}");
         }
         if let Some((_, owner)) = &self.startup {
+            eprintln!("dmbd compact startup begin");
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
             eprintln!("dmbd compact startup {report:?}");
         }
         if let Some((_, owner)) = &self.abi {
+            eprintln!("dmbd compact ABI payloads begin");
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
             eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?}");
         }
         self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {
+            eprintln!("dmbd compact initializer assembly begin");
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
             eprintln!("dmbd compact initializer assembly {report:?}");
         }
@@ -94,6 +99,7 @@ impl BuildHost {
         }
         self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {
+            eprintln!("dmbd compact initializer assembly begin");
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
             eprintln!("dmbd compact initializer assembly {report:?}");
         }
