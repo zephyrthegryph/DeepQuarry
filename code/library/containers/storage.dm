@@ -150,11 +150,11 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	if(!D)
 		return
 	if(!isnull(types))
-		D.accepts = types.Copy()
-		D.has_accepts = TRUE
+		D.set_accepts(types.Copy())
+		D.set_has_accepts(TRUE)
 	if(!isnull(max_size))
-		D.max_size = max_size
-		D.has_max_size = TRUE
+		D.set_max_size(max_size)
+		D.set_has_max_size(TRUE)
 
 /// The capacity of the holder's storage slot, in storage-cost units.
 /datum/capability/lib/storage/proc/space_of(atom/holder)
@@ -176,7 +176,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	if(!isitem(thing))
 		return "that can't go in a container"
 	var/obj/item/W = thing
-	if(actor && actor.isEquipped(W) && !actor.canUnEquip(W))
+	if(actor && actor.isEquipped(W) && !W.mob_can_unequip(actor, actor.inventory_slot_id(W), TRUE))
 		return "you can't let go of \the [W]"
 	var/limit = slots_of(holder)
 	if(!isnull(limit) && count_in(holder) >= limit)
@@ -334,3 +334,8 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	var/obj/item/storage/S = A.holder
 	S.toggle_gathering(A.actor)
 	return OP_OK
+
+TRACKED(/datum/cap_data/storage, accepts)
+TRACKED(/datum/cap_data/storage, has_accepts)
+TRACKED(/datum/cap_data/storage, max_size)
+TRACKED(/datum/cap_data/storage, has_max_size)

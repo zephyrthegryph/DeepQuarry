@@ -1,3 +1,5 @@
+TRACKED(/obj/item/organ, parent_organ)
+
 /obj/item/organ
 	name = "organ"
 	icon = 'icons/obj/surgery.dmi'

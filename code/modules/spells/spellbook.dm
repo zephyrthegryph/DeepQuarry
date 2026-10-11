@@ -320,7 +320,7 @@ CAPABILITIES(/obj/item/spellbook/oneuse)
 		var/obj/item/clothing/mask/horsehead/magichead = new /obj/item/clothing/mask/horsehead
 		magichead.say_verbs = list("neighs", "whinnys", "snorts")
 		magichead.say_messages = list("NEEEEIGH", "KEECHOOOW", "WHIIIINNNY", "NEEEEEEIGHHHH", "KEECHOOOWWW")
-		magichead.canremove = FALSE		//curses!
+		magichead.set_canremove(FALSE) //curses!
 		magichead.flags_inv = null	//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		user.drop_from_inventory(user.get_equipped_item(SLOT_ID_MASK))

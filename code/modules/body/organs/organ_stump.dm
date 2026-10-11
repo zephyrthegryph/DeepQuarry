@@ -23,11 +23,11 @@ TRACKED(/obj/item/organ/external/stump, stump_joined)
 /obj/item/organ/external/stump/Initialize(mapload)
 	var/obj/item/organ/external/limb = stump_of
 	if(istype(limb))
-		organ_tag = limb.organ_tag
+		set_organ_tag(limb.organ_tag)
 		body_part = limb.body_part
 		amputation_point = limb.amputation_point
 		joint = limb.joint
-		parent_organ = limb.parent_organ
+		set_parent_organ(limb.parent_organ)
 	. = ..()
 	if(istype(limb))
 		set_max_damage(limb.max_damage)

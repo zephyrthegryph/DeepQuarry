@@ -165,3 +165,18 @@
 /proc/acceptance_act_release(datum/act/op/acceptance/A)
 	if(A)
 		A.release()
+
+// Evaluate an already-compiled slot plan without changing holder overrides or publishing.
+/proc/acceptance_plan_query(datum/entry/part/acceptance_plan/P, datum/declarer, channel, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, wearer_is_actor = FALSE, reads_only = FALSE)
+	var/datum/act/op/acceptance/A
+	var/previous_pure_depth = GLOB.op_pure_depth
+	try
+		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, null, /datum/act/op/acceptance)
+		op_pure_begin()
+		. = reads_only ? P.read_keys(A) : P.check(A)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		acceptance_act_release(A)
+		throw fault
+	op_pure_end()
+	acceptance_act_release(A)

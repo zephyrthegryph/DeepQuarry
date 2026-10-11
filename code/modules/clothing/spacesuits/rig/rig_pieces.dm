@@ -160,7 +160,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 	flags =              THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-TYPE_TABLE(/obj/item/clothing/suit/lightrig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 
 /obj/item/clothing/shoes/lightrig
 	name = DEVELOPER_WARNING_NAME // "boots"
@@ -173,3 +173,6 @@ TYPE_TABLE(/obj/item/clothing/suit/lightrig, suit_storage_spec, list(HOLD_ONLY(l
 /// the tacknife this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
 	return tacknife
+
+CAPABILITIES(/obj/item/clothing/suit/lightrig)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

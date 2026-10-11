@@ -55,16 +55,16 @@
 	var/list/events
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
-	observe(holder, /datum/act/check_insert, src, instead(when(PROC_REF(blocks_insert))))
-	observe(holder, /datum/act/check_remove, src, instead(when(PROC_REF(blocks_remove))))
+	observe(holder, /datum/act/insert, src, needs(req(PROC_REF(blocks_insert))))
+	observe(holder, /datum/act/remove, src, needs(req(PROC_REF(blocks_remove))))
 	observe(holder, /datum/notice/slot_inserted, src, then(PROC_REF(on_inserted)))
 	observe(holder, /datum/notice/slot_removed, src, then(PROC_REF(on_removed)))
 
-/datum/dq_containment_listener/proc/blocks_insert(datum/act/check_insert/check)
-	return block_insert
+/datum/dq_containment_listener/proc/blocks_insert(datum/act/op/A)
+	return block_insert ? "it won't go in" : null
 
-/datum/dq_containment_listener/proc/blocks_remove(datum/act/check_remove/check)
-	return block_remove
+/datum/dq_containment_listener/proc/blocks_remove(datum/act/op/A)
+	return block_remove ? "it won't come out" : null
 
 /datum/dq_containment_listener/proc/on_inserted(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -671,3 +671,6 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 /datum/unit_test/dq_containment_conservation_fuzz/representative
 	tier = TEST_TIER_NORMAL
 	steps = 120
+
+TRACKED(/datum/dq_containment_listener, block_insert)
+TRACKED(/datum/dq_containment_listener, block_remove)

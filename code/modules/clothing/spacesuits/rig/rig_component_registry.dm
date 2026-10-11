@@ -73,7 +73,7 @@
 	for(var/obj/item/piece in get_equippable_pieces())
 		if(!istype(piece))
 			continue
-		piece.canremove = FALSE
+		piece.set_canremove(FALSE)
 		piece.name = "[holder().suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [holder().name]."
 		piece.icon_state = "[holder().suit_state]"

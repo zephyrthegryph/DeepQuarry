@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 	. = ..()
 	setup_radial_icon()
 	if(integrated_object) // declared child
-		integrated_object.canremove = FALSE
+		integrated_object.set_canremove(FALSE)
 
 /obj/item/organ/internal/augment/proc/setup_radial_icon()
 	if(!radial_icon)

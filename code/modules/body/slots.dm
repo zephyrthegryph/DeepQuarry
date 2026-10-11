@@ -66,6 +66,8 @@
 	. = wearer.body_slot_refusal(src)
 	if(.)
 		return .
+	if(acceptance_declared(GLOB.native_equipment_acceptance, slot_id))
+		return dq_native_equip_slot_reason(wearer, slot_id, thing, actor)
 	if(accepts)
 		var/datum/predicate/P = dq_predicate(accepts)
 		return P.why_not(wearer, thing, null)
@@ -120,7 +122,6 @@
 	redraw = /mob/proc/update_inv_head
 	slot_id = SLOT_ID_HEAD
 	name = "head"
-	accepts = /datum/predicate/equip_slot/head
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
@@ -130,7 +131,6 @@
 	cover_flags = FACE
 	slot_id = SLOT_ID_MASK
 	name = "mask"
-	accepts = /datum/predicate/equip_slot/mask
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
@@ -139,7 +139,6 @@
 	drops_with = list(SLOT_ID_SUIT_STORAGE)
 	slot_id = SLOT_ID_SUIT
 	name = "suit"
-	accepts = /datum/predicate/equip_slot/suit
 	layer = SLOT_LAYER_SUIT
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
@@ -150,7 +149,6 @@
 	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_UNIFORM
 	name = "uniform"
-	accepts = /datum/predicate/equip_slot/uniform
 	layer = SLOT_LAYER_UNIFORM
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
@@ -160,7 +158,6 @@
 	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_GLOVES
 	name = "gloves"
-	accepts = /datum/predicate/equip_slot/gloves
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	any_parts = list(BP_L_HAND, BP_R_HAND)
 
@@ -168,7 +165,6 @@
 	redraw = /mob/proc/update_inv_shoes
 	slot_id = SLOT_ID_SHOES
 	name = "shoes"
-	accepts = /datum/predicate/equip_slot/shoes
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	any_parts = list(BP_L_FOOT, BP_R_FOOT)
 
@@ -180,7 +176,6 @@
 	cover_flags = EYES
 	slot_id = SLOT_ID_EYES
 	name = "eyes"
-	accepts = /datum/predicate/equip_slot/glasses
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR
 	required_parts = list(BP_HEAD)
 
@@ -188,7 +183,6 @@
 	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_L
 	name = "left ear"
-	accepts = /datum/predicate/equip_slot/ear/left
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
@@ -196,7 +190,6 @@
 	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_R
 	name = "right ear"
-	accepts = /datum/predicate/equip_slot/ear/right
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
@@ -204,7 +197,6 @@
 	redraw = /mob/proc/update_inv_back
 	slot_id = SLOT_ID_BACK
 	name = "back"
-	accepts = /datum/predicate/equip_slot/back
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
@@ -212,7 +204,6 @@
 	redraw = /mob/proc/update_inv_belt
 	slot_id = SLOT_ID_BELT
 	name = "belt"
-	accepts = /datum/predicate/equip_slot/belt
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
@@ -220,7 +211,6 @@
 	redraw = /mob/proc/update_inv_wear_id
 	slot_id = SLOT_ID_ID
 	name = "ID"
-	accepts = /datum/predicate/equip_slot/id
 	roles = BODY_SLOT_WORN
 
 /// Suit storage: clipped inside the suit.
@@ -229,7 +219,6 @@
 	slot_id = SLOT_ID_SUIT_STORAGE
 	name = "suit storage"
 	exposure = SLOT_EXPOSURE_INTERNAL
-	accepts = /datum/predicate/equip_slot/suit_storage
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
@@ -240,25 +229,21 @@
 /datum/relation_definition/slot/body/pocket/left
 	slot_id = SLOT_ID_POCKET_L
 	name = "left pocket"
-	accepts = /datum/predicate/equip_slot/pocket/left
 
 /datum/relation_definition/slot/body/pocket/right
 	slot_id = SLOT_ID_POCKET_R
 	name = "right pocket"
-	accepts = /datum/predicate/equip_slot/pocket/right
 
 /datum/relation_definition/slot/body/handcuffed
 	redraw = /mob/proc/update_inv_handcuffed
 	slot_id = SLOT_ID_HANDCUFFED
 	name = "wrists"
-	accepts = /datum/predicate/equip_slot/handcuffs
 	required_parts = list(BP_L_HAND, BP_R_HAND)
 
 /datum/relation_definition/slot/body/legcuffed
 	redraw = /mob/proc/update_inv_legcuffed
 	slot_id = SLOT_ID_LEGCUFFED
 	name = "ankles"
-	accepts = /datum/predicate/equip_slot/legcuffs
 	required_parts = list(BP_L_FOOT, BP_R_FOOT)
 
 // ---- Cyborg modules ----

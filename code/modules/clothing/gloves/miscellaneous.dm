@@ -116,10 +116,11 @@ CAPABILITIES(/obj/item/clothing/gloves/tactical)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/vox)
+	acceptance("fit", fits(list("Vox")), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
-TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
+
 
 /obj/item/clothing/gloves/ranger
 	var/glovecolor = "white"

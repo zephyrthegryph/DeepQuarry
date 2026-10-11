@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_replika, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/accessory/replika)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 	variants(nameof(variant), PROC_REF(variant_table))
 

@@ -7,10 +7,11 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(permeability = 0.05, siemens = 0.8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
-TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
+
 
 /obj/item/clothing/shoes/mime
 	name = "mime shoes"
@@ -26,10 +27,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
-TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
+
 
 /obj/item/clothing/shoes/dress
 	name = "dress shoes"
@@ -49,7 +51,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
 
 	wizard_garb = 1
 
-TYPE_TABLE(/obj/item/clothing/shoes/sandal, fit_spec, null)
+
 
 /obj/item/clothing/shoes/sandals
 	desc = "A pair of simple sandals."
@@ -68,7 +70,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/sandal, fit_spec, null)
 	icon_state = "cookflops"
 	body_parts_covered = 0
 
-TYPE_TABLE(/obj/item/clothing/shoes/cookflop, fit_spec, null)
+
 
 /obj/item/clothing/shoes/tourist_1
 	name = "tourist sandals"
@@ -76,7 +78,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/cookflop, fit_spec, null)
 	icon_state = "tourist_1"
 	body_parts_covered = 0
 
-TYPE_TABLE(/obj/item/clothing/shoes/tourist_1, fit_spec, null)
+
 
 /obj/item/clothing/shoes/tourist_2
 	name = "tourist sandals"
@@ -84,7 +86,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_1, fit_spec, null)
 	icon_state = "tourist_2"
 	body_parts_covered = 0
 
-TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
+
 
 /obj/item/clothing/shoes/sandal/clogs
 	name = "plastic clogs"
@@ -117,7 +119,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 		play_sfx(src, SFX_CLOWNSTEP, 0.4, vary = TRUE)
 */
 
-TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
+
 
 /obj/item/clothing/shoes/cult
 	name = "boots"
@@ -127,10 +129,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
 	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/cult)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(siemens = 0.7, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
-TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
+
 
 /obj/item/clothing/shoes/cult/cultify()
 	return
@@ -148,9 +151,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/slippers)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
-TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
+
 
 /obj/item/clothing/shoes/slippers/worn
 	name = "worn bunny slippers"
@@ -178,7 +182,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 
-TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
+
 
 /obj/item/clothing/shoes/athletic
 	name = "athletic shoes"
@@ -210,9 +214,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
-TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
+
 
 /obj/item/clothing/shoes/boots/ranger
 	var/bootcolor = "white"
@@ -389,12 +394,13 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(siemens = 0.7))
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
 TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list(SFX_MECHSTEP=1))
 
-TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes, fit_spec, null)
+
 
 /obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
 	.=..()
@@ -440,10 +446,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 
-TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
+
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
@@ -461,3 +468,21 @@ CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
 	..()
 	if(look.state_so_far(src) == "ranger_boots")
 		look.state("[bootcolor]_ranger_boots")
+
+CAPABILITIES(/obj/item/clothing/shoes/sandal)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/cookflop)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/tourist_1)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/tourist_2)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)

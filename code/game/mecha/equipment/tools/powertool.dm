@@ -19,7 +19,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool)
 	. = ..()
 	my_tool.name = name
 	my_tool.set_anchored(TRUE)
-	my_tool.canremove = FALSE
+	my_tool.set_canremove(FALSE)
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)

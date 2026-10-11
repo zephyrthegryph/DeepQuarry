@@ -1,3 +1,5 @@
+TRACKED(/mob/living/simple_mob, has_hands)
+
 // Reorganized and somewhat cleaned up.
 // AI code has been made into a datum, inside the AI module folder.
 

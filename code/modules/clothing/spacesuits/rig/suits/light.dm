@@ -18,7 +18,7 @@
 	rigsuit_max_pressure = 5 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
-TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
+
 
 /obj/item/clothing/suit/space/rig/light
 	name = DEVELOPER_WARNING_NAME // "suit"
@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/hacker)
 		/obj/item/rig_module/self_destruct
 		)
 
-TYPE_TABLE(/obj/item/rig/light/ninja, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))))
+
 
 /obj/item/clothing/gloves/gauntlets/rig/light/ninja
 	name = "insulated gloves"
@@ -141,3 +141,9 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
 		/obj/item/rig_module/stealth_field,
 		/obj/item/rig_module/vision
 		)
+
+CAPABILITIES(/obj/item/rig/light)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/rig/light/ninja)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

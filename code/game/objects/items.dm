@@ -1,5 +1,7 @@
 TRACKED(/obj/item, body_parts_covered)
 
+TRACKED(/obj/item, canremove)
+
 
 /obj/item
 	name = "item"

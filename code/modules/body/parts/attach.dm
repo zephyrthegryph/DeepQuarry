@@ -150,7 +150,10 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 /// Changes this part's organ_tag, which is its key in its slot and in its
 /// owner's caches.
+SETTER(/obj/item/organ, organ_tag)
 /obj/item/organ/proc/set_organ_tag(new_tag)
+	if(TRACKED_UNCHANGED(organ_tag, new_tag))
+		return FALSE
 	var/mob/living/M = owner
 	if(M)
 		dq_part_uncache(M, src)
@@ -158,6 +161,8 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	ledger_rekey()
 	if(M)
 		dq_part_cache(M, src)
+	tracked_changed(src, nameof(organ_tag))
+	return TRUE
 
 // ---- Owner caches ----
 

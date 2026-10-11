@@ -11,11 +11,13 @@
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX, SPECIES_TESHARI, SPECIES_ALTEVIAN), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
+
+
 
 /obj/item/clothing/suit/space/void/responseteam/command
 	name = "Mark VII-C Emergency Response Team Commander Suit"
@@ -87,9 +89,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 	var/hud_active = 1
 	var/activation_sound = SFX_ITEMS_NIF_CLICK
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
+
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX, SPECIES_TESHARI, SPECIES_ALTEVIAN), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
 

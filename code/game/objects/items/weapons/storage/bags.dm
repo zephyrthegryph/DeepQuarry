@@ -245,7 +245,7 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 
 /obj/item/storage/bag/sheetsnatcher/borg/proc/upgrade()
 	name += " of holding"
-	capacity = 5000
+	set_capacity(5000)
 
 // -----------------------------
 //           Cash Bag
@@ -414,3 +414,12 @@ CAPABILITIES(/obj/item/storage/bag/santabag)
 		look.state("giftbag1")
 	else
 		look.state("giftbag2")
+
+
+/datum/relation_definition/slot/storage/sheets/admission_read_keys(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
+	. = ..()
+	. += list(list(holder, SLOT_OCCUPANCY_KEY), list(holder, nameof(holder.capacity)))
+	for(var/obj/item/stack/material/S as anything in holder.stored_items())
+		. += S.amount_read_keys()
+
+TRACKED(/obj/item/storage/bag/sheetsnatcher, capacity)

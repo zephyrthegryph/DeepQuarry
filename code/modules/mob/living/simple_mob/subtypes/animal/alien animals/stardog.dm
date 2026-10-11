@@ -155,7 +155,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			//legacy ai_holder wander tuning removed.
 			src.melee_damage_lower = 50
 			src.melee_damage_upper = 100
-			src.mob_size = MOB_HUGE
+			src.set_mob_size(MOB_HUGE)
 			src.child_om_marker.set_light(5, 1, "#ff8df5")
 			src.movement_cooldown = 5
 
@@ -165,7 +165,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		//legacy ai_holder wander tuning removed.
 		src.melee_damage_lower = 1
 		src.melee_damage_upper = 5
-		src.mob_size = MOB_SMALL
+		src.set_mob_size(MOB_SMALL)
 		src.child_om_marker.set_light(0)
 		src.movement_cooldown = 0
 

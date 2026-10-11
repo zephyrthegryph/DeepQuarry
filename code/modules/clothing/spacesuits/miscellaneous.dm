@@ -23,11 +23,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, min_pressure = 0, max_pressure = 2 * ONE_ATMOSPHERE, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 //Deathsquad suit
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/captain, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 /obj/item/clothing/head/helmet/space/deathsquad
 	name = "deathsquad helmet"
 	desc = "That's not red paint. That's real blood."
@@ -71,7 +72,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad/beret)
 
 //Space pirate outfit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/santa, suit_storage_spec, list(HOLD_ONLY(list(/obj/item))))
+
 /obj/item/clothing/head/helmet/space/pirate
 	name = "pirate hat"
 	desc = "Yarr."
@@ -95,11 +96,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	body_parts_covered = UPPER_TORSO|ARMS
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 
 //Orange emergency space suit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/pirate, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
+
 /obj/item/clothing/head/helmet/space/emergency
 	name = "emergency soft helmet"
 	icon_state = "syndicate-helm-orange"
@@ -111,3 +113,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/pirate, suit_storage_spec, list(HOLD_ON
 	icon_state = "syndicate-orange"
 	desc = "A thin, ungainly softsuit colored in blaze orange for rescuers to easily locate, looks pretty fragile."
 	slowdown = 2
+
+CAPABILITIES(/obj/item/clothing/suit/space/santa)
+	acceptance("suit_storage", req_acceptance_type(list(/obj/item), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

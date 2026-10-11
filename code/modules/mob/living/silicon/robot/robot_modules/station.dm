@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/robot_module)
 	create_equipment(R)
 
 	for(var/obj/item/I in modules)
-		I.canremove = FALSE
+		I.set_canremove(FALSE)
 
 	on_robot_equip(R)
 
@@ -220,7 +220,7 @@ CAPABILITIES(/obj/item/robot_module)
 			rel_add(src, nameof(synths), new_synth)
 	rel_clear(item_with_synth, nameof(item_with_synth.synths))
 	for(var/datum/matter_synth/linked_synth as anything in item_synths)
-		rel_add(item_with_synth, nameof(item_with_synth.synths), linked_synth)
+		item_with_synth.add_synth(linked_synth)
 
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
@@ -370,15 +370,15 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) // edit: we have burn surgeries so they should be able to do them
-	N.uses_charge = 1
-	N.charge_costs = list(1000)
-	rel_add(N, nameof(N.synths), medicine)
-	B.uses_charge = 1
-	B.charge_costs = list(1000)
-	rel_add(B, nameof(B.synths), medicine)
-	O.uses_charge = 1
-	O.charge_costs = list(1000)
-	rel_add(O, nameof(O.synths), medicine)
+	N.set_uses_charge(1)
+	N.set_charge_costs(list(1000))
+	N.add_synth(medicine)
+	B.set_uses_charge(1)
+	B.set_charge_costs(list(1000))
+	B.add_synth(medicine)
+	O.set_uses_charge(1)
+	O.set_charge_costs(list(1000))
+	O.add_synth(medicine)
 	rel_add(src, nameof(modules), N)
 	rel_add(src, nameof(modules), B)
 	rel_add(src, nameof(modules), O)
@@ -433,18 +433,18 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
-	C.uses_charge = 1
-	C.charge_costs = list(5000)
-	rel_add(C, nameof(C.synths), medicine)
-	O.uses_charge = 1
-	O.charge_costs = list(1000)
-	rel_add(O, nameof(O.synths), medicine)
-	B.uses_charge = 1
-	B.charge_costs = list(1000)
-	rel_add(B, nameof(B.synths), medicine)
-	S.uses_charge = 1
-	S.charge_costs = list(1000)
-	rel_add(S, nameof(S.synths), medicine)
+	C.set_uses_charge(1)
+	C.set_charge_costs(list(5000))
+	C.add_synth(medicine)
+	O.set_uses_charge(1)
+	O.set_charge_costs(list(1000))
+	O.add_synth(medicine)
+	B.set_uses_charge(1)
+	B.set_charge_costs(list(1000))
+	B.add_synth(medicine)
+	S.set_uses_charge(1)
+	S.set_charge_costs(list(1000))
+	S.add_synth(medicine)
 	rel_add(src, nameof(modules), O)
 	rel_add(src, nameof(modules), B)
 	rel_add(src, nameof(modules), S)
@@ -608,7 +608,7 @@ CAPABILITIES(/obj/item/robot_module)
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
 	M.name = "steel recycler"
 	M.desc = "A device that refines recycled steel into sheets."
-	rel_add(M, nameof(M.synths), metal)
+	M.add_synth(metal)
 	// Shared recipe tables, like material.get_recipes(): never owned by one stack.
 	var/static/list/steel_recycler_recipes = list(new /datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20))
 	var/static/list/glass_recycler_recipes = list(new /datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20))
@@ -619,7 +619,7 @@ CAPABILITIES(/obj/item/robot_module)
 	G.name = "glass recycler"
 	G.desc = "A device that refines recycled glass into sheets."
 	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
-	rel_add(G, nameof(G.synths), glass)
+	G.add_synth(glass)
 	G.recipes = glass_recycler_recipes
 	rel_add(src, nameof(modules), G)
 
@@ -806,9 +806,9 @@ CAPABILITIES(/obj/item/robot_module)
 	rel_add(src, nameof(synths), beacon)
 
 	var/obj/item/stack/marker_beacon/MB = new /obj/item/stack/marker_beacon(src)
-	MB.uses_charge = 1
-	MB.charge_costs = list(500)
-	rel_add(MB, nameof(MB.synths), beacon)
+	MB.set_uses_charge(1)
+	MB.set_charge_costs(list(500))
+	MB.add_synth(beacon)
 	rel_add(src, nameof(modules), MB)
 
 	rel_add(src, nameof(modules), new /obj/item/dogborg/sleeper/compactor/supply(src))
@@ -854,9 +854,9 @@ CAPABILITIES(/obj/item/robot_module)
 	rel_add(src, nameof(synths), wire) //Cable code, taken from engiborg,
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
-	N.uses_charge = 1
-	N.charge_costs = list(1000)
-	rel_add(N, nameof(N.synths), nanite)
+	N.set_uses_charge(1)
+	N.set_charge_costs(list(1000))
+	N.add_synth(nanite)
 	rel_add(src, nameof(modules), N)
 
 	rel_add(src, nameof(modules), new /obj/item/dogborg/sleeper/compactor/analyzer(src))

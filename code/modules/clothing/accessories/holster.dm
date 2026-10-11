@@ -10,7 +10,7 @@
 	w_class = ITEMSIZE_NORMAL
 
 /// Holsters take holsterable things; sheaths and special holsters list what they take.
-TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_HOLSTERABLE), "it isn't made for a holster")))
+
 
 /obj/item/clothing/accessory/holster/proc/holster(obj/item/I, mob/living/user)
 	if(holstered && istype(user))
@@ -75,6 +75,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 //YW change start
 CAPABILITIES(/obj/item/clothing/accessory/holster)
+	acceptance("hold", req_acceptance_tag(TAG_HOLSTERABLE, because = "it isn't made for a holster"), mode = ACCEPTANCE_REPLACE)
 	op("holster_draw_hand", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), then(PROC_REF(holster_draw_hand)))
 	op("holster_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Holster item"), then(PROC_REF(holster_item)))
 	op("holster_quick_holster_verb", menu(), label("Holster"), needs(carried()), then(PROC_REF(holster_quick_holster_verb)))
@@ -170,7 +171,7 @@ CAPABILITIES(/obj/item/clothing/accessory/holster)
 	name = "KA holster"
 	desc = "A specialized holster, made specifically for Kinetic Accelerators."
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/energy/kinetic_accelerator))))
+
 
 /obj/item/clothing/accessory/holster/waist/lanyard
 	name = "baton lanyard"
@@ -178,11 +179,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator, hold_
 	icon_state = "holster_lanyard"
 	overlay_state = "holster_lanyard"
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/lanyard, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/melee/baton, \
-		/obj/item/melee/classic_baton, \
-		/obj/item/melee/telebaton \
-		))))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier
 	name = "rapier sheath"
@@ -192,20 +189,13 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/lanyard, hold_spec, list(H
 	var/has_full_icon = 1
 	overlay_state = "sheath"
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/rapier))))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords
 	name = "sword sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/melee/rapier, \
-		/obj/item/material/sword/katana, \
-		/obj/item/toy/cultsword, \
-		/obj/item/material/sword, \
-		/obj/item/melee/cursedblade, \
-		/obj/item/melee/cultblade \
-		))))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier/proc/occupied()
 	if(!has_full_icon)
@@ -257,8 +247,23 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 	icon_state = "instrument"
 	concealed_holster = 0
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
+
 
 /obj/item/clothing/accessory/holster/ownership()
 	. = ..()
 	. += owns(nameof(holstered), policy = OWN_CONTAINED)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator)
+	acceptance("hold", req_acceptance_type(list(/obj/item/gun/energy/kinetic_accelerator), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/waist/lanyard)
+	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/baton,  /obj/item/melee/classic_baton,  /obj/item/melee/telebaton  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
+	acceptance("hold", req_acceptance_type(list(/obj/item/melee/rapier), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier/swords)
+	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/rapier,  /obj/item/material/sword/katana,  /obj/item/toy/cultsword,  /obj/item/material/sword,  /obj/item/melee/cursedblade,  /obj/item/melee/cultblade  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/case)
+	acceptance("hold", req_acceptance_type(list(/obj/item/instrument), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

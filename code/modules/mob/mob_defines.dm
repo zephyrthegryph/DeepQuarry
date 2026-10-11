@@ -344,3 +344,20 @@ TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
 TRACKED(/mob, resting)
 TRACKED(/mob, status_flags)
+
+
+/mob/proc/set_mob_size(value)
+	if(mob_size == value)
+		return FALSE
+	mob_size = value
+	ledger_refresh_cost()
+	tracked_changed(src, nameof(mob_size))
+	return TRUE
+SETTER(/mob, mob_size)
+/mob/proc/set_pinned(list/value)
+	if(pinned == value)
+		return FALSE
+	pinned = value ? value.Copy() : null
+	tracked_changed(src, nameof(pinned))
+	return TRUE
+SETTER(/mob, pinned)

@@ -61,7 +61,7 @@ CAPABILITIES(/obj/item/technomancer_core)
 		for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
 			wearer.ability_master.remove_ability(A)
 	rel_clear(src, nameof(wearer))
-	canremove = TRUE
+	set_canremove(TRUE)
 	..()
 
 // 'pay_energy' is too vague of a name for a proc at the mob level.
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/technomancer_core)
 		if(!(GLOB.technomancers.is_antagonist(wearer.mind)) && !universal) // In case someone tries to wear a stolen core. // Add universal cores
 			wearer.adjust_instability(20)
 	if(!wearer || wearer.stat == DEAD) // Unlock if we're dead or not worn.
-		canremove = TRUE
+		set_canremove(TRUE)
 
 /obj/item/technomancer_core/proc/regenerate()
 	energy = min(max(energy + regen_rate, 0), max_energy)
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/spellbutton)
 /obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(datum/act/op/A)
 	var/mob/user = A.actor
 
-	canremove = !canremove
+	set_canremove(!canremove)
 	to_chat(user, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
 
 // For the adminbuse!

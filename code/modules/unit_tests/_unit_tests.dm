@@ -1264,7 +1264,11 @@
 #include "dq_acceptance_foundation_tests.dm"
 #include "dq_acceptance_tracking_tests.dm"
 #include "dq_acceptance_old_grouped_tests.dm"
+#include "dq_native_slot_accepts_tests.dm"
 
+#include "j_transfer_storage_regressions.dm"
+
+#include "j_closet_resident_cost_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

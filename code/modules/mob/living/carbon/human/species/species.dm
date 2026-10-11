@@ -519,7 +519,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /// its parent's slot (code/modules/body/parts/), so no list is written here.
 /datum/species/proc/create_organs(mob/living/carbon/human/H) //Handles creation of mob organs.
 
-	H.mob_size = mob_size
+	H.set_mob_size(mob_size)
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
 		replaced_by(old_root, H)

@@ -194,11 +194,12 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
 
 //This is really scuffed and needs fixing sometime.
 
-TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 /obj/item/clothing/accessory/poncho/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
 	var/mob/living/carbon/human/H = loc
@@ -392,9 +393,10 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/wcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 
 /obj/item/clothing/accessory/wcoat/red
 	name = "red waistcoat"
@@ -579,7 +581,7 @@ CAPABILITIES(/obj/item/clothing/accessory/sweater)
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
-TYPE_TABLE(/obj/item/clothing/accessory/replika, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
+
 
 
 /obj/item/clothing/accessory/jacket/modwrap

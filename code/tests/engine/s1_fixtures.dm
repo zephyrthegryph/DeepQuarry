@@ -46,7 +46,7 @@ CAPABILITIES(/obj/s1_fixture/rack)
 
 TRACKED(/obj/s1_fixture/rack, welded)
 
-/obj/s1_fixture/rack/proc/not_welded(datum/act/A)
+/obj/s1_fixture/rack/proc/not_welded(datum/act/op/A)
 	return welded ? MSG(s1/welded) : null
 
 /obj/s1_fixture/rack/proc/heard_removed(datum/act/A)
@@ -80,15 +80,13 @@ CAPABILITIES(/obj/s1_fixture/picky)
 
 TRACKED(/obj/s1_fixture/picky, welded)
 
-/obj/s1_fixture/picky/proc/takes_gizmos_only(datum/act/A)
-	var/datum/act/insert/F = A
-	return istype(F.item, /obj/item/s1_fixture/gizmo) ? null : MSG(s1/no_trinkets)
+/obj/s1_fixture/picky/proc/takes_gizmos_only(datum/act/op/A)
+	return istype(A.target, /obj/item/s1_fixture/gizmo) ? null : MSG(s1/no_trinkets)
 
-/obj/s1_fixture/picky/proc/actor_is_steward(datum/act/A)
-	var/datum/act/action/F = A
-	return (isnull(steward) || F.actor == steward) ? null : MSG(s1/not_the_steward)
+/obj/s1_fixture/picky/proc/actor_is_steward(datum/act/op/A)
+	return (isnull(steward) || A.actor == steward) ? null : MSG(s1/not_the_steward)
 
-/obj/s1_fixture/picky/proc/not_welded(datum/act/A)
+/obj/s1_fixture/picky/proc/not_welded(datum/act/op/A)
 	return welded ? MSG(s1/welded) : null
 
 /obj/s1_fixture/picky/proc/heard_removed(datum/act/A)

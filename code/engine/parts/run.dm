@@ -1661,25 +1661,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 /// The pre-check of the insert action (E4): the needs hooks of the holder's table and activations asked about this insert, nothing started.
 /// A reason, or null. Allocates only when something hooks the action.
-/proc/op_insert_precheck(atom/holder, atom/movable/thing, slot_id)
-	if(!holder || !act_wanted(holder, /datum/act/insert))
-		return null
-	var/datum/act/insert/F = act_begin(/datum/act/insert, holder)
-	if(!F)
-		return null
-	F.item = thing // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	F.slot_id = slot_id
-	var/datum/act_plan/plan = act_plan_for(holder, /datum/act/insert)
-	var/reason = null
-	for(var/datum/hook/H as anything in plan.needs)
-		if(!hook_conditions_hold(H, holder))
-			continue
-		reason = act_needs_refusal(F, H)
-		if(reason)
-			break
-	F.release()
-	return reason
-
+/proc/op_insert_precheck(atom/holder, atom/movable/thing, slot_id, mob/actor = null)
+	return op_transfer_precheck(holder, /datum/act/insert, thing, slot_id, actor)
 
 /// Interfaces to presentation and actor policy used by an operation.
 /datum/progress_view

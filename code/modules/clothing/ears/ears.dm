@@ -52,7 +52,7 @@ CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
 	slot_flags = SLOT_EARS
 	resistance_flags = FIRE_PROOF
 
-TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL))))
+
 
 /obj/item/clothing/ears/skrell/chain
 	name = "Gold headtail chains"
@@ -193,3 +193,6 @@ CAPABILITIES(/obj/item/clothing/ears/skrell/band)
 	name = "light blue headtail cloth"
 	icon_state = "skrell_cloth_lblue_male"
 	item_state_slots = list(slot_r_hand_str = "egg2", slot_l_hand_str = "egg2")
+
+CAPABILITIES(/obj/item/clothing/ears/skrell)
+	acceptance("fit", fits(list(SPECIES_SKRELL)), mode = ACCEPTANCE_REPLACE)

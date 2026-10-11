@@ -70,7 +70,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		rig.forceMove(T)
 	blob_form().release_everything(H)
 	H.forceMove(rig)
-	rig.canremove = TRUE
+	rig.set_canremove(TRUE)
 	log_game("FORMS: [key_name(H)] folded into their control cluster at [AREACOORD(rig)]")
 	return TRUE
 

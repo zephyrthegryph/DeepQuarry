@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots)
 	icon_state = "digiboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
-TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless, fit_spec, null)
+
 
 /obj/item/clothing/shoes/boots/jackboots/knee
 	name = "knee-length jackboots"
@@ -81,9 +81,10 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/knee)
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/knee)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
-TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/knee, fit_spec, null)
+
 
 /obj/item/clothing/shoes/boots/jackboots/thigh
 	name = "thigh-length jackboots"
@@ -101,9 +102,10 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/thigh)
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(heat_parts = FEET|LEGS, cold_parts = FEET|LEGS))
 
-TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, null)
+
 
 /obj/item/clothing/shoes/boots/jackboots/recolorable
 	icon_state = "boots_recolor"
@@ -124,7 +126,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/workboots)
 	icon_state = "workbootstoeless"
 	item_state_slots = list(slot_r_hand_str = "workboots", slot_l_hand_str = "workboots")
 
-TYPE_TABLE(/obj/item/clothing/shoes/boots/workboots/toeless, fit_spec, null)
+
 
 /obj/item/clothing/shoes/boots/winter
 	name = "winter boots"
@@ -285,3 +287,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/marine)
 	name = "hoofboots"
 	desc = "A pair of high-heeled boots with hooves on the front of the soles, for use with a hobby horse or to disguise your footprints."
 	icon_state = "hoofboots"
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots/toeless)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/workboots/toeless)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)

@@ -8,19 +8,21 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
+	acceptance("equip", req_acceptance_arm_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
 
-TYPE_TABLE(/obj/item/clothing/gloves/arm_guard, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/gloves/arm_guard/proc/suit_clearance, null))))
 
-/obj/item/clothing/gloves/arm_guard/proc/suit_clearance(mob/living/carbon/human/H)
+
+/obj/item/clothing/gloves/arm_guard/proc/suit_clearance(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
-		return TRUE
+		return null
 	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & ARMS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
-	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
-		if(A.body_parts_covered & ARMS)
-			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
-	return TRUE
+	for(var/obj/item/clothing/accessory/W in H.get_equipped_item(SLOT_ID_SUIT))
+		if(W.body_parts_covered & ARMS)
+			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [W] is in the way"
+	return null
 
 /obj/item/clothing/gloves/arm_guard/laserproof
 	name = "ablative arm guards"
@@ -79,3 +81,16 @@ CAPABILITIES(/obj/item/clothing/gloves/arm_guard/flexitac)
 	icon_state = "ge_gloves"
 	icon = 'icons/inventory/hands/item.dmi'
 	icon = 'icons/inventory/hands/mob.dmi'
+
+/proc/req_acceptance_arm_clearance()
+	return part_make(/datum/entry/part/req/acceptance_leaf/arm_clearance, list())
+
+
+/datum/entry/part/req/acceptance_leaf/arm_clearance/acceptance_reason(datum/act/op/A)
+	var/obj/item/clothing/gloves/arm_guard/I = A.target
+	return I.suit_clearance(A)
+
+
+
+/datum/entry/part/req/acceptance_leaf/arm_clearance/read_keys(datum/act/op/A)
+	return suit_clearance_reads(A)

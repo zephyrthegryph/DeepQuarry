@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated equipment and container admission checks to native requirements."
+  - bugfix: "Container admission previews follow changes to the cost of items already inside."

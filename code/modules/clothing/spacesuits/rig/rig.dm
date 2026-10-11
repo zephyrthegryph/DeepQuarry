@@ -303,7 +303,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 
 /obj/item/rig/proc/reset()
 	offline = 2
-	canremove = TRUE
+	set_canremove(TRUE)
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 		if(!piece) continue
 		piece.icon_state = "[suit_state]"
@@ -313,7 +313,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 
 /obj/item/rig/proc/cut_suit()
 	offline = 2
-	canremove = TRUE
+	set_canremove(TRUE)
 	toggle_piece("helmet", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("boots", loc, ONLY_RETRACT, TRUE)
@@ -347,7 +347,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		M.client?.screen += booting_L
 		M.client?.screen += booting_R
 
-	canremove = FALSE // No removing the suit while unsealing.
+	set_canremove(FALSE) // No removing the suit while unsealing.
 	sealing = 1
 
 	if(!seal_target && !suit_is_deployed())
@@ -499,14 +499,14 @@ TRACKED(/obj/item/rig, carried_by_mob)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 			if(!piece) continue
 			piece.icon_state = "[suit_state][!seal_target ? "" : "_sealed"]"
-		canremove = !seal_target
+		set_canremove(!seal_target)
 		if(airtight)
 			update_component_sealed()
 		refresh_worn_pieces()
 		return 0
 
 	// Success!
-	canremove = seal_target
+	set_canremove(seal_target)
 	if(M.hud_used)
 		if(canremove)
 			rel_clear(src, nameof(minihud))
@@ -800,11 +800,11 @@ TRACKED(/obj/item/rig, carried_by_mob)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 						rel_clear(use_obj, nameof(use_obj.master_rig))   // intentional retract: silence the dropped() safety net
-						use_obj.canremove = TRUE
+						use_obj.set_canremove(TRUE)
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
 						use_obj.dropped(holder)
-						use_obj.canremove = FALSE
+						use_obj.set_canremove(FALSE)
 						use_obj.forceMove(src)
 
 		else if (deploy_mode != ONLY_RETRACT)

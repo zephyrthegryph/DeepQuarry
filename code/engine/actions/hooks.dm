@@ -322,6 +322,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		any = TRUE
 		hook_plan_add(P, H)
 	if(!any)
+		qdel(P)
 		P = null
 	for_table[act_type] = P || FALSE
 	return P || FALSE
@@ -493,6 +494,9 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// A needs hook's verdict: null to let the action go on, else the refusal reason. The hook's children are requirements (the part engine's
 /// req_* constructors, or a legacy requirement with a form in the new engine), asked in the action's own context.
 /proc/act_needs_refusal(datum/act/A, datum/hook/H)
+	if(istype(A, /datum/act/insert) || istype(A, /datum/act/remove))
+		var/datum/act/action/F = A
+		return op_transfer_action_requirement(F, H)
 	for(var/child in H.entry.children)
 		if(istype(child, /datum/entry/part/req) || istype(child, /datum/requirement))
 			if(!op_req_holds(A, child))
@@ -528,6 +532,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	var/datum/rx_state/rx = rx_of(A.holder)
 	for(var/datum/hook/H as anything in made)
 		LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
+	rx.set_hooks_generation(rx.hooks_generation + 1)
 	return TRUE
 
 /proc/hooks_detach(datum/activation/A, datum/entry/E)
@@ -537,12 +542,16 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())
 		if(H.activation == A && H.source_entry == E)
 			holder.rx.hooks -= H
+			holder.rx.set_hooks_generation(holder.rx.hooks_generation + 1)
 			coalesce_cancel(holder, H)
 			H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null
 
+TRACKED(/datum/rx_state, hooks_generation)
+
 /datum/rx_state
+	var/hooks_generation = 0
 	/// The /datum/hook records the live activations of this datum brought (the type's own are in its compiled table).
 	var/list/hooks
 

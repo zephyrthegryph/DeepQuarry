@@ -115,30 +115,30 @@ CAPABILITIES(/datum/prompt/choice/augment_location)
 	if(target_choice)
 		switch(target_choice)
 			if(O_AUG_R_HAND)
-				I.organ_tag = O_AUG_R_HAND
-				I.parent_organ = BP_R_HAND
+				I.set_organ_tag(O_AUG_R_HAND)
+				I.set_parent_organ(BP_R_HAND)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_HAND)
-				I.organ_tag = O_AUG_L_HAND
-				I.parent_organ = BP_L_HAND
+				I.set_organ_tag(O_AUG_L_HAND)
+				I.set_parent_organ(BP_L_HAND)
 				I.target_slot = SLOT_ID_HAND_L
 
 			if(O_AUG_R_FOREARM)
-				I.organ_tag = O_AUG_R_FOREARM
-				I.parent_organ = BP_R_ARM
+				I.set_organ_tag(O_AUG_R_FOREARM)
+				I.set_parent_organ(BP_R_ARM)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_FOREARM)
-				I.organ_tag = O_AUG_L_FOREARM
-				I.parent_organ = BP_L_ARM
+				I.set_organ_tag(O_AUG_L_FOREARM)
+				I.set_parent_organ(BP_L_ARM)
 				I.target_slot = SLOT_ID_HAND_L
 
 			if(O_AUG_R_UPPERARM)
-				I.organ_tag = O_AUG_R_UPPERARM
-				I.parent_organ = BP_R_ARM
+				I.set_organ_tag(O_AUG_R_UPPERARM)
+				I.set_parent_organ(BP_R_ARM)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_UPPERARM)
-				I.organ_tag = O_AUG_L_UPPERARM
-				I.parent_organ = BP_L_ARM
+				I.set_organ_tag(O_AUG_L_UPPERARM)
+				I.set_parent_organ(BP_L_ARM)
 				I.target_slot = SLOT_ID_HAND_L
 
 		. = H.get_organ(I.parent_organ)
