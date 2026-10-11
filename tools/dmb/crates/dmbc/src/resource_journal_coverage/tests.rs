@@ -64,7 +64,7 @@ fn observed_resource_coverage_declines_file_created_after_folder_observation() {
     let policy = raw_policy();
     let config = CaptureConfig { policy: &policy, encoded: &[], additional: &[] };
     let current = demand(&root.0, "asset.txt");
-    let captured = capture_discovered(current.clone(), config, &crate::input_snapshot::FileSystemInputs).unwrap();
+    let captured = capture_discovered(current.clone(), config, &dm_resources::capture::FileSystemCapture).unwrap();
     journal.with_access_view(|view| {
         let error = validate_observed_demand(current, &captured, config, &view, limits()).err().unwrap();
         assert!(error.to_string().contains("resource file contradicts search folder membership"));
