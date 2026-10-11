@@ -1,17 +1,17 @@
 # Incremental runtime contract
 
-This standalone corpus declares nine exact runtime values: inherited instance
+This standalone corpus declares eleven exact runtime values: inherited instance
 default, parent call with omitted and explicit arguments, global procedure
 argument defaults, global initializer, first and second procedure-static calls,
 and a field/procedure structural extension, plus the numeric contents of an
-embedded resource. It has no game boot or FFI. Runtime directories contain only
+embedded resource, plus separately observed inherited/own defaults of a newly added type. It has no game boot or FFI. Runtime directories contain only
 the DMB and RSC; the resource observation must come from the archive.
 
-The fourteen revisions are initial, unchanged, body edit, inherited default edit,
+The sixteen revisions are initial, unchanged, body edit, inherited default edit,
 argument default edit, procedure-static initializer edit, global initializer
 edit, parent change and restoration, field/procedure addition, runtime field
 initializer replacement, removal of that initializer/field/procedure, resource replacement and an unchanged
-resource build. Edits are cumulative and identify
+resource build, followed by adding and deleting a new subtype. The added subtype is instantiated through a typed local and must report inherited value 9 and own value 31; deletion restores the zero-valued observer without retaining a reference to the removed type. These new revisions are source-only and await an actual paired run; existing fourteen-revision receipts remain historical evidence for their original nine markers. Edits are cumulative and identify
 one exact source site. `scenarios.json` contains the expected values for each
 revision. Both compilers returning the same wrong result is a failure.
 

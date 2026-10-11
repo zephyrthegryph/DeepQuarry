@@ -19,7 +19,7 @@ from iteration_memory import OwnedMemory
 from watchdog import record_daemon_cleanup, terminate_owned
 
 LABELS = ("inherited", "parent_default", "parent_explicit", "argument_defaults",
-          "global", "static_first", "static_second", "structural", "resource")
+          "global", "static_first", "static_second", "structural", "resource", "new_type_inherited", "new_type_own")
 
 
 def load(name, file):
@@ -153,7 +153,7 @@ def owned_daemon_route(h, cache):
     return namespace, h.Endpoint(namespace), environment
 
 
-def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_files=("contract-resource.txt",), scope="nine explicit standalone semantic observations including embedded resource replacement"):
+def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_files=("contract-resource.txt",), scope="eleven standalone observations including resource replacement and type addition/deletion"):
     fixture_directory = Path(fixture_directory).resolve(strict=True)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):

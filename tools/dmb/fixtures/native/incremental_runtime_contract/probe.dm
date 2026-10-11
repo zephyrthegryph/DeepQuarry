@@ -32,6 +32,9 @@ var/global/runtime_contract_global = 11
     counter++
     return counter
 
+/proc/runtime_contract_new_type_values()
+    return list(0, 0)
+
 /world/New()
     ..()
     var/datum/runtime_contract/base/child/probe = new
@@ -44,5 +47,8 @@ var/global/runtime_contract_global = 11
     world.log << "DQ_CONTRACT static_second [runtime_contract_tick()]"
     world.log << "DQ_CONTRACT structural [probe.extra()]"
     world.log << "DQ_CONTRACT resource [text2num(file2text('contract-resource.txt'))]"
+    var/list/new_type_values = runtime_contract_new_type_values()
+    world.log << "DQ_CONTRACT new_type_inherited [new_type_values[1]]"
+    world.log << "DQ_CONTRACT new_type_own [new_type_values[2]]"
     world.log << "DQ_CONTRACT finished"
     shutdown()

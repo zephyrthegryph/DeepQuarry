@@ -13,7 +13,9 @@
         21,
         22,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -27,7 +29,9 @@
         21,
         22,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -43,7 +47,9 @@
         21,
         22,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -59,7 +65,9 @@
         21,
         22,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -75,7 +83,9 @@
         21,
         22,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -91,7 +101,9 @@
         41,
         42,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -107,7 +119,9 @@
         41,
         42,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -123,7 +137,9 @@
         41,
         42,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -139,7 +155,9 @@
         41,
         42,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -155,7 +173,9 @@
         41,
         42,
         13,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -171,7 +191,9 @@
         41,
         42,
         19,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -187,7 +209,9 @@
         41,
         42,
         0,
-        14
+        14,
+        0,
+        0
       ]
     },
     {
@@ -203,7 +227,9 @@
         41,
         42,
         0,
-        29
+        29,
+        0,
+        0
       ]
     },
     {
@@ -217,7 +243,45 @@
         41,
         42,
         0,
-        29
+        29,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "new_type_add",
+      "before": "/proc/runtime_contract_new_type_values()\n    return list(0, 0)\n",
+      "after": "/datum/runtime_contract/base/new_type\n    var/own_value = 31\n\n/proc/runtime_contract_new_type_values()\n    var/datum/runtime_contract/base/new_type/value = new\n    return list(value.inherited_value, value.own_value)\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        9,
+        31
+      ]
+    },
+    {
+      "name": "new_type_delete",
+      "before": "/datum/runtime_contract/base/new_type\n    var/own_value = 31\n\n/proc/runtime_contract_new_type_values()\n    var/datum/runtime_contract/base/new_type/value = new\n    return list(value.inherited_value, value.own_value)\n",
+      "after": "/proc/runtime_contract_new_type_values()\n    return list(0, 0)\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        29,
+        0,
+        0
       ]
     }
   ]
