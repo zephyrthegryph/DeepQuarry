@@ -290,5 +290,25 @@
       "body missing declared type wording retains space in return value"
     ],
     "scope": "focused actual constructor and continuation producers, compact frontend diagnostic spans, callback header facts; not full suite"
+  },
+  "owned_cleanup_20261011": {
+    "scope": "explicit audited leaf files only; no source, receipts, original BYOND pairs, immutable pins or current Cargo artifacts",
+    "runtime_copies": {
+      "files": 27,
+      "bytes": 3456318779
+    },
+    "older_compiler_artifacts": {
+      "files": 719,
+      "bytes": 4952272530
+    },
+    "refresh_runtime_copies": {
+      "files": 6,
+      "bytes": 877377948
+    },
+    "total_removed_bytes": 9285969257,
+    "free_bytes_after": 17803718656,
+    "matching_closure_cohort": "20261010-051017-f65f20d7 preserved",
+    "scripts_root": "E:/dq-cache/dmb-native-v2/integration-gates",
+    "initial_script_refusal": "Original cleanup field did not match typed receipt schema; no files deleted in refused attempt. Exact typed schema corrected and all preflight verified before removal."
   }
 }
