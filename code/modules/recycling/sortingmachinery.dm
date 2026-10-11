@@ -54,17 +54,18 @@ CAPABILITIES(/obj/machinery/disposal/deliveryChute)
 	to_chat(user, "You [c_mode ? "remove" : "attach"] the screws around the power connection.")
 	return OP_OK
 
-/obj/machinery/disposal/deliveryChute/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(!c_mode)
-		return OP_OK
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start slicing the floorweld off the delivery chute.", receiver = src, on_done = PROC_REF(welder_act_tool_done_sorter), done_args = list(user))
-	return OP_OK
+/// A chute is unwelded when its panel is open (c_mode), whatever its mode.
+/obj/machinery/disposal/deliveryChute/unweldable_mode(datum/act/op/A)
+	return !!read_once(c_mode)
 
-/obj/machinery/disposal/deliveryChute/proc/welder_act_tool_done_sorter(mob/user)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
+/obj/machinery/disposal/deliveryChute/empty_refusal(datum/act/op/A)
+	return null
+
+/obj/machinery/disposal/deliveryChute/slice_begins(datum/act/op/A)
+	return msg_text("You start slicing the floorweld off the delivery chute.")
+
+/obj/machinery/disposal/deliveryChute/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You sliced the floorweld off the delivery chute.")
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	C.ptype = 8

@@ -174,6 +174,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 CAPABILITIES(/turf)
 	silicon_hand(robots = TRUE, tier = OP_PRIORITY_DEFAULT - 100) // a cyborg's empty-gripper Use of a turf is the hand's
 	ref_many(nameof(opacity_sources))
+	op("dig", item(/obj/item/shovel), priority(OP_PRIORITY_DEFAULT - 9), label("Dig"), when(PROC_REF(diggable_by)), begins(PROC_REF(dig_begins)), wait(3 SECONDS), then(PROC_REF(handle_turf_dig_tool_done)))
 	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
 	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 10), label("Touch"), then(PROC_REF(turf_touch_op)))
 	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 10), label("Crawl"), then(PROC_REF(turf_drag)))
