@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"d7b64e023e443801a80eb904166277bd6d201b0a","ok":true,"passed":71,"failed":0,"new_failed":0,"lanes":"origin/codex/requirements-zero-1010-e origin/codex/requirements-zero-1010-f origin/codex/requirements-zero-1010-g","tests_json":"data/test-runs/20261011T035433_d7b64e023e_focused.json","created":"2026-10-11T03:54:47Z"}
