@@ -17,11 +17,16 @@ class VerifiedAnchor(unittest.TestCase):
         self.candidate={"version":2,"commit":self.commit,"plan_sha256":hashlib.sha256(b"/obj/example\tkey\tfield\n").hexdigest(),"inputs":self.inputs,"both_pins_passed":True,"results":str(self.result_path),"results_sha256":NS["digest"](self.result_path.read_bytes())}
         self.note={"ok":True,"tested_commit":self.commit,"look_coverage":self.candidate.copy(),"tests_json":str(self.result_path)}
         self.ancestor=True; self.have_note=True
+        self.calls=[]
         self.original=NS["git"];NS["git"]=self.git;self.addCleanup(lambda:NS.__setitem__("git",self.original))
+        self.old_batch=NS["note_batch"];NS["note_batch"]=lambda entries: [(commit,self.note) for _,commit in entries];self.addCleanup(lambda:NS.__setitem__("note_batch",self.old_batch))
     def git(self,*args):
+        self.calls.append(args)
         if args[0]=="notes":
             if args[-1]=="list":return "c"*40+" "+self.commit if self.have_note else ""
-            if "show" in args:return json.dumps(self.note)
+            if "show" in args:
+                if not self.have_note:raise NS["subprocess"].CalledProcessError(1,args)
+                return json.dumps(self.note)
         if args[:2]==("merge-base","--is-ancestor"):
             if not self.ancestor:raise NS["subprocess"].CalledProcessError(1,args)
             return ""
@@ -61,5 +66,53 @@ class VerifiedAnchor(unittest.TestCase):
         self.have_note=False
         tracked=pathlib.Path(self.temp.name)/"look_keys.txt";tracked.write_text("/obj/example\tkey\tfield\n")
         self.assertFalse(NS["official"](self.candidate),"Equal freshly regenerated keys without verified coverage must not establish zero-stale")
+
+    def test_exact_pass_does_not_list_or_batch_notes(self):
+        NS["note_batch"]=lambda entries: self.fail("exact verified note must not batch")
+        self.assertTrue(NS["official"](self.candidate))
+        self.assertFalse(any(call[0]=="notes" and call[-1]=="list" for call in self.calls))
+    def test_snapshot_child_note_still_authenticated(self):
+        original=self.git
+        child="d"*40
+        def fake(*args):
+            if args[0]=="notes" and "show" in args:raise NS["subprocess"].CalledProcessError(1,args)
+            if args[0]=="notes" and args[-1]=="list":return "c"*40+" "+child
+            return original(*args)
+        NS["git"]=fake
+        self.assertTrue(NS["official"](self.candidate))
+    def test_snapshot_child_off_branch_refused(self):
+        self.ancestor=False
+        self.assertFalse(NS["official"](self.candidate))
+    def test_source_fingerprints_evaluated_once(self):
+        self.have_note=False
+        self.assertFalse(NS["official"](self.candidate))
+        self.assertEqual(sum(call[0]=="rev-parse" for call in self.calls),len(NS["INPUTS"]))
+
+class NoteBatchDecoding(unittest.TestCase):
+    def setUp(self):
+        self.old=NS["subprocess"].check_output
+        self.addCleanup(lambda:setattr(NS["subprocess"],"check_output",self.old))
+    def batch(self,data,entries):
+        calls=[]
+        def fake(*args,**kwargs):calls.append((args,kwargs));return data
+        NS["subprocess"].check_output=fake
+        result=NS["note_batch"](entries)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(calls[0][0][0],["git","cat-file","--batch"])
+        return result
+    def test_multiple_unicode_notes_single_process(self):
+        entries=[("a"*40,"c"*40),("b"*40,"d"*40)]
+        bodies=[json.dumps({"reason":"é"},ensure_ascii=False).encode(),b'{"ok":true}']
+        data=b"".join((blob+" blob "+str(len(body))+"\n").encode()+body+b"\n" for (blob,_),body in zip(entries,bodies))
+        self.assertEqual(self.batch(data,entries),[("c"*40,{"reason":"é"}),("d"*40,{"ok":True})])
+    def test_wrong_object_identity_rejected(self):
+        with self.assertRaises(ValueError):self.batch(("b"*40+" blob 2\n{}\n").encode(),[("a"*40,"c"*40)])
+    def test_truncated_blob_rejected(self):
+        with self.assertRaises(ValueError):self.batch(("a"*40+" blob 8\n{}\n").encode(),[("a"*40,"c"*40)])
+    def test_missing_newline_rejected(self):
+        with self.assertRaises(ValueError):self.batch(("a"*40+" blob 2\n{}x").encode(),[("a"*40,"c"*40)])
+    def test_empty_inventory_starts_no_process(self):
+        NS["subprocess"].check_output=lambda *args,**kwargs:self.fail("empty inventory")
+        self.assertEqual(NS["note_batch"]([]),[])
 
 if __name__=="__main__":unittest.main()

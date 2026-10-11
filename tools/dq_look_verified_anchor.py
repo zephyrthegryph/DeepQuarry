@@ -22,27 +22,66 @@ def passing(result):
     rows = [result["tests"].get(p) for p in PINS]
     return all(isinstance(row, dict) and type(row.get("status")) is int and row["status"] == 0 and row.get("runtimes", 0) == 0 for row in rows)
 def digest(data): return hashlib.sha256(data).hexdigest()
+def note_batch(entries):
+    """Read all fallback note blobs with one read-only Git process, preserving byte sizes."""
+    if not entries: return []
+    wanted = "".join(blob + "\n" for blob, _ in entries).encode("ascii")
+    output = subprocess.check_output(["git", "cat-file", "--batch"], input=wanted, stderr=subprocess.DEVNULL)
+    offset = 0
+    decoded = []
+    for expected_blob, commit in entries:
+        end = output.find(b"\n", offset)
+        if end < 0: raise ValueError("truncated note batch header")
+        header = output[offset:end].decode("ascii").split()
+        offset = end + 1
+        if len(header) != 3 or header[0] != expected_blob or header[1] != "blob":
+            raise ValueError("unexpected note batch object")
+        size = int(header[2])
+        if size < 0 or offset + size >= len(output): raise ValueError("truncated note blob")
+        body = output[offset:offset + size]
+        offset += size
+        if output[offset:offset + 1] != b"\n": raise ValueError("missing note batch terminator")
+        offset += 1
+        try: decoded.append((commit, json.loads(body)))
+        except (ValueError, UnicodeDecodeError): continue
+    return decoded
+
+def official_notes(ref, tested_commit):
+    # Common case: merge-gates stamped the exact tested commit. Avoid inventorying any notes.
+    try:
+        yield tested_commit, json.loads(git("notes", "--ref=" + ref, "show", tested_commit))
+    except (subprocess.CalledProcessError, ValueError): pass
+    # Snapshot-only lane-ready stamps may sit on a child commit, so exact lookup alone is insufficient.
+    try:
+        entries = []
+        for line in git("notes", "--ref=" + ref, "list").splitlines():
+            row = line.split()
+            if len(row) != 2 or not all(re.fullmatch(r"[0-9a-f]{40,64}", field) for field in row): continue
+            if row[1] != tested_commit: entries.append((row[0], row[1]))
+        yield from note_batch(entries)
+    except (subprocess.CalledProcessError, ValueError, UnicodeDecodeError): return
+
 def official(candidate):
-    # A candidate's tested commit may be the parent of the snapshot-only stamped commit.
-    # Actual notes relate those commits; ancestry alone does not establish coverage.
-    for ref in ("lane-ready","merge-gates"):
-        try: entries=git("notes","--ref="+ref,"list").splitlines()
-        except subprocess.CalledProcessError: continue
-        for entry in entries:
+    # Validate the source once per candidate, not once for every historical note.
+    try:
+        if not isinstance(candidate, dict) or candidate.get("version") != VERSION: return False
+        if not re.fullmatch(r"[0-9a-f]{40,64}", candidate.get("commit", "")): return False
+        if candidate.get("inputs") != fingerprints("HEAD"): return False
+    except (subprocess.CalledProcessError, TypeError): return False
+    for ref in ("merge-gates", "lane-ready"):
+        for commit, note in official_notes(ref, candidate["commit"]):
             try:
-                commit=entry.split()[1]
-                note=json.loads(git("notes","--ref="+ref,"show",commit))
-                if note.get("ok") is not True: continue
-                coverage=note.get("look_coverage",{})
-                if coverage != candidate: continue
-                if candidate.get("version") != VERSION or candidate.get("inputs") != fingerprints("HEAD"): continue
+                if not isinstance(note, dict) or note.get("ok") is not True: continue
+                if note.get("look_coverage", {}) != candidate: continue
                 if note.get("tested_commit", note.get("commit")) != candidate["commit"]: continue
-                git("merge-base","--is-ancestor",commit,"HEAD")
-                results=json.loads(pathlib.Path(note["tests_json"]).read_text())
-                if not passing(results) or digest(pathlib.Path(note["tests_json"]).read_bytes()) != candidate.get("results_sha256"): continue
-                if not result_commit_matches(candidate["commit"],results): continue
+                git("merge-base", "--is-ancestor", commit, "HEAD")
+                # Parse and hash the same read; do not reopen a file that could change between reads.
+                result_bytes = pathlib.Path(note["tests_json"]).read_bytes()
+                results = json.loads(result_bytes)
+                if not passing(results) or digest(result_bytes) != candidate.get("results_sha256"): continue
+                if not result_commit_matches(candidate["commit"], results): continue
                 return True
-            except (subprocess.CalledProcessError,ValueError,KeyError,OSError,IndexError,TypeError,AttributeError): continue
+            except (subprocess.CalledProcessError, ValueError, KeyError, OSError, IndexError, TypeError, AttributeError): continue
     return False
 if sys.argv[1]=="record":
     plan=pathlib.Path(sys.argv[2]).read_bytes()
