@@ -14,7 +14,7 @@
 	// Forces synths to select an icon relevant to their module
 	apply_cyborg_chargen_prefs_or_default()
 
-	plane_holder.set_vis(VIS_AUGMENTED, TRUE)
+	hud_used?.plane_holder?.set_vis(VIS_AUGMENTED, TRUE)
 
 	if(syndicate)
 		apply_syndicate_state()

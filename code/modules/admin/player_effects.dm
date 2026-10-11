@@ -718,22 +718,22 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 		return
 	if(Tar.plane != PLANE_INVIS_EVENT)
 		Tar.plane = PLANE_INVIS_EVENT
-		if(!(VIS_EVENT_INVIS in Tar.vis_enabled))
-			Tar.plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
-			Tar.vis_enabled += VIS_EVENT_INVIS
+		if(!(VIS_EVENT_INVIS in hud_of(Tar)?.vis_enabled))
+			hud_of(Tar)?.plane_holder?.set_vis(VIS_EVENT_INVIS,TRUE)
+			hud_of(Tar)?.vis_enabled += VIS_EVENT_INVIS
 	else
 		Tar.plane = MOB_LAYER
-		if(VIS_EVENT_INVIS in Tar.vis_enabled)
-			Tar.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
-			Tar.vis_enabled -= VIS_EVENT_INVIS
+		if(VIS_EVENT_INVIS in hud_of(Tar)?.vis_enabled)
+			hud_of(Tar)?.plane_holder?.set_vis(VIS_EVENT_INVIS,FALSE)
+			hud_of(Tar)?.vis_enabled -= VIS_EVENT_INVIS
 
 /datum/eventkit/player_effects/proc/ui_act_see_event_invis(datum/act/op/A)
-	if(!(VIS_EVENT_INVIS in target().vis_enabled))
-		target().plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
-		target().vis_enabled += VIS_EVENT_INVIS
-	else if(VIS_EVENT_INVIS in target().vis_enabled)
-		target().plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
-		target().vis_enabled -= VIS_EVENT_INVIS
+	if(!(VIS_EVENT_INVIS in hud_of(target())?.vis_enabled))
+		hud_of(target())?.plane_holder?.set_vis(VIS_EVENT_INVIS,TRUE)
+		hud_of(target())?.vis_enabled += VIS_EVENT_INVIS
+	else if(VIS_EVENT_INVIS in hud_of(target())?.vis_enabled)
+		hud_of(target())?.plane_holder?.set_vis(VIS_EVENT_INVIS,FALSE)
+		hud_of(target())?.vis_enabled -= VIS_EVENT_INVIS
 
 ////////INVENTORY//////////////
 

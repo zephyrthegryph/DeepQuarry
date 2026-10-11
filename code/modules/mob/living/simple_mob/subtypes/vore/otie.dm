@@ -296,7 +296,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie)
 	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
-				if(M.zone_sel.selecting == BP_GROIN)
+				if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return OP_OK
 				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))

@@ -16,7 +16,7 @@
 			if(isliving(A))
 				var/mob/living/L = A
 				if(istype(L) && (!has_hands || !L.attempt_to_scoop(src)))
-					if(src.zone_sel.selecting == BP_GROIN)
+					if(hud_used?.zone_sel?.selecting == BP_GROIN)
 						if(src.vore_bellyrub(A))
 							return
 					automatic_custom_emote(VISIBLE_MESSAGE,"[pick(friendly)] \the [A]!", check_stat = TRUE)

@@ -330,7 +330,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
 	new module_type(target())
-	target().hands.icon_state = target().get_hud_module_icon()
+	hud_of(target())?.hands?.icon_state = target().get_hud_module_icon()
 	target().hud_used?.update_robot_modules_display()
 	return TRUE
 

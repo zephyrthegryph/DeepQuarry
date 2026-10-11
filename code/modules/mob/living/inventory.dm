@@ -270,7 +270,7 @@ CAPABILITIES(/datum/inventory_panel)
 	)))
 	data["slots"] = slots
 
-	data["internals"] = host.internals
+	data["hud_used?.internals"] = hud_of(host)?.internals
 	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
 
 	return data
@@ -342,7 +342,7 @@ CAPABILITIES(/datum/inventory_panel/human)
 		))
 	data["specialSlots"] = specialSlots
 
-	data["internals"] = H.internals
+	data["hud_used?.internals"] = hud_of(H)?.internals
 	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
 
 	data["sensors"] = FALSE

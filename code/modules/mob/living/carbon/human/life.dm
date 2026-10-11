@@ -578,8 +578,8 @@
 
 		if(internal)
 			return internal.remove_air_volume(volume_needed)
-		else if(internals)
-			internals.icon_state = "internal0"
+		else if(hud_used?.internals)
+			hud_used?.internals?.icon_state = "internal0"
 	return null
 
 
@@ -1612,11 +1612,11 @@
 
 /mob/living/carbon/human/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
-		src.healths.icon_state = "health7"	//DEAD healthmeter
+		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
 		src.health_doll_key = null
 		return
 
@@ -1624,7 +1624,7 @@
 		return
 
 	if(src.factor(BF_ANALGESIA) > 100)
-		src.healths.icon_state = "health_numb"
+		hud_used?.healths?.icon_state = "health_numb"
 		src.health_doll_key = null
 		return
 
@@ -1652,7 +1652,7 @@
 		return
 	src.health_doll_key = key
 
-	var/mutable_appearance/healths_ma = new(src.healths)
+	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
 	healths_ma.overlays = null
 	healths_ma.plane = PLANE_PLAYER_HUD
@@ -1670,7 +1670,7 @@
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
 	healths_ma.add_overlay(health_images)
-	src.healths.appearance = healths_ma
+	hud_used?.healths?.appearance = healths_ma
 
 /// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
 /mob/living/carbon/human/var/tmp/health_doll_key
@@ -1819,7 +1819,7 @@
 /mob/living/carbon/human/proc/life_changeling_due()
 	if(is_changeling(src))
 		return TRUE
-	return src.mind && src.hud_used && src.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
+	return src.mind && src.hud_used && hud_used?.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
 
 /mob/living/carbon/human/proc/life_changeling_rewake()
 	return 30 SECONDS
@@ -1829,47 +1829,47 @@
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		if(src.mind && src.hud_used)
-			src.ling_chem_display.invisibility = INVISIBILITY_ABSTRACT
+			hud_used?.ling_chem_display?.invisibility = INVISIBILITY_ABSTRACT
 		return
 	else
 		comp.regenerate()
 		if(src.hud_used)
-			src.ling_chem_display.invisibility = INVISIBILITY_NONE
+			hud_used?.ling_chem_display?.invisibility = INVISIBILITY_NONE
 			switch(comp.chem_storage)
 				if(1 to 50)
 					switch(comp.chem_charges)
 						if(0 to 9)
-							src.ling_chem_display.icon_state = "ling_chems0"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems0"
 						if(10 to 19)
-							src.ling_chem_display.icon_state = "ling_chems10"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems10"
 						if(20 to 29)
-							src.ling_chem_display.icon_state = "ling_chems20"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems20"
 						if(30 to 39)
-							src.ling_chem_display.icon_state = "ling_chems30"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems30"
 						if(40 to 49)
-							src.ling_chem_display.icon_state = "ling_chems40"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems40"
 						if(50)
-							src.ling_chem_display.icon_state = "ling_chems50"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems50"
 				if(51 to 80) //This is a crappy way of checking for engorged sacs...
 					switch(comp.chem_charges)
 						if(0 to 9)
-							src.ling_chem_display.icon_state = "ling_chems0e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems0e"
 						if(10 to 19)
-							src.ling_chem_display.icon_state = "ling_chems10e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems10e"
 						if(20 to 29)
-							src.ling_chem_display.icon_state = "ling_chems20e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems20e"
 						if(30 to 39)
-							src.ling_chem_display.icon_state = "ling_chems30e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems30e"
 						if(40 to 49)
-							src.ling_chem_display.icon_state = "ling_chems40e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems40e"
 						if(50 to 59)
-							src.ling_chem_display.icon_state = "ling_chems50e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems50e"
 						if(60 to 69)
-							src.ling_chem_display.icon_state = "ling_chems60e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems60e"
 						if(70 to 79)
-							src.ling_chem_display.icon_state = "ling_chems70e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems70e"
 						if(80)
-							src.ling_chem_display.icon_state = "ling_chems80e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems80e"
 
 /// MED-6: no traumatic shock building and none to recover from.
 /mob/living/carbon/human/proc/life_shock_due()

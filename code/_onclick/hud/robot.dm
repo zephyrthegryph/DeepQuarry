@@ -86,18 +86,18 @@
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
 //Health
-	rel_set(src, nameof(healths), new /atom/movable/screen())
-	healths.icon = HUD.ui_style
-	healths.icon_state = "health0"
-	healths.alpha = HUD.ui_alpha
-	healths.name = "health"
-	healths.screen_loc = ui_borg_health
+	rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+	hud_used?.healths?.icon = HUD.ui_style
+	hud_used?.healths?.icon_state = "health0"
+	hud_used?.healths?.alpha = HUD.ui_alpha
+	hud_used?.healths?.name = "health"
+	hud_used?.healths?.screen_loc = ui_borg_health
 
-	rel_set(src, nameof(autowhisper_display), rel_add(HUD, nameof(HUD.other), new /atom/movable/screen()))
-	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
-	autowhisper_display.icon_state = "autowhisper"
-	autowhisper_display.name = "autowhisper"
-	autowhisper_display.screen_loc = ui_borg_under_health
+	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.other), new /atom/movable/screen()))
+	hud_used?.autowhisper_display?.icon = 'icons/mob/screen/minimalist.dmi'
+	hud_used?.autowhisper_display?.icon_state = "autowhisper"
+	hud_used?.autowhisper_display?.name = "autowhisper"
+	hud_used?.autowhisper_display?.screen_loc = ui_borg_under_health
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -135,12 +135,12 @@
 	rel_add(HUD, nameof(HUD.other), aw)
 
 //Installed Module
-	rel_set(src, nameof(hands), new /atom/movable/screen())
-	hands.icon = HUD.ui_style
-	hands.icon_state = "nomod"
-	hands.alpha = HUD.ui_alpha
-	hands.name = "module"
-	hands.screen_loc = ui_borg_module
+	rel_set(hud_used, nameof(/datum/hud::hands), new /atom/movable/screen())
+	hud_used?.hands?.icon = HUD.ui_style
+	hud_used?.hands?.icon_state = "nomod"
+	hud_used?.hands?.alpha = HUD.ui_alpha
+	hud_used?.hands?.name = "module"
+	hud_used?.hands?.screen_loc = ui_borg_module
 
 //Module Panel
 	using = new /atom/movable/screen()
@@ -153,13 +153,13 @@
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Store
-	rel_set(src, nameof(throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	throw_icon.icon = HUD.ui_style
-	throw_icon.icon_state = "store"
-	throw_icon.alpha = HUD.ui_alpha
-	throw_icon.color = HUD.ui_color
-	throw_icon.name = "store"
-	throw_icon.screen_loc = ui_borg_store
+	rel_set(hud_used, nameof(/datum/hud::throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.throw_icon?.icon = HUD.ui_style
+	hud_used?.throw_icon?.icon_state = "store"
+	hud_used?.throw_icon?.alpha = HUD.ui_alpha
+	hud_used?.throw_icon?.color = HUD.ui_color
+	hud_used?.throw_icon?.name = "store"
+	hud_used?.throw_icon?.screen_loc = ui_borg_store
 
 //Inventory
 	robot_inventory = new /atom/movable/screen()
@@ -171,36 +171,36 @@
 	robot_inventory.screen_loc = ui_borg_inventory
 	rel_add(HUD, nameof(HUD.other), robot_inventory)
 
-	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	pullin.icon = HUD.ui_style
-	pullin.icon_state = "pull0"
-	pullin.alpha = HUD.ui_alpha
-	pullin.color = HUD.ui_color
-	pullin.name = "pull"
-	pullin.screen_loc = ui_borg_pull
+	rel_set(hud_used, nameof(/datum/hud::pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.pullin?.icon = HUD.ui_style
+	hud_used?.pullin?.icon_state = "pull0"
+	hud_used?.pullin?.alpha = HUD.ui_alpha
+	hud_used?.pullin?.color = HUD.ui_color
+	hud_used?.pullin?.name = "pull"
+	hud_used?.pullin?.screen_loc = ui_borg_pull
 
-	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel())
-	zone_sel.icon = HUD.ui_style
-	zone_sel.alpha = HUD.ui_alpha
-	zone_sel.cut_overlays()
+	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel())
+	hud_used?.zone_sel?.icon = HUD.ui_style
+	hud_used?.zone_sel?.alpha = HUD.ui_alpha
+	hud_used?.zone_sel?.cut_overlays()
 
 	//Handle the gun settings buttons
-	rel_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
-	gun_setting_icon.icon = HUD.ui_style
-	gun_setting_icon.alpha = HUD.ui_alpha
-	rel_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
-	item_use_icon.icon = HUD.ui_style
-	item_use_icon.alpha = HUD.ui_alpha
-	rel_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
-	gun_move_icon.icon = HUD.ui_style
-	gun_move_icon.alpha = HUD.ui_alpha
-	rel_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
-	radio_use_icon.icon = HUD.ui_style
-	radio_use_icon.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::gun_setting_icon), new /atom/movable/screen/gun/mode(null))
+	hud_used?.gun_setting_icon?.icon = HUD.ui_style
+	hud_used?.gun_setting_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::item_use_icon), new /atom/movable/screen/gun/item(null))
+	hud_used?.item_use_icon?.icon = HUD.ui_style
+	hud_used?.item_use_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::gun_move_icon), new /atom/movable/screen/gun/move(null))
+	hud_used?.gun_move_icon?.icon = HUD.ui_style
+	hud_used?.gun_move_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::radio_use_icon), new /atom/movable/screen/gun/radio(null))
+	hud_used?.radio_use_icon?.icon = HUD.ui_style
+	hud_used?.radio_use_icon?.alpha = HUD.ui_alpha
 
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += list( throw_icon, zone_sel, hands, healths, pullin, robot_inventory, gun_setting_icon)
+		client.screen += list( hud_used?.throw_icon, hud_used?.zone_sel, hud_used?.hands, hud_used?.healths, hud_used?.pullin, robot_inventory, hud_used?.gun_setting_icon)
 		if(HUD.combat_mode_button)
 			client.screen += HUD.combat_mode_button
 		if(length(HUD.adding))
@@ -332,7 +332,7 @@
 
 /mob/living/silicon/robot/update_hud()
 	if(modtype)
-		hands.icon_state = get_hud_module_icon()
+		hud_used?.hands?.icon_state = get_hud_module_icon()
 	..()
 
 /mob/living/silicon/robot/proc/get_hud_module_icon()

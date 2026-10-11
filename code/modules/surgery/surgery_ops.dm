@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 
 /// The zone the surgeon is working on: their selected zone.
 /proc/surgery_zone(mob/living/user)
-	return user?.zone_sel?.selecting
+	return hud_of(user)?.zone_sel?.selecting
 
 // --- Match and Require --------------------------------------------------------------------------
 

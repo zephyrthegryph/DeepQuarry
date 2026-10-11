@@ -310,7 +310,7 @@
 
 /// Clicks `victim` with the grab `G` in `user`'s hand; when the click does not reach the grab's attack, the grab attacks as the click would.
 /datum/unit_test/dq_timed_pin_w7/proc/h_grab_click(mob/living/carbon/human/user, mob/living/carbon/human/victim, obj/item/grab/G, zone, stance)
-	user.zone_sel.selecting = zone
+	hud_of(user)?.zone_sel.selecting = zone
 	user.next_click = 0
 	test_click(user, victim, G)
 	if(isnull(running(user)))
@@ -1663,7 +1663,7 @@
 	TEST_ASSERT(!isnull(torso), "the target has a torso")
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	hold(user, N)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	test_chat_clear()
 	test_click(user, target, N)
 	if(isnull(running(user)))
@@ -1686,7 +1686,7 @@
 	target.set_species(SPECIES_PROMETHEAN)
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	hold(user, N)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	test_click(user, target, N)
 	if(isnull(running(user)))
 		N.attack(target, user, BP_TORSO)

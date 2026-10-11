@@ -188,7 +188,7 @@ CAPABILITIES(/datum/autopsy_data_scanner)
 
 	src.timeofdeath = M.timeofdeath
 
-	var/obj/item/organ/external/S = M.get_organ(user.zone_sel.selecting)
+	var/obj/item/organ/external/S = M.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!S)
 		to_chat(user, span_warning("You can't scan this body part."))
 		return

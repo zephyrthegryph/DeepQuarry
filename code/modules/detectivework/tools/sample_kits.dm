@@ -123,7 +123,7 @@ CAPABILITIES(/obj/item/sample/print)
 		act_message(user, H, others = span_danger("%U% tries to take prints from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
-	if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+	if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 		var/has_hand
 		var/obj/item/organ/external/O = H.organs_by_name[BP_R_HAND]
 		if(istype(O) && !O.is_stump())

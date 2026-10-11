@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/airway_kit)
 
 /// Requirement: the user aims at the mouth or the head (what is aimed at is fixed while the click is decided).
 /obj/item/airway_kit/proc/aimed_at_mouth(datum/act/op/A)
-	var/zone = read_once(A.actor.zone_sel?.selecting)
+	var/zone = read_once(hud_of(A.actor)?.zone_sel?.selecting)
 	return zone == O_MOUTH || zone == BP_HEAD
 
 /// Requirement: the patient has a mouth and no mask over it.
@@ -125,7 +125,7 @@ TRACKED(/obj/item/decompression_needle, used)
 
 /// Requirement: the user aims at the chest (what is aimed at is fixed while the click is decided).
 /obj/item/decompression_needle/proc/aimed_at_chest(datum/act/op/A)
-	return read_once(A.actor.zone_sel?.selecting) == BP_TORSO
+	return read_once(hud_of(A.actor)?.zone_sel?.selecting) == BP_TORSO
 
 /obj/item/decompression_needle/proc/aim_text(datum/act/op/A)
 	return span_warning("Aim for [A.target]'s chest.")

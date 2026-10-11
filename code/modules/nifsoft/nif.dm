@@ -699,7 +699,7 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 	var/mob/living/carbon/human/U = A.actor
 	if(!istype(U) || !istype(T) || U == T)
 		return FALSE
-	return read_once(T.species?.is_slime_bodied) && read_once(U.zone_sel?.selecting) == BP_TORSO
+	return read_once(T.species?.is_slime_bodied) && read_once(hud_of(U)?.zone_sel?.selecting) == BP_TORSO
 
 /// Requirement: nothing worn on the body to interfere.
 /obj/item/nif/proc/stuff_in_unclothed(datum/act/op/A)
