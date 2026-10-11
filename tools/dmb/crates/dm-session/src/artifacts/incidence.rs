@@ -269,8 +269,8 @@ mod tests {
         let weak = Arc::downgrade(&leaf);
         let receipt = Receipt::from(leaf.clone());
         let mut index = Incidence::default();
-        index.insert(1, 10, &receipt);
-        index.insert(2, 20, &receipt);
+        index.insert(1, 10, &receipt, &[(3, 0)]);
+        index.insert(2, 20, &receipt, &[(3, 0)]);
         assert_eq!(index.leaves.len(), 1);
         assert_eq!(index.affected([&3]), BTreeSet::from([1, 2]));
         assert_eq!(
