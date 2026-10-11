@@ -13,6 +13,9 @@ use std::{
 };
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
+    /// Request budget after the generation handshake; absent preserves 20 seconds.
+    #[serde(default)]
+    pub timeout_seconds: Option<u16>,
     pub project: PathBuf,
     pub defines: BTreeMap<String, String>,
     pub engine_template: Option<PathBuf>,
@@ -113,6 +116,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
         } if version == super::protocol::VERSION && remote == compiler => {}
         _ => return Err("read-only query requires an existing compatible active daemon".into()),
     }
+    super::transport::set_timeout(&mut stream, request.timeout()?)?;
     super::protocol::send(&mut stream, &super::protocol::Request::Query(request))?;
     match super::protocol::receive_bounded::<super::protocol::Reply>(
         &mut stream,
@@ -247,7 +251,18 @@ const MAX_QUERIES: usize = 128;
 const MAX_REQUEST: usize = 65536;
 pub(crate) const MAX_OUTPUT: usize = 524288;
 impl QueryRequest {
+    pub(crate) fn timeout(&self) -> io::Result<std::time::Duration> {
+        let seconds = self.timeout_seconds.unwrap_or(20);
+        if !(1..=300).contains(&seconds) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "query timeout_seconds must be 1..300",
+            ));
+        }
+        Ok(std::time::Duration::from_secs(u64::from(seconds)))
+    }
     pub(crate) fn validate(&self) -> io::Result<()> {
+        self.timeout()?;
         if self.queries.len().saturating_add(self.source_queries.len()) > MAX_QUERIES
             || self.queries.iter().any(|query| {
                 query
@@ -418,6 +433,7 @@ mod tests {
     use super::*;
     fn request() -> QueryRequest {
         QueryRequest {
+            timeout_seconds: None,
             project: "fixture.dme".into(),
             defines: BTreeMap::new(),
             engine_template: None,
@@ -678,3 +694,7 @@ mod selected_tests;
 #[cfg(test)]
 #[path = "query/occurrence_pages_tests.rs"]
 mod occurrence_pages_tests;
+
+#[cfg(test)]
+#[path = "query/deadline_tests.rs"]
+mod deadline_tests;

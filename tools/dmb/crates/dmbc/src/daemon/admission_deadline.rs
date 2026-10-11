@@ -5,6 +5,9 @@ use std::{
 };
 pub(super) struct AdmissionDeadline(Instant);
 impl AdmissionDeadline {
+    pub(super) fn at(deadline: Instant) -> Self {
+        Self(deadline)
+    }
     pub(super) fn new(now: Instant) -> Self {
         Self(now + Duration::from_secs(600))
     }
@@ -23,6 +26,23 @@ impl AdmissionDeadline {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn query_admission_preserves_issued_deadline() {
+        let start = Instant::now();
+        let deadline = AdmissionDeadline::at(start + Duration::from_secs(20));
+        assert_eq!(
+            deadline.remaining(start + Duration::from_secs(19)).unwrap(),
+            Duration::from_secs(1)
+        );
+        assert_eq!(
+            crate::request_failure::exit_code(
+                &deadline
+                    .remaining(start + Duration::from_secs(20))
+                    .unwrap_err()
+            ),
+            75
+        );
+    }
     #[test]
     fn retries_share_one_fixed_deadline_and_expiration_is_cancellation() {
         let start = Instant::now();

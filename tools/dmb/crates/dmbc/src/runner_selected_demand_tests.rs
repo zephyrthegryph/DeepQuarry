@@ -38,6 +38,7 @@ fn uncaptured_high_ordinal_demand_uses_current_body_and_rejects_stale_pins() {
     };
     let original = build("", 1);
     let request = |frontend: &dm_tree::frontend::FrontendRevision| QueryRequest {
+        timeout_seconds: None,
         project: "project.dme".into(),
         defines: Default::default(),
         engine_template: None,

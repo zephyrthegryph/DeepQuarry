@@ -196,6 +196,7 @@ mod tests {
     #[test]
     fn rejects_unpinned_or_unbounded_traversal_before_transport() {
         let mut request = QueryRequest {
+            timeout_seconds: None,
             project: "not-a-real-project.dme".into(),
             defines: Default::default(),
             engine_template: None,

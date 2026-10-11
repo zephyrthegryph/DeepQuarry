@@ -413,6 +413,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             }
             let result = (|| -> io::Result<super::query::QueryReply> {
                 request.validate()?;
+                let deadline = Instant::now() + request.timeout()?;
+                let admission = admission_deadline::AdmissionDeadline::at(deadline);
+                transport::set_timeout(&mut stream, admission.remaining(Instant::now())?)?;
+                let _binding =
+                    control::bind_with_deadline(control::Cancellation::default(), deadline);
+                control::checkpoint()?;
                 if !request.project.is_absolute()
                     || request
                         .engine_template
@@ -461,7 +467,9 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     _ => false,
                 });
                 if !needs_demand {
-                    return super::query::evaluate_snapshot(&request, tree, &state);
+                    let reply = super::query::evaluate_snapshot(&request, tree, &state)?;
+                    control::checkpoint()?;
+                    return Ok(reply);
                 }
                 // Reject stale pins against the published snapshot before rebuilding.
                 let mut pins = request.clone();
@@ -472,22 +480,20 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                 // Build admission acquires worker capacity before the host lock.
                 // Release our read lock before following that same order.
                 drop(host);
-                let _permit = shared.acquire_until(
-                    1,
-                    &admission_deadline::AdmissionDeadline::new(Instant::now()),
-                )?;
+                let _permit = shared.acquire_until(1, &admission)?;
                 let mut host = slot.host.try_lock().map_err(|_| {
                     io::Error::new(
                         io::ErrorKind::WouldBlock,
                         "query session is building; retry after completion",
                     )
                 })?;
-                crate::request_runner::selected_demand::execute(&request, &mut host).map_err(
-                    |error| match error.downcast::<io::Error>() {
+                let reply = crate::request_runner::selected_demand::execute(&request, &mut host)
+                    .map_err(|error| match error.downcast::<io::Error>() {
                         Ok(error) => *error,
                         Err(error) => io::Error::other(error.to_string()),
-                    },
-                )
+                    })?;
+                control::checkpoint()?;
+                Ok(reply)
             })();
             match result {
                 Ok(reply) => protocol::send(&mut stream, &Reply::Query(reply)),

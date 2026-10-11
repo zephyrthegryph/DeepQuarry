@@ -624,7 +624,10 @@ fn compile_with_lookup_mode(
         }) {
             return Err(vec![LowerError {
                 kind: LowerErrorKind::SourceError,
-                ..error(",", &diagnostic.message).at(diagnostic.span)
+                ..error(",", &diagnostic.message).at(Some(LowerSpan {
+                    start: diagnostic.span.start,
+                    end: diagnostic.span.end,
+                }))
             }]);
         }
         if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
