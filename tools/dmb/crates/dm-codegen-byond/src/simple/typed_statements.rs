@@ -4,6 +4,9 @@ use super::*;
 mod deletion;
 #[path = "local_array_initializers.rs"]
 mod local_array_initializers;
+#[path = "protected_entry.rs"]
+mod protected_entry;
+use protected_entry::{protected_entry_error, protected_entry_label};
 
 impl Compiler<'_> {
     pub(super) fn typed_statements_inner(
@@ -126,6 +129,11 @@ impl Compiler<'_> {
                     self.result.code.items.push(CodeItem::Label(end));
                 }
                 StatementKind::Goto(name) => {
+                    if !self.user_labels.contains_key(name)
+                        && protected_entry_label(self.statement_view(statements), name)
+                    {
+                        return Err(protected_entry_error(&statement.raw_header, name));
+                    }
                     let label = self
                         .user_labels
                         .get(name)
@@ -133,12 +141,7 @@ impl Compiler<'_> {
                         .ok_or_else(|| error(&statement.raw_header, "undefined goto label"))?;
                     let depth = *self.label_try_depths.get(&label).unwrap_or(&0);
                     if depth > self.try_depth {
-                        let mut failure = error(
-                            &statement.raw_header,
-                            &format!("goto {name}: bad link"),
-                        );
-                        failure.kind = LowerErrorKind::SourceError;
-                        return Err(failure);
+                        return Err(protected_entry_error(&statement.raw_header, name));
                     }
                     let target_iterator_depth =
                         *self.user_label_iterator_depths.get(name).ok_or_else(|| {
@@ -148,12 +151,7 @@ impl Compiler<'_> {
                             )
                         })?;
                     if target_iterator_depth > self.iterator_depth {
-                        let mut failure = error(
-                            &statement.raw_header,
-                            &format!("goto {name}: bad link"),
-                        );
-                        failure.kind = LowerErrorKind::SourceError;
-                        return Err(failure);
+                        return Err(protected_entry_error(&statement.raw_header, name));
                     }
                     for _ in target_iterator_depth.max(1)..self.iterator_depth {
                         self.emit(opcode::ITER_POP, vec![]);
