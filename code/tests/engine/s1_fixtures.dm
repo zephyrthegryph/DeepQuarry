@@ -40,14 +40,14 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 
 CAPABILITIES(/obj/s1_fixture/rack)
 	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 4)), on = ON_CONTENTS)
-	extend(/datum/act/remove, needs(req_bool(PROC_REF(not_welded), because = MSG(s1/welded))))
+	extend(/datum/act/remove, needs(req(PROC_REF(not_welded))))
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
 TRACKED(/obj/s1_fixture/rack, welded)
 
 /obj/s1_fixture/rack/proc/not_welded(datum/act/A)
-	return !welded
+	return welded ? MSG(s1/welded) : null
 
 /obj/s1_fixture/rack/proc/heard_removed(datum/act/A)
 	removed_heard++
@@ -73,8 +73,8 @@ TRACKED(/obj/s1_fixture/rack, welded)
 
 CAPABILITIES(/obj/s1_fixture/picky)
 	ref_one(nameof(steward), /mob)
-	extend(/datum/act/insert, needs(req_bool(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets))), needs(req_bool(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward))))
-	extend(/datum/act/remove, needs(req_bool(PROC_REF(not_welded), because = MSG(s1/welded))))
+	extend(/datum/act/insert, needs(req(PROC_REF(takes_gizmos_only))), needs(req(PROC_REF(actor_is_steward))))
+	extend(/datum/act/remove, needs(req(PROC_REF(not_welded))))
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
@@ -82,14 +82,14 @@ TRACKED(/obj/s1_fixture/picky, welded)
 
 /obj/s1_fixture/picky/proc/takes_gizmos_only(datum/act/A)
 	var/datum/act/insert/F = A
-	return istype(F.item, /obj/item/s1_fixture/gizmo)
+	return istype(F.item, /obj/item/s1_fixture/gizmo) ? null : MSG(s1/no_trinkets)
 
 /obj/s1_fixture/picky/proc/actor_is_steward(datum/act/A)
 	var/datum/act/action/F = A
-	return isnull(steward) || F.actor == steward
+	return (isnull(steward) || F.actor == steward) ? null : MSG(s1/not_the_steward)
 
 /obj/s1_fixture/picky/proc/not_welded(datum/act/A)
-	return !welded
+	return welded ? MSG(s1/welded) : null
 
 /obj/s1_fixture/picky/proc/heard_removed(datum/act/A)
 	removed_heard++

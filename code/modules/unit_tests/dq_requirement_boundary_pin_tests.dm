@@ -184,7 +184,7 @@
 	parent_type = /datum/unit_test/dq_conversion_pin
 	capture_roots = list(/obj/item/airlock_electronics, /obj/machinery/computer/card, /obj/machinery/light/flamp, /obj/machinery/sleeper, /obj/machinery/vending, /obj/machinery/computer/scan_consolenew, /obj/machinery/oxygen_pump, /obj/machinery/computer/aifixer, /obj/machinery/computer/communications, /obj/machinery/autolathe, /obj/machinery/camera, /obj/machinery/suit_cycler, /obj/structure/bed, /obj/structure/bed/chair)
 
-// OLD-code boundary pins: evaluate the actual compiled req_bool before conversion,
+// OLD-code boundary pins: evaluate the actual compiled requirement before conversion,
 // and the same compiled req afterwards. No callback-result shape assertion.
 /datum/unit_test/dq_requirement_fourth_boundary
 

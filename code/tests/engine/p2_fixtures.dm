@@ -34,10 +34,10 @@ CAPABILITIES(/obj/p2_hit/taker)
 
 CAPABILITIES(/obj/p2_hit/halver)
 	extend(/datum/act/hit, adjusts("packet.amounts", scale = 0.5))
-	extend(/datum/act/hit/fire, needs(req_bool(PROC_REF(never), because = MSG(p1/not_ready))))
+	extend(/datum/act/hit/fire, needs(req(PROC_REF(never))))
 
 /obj/p2_hit/halver/proc/never(datum/act/A)
-	return FALSE
+	return MSG(p1/not_ready)
 
 /// Hears a blob hit after it landed.
 /obj/p2_hit/listener
@@ -292,11 +292,11 @@ MSG_DEF_SELF(p2_silent/closed, "It is closed.")
 	var/pressed = 0
 
 CAPABILITIES(/obj/p2_silent)
-	op("press", ui_act(), needs(req_bool(PROC_REF(is_open), silent = TRUE)), then(PROC_REF(was_pressed)))
-	op("press_loud", ui_act(), needs(req_bool(PROC_REF(is_open), because = MSG(p2_silent/closed))), then(PROC_REF(was_pressed)))
+	op("press", ui_act(), needs(req(PROC_REF(is_open), silent = TRUE)), then(PROC_REF(was_pressed)))
+	op("press_loud", ui_act(), needs(req(PROC_REF(is_open))), then(PROC_REF(was_pressed)))
 
 /obj/p2_silent/proc/is_open(datum/act/op/A)
-	return open // ALLOW(reads): a test fixture's plain flag, read when the press arrives
+	return open ? null : MSG(p2_silent/closed) // ALLOW(reads): a test fixture's plain flag, read when the press arrives
 
 /obj/p2_silent/proc/was_pressed(datum/act/op/A)
 	pressed++
