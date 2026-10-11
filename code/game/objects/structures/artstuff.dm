@@ -423,9 +423,6 @@ CAPABILITIES(/obj/item/paint_palette)
 	. = ..()
 	if(persistence_id)
 		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
-	if(building)
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
-		pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
 
 /// Phase 2: leaves the persistent painting frames.
 /obj/structure/sign/painting/lifecycle_dematerialize()
@@ -438,6 +435,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	op("vv_removepainting", topic_in(VV_TOPIC, "removepainting"), then(PROC_REF(vv_topic_remove_painting)))
+	rolls(ROLL_PIXEL, WALL_OFFSET(30, 30), when = nameof(building))
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

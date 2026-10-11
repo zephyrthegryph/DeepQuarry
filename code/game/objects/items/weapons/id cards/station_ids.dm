@@ -49,6 +49,7 @@ CAPABILITIES(/obj/item/card/id)
 	op("show", in_hand(), label("Show"), then(PROC_REF(interaction_show)))
 	// the old object verb
 	op("read", menu(), label("Read ID Card"), needs(carried()), then(PROC_REF(verb_read)))
+	derives(nameof(access), PROC_REF(starting_access))
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"
@@ -172,9 +173,8 @@ CAPABILITIES(/obj/item/card/id)
 	item_state = "idgreen"
 	assignment = "Synthetic"
 
-/obj/item/card/id/synthetic/Initialize(mapload)
-	. = ..()
-	access = SSaccess.get_all_station_access().Copy() + ACCESS_SYNTH
+/obj/item/card/id/synthetic/starting_access()
+	return SSaccess.get_all_station_access().Copy() + ACCESS_SYNTH
 
 /obj/item/card/id/lost
 	name = "\improper Unknown ID"
@@ -182,9 +182,9 @@ CAPABILITIES(/obj/item/card/id)
 	icon_state = "id-robot-n"
 	assignment = "Lost"
 
-/obj/item/card/id/lost/Initialize(mapload)
+/obj/item/card/id/lost/starting_access()
 	. = ..()
-	access += ACCESS_LOST
+	. += ACCESS_LOST
 
 /obj/item/card/id/platform
 	name = "\improper Support Platform ID"
@@ -205,13 +205,11 @@ CAPABILITIES(/obj/item/card/id)
 	registered_name = "Central Command"
 	assignment = "General"
 
-/obj/item/card/id/centcom/Initialize(mapload)
-	. = ..()
-	access = SSaccess.get_all_centcom_access().Copy()
+/obj/item/card/id/centcom/starting_access()
+	return SSaccess.get_all_centcom_access().Copy()
 
-/obj/item/card/id/centcom/station/Initialize(mapload)
-	. = ..()
-	access |= SSaccess.get_all_station_access()
+/obj/item/card/id/centcom/station/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
 /obj/item/card/id/centcom/ert
 	name = "\improper " + JOB_EMERGENCY_RESPONSE_TEAM + "ID"
@@ -219,9 +217,8 @@ CAPABILITIES(/obj/item/card/id)
 	icon_state = "ert-id"
 	rank = JOB_EMERGENCY_RESPONSE_TEAM
 
-/obj/item/card/id/centcom/ert/Initialize(mapload)
-	. = ..()
-	access |= SSaccess.get_all_station_access()
+/obj/item/card/id/centcom/ert/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
 // Department-flavor IDs
 /obj/item/card/id/medical

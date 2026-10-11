@@ -635,15 +635,18 @@ TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, n
 
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
 	param(nameof(bomb_fill), pos = 1)
+	derives(nameof(bomb_fill), PROC_REF(forced_fill))
 
 /// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
 /obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
 
 // ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/// How full it starts (derives(), at init): the type's forced fill, else its own.
+/obj/item/tank/phoron/onetankbomb/proc/forced_fill()
+	var/forced = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
+	return isnull(forced) ? bomb_fill : forced
+
 /obj/item/tank/phoron/onetankbomb/Initialize(mapload)
-	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
-	if(!isnull(forced_fill))
-		bomb_fill = forced_fill
 	. = ..()
 	onetankbomb(bomb_fill)
 
@@ -651,15 +654,18 @@ TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, n
 
 CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
 	param(nameof(bomb_fill), pos = 1)
+	derives(nameof(bomb_fill), PROC_REF(forced_fill))
 
 /// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
 /obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
 
 // ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/// How full it starts (derives(), at init): the type's forced fill, else its own.
+/obj/item/tank/oxygen/onetankbomb/proc/forced_fill()
+	var/forced = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
+	return isnull(forced) ? bomb_fill : forced
+
 /obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
-	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
-	if(!isnull(forced_fill))
-		bomb_fill = forced_fill
 	. = ..()
 	onetankbomb(bomb_fill)
 
