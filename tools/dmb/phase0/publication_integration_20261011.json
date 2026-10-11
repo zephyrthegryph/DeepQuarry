@@ -1075,6 +1075,14 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "six_git_worktree_corrected_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/4cc2f11888ed4c04a5a4c81132b4198b/receipt.json",
+    "complete": true,
+    "compiler_commit": "e64fbafd2a70a93cc2ebaf9bc26bda2fe367ecdb",
+    "compiler_sha256": "93b00fcc2825cb7846664a4226e69250d3cc95d698f74839702ed6ac1c7ec770",
+    "fixture_commit": "ec6cd89275",
+    "scope": "Six actual owned Git worktrees, independent fresh output pairs before daemon startup, concurrent required-existing clients, asymmetric body/structural edits, source-error isolation and recovery all passed. Daemon and Job reaped, owned worktrees removed. Tiny integration contract only; not real DeepQuarry six-worktree performance or full runtime parity."
+  },
   "shared_pressure_focused_589": {
     "source_commit": "589eda04e19fa2217a1e79c6f2353fca16e62e68",
     "source_archive_sha256": "f53b3de0d9a7f401f9ccaa1b79cdb1777d16f82dd2cce32cfed1ae9b20dc1989",
