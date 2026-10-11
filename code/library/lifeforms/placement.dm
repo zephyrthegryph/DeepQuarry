@@ -55,7 +55,7 @@ CAPABILITY_TYPE(finds, CAP_FINDS, /datum/capability/lib/finds, key = NONE, var_n
 		return
 	var/list/dirs = near == NEAR_AROUND ? GLOB.alldirs : GLOB.cardinal
 	for(var/direction in dirs)
-		var/atom/found = locate(kind) in get_step(origin, direction)
+		var/atom/found = locate_within(get_step(origin, direction), kind)
 		if(!found)
 			continue
 		rel_set(holder, var_name, found)
