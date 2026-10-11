@@ -65,7 +65,7 @@ human|none click: Click: Use
 +2 menu: Ui open
 +3 menu: Use
 +4 click: Click: Use
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +2 menu: Ui open

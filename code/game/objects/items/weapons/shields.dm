@@ -179,14 +179,14 @@ CAPABILITIES(/obj/item/shield/energy)
 	set_active(!active)
 	if (active)
 		set_force(10)
-		w_class = ITEMSIZE_LARGE
+		set_w_class(ITEMSIZE_LARGE)
 		set_slot_flags(null)
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("\The [src] is now active."))
 
 	else
 		set_force(3)
-		w_class = ITEMSIZE_TINY
+		set_w_class(ITEMSIZE_TINY)
 		set_slot_flags(SLOT_EARS)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("\The [src] can now be concealed."))
@@ -259,14 +259,14 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 		set_force(8)
 		set_throwforce(5)
 		throw_speed = 2
-		w_class = ITEMSIZE_LARGE
+		set_w_class(ITEMSIZE_LARGE)
 		set_slot_flags(SLOT_BACK)
 		to_chat(user, span_notice("You extend \the [src]."))
 	else
 		set_force(3)
 		set_throwforce(3)
 		throw_speed = 3
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		set_slot_flags(null)
 		to_chat(user, span_notice("[src] can now be concealed."))
 

@@ -56,7 +56,7 @@
 /proc/dq_parity_gained_suit_storage(obj/item/W)
 	if(dq_parity_fixture()["suit"]["[W.type]"])
 		return FALSE
-	return dq_constraint(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
+	return dq_constraint_present(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
 
 /datum/unit_test/dq_constraint_parity
 	abstract_type = /datum/unit_test/dq_constraint_parity
@@ -119,10 +119,9 @@
 	return I != S && !S.insert_refusal(I, null)
 
 /datum/unit_test/dq_constraint_parity/proc/suit_storage_takes(obj/item/suit, obj/item/I)
-	var/datum/predicate/P = dq_constraint(suit, CONSTRAINT_SUIT_STORAGE)
-	if(!P)
+	if(!dq_constraint_present(suit, CONSTRAINT_SUIT_STORAGE))
 		return FALSE
-	return istype(I, /obj/item/pda) || istype(I, /obj/item/pen) || P.check(null, I, null)
+	return istype(I, /obj/item/pda) || istype(I, /obj/item/pen) || isnull(dq_constraint_refusal(suit, CONSTRAINT_SUIT_STORAGE, I, null))
 
 /datum/unit_test/dq_constraint_parity/proc/holster_takes(obj/item/holster, obj/item/I)
 	return !dq_constraint_refusal(holster, CONSTRAINT_HOLD, I, null)
@@ -143,7 +142,7 @@
 		var/obj/item/W = dq_parity_make(path, T)
 		if(!W)
 			continue
-		if(dq_constraint(W, CONSTRAINT_SUIT_STORAGE))
+		if(dq_constraint_present(W, CONSTRAINT_SUIT_STORAGE))
 			TEST_FAIL("[path] has suit storage now; it had none")
 		qdel(W)
 		CHECK_TICK

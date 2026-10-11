@@ -10,7 +10,7 @@ CAPABILITIES(/datum)
 	owns_one(nameof(rule_binding), /datum/rule_binding)
 
 
-/proc/dq_rule_binding_of(datum/thing)
+/proc/dq_rule_binding_of(datum/thing) as /datum/rule_binding
 	var/datum/rule_binding/binding = thing?.rule_binding
 	return QDELETED(binding) ? null : binding
 
@@ -212,9 +212,9 @@ CAPABILITIES(/datum)
 				var/handle = trigger.provider().node_of(owner, TRUE)
 				var/above = trigger.fires_above()
 				// Watches fire at >= / <=; a strict comparison watches just past the level.
-				if(trigger.op == PRED_CMP_GT)
+				if(trigger.op == SIM_COMPARE_GT)
 					level += dq_rule_epsilon(level)
-				else if(trigger.op == PRED_CMP_LT)
+				else if(trigger.op == SIM_COMPARE_LT)
 					level -= dq_rule_epsilon(level)
 				out += dq_rx_when_threshold(src, handle, trigger.provider().channel, above, level, TRUE)
 			if(RULE_TRIGGER_BAND)
@@ -257,7 +257,7 @@ CAPABILITIES(/datum)
 		hold_left[i] = null
 
 /datum/rule_binding/proc/check(datum/rule/rule)
-	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
+	return rule.compiled_condition.holds(owner) ? TRUE : FALSE
 
 /// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
@@ -395,4 +395,3 @@ CAPABILITIES(/datum)
 				replaced_by(thing)
 			if(RULE_OP_REMOVE)
 				spent(thing)
-

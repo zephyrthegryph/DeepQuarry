@@ -62,7 +62,7 @@
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
 	set_edge(TRUE)
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
 	set_light(lrange, lpower, lcolor)
 	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
@@ -82,7 +82,7 @@
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
-	w_class = initial(w_class)
+	set_w_class(initial(w_class))
 	set_light(0,0)
 	set_attack_verb(null)
 

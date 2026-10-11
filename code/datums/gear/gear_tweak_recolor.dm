@@ -104,7 +104,7 @@ GLOBAL_DATUM_INIT(gear_tweak_unified_recolor, /datum/gear_tweak/recolor, new)
 				for(var/species in I.sprite_sheets)
 					var/icon/swapped_sheet = _swap_icon(I.sprite_sheets[species], swaps)
 					new_sheets[species] = swapped_sheet || I.sprite_sheets[species]
-				I.sprite_sheets = new_sheets
+				I.set_sprite_sheets(new_sheets)
 		if("matrix")
 			var/list/m = metadata["value"]
 			if(islist(m) && length(m) >= 12)

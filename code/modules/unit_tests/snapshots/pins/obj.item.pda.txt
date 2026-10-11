@@ -106,14 +106,13 @@
 +5 menu: Remove id (refused: You can't do that.)
 +6 menu: Remove pen (refused: You can't do that.)
 +7 menu: Reset PDA (refused: You can't do that.)
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
-+8 click: Click: Item
+human|/obj/item menu: Alt
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove cartridge (refused: You can't do that.)
+human|/obj/item menu: Remove id (refused: You can't do that.)
+human|/obj/item menu: Remove pen (refused: You can't do that.)
+human|/obj/item menu: Reset PDA (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Item
 keys: alt, Authenticate, collect_item, drag_buckle, Eject, gen_silicon_item_silicon_equip_module, Home, item, kit_customize, kit_customize_last, move_to_top, pda_self, pda_verb_remove_cartridge, pda_verb_remove_id, pda_verb_remove_pen, pda_verb_reset, pick_up_item, Retro, Ringtone, StartProgram, threaten_eat, toggle_digestable, TouchSounds

@@ -195,7 +195,7 @@ CAPABILITIES(/datum/protean_power/blobform)
 	if(!species)
 		return
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.base_species = A.answer.value
+	species.set_base_species(A.answer.value)
 	regenerate_icons()
 
 /datum/protean_power/hide_self

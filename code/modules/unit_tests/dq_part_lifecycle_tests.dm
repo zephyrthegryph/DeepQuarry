@@ -225,7 +225,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
-	brain.parent_organ = BP_TORSO
+	brain.set_parent_organ(BP_TORSO)
 	TEST_ASSERT(brain.place_into(torso, SLOT_ID_PART_ORGANS), "the brain moves to the torso")
 	TEST_ASSERT_EQUAL(brain.loc, torso, "the brain sits in the torso")
 	TEST_ASSERT_EQUAL(brain.owner, H, "the brain is still owned")

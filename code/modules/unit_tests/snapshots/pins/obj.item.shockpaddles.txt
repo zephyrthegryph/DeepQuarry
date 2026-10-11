@@ -13,5 +13,8 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj.item human|/obj/item/card/emag
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 keys: collect_item, drag_buckle, electrocute, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, revive_charge, revive_place, toggle_digestable

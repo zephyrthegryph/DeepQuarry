@@ -12,7 +12,7 @@
 
 /datum/unit_test/proc/dq_storage_item(turf/T, size)
 	var/obj/item/dq_storage_test/I = allocate(/obj/item/dq_storage_test, T)
-	I.w_class = size
+	I.set_w_class(size)
 	return I
 
 // ---- Insert and remove parity ----

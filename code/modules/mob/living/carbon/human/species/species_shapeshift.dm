@@ -3,6 +3,44 @@
 // used for slimes but it may be useful for changelings later.
 GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
+CAPABILITY_TYPE(wrapped_species_form, CAP_WRAPPED_SPECIES_FORM, /datum/capability/lib/wrapped_species_form, key = NONE)
+/datum/capability/lib/wrapped_species_form
+	holder_hooks = HOLDER_HOOK_INIT
+/datum/capability/lib/wrapped_species_form/cap_data_type()
+	return /datum/cap_data/wrapped_species_form
+/datum/capability/lib/wrapped_species_form/on_holder_init(datum/act/eval/A)
+	var/mob/living/carbon/human/H = A.holder
+	var/datum/activation/activation = cap_activation(H, CAP_WRAPPED_SPECIES_FORM, null, TRUE)
+	var/datum/cap_data/wrapped_species_form/S = cap_data(activation)
+	rel_set(S, nameof(S.holder), H)
+/datum/cap_data/wrapped_species_form
+	var/bodytype
+	var/mob/living/carbon/human/holder
+CAPABILITIES(/datum/cap_data/wrapped_species_form)
+	ref_one(nameof(holder))
+SETTER(/datum/cap_data/wrapped_species_form, bodytype)
+/datum/cap_data/wrapped_species_form/proc/set_bodytype(value)
+	if(TRACKED_UNCHANGED(bodytype, value))
+		return FALSE
+	bodytype = value
+	if(holder)
+		GLOB.wrapped_species_by_ref["\ref[holder]"] = value
+	tracked_changed(src, nameof(bodytype))
+	return TRUE
+/mob/living/carbon/human/proc/wrapped_species_state(create = FALSE)
+	RETURN_TYPE(/datum/cap_data/wrapped_species_form)
+	var/datum/activation/A = cap_activation(src, CAP_WRAPPED_SPECIES_FORM, null, create)
+	if(!A)
+		return null
+	var/datum/cap_data/wrapped_species_form/S = create ? cap_data(A) : A.data
+	return S
+/mob/living/carbon/human/proc/wrapped_bodytype()
+	var/datum/cap_data/wrapped_species_form/S = wrapped_species_state()
+	return S?.bodytype
+/mob/living/carbon/human/proc/set_wrapped_bodytype(value)
+	var/datum/cap_data/wrapped_species_form/S = wrapped_species_state(TRUE)
+	return S ? S.set_bodytype(value) : FALSE
+
 /datum/species/shapeshifter
 
 	inherent_verbs = list(
@@ -23,50 +61,50 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /datum/species/shapeshifter/get_icobase(mob/living/carbon/human/H, get_deform)
 	if(!H) return ..(null, get_deform)
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_icobase(H, get_deform)
 
 /datum/species/shapeshifter/get_race_key(mob/living/carbon/human/H)
-	return "[..()]-[GLOB.wrapped_species_by_ref["\ref[H]"]]"
+	return "[..()]-[H?.wrapped_bodytype()]"
 
 /datum/species/shapeshifter/get_bodytype(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_bodytype(H)
 
 /datum/species/shapeshifter/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_blood_mask(H)
 
 /datum/species/shapeshifter/get_damage_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_damage_mask(H)
 
 /datum/species/shapeshifter/get_damage_overlays(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_damage_overlays(H)
 
 /datum/species/shapeshifter/get_tail(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail(H)
 
 /datum/species/shapeshifter/get_tail_animation(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail_animation(H)
 
 /datum/species/shapeshifter/get_tail_hair(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail_hair(H)
 
 /datum/species/shapeshifter/handle_post_spawn(mob/living/carbon/human/H)
 	..()
-	GLOB.wrapped_species_by_ref["\ref[H]"] = base_species
+	H.set_wrapped_bodytype(base_species)
 
 	for(var/obj/item/organ/external/E in H.organs)
 		E.sync_colour_to_human(H)
@@ -238,7 +276,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		return
 	var/mob/living/carbon/human/shifter = asker || answerer
 	var/choice = value
-	if(!GLOB.all_species[choice] || GLOB.wrapped_species_by_ref["\ref[shifter]"] == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
+	if(!GLOB.all_species[choice] || shifter.wrapped_bodytype() == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
 		return "not a form to take"
 	return null
 
@@ -709,8 +747,8 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	dna.base_species = new_species
 	var/datum/species/own_species = rel_private(src, nameof(species)) // never write through to a registered species
-	own_species.base_species = new_species
-	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
+	own_species.set_base_species(new_species)
+	set_wrapped_bodytype(new_species)
 	if (visible)
 		act_message(src, null, others = span_filter_notice(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 		regenerate_icons()
@@ -974,3 +1012,17 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 			a_tail = alpha
 		if("wings")
 			a_wing = alpha
+
+/datum/species/shapeshifter/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	. = ..()
+	if(!H)
+		return
+	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()
+	. += list(list(form, nameof(form.bodytype)))
+	var/list/visited = seen ? seen.Copy() : list()
+	if(src in visited)
+		return
+	visited += src
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
+	if(S && !(S in visited))
+		. += S.acceptance_bodytype_reads(H, visited)

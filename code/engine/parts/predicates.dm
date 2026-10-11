@@ -754,9 +754,11 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	if(subject == PRED_GLOBAL)
 		return call(proc_path)(actor, target, held)
 	var/datum/thing = dq_pred_subject(subject, actor, target, held)
-	if(!thing || !hascall(thing, dq_pred_proc_name(proc_path)))
+	var/proc_name = dq_pred_proc_name(proc_path)
+	if(!thing || !hascall(thing, proc_name))
 		return FALSE
-	return call(thing, proc_path)(actor, target, held)
+	// The absolute path declares the callback; the actual subject selects its override.
+	return call(thing, proc_name)(actor, target, held)
 
 /datum/pred_node/call_proc/generate_reason(mob/actor, atom/target, atom/movable/held)
 	if(!negate)

@@ -21,11 +21,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering)
 	slowdown = 1
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 //Engineering HAZMAT Voidsuit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE))))
+
 
 /obj/item/clothing/head/helmet/space/void/engineering/hazmat
 	name = "HAZMAT voidsuit helmet"
@@ -105,7 +106,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 
 //Mining
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/salvage, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE))))
+
 /obj/item/clothing/head/helmet/space/void/mining
 	name = "mining voidsuit helmet"
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has reinforced plating."
@@ -127,7 +128,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/salvage, suit_storage_
 
 //Mining Surplus Voidsuit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/mining, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING))))
+
 
 /obj/item/clothing/head/helmet/space/void/mining/alt
 	name = "frontier mining voidsuit helmet"
@@ -158,7 +159,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/mining, suit_storage_spec, list(HO
 
 //Medical EMT Voidsuit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL))))
+
 
 /obj/item/clothing/head/helmet/space/void/medical/emt
 	name = "emergency medical response voidsuit helmet"
@@ -208,7 +209,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	light_overlay = "helmet_light_dual_blue"
 	no_cycle = TRUE
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/medical/veymed, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
+
 
 /obj/item/clothing/suit/space/void/medical/veymed
 	name = "lightweight medical voidsuit"
@@ -218,7 +219,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/medical/veymed, fit_spec, l
 	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	no_cycle = TRUE
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/medical/veymed, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
+
 
 /obj/item/clothing/head/helmet/space/void/medical/veymed_static
 	name = "nonadaptive lightweight medical voidsuit helmet"
@@ -258,11 +259,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security)
 	slowdown = 1
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.7))
 
 //Security Crowd Control Voidsuit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO))))
+
 
 /obj/item/clothing/head/helmet/space/void/security/riot
 	name = "crowd control voidsuit helmet"
@@ -359,7 +361,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos)
 
 //SAR
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/exploration, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))))
+
 /obj/item/clothing/head/helmet/space/void/expedition_medical
 	name = "field medic voidsuit helmet"
 	desc = "A radiation-resistant helmet made especially for exploring unknown planetary environments. Has a reinforced high-vis bubble style visor."
@@ -382,9 +384,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/expedition_medical)
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/expedition_medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))))
+
 
 /obj/item/clothing/head/helmet/space/void/exploration/alt
 	desc = "A radiation-resistant helmet retrofitted for exploring unknown planetary environments."
@@ -415,7 +418,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/expedition_medical, suit_storage_s
 	name = "pilot voidsuit"
 	armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/pilot, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable))))
+
 
 /obj/item/clothing/head/helmet/space/void/pilot/alt
 	icon_state = "rig0_pilot2"
@@ -558,3 +561,24 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/pilot, suit_storage_spec, list(HOL
 
 
 
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/salvage)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/mining)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/medical)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/veymed)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/exploration)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/pilot)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

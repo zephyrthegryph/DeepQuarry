@@ -74,7 +74,7 @@
 	desc = "An evidence bag containing [I]."
 	I.forceMove(src)
 	rel_set(src, nameof(stored_item), I)
-	w_class = I.w_class
+	set_w_class(I.w_class)
 	return TRUE
 
 
@@ -95,7 +95,7 @@ CAPABILITIES(/obj/item/evidencebag)
 		user.put_in_hands(I)
 		rel_clear(src, nameof(stored_item))
 
-		w_class = initial(w_class)
+		set_w_class(initial(w_class))
 		icon_state = "evidenceobj"
 		desc = "An empty evidence bag."
 	else

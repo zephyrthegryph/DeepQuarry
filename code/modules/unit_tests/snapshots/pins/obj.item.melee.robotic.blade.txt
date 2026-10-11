@@ -4,54 +4,26 @@
 +3 menu: Recolor
 @obj.item ai|none
 @obj.item ghost|none
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Recolor
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Recolor
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Recolor
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Recolor
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Recolor
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Recolor
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-@obj.item.melee human|/obj/item/stack/cable_coil
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/tool/screwdriver
++1 menu: Recolor
+@obj human|/obj/item/tool/crowbar
++1 menu: Recolor
+@obj human|/obj/item/tool/wrench
++1 menu: Recolor
+@obj human|/obj/item/tool/wirecutters
++1 menu: Recolor
+@obj human|/obj/item/multitool
++1 menu: Recolor
+@obj human|/obj/item/weldingtool
++1 menu: Recolor
+@obj human|/obj/item/stack/cable_coil
 +2 menu: Recolor
-+4 click: nothing
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Recolor
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
-@obj.item.melee human|/obj/item/card/id
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/stack/material/steel
++1 menu: Recolor
+@obj human|/obj/item/card/id
 +2 menu: Recolor
-+4 click: nothing
-@obj.item.melee human|/obj/item/kit
--menu: Baton item
--menu: Take cell
+@obj human|/obj/item/kit
 +2 menu: Recolor
-@obj.item.melee human|/obj/item/storage
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/storage
 +2 menu: Recolor
-+4 click: Click: Collect
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, toggle_digestable, use

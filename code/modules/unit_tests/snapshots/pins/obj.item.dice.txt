@@ -70,11 +70,10 @@
 +1 menu: Interaction alt
 +2 menu: Interaction item
 +4 menu: Set Face
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Interaction alt
-+1 menu: Interaction item
-+3 menu: Set Face
-+5 click: Click: Interaction item
+human|/obj/item menu: Interaction alt
+human|/obj/item menu: Interaction item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Set Face
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Interaction item
 keys: collect_item, dice_verb_set_face, drag_buckle, gen_silicon_item_silicon_equip_module, interaction_alt, interaction_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, roll, toggle_digestable, use_welder

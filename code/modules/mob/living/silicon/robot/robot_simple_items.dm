@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 			if(!cyborg_integrated_tools[path])
 				rel_add(src, nameof(cyborg_integrated_tools), new path(src), path)
 		var/obj/item/I = integrated_tool_at(path)
-		I.canremove = FALSE
+		I.set_canremove(FALSE)
 
 	for(var/tool in cyborg_integrated_tools)
 		var/obj/item/real_tool = integrated_tool_at(tool)
@@ -564,7 +564,7 @@ CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
 		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
-			rel_add(current_stack, nameof(current_stack.synths), linked_synth)
+			current_stack.add_synth(linked_synth)
 		rel_add(src, nameof(cyborg_integrated_tools), current_stack)
 
 	. = ..()

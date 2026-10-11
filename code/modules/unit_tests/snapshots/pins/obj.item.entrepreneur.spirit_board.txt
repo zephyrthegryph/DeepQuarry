@@ -58,10 +58,9 @@
 @obj human|/obj/item/storage
 +0 menu: Alt
 +2 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Alt
-+1 menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
-+4 click: Click: Item
+human|/obj/item menu: Alt
+human|/obj/item menu: Item (refused: you need some sort of glass, bottle or cup to contact the spirit world)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Item
 keys: alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, spirit_board_ghost_guide, toggle_digestable

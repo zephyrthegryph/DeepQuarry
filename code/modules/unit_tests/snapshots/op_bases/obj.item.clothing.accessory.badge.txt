@@ -5,6 +5,14 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Holobadge imprint item
+human|/obj/item/kit menu: Accessory attached hand
+human|/obj/item/kit menu: Alternate use
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Holobadge imprint item
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Use
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/multitool menu: Accessory attached hand
 human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Holobadge imprint item
@@ -27,6 +35,14 @@ human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Holobadge imprint item
+human|/obj/item/storage menu: Accessory attached hand
+human|/obj/item/storage menu: Alternate use
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Holobadge imprint item
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Use
+human|/obj/item/storage click: Click: Holobadge imprint item
 human|/obj/item/tool/crowbar menu: Accessory attached hand
 human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Holobadge imprint item

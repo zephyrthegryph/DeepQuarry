@@ -34,10 +34,10 @@
 @obj.item.toy human|/obj/item/card/id
 -menu: Name Plushie (refused: You can't do that.)
 +0 menu: Alternate use
-@obj.item.toy.plushie human|/obj/item/kit
+@obj.item.toy human|/obj/item/kit
 -menu: Name Plushie (refused: You can't do that.)
 +0 menu: Alternate use
-@obj.item.toy.plushie human|/obj/item/storage
+@obj.item.toy human|/obj/item/storage
 -menu: Name Plushie (refused: You can't do that.)
 +0 menu: Alternate use
 @obj.item.toy human|/obj/item

@@ -31,9 +31,9 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT_EQUAL(dq_test_slot_ids(M), jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BODY), ","), "a simple body should declare hands and its interior")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	M.has_hands = FALSE
+	M.set_has_hands(FALSE)
 	TEST_ASSERT_NOTNULL(dq_ledger_refusal(pen, M, SLOT_ID_HAND_L, M), "a simple mob without hands should refuse its hand slots")
-	M.has_hands = TRUE
+	M.set_has_hands(TRUE)
 	TEST_ASSERT_NULL(dq_ledger_refusal(pen, M, SLOT_ID_HAND_L, M), "a simple mob with hands should hold things")
 
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)

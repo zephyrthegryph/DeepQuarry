@@ -1107,7 +1107,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
 	set_edge(TRUE)
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
 /obj/item/melee/fluffstuff/proc/deactivate(mob/living/user)
@@ -1120,7 +1120,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
-	w_class = initial(w_class)
+	set_w_class(initial(w_class))
 
 CAPABILITIES(/obj/item/melee/fluffstuff)
 	configure(item_combat(sharp = FALSE, edge = FALSE))

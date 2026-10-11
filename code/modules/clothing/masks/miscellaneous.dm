@@ -478,4 +478,3 @@ CAPABILITIES(/obj/item/clothing/mask/lacemask)
 
 CAPABILITIES(/obj/item/clothing/mask/costume/ghost)
 	configure(item_worn(covers = HEAD|FACE, flags = FLEXIBLEMATERIAL, hides = HIDEFACE|BLOCKHAIR))
-

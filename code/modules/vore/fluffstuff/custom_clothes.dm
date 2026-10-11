@@ -351,11 +351,13 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', hides = HIDETIE|HIDEHOLSTER))
 
 //For general use
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 /obj/item/clothing/suit/storage/fluff/fedcoat
 	name = "Federation Uniform Jacket (Red)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. Set phasers to awesome."
@@ -367,9 +369,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat, suit_stora
 	armor_spec = "melee=10;bullet=20;laser=10" //As much armor as the cyberpunk jacket. Also priced the same.
 	var/unbuttoned = FALSE
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/fluff/fedcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
+
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
 
@@ -424,9 +427,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	//Variants
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/fluff/modernfedcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedblue
 	name = "Modern Federation Uniform Jacket (Blue)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. Wearing this makes you feel like a scientist or a pilot."
@@ -681,10 +685,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
 	//Bonnie Suit
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/fluff/freddy, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
+
 /obj/item/clothing/suit/fluff/freddy/bonnie
 	desc = "Children's entertainer."
 	icon_state = "bonniesuit"
@@ -716,9 +721,11 @@ TYPE_TABLE(/obj/item/clothing/suit/fluff/freddy, suit_storage_spec, list(HOLD_ON
 	light_overlay = "helmet_light_dual"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm, fit_spec, null)
+
 
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/proc/owner_fit, "your face and whoever is meant for this helmet are too different"))))
@@ -738,9 +745,11 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/sc
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess, fit_spec, null)
+
 
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/proc/owner_fit, "it only has three fingers, and room for extra limbs"))))
@@ -772,6 +781,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespes
 		slot_head_str = 'icons/vore/custom_onmob_32x48_vr.dmi'
 		)
 
+
 TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/fluff/avida/proc/match_ears, null))))
 
 /// Always fits; picks the trimmed sprite when the wearer's ears suit it.
@@ -796,6 +806,7 @@ TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), l
 CAPABILITIES(/obj/item/clothing/under/fluff/aluranevines)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
+
 TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/aluranevines/proc/owner_fit, "wrapping vines around yourself is an odd idea"))))
 
 /obj/item/clothing/under/fluff/aluranevines/proc/owner_fit(mob/living/carbon/human/H)
@@ -810,12 +821,14 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon_state = "rig-hos"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 //HOS Hardsuit Helmet
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/security/fluff/hos, fit_spec, null)
+
 /obj/item/clothing/head/helmet/space/void/security/fluff/hos // ToDo: Rig version.
 	name = "\improper prototype voidsuit helmet"
 	desc = "A customized security voidsuit helmet customized to include the " + JOB_HEAD_OF_SECURITY + "'s signature hat. Has additional composite armor."
@@ -824,12 +837,14 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/fluff/hos, fit_spec, null
 	icon_state = "rig0-hos"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 //adk09:Lethe
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/fluff/hos, fit_spec, null)
+
 /obj/item/clothing/head/helmet/hos/fluff/lethe
 	name = "Lethe's Hat"
 	desc = " This is Lethe's Hat! A little tag attached inside reads: 'If found please return to Lethe! Or else!' It looks rather worn in. It also lacks armor."
@@ -947,6 +962,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit, "it doesn't fit"))))
 
 /obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit(mob/living/carbon/human/H)
@@ -968,10 +984,13 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
+
+
 
 TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/fluff/joan/proc/owner_fit, "it doesn't fit"))))
 
@@ -1081,11 +1100,13 @@ CAPABILITIES(/obj/item/clothing/head/fluff/hairflowerpin)
 	blood_overlay_type = "coat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //bwoincognito:Octavious Ward
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
+
 /obj/item/clothing/under/det/fluff/octavious
 	name = "Expensive Suit and vest"
 	desc = "A well made suit and tie, with a thin leather vest, while not as rugged as normal lab suits, it lets the wearer look dashing as he works. The letter's O.C.W. are embroidered on the left breast."
@@ -1234,11 +1255,13 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 	icon_state = "chococoat"
 
 CAPABILITIES(/obj/item/clothing/suit/chococoat)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 //KiwiDaNinja: Chakat Taiga
 
-TYPE_TABLE(/obj/item/clothing/suit/chococoat, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/material/knife))))
+
 /obj/item/clothing/under/fluff/taiga
 	name = "Taiga's F.D Uniform"
 	desc = "This uniform - consisting of only the uniform shirt, and built out of a soft fleece - dons the badge of Amistad Fire and Rescuse on both shoulders. The badges denote the wearer as a FF/" + JOB_PARAMEDIC + ", and their name is embroidered in a gold thread on their right breast; Chakat Taiga! An 'official' badge is pinned to their left breast." //A walking advertisement?
@@ -1362,10 +1385,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = CHEST|ARMS))
 	configure(item_protection(permeability = 0.50))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/trek/ds9, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL))))
+
 
 /obj/item/clothing/suit/storage/trek/ds9/admiral // Only for adminuz
 	name = "Admiral Overcoat"
@@ -1404,6 +1428,7 @@ CAPABILITIES(/obj/item/clothing/under/batter)
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "jessiecoat"
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit, "you need a wolf-taur half to wear this"))))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit(mob/living/carbon/human/H)
@@ -1432,6 +1457,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec,
 //samanthafyre:Kateryna Petrovitch
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/kate, fit_spec, null)
+
 /obj/item/clothing/head/helmet/space/fluff/kate
 	name = "Kat's Navy Engineer Helmet"
 	desc = "A customized combat space helmet made for Kateryna. It uses a navy design as the base before it\
@@ -1442,6 +1468,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/kate, fit_spec, null)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, fit_spec, null)
 
@@ -1661,6 +1689,8 @@ CAPABILITIES(/obj/item/storage/belt/security/fluff/kilano)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
+TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/gloves/fluff/kilano/netra
 	name = "black and gold dress gloves"
 	desc = "Some fancy looking black and gold patterned gloves made of a silky material."
@@ -1673,6 +1703,7 @@ CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
 //BeyondMyLife: Ne'tra Ky'ram
 
 TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano/netra, fit_spec, null)
+
 /obj/item/clothing/shoes/boots/fluff/kilano
 	name = "black and gold winter boots"
 	desc = "Some Fur lined black and gold heavy duty winter bots."
@@ -1687,6 +1718,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
 //BeyondMyLife: Ne'tra Ky'ram
 
 TYPE_TABLE(/obj/item/clothing/shoes/boots/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/accessory/storage/black_vest/fluff/kilano
 	name = "black and gold webbing vest"
 	desc = "A black and gold webbing vest, it looks like a child spilled a box of crayons all over it."
@@ -1711,7 +1743,6 @@ CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
 
 //BeyondMyLife:Kilano Soryu
 
-TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
 /obj/item/clothing/gloves/fluff/kilano
 	name = "Bleached Gloves"
 	desc = "Some old captain's gloves, bleached white, almost unrecognizable from the color change besides the gold trim."
@@ -1726,6 +1757,7 @@ CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano)
 //BeyondMyLife: Cassandra Selones
 
 TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/shoes/boots/fluff/kilano/purple
 	name = "purple and silver winter boots"
 	desc = "Some fur lined boots, purple and silver."
@@ -1816,6 +1848,8 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
+
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, fit_spec, null)
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit, "the faceplate is not made for your anatomy"))))
@@ -1830,6 +1864,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, 
 	icon = 'icons/mob/taursuits_lizard.dmi'
 	icon_state = "hasd_suit"
 	pixel_x = -16
+
+
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, fit_spec, null)
 
@@ -1951,8 +1987,10 @@ CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
 
 
-TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_TESHARI))))
 
+
+
+TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_TESHARI))))
 
 TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit, "only slimes can wear this"))))
 
@@ -2053,9 +2091,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/zena)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
+
+
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/zena, fit_spec, null)
-
-
 
 /obj/item/clothing/suit/space/void/engineering/zena
 	name = "custom shroud suit"
@@ -2067,8 +2106,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/zena)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
 
+
+TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
 
 /obj/item/clothing/suit/storage/flintlock
 	name = "green jacket"
@@ -2098,6 +2138,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flintlock)
 CAPABILITIES(/obj/item/clothing/under/skirt/outfit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
+
 TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit, "it doesn't fit"))))
 
 /obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit(mob/living/carbon/human/H)
@@ -2111,6 +2152,7 @@ TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spe
 
 CAPABILITIES(/obj/item/clothing/shoes/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/fluff/nikki/proc/owner_fit, "they don't fit"))))
 
@@ -2406,6 +2448,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/memory_crown)
 	has_hood_sprite = FALSE //No need.
 	var/toggled = FALSE
 	COOLDOWN_DECLARE(toggle_cooldown)
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/purple_robes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 

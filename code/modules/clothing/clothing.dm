@@ -1,3 +1,8 @@
+TRACKED(/obj/item/clothing, valid_accessory_slots)
+TRACKED(/obj/item/clothing, restricted_accessory_slots)
+
+TRACKED(/obj/item/clothing/shoes, overshoes)
+
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
 	resistance_flags = FLAMMABLE
@@ -92,13 +97,13 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 /obj/item/clothing/proc/rig_self_detach()
 	var/obj/item/rig/owner_rig = master_rig()
 	rel_clear(src, nameof(master_rig))
-	canremove = TRUE
+	set_canremove(TRUE)
 	if(ismob(loc))
 		var/mob/M = loc
 		M.drop_from_inventory(src)
 	if(owner_rig && !QDELETED(owner_rig))
 		forceMove(owner_rig)   // retracted into the module (which may now be on the floor)
-		canremove = FALSE
+		set_canremove(FALSE)
 	else
 		forceMove(get_turf(src))   // module is gone; settle on the floor
 
@@ -169,7 +174,7 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 			. |= C.get_heat_protection_flags()
 
 /obj/item/clothing/proc/refit_for_species(target_species)
-	if(!dq_constraint(src, CONSTRAINT_FIT))
+	if(!dq_constraint_present(src, CONSTRAINT_FIT))
 		return //this item doesn't restrict who it fits
 
 	switch(target_species)
@@ -433,6 +438,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	punch_force = 2
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
+	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
@@ -440,7 +446,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 ///////////////////////////////////////////////////////////////////////
 //Head
 
-TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_DIONA))))
+
 /obj/item/clothing/head
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
@@ -651,6 +657,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 /// Native requirement: return null or the component refusal.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
 	return holding ? null : "there is no knife in it"
+
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -937,6 +944,7 @@ CAPABILITIES(/obj/item/clothing/suit)
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
+
 TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
@@ -975,7 +983,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 /obj/item/clothing/suit/proc/RemoveHood()
 	set_hood_up(FALSE)
 	if(hood)
-		hood.canremove = TRUE // This shouldn't matter anyways but just incase.
+		hood.set_canremove(TRUE) // This shouldn't matter anyways but just incase.
 		if(ishuman(hood.loc))
 			var/mob/living/carbon/H = hood.loc
 			H.unEquip(hood, 1)
@@ -1001,7 +1009,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 				hood.color = color
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
 			set_hood_up(TRUE)
-			hood.canremove = FALSE
+			hood.set_canremove(FALSE)
 			H.update_inv_wear_suit()
 ///Hood stuff end.
 
@@ -1622,3 +1630,6 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
 		return "gone"
 	return suit.sensor_mode_refusal(answerer, !isnull(value))
+
+TRACKED(/obj/item/clothing/gloves, glove_level)
+TRACKED(/obj/item/clothing/gloves, overgloves)

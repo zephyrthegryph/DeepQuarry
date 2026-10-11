@@ -60,6 +60,7 @@
 +2 menu: Store
 +4 menu: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 -click: Click: Use
 +1 menu: Store
 +4 click: Click: Store

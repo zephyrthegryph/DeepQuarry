@@ -73,7 +73,7 @@ human|none click: Click: Ui open
 +1 menu: Rotate Clockwise (refused: It is fastened to the floor!)
 +2 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 +4 menu: Turn Around (refused: It is fastened to the floor!)
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +1 menu: Rotate Clockwise (refused: It is fastened to the floor!)

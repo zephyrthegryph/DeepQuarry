@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Keep wrapped bodytype changes synchronized and avoid cancelling valid actions while replacing a plain dependency."

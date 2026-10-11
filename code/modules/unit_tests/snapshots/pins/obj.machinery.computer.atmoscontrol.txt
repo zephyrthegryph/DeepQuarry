@@ -31,5 +31,5 @@
 -click: Click: Use item
 +5 click: Click: Use
 @obj human|/obj/item/gripper
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 keys: atmoscontrol_robot_use, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use, use_gripper, use_item

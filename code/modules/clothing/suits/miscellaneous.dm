@@ -125,6 +125,7 @@ CAPABILITIES(/obj/item/clothing/suit/justice)
 CAPABILITIES(/obj/item/clothing/suit/judgerobe)
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/judgerobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/apron/overalls
@@ -143,6 +144,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/apron/overalls)
 
 CAPABILITIES(/obj/item/clothing/suit/syndicatefake)
 	configure(item_worn(hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, covers = CHEST|ARMS|HANDS|LEGS|FEET))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -399,6 +401,7 @@ CAPABILITIES(/obj/item/clothing/suit/ianshirt)
 CAPABILITIES(/obj/item/clothing/suit/leathercoat)
 	configure(item_worn(hides = HIDEHOLSTER))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/leathercoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/leathercoat/sec
@@ -418,6 +421,7 @@ CAPABILITIES(/obj/item/clothing/suit/leathercoat/sec)
 
 CAPABILITIES(/obj/item/clothing/suit/neocoat)
 	configure(item_worn(hides = HIDEHOLSTER))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/neocoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -448,6 +452,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/greyjacket)
 CAPABILITIES(/obj/item/clothing/suit/storage/trench)
 	configure(item_worn(hides = HIDEHOLSTER))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE))))
 
 /obj/item/clothing/suit/storage/trench/grey
@@ -476,6 +481,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/peacoat)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/duster)
 	configure(item_worn(hides = HIDEHOLSTER))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
 
@@ -672,6 +678,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/bomber)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/bomber/retro
@@ -696,6 +703,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/bomber)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -741,6 +749,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket/nanotrasen/sl
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/brown_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/brown_jacket/sleeveless
@@ -774,6 +783,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen/slee
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/denim_jacket)
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -894,6 +904,7 @@ CAPABILITIES(/obj/item/clothing/suit/whitedress)
 CAPABILITIES(/obj/item/clothing/suit/varsity)
 	configure(item_worn(hides = HIDETIE|HIDEHOLSTER))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/varsity, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/varsity/red
@@ -930,6 +941,7 @@ CAPABILITIES(/obj/item/clothing/suit/runner)
  */
 
 TYPE_TABLE(/obj/item/clothing/suit/runner, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 /obj/item/clothing/suit/storage/toggle/sec_dep_jacket
 	name = "department jacket, security"
 	desc = "A cozy jacket in security's colors. Show your department pride!"
@@ -999,6 +1011,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/light_jacket)
 	icon_state = "trackjacket"
 	item_state_slots = list(slot_r_hand_str = "black_labcoat", slot_l_hand_str = "black_labcoat")
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/toggle/track/blue
@@ -1032,6 +1045,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list
 	var/rolled = 0
 	var/tucked = 0
 	var/buttoned = 0
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/flannel, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -1141,6 +1155,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/greengov)
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
 	armor_spec = "bio=10"
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/caution
@@ -1238,6 +1253,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/drive)
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/moto_jacket)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/moto_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/storage/punkvest
@@ -1259,6 +1275,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/punkvest)
 CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 
@@ -1308,6 +1325,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket/captain)
 CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
+
 TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/drake_cloak/proc/taur_fit, "you need a drake-taur half to wear this"))))
 
 /obj/item/clothing/suit/drake_cloak/proc/taur_fit(mob/living/carbon/human/H)
@@ -1325,6 +1343,7 @@ TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), l
 
 CAPABILITIES(/obj/item/clothing/suit/barding)
 	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS))
+
 
 TYPE_TABLE(/obj/item/clothing/suit/barding, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this"))))
 
@@ -1420,5 +1439,6 @@ CAPABILITIES(/obj/item/clothing/suit/taur/skirt)
 	desc = "A formal jacket worn by the bridge and command crew from the Altevian Hegemony. The material is of high quality silk, and provides maximum comfort and breathing room."
 	icon_state = "altevian-admiral"
 
-TYPE_TABLE(/obj/item/clothing/suit/captunic/capjacket/altevian_admiral, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))
 
+
+TYPE_TABLE(/obj/item/clothing/suit/captunic/capjacket/altevian_admiral, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))
