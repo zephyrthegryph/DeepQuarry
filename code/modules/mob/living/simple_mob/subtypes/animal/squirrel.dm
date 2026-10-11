@@ -48,7 +48,6 @@
 	var/do_seasons = TRUE
 	picked_color = FALSE
 
-	allow_mind_transfer = TRUE
 
 /////////////////////////////////////// Vore stuff///////////////////////////////////////////
 
@@ -152,6 +151,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(softfall = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
 	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))

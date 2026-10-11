@@ -45,7 +45,6 @@
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
-	allow_mind_transfer = TRUE
 
 /// Whoever presses a button of the bot's window leaves their prints on it.
 /mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
@@ -684,20 +683,18 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	release_vore_contents()
 	revoke(src, granted_verb(/mob/proc/insidePanel), src)
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
+	vore_prefs.devourable = FALSE
+	vore_prefs.feeding = FALSE
+	vore_prefs.can_be_drop_pred = FALSE
 
 	return ..()
 
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/bot
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
 
 CAPABILITIES(/mob/living/bot)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
 	configure(mob_movement(makes_dirt = FALSE))
 	silicon_hand()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.

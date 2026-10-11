@@ -16,7 +16,7 @@
 		living_prey.belly_overlay_tgui?.hide()
 		return
 	var/datum/belly_overlay_tgui/dq_overlay = get_belly_overlay_tgui(living_prey)
-	if(!living_prey.show_vore_fx || !belly_fullscreen)
+	if(!living_prey.vore_prefs.show_vore_fx || !belly_fullscreen)
 		dq_overlay?.hide()
 		check_hud_disable(living_prey)
 		return

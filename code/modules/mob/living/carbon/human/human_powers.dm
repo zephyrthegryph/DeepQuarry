@@ -10,8 +10,8 @@
 		to_chat(src, span_warning("You can't mess with your hair right now!"))
 		return
 
-	if(h_style)
-		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
+	if(looks.hair_style)
+		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[looks.hair_style]
 		if(!(hair_style.flags & HAIR_TIEABLE))
 			to_chat(src, span_warning("Your hair isn't long enough to tie."))
 			return
@@ -26,8 +26,8 @@
 	if(!A.answer)
 		return
 	var/selected_string = A.answer.value
-	if(selected_string && h_style != selected_string)
-		h_style = selected_string
+	if(selected_string && looks.hair_style != selected_string)
+		looks.set_hair_style(selected_string)
 		regenerate_icons()
 		act_message(src, null, others = span_notice("%U% pauses a moment to style their hair."))
 	else

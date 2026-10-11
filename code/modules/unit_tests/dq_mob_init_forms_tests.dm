@@ -59,7 +59,7 @@
 
 	var/mob/living/carbon/human/skrell/S = allocate(/mob/living/carbon/human/skrell, T)
 	TEST_ASSERT_EQUAL(S.species?.name, SPECIES_SKRELL, "a species subtype is made as its species")
-	TEST_ASSERT_EQUAL(S.h_style, "Skrell Short Tentacles", "with its hair")
+	TEST_ASSERT_EQUAL(S.looks.hair_style, "Skrell Short Tentacles", "with its hair")
 
 	var/mob/living/carbon/human/monkey/punpun/P = allocate(/mob/living/carbon/human/monkey/punpun, T)
 	TEST_ASSERT_EQUAL(P.name, "Pun Pun", "Pun Pun is named over its species' name")

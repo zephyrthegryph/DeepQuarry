@@ -55,7 +55,6 @@
 	var/next
 	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
-	can_be_drop_prey = FALSE
 
 	can_pain_emote = TRUE
 	species_sounds = "Metroid"

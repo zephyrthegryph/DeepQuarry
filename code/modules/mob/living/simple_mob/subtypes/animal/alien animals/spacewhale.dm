@@ -50,7 +50,6 @@
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-	can_be_drop_prey = FALSE
 
 /datum/say_list/spacewhale
 	emote_see = list("ripples and flows", "flashes rhythmically","glows faintly","investigates something")
@@ -123,6 +122,7 @@
 TRACKED(/mob/living/simple_mob/vore/overmap/spacewhale, restless)
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	after_init(0, then(PROC_REF(spacewhale_restless_ready)))
 	on_change(nameof(restless), ANY, then(PROC_REF(restless_changed)))
 
@@ -140,7 +140,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
 	. = ..()
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.stat == DEAD && !L.allowmobvore)
+		if(L.stat == DEAD && !L.vore_prefs.allowmobvore)
 			L.gib()
 		else
 			return .

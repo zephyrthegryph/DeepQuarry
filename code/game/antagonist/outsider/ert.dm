@@ -31,7 +31,7 @@ GLOBAL_DATUM(ert, /datum/antagonist/ert)
 
 /datum/antagonist/ert/create_default(mob/source)
 	var/mob/living/carbon/human/M = ..()
-	if(istype(M)) M.age = rand(25,45)
+	if(istype(M)) M.bio.age = rand(25,45)
 
 /datum/antagonist/ert/New()
 	..()

@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/mindbinder)
 		A = H.held_mob
 	if(istype(A, /mob/living))
 		var/mob/living/M = A
-		if(!M.allow_mind_transfer)
+		if(!M.vore_prefs.allow_mind_transfer)
 			to_chat(user,span_danger("The target's mind is too complex to be affected!"))
 			return
 		if(user == M)

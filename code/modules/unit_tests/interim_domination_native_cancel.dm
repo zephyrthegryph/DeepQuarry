@@ -2,7 +2,7 @@
 /datum/unit_test/dq_eg2/interim_domination_native_cancel/run_gate()
 	var/mob/living/carbon/human/pred = person()
 	var/mob/living/carbon/human/prey = person()
-	pred.allow_mind_transfer = TRUE
+	pred.vore_prefs.allow_mind_transfer = TRUE
 	prey.forceMove(pred)
 	TEST_ASSERT_EQUAL(prey.loc, pred, "the real public entry sees its actor physically inside a living predator")
 	TEST_ASSERT(!pred.prey_controlled && !prey.prey_controlled, "both real participants start without transferred control")

@@ -103,19 +103,19 @@
 	var/obj/belly/B = vore_selected_of(pred)
 
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "a willing prey should be devourable")
-	prey.devourable = FALSE
+	prey.vore_prefs.devourable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't able to be devoured.", "devour refusal reason")
 	TEST_ASSERT(!pred.begin_instant_nom(pred, prey, pred, B), "an unwilling prey must not be eaten")
 	TEST_ASSERT(prey.loc != B, "an unwilling prey must stay out")
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 
-	prey.digestable = FALSE
+	prey.vore_prefs.digestable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "they don't allow digestion", "digest refusal reason")
-	prey.absorbable = FALSE
+	prey.vore_prefs.absorbable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_absorb, pred, prey), "they don't allow absorption", "absorb refusal reason")
-	prey.permit_healbelly = FALSE
+	prey.vore_prefs.permit_healbelly = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_heal, pred, prey), "they don't allow healing bellies", "heal refusal reason")
-	prey.strip_pref = FALSE
+	prey.vore_prefs.strip_pref = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_strip, pred, prey), "they don't allow stripping", "strip refusal reason")
 
 	// A refused mode holds: an indigestible prey takes no digestion damage.

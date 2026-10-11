@@ -87,7 +87,7 @@
 				if(istype(E))
 					E.add_wound(new /datum/affliction/wound/internal_bleeding(E, 5))
 
-			if(M.stat == DEAD || M.allow_spontaneous_tf)
+			if(M.stat == DEAD || M.vore_prefs.allow_spontaneous_tf)
 				M.add_xenochimera()
 				cure()
 	return

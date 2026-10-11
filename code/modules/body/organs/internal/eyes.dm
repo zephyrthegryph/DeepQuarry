@@ -64,9 +64,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 		// input() supplies us with a hex color, which we can't use, so we convert it to rbg values.
 		var/list/new_color_rgb_list = hex2rgb(new_color)
 		// First, update mob vars.
-		owner.r_eyes = new_color_rgb_list[1]
-		owner.g_eyes = new_color_rgb_list[2]
-		owner.b_eyes = new_color_rgb_list[3]
+		owner.looks.set_eyes_color(rgb(new_color_rgb_list[1], new_color_rgb_list[2], new_color_rgb_list[3]))
 		// Now sync the organ's eye_colour list.
 		update_colour()
 		// Finally, update the eye icon on the mob.
@@ -76,9 +74,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 
 	// Apply our eye colour to the target.
 	if(istype(target) && eye_colour)
-		target.r_eyes = eye_colour[1]
-		target.g_eyes = eye_colour[2]
-		target.b_eyes = eye_colour[3]
+		target.looks.set_eyes_color(rgb(eye_colour[1], eye_colour[2], eye_colour[3]))
 		target.update_eyes()
 	..()
 
@@ -89,11 +85,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 /obj/item/organ/internal/eyes/proc/update_colour()
 	if(!owner)
 		return
-	eye_colour = list(
-		owner.r_eyes ? owner.r_eyes : 0,
-		owner.g_eyes ? owner.g_eyes : 0,
-		owner.b_eyes ? owner.b_eyes : 0
-		)
+	eye_colour = hex2rgb(owner.looks.eyes_color)
 
 /obj/item/organ/internal/eyes/apply_lesion_damage(amount, lesion_type = null, silent = FALSE)
 	var/oldbroken = is_broken()

@@ -23,9 +23,9 @@
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/honkpet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("honkpet_interaction_hand", hand(), ungated(), stance(I_DISARM), label("Swap costume"), then(PROC_REF(honkpet_interaction_hand)))
 
 /// Old attack_hand: disarm swaps the sprite instead of the normal touch.

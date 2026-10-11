@@ -27,14 +27,14 @@
 				affecting_amt = 5
 			if(affecting_amt >= 1)
 				for(var/mob/living/L in touchable_atoms)
-					if(!L.apply_reagents || L.absorbed)
+					if(!L.vore_prefs.apply_reagents || L.absorbed)
 						continue
-					if((L.digestable && digest_mode == DM_DIGEST))
-						if(!L.permit_healbelly && is_beneficial) // Healing reagents turned off in preferences!
+					if((L.vore_prefs.digestable && digest_mode == DM_DIGEST))
+						if(!L.vore_prefs.permit_healbelly && is_beneficial) // Healing reagents turned off in preferences!
 							continue
 						if(reagents.total_volume)
 							reagents.splash_mob(L, affecting_amt, FALSE)
-					if(L.permit_healbelly && digest_mode == DM_HEAL)
+					if(L.vore_prefs.permit_healbelly && digest_mode == DM_HEAL)
 						if(is_beneficial && reagents.total_volume)
 							reagents.splash_mob(L, affecting_amt, FALSE)
 				for(var/obj/item/I in touchable_atoms)

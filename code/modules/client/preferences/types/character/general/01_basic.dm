@@ -21,7 +21,7 @@
 	maximum = 100 // was 250; capped so the Mind/Body pool curve reaches its plateau at a realistic upper bound.
 
 /datum/preference/numeric/human/age/apply_to_human(mob/living/carbon/human/target, value)
-	target.age = value
+	target.bio.age = value
 	return
 
 /datum/preference/numeric/human/age/create_default_value()

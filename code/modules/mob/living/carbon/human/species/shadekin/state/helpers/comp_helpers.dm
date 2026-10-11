@@ -72,7 +72,7 @@
 		return eye_color //revert to default if we're not a human
 
 	var/mob/living/carbon/human/H = owner
-	var/eyecolor_rgb = rgb(H.r_eyes, H.g_eyes, H.b_eyes)
+	var/eyecolor_rgb = H.looks.eyes_color
 
 	var/list/hsv_color = rgb2num(eyecolor_rgb, COLORSPACE_HSV)
 	var/eyecolor_hue = hsv_color[1]
@@ -88,9 +88,7 @@
 	eyecolor_rgb = rgb(eyecolor_hue, eyecolor_sat, eyecolor_val, space=COLORSPACE_HSV)
 
 	var/list/rgb_color = rgb2num(eyecolor_rgb)
-	H.r_eyes = rgb_color[1]
-	H.g_eyes = rgb_color[2]
-	H.b_eyes = rgb_color[3]
+	H.looks.set_eyes_color(rgb(rgb_color[1], rgb_color[2], rgb_color[3]))
 
 	//Now determine what color we fall into.
 	switch(eyecolor_hue)

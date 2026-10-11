@@ -352,11 +352,11 @@ CAPABILITIES(/obj/item/cat_box)
 	gender = MALE
 	holder_type = /obj/item/holder/cat/fluff/tabiranth
 	friend_name = "Ascian"
-	digestable = 0
 	meat_amount = 0
 	endurance = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 	configure(mob_kind(death_message = "teleports away!"))
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/life_special_due()

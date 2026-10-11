@@ -510,9 +510,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			break
 	D.universal_speak = 1
 	D.disable_godmode()
-	D.b_eyes = 200
-	D.r_eyes = 200
-	D.g_eyes = 200
+	D.looks.set_eyes_color(rgb(200, 200, 200))
 	D.update_eyes()
 	LAZYCLEARLIST(D.all_underwear)
 	D.key = ghost.key

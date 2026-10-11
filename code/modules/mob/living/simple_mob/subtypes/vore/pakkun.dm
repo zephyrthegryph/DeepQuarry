@@ -27,7 +27,6 @@
 	faction = FACTION_PAKKUN
 
 	movement_cooldown = 2
-	can_be_drop_pred = 1 //They can tongue vore.
 
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -55,7 +54,6 @@
 
 	endurance = 100
 
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/pakkun/life_type_post_due()
 	return TRUE
@@ -91,6 +89,7 @@
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))
 	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))
 	op("pakkun_interaction_item", item(/obj/item), then(PROC_REF(pakkun_interaction_item)))
@@ -206,14 +205,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
 	icon_living = "snappy"
 	icon_state = "snappy"
 	icon_rest = "snappy-rest"
-	digestable = 0 // pet mob, do not eat
-	devourable = 0
 
 	vore_default_mode = DM_HOLD
 	/// The help-touchers she remembers (a relation list).
 	var/list/petters
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	ref_many(nameof(petters))
 	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(snappy_interaction_hand)))
 

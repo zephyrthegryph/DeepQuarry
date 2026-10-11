@@ -55,31 +55,39 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	species_at_make = SPECIES_TAJARAN
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
-	h_style = "Tajaran Ears"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
 	icon = 'icons/mob/human_races/r_lizard.dmi'
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
 	species_at_make = SPECIES_UNATHI
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
-	h_style = "Unathi Horns"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
 	icon = 'icons/mob/human_races/r_sergal.dmi' // our icons
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Ears"))
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
 	species_at_make = SPECIES_SERGAL
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
-	h_style = "Sergal Ears"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	icon = 'icons/mob/human_races/r_vulpkanin.dmi'
+
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin)
+	profile(nameof(looks), /datum/record/appearance, fields = list())
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	species_at_make = SPECIES_VULPKANIN
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
-	h_style = "vulpkanin, dual-color"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari
 	icon = 'icons/mob/human_races/r_teshari.dmi'
@@ -88,31 +96,41 @@
 
 /mob/living/carbon/human/skrell
 	species_at_make = SPECIES_SKRELL
+
+CAPABILITIES(/mob/living/carbon/human/skrell)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Skrell Short Tentacles"))
 /mob/living/carbon/human/skrell
-	h_style = "Skrell Short Tentacles"
 
 /mob/living/carbon/human/tajaran
 	species_at_make = SPECIES_TAJARAN
+
+CAPABILITIES(/mob/living/carbon/human/tajaran)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
 /mob/living/carbon/human/tajaran
-	h_style = "Tajaran Ears"
 
 /mob/living/carbon/human/unathi
 	species_at_make = SPECIES_UNATHI
+
+CAPABILITIES(/mob/living/carbon/human/unathi)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
 /mob/living/carbon/human/unathi
-	h_style = "Unathi Horns"
 
 /mob/living/carbon/human/vox
 	species_at_make = SPECIES_VOX
+
+CAPABILITIES(/mob/living/carbon/human/vox)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Short Vox Quills"))
 /mob/living/carbon/human/vox
-	h_style = "Short Vox Quills"
 
 /mob/living/carbon/human/diona
 	species_at_make = SPECIES_DIONA
 
 /mob/living/carbon/human/teshari
 	species_at_make = SPECIES_TESHARI
+
+CAPABILITIES(/mob/living/carbon/human/teshari)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Teshari Default"))
 /mob/living/carbon/human/teshari
-	h_style = "Teshari Default"
 
 /mob/living/carbon/human/promethean
 	species_at_make = SPECIES_PROMETHEAN
@@ -150,8 +168,10 @@ TYPE_TABLE(/mob/living/carbon/human/stok, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sergal
 	species_at_make = SPECIES_SERGAL
+
+CAPABILITIES(/mob/living/carbon/human/sergal)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Plain"))
 /mob/living/carbon/human/sergal
-	h_style = "Sergal Plain"
 
 /mob/living/carbon/human/akula
 	species_at_make = SPECIES_AKULA

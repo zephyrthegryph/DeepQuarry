@@ -100,7 +100,7 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && vore_selected_of(eater))
+		if(possessed_voice && possessed_voice.len && eater.vore_prefs.can_be_drop_pred && eater.vore_prefs.food_vore && vore_selected_of(eater))
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
@@ -1830,7 +1830,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.can_be_drop_pred && Pred.food_vore && vore_selected_of(Pred))
+	if(Pred.vore_prefs.can_be_drop_pred && Pred.vore_prefs.food_vore && vore_selected_of(Pred))
 		vore_selected_of(Pred).nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()
@@ -4785,7 +4785,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 
 /mob/living/simple_mob/slime
 	composition_reagent = REAGENT_ID_SLIMEJELLY
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals

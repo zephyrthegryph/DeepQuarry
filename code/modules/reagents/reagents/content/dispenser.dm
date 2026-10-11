@@ -555,7 +555,7 @@
 			return
 	if(isbelly(M.loc))
 		var/obj/belly/B = M.loc
-		if(!M.digestable || B.digest_mode != DM_DIGEST)
+		if(!M.vore_prefs.digestable || B.digest_mode != DM_DIGEST)
 			remove_self(volume)
 			return
 		if(B.owner)
@@ -612,7 +612,7 @@
 		return
 	if(isbelly(L.loc))
 		var/obj/belly/B = L.loc
-		if(B.digest_mode != DM_DIGEST || !L.digestable)
+		if(B.digest_mode != DM_DIGEST || !L.vore_prefs.digestable)
 			remove_self(volume)
 			return
 		if(B.owner)

@@ -101,7 +101,6 @@ I think I covered everything.
 	glow_intensity = 3
 	glow_color = "#ED9200"
 	say_list_type = /datum/say_list/bigdragon
-	devourable = 0	//No
 	universal_understand = 1 //So they can hear synth speach
 	max_tox = 0 // for virgo3b survivability
 	max_co2 = 0 // Also needed for 3b Survivability otherwise it chokes to death
@@ -182,7 +181,6 @@ I think I covered everything.
 	)
 	var/eyes
 
-	can_be_drop_prey = FALSE
 
 ///
 ///		Subtypes
@@ -205,7 +203,9 @@ I think I covered everything.
 	endurance = 200
 	melee_damage_lower = 20
 	melee_damage_upper = 15
-	allow_mind_transfer = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 ///
 ///		Misc define stuff

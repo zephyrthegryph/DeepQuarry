@@ -67,8 +67,10 @@
 	//these things are resilient, on account of being infused with all the minerals they eat
 	armor_spec = "melee=25;bullet=15;laser=15;bomb=25;bio=100;rad=100"
 
-	can_be_drop_prey = FALSE
 	glow_override = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/oregrub/lava
 	name = "mature lavagrub"

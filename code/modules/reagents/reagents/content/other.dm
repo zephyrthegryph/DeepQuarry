@@ -1098,7 +1098,7 @@ CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/advmutationtoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!(M.allow_spontaneous_tf))
+	if(!(M.vore_prefs.allow_spontaneous_tf))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M

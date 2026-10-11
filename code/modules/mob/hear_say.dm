@@ -168,7 +168,7 @@
 	var/not_included = list("A", "The", "Of", "In", "For", "Through", "Throughout", "Therefore", "Here", "There", "Then", "Now", "I", "You", "They", "He", "She", "By")
 	var/list/valid_names = splittext(real_name, " ") // Should output list("John", "Doe") as an example.
 	valid_names -= not_included
-	var/list/nicknames = splittext(nickname, " ")
+	var/list/nicknames = splittext(bio.nickname, " ")
 	valid_names += nicknames
 	valid_names += TYPE_TABLE_GET(src, special_mentions)
 	for(var/name in valid_names)

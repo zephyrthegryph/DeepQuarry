@@ -15,7 +15,7 @@
 	var/recipient_size = recipient.size_multiplier
 	TEST_ASSERT_EQUAL(giver_size, 1, "Actual giver starts at ordinary size")
 	TEST_ASSERT_EQUAL(recipient_size, 1, "Actual recipient starts at ordinary size")
-	TEST_ASSERT(giver.resizable, "Actual giver allows the growing prize's normal resize")
+	TEST_ASSERT(giver.vore_prefs.resizable, "Actual giver allows the growing prize's normal resize")
 	TEST_ASSERT(!has_trait(giver, TRAIT_UNLUCKY) && !has_trait(recipient, TRAIT_UNLUCKY), "Actual participants have no random unlucky winner reversal")
 	var/obj/item/cracker/growing/offered = allocate(/obj/item/cracker/growing, surface)
 	offered.rigged = 1

@@ -57,7 +57,9 @@
 	faction_bump_vore = 1 // Allows snakes to vore people who bump into them even if they are the same "friendly" faction.
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 // Adds vore belly
 /mob/living/simple_mob/animal/passive/snake/load_default_bellies()

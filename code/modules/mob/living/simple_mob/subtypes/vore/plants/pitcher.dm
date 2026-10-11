@@ -51,7 +51,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	var/pitcher_metabolism = 0.1 //How much nutriment does the pitcher lose every 2 seconds? 0.1 should be around 30 every 10 minutes.
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/pitcher_plant //Putting vore variables separately because apparently that's tradition.
 	vore_bump_chance = 100
@@ -175,6 +174,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
 	op("pitcher_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pitcher_interaction_item)))
 	op("pitcher_fish_out", item(/obj/item/stack/cable_coil), claims(), starts(PROC_REF(fish_out_started)), wait(PROC_REF(fish_out_time)), then(PROC_REF(fish_out_done)))
@@ -253,7 +253,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 		FOR_CONTENTS(L, vore_selected_of(src))
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
-			if(!L.digestable)
+			if(!L.vore_prefs.digestable)
 				vore_selected_of(src).digest_mode = DM_DRAIN
 				N = 1
 				hasindigestable = 1

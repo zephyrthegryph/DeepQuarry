@@ -16,7 +16,6 @@
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
-	digest_leave_remains = TRUE
 
 	var/tt_desc = null //Tooltip description
 
@@ -167,7 +166,6 @@
 	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 TRACKED(/mob/living/simple_mob, icon_living)
@@ -179,6 +177,7 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
 	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
 	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
 	ref_many(nameof(prey_excludes))
@@ -262,7 +261,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(picked_size)
 		to_chat(src, span_notice("You have already picked a size! If you picked the wrong size, ask an admin to change your picked_size variable to 0."))
 		return
-	if(!resizable)
+	if(!vore_prefs.resizable)
 		to_chat(src, span_warning("You are immune to resizing!"))
 		return
 
@@ -527,8 +526,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
 	does_spin = FALSE
-	can_be_drop_pred = TRUE				// Mobs are pred by default.
-	can_be_drop_prey = TRUE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob
@@ -557,10 +554,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		return 0
 	if(M.is_incorporeal()) // No eating the phased ones
 		return 0
-	if(vore_ignores_undigestable && !M.digestable) //Don't eat people with nogurgle prefs
+	if(vore_ignores_undigestable && !M.vore_prefs.digestable) //Don't eat people with nogurgle prefs
 		// ai_log("vr/wont eat [M] because I am picky", 3) // AI TEMPORARY REMOVAL
 		return 0
-	if(!M.allowmobvore || !M.devourable) // Don't eat people who don't want to be ate by mobs
+	if(!M.vore_prefs.allowmobvore || !M.vore_prefs.devourable) // Don't eat people who don't want to be ate by mobs
 		// ai_log("vr/wont eat [M] because they don't allow mob vore", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(LAZYFIND(prey_excludes, M)) // They're excluded
@@ -672,7 +669,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(LAZYLEN(vore_organs))
 		return
 
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	load_default_bellies()
 
 /mob/living/simple_mob/proc/load_default_bellies()
@@ -719,7 +716,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
 		"The stomach glorps and gurgles as it tries to work you into slop.")
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	B.belly_fullscreen = "a_tumby"
 	B.belly_fullscreen_color = "#823232"
 	B.belly_fullscreen_color2 = "#823232"
@@ -934,7 +931,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/spit_projectile = null // what our spit projectile is. Can be anything
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 
 /mob/living/simple_mob/RangedAttack(atom/A)
 	if(!isnull(spit_projectile) && spitting)

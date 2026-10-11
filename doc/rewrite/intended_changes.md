@@ -4572,6 +4572,32 @@ borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item
 * **Machines that refreshed their parts again after `default_parts()`** (bomb tester, DNA scanner, honey extractor, built abductor RTGs) refresh
   once; the teleporter hub, microwave, smartfridge and biogenerator use `default_parts()`.
 
+## Profile records (rewrite/bv-profiles, base_vars stage 4)
+
+Character data moved off the base types into owned records (`code/engine/declare/profiles.dm`): `H.looks`
+(`/datum/record/appearance`), `M.bio` (`/datum/record/identity`) and `M.vore_prefs` (`/datum/record/vore_prefs`).
+
+* **Colours are `"#rrggbb"` strings.** The r_/g_/b_ triples of hair, gradient, facial hair, eyes, skin and synth parts are one field each.
+  `change_hair_color()`, `change_eye_color()`, `change_skin_color()` and the others take a colour, not three channels. A colour picked in a
+  prompt keeps the case it came in (`"#FF0000"` is not rewritten to `"#ff0000"`); BYOND draws both the same. Icon cache keys hold the string
+  instead of three numbers. `dq_profile_human_look_pin` proves the drawn human is pixel-identical (five fingerprints recorded on the old tree:
+  human, digitigrade tajaran, unathi, a DNA copy, a colour copy).
+* **Rezadone and slime colour shifts** walk the channels in a loop: the same `prob()` calls in the same order, each channel of skin, hair and
+  beard changed as before.
+* **The identity record is on `/mob`, not only on humans**: robots, drones, simple mobs and pAIs read and write flavour text, nicknames and say
+  verbs, which lived on `/mob` and `/mob/living`.
+* **Shapeshifting into another human (`transform_into_other_human`) copies the whole looks record**, so the lipstick and digitigrade legs come
+  along with the colours and styles (the old copy proc took colours and styles only and set digitigrade by hand). `copy_colours_from()` is deleted.
+* **The dead ringer's corpse copies its wearer's looks record** (eyes, gradient and synth colours too, not only hair, beard and skin).
+* **Vore preference copies copy the lists.** `VORE_PREF_TRANSFER` handed the nutrition and weight message lists and the vore sprite colour
+  lists over by reference, so a mob and its saved preferences (or a mob and its tf form) shared them; `record_copy()`, `record_export()` and
+  `record_import()` copy them. The macro is deleted.
+* **137 mob types' vore toggle overrides** (`digestable = 0`, `can_be_drop_prey = FALSE`, ...) are `profile(nameof(vore_prefs), ..., fields =
+  list(...))` in their CAPABILITIES blocks, applied when the record is built (before the type's `Initialize()` runs, as the overrides were).
+* **No savefile migration.** The character save already held colours as `"#rrggbb"` strings and the vore save holds the same keys; neither
+  format changed. `dq_profile_pref_save_roundtrip` and `dq_profile_vore_prefs_roundtrip` load real (headless test account) saves, apply them to
+  the records and write them back.
+
 ## Item protection as a type trait (rewrite/look-traits, gap 5)
 
 `heat_protection`, `cold_protection`, `max_heat_protection_temperature`, `min_cold_protection_temperature`, `max_pressure_protection`,

@@ -86,9 +86,9 @@
 	..()
 	rel_set(identity(), nameof(/mob::dna), dna)
 	if(identity().flavor_texts)
-		flavor_texts = identity().flavor_texts
+		bio.flavor_texts = identity().flavor_texts
 	else
-		identity().flavor_texts = flavor_texts
+		identity().flavor_texts = bio.flavor_texts
 	if(identity().languages)
 		languages = identity().languages
 	else

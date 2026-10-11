@@ -24,19 +24,19 @@ TYPE_TABLE(/mob/living/simple_mob/animal, butchery_organ_types, list( \
 TYPE_TABLE(/datum/decl/mob_organ_names/quadruped, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail"))
 
 /mob/living/simple_mob/animal/get_examine_desc()
-	return flavor_text || desc
+	return bio.flavor_text || desc
 
 /mob/living/simple_mob/animal/verb/set_flavour_text()
 	set name = "Set Flavour Text"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Set your flavour text."
 	set src = usr
-	open_request(src, /datum/prompt/text, PROC_REF(flavour_text_entered), answerer = src, title = "Flavour Text", question = "Please describe yourself.", default = flavor_text, multiline = TRUE, timeout = 0)
+	open_request(src, /datum/prompt/text, PROC_REF(flavour_text_entered), answerer = src, title = "Flavour Text", question = "Please describe yourself.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
 
 /mob/living/simple_mob/animal/proc/flavour_text_entered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/new_flavour_text = A.answer.value
 	if(length(new_flavour_text))
-		flavor_text = new_flavour_text
+		bio.flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))

@@ -193,7 +193,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 	var/datum/preferences/pref = cli.prefs
 
 	SetName(pref.read_preference(/datum/preference/text/pai_name))
-	flavor_text = pref.read_preference(/datum/preference/text/pai_description)
+	bio.flavor_text = pref.read_preference(/datum/preference/text/pai_description)
 	change_chassis(pref.read_preference(/datum/preference/text/pai_chassis))
 	gender = pref.read_preference(/datum/preference/choiced/gender/biological) // Cannot use identifying yet due to byond limits
 	set_eye_color(pref.read_preference(/datum/preference/color/pai_eye_color))

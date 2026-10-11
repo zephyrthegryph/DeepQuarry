@@ -52,13 +52,13 @@ TRACKED(/obj/item/slow_sizegun, busy)
 			unresizable = TRUE
 			return
 
-	if(!(target.resizable))
+	if(!(target.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
 		return TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		return TRUE
 
 	if(!(target.has_large_resize_bounds()) && (target.size_multiplier >= RESIZE_MAXIMUM) && sizeshift_mode == SIZE_GROW)
@@ -120,10 +120,10 @@ TRACKED(/obj/item/slow_sizegun, busy)
 			unresizable = TRUE
 			return
 
-	if(!(L.resizable))
+	if(!(L.vore_prefs.resizable))
 		unresizable = TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
@@ -201,9 +201,9 @@ TRACKED(/obj/item/slow_sizegun, busy)
 		var/mob/living/carbon/human/our_target = L
 		var/size_difference = previous_scale - our_target.size_multiplier
 		if((size_difference >= 0.3) || (size_difference <= -0.3))
-			if(our_target.size_strip_preference == SIZESTRIP_ITEMS)
+			if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 				our_target.drop_all_clothing(FALSE)
-			else if(our_target.size_strip_preference == SIZESTRIP_ALL)
+			else if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ALL)
 				our_target.drop_all_clothing(TRUE)
 
 	// Now clean up the effects.

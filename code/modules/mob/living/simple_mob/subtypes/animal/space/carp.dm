@@ -82,9 +82,9 @@
 	var/static/list/carp_colors_rare = list(\
 	"silver" = "#fdfbf3", \
 	)
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 15))
 	swarming()
