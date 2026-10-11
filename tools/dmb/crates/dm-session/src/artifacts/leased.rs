@@ -401,6 +401,28 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         fresh: bool,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
+        // Only this small bridge specializes on the caller's closure type.
+        // Keep producer capture on the stack; admission/budget checks in the
+        // shared body happen before taking it, under the same lock as before.
+        let mut create = Some(create);
+        self.insert_qualified_produced(key, reads, versions, weight, previous, fresh, &mut || {
+            create
+                .take()
+                .expect("artifact producer invoked more than once")()
+        })
+    }
+    // Do not re-inline the heavy store mutation body into every producer bridge.
+    #[inline(never)]
+    fn insert_qualified_produced(
+        &self,
+        key: Arc<[u8]>,
+        reads: crate::Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        previous: Option<&Arc<T>>,
+        fresh: bool,
+        produce: &mut dyn FnMut() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self
             .store
@@ -442,7 +464,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let (value, key) = if let Some(existing) = existing {
             existing
         } else {
-            let value = Arc::new(create());
+            let value = Arc::new(produce());
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads,
