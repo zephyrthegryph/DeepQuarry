@@ -14,7 +14,7 @@ class VerifiedAnchor(unittest.TestCase):
         self.result={"commit":self.commit[:10],"tests":{p:{"status":0,"runtimes":0} for p in NS["PINS"]}}
         self.result_path.write_text(json.dumps(self.result))
         self.inputs={p:"b"*40 for p in NS["INPUTS"]}
-        self.candidate={"version":2,"commit":self.commit,"plan_sha256":hashlib.sha256(b"/obj/example\tkey\tfield\n").hexdigest(),"inputs":self.inputs,"both_pins_passed":True,"results":str(self.result_path),"results_sha256":NS["digest"](self.result_path.read_bytes())}
+        self.candidate={"version":3,"commit":self.commit,"plan_sha256":hashlib.sha256(b"/obj/example\tkey\tfield\n").hexdigest(),"inputs":self.inputs,"goldens":{p:"b"*40 for p in NS["GOLDENS"]},"both_pins_passed":True,"results":str(self.result_path),"results_sha256":NS["digest"](self.result_path.read_bytes())}
         self.note={"ok":True,"tested_commit":self.commit,"look_coverage":self.candidate.copy(),"tests_json":str(self.result_path)}
         self.ancestor=True; self.have_note=True
         self.calls=[]
@@ -86,7 +86,19 @@ class VerifiedAnchor(unittest.TestCase):
     def test_source_fingerprints_evaluated_once(self):
         self.have_note=False
         self.assertFalse(NS["official"](self.candidate))
-        self.assertEqual(sum(call[0]=="rev-parse" for call in self.calls),len(NS["INPUTS"]))
+        self.assertEqual(sum(call[0]=="rev-parse" for call in self.calls),len(NS["INPUTS"])+len(NS["GOLDENS"]))
+
+    def test_changed_committed_goldens_refuse_anchor(self):
+        original=self.git
+        def changed(*args):
+            if args[0]=="rev-parse" and any(args[1].endswith(":"+p) for p in NS["GOLDENS"]):return "c"*40
+            return original(*args)
+        NS["git"]=changed
+        self.assertFalse(NS["official"](self.candidate))
+    def test_malformed_commit_shapes_refuse_cleanly(self):
+        for value in (None,123,[],{}):
+            self.assertFalse(NS["result_commit_matches"](self.commit,{"commit":value}))
+            self.assertFalse(NS["result_commit_matches"](value,{"commit":self.commit[:10]}))
 
 class NoteBatchDecoding(unittest.TestCase):
     def setUp(self):
@@ -114,5 +126,27 @@ class NoteBatchDecoding(unittest.TestCase):
     def test_empty_inventory_starts_no_process(self):
         NS["subprocess"].check_output=lambda *args,**kwargs:self.fail("empty inventory")
         self.assertEqual(NS["note_batch"]([]),[])
+
+class GoldenOutputIdentities(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.directory=pathlib.Path(self.temp.name)/"goldens";self.directory.mkdir()
+        self.previous=NS["GOLDENS"];NS["GOLDENS"]=(str(self.directory),)
+        self.addCleanup(lambda:NS.__setitem__("GOLDENS",self.previous))
+    def identity(self):return NS["golden_output_identities"]()[str(self.directory)]
+    def test_empty_tree_matches_known_git_identity(self):
+        self.assertEqual(self.identity(),"4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+    def test_lf_crlf_same_committed_text_identity(self):
+        p=self.directory/"fixture.txt";p.write_bytes(b"first\r\nsecond\r\n");before=self.identity()
+        p.write_bytes(b"first\nsecond\n");self.assertEqual(self.identity(),before)
+    def test_blessed_output_identity_changes_before_commit(self):
+        p=self.directory/"fixture.txt";p.write_bytes(b"old\n");before=self.identity()
+        p.write_bytes(b"intended new\n");self.assertNotEqual(self.identity(),before)
+    def test_creation_order_does_not_change_tree_identity(self):
+        (self.directory/"b.txt").write_bytes(b"b\n");(self.directory/"a.txt").write_bytes(b"a\n");before=self.identity()
+        (self.directory/"b.txt").unlink();(self.directory/"b.txt").write_bytes(b"b\n");self.assertEqual(self.identity(),before)
+    def test_unexpected_nontext_output_refused(self):
+        (self.directory/"unsafe.bin").write_bytes(b"x")
+        with self.assertRaises(ValueError):self.identity()
 
 if __name__=="__main__":unittest.main()

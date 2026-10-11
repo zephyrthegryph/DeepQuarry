@@ -6,14 +6,37 @@ Missing evidence conservatively selects full coverage. Never creates/reconstruct
 import hashlib, json, pathlib, subprocess, sys, re
 PINS=("/datum/unit_test/dq_look_state_pin", "/datum/unit_test/dq_look_tree_pin")
 ROOT=pathlib.Path("data/look-verified")
-VERSION=2
-INPUTS=("code/modules/unit_tests/dq_look_sweep.dm", "code/modules/unit_tests/dq_look_pins.dm", "code/modules/unit_tests/dq_conversion_pins.dm", "tools/dq_focused_test.sh", "tools/dq_look_verified_anchor.py", "tools/analyze", "tools/build", "tools/dmb", "code/engine/present")
+VERSION=3
+INPUTS=("code/modules/unit_tests/dq_look_sweep.dm", "code/modules/unit_tests/dq_look_pins.dm", "code/modules/unit_tests/dq_conversion_pins.dm", "code/modules/unit_tests/dq_snapshot_files.dm", ".gitattributes", "tools/dq_focused_test.sh", "tools/dq_look_verified_anchor.py", "tools/analyze", "tools/build", "tools/dmb", "code/engine/present")
+GOLDENS=("code/modules/unit_tests/snapshots/look_states", "code/modules/unit_tests/snapshots/look_trees")
+def golden_git_identities(commit):
+    return {path: git("rev-parse", commit+":"+path) for path in GOLDENS}
+
+def golden_output_identities():
+    # Capture the exact successfully checked golden output, including authorized post-run blessing.
+    # .gitattributes pins *.txt to LF; snapshots have regular nonexecutable text files only.
+    def object_id(kind, data):
+        return hashlib.sha1(kind.encode()+b" "+str(len(data)).encode()+b"\0"+data).digest()
+    def tree(directory):
+        entries=[]
+        for child in directory.iterdir():
+            if child.is_symlink(): raise ValueError("snapshot symlink is not regular golden output")
+            name=child.name.encode("utf-8")
+            if child.is_dir():
+                entries.append((name+b"/", b"40000 "+name+b"\0"+tree(child)))
+            elif child.is_file() and child.suffix==".txt":
+                data=child.read_bytes().replace(b"\r\n",b"\n")
+                entries.append((name,b"100644 "+name+b"\0"+object_id("blob",data)))
+            else: raise ValueError("unexpected file in snapshot golden tree")
+        return object_id("tree",b"".join(entry for _,entry in sorted(entries)))
+    return {path: tree(pathlib.Path(path)).hex() for path in GOLDENS}
+
 def fingerprints(commit):
     return {path: git("rev-parse", commit+":"+path) for path in INPUTS}
 def result_commit_matches(commit, result):
     if not isinstance(result, dict): return False
     short=result.get("commit", "")
-    return bool(re.fullmatch(r"[0-9a-f]{10,40}", short)) and commit.startswith(short)
+    return isinstance(commit, str) and isinstance(short, str) and bool(re.fullmatch(r"[0-9a-f]{10,40}", short)) and commit.startswith(short)
 
 def git(*args):
     return subprocess.check_output(["git",*args],stderr=subprocess.DEVNULL).decode().strip()
@@ -67,7 +90,8 @@ def official(candidate):
         if not isinstance(candidate, dict) or candidate.get("version") != VERSION: return False
         if not re.fullmatch(r"[0-9a-f]{40,64}", candidate.get("commit", "")): return False
         if candidate.get("inputs") != fingerprints("HEAD"): return False
-    except (subprocess.CalledProcessError, TypeError): return False
+        if candidate.get("goldens") != golden_git_identities("HEAD"): return False
+    except (subprocess.CalledProcessError, TypeError, OSError, ValueError): return False
     for ref in ("merge-gates", "lane-ready"):
         for commit, note in official_notes(ref, candidate["commit"]):
             try:
@@ -95,7 +119,7 @@ if sys.argv[1]=="record":
         raise SystemExit("look coverage record refused: non-snapshot tracked edits")
     ROOT.mkdir(parents=True,exist_ok=True)
     key=digest(plan); (ROOT/(commit+".tsv")).write_bytes(plan)
-    (ROOT/(commit+".json")).write_text(json.dumps({"version":VERSION,"commit":commit,"plan_sha256":key,"both_pins_passed":True,"results":sys.argv[3],"results_sha256":digest(pathlib.Path(sys.argv[3]).read_bytes()),"inputs":fingerprints(commit)}))
+    (ROOT/(commit+".json")).write_text(json.dumps({"version":VERSION,"commit":commit,"plan_sha256":key,"both_pins_passed":True,"results":sys.argv[3],"results_sha256":digest(pathlib.Path(sys.argv[3]).read_bytes()),"inputs":fingerprints(commit),"goldens":golden_output_identities()}))
 elif sys.argv[1]=="export":
     # The existing official stamping path calls this only after its real gate completed.
     # No candidate or failed/skipped pins means no coverage property, not failure of other tests.
@@ -108,6 +132,7 @@ elif sys.argv[1]=="export":
         candidate=json.loads((ROOT/(commit+".json")).read_text())
         plan=(ROOT/(commit+".tsv")).read_bytes()
         if candidate.get("version")!=VERSION or candidate.get("inputs")!=fingerprints(commit): raise ValueError()
+        if candidate.get("goldens")!=golden_output_identities(): raise ValueError()
         if digest(plan)!=candidate.get("plan_sha256") or digest(result_path.read_bytes())!=candidate.get("results_sha256"): raise ValueError()
         print(json.dumps(candidate))
     except (OSError,ValueError,subprocess.CalledProcessError,KeyError,TypeError,AttributeError): print("null")
