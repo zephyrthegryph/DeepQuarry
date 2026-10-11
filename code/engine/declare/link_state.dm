@@ -160,6 +160,14 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		link_watch_start(E, end_a, end_b)
 	return TRUE
 
+/// Sets holder's single end `key` to `other`: links it (replacing the old link), or breaks it when `other` is null. Returns `other`.
+/proc/link_set_one(datum/holder, key, datum/other)
+	if(isnull(other))
+		link_break(holder, key)
+	else
+		link_make(holder, key, other)
+	return other
+
 /// Breaks the link of holder's end `key` to `other`, or every link of that end when `other` is null. TRUE when something was broken.
 /proc/link_break(datum/holder, key, datum/other = null)
 	var/list/row = link_end_row(key)

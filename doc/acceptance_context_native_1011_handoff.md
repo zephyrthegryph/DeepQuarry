@@ -1,50 +1,17 @@
-# Native acceptance context prerequisites
+# Native acceptance foundation — 2026-10-11
 
-Branch: codex/acceptance-context-native-1011, based on master 73c3f0fbc8 and carrying the native rule conditions and requirement hard ban.
+Branch: `codex/acceptance-context-native-1011`.
 
-No production acceptance declaration has been converted. This landing preserves the old tables while establishing immutable acceptance plans and a single borrowed pooled invocation with explicit wearer, mover, destination, slot and channel fields. The query binder validates and copies scalar options before pool checkout, never dispatches an event or publishes a notice, and releases contexts on exceptions.
+This landing establishes the native requirement/acceptance context without converting production acceptance tables. It carries wearer, mover, destination, slot and channel through a borrowed pooled invocation, validates scalar options before checkout and cleans up after faults. Normal actions retain their authority, tracing and metrics behavior.
 
-Generated dependency rows resolve the invocation's actual roots, real parent_type inheritance, relation membership and member keys, including associative owned lists. The real system-accessor regression uses a singleton's tracked setter. Native dependency-kind dispatch is implemented, but no end-to-end native-domain named-key invalidation result is claimed.
+Read metadata follows actual invocation roots, inherited declarations, relation members and system accessors. Mutable inputs use tracked setters: 141 mutation sites in 70 files, adapted to master’s protection traits. No new item, mob or human base variable was added. Plain reference retargeting publishes its final state; paired relation retargeting remains a separate gap. Native-domain named-key invalidation is not claimed as end-to-end coverage.
 
-The prerequisites carry 141 tracked mutation conversions in 70 files from the earlier I draft, updated for master's protection traits. Protection bitmask changes use trait setters instead of mutating a shared trait record. No new item, mob or human base variable is introduced.
+Old-code pins: 140 concrete type recordings were captured before declaration conversion. The audit found 173 additional factor-only rewrites and zero existing behavior differences. Real fixtures cover ordered fit/size refusals, distinct wearer and mover, physical custody, suit storage, override/adoption semantics and sprite fallback.
 
-Old-table boundary fixtures exercise real content: distinct wearer/mover, exact ordered fit and size refusals, physical equip/remove custody, absent and empty suit storage, paperwork slots, instance override/adopt semantics and sprite fallback. Runtime proof remains pending. Missing concrete conversion pins must be recorded before the declaration cohort is converted; inherited factoring alone is not coverage.
+Verification: Lane-ready stamp `a65a3197c51d55376c4f3e6171d77cca7bf08587` on master `821748811b`: 27 tests passed, zero failed, including `dq_requirement_protocol_pin` and `dq_conversion_pin`. Production/test builds had zero errors (43/59 existing warnings), DreamChecker zero diagnostics, ratchets/analyzer and boot passed. Result: `data/test-runs/20261011T103528_a65a3197c5_focused.json`. No full suite or look world ran. The preceding complete gate passed 48 tests and failed only conversion pins; compilation had zero errors, DreamChecker zero diagnostics, ratchets and boot passed. Five classes were refreshed only for master `81e61e24e9`’s native rotation ops, with provenance recorded in `intended_changes.md`. Robot/platform key additions from `8b3e4f9ed9` and `babfc5a10a` are documented there as well. Capture normalization removes only volatile VR-Cyborg serials and constructor traceback line numbers.
 
-Verification is pending. No pins have been blessed, no baseline increased and no ALLOW annotation added by this landing.
+An interrupted earlier gate produced an invalid note on `f724a5866f`; it was corrected to `ok:false` and is not verification evidence. Lane-ready now requires matching compile, analyzer, ratchet and nonempty runtime-result evidence. Four controlled wrapper regressions pass without a DM build.
 
-Generator verification: eight focused actions-generator Rust tests passed (zero failures; 187 unrelated tests filtered out), with one cargo job at a time and two build workers. Generation passed. The 140 missing old-table pin files are currently empty recording inputs, not successful coverage. No production acceptance table has been converted. The compile, DreamChecker, ratchet and focused runtime gate remains pending.
+No baseline was raised and no debt ALLOW was added. Production acceptance declarations and compiler retirement follow in separate stamped branches.
 
-Pre-compile gate repairs: the run at 932634c8d9 found seven new initialization-write findings, one borrowed-context ownership finding and seven static-type warnings. It was cancelled while both compilers were queued; no compile or runtime test took place. The source now shares the existing pooled action binding primitive with queries, retaining its three existing ownership annotations instead of introducing another writer. Normal actions retain authority consumption, tracing and metrics. Organ and hardware initial sizes use one-time derives; wrapped-item and conditional appearance configuration uses setup. Typed datum locals guard dependency deletion checks. Runtime verification and old-code pin capture remain pending.
-
-The slot-flags lint now distinguishes exact tracked same-receiver setter read/modify/write expressions from admission guards using semantic positions. It retains the same rule, source scope, filters and ceiling; a guard on the same line, nested condition, foreign receiver or unresolved setter still counts. Its focused Rust regression passed. These two findings were mutations introduced by the setter conversion, not new admission guards.
-
-The first completed gate on 7afd7d7669 compiled production and test builds with zero errors and passed DreamChecker with zero diagnostics. The focused world passed 31 tests and failed 22; no stamp was issued. Most failures share a derivation recursion-guard runtime after the previous holder's teardown cleared its lazy list. The guard now uses lazy access/set/remove throughout, with a real delete-and-recreate regression. Separate menu-plan, dependency-hop and fixture failures are being repaired before failure-only verification. The 140 old-table pin recording inputs remain unproved; no declaration conversion or pin blessing follows this failed run.
-
-The admin-holder lint falsely counted the new typed query's borrowed holder field. Its correction masks only semantic occurrences proven to be the inherited /datum/act field before applying the unchanged legacy filters. Mixed client or unknown receivers still count; no receiver-name whitelist, ceiling or path exemption was added. Its focused Rust regression passed (one test, zero failures).
-
-The repair gate on 8495891878 passed production compilation (0 errors, 43 warnings), test compilation (0 errors, 59 warnings), DreamChecker (0 diagnostics), ratchets and a clean boot. It passed 38 focused tests and failed five; no stamp was issued. Both dq_requirement_protocol_pin and dq_conversion_pin passed. All 140 concrete old-table recording inputs now contain rows. An expansion audit found 140 new recordings, 173 factor-only rewrites and zero behavior differences in existing pins. Production acceptance tables remain unchanged.
-
-The five residual failures were diagnosed before further edits: the test size requirement lacked its refusal reason; the deliberate metadata setter fault re-entered its own watched probe; plain-reference replacement published an intermediate null; generated list-hop names used DM interpolation instead of literal brackets; and wrapped_species_form omitted HOLDER_HOOK_INIT. Repairs preserve paired/unlink-callback relation behavior; broader atomic paired retargeting is a separate framework gap. Failure-only runtime verification is pending.
-# Latest repair verification
-
-The merged `987ed4b826` run passed production compilation (zero errors),
-DreamChecker (zero diagnostics) and ratchets. Its focused world recorded 21 passes
-and 18 failures, with 12 boot runtimes. No lane-ready stamp was issued.
-
-The dominant failure was a mismatch between the lazy derives recursion guard and
-the newly merged lifecycle teardown: teardown subtracted from a null list. The
-repair uses the same lazy removal contract and the regression checks the empty
-guard before destroying a real derived holder. Two independent failures were an
-unescaped literal list-hop suffix and a UI-only fixture that never entered the
-context menu. The latter now asserts a real menu row before injecting its fault;
-its fault-propagation and cleanup assertions are retained.
-
-The next verification list contains the 18 failed selectors; lane-ready adds its
-mandatory smoke and incremental-pin checks. Results remain pending. No pin rows
-were blessed for these failures.
-
-The latest repair run on 781a12c6f8 passed 33 tests and failed only the two pin suites. Production compilation, DreamChecker, ratchets and boot were clean. Real acceptance, lifecycle and metadata regressions passed. Residual differences are master-added robot keys and volatile fixture serials/source line numbers; the pin producer now normalizes only those volatile values while retaining substantive refusal and fault text. Verification remains pending.
-
-Master c25bd00e3c introduced tracked_tests. Its check exposed 40 raw fixture writes to fields tracked by this landing. Thirty-eight now call the real existing setters; the two deliberate metadata fault controls use the harness set_var to preserve explicit fault timing and restoration. The targeted lint is clean at the unchanged baseline of 225. The queued b27b664195 gate was cancelled before compilation/tests after this lint failure; it supplies no runtime proof.
-
-The f724a5866f queued run was stopped after DreamChecker caught a reserved-word error in the new capture test; no compile or world result was produced. Cancelling its inner gate exposed an invalid automatic 0-test stamp. That specific published note has been overwritten with ok=false; it is not passing evidence. Lane-ready now requires matching compile/analyzer/ratchet markers and matching test-result counts before writing a note. Four wrapper regressions pass: missing evidence, incomplete evidence and inconsistent counts are refused; complete controlled evidence stamps with its original DM selector. The capture test variable has been renamed. Runtime verification remains pending.
+The final gate passed before a wrapper SHA-format mismatch prevented the lane-ready note. A corrected wrapper validated and reused the unchanged exact-commit proof, including all requested selectors and the existing compile/analyzer/ratchet markers; no DM batch was repeated. The checked workflow correction will land with the next branch. Four controlled wrapper checks passed using the real `sha=` output format. Known fixture STATE LEAK warnings remain for the separate hygiene landing.

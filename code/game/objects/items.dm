@@ -22,7 +22,6 @@ TRACKED(/obj/item, canremove)
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null // the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -52,7 +51,6 @@ TRACKED(/obj/item, canremove)
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -1101,19 +1099,21 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return FALSE
 
 
-/// The hidden uplink (owned, in the item's contents); a global helper keeps the proc off the base type.
+/// The hidden uplink in the item's contents (its uplink slot), or null; a global helper keeps the proc off the base type. The uplink is a
+/// thing the item holds, so it goes with the item's contents: no var on /obj/item.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return I?.hidden_uplink
-
-/obj/item/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED)
+	return I ? locate_within(I, /obj/item/uplink/hidden) : null
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return I?.my_augment
 
-// An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
+// An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
+/proc/item_master(obj/item/I) as /obj/item
+	return link_get(I, LK_ITEM_MASTER)
+
+/proc/set_item_master(obj/item/I, obj/item/master)
+	return link_set_one(I, LK_ITEM_MASTER, master)
 
 // ---- what an item sounds like: the item_sounds() type trait ----
 //
@@ -1149,6 +1149,9 @@ STATIC_ENTRY(item_sounds)
 /datum/entry_engine/type_trait/item_sounds
 	kind = ENTRY_ITEM_SOUNDS
 	trait_type = /datum/type_trait/item_sounds
+	publish_key = ITEM_SOUNDS_KEY
+	base_type = /obj/item
+	var_names = list("hitsound" = "hit", "usesound" = "use", "mob_throw_hit_sound" = "throw_hit", "equip_sound" = "equip", "pickup_sound" = "pickup", "drop_sound" = "drop")
 
 /// The sounds `I` makes (its own once one was set at run time). Read only.
 READS_AS(/proc/sounds_of, ITEM_SOUNDS_KEY)
@@ -1163,13 +1166,7 @@ READS_AS(/proc/sounds_of, ITEM_SOUNDS_KEY)
 
 /// Writes one of the item's sounds at run time (its own copy of the trait).
 /obj/item/proc/set_item_sound(field, value)
-	var/datum/type_trait/item_sounds/now = sounds_of(src)
-	if(now.vars[field] == value)
-		return FALSE
-	var/datum/type_trait/item_sounds/own = type_trait_own(src, ENTRY_ITEM_SOUNDS)
-	own.vars[field] = value // ALLOW(api): the field is one of the trait's six, named by the setter below
-	tracked_changed(src, ITEM_SOUNDS_KEY)
-	return TRUE
+	return set_trait(src, ENTRY_ITEM_SOUNDS, field, value)
 
 /obj/item/proc/set_hitsound(value)
 	return set_item_sound("hit", value)
@@ -1229,6 +1226,9 @@ STATIC_ENTRY(item_protection)
 /datum/entry_engine/type_trait/item_protection
 	kind = ENTRY_ITEM_PROTECTION
 	trait_type = /datum/type_trait/item_protection
+	publish_key = ITEM_PROTECTION_KEY
+	base_type = /obj/item
+	var_names = list("heat_protection" = "heat_parts", "cold_protection" = "cold_parts", "max_heat_protection_temperature" = "max_heat", "min_cold_protection_temperature" = "min_cold", "max_pressure_protection" = "max_pressure", "min_pressure_protection" = "min_pressure", "gas_transfer_coefficient" = "gas_transfer", "permeability_coefficient" = "permeability", "siemens_coefficient" = "siemens")
 
 /// What `I` protects from (its own values once one was set at run time). Read only.
 READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
@@ -1243,13 +1243,7 @@ READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
 
 /// Writes one of the item's protection values at run time (its own copy of the trait).
 /obj/item/proc/set_item_protection(field, value)
-	var/datum/type_trait/item_protection/now = protection_of(src)
-	if(now.vars[field] == value)
-		return FALSE
-	var/datum/type_trait/item_protection/own = type_trait_own(src, ENTRY_ITEM_PROTECTION)
-	own.vars[field] = value // ALLOW(api): the field is one of the trait's nine, named by the setters below
-	tracked_changed(src, ITEM_PROTECTION_KEY)
-	return TRUE
+	return set_trait(src, ENTRY_ITEM_PROTECTION, field, value)
 
 /obj/item/proc/set_heat_protection(value)
 	return set_item_protection("heat_parts", value)

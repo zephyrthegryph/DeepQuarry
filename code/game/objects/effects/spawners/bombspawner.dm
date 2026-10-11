@@ -118,8 +118,8 @@ CAPABILITIES(/obj/effect/spawner/newbomb)
 	rel_set(V, nameof(V.tank_one), PT)
 	rel_set(V, nameof(V.tank_two), OT)
 
-	rel_set(PT, nameof(PT.master), V)
-	rel_set(OT, nameof(OT.master), V)
+	set_item_master(PT, V)
+	set_item_master(OT, V)
 
 	PT.set_valve_welded(1)
 	// XGM exposed total_moles as a writable var; LINDA exposes it only

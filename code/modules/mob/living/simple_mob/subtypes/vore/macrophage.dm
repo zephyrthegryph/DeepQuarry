@@ -111,7 +111,7 @@ TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
 /// Every 3 minutes while deathwatch is set (its every() in the type's CAPABILITIES).
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck(datum/act/A)
-	if(locate_in_list(vore_selected, /mob/living/carbon/human))
+	if(locate_in_list(vore_selected_of(src), /mob/living/carbon/human))
 		return
 	set_deathwatch(FALSE)
 	death()
@@ -184,6 +184,6 @@ TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 // The macrophage's own strain (owned); victims and decals get their own copies.

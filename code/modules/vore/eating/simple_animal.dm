@@ -32,13 +32,13 @@
 /mob/living/simple_mob/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	if(vore_active && !voremob_loaded && pred == src) //Only init your own bellies.
 		init_vore(TRUE)
-		belly = vore_selected
+		belly = vore_selected_of(src)
 	return ..()
 
 /mob/living/simple_mob/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	if(vore_active && !voremob_loaded && pred == src) //Only init your own bellies.
 		init_vore(TRUE)
-		belly = vore_selected
+		belly = vore_selected_of(src)
 	return ..()
 // Simple proc for animals to have their digestion toggled on/off externally
 // Added as a verb in /mob/living/simple_mob/init_vore() if vore is enabled for this mob.
@@ -56,23 +56,23 @@
 /mob/living/simple_mob/proc/toggle_digestion_stage(mob/living/carbon/human/user, enable_answer, disable_answer)
 	if(!istype(user) || user.stat) return
 
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(user, span_warning("[src] isn't planning on eating anything much less digesting it."))
 		return
 
-	if(vore_selected.digest_mode == DM_HOLD)
+	if(vore_selected_of(src).digest_mode == DM_HOLD)
 		if(isnull(enable_answer))
 			open_request(src, /datum/prompt/choice/animal_digestion/enable, PROC_REF(animal_digestion_answered), answerer = user, question = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
 		if(enable_answer == "Enable")
-			vore_selected.digest_mode = DM_DIGEST
-			after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), with = list(vore_default_mode))
+			vore_selected_of(src).digest_mode = DM_DIGEST
+			after(vore_selected_of(src), 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), with = list(vore_default_mode))
 	else
 		if(isnull(disable_answer))
 			open_request(src, /datum/prompt/choice/animal_digestion/disable, PROC_REF(animal_digestion_answered), answerer = user, question = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
 		if(disable_answer == "Disable")
-			vore_selected.digest_mode = DM_HOLD
+			vore_selected_of(src).digest_mode = DM_HOLD
 
 // Added as a verb in /mob/living/simple_mob/init_vore() if vore is enabled for this mob.
 /mob/living/simple_mob/proc/toggle_fancygurgle()
@@ -83,12 +83,12 @@
 
 	var/mob/living/user = usr	//I mean, At least ghosts won't use it.
 	if(!istype(user) || user.stat) return
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(user, span_warning("[src] isn't vore capable."))
 		return
 
-	vore_selected.fancy_vore = !vore_selected.fancy_vore
-	to_chat(user, "[src] is now using [vore_selected.fancy_vore ? "Fancy" : "Classic"] vore sounds.")
+	vore_selected_of(src).fancy_vore = !vore_selected_of(src).fancy_vore
+	to_chat(user, "[src] is now using [vore_selected_of(src).fancy_vore ? "Fancy" : "Classic"] vore sounds.")
 
 /mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier)
 	if(istype(O, /obj/item/newspaper) && !(ckey || (ai_brain && ai_brain.hostile && faction != user.faction)) && isturf(user.loc))
