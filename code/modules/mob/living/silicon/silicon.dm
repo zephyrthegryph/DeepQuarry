@@ -210,6 +210,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		speech_synthesizer_langs += added_language
 		return 1
 
+/// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
+/mob/living/silicon/lifeform_learn(language, speaks = TRUE)
+	return add_language(language, speaks)
+
 /mob/living/silicon/remove_language(rem_language)
 	var/datum/language/removed_language = GLOB.all_languages[rem_language]
 	if(!removed_language)

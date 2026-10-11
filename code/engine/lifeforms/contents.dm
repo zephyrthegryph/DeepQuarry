@@ -26,8 +26,11 @@
 		return null
 	return entry_make(ENTRY_CONTAINS, null, list("type" = type, "slot" = slot, "count" = count, "when" = when, "args" = args))
 
-/proc/knows(language, when = null)
-	return entry_make(ENTRY_KNOWS, "knows:[language]", list("language" = language, "when" = when))
+/// knows(LANGUAGE_X): the mob learns it at init. `language` may also be nameof(var) holding a language name or a list of them (a
+/// simple mob's `has_langs`): each is learned, in order; a null var teaches nothing. `speaks = FALSE` learns it without speaking it (a silicon's speech synthesizer leaves it out).
+/// `default = TRUE` makes it (the list's first) the mob's default language.
+/proc/knows(language, when = null, speaks = TRUE, default = FALSE)
+	return entry_make(ENTRY_KNOWS, "knows:[language]", list("language" = language, "when" = when, "speaks" = !!speaks, "default" = !!default))
 
 /// starts_args with OWNER resolved to `holder` (a make_args() record becomes a copy with its values resolved and `by` the holder).
 /proc/starts_args_resolve(datum/holder, list/starts_args)
@@ -78,12 +81,24 @@
 		var/datum/entry/E = C.item
 		if((C.whens && !op_whens_hold(holder, C.whens)) || (!isnull(E.args["when"]) && !condition_holds(holder, E.args["when"])))
 			continue
-		M.lifeform_learn(E.args["language"])
+		var/language = E.args["language"]
+		var/list/languages = list(language)
+		if(istext(language) && (language in M.vars)) // nameof(var): the language (or list of them) the var holds
+			var/held = M.vars[language]
+			languages = islist(held) ? held : (held ? list(held) : list())
+		for(var/name in languages)
+			M.lifeform_learn(name, E.args["speaks"])
+		if(E.args["default"] && length(languages))
+			M.lifeform_default_language(languages[1])
 
 /// Placement of initial contents that did not enter a declared slot.
 /atom/movable/proc/lifeform_place(atom/holder)
 	return null
 
 /// A language declaration is delivered by the mob implementation.
-/mob/proc/lifeform_learn(language)
+/mob/proc/lifeform_learn(language, speaks = TRUE)
+	return null
+
+/// knows(..., default = TRUE): the mob speaks `language` when it names none.
+/mob/proc/lifeform_default_language(language)
 	return null

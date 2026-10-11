@@ -1192,6 +1192,14 @@ SETTER(/mob/living, nutrition)
 			else
 				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
 
+/// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
+/mob/living/proc/roll_numbered_name(datum/roller/R)
+	return "[name] ([R.number(1, 1000)])"
+
+/// rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name))): the real name follows the (rolled) name.
+/mob/living/proc/roll_real_name(datum/roller/R)
+	return name
+
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 

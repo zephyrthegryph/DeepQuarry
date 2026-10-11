@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/leopardmander
+	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	name = "leopardmander"
 	desc = "A huge salamander-like drake. They are best known for their rarity, their voracity, their very potent paralyzing venom, and their healing stomach. This one is white."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leopardmander)
@@ -78,9 +79,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
 	plane_holder.set_vis(VIS_CH_STATUS_R, 1)
 	plane_holder.set_vis(VIS_CH_BACKUP, 1)
 
-/mob/living/simple_mob/vore/leopardmander/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
 
 /mob/living/simple_mob/vore/leopardmander/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)

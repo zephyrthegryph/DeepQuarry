@@ -8,6 +8,8 @@
 
 	icon = 'icons/mob/xenos_32.dmi'
 	vis_height = 32
+	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
+	sight = SEE_MOBS
 
 	faction = "xeno"
 	endurance = 200
@@ -56,10 +58,6 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/xeno_ch/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	sight |= SEE_MOBS
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)

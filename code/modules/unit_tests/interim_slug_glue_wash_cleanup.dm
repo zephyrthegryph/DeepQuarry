@@ -11,7 +11,7 @@
 	TEST_ASSERT_NOTNULL(glue, "actual public slug spreading creates a real glue effect")
 	own(glue)
 	TEST_ASSERT_EQUAL(glue.owner_slug, slug, "the real created glue retains its original slug relation")
-	TEST_ASSERT_EQUAL(glue.my_turf, T, "the real glue constructor records its original floor")
+	TEST_ASSERT_EQUAL(get_turf(glue), T, "the real glue lies on its original floor")
 	TEST_ASSERT_EQUAL(slug.slime_count, 1, "the real slug registers exactly one glue effect")
 	slug.spread_slime()
 	TEST_ASSERT_EQUAL(locate_on(T, /obj/effect/slug_glue), glue, "actual duplicate spreading preserves the original effect identity")
