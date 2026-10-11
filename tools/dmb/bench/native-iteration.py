@@ -27,7 +27,7 @@ import worktree_authority
 import build_receipt
 from iteration_memory import OwnedMemory, iteration_concurrency
 from upgrade_owned_job import OwnedJob
-from session_acceptance import required_edit_coverage, bounded_policy
+from session_acceptance import session_edit_coverage, edit_sessions, bounded_policy
 
 _owned_memory = None
 _owned_job = None
@@ -445,7 +445,9 @@ def main():
     edits = json.loads(Path(args.edits).read_text(encoding="utf-8"))
     if not edits or len(edits) > 8 or any(edit["kind"] not in ("body", "structural") for edit in edits):
         raise ValueError("requires 1..8 explicit body/structural edits")
-    coverage = required_edit_coverage(edits) if args.worktree_sources else None
+    for edit in edits:
+        edit_sessions(edit, len(sources))
+    coverage = session_edit_coverage(edits, len(sources)) if args.worktree_sources else None
     detached = set()
     for edit in edits:
         path = Path(edit["path"])
@@ -546,7 +548,8 @@ def main():
             receipt["active_request"] = row
             for index, project in enumerate(projects):
                 session = {"index": index, "project": str(project / manifest)}
-                if edit is not None:
+                session["role"] = "edited" if edit is not None and index in edit_sessions(edit, len(projects)) else "unchanged"
+                if session["role"] == "edited":
                     session["edit"] = replace_edit(project, edit)
                     edit_history.append(index, session["edit"])
                 row["sessions"].append(session)

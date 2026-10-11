@@ -24,3 +24,40 @@ def bounded_policy(total_workers, request_workers, job_memory_mib, sampled_bytes
     if sampled_bytes is not None and not 1 <= sampled_bytes <= job_bytes:
         raise ValueError("sampled owned memory budget must fit configured job cap")
     return job_bytes
+
+
+def edit_sessions(edit, session_count):
+    """Exact target assignment; absent assignment preserves all-session edits."""
+    targets = edit.get("sessions", list(range(session_count)))
+    if (not isinstance(targets, list) or not targets
+            or any(type(index) is not int or not 0 <= index < session_count for index in targets)
+            or len(set(targets)) != len(targets)):
+        raise ValueError("edit sessions must be unique integer indices within the current source roster")
+    return tuple(sorted(targets))
+
+
+def session_edit_coverage(edits, session_count):
+    assignments = [edit_sessions(edit, session_count) for edit in edits]
+    if not any("sessions" in edit for edit in edits):
+        result = required_edit_coverage(edits)
+        result["classification"] = "six-worktree-byte-acceptance"
+        return result
+    observed = [set() for _ in range(session_count)]
+    for edit, targets in zip(edits, assignments):
+        label = "body" if edit.get("kind") == "body" else edit.get("structural_kind")
+        if edit.get("kind") not in ("body", "structural") or label not in {"body", "newvar", "newproc", "default"}:
+            raise ValueError("assigned edits require an explicit body or structural mutation label")
+        for index in targets:
+            observed[index].add(label)
+    required = {"body", "newvar", "newproc", "default"}
+    full = all(required <= labels for labels in observed)
+    if not full:
+        body = {index for index, labels in enumerate(observed) if "body" in labels}
+        structural = {index for index, labels in enumerate(observed) if labels - {"body"}}
+        unchanged = {index for index, labels in enumerate(observed) if not labels}
+        if not unchanged or not any(a != b for a in body for b in structural):
+            raise ValueError("isolation probe requires distinct body/structural sessions and an unchanged session")
+    return {"classification": "six-worktree-byte-acceptance" if full else "six-session-isolation-probe",
+            "per_session": [sorted(labels) for labels in observed],
+            "required": sorted(required),
+            "scope": "exact edit assignments; every session requires an independent fresh byte oracle; no runtime claim"}

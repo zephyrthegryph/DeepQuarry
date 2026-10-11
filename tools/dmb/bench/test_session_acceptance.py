@@ -1,5 +1,5 @@
 import unittest
-from session_acceptance import required_edit_coverage, bounded_policy
+from session_acceptance import required_edit_coverage, bounded_policy, edit_sessions, session_edit_coverage
 
 class CoverageTests(unittest.TestCase):
     def test_each_required_edit_is_explicit(self):
@@ -23,3 +23,26 @@ class BoundsTests(unittest.TestCase):
         with self.assertRaises(ValueError): bounded_policy(2, 2, 4096, 5_000_000_000)
     def test_explicit_allowance_does_not_change_worker_budget(self):
         self.assertEqual(bounded_policy(2, 2, 8192, 6_000_000_000), 8192 * 1024 * 1024)
+
+
+class AssignmentTests(unittest.TestCase):
+    def test_asymmetric_probe_preserves_four_unchanged_roots(self):
+        edits = [{"kind": "body", "sessions": [0]},
+                 {"kind": "structural", "structural_kind": "newproc", "sessions": [1]}]
+        coverage = session_edit_coverage(edits, 6)
+        self.assertEqual(coverage["classification"], "six-session-isolation-probe")
+        self.assertEqual(coverage["per_session"], [["body"], ["newproc"], [], [], [], []])
+        self.assertEqual(edit_sessions({"kind": "body"}, 6), tuple(range(6)))
+
+    def test_full_coverage_requires_every_root(self):
+        edits = [{"kind": "body", "sessions": list(range(6))}] + [
+            {"kind": "structural", "structural_kind": kind, "sessions": list(range(6))}
+            for kind in ("newvar", "newproc", "default")]
+        self.assertEqual(session_edit_coverage(edits, 6)["classification"], "six-worktree-byte-acceptance")
+
+    def test_invalid_assignments_and_false_isolation_decline(self):
+        for targets in ([], [0, 0], [-1], [6], [True], "0"):
+            with self.assertRaises(ValueError): edit_sessions({"sessions": targets}, 6)
+        with self.assertRaises(ValueError):
+            session_edit_coverage([{"kind": "body", "sessions": [0]},
+                {"kind": "structural", "structural_kind": "newvar", "sessions": [0]}], 6)

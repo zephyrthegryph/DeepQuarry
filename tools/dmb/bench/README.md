@@ -93,3 +93,19 @@ with the same semantic configuration; preserve its source/provenance receipt.
 The original journal, source closure, and BYOND pair remain immutable.
 
 Captured no-cache replay authenticates the journal index and checksum before/after each run, and pins its exact BYOND snapshot/configuration. It does not hash unrelated live physical source files; replay verifies every requested payload and refuses uncaptured reads. Live scenarios retain full physical SHA256 validation. This change affects unmeasured preparation only. Receipts name the closure-validation mode and pin benchmark methodology files. Oracle-valid private output bundles may clear readonly attributes only after all NTFS links are proved internal to the jointly owned output roots; outside or pinned links remain untouched.
+
+
+### Asymmetric retained-session isolation
+
+The existing native-iteration runner accepts an optional zero-based `sessions`
+array on an edit row. For example, assign a body edit to `[0]` and a new-proc
+edit to `[1]`; sessions 2 through 5 remain unchanged. Omit the array to preserve
+the existing all-session edit behavior. Every session is still requested from
+the same owned daemon and compared independently against a fresh native build.
+
+A partial assignment is labeled `six-session-isolation-probe`, not full
+acceptance. Full six-worktree byte acceptance requires body, new-var, new-proc
+and default edits in every root, plus all fresh byte oracles and existing
+worktree/source/process proofs. An isolation probe requires distinct body and
+structural sessions and at least one entirely unchanged session. Existing
+worker and memory bounds apply. Scenario labels alone never certify outputs.
