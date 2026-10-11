@@ -1,6 +1,7 @@
 //! Bind proven duplicate stored declarations to the current issued source.
 use super::{ColdError, ColdFrontend};
-use crate::lowering::{DiagnosticKind, LoweringDiagnostic, RelatedDiagnostic};
+use crate::lowering::{LoweringDiagnostic, RelatedDiagnostic};
+use dm_tree::frontend::DiagnosticKind;
 
 pub(super) fn capture_error(
     frontend: &ColdFrontend,
@@ -15,7 +16,7 @@ pub(super) fn capture_error(
     let Ok(roster) = frontend.callable_roster() else {
         return ColdError::Initializer(error);
     };
-    for body in &frontend.bodies {
+    for body in frontend.bodies.iter() {
         let Some(identity) = roster.identity_for_member(body.member) else {
             return ColdError::Initializer(error);
         };

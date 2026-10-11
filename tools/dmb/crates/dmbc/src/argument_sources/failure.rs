@@ -1,7 +1,8 @@
 //! Preserve typed helper emitter failures while binding their synthetic syntax
 //! coordinates to the exact current captured signature expression.
 use super::*;
-use crate::lowering::{DiagnosticKind, LoweringDiagnostic, RelatedDiagnostic};
+use crate::lowering::{LoweringDiagnostic, RelatedDiagnostic};
+use dm_tree::frontend::DiagnosticKind;
 use dm_codegen_byond::{DiagnosticAnchor, LowerError, LowerErrorKind, LowerSpan};
 
 #[derive(Debug)]
