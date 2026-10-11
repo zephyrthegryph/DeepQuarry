@@ -106,8 +106,8 @@
 		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), SLOT_ID_HAND_R)
 		rel_set(H, nameof(H.internal), H.get_equipped_item(SLOT_ID_HAND_R))
 	rel_set(H, nameof(H.internal), locate_within(H, /obj/item/tank))
-	if(istype(H.internal,/obj/item/tank) && H.internals)
-		H.internals.icon_state = "internal1"
+	if(istype(H.internal,/obj/item/tank) && hud_of(H)?.internals)
+		hud_of(H)?.internals?.icon_state = "internal1"
 
 
 /datum/species/vox

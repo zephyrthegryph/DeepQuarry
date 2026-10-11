@@ -60,8 +60,8 @@
 		test_menu(user, target, menu_key)
 		return
 	if(legacy_click)
-		user.next_click = -1
-		user.next_move = -1
+		cooldown_set_end(user, next_click, -1)
+		cooldown_set_end(user, next_move, -1)
 		user.ClickOn(target, list2params(list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK)))
 		return
 	test_click(user, target, held)
@@ -176,7 +176,7 @@
 /datum/unit_test/dq_timed_pin_w8/paper_wipe/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_MOUTH
+	hud_of(user)?.zone_sel.selecting = O_MOUTH
 	var/mob/living/carbon/human/patient = person(get_step(user, NORTH))
 	patient.looks.set_lip_style("red")
 	target = patient
@@ -189,7 +189,7 @@
 /datum/unit_test/dq_timed_pin_w8/paper_wipe/extra_pin()
 	// aimed at the eyes it only shows the paper, at once
 	setup_scene()
-	user.zone_sel.selecting = O_EYES
+	hud_of(user)?.zone_sel.selecting = O_EYES
 	refused()
 	var/mob/living/carbon/human/patient = target
 	TEST_ASSERT(!isnull(patient.looks.lip_style), "and wipes nothing")
@@ -251,7 +251,7 @@
 /datum/unit_test/dq_timed_pin_w8/tape_eyes/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_EYES
+	hud_of(user)?.zone_sel.selecting = O_EYES
 	user.set_use_stance(I_DISARM) // the roll refuses the help stance
 	target = user
 	held = hold(/obj/item/tape_roll)
@@ -276,7 +276,7 @@
 /datum/unit_test/dq_timed_pin_w8/tape_mouth/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_MOUTH
+	hud_of(user)?.zone_sel.selecting = O_MOUTH
 	user.set_use_stance(I_DISARM)
 	target = user
 	held = hold(/obj/item/tape_roll)

@@ -47,7 +47,7 @@
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
-	next_move = 1
+	cooldown_set_end(src, next_move, 1)
 	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
@@ -60,10 +60,11 @@
 	add_click_catcher()
 	update_client_color()
 
-	if(!plane_holder) //Lazy
-		rel_set(src, nameof(plane_holder), new /datum/plane_holder(src)) //Not a location, it takes it and saves it.
-	if(!vis_enabled)
-		vis_enabled = list()
+	// The plane masters live on the hud built above; recalculate_vis() rebuilds what this mob sees through them.
+	var/datum/hud/hud = hud_used
+	var/datum/plane_holder/plane_holder = new /datum/plane_holder(src) //Not a location, it takes it and saves it.
+	rel_set(hud, nameof(hud.plane_holder), plane_holder)
+	hud.vis_enabled = list()
 	client.screen += plane_holder.plane_masters
 	if(GLOB.global_vantag_hud)
 		vantag_hud = TRUE

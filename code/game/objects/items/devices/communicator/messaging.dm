@@ -126,7 +126,7 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 
 // Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
 /obj/item/communicator/topic_usable(datum/act/op/A)
-	return A.actor && get(src, /mob) == A.actor
+	return (A.actor && get(src, /mob) == A.actor) ? null : MSG(op/topic_gate)
 
 /obj/item/communicator/proc/reply_subject(datum/act/op/A)
 	return src

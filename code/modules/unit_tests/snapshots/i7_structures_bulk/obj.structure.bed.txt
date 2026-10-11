@@ -46,21 +46,7 @@
 -menu: Use
 -click: Click: Use
 +3 click: nothing
-@obj.structure human|/obj/item/stack
--menu: Repair (refused: )
--menu: Use
--click: Click: Repair
-+2 menu: Pad (refused: You cannot pad that with that.)
-+4 click: Click: Pad
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie click: Click: Tuck plushie
+@obj human|/obj/item/stack
+@obj human|/obj/item/disk
+@obj human|/obj/item/toy/plushie
 keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, tuck_disk, tuck_plushie, unpad

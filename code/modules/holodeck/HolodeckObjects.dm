@@ -172,7 +172,7 @@ CAPABILITIES(/turf/simulated/floor/holofloor/desert)
 		play_sfx(target, SFX_WEAPONS_PUNCHMISS)
 		act_message(user, target, others = span_danger("%U% has attempted to punch %T%!"))
 		return TRUE
-	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
+	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(hud_of(user)?.zone_sel?.selecting))
 	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
 
 	if(user.has_mutation(HULK))
@@ -429,7 +429,7 @@ CAPABILITIES(/obj/machinery/readybutton)
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
 	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
-	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req_bool(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))
+	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req(PROC_REF(can_press_holds))), then(PROC_REF(interaction_press)))
 
 /// Old attack_ai: refuse silicons.
 /obj/machinery/readybutton/proc/readybutton_silicon_refuse(datum/act/op/A)
@@ -449,11 +449,9 @@ CAPABILITIES(/obj/machinery/readybutton)
 
 /obj/machinery/readybutton/proc/can_press_holds(datum/act/op/A)
 	var/answer = can_press(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/obj/machinery/readybutton/proc/can_press_refusal(datum/act/op/A)
-	var/answer = can_press(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Old attack_hand: never called ..().
 /obj/machinery/readybutton/proc/interaction_press(datum/act/op/A)

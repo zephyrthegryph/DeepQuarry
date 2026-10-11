@@ -1,0 +1,64 @@
+human|/obj/item menu: Accessory attached hand
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Holobadge imprint item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Holobadge imprint item
+human|/obj/item/multitool menu: Accessory attached hand
+human|/obj/item/multitool menu: Alternate use
+human|/obj/item/multitool menu: Holobadge imprint item
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Holobadge imprint item
+human|/obj/item/stack/cable_coil menu: Accessory attached hand
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: Holobadge imprint item
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Holobadge imprint item
+human|/obj/item/stack/material/steel menu: Accessory attached hand
+human|/obj/item/stack/material/steel menu: Alternate use
+human|/obj/item/stack/material/steel menu: Holobadge imprint item
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Holobadge imprint item
+human|/obj/item/tool/crowbar menu: Accessory attached hand
+human|/obj/item/tool/crowbar menu: Alternate use
+human|/obj/item/tool/crowbar menu: Holobadge imprint item
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Holobadge imprint item
+human|/obj/item/tool/screwdriver menu: Accessory attached hand
+human|/obj/item/tool/screwdriver menu: Alternate use
+human|/obj/item/tool/screwdriver menu: Holobadge imprint item
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Holobadge imprint item
+human|/obj/item/tool/wirecutters menu: Accessory attached hand
+human|/obj/item/tool/wirecutters menu: Alternate use
+human|/obj/item/tool/wirecutters menu: Holobadge imprint item
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Holobadge imprint item
+human|/obj/item/tool/wrench menu: Accessory attached hand
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: Holobadge imprint item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Holobadge imprint item
+human|/obj/item/weldingtool menu: Accessory attached hand
+human|/obj/item/weldingtool menu: Alternate use
+human|/obj/item/weldingtool menu: Holobadge imprint item
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Holobadge imprint item

@@ -121,10 +121,7 @@
 
 /// Requirement: enough nutrition to regenerate on.
 /mob/living/simple_mob/proc/hungry_enough_to_heal(datum/act/op/A)
-	return read_once(nutrition) >= 10
-
-/mob/living/simple_mob/proc/too_hungry_to_heal_text(datum/act/op/A)
-	return span_warning("You are too hungry to regenerate health.")
+	return read_once(nutrition) >= 10 ? null : span_warning("You are too hungry to regenerate health.")
 
 /mob/living/simple_mob/proc/nutrition_heal_question(datum/act/op/A)
 	var/endurance_now = get_endurance()

@@ -42,8 +42,8 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 	..()
 	if(breather())
 		breather().internal = null
-		if(breather().internals)
-			breather().internals.icon_state = "internal0"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal0"
 		breather().remove_from_mob(contained)
 		breather().cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
@@ -102,8 +102,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		contained.forceMove(src)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " makes \the [contained] rapidly retract back into %T%!"))
 		breather().cozyloop.stop() // Cozy Music
-		if(breather().internals)
-			breather().internals.icon_state = "internal0"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal0"
 		rel_clear(src, nameof(breather))
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
@@ -120,8 +120,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
@@ -207,8 +207,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
-			if(breather().internals)
-				breather().internals.icon_state = "internal0"
+			if(hud_of(breather())?.internals)
+				hud_of(breather())?.internals?.icon_state = "internal0"
 
 //Create rightclick to view tank settings
 /obj/machinery/oxygen_pump/proc/oxygen_pump_settings(datum/act/op/A)
@@ -278,8 +278,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
@@ -328,8 +328,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
@@ -351,8 +351,8 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
-			if(breather().internals)
-				breather().internals.icon_state = "internal0"
+			if(hud_of(breather())?.internals)
+				hud_of(breather())?.internals?.icon_state = "internal0"
 
 		if(breather())	// Safety.
 			if(ishuman(breather()) && !(HAS_SYNTHETIC_BIOLOGY(breather())))

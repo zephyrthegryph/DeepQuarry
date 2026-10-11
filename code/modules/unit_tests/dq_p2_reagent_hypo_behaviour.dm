@@ -26,7 +26,7 @@
 /proc/rc_label_pack(mob/actor, obj/item/reagent_containers/blood/B, obj/item/pen/pen, text)
 	actor.drop_item()
 	actor.put_in_active_hand(pen)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	input_submit(new /datum/input_event/click(actor, B, null, null, "left=1"))
 	test_answer(actor, text)
 	test_time(10 SECONDS)
@@ -105,7 +105,7 @@
 	rc_click(H, patient, empty)
 	TEST_ASSERT_EQUAL(rc_blood_units(patient), before, "an empty hypospray gives nothing")
 	var/obj/item/reagent_containers/hypospray/S = rc_hypo(/obj/item/reagent_containers/hypospray, 20)
-	H.zone_sel.set_selecting(BP_L_ARM)
+	hud_of(H)?.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
 	arm.robotize()
 	rc_click(H, patient, S)
@@ -113,7 +113,7 @@
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	rc_click(H, patient, S)
 	TEST_ASSERT_EQUAL(rc_units(S), 15, "a missing limb is refused")
-	H.zone_sel.set_selecting(BP_TORSO)
+	hud_of(H)?.zone_sel.set_selecting(BP_TORSO)
 
 /// Armour does not stop it: the nozzle finds a port.
 /datum/unit_test/dq_p2_reagents/hypospray_goes_through_armour
@@ -190,7 +190,7 @@
 	var/obj/item/reagent_containers/glass/beaker/vial/old = S.loaded_vial
 	H.drop_item()
 	H.put_in_inactive_hand(S)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, S, null, null, "left=1"))
 	rc_settle()
 	TEST_ASSERT_NULL(S.loaded_vial, "an empty hand on it, held in the other hand, takes the vial out")
@@ -333,7 +333,7 @@
 	H.drop_item()
 	H.put_in_active_hand(pack)
 	H.set_use_stance(I_HURT)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, pack, null, null, "left=1"))
 	rc_settle()
 	H.set_use_stance(I_HELP)
@@ -346,7 +346,7 @@
 	H.drop_item()
 	H.put_in_active_hand(water)
 	H.set_use_stance(I_HURT)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, water, null, null, "left=1"))
 	rc_settle()
 	H.set_use_stance(I_HELP)
@@ -369,7 +369,7 @@
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/patient = rc_actor()
 	var/obj/item/reagent_containers/hypospray/S = rc_hypo(/obj/item/reagent_containers/hypospray, 20)
-	H.zone_sel.set_selecting(BP_L_ARM)
+	hud_of(H)?.zone_sel.set_selecting(BP_L_ARM)
 	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	rc_click(H, patient, S, I_HELP, FALSE)

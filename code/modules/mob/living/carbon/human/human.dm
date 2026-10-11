@@ -16,25 +16,20 @@
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-	COOLDOWN_DECLARE(push_lying_cooldown) //For human_attackhand.dm: lying-struggle antispam
-	COOLDOWN_DECLARE(disarm_cooldown) //For human_attackhand.dm: repeat-disarm window
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
-	COOLDOWN_DECLARE(spit_cooldown) 					//Timestamp.
 
 	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
-	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
 	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
-	COOLDOWN_DECLARE(chew_cooldown)
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
@@ -853,13 +848,13 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(COOLDOWN_FINISHED(src, xylophone))
+	if(cooldown_ready(src, xylophone))
 		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
 			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
 			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
-		COOLDOWN_START(src, xylophone, 2 MINUTES)
+		cooldown_start(src, xylophone, 2 MINUTES)
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -1630,7 +1625,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
 		else
-			target_zone = user.zone_sel.selecting
+			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
 	var/fail_msg
@@ -2132,7 +2127,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -2256,11 +2251,11 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
 	set category = VERB_CAT_IC_GAME
 
-	if(stat || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || !cooldown_ready(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
 
-	COOLDOWN_START(src, last_special, 2 SECONDS) // Antispam.
+	cooldown_start(src, last_special, 2 SECONDS) // Antispam.
 	create_new_area(usr)
 	return
 

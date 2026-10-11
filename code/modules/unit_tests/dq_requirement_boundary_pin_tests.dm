@@ -418,3 +418,673 @@
 /datum/unit_test/dq_requirement_fourth_pin
 	parent_type = /datum/unit_test/dq_conversion_pin
 	capture_roots = list(/obj/item/beehive_assembly, /obj/item/bodybag, /obj/item/card/id/guest, /obj/item/disk/botany, /obj/item/ducttape, /obj/item/reagent_containers/food/snacks/bun, /obj/item/reagent_containers/food/snacks/customizable, /obj/item/reagent_containers/food/snacks/customizable/sandwich, /obj/item/reagent_containers/food/snacks/slice/bread, /obj/item/reagent_containers/food/snacks/sliceable/flatdough, /obj/item/reagent_containers/food/snacks/spagetti, /obj/item/tape_roll, /obj/item/trash/bowl, /obj/machinery/alarm, /obj/machinery/atmospherics/binary/passive_gate, /obj/machinery/atmospherics/binary/pump, /obj/machinery/atmospherics/binary/volume_pump, /obj/machinery/atmospherics/omni, /obj/machinery/atmospherics/pipe, /obj/machinery/atmospherics/portables_connector, /obj/machinery/atmospherics/trinary, /obj/machinery/atmospherics/tvalve, /obj/machinery/atmospherics/unary/heat_exchanger, /obj/machinery/atmospherics/unary/outlet_injector, /obj/machinery/atmospherics/unary/vent_pump, /obj/machinery/atmospherics/unary/vent_scrubber, /obj/machinery/atmospherics/valve, /obj/machinery/beehive, /obj/machinery/botany, /obj/machinery/botany/editor, /obj/machinery/botany/extractor, /obj/machinery/computer/atmoscontrol, /obj/machinery/computer/cloning, /obj/machinery/computer/pandemic, /obj/machinery/computer/secure_data, /obj/machinery/computer/skills, /obj/machinery/computer/telecomms, /obj/machinery/computer/telecomms/server, /obj/machinery/door/unpowered, /obj/machinery/embedded_controller, /obj/machinery/embedded_controller/radio/airlock, /obj/machinery/field_generator, /obj/machinery/firealarm, /obj/machinery/holoposter, /obj/machinery/honey_extractor, /obj/machinery/particle_smasher, /obj/machinery/partyalarm, /obj/machinery/portable_atmospherics/hydroponics, /obj/machinery/power/emitter, /obj/machinery/power/generator, /obj/machinery/power/smes, /obj/machinery/recharge_station, /obj/machinery/seed_storage, /obj/machinery/space_heater, /obj/machinery/suit_storage_unit, /obj/machinery/telecomms, /obj/machinery/telecomms/relay, /obj/machinery/washing_machine, /obj/structure/AIcore, /obj/structure/closet, /obj/structure/closet/bluespace, /obj/structure/closet/body_bag, /obj/structure/closet/body_bag/cryobag, /obj/structure/closet/crate, /obj/structure/closet/crate/secure, /obj/structure/closet/secure_closet, /obj/structure/closet/secure_closet/mind, /obj/structure/closet/secure_closet/personal, /obj/structure/closet/walllocker/emerglocker)
+
+// Append to the included dq_requirement_boundary_pin_tests.dm.
+/datum/unit_test/dq_requirement_fifth_machinery
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_fifth_machinery/pipelayer/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/machinery/pipelayer/P = allocate(/obj/machinery/pipelayer, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	P.set_on(FALSE)
+	P.metal = 0
+	check(P, H, "toggle", "can_run", /datum/msg/pipelayer/no_metal)
+	P.metal = 1
+	check(P, H, "toggle", "can_run", null)
+	P.metal = 0
+	P.set_on(TRUE)
+	check(P, H, "toggle", "can_run", null)
+	P.set_on(FALSE)
+	check(P, H, "toggle", "can_run", /datum/msg/pipelayer/no_metal)
+
+/datum/unit_test/dq_requirement_fifth_machinery/generators/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/power/port_gen/pacman/P = allocate(/obj/machinery/power/port_gen/pacman, run_loc_floor_bottom_left)
+	P.set_sheets(P.max_sheets)
+	check(P, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	P.set_sheets(P.max_sheets - 1)
+	check(P, H, "add_fuel", "has_room", null)
+	P.set_sheets(P.max_sheets)
+	check(P, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	var/obj/machinery/power/port_gen/large_altevian/L = allocate(/obj/machinery/power/port_gen/large_altevian, run_loc_floor_bottom_left)
+	L.set_sheets(L.max_sheets)
+	check(L, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	L.set_sheets(L.max_sheets - 1)
+	check(L, H, "add_fuel", "has_room", null)
+	L.set_sheets(L.max_sheets)
+	check(L, H, "add_fuel", "has_room", /datum/msg/pacman/full)
+	// The real destruction path spills remaining fuel; leave no synthetic fuel behind.
+	P.set_sheets(0)
+	L.set_sheets(0)
+
+/datum/unit_test/dq_requirement_fifth_machinery/portable/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/portable_atmospherics/powered/pump/P = allocate(/obj/machinery/portable_atmospherics/powered/pump, run_loc_floor_bottom_left)
+	P.set_destroyed(TRUE)
+	check(P, H, "port", "not_destroyed", /datum/msg/portable/wrecked)
+	P.set_destroyed(FALSE)
+	check(P, H, "port", "not_destroyed", null)
+	P.set_destroyed(TRUE)
+	check(P, H, "port", "not_destroyed", /datum/msg/portable/wrecked)
+
+// Old-code boundary proof for the industrial requirement cohort; the same
+// compiled clause is checked after its null-or-reason conversion.
+/datum/unit_test/dq_requirement_industry_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_industry_boundary/pump/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/pump/P = allocate(/obj/machinery/pump, H.loc)
+	var/obj/item/cell/C = allocate(/obj/item/cell, H.loc)
+	P.open = FALSE
+	P.unlocked = FALSE
+	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_watertight), C)
+	P.unlocked = TRUE
+	check(P, H, "insert_cell", "battery_panel_open", MSG(pump/panel_screwed), C)
+	P.open = TRUE
+	check(P, H, "insert_cell", "battery_panel_open", null, C)
+	var/obj/item/cell/initial_cell = P.cell
+	TEST_ASSERT_NOTNULL(initial_cell, "The default parts initialize their real cell view")
+	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
+	rel_set(P, nameof(P.cell), null)
+	check(P, H, "insert_cell", "no_cell", null, C)
+	rel_set(P, nameof(P.cell), C)
+	check(P, H, "insert_cell", "no_cell", MSG(pump/has_cell), C)
+	rel_set(P, nameof(P.cell), null)
+	check(P, H, "insert_cell", "no_cell", null, C)
+
+/datum/unit_test/dq_requirement_industry_boundary/syringe/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, H.loc)
+	var/obj/item/reagent_containers/syringe/ld50_syringe/L = allocate(/obj/item/reagent_containers/syringe/ld50_syringe, H.loc)
+	check(S, H, "stab", "may_stab", null, null, H)
+	check(L, H, "stab", "may_stab", MSG(syringe/too_big), null, H)
+	check(S, H, "stab", "may_stab", null, null, H)
+
+/datum/unit_test/dq_requirement_industry_boundary/chem_master/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, H.loc)
+	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
+		check(M, H, key, "makes_drugs", /datum/msg/req_silent)
+	M.reagents.add_reagent(REAGENT_ID_WATER, 5)
+	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
+		check(M, H, key, "makes_drugs", null)
+	M.set_condi(TRUE)
+	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
+	M.set_condi(FALSE)
+	check(M, H, "create_pill_multiple", "makes_drugs", null)
+	M.reagents.clear_reagents()
+	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
+
+/datum/unit_test/dq_requirement_industry_boundary/mixer/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/appliance/mixer/candy/M = allocate(/obj/machinery/appliance/mixer/candy, H.loc)
+	var/datum/cooking_item/CI = LAZYACCESS(M.cooking_objs, 1)
+	TEST_ASSERT_NOTNULL(CI, "A real mixer initializes its owned cooking container")
+	var/obj/item/reagent_containers/cooking_container/C = CI.container()
+	TEST_ASSERT_NOTNULL(C, "The cooking slot contains its real container")
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", "there's nothing in it, add ingredients before turning [M] on")
+	C.reagents.add_reagent(REAGENT_ID_WATER, 5)
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", null)
+	C.reagents.clear_reagents()
+	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", "there's nothing in it, add ingredients before turning [M] on")
+
+/datum/unit_test/dq_requirement_industry_boundary/furnace/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/material_furnace/F = allocate(/obj/machinery/material_furnace, H.loc)
+	var/obj/item/stack/material/steel/S = allocate(/obj/item/stack/material/steel, H.loc)
+	check(F, H, "eject_contents", "can_eject_contents_holds", "the furnace is empty")
+	check(F, H, "use", "can_use_furnace_holds", "the furnace is empty; load material sheets before firing it")
+	check(F, H, "load_stock", "can_load_stock_holds", null, S)
+	F.set_firing(TRUE)
+	check(F, H, "load_stock", "can_load_stock_holds", "the furnace must be idle and its output removed first", S)
+	check(F, H, "use", "can_use_furnace_holds", "the furnace is still firing")
+	F.set_firing(FALSE)
+	check(F, H, "load_stock", "can_load_stock_holds", null, S)
+
+/datum/unit_test/dq_requirement_industry_boundary/food/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/reagent_containers/food/snacks/bun/B = allocate(/obj/item/reagent_containers/food/snacks/bun, H.loc)
+	B.package = FALSE
+	B.canned = FALSE
+	check(B, H, "stuff", "stuffing_free", null)
+	B.package = TRUE
+	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	B.package = FALSE
+	B.canned = TRUE
+	check(B, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	B.canned = FALSE
+	check(B, H, "stuff", "stuffing_free", null)
+	var/obj/item/reagent_containers/food/drinks/coffee/C = allocate(/obj/item/reagent_containers/food/drinks/coffee, H.loc)
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, TRUE)
+	check(C, H, "stuff", "stuffing_free", null)
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, FALSE)
+	check(C, H, "stuff", "stuffing_free", MSG(food/closed_to_micros))
+	cap_key_set(C, REAGENT_CONTAINER_LID_OPEN, TRUE)
+	check(C, H, "stuff", "stuffing_free", null)
+
+// Actual compiled clauses: no duplicated predicate logic or fake client eligibility.
+/datum/unit_test/dq_requirement_fifth_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_fifth_boundary/void_components/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	for(var/suit_type in list(/obj/item/clothing/suit/space/void, /obj/item/clothing/suit/space/void/autolok, /obj/item/clothing/suit/space/void/responseteam))
+		var/obj/item/clothing/suit/space/void/S = allocate(suit_type, H.loc)
+		// Strip real starting components through their declared relations before each boundary.
+		rel_clear(S, nameof(S.hood))
+		rel_clear(S, nameof(S.boots))
+		rel_clear(S, nameof(S.tank))
+		rel_clear(S, nameof(S.cooler))
+		check(S, H, "voidsuit_remove_component", "has_removable_component", MSG(void/nothing_installed))
+		var/obj/item/suit_cooling_unit/C = allocate(/obj/item/suit_cooling_unit, S)
+		rel_set(S, nameof(S.cooler), C)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", suit_type == /obj/item/clothing/suit/space/void ? MSG(void/nothing_installed) : null)
+		rel_set(S, nameof(S.cooler), null)
+		var/obj/item/tank/T = allocate(/obj/item/tank, S)
+		rel_set(S, nameof(S.tank), T)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", null)
+		rel_set(S, nameof(S.tank), null)
+		check(S, H, "voidsuit_remove_component", "has_removable_component", MSG(void/nothing_installed))
+
+/datum/unit_test/dq_requirement_fifth_boundary/tongue_and_lightreplacer/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/robot_tongue/L = allocate(/obj/item/robot_tongue, H.loc)
+	L.water = allocate(/datum/matter_synth, 500)
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", /datum/msg/req_silent)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", MSG(tongue/full))
+	TEST_ASSERT(L.water.use_charge(1), "The real matter reservoir spends one unit")
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", null)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", null)
+	L.water.add_charge(1)
+	check(L, H, "tongue_drink_sink", "tongue_thirsty", /datum/msg/req_silent)
+	check(L, H, "tongue_drink_toilet", "tongue_thirsty", MSG(tongue/full))
+	var/obj/item/lightreplacer/dogborg/R = allocate(/obj/item/lightreplacer/dogborg, H.loc)
+	R.set_uses(R.max_uses)
+	check(R, H, "fabricate", "has_room", MSG(lightreplacer/full))
+	R.set_uses(R.max_uses - 1)
+	check(R, H, "fabricate", "has_room", null)
+	R.set_uses(R.max_uses)
+	check(R, H, "fabricate", "has_room", MSG(lightreplacer/full))
+
+/datum/unit_test/dq_requirement_fifth_boundary/weaver/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/trait_state/weaver/W = H.add_trait_state(/datum/trait_state/weaver)
+	TEST_ASSERT_NOTNULL(W, "The real trait attaches to the human")
+	var/list/costs = list("binding" = 50, "floor" = 25, "wall" = 100, "nest" = 100, "trap" = 250)
+	for(var/product in costs)
+		var/cost = costs[product]
+		W.set_silk_reserve(cost - 1)
+		check(W, H, "weave_[product]", "weave_silk_[product]", /datum/msg/weaver/no_silk)
+		W.set_silk_reserve(cost)
+		check(W, H, "weave_[product]", "weave_silk_[product]", null)
+		W.set_silk_reserve(cost - 1)
+		check(W, H, "weave_[product]", "weave_silk_[product]", /datum/msg/weaver/no_silk)
+	check(W, H, "weave_floor", "weave_site_free", null)
+	var/obj/effect/weaversilk/floor/F = allocate(/obj/effect/weaversilk/floor, H.loc)
+	check(W, H, "weave_floor", "weave_site_free", /datum/msg/weaver/already_there)
+	qdel(F)
+	check(W, H, "weave_floor", "weave_site_free", null)
+/datum/unit_test/dq_requirement_fifth_boundary/vv_remote/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, H.loc)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
+	rel_set(target, nameof(target.teleop), H)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", MSG(vv/player_mob))
+	rel_set(target, nameof(target.teleop), null)
+	check(target, H, "vv_give_ai", "vv_not_remote_driven", null)
+// Record and compare concrete old-code types for requirement batch E.
+/datum/unit_test/dq_requirement_fifth_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/turf/simulated/mineral/floor, /obj/item/assembly/signaler/anomaly, /obj/item/clamp, /obj/item/clothing/accessory/badge/holo, /obj/item/clothing/glasses/hud/health/eyepatch, /obj/item/clothing/glasses/hud/security/eyepatch, /obj/item/clothing/glasses/hud/security/eyepatch2, /obj/item/clothing/shoes/black, /obj/item/clothing/suit/space/void, /obj/item/clothing/suit/space/void/autolok, /obj/item/clothing/suit/space/void/responseteam, /obj/item/clothing/under/color/grey, /obj/item/dogborg/sleeper, /obj/item/frame, /obj/item/glamour_face, /obj/item/lightreplacer, /obj/item/lightreplacer/dogborg, /obj/item/pipe, /obj/item/pipe_meter, /obj/item/reagent_containers/cooking_container, /obj/item/reagent_containers/food/drinks/coffee, /obj/item/reagent_containers/food/snacks/bun, /obj/item/reagent_containers/food/snacks/csandwich, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/syringe/ld50_syringe, /obj/item/resonator, /obj/item/rig, /obj/item/robot_tongue, /obj/item/solar_assembly, /obj/item/stack/cable_coil/alien, /obj/item/stack/flag, /obj/item/stack/lightpole, /obj/item/storage/firstaid, /obj/machinery/appliance/mixer/candy, /obj/machinery/atmospherics/unary/cryo_cell, /obj/machinery/beehive, /obj/machinery/chem_master, /obj/machinery/chemical_dispenser, /obj/machinery/clamp, /obj/machinery/door/airlock, /obj/machinery/door/blast, /obj/machinery/door/firedoor, /obj/machinery/door/window, /obj/machinery/honey_extractor, /obj/machinery/material_furnace, /obj/machinery/meter, /obj/machinery/mineral/processing_unit_console, /obj/machinery/mining/brace, /obj/machinery/mining/drill, /obj/machinery/nuclearbomb, /obj/machinery/pipedispenser, /obj/machinery/pipedispenser/disposal, /obj/machinery/pipelayer, /obj/machinery/porta_turret, /obj/machinery/portable_atmospherics/canister, /obj/machinery/portable_atmospherics/powered/pump, /obj/machinery/portable_atmospherics/powered/pump/huge, /obj/machinery/portable_atmospherics/powered/scrubber/huge, /obj/machinery/power/apc, /obj/machinery/power/port_gen/large_altevian, /obj/machinery/power/port_gen/pacman, /obj/machinery/power/thermoregulator, /obj/machinery/pump, /obj/machinery/reagent_refinery/filter, /obj/machinery/reagent_refinery/grinder, /obj/machinery/recharger, /obj/machinery/rnd/destructive_analyzer, /obj/machinery/seed_storage, /obj/machinery/smartfridge, /obj/machinery/smartfridge/secure, /obj/machinery/vr_sleeper, /obj/structure/glamour_ring)
+// Append to dq_requirement_boundary_pin_tests.dm BEFORE production conversion.
+// Uses real compiled needs/when; callback protocol is intentionally not asserted.
+/datum/unit_test/dq_requirement_sixth_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_sixth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
+// Self-contained OLD proof draft for fresh origin/master; no F helper dependency.
+/datum/unit_test/dq_requirement_eighth_boundary
+	parent_type = /datum/unit_test
+
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check(datum/holder, mob/actor, key, callback, expected, obj/held = null, atom/target = null)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real [holder.type] [key] op exists")
+	var/datum/entry/part/req/selected
+	var/matches = 0
+	for(var/datum/entry/part/req/R as anything in P.needs)
+		if(LAZYACCESS(R.args, "what") == callback)
+			selected = R
+			matches++
+	TEST_ASSERT_EQUAL(matches, 1, "Exactly one real compiled requirement names [callback]")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.held = held
+	A.target = target || holder
+	A.oplan = P
+	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
+
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real [holder.type] [key] op exists")
+	TEST_ASSERT(length(P.conds), "The actual op carries a selector")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.held = held
+	A.target = target || holder
+	A.oplan = P
+	var/actual = TRUE
+	for(var/condition in P.conds)
+		if(!op_cond(A, condition))
+			actual = FALSE
+			break
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "[key] preserves actual compiled selector visibility")
+
+/datum/unit_test/dq_requirement_sixth_boundary/medical_patient/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/simple_mob/animal/passive/dog/nonhuman = allocate(/mob/living/simple_mob/animal/passive/dog, H.loc)
+	var/list/cases = list(/obj/item/thermometer_medical = MSG(thermometer_medical/not_human), /obj/item/bp_cuff = MSG(bp_cuff/not_human), /obj/item/pulse_oximeter = MSG(pulse_oximeter/not_human))
+	for(var/type in cases)
+		var/obj/item/I = allocate(type, H.loc)
+		check(I, H, "take", "target_is_human", null, I, H)
+		check(I, H, "take", "target_is_human", cases[type], I, nonhuman)
+		check(I, H, "take", "target_is_human", null, I, H)
+
+/datum/unit_test/dq_requirement_sixth_boundary/headset_slots/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/radio/headset/radio = allocate(/obj/item/radio/headset, H.loc)
+	var/obj/item/encryptionkey/first = allocate(/obj/item/encryptionkey, H.loc)
+	var/obj/item/encryptionkey/second = allocate(/obj/item/encryptionkey, H.loc)
+	var/obj/item/encryptionkey/third = allocate(/obj/item/encryptionkey, H.loc)
+	rel_clear(radio, nameof(radio.keyslot1))
+	rel_clear(radio, nameof(radio.keyslot2))
+	check(radio, H, "item", "can_insert_key_holds", null, first)
+	move_into(radio, nameof(radio.keyslot1), first, H)
+	TEST_ASSERT_EQUAL(radio.keyslot1, first, "The first real key occupies its slot")
+	check(radio, H, "item", "can_insert_key_holds", null, second)
+	move_into(radio, nameof(radio.keyslot2), second, H)
+	TEST_ASSERT_EQUAL(radio.keyslot2, second, "The second real key occupies its slot")
+	check(radio, H, "item", "can_insert_key_holds", "the headset can't hold another key", third)
+	rel_take(radio, nameof(radio.keyslot2))
+	check(radio, H, "item", "can_insert_key_holds", null, third)
+
+/datum/unit_test/dq_requirement_sixth_boundary/plushie_overrides/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/toy/plushie/P = allocate(/obj/item/toy/plushie, H.loc)
+	TEST_ASSERT_NULL(H.mind, "The old no-mind boundary is real")
+	check(P, H, "rename", "can_rename", MSG(plushie/no_mind))
+	var/datum/mind/M = allocate(/datum/mind)
+	M.transfer_to(H)
+	TEST_ASSERT_EQUAL(H.mind, M, "The real allocated mind transfer enables choosing a name")
+	check(P, H, "rename", "can_rename", null)
+	var/obj/item/toy/plushie/teshari/strix/S = allocate(/obj/item/toy/plushie/teshari/strix, H.loc)
+	var/obj/item/toy/plushie/teshari/eili/E = allocate(/obj/item/toy/plushie/teshari/eili, H.loc)
+	check(S, H, "rename", "can_rename", "You cannot rename Strix Hades, you hug him anyway.")
+	check(E, H, "rename", "can_rename", "You cannot rename Eili, you hug her anyway.")
+
+/datum/unit_test/dq_requirement_sixth_boundary/picnic_override/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/picnic_blanket_deployed/B = allocate(/obj/structure/picnic_blanket_deployed, H.loc)
+	check(B, H, "fold_up", "pred_can_fold_up", null)
+	B.set_blanket_type(2) // The file-local SIDE define is deliberately not leaked into tests.
+	check(B, H, "fold_up", "pred_can_fold_up", MSG(picnic_blanket/center))
+	B.set_blanket_type(1)
+	check(B, H, "fold_up", "pred_can_fold_up", null)
+	var/obj/structure/picnic_blanket_deployed/for_mapping_use/M = allocate(/obj/structure/picnic_blanket_deployed/for_mapping_use, H.loc)
+	M.set_blanket_type(1)
+	M.set_unfoldable(TRUE)
+	check(M, H, "fold_up", "pred_can_fold_up", MSG(picnic_blanket/center))
+	M.set_unfoldable(FALSE)
+	check(M, H, "fold_up", "pred_can_fold_up", null)
+
+/datum/unit_test/dq_requirement_sixth_boundary/nif_compliance/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/disk/nifsoft/compliance/D = allocate(/obj/item/disk/nifsoft/compliance, H.loc)
+	check(D, H, "upload", "upload_ready", span_warning("You haven't set any laws yet. Use the disk in-hand first."), D, H)
+	D.set_laws("Protect the wearer")
+	check(D, H, "upload", "upload_ready", span_warning("Either they don't have a NIF, or the uploader can't connect."), D, H)
+	var/obj/item/nif/N = allocate(/obj/item/nif, H.loc)
+	TEST_ASSERT(N.quick_implant(H), "The actual implant preparation succeeds")
+	N.quick_install(H) // Complete the real 0.1 SECONDS callback synchronously for this state-boundary fixture.
+	N.set_stat(NIF_WORKING)
+	TEST_ASSERT_EQUAL(H.nif, N, "The real implant creates the target's NIF relationship")
+	check(D, H, "upload", "upload_ready", null, D, H)
+	N.set_stat(NIF_TEMPFAIL)
+	check(D, H, "upload", "upload_ready", span_warning("Either they don't have a NIF, or the uploader can't connect."), D, H)
+	N.set_stat(NIF_WORKING)
+	check(D, H, "upload", "upload_ready", null, D, H)
+
+/datum/unit_test/dq_requirement_sixth_boundary/organ_stage_selectors/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/organ/external/arm/limb = allocate(/obj/item/organ/external/arm, H.loc)
+	var/obj/item/surgical/scalpel/scalpel = allocate(/obj/item/surgical/scalpel, H.loc)
+	var/obj/item/surgical/retractor/retractor = allocate(/obj/item/surgical/retractor, H.loc)
+	var/obj/item/surgical/hemostat/hemostat = allocate(/obj/item/surgical/hemostat, H.loc)
+	var/obj/item/surgical/bioregen/bioregen = allocate(/obj/item/surgical/bioregen, H.loc)
+	limb.stage = 0
+	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
+	check_when(limb, H, "bench_retract", FALSE, retractor)
+	limb.stage = 1
+	check_when(limb, H, "bench_scalpel", FALSE, scalpel)
+	check_when(limb, H, "bench_retract", TRUE, retractor)
+	limb.stage = 2
+	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
+	check_when(limb, H, "bench_extract", TRUE, hemostat)
+	check_when(limb, H, "bench_rejuvenate", FALSE, bioregen)
+	limb.stage = 3
+	check_when(limb, H, "bench_scalpel", FALSE, scalpel)
+	check_when(limb, H, "bench_extract", FALSE, hemostat)
+	check_when(limb, H, "bench_rejuvenate", TRUE, bioregen)
+	limb.stage = 0
+	check_when(limb, H, "bench_scalpel", TRUE, scalpel)
+
+/datum/unit_test/dq_requirement_sixth_boundary/hailer_override_texts/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/hailer/W = allocate(/obj/item/hailer, H.loc)
+	check(W, H, "set_message", "unfried", null)
+	check(W, H, "emag.use", "unfried", null)
+	W.set_insults(list("Fried!"))
+	check(W, H, "set_message", "unfried", "the hailer is fried, the tiny input screen just shows a waving ASCII penis")
+	check(W, H, "emag.use", "unfried", "The hailer is fried. You can't even fit the sequencer into the input slot.")
+	W.set_insults(null)
+	check(W, H, "set_message", "unfried", null)
+	check(W, H, "emag.use", "unfried", null)
+/datum/unit_test/dq_requirement_sixth_boundary/resuscitation_equipment/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, H.loc)
+	TEST_ASSERT(H.check_has_mouth(), "The actual patient has a mouth before sealing")
+	check(B, H, "squeeze", "sealable", null, B, H)
+	var/obj/item/clothing/head/hardhat/firefighter/helmet = allocate(/obj/item/clothing/head/hardhat/firefighter, H.loc)
+	TEST_ASSERT(H.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD, disable_warning = TRUE), "The face-covering helmet actually equips")
+	TEST_ASSERT(helmet.body_parts_covered & FACE, "The real helmet blocks a face seal")
+	check(B, H, "squeeze", "sealable", MSG(bvm/no_seal), B, H)
+	TEST_ASSERT(H.unEquip(helmet), "The real seal obstruction can be removed")
+	check(B, H, "squeeze", "sealable", null, B, H)
+	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, H.loc)
+	check(N, H, "decompress", "unused", null, N, H)
+	N.set_used(TRUE)
+	check(N, H, "decompress", "unused", span_warning("\The [N] has already been used."), N, H)
+	N.set_used(FALSE)
+	check(N, H, "decompress", "unused", null, N, H)
+
+/datum/unit_test/dq_requirement_sixth_boundary/scanner_dexterity/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/simple_mob/animal/passive/dog/dog = allocate(/mob/living/simple_mob/animal/passive/dog, H.loc)
+	var/obj/item/mass_spectrometer/S = allocate(/obj/item/mass_spectrometer, H.loc)
+	TEST_ASSERT(H.IsAdvancedToolUser(), "The real human has advanced dexterity")
+	TEST_ASSERT(!dog.IsAdvancedToolUser(), "The real dog lacks advanced dexterity")
+	check(S, H, "self", "can_analyze_holds", null, S)
+	check(S, dog, "self", "can_analyze_holds", "you don't have the dexterity to do this", S)
+	check(S, H, "self", "can_analyze_holds", null, S)
+	var/obj/item/autopsy_scanner/A = allocate(/obj/item/autopsy_scanner, H.loc)
+	check(A, H, "print_data_effect", "can_print_data_holds", null)
+	check(A, dog, "print_data_effect", "can_print_data_holds", "no")
+	check(A, H, "print_data_effect", "can_print_data_holds", null)
+/datum/unit_test/dq_requirement_sixth_boundary/shield_cell_selectors/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator, H.loc)
+	rel_clear(G, nameof(G.bcell))
+	check_when(G, H, "destroy_cell", FALSE)
+	check_when(G, H, "remove_cell", TRUE)
+	var/obj/item/cell/device/shield_generator/built = allocate(/obj/item/cell/device/shield_generator, H.loc)
+	move_into(G, nameof(G.bcell), built, H)
+	TEST_ASSERT_EQUAL(G.bcell, built, "The built-in battery is really in the bay")
+	check_when(G, H, "destroy_cell", TRUE)
+	check_when(G, H, "remove_cell", FALSE)
+	rel_take(G, nameof(G.bcell))
+	var/obj/item/cell/device/shield_generator/parry/parry = allocate(/obj/item/cell/device/shield_generator/parry, H.loc)
+	move_into(G, nameof(G.bcell), parry, H)
+	check_when(G, H, "destroy_cell", FALSE)
+	check_when(G, H, "remove_cell", TRUE)
+	rel_take(G, nameof(G.bcell))
+	move_into(G, nameof(G.bcell), built, H)
+	check_when(G, H, "destroy_cell", TRUE)
+	check_when(G, H, "remove_cell", FALSE)
+
+// Ignored draft: append BEFORE native requirement conversion, then run on old code.
+// Select actual compiled needs, preserving callback identity across conversion.
+/datum/unit_test/dq_requirement_seventh_boundary
+	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
+
+/datum/unit_test/dq_requirement_seventh_boundary/filing_contents/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/filingcabinet/C = allocate(/obj/structure/filingcabinet, H.loc)
+	check(C, H, "interaction_hand", "has_files", MSG(filingcabinet/empty))
+	var/obj/item/paper/P = allocate(/obj/item/paper, H.loc)
+	P.forceMove(C)
+	TEST_ASSERT_EQUAL(P.loc, C, "a real file occupies the cabinet")
+	check(C, H, "interaction_hand", "has_files", null)
+	P.forceMove(H.loc)
+	check(C, H, "interaction_hand", "has_files", MSG(filingcabinet/empty))
+	// Also run interim_filing_cabinet_sticky_document: its public removal
+	// callback exercises the ordinary has_files Boolean consumer.
+
+/datum/unit_test/dq_requirement_seventh_boundary/bed_refusal_order/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/bed/B = allocate(/obj/structure/bed, H.loc)
+	var/obj/item/stack/material/steel/steel = allocate(/obj/item/stack/material/steel, H.loc)
+	var/obj/item/stack/material/cloth/cloth = allocate(/obj/item/stack/material/cloth, H.loc)
+	TEST_ASSERT_NOTNULL(padding_type_of(cloth), "the real cloth stack is padding")
+	TEST_ASSERT_NULL(padding_type_of(steel), "the real steel stack is not padding")
+	check(B, H, "pad", "can_be_padded", MSG(bed/not_padding), steel)
+	check(B, H, "pad", "can_be_padded", null, cloth)
+	check(B, H, "unpad", "has_padding", MSG(bed/no_padding))
+	B.add_padding(padding_type_of(cloth))
+	TEST_ASSERT_NOTNULL(B.padding_material, "the actual padding mutation creates material")
+	check(B, H, "unpad", "has_padding", null)
+	check(B, H, "pad", "can_be_padded", MSG(bed/already_padded), steel)
+	B.can_pad = FALSE
+	check(B, H, "pad", "can_be_padded", MSG(bed/cant_pad), steel)
+	B.can_pad = TRUE
+	B.set_padding_material(null)
+	check(B, H, "pad", "can_be_padded", null, cloth)
+	var/obj/structure/bed/chair/chair = allocate(/obj/structure/bed/chair, H.loc)
+	check(chair, H, "pad", "can_be_padded", null, cloth)
+	check(chair, H, "pad", "can_be_padded", MSG(bed/not_padding), steel)
+
+/datum/unit_test/dq_requirement_seventh_boundary/records_login/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/machinery/computer/secure_data/security = allocate(/obj/machinery/computer/secure_data, H.loc)
+	var/obj/machinery/computer/skills/skills = allocate(/obj/machinery/computer/skills, H.loc)
+	check(security, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
+	check(skills, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
+	security.authenticated = H.real_name
+	skills.authenticated = H.real_name
+	check(security, H, "edit_notes", "records_authenticated", null)
+	check(skills, H, "edit_notes", "records_authenticated", null)
+	security.authenticated = null
+	skills.authenticated = null
+	check(security, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
+	check(skills, H, "edit_notes", "records_authenticated", MSG(records/not_authenticated))
+
+/datum/unit_test/dq_requirement_seventh_boundary/canvas_finalization/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/canvas/C = allocate(/obj/item/canvas, H.loc)
+	check(C, H, "paint", "canvas_open", null)
+	check(C, H, "finalize", "canvas_open", null)
+	C.finalized = TRUE
+	check(C, H, "paint", "canvas_open", MSG(canvas/finished))
+	check(C, H, "finalize", "canvas_open", MSG(canvas/finished))
+	C.finalized = FALSE
+	check(C, H, "paint", "canvas_open", null)
+
+/datum/unit_test/dq_requirement_seventh_boundary/toilet_cleanup_gates/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/toilet/T = allocate(/obj/structure/toilet, H.loc)
+	T.set_cistern(FALSE)
+	check(T, H, "use_wrench", "cistern_open", MSG(req_silent))
+	T.set_cistern(TRUE)
+	check(T, H, "use_wrench", "cistern_open", null)
+	T.set_refilling(FALSE)
+	check(T, H, "use_wrench", "not_refilling", null)
+	T.set_refilling(TRUE)
+	check(T, H, "use_wrench", "not_refilling", MSG(toilet/refilling))
+	T.set_refilling(FALSE)
+	check(T, H, "use_wrench", "not_refilling", null)
+
+/datum/unit_test/dq_requirement_seventh_boundary/grille_cardinal_and_window/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_step(T, SOUTH))
+	var/obj/structure/grille/G = allocate(/obj/structure/grille, T)
+	check(G, H, "place_window", "window_reachable", null)
+	check(G, H, "place_window", "no_window_that_way", null)
+	var/obj/structure/window/W = allocate(/obj/structure/window, T)
+	W.set_dir(G.window_dir_for(H))
+	check(G, H, "place_window", "no_window_that_way", MSG(grille/window_there))
+	qdel(W)
+	check(G, H, "place_window", "no_window_that_way", null)
+	H.forceMove(get_step(get_step(T, SOUTH), EAST))
+	TEST_ASSERT_NULL(G.window_dir_for(H), "the actual diagonal actor has no window-facing direction")
+	check(G, H, "place_window", "window_reachable", MSG(grille/cant_reach))
+	H.forceMove(get_step(T, SOUTH))
+	check(G, H, "place_window", "window_reachable", null)
+
+
+
+/datum/unit_test/dq_requirement_sixth_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/obj/effect/anomaly, /obj/item/airway_kit, /obj/item/ammo_magazine/smart, /obj/item/analyzer, /obj/item/autopsy_scanner, /obj/item/bag_valve_mask, /obj/item/beartrap, /obj/item/bedsheet, /obj/item/binoculars, /obj/item/bluespace_crystal, /obj/item/bodybag, /obj/item/book, /obj/item/bp_cuff, /obj/item/camera_bug, /obj/item/canvas, /obj/item/cataloguer/compact, /obj/item/clothing/mask/smokable, /obj/item/decompression_needle, /obj/item/disk/nifsoft, /obj/item/disk/nifsoft/compliance, /obj/item/dnainjector, /obj/item/emergency_beacon, /obj/item/entrepreneur/dumbbell, /obj/item/entrepreneur/spirit_board, /obj/item/flame/candle, /obj/item/flashlight, /obj/item/gun/projectile/heavysniper/collapsible, /obj/item/hailer, /obj/item/healthanalyzer, /obj/item/implantpad, /obj/item/latexballon, /obj/item/lipstick, /obj/item/mail, /obj/item/mail/blank, /obj/item/mapping_unit, /obj/item/mass_spectrometer, /obj/item/material/ashtray, /obj/item/material/barbedwire, /obj/item/material/gravemarker, /obj/item/mine, /obj/item/modkit, /obj/item/nif, /obj/item/organ, /obj/item/organ/external/arm, /obj/item/paper_bin, /obj/item/pda, /obj/item/personal_shield_generator, /obj/item/petrifier, /obj/item/picnic_blankets_carried, /obj/item/pulse_oximeter, /obj/item/radio/headset, /obj/item/rms, /obj/item/roller, /obj/item/sample, /obj/item/slime_grinder, /obj/item/stack/marker_beacon, /obj/item/stack/material/log, /obj/item/stack/material/steel, /obj/item/stack/tile/maintenance_panel, /obj/item/stool, /obj/item/storage/bible, /obj/item/target, /obj/item/technomancer_catalog, /obj/item/thermometer_medical, /obj/item/toy/plushie, /obj/item/TVAssembly, /obj/item/uav, /obj/item/universal_translator, /obj/item/xenoarch_multi_tool, /obj/machinery/computer/mecha, /obj/machinery/computer/secure_data, /obj/machinery/computer/skills, /obj/machinery/computer/telescience, /obj/machinery/conveyor_switch, /obj/machinery/department_storefront, /obj/machinery/firework_launcher, /obj/machinery/item_bank, /obj/machinery/keycard_auth, /obj/machinery/power/quantumpad, /obj/machinery/power/shield_generator, /obj/machinery/readybutton, /obj/machinery/shield_gen, /obj/machinery/shieldgen, /obj/machinery/shieldwallgen, /obj/machinery/slot_machine, /obj/machinery/station_slot_machine, /obj/machinery/vending/nifsoft_shop, /obj/machinery/wheel_of_fortune, /obj/structure/barricade, /obj/structure/bed, /obj/structure/bed/chair, /obj/structure/casino_table/roulette_table, /obj/structure/closet, /obj/structure/closet/body_bag, /obj/structure/closet/body_bag/cryobag, /obj/structure/closet/body_bag/cryobag/robobag, /obj/structure/dirtybed, /obj/structure/door_assembly, /obj/structure/filingcabinet, /obj/structure/fitness/weightlifter, /obj/structure/flora/tree, /obj/structure/flora/tree/pine/xmas/presents, /obj/structure/grille, /obj/structure/janitorialcart, /obj/structure/low_wall, /obj/structure/marker_beacon, /obj/structure/micro_tunnel, /obj/structure/mirror, /obj/structure/picnic_blanket_deployed, /obj/structure/picnic_blanket_deployed/for_mapping_use, /obj/structure/prop/desert_rock/rock, /obj/structure/railing, /obj/structure/reflector, /obj/structure/safe, /obj/structure/simple_door, /obj/structure/toilet, /obj/structure/undies_wardrobe, /obj/structure/windoor_assembly, /obj/structure/window, /obj/vehicle/train, /obj/vehicle/train/engine, /obj/vehicle/train/rover/engine, /obj/vehicle/train/security/engine, /turf/simulated/floor/water/digestive_enzymes/nanites)
+
+/datum/unit_test/dq_requirement_sixth_boundary/uav_cell_selector/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/uav/U = allocate(/obj/item/uav, H.loc)
+	var/obj/item/cell/C = allocate(/obj/item/cell, H.loc)
+	TEST_ASSERT_NULL(U.cell, "The real UAV begins empty")
+	check_when(U, H, "insert_cell", TRUE, C)
+	check(U, H, "use_screwdriver", "has_cell", /datum/msg/req_silent)
+	rel_set(U, nameof(U.cell), C)
+	TEST_ASSERT_EQUAL(U.cell, C, "The declared relation contains the real cell")
+	check_when(U, H, "insert_cell", FALSE, C)
+	check(U, H, "use_screwdriver", "has_cell", null)
+	rel_take(U, nameof(U.cell))
+	TEST_ASSERT_NULL(U.cell, "The real relation is empty again")
+	check_when(U, H, "insert_cell", TRUE, C)
+	check(U, H, "use_screwdriver", "has_cell", /datum/msg/req_silent)
+/datum/unit_test/dq_requirement_eighth_boundary/kit_order_family/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/kit/K = allocate(/obj/item/kit, H.loc)
+	var/list/first_types = list(/obj/item/flashlight, /obj/item/radio/headset)
+	for(var/type in first_types)
+		var/obj/item/I = allocate(type, H.loc)
+		check_when(I, H, "kit_customize", TRUE, K)
+		check_when(I, H, "kit_customize_last", FALSE, K)
+	var/list/last_types = list(/obj/item/clothing/head/helmet/space/void, /obj/item/clothing/suit/space/void, /obj/item/clothing/suit/storage/hooded, /obj/item/rig)
+	for(var/type in last_types)
+		var/obj/item/I = allocate(type, H.loc)
+		check_when(I, H, "kit_customize", FALSE, K)
+		check_when(I, H, "kit_customize_last", TRUE, K)
+
+/datum/unit_test/dq_requirement_eighth_boundary/harm_click_protocol/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/smoleruins/ruins = allocate(/obj/structure/smoleruins, H.loc)
+	var/obj/item/flashlight/I = allocate(/obj/item/flashlight, H.loc)
+	H.set_combat_mode(FALSE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), MSG(harm_click_only), I)
+	H.set_combat_mode(TRUE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), null, I)
+	H.set_combat_mode(FALSE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), MSG(harm_click_only), I)
+
+/datum/unit_test/dq_requirement_eighth_boundary/player_effects_target/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, H.loc)
+	var/datum/eventkit/player_effects/panel = allocate(/datum/eventkit/player_effects)
+	rel_set(panel, nameof(panel.target), ghost)
+	check(panel, H, "quick_nif", "nif_target_ok", /datum/msg/player_effects/nif_unsuitable)
+	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_not_living)
+	rel_set(panel, nameof(panel.target), H)
+	TEST_ASSERT_NOTNULL(H.get_organ(BP_HEAD), "The real target has a head for the NIF")
+	TEST_ASSERT_NULL(H.nif, "The real target begins without a NIF")
+	check(panel, H, "quick_nif", "nif_target_ok", null)
+	check(panel, H, "ai", "ai_target_ok", null)
+	H.teleop = ghost
+	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_player)
+	H.teleop = null
+	check(panel, H, "ai", "ai_target_ok", null)
+	var/obj/item/nif/N = allocate(/obj/item/nif, H.loc)
+	TEST_ASSERT(N.quick_implant(H), "The actual implant preparation succeeds")
+	N.quick_install(H) // Complete the real delayed callback for the state-boundary fixture.
+	TEST_ASSERT_EQUAL(H.nif, N, "The real NIF is implanted into the target")
+	check(panel, H, "quick_nif", "nif_target_ok", /datum/msg/player_effects/nif_present)
+	N.unimplant(H)
+	check(panel, H, "quick_nif", "nif_target_ok", null)
+	// No item_tf positive case: a genuine keyed player is required, not a fake ckey.
+	check(panel, H, "item_tf", "item_tf_ready", /datum/msg/req_silent)
+// Evaluate the selected real compiled requirement with actual topic arguments.
+// This isolates target eligibility and does not claim administrator authorization.
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check_args(datum/holder, mob/actor, key, callback, expected, list/args)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real topic op exists")
+	var/datum/entry/part/req/selected
+	var/matches = 0
+	for(var/datum/entry/part/req/R as anything in P.needs)
+		if(LAZYACCESS(R.args, "what") == callback)
+			selected = R
+			matches++
+	TEST_ASSERT_EQUAL(matches, 1, "One actual requirement owns this target predicate")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.target = holder
+	A.oplan = P
+	A.args = args
+	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "The actual topic target requirement preserves the exact reason")
+
+/datum/unit_test/dq_requirement_eighth_boundary/admin_target_without_rights/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/observer/dead/G = allocate(/mob/observer/dead, H.loc)
+	// The real constructor needs ranks and an identity; this holder has no rights or client.
+	set_global(nameof(GLOB.admin_datums), GLOB.admin_datums.Copy())
+	set_global(nameof(GLOB.deadmins), GLOB.deadmins.Copy())
+	var/fixture_key = "dq_requirement_eighth_target"
+	var/datum/admins/holder = allocate(/datum/admins, list(), fixture_key)
+	GLOB.admin_datums -= fixture_key
+	check_args(holder, H, "sendbacktolobby", "lobby_target_observer", MSG(admin_topic/lobby_not_ghost), list("sendbacktolobby" = H))
+	check_args(holder, H, "sendbacktolobby", "lobby_target_observer", null, list("sendbacktolobby" = G))
+	check_args(holder, H, "sendbacktolobby", "lobby_target_client", MSG(admin_topic/lobby_no_client), list("sendbacktolobby" = G))
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", MSG(admin_topic/syndicate_unreachable), list("SyndicateReply" = H))
+	var/obj/item/radio/headset/headset = allocate(/obj/item/radio/headset, H.loc)
+	TEST_ASSERT(H.equip_to_slot_if_possible(headset, SLOT_ID_EAR_L, disable_warning = TRUE), "A real headset equips into the ear")
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", null, list("SyndicateReply" = H))
+	TEST_ASSERT(H.unEquip(headset), "The actual headset can be removed")
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", MSG(admin_topic/syndicate_unreachable), list("SyndicateReply" = H))
+
+/datum/unit_test/dq_requirement_eighth_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/datum/edit_player_panel, /datum/eventkit/player_effects, /datum/newscaster_panel, /datum/tgui_module/appearance_changer, /datum/tgui_module/cardmod, /datum/tgui_module/crew_monitor, /datum/tgui_module/late_choices, /datum/tgui_module/law_manager, /datum/tgui_module/rcon, /datum/tgui_module/ship/nav, /obj/structure/ghost_pod/ghost_activated/maint_lurker, /obj/structure/ghost_pod/ghost_activated/unified_hole, /obj/item/communicator, /obj/item/areaeditor, /obj/item/rcd, /obj/item/sleevemate, /obj/mecha/working/ripley, /obj/item/mecha_parts/mecha_equipment/tool/passenger, /obj/machinery/syndicate_beacon, /obj/item/flashlight, /obj/item/radio/headset, /obj/item/paicard, /obj/structure/ghost_pod/manual, /obj/structure/ghost_pod/ghost_activated, /obj/structure/trash_pile, /obj/machinery/computer/specops_shuttle, /obj/machinery/magnetic_controller, /obj/structure/smoleruins, /obj/structure/smolebuilding)
+
+/datum/unit_test/dq_requirement_eighth_boundary/topic_inherited_parent/Run()
+	var/mob/living/carbon/human/external = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/pilot = allocate(/mob/living/carbon/human, external.loc)
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, external.loc)
+	TEST_ASSERT_NULL(external.client, "The external actor really has no attached client")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.actor = external
+	A.holder = mech
+	A.target = mech
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A real nonpilot preserves parent denial")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot, pilot), "The real containment API establishes a pilot")
+	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), pilot, "The real slot identifies that pilot")
+	A.actor = pilot
+	TEST_ASSERT_NULL(mech.topic_usable(A), "The actual pilot is allowed through the pilot exception")
+	A.actor = external
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A different actor remains refused after boarding")
+	for(var/type in list(/obj/item/rcd, /obj/item/areaeditor, /obj/item/sleevemate))
+		var/obj/item/I = allocate(type, external.loc)
+		A.holder = I
+		A.target = I
+		TEST_ASSERT_EQUAL(I.topic_usable(A), MSG(op/topic_gate), "[type] must preserve its real parent client denial")
+	A.release()

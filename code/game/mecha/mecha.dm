@@ -2473,9 +2473,9 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 // A conscious clicker; the pilot always reaches the controls, anyone else needs the usual obj reach.
 /obj/mecha/topic_usable(datum/act/op/A)
 	if(!A.actor || A.actor.stat)
-		return FALSE
+		return MSG(op/topic_gate)
 	if(topic_is_pilot(A.actor))
-		return TRUE
+		return null
 	return ..()
 
 /obj/mecha/proc/topic_is_pilot(mob/user)

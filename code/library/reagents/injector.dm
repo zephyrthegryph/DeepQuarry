@@ -65,15 +65,15 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 /datum/capability/lib/injector/proc/limb_there(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	return (!user?.zone_sel || !!target.get_organ(user.zone_sel.selecting)) ? null : /datum/msg/injector/limb_missing
+	return (!hud_of(user)?.zone_sel || !!target.get_organ(hud_of(user)?.zone_sel?.selecting)) ? null : /datum/msg/injector/limb_missing
 
 /// The roll of a thick hide: TRUE (the injection goes on) unless it turns the needle away.
 /datum/capability/lib/injector/proc/skin_holds_up(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	if(!user?.zone_sel)
+	if(!hud_of(user)?.zone_sel)
 		return OP_OK
-	var/obj/item/organ/external/affected = target.get_organ(user.zone_sel.selecting)
+	var/obj/item/organ/external/affected = target.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(affected && target.thick_skin_holds(affected))
 		to_chat(user, span_warning("Your needle fails to penetrate \the [affected]'s thick hide..."))
 		return OP_REFUSED

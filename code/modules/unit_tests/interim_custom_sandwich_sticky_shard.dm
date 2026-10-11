@@ -1,6 +1,6 @@
 /// The person clicks `target` with `held` in hand and time passes.
 /proc/interim_put_on(mob/living/carbon/human/user, atom/target, obj/item/held)
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, target, held)
 	test_time(10 SECONDS)
 

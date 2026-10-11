@@ -209,21 +209,21 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 /datum/capability/lib/needle/proc/limb_aimed(datum/act/op/A)
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	if(!ishuman(target) || target == user || !user?.zone_sel)
+	if(!ishuman(target) || target == user || !hud_of(user)?.zone_sel)
 		return null
-	return target.get_organ(user.zone_sel.selecting)
+	return target.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 /datum/capability/lib/needle/proc/aimed_at_a_human(datum/act/op/A)
 	var/mob/living/target = A.target
 	var/mob/user = A.actor
-	return ishuman(target) && target != user && !isnull(user?.zone_sel)
+	return ishuman(target) && target != user && !isnull(hud_of(user)?.zone_sel)
 
 /datum/capability/lib/needle/proc/limb_there(datum/act/op/A)
 	if(!aimed_at_a_human(A))
 		return null
 	var/mob/living/carbon/human/target = A.target
 	var/mob/user = A.actor
-	return (!!target.get_organ(user.zone_sel.selecting)) ? null : /datum/msg/needle/limb_missing
+	return (!!target.get_organ(hud_of(user)?.zone_sel?.selecting)) ? null : /datum/msg/needle/limb_missing
 
 /datum/capability/lib/needle/proc/limb_not_robotic(datum/act/op/A)
 	var/obj/item/organ/external/affected = limb_aimed(A)
@@ -352,7 +352,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/mob/user = A.actor
 	if(aimed_at_a_human(A))
 		var/mob/living/carbon/human/H = target
-		var/obj/item/organ/external/affected = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affected = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 		if(affected && H.thick_skin_holds(affected))
 			to_chat(user, span_warning("Your needle fails to penetrate \the [affected]'s thick hide..."))
 			return OP_REFUSED

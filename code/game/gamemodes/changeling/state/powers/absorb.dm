@@ -60,7 +60,7 @@
 			to_chat(src, span_notice("We stab [T] with the proboscis."))
 			act_message(src, T, others = span_danger("%U% stabs %T% with the proboscis!"))
 			to_chat(T, span_danger("You feel a sharp stabbing pain!"))
-			var/obj/item/organ/external/affecting = T.get_organ(src.zone_sel.selecting)
+			var/obj/item/organ/external/affecting = T.get_organ(hud_used?.zone_sel?.selecting)
 			T.injure(INJURY_PIERCE, 39, affecting, src)
 
 	feedback_add_details("changeling_powers","A[stage]")

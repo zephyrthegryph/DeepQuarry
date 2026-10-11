@@ -1,10 +1,12 @@
 human|none menu: Reset Lock (refused: You need to unlock it first.)
 human|none click: nothing
-@obj.structure.closet robot|none
-+0 menu: Reset Lock (refused: You need to unlock it first.)
+robot|none menu: Reset Lock (refused: You need to unlock it first.)
+robot|none menu: Toggle Lock
+robot|none menu: Use
+robot|none click: Click: Toggle Lock
 @obj.structure ai|none
 @obj.structure.closet ghost|none
--menu: Toggle Lock
+-menu: Toggle Open
 +0 menu: Reset Lock (refused: You need to unlock it first.)
 @obj.structure.closet human|/obj/item/tool/screwdriver
 -menu: Toggle Lock
@@ -12,12 +14,10 @@ human|none click: nothing
 +2 menu: Reset Lock (refused: You need to unlock it first.)
 +4 click: nothing
 @obj.structure.closet human|/obj/item/tool/crowbar
--menu: Toggle Lock
--click: Click: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
-+4 click: nothing
 @obj.structure.closet human|/obj/item/tool/wrench
--menu: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
 @obj.structure.closet human|/obj/item/tool/wirecutters
 -menu: Toggle Lock
@@ -25,36 +25,27 @@ human|none click: nothing
 +2 menu: Reset Lock (refused: You need to unlock it first.)
 +4 click: nothing
 @obj.structure.closet human|/obj/item/multitool
--menu: Toggle Lock
--click: Click: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
-+4 click: nothing
 @obj.structure.closet human|/obj/item/weldingtool
--menu: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
 @obj.structure.closet human|/obj/item/stack/cable_coil
--menu: Toggle Lock
--click: Click: Toggle Lock
+-menu: Toggle Open
 +3 menu: Reset Lock (refused: You need to unlock it first.)
-+5 click: nothing
 @obj.structure.closet human|/obj/item/stack/material/steel
--menu: Toggle Lock
--click: Click: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
-+4 click: nothing
 @obj.structure.closet human|/obj/item/card/id
--menu: Toggle
--menu: Toggle Lock
--click: Click: Toggle
+-menu: Toggle Open
+-click: nothing
 +3 menu: Reset Lock (refused: You need to unlock it first.)
 +4 menu: Swipe ID
 +5 menu: Toggle (refused: Access denied.)
 +7 click: Click: Swipe ID
 @obj.structure.closet human|/obj/item
--menu: Toggle Lock
--click: Click: Toggle Lock
+-menu: Toggle Open
 +2 menu: Reset Lock (refused: You need to unlock it first.)
-+4 click: nothing
 @obj human|/obj/item/storage/laundry_basket
 -menu: Toggle Open
 +3 menu: Reset Lock (refused: You need to unlock it first.)

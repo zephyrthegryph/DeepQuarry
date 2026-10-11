@@ -1,0 +1,85 @@
+human|none menu: Ui open
+human|none click: Click: Ui open
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Breaker
++2 menu: Toggle worn
++3 menu: Ui open
++5 click: Click: Toggle worn
+@obj ai|none
+-click: Click: Use
++0 menu: Breaker
++1 menu: Ui open
++3 click: Click: Ui open
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
+-menu: Open maintenance panel
+-click: Click: Open maintenance panel
++1 menu: Open
++3 menu: Ui open
++4 click: Click: Open
+@obj.machinery.power human|/obj/item/tool/crowbar
+-menu: Deconstruct (refused: the maintenance panel is closed)
+-click: Click: Deconstruct
++1 menu: Open (refused: The cover is locked and cannot be opened.)
++2 menu: Remove cover (refused: The cover is locked and cannot be opened.)
++4 menu: Ui open
++5 click: Click: Open
+@obj human|/obj/item/tool/wrench
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj human|/obj/item/multitool
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj human|/obj/item/weldingtool
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj.machinery.power human|/obj/item/stack/cable_coil
+-click: Click: Lay cable
++4 menu: Ui open
++5 click: Click: Ui open
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj human|/obj/item/card/id
+-click: nothing
++2 menu: Toggle (refused: Access denied.)
++4 menu: Ui open
++5 click: Click: Toggle
+@obj human|/obj/item
+-click: nothing
++2 menu: Ui open
++3 click: Click: Ui open
+@obj human|/obj/item/module/power_control
+@obj human|/obj/item/frame/apc
+@obj.machinery.power human|/obj/item/pda
+-menu: Climb
+-menu: Rotate Clockwise
+-menu: Rotate Counter Clockwise
+-menu: Turn Around
++7 menu: Ui open
+@obj.machinery.power human|/obj/item/card/emag
+-menu: Climb
+-menu: Rotate Clockwise
+-menu: Rotate Counter Clockwise
+-menu: Turn Around
++2 menu: Ui open
+@obj.machinery.power human|/obj/item/cell
+-menu: Insert cell
+-click: Click: Insert cell
++6 click: Click: Ui open
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Ui open
+human|/obj/item/assembly/signaler click: Click: Ui open
+wires: AI Control, ID Scan, Primary Power, Secondary Power
+keys: breaker, cable_place, cell_bay.cell.insert, cell_bay.cell.take, chargemode, construction.build:apc_board, construction.build:apc_secured, construction.build:apc_wired, construction.dismantle, construction.undo:apc_board, construction.undo:apc_secured, construction.undo:apc_wired, cover.open, cover.remove, cover.replace, coverlock, drag_buckle, emag.subvert, emag.use, emergency_lighting, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, nightshift, overload, panel.open, reboot, robot_remote_blocked, set_channel, silicon_hand, subversion_reset.use, ui_open, wires.cut, wires.open, wires.pulse, wires_signaler

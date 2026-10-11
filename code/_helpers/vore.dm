@@ -77,6 +77,6 @@
 		return FALSE
 	if(!pred.is_slipping && !prey.is_slipping)
 		return FALSE
-	if(!COOLDOWN_FINISHED(prey, slip_protect))
+	if(!cooldown_ready(prey, slip_protect))
 		return FALSE
 	return TRUE

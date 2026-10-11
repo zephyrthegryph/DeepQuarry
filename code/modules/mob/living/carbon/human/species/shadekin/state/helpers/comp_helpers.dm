@@ -6,11 +6,11 @@
 ///Handles the shadekin's HUD updates.
 /datum/shadekin/proc/update_shadekin_hud()
 	var/turf/T = get_turf(owner)
-	if(owner.shadekin_display)
+	if(hud_of(owner)?.shadekin_display)
 		var/l_icon = 0
 		var/e_icon = 0
 
-		owner.shadekin_display.invisibility = INVISIBILITY_NONE
+		hud_of(owner)?.shadekin_display?.invisibility = INVISIBILITY_NONE
 		if(T)
 			var/brightness = T.get_lumcount() //Brightness in 0.0 to 1.0
 			var/darkness = 1-brightness //Invert
@@ -38,7 +38,7 @@
 			if(100 to INFINITY)
 				e_icon = 4
 
-		owner.shadekin_display.icon_state = "shadekin-[l_icon]-[e_icon]"
+		hud_of(owner)?.shadekin_display?.icon_state = "shadekin-[l_icon]-[e_icon]"
 	return
 
 ///For simplekin or those that have a pre-defined eye color

@@ -311,8 +311,8 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()
-	plane_holder.set_vis(VIS_AUGMENTED, TRUE)
-	plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
+	hud_used?.plane_holder?.set_vis(VIS_AUGMENTED, TRUE)
+	hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE)
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
 // the soulcatcher is told the mind unloaded.

@@ -276,7 +276,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 	if(bound_mob)
 		if(!bound_mob.vore_prefs.devourable)	//Don't eat if prefs are bad
 			return ITEM_INTERACT_FAILURE
-		if(user.zone_sel.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
+		if(hud_of(user)?.zone_sel?.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
 				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
 				M.perform_the_nom(M, bound_mob, M, M.vore_selected)

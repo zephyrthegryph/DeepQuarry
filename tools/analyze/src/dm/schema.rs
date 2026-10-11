@@ -405,13 +405,17 @@ impl OwnershipKinds {
             }
         }
         // The declared form: the entries of CAPABILITIES(T) blocks (sem::decls reads the blocks, backslash form and block form alike).
+        // hud_element(nameof(x), T) is an owns_one on the hud; hud_element(..., owned = FALSE) a ref_one.
         // profile(nameof(x), /datum/record/T) is an owns_one (code/engine/declare/profiles.dm).
-        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many|profile)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
+        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
         let mut declared: HashMap<(String, String), &'static str> = HashMap::new();
         for m in crate::sem::decls::Decls::get(tree).markers_named("CAPABILITIES") {
             let Some(ty) = m.args.first() else { continue };
             for c in entry.captures_iter(&m.body) {
-                let kind = if c[1].starts_with("owns_") || &c[1] == "profile" { "OWN" } else { "REL" };
+                // The rest of the entry's line (a block may hold several entries on one line in the backslash form).
+                let rest = m.body[c.get(0).map(|x| x.end()).unwrap_or(0)..].split('\n').next().unwrap_or("");
+                let owned_hud = &c[1] == "hud_element" && !rest.contains("owned = FALSE");
+                let kind = if c[1].starts_with("owns_") || owned_hud || &c[1] == "profile" { "OWN" } else { "REL" };
                 declared.entry((ty.clone(), c[2].to_string())).or_insert(kind);
             }
         }

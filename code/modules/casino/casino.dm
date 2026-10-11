@@ -45,7 +45,7 @@ CAPABILITIES(/obj/structure/casino_table)
 
 CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
-	op("hand", hand(), ungated(), label("Spin"), needs(req_bool(PROC_REF(can_spin_holds), because = PROC_REF(can_spin_refusal))), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Spin"), needs(req(PROC_REF(can_spin_holds))), then(PROC_REF(interaction_hand)))
 	op("insert_ball", item(/obj/item/roulette_ball), label("Insert a roulette ball"), then(PROC_REF(interaction_insert_ball)))
 	op("roulette_table_remove_ball_effect", menu(), label("Remove Roulette Ball"), needs(req_adjacent(), req_capable()), then(PROC_REF(roulette_table_remove_ball_effect)))
 
@@ -78,13 +78,11 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 /// Requirement (was REQ_* can_spin): the legacy check answers TRUE to pass.
 /obj/structure/casino_table/roulette_table/proc/can_spin_holds(datum/act/op/A)
 	var/answer = can_spin(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_spin_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/casino_table/roulette_table/proc/can_spin_refusal(datum/act/op/A)
-	var/answer = can_spin(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/structure/casino_table/roulette_table/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
@@ -422,8 +420,8 @@ CAPABILITIES(/obj/item/roulette_ball/hollow)
 CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning))), then(PROC_REF(interaction_use)))
-	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req_bool(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req_bool(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
-	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req_bool(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
+	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
+	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
 	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_setinterval_verb)))
 
 MSG_DEF_SELF(casino/wheel_spinning, "the wheel of fortune is already spinning")
@@ -462,17 +460,16 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 /// Requirement: the swiped card carries management access.
 /obj/machinery/wheel_of_fortune/proc/can_manage(datum/act/op/A)
-	return !!check_access(A.held)
+	return (!!check_access(A.held)) ? null : MSG(casino/access_denied)
 
 /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(datum/act/op/A)
-	return !work_busy(src) && !A.actor.incapacitated()
-
-/// Why not_busy_and_actor_able refuses.
-/obj/machinery/wheel_of_fortune/proc/not_busy_refusal(datum/act/op/A)
+	if(!work_busy(src) && !A.actor.incapacitated())
+		return null
 	if(work_busy(src))
 		return "the wheel of fortune is already spinning!"
 	return "you can't do that right now"
 
+/// Why not_busy_and_actor_able refuses.
 /obj/machinery/wheel_of_fortune/proc/interaction_id(datum/act/op/A)
 	wheel_management_stage(A.actor, A.held, list())
 	return OP_OK

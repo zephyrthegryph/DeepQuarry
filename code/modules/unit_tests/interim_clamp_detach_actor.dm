@@ -9,28 +9,28 @@
 	var/obj/machinery/atmospherics/pipe/simple/pipe = allocate(/obj/machinery/atmospherics/pipe/simple, T)
 	var/obj/machinery/clamp/clamp = allocate(/obj/machinery/clamp, T, pipe)
 	TEST_ASSERT_EQUAL(clamp.target_ref(), pipe, "the actual clamp attaches to its supplied pipe")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, clamp)
 	test_time(1 SECOND)
 	TEST_ASSERT(!clamp.open, "the actual toggle closes the clamp")
 	TEST_ASSERT(pipe.in_stasis, "the closed clamp places its actual pipe in stasis")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_drag(actor, clamp, actor)
 	test_time(4 SECONDS)
 	TEST_ASSERT(!QDELETED(clamp), "a closed clamp cannot start timed removal")
 	TEST_ASSERT(pipe.in_stasis, "refused removal preserves actual closed pipe state")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, clamp)
 	test_time(1 SECOND)
 	TEST_ASSERT(clamp.open, "the actual toggle reopens the clamp")
 	TEST_ASSERT(!pipe.in_stasis, "reopening restores actual pipe flow")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_drag(actor, clamp, bystander)
 	test_time(4 SECONDS)
 	TEST_ASSERT(!QDELETED(clamp), "unrelated drop destinations and absent actors cannot remove the clamp")
 	TEST_ASSERT_NULL(actor.get_active_hand(), "refused removal produces no item in the actor's hand")
 	TEST_ASSERT_EQUAL(actor.stat, CONSCIOUS, "the real timed-task actor remains conscious after the prior refusal waits")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_drag(actor, clamp, actor)
 	test_time(1 SECOND)
 	TEST_ASSERT(!QDELETED(clamp), "actual removal does not finish before its three second delay")

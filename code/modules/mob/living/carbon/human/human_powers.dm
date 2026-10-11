@@ -38,7 +38,7 @@
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
@@ -67,7 +67,7 @@
 	if(!istype(selected) || QDELETED(selected))
 		return "gone"
 	var/mob/living/carbon/human/H = answerer
-	if(!H.Adjacent(selected) || !COOLDOWN_FINISHED(H, last_special))
+	if(!H.Adjacent(selected) || !cooldown_ready(H, last_special))
 		return "can't reach"
 	if(H.stat || H.has_status(STAT_PARALYZED) || H.has_status(STAT_STUNNED) || H.has_status(STAT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
 		return "not able to"
@@ -84,7 +84,7 @@
 /mob/living/carbon/human/proc/tackle_target_apply(datum/act/request/A)
 	var/mob/living/T = A.answer.value
 
-	COOLDOWN_START(src, last_special, 5 SECONDS)
+	cooldown_start(src, last_special, 5 SECONDS)
 
 	var/failed
 	if(prob(75))
@@ -263,7 +263,6 @@
 	to_chat(src,output)
 
 /mob/living/carbon/human
-	var/next_sonar_ping = 0
 
 /mob/living/carbon/human/proc/sonar_ping()
 	set name = "Listen In"
@@ -273,13 +272,13 @@
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(!COOLDOWN_FINISHED(src, next_sonar_ping))
+	if(!cooldown_ready(src, next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))
 		to_chat(src, span_warning("You are for all intents and purposes currently deaf!"))
 		return
-	next_sonar_ping += 10 SECONDS
+	cooldown_set_end(src, next_sonar_ping, cooldown_end(src, next_sonar_ping) + (10 SECONDS))
 	var/heard_something = FALSE
 	to_chat(src, span_notice("You take a moment to listen in to your environment..."))
 	for(var/mob/living/L in range(client.view, src))

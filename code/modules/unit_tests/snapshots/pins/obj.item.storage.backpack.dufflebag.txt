@@ -1,68 +1,28 @@
-@obj human|none
+@obj.item.storage human|none
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-@obj robot|none
+@obj.item.storage robot|none
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+3 menu: Open
 @obj.item ai|none
-@obj.item.storage ghost|none
--menu: Empty contents
--menu: Switch gathering method (refused: You can't do that.)
+@obj.item ghost|none
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
+@obj.item.storage human|/obj/item/tool/screwdriver
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/tool/crowbar
--click: nothing
+@obj.item.storage human|/obj/item/tool/crowbar
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/tool/wrench
--click: nothing
+@obj.item.storage human|/obj/item/tool/wrench
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/tool/wirecutters
--click: nothing
+@obj.item.storage human|/obj/item/tool/wirecutters
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/multitool
--click: nothing
+@obj.item.storage human|/obj/item/multitool
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/weldingtool
--click: nothing
+@obj.item.storage human|/obj/item/weldingtool
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/stack/cable_coil
--click: nothing
+@obj.item.storage human|/obj/item/stack/cable_coil
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+3 menu: Open
-+4 menu: Put in
-+6 click: Click: Put in
-@obj human|/obj/item/stack/material/steel
--click: nothing
+@obj.item.storage human|/obj/item/stack/material/steel
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-@obj human|/obj/item/card/id
--click: nothing
+@obj.item.storage human|/obj/item/card/id
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+6 click: Click: Put in
 @obj human|/obj/item/kit
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
 +3 menu: Open
@@ -73,17 +33,8 @@
 +3 menu: Open
 +4 menu: Put in
 +6 click: Click: Put in
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
+@obj.item.storage human|/obj/item
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+2 menu: Open
-+3 menu: Put in
-+5 click: Click: Put in
-human|/obj/item/lightreplacer menu: Adjust Duffelbag Angle (refused: You can't do that.)
-human|/obj/item/lightreplacer menu: Move To Top
-human|/obj/item/lightreplacer menu: Open
-human|/obj/item/lightreplacer menu: Put in
-human|/obj/item/lightreplacer menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/lightreplacer click: Click: Put in
+@obj human|/obj/item/lightreplacer
++0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
 keys: collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, tilt, toggle_digestable

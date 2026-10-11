@@ -699,23 +699,17 @@ MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic li
 	var/mob/living/carbon/human/U = A.actor
 	if(!istype(U) || !istype(T) || U == T)
 		return FALSE
-	return read_once(T.species?.is_slime_bodied) && read_once(U.zone_sel?.selecting) == BP_TORSO
+	return read_once(T.species?.is_slime_bodied) && read_once(hud_of(U)?.zone_sel?.selecting) == BP_TORSO
 
 /// Requirement: nothing worn on the body to interfere.
 /obj/item/nif/proc/stuff_in_unclothed(datum/act/op/A)
 	var/mob/living/carbon/human/T = A.target
-	return !read_once(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
-
-/obj/item/nif/proc/stuff_in_clothed_text(datum/act/op/A)
-	return span_warning("Remove any clothing they have on, as it might interfere!")
+	return (!read_once(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))) ? null : span_warning("Remove any clothing they have on, as it might interfere!")
 
 /// Requirement: the chest is there to stuff it into.
 /obj/item/nif/proc/stuff_in_torso(datum/act/op/A)
 	var/mob/living/carbon/human/T = A.target
-	return !isnull(read_once(T.get_organ(BP_TORSO)))
-
-/obj/item/nif/proc/stuff_in_torso_text(datum/act/op/A)
-	return span_warning("They should probably regrow their torso first.")
+	return (!isnull(read_once(T.get_organ(BP_TORSO)))) ? null : span_warning("They should probably regrow their torso first.")
 
 /obj/item/nif/proc/stuffing_text(datum/act/op/A)
 	return msg_text(span_notice("You begin installing %I% into %T%'s chest by just stuffing it in."), \

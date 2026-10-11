@@ -20,10 +20,8 @@
 
 	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
-	var/special_voice = "" // For changing our voice. Used by a symptom.
 
 
-	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
 
 	var/hand_blood_color
 

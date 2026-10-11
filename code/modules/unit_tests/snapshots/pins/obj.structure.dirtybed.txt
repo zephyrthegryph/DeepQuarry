@@ -1,0 +1,46 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++2 menu: Toggle
++4 click: Click: Toggle
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++4 click: nothing
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++3 click: nothing
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++4 click: nothing
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++3 click: nothing
+keys: anchor.toggle, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, drag_buckle, loose, melee_hit

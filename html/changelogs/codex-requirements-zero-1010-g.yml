@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Inspecting topic actions no longer sends access-denied feedback before an action is attempted."
