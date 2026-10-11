@@ -8,13 +8,16 @@
     "frontend_replay_and_request_lifecycle": 8,
     "binding_request_lifecycle": 2,
     "compiler_artifact_and_composition_lifecycle": 17,
-    "resource_comparison": 5
+    "resource_comparison": 5,
+    "procedure_hit_verification": 4,
+    "batch_spool_and_orphan_lifecycle": 9
   },
   "focused_failure": {
     "test": "failed_header_pruning_preserves_published_selector_owner",
     "cause": "Header miss returned a separate Arc rather than the admitted stored owner",
     "fix_commit": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b",
-    "rerun_status": "pending"
+    "rerun_status": "passed",
+    "rerun_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json"
   },
   "test_binary_source": "working tree, including preserved pre-existing edits; not an immutable compiler benchmark pin",
   "focused_receipts": [
@@ -23,7 +26,10 @@
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052917-99453442-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053357-469d8d15-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053430-a7845966-focused.json",
-    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053547-d39cea37-focused.json"
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053547-d39cea37-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060501-d03936c9-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060530-c8b5c89a-focused.json"
   ],
   "resources": {
     "distinct_assets": 3852,
@@ -37,5 +43,14 @@
   "full_runtime_baseline": "open",
   "latest_full_game_incremental_benchmark": "open",
   "six_worktree_acceptance": "open",
-  "shared_configuration_and_input_closure": "open"
+  "shared_configuration_and_input_closure": "open",
+  "verification_scope": "named executable procedure memo hits only; initializer verifier implementation pending",
+  "runtime_fixture_revisions": {
+    "nested_map": 6,
+    "initializer_inheritance_resources": 14,
+    "matches_byond_observations": true,
+    "matches_fresh_native_bytes": true,
+    "full_game_acceptance": false,
+    "source": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b"
+  }
 }
