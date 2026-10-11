@@ -51,11 +51,42 @@ pub fn from_ast(
 /// or a parser continuation; a root reset would change their meaning.
 pub fn from_ast_in_scope(
     ast: &AstFile,
+    symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    owner: &str,
+) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
+    from_ast_with_cursor(ast, symbols, file, include_occurrence, region, owner, None)
+}
+/// Frontend-only current expanded text; structural ASTs omit executable children.
+/// The text and absolute AST spans are issued by the same current parse pass.
+pub(crate) fn from_ast_with_source(
+    ast: &AstFile,
+    symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    source: &str,
+) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
+    from_ast_with_cursor(
+        ast,
+        symbols,
+        file,
+        include_occurrence,
+        region,
+        "/",
+        Some(source),
+    )
+}
+fn from_ast_with_cursor(
+    ast: &AstFile,
     mut symbols: SymbolTable,
     file: FileId,
     include_occurrence: u32,
     region: u128,
     owner: &str,
+    source: Option<&str>,
 ) -> Result<AdaptedDeclarations, Vec<AdapterError>> {
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
@@ -76,6 +107,7 @@ pub fn from_ast_in_scope(
     }
     let normalized = crate::normalize::declarations_in_scope(&ast.items, owner);
     let mut context = AdapterContext {
+        source,
         file,
         include_occurrence,
         region,
@@ -145,6 +177,7 @@ fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     Ok(bytes.into())
 }
 struct AdapterContext<'a> {
+    source: Option<&'a str>,
     file: FileId,
     include_occurrence: u32,
     region: u128,
@@ -362,23 +395,42 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         context.symbols,
                     )
                     .map_err(|error| {
-                        source_argument_span = if error.after_header {
-                            // DreamMaker reports an empty formal at the next
-                            // declaration/body token after reading the header.
-                            let cursor = item.children.first().map_or(
-                                item.header_span.end,
-                                |child| child.header_span.start,
-                            );
-                            Some(Span { file, start: cursor as u32, end: cursor as u32 })
-                        } else { error.source_span.map(|argument| {
-                            let offset =
-                                arguments.as_ptr() as usize - item.header.as_ptr() as usize;
-                            Span {
-                                file,
-                                start: (item.header_span.start + offset + argument.start) as u32,
-                                end: (item.header_span.start + offset + argument.end) as u32,
-                            }
-                        }) };
+                        source_argument_span =
+                            if error.after_header {
+                                // DreamMaker reports an empty formal at the next
+                                // declaration/body token after reading the header.
+                                let checked = context.source.and_then(|source| {
+                                    match dm_syntax::lookahead_after(source, item.header_span.end) {
+                                        dm_syntax::LexerLookahead::Token(token) => {
+                                            Some(token.span.start)
+                                        }
+                                        dm_syntax::LexerLookahead::End => Some(source.len()),
+                                        dm_syntax::LexerLookahead::Unknown => None,
+                                    }
+                                });
+                                let cursor = checked.unwrap_or_else(|| {
+                                    item.children.first().map_or(item.header_span.end, |child| {
+                                        child.header_span.start
+                                    })
+                                });
+                                Some(Span {
+                                    file,
+                                    start: cursor as u32,
+                                    end: cursor as u32,
+                                })
+                            } else {
+                                error.source_span.map(|argument| {
+                                    let offset =
+                                        arguments.as_ptr() as usize - item.header.as_ptr() as usize;
+                                    Span {
+                                        file,
+                                        start: (item.header_span.start + offset + argument.start)
+                                            as u32,
+                                        end: (item.header_span.start + offset + argument.end)
+                                            as u32,
+                                    }
+                                })
+                            };
                         error.message
                     })?;
                     header_declarations = parsed_signature.declarations;

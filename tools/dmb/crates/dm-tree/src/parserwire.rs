@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 // must never replay under the same fragment identity.
 // Revision 7 includes lexical-owner qualification for sibling field defaults.
 // Older fragments may contain semantically misplaced declaration facts.
-pub(super) const VERSION: u32 = 10;
+// Revision 11 binds malformed-signature cursors to current expanded text.
+pub(super) const VERSION: u32 = 11;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -207,7 +208,7 @@ mod tests {
     }
     #[test]
     fn previous_fact_schema_cannot_reuse_parser_fragment_identity() {
-        const PREVIOUS_VERSION: u32 = 9;
+        const PREVIOUS_VERSION: u32 = 10;
         let source = "/datum/probe\n    var/value = 1\n";
         let ast = dm_syntax::parse_declaration_skeleton(source);
         let items = super::super::compact_declarations(ast.items, 0);

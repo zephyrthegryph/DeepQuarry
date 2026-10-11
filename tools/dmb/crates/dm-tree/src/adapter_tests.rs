@@ -5,21 +5,48 @@ fn empty_formal_slots_and_missing_defaults_are_source_errors() {
     for prefix in ["", "// shifted\n\n"] {
         for arguments in [",value", "value,,second"] {
             let source = format!("{prefix}/proc/probe({arguments})\n    return 1\n");
-            let errors = from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).unwrap_err();
+            let errors = from_ast(
+                &dm_syntax::parse(&source),
+                SymbolTable::default(),
+                FileId(3),
+                7,
+                11,
+            )
+            .unwrap_err();
             assert_eq!(errors.len(), 1);
             assert_eq!(errors[0].kind, dm_syntax::DiagnosticKind::Expression);
             assert_eq!(errors[0].message, "bad argument definition");
-            assert_eq!(errors[0].span.start as usize, source.find("return").unwrap());
+            assert_eq!(
+                errors[0].span.start as usize,
+                source.find("return").unwrap()
+            );
         }
         let source = format!("{prefix}/proc/probe(value = )\n    return 1\n");
-        let errors = from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).unwrap_err();
+        let errors = from_ast(
+            &dm_syntax::parse(&source),
+            SymbolTable::default(),
+            FileId(3),
+            7,
+            11,
+        )
+        .unwrap_err();
         assert_eq!(errors[0].kind, dm_syntax::DiagnosticKind::Expression);
         assert_eq!(errors[0].message, "missing expression");
-        assert_eq!(&source[errors[0].span.start as usize..errors[0].span.end as usize], "=");
+        assert_eq!(
+            &source[errors[0].span.start as usize..errors[0].span.end as usize],
+            "="
+        );
     }
     for arguments in ["", "value,"] {
         let source = format!("/proc/probe({arguments})\n    return 1\n");
-        assert!(from_ast(&dm_syntax::parse(&source), SymbolTable::default(), FileId(3), 7, 11).is_ok());
+        assert!(from_ast(
+            &dm_syntax::parse(&source),
+            SymbolTable::default(),
+            FileId(3),
+            7,
+            11
+        )
+        .is_ok());
     }
 }
 #[test]
@@ -710,4 +737,47 @@ fn absolute_header_type_effect_uses_exact_current_header_origin() {
         })
         .unwrap();
     assert!(procedure.signature.parameters.is_empty());
+}
+
+#[test]
+fn malformed_signature_current_expanded_cursor_survives_compact_frontend() {
+    struct Included(String);
+    impl dm_preprocess::SourceProvider for Included {
+        fn read(&self, path: &std::path::Path) -> Result<String, String> {
+            match path.file_name().and_then(|name| name.to_str()) {
+                Some("signature.dme") => Ok("#include \"signature.dm\"\n".into()),
+                Some("signature.dm") => Ok(self.0.clone()),
+                _ => Err("unknown fixture source".into()),
+            }
+        }
+    }
+    let mut state = crate::frontend::RetainedSemanticTree::new();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    for (prefix, between, expected) in [("", "", 2), ("// shifted\n", "// comment\n\n", 5)] {
+        let source = Included(format!(
+            "{prefix}/proc/probe(value,,second)\n{between}    return value\n"
+        ));
+        for retained in [false, true] {
+            let errors = crate::frontend::build_with_executor_and_semantic_state(
+                std::path::Path::new("signature.dme"),
+                &source,
+                &Default::default(),
+                crate::frontend::FrontendConfig {
+                    workers: 1,
+                    engine: None,
+                    observer: None,
+                },
+                None,
+                &executor,
+                if retained { Some(&mut state) } else { None },
+            )
+            .unwrap_err();
+            assert_eq!(errors.len(), 1);
+            assert_eq!(errors[0].message, "bad argument definition");
+            assert_eq!(errors[0].kind, crate::frontend::DiagnosticKind::SourceError);
+            let location = errors[0].location.as_ref().unwrap();
+            assert_eq!(location.line, expected);
+            assert_eq!(location.path.file_name().unwrap(), "signature.dm");
+        }
+    }
 }

@@ -221,7 +221,7 @@ pub(super) fn parse_declarations_with_state(
                             let mut facts = if let Some(facts) = admitted_facts {
                                 Ok(facts)
                             } else if errors.is_empty() {
-                                crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0)
+                                crate::adapter::from_ast_with_source(&ast, SymbolTable::default(), FileId(0), 0, 0, source)
                                     .and_then(|mut adapted| {
                                         crate::allocation_ledger::capture(
                                             &ast.items,
