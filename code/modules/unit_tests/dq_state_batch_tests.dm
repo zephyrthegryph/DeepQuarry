@@ -29,7 +29,7 @@ CAPABILITIES(/datum/dq_state_batch_fixture)
 
 /datum/dq_state_batch_fixture/proc/deleted_write()
 	set_left(1)
-	END_SCOPE(src)
+	lifeform_end(src, END_SCOPE)
 
 /datum/dq_state_batch_fixture/proc/pure_write()
 	set_left(5)

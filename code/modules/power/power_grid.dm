@@ -37,6 +37,7 @@ CAPABILITIES(/datum/power_grid_registry)
 	owns_many(nameof(owned_grids), /datum/power_grid)
 
 /proc/power_grid_registry()
+	RETURN_TYPE(/datum/power_grid_registry)
 	return SSmachines.power_grid_registry()
 
 /// A pure lookup: a requirement or draw does not create simulation state.
