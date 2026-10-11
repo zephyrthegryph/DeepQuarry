@@ -19,7 +19,7 @@
 /obj/item/pinpointer/var/active = FALSE
 TRACKED(/obj/item/pinpointer, active)
 CAPABILITIES(/obj/item/pinpointer)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(pinpointer_toggle_op)))
 

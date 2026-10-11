@@ -11,7 +11,7 @@
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 
 CAPABILITIES(/obj/item/material/sword)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/material/sword/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(unique_parry_check(user, attacker, damage_source) && prob(50))
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/material/sword)
 	can_cleave = TRUE
 
 CAPABILITIES(/obj/item/material/sword/battleaxe)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/sword/battleaxe/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(unique_parry_check(user, attacker, damage_source) && prob(10))

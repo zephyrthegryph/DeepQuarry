@@ -19,7 +19,7 @@
 			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi')
 
 CAPABILITIES(/obj/item/towel)
-	configure(uses_power(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	configure(item_sounds(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	op("wipe", in_hand(), label("Towel yourself off"), then(PROC_REF(toweled_off)))
 
 /// The towel keeps the same wiping effect on its actual actor.

@@ -49,7 +49,7 @@
 	agony = 20
 
 CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
-	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/energy/mob/precursor
 	name = "precursor beam"

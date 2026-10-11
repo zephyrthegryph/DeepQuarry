@@ -7,7 +7,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/phoron)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/diamond
 	name = MAT_DIAMOND
@@ -17,7 +17,7 @@ CAPABILITIES(/obj/item/stack/material/phoron)
 	coin_type = /obj/item/coin/diamond
 
 CAPABILITIES(/obj/item/stack/material/diamond)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/painite
 	name = MAT_PAINITE

@@ -35,7 +35,7 @@ TRACKED(/obj/item/batterer, max_uses)
 MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
 CAPABILITIES(/obj/item/batterer)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available))), then(PROC_REF(batter_triggered)))
 
 /obj/item/batterer/proc/batter_available(datum/act/op/A)

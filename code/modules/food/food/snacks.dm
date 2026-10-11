@@ -2644,7 +2644,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickennoodlesoup)
 	eating_sound = SFX_ITEMS_DRINK
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/bearstew
@@ -5984,7 +5984,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 
 /obj/item/reagent_containers/food/snacks/candy
@@ -6319,7 +6319,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/tuna

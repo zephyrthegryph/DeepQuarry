@@ -34,7 +34,7 @@
 	caseless = TRUE
 
 CAPABILITIES(/obj/item/ammo_casing/artifact)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	owns_one(nameof(BB), /obj/item/projectile, starts = PROC_REF(make_artifact_bullet))
 
 /// The bullet (owns_one(starts =)): the projectile_type of the artifact gun it is made in. These should ONLY ever be in artifact weapons:

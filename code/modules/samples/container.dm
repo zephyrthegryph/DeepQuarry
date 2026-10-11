@@ -17,7 +17,7 @@
 
 
 CAPABILITIES(/obj/item/storage/sample_container)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY))
 
 /obj/item/storage/sample_container/draw(datum/look/look)

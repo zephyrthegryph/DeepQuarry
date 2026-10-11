@@ -234,7 +234,7 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/book)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOK, pickup = SFX_ITEMS_PICKUP_BOOK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOK, pickup = SFX_ITEMS_PICKUP_BOOK))
 	interface("Book")
 	without("ui_open")
 	ui_shape(title = bool(), author = bool(), content = bool())

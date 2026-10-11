@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/clothing/head/woodcirclet)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/sunflower_crown)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/lavender_crown
 	name = "lavender crown"
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/clothing/head/sunflower_crown)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/lavender_crown)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/poppy_crown
 	name = "poppy crown"
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/clothing/head/lavender_crown)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/poppy_crown)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/rose_crown
 	name = "rose crown"
@@ -75,4 +75,4 @@ CAPABILITIES(/obj/item/clothing/head/poppy_crown)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/rose_crown)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))

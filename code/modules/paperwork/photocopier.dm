@@ -411,7 +411,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	var/toner_amount = 30
 
 CAPABILITIES(/obj/item/toner)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/machinery/photocopier/ownership()
 	. = ..()

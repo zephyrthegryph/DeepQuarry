@@ -21,7 +21,7 @@
 
 
 CAPABILITIES(/obj/item/material/kitchen/utensil)
-	configure(uses_power(drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 	reagents(nameof(scoop_volume))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
 	// Feeding someone else takes five seconds; the one fed has to still be beside the feeder when it ends.
@@ -214,7 +214,7 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 	thrown_force_divisor = 1 // as above
 
 CAPABILITIES(/obj/item/material/kitchen/rollingpin)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(CLUMSY_HARM_CHANCE(user))

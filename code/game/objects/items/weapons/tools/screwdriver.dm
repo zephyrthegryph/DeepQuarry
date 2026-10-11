@@ -23,7 +23,7 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/screwdriver)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
 
 /obj/item/tool/screwdriver/Initialize(mapload)
 	. = ..()
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/tool/screwdriver)
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/screwdriver/alien)
-	configure(uses_power(use = SFX_ITEMS_PSHOOM))
+	configure(item_sounds(use = SFX_ITEMS_PSHOOM))
 
 /obj/item/tool/screwdriver/hybrid
 	name = "strange screwdriver"
@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/tool/screwdriver/alien)
 	reach = 2
 
 CAPABILITIES(/obj/item/tool/screwdriver/hybrid)
-	configure(uses_power(use = SFX_EFFECTS_UNCLOAK))
+	configure(item_sounds(use = SFX_EFFECTS_UNCLOAK))
 
 /obj/item/tool/screwdriver/power
 	name = "power screwdriver"
@@ -110,4 +110,4 @@ CAPABILITIES(/obj/item/tool/screwdriver/hybrid)
 	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/screwdriver/power)
-	configure(uses_power(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))

@@ -17,7 +17,7 @@ TRACKED(/obj/item/tvcamera, streaming)
 /// Relation view: the atom being broadcast; the feed follows it while set.
 /obj/item/tvcamera/var/atom/showing
 CAPABILITIES(/obj/item/tvcamera)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(showing))
 	every(2 SECONDS, then(PROC_REF(tvcamera_step)), when = nameof(showing))
 	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)

@@ -7,7 +7,7 @@
 	no_variants = FALSE
 
 CAPABILITIES(/obj/item/stack/material/wood)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/material/wood/sif
 	name = MAT_SIFWOOD + " plank"
@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/stack/material/wood)
 	plank_type = /obj/item/stack/material/wood/hard
 
 CAPABILITIES(/obj/item/stack/material/log)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 	op("log_cut", item(/obj/item), when(req_bool(PROC_REF(item_cuts))), wait(PROC_REF(cut_time)), then(PROC_REF(cut_planks_done)))
 
 /// The held item has a cutting edge and some force.
@@ -118,7 +118,7 @@ CAPABILITIES(/obj/item/stack/material/log)
 	apply_colour = TRUE
 
 CAPABILITIES(/obj/item/stack/material/stick)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/material/stick/reagents_per_sheet()
 	return REAGENTS_PER_ROD

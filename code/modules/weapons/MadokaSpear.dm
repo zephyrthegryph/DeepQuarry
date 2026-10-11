@@ -131,4 +131,4 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

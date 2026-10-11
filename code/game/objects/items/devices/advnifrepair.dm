@@ -15,7 +15,7 @@ MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 	var/efficiency = 15 //How many units reagent per 1 unit nanopaste
 
 CAPABILITIES(/obj/item/nifrepairer)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(supply), /datum/reagents)
 	op("item", item(/obj/item), label("Load"), then(PROC_REF(interaction_item)))
 

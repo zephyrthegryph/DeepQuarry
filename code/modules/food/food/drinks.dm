@@ -50,7 +50,7 @@
 // fed to others in three seconds (in any stance unless it is a blow), poured from and into, and filled from a tank. What a sip tells and leaves behind is
 // sipped() and, a moment after the transfer, On_Consume().
 CAPABILITIES(/obj/item/reagent_containers/food/drinks)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DRINKGLASS, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DRINKGLASS, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
 	reagent_container(
 		volume = nameof(volume),
 		lid = TRUE,
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/soymilk
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
 	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_SOYMILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/smallmilk
@@ -257,7 +257,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
 	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_MILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/smallchocmilk
@@ -271,7 +271,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
 	center_of_mass_y = 9
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	configure(reagents(add = list(REAGENT_ID_CHOCOLATEMILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/coffee
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
 	center_of_mass_y = 10
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_COFFEE = 30)))
 
 /obj/item/reagent_containers/food/drinks/tea
@@ -298,7 +298,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
 	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf_tea
@@ -312,7 +312,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
 	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_TEADECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/ice
@@ -335,7 +335,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
 	center_of_mass_y = 13
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_HOTCOCO = 30)))
 
 /obj/item/reagent_containers/food/drinks/greentea
@@ -349,7 +349,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
 	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_GREENTEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/chaitea
@@ -363,7 +363,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
 	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_CHAITEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf
@@ -377,7 +377,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
 	center_of_mass_y = 14
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/dry_ramen
@@ -390,7 +390,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
 	center_of_mass_y = 11
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	configure(reagents(add = list(REAGENT_ID_DRYRAMEN = 30)))
 
 /obj/item/reagent_containers/food/drinks/sillycup
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
 		icon_state = "water_cup_e"
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 	drag_onto(PROC_REF(drop_input))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). An empty cup dropped on a cooler goes back in it.

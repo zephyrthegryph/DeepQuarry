@@ -167,7 +167,7 @@ TRACKED(/obj/item/smallDelivery, examtext)
 TRACKED(/obj/item/smallDelivery, nameset)
 
 CAPABILITIES(/obj/item/smallDelivery)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
 	op("label", item(/obj/item/pen),

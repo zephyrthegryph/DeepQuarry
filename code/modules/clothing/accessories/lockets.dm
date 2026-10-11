@@ -11,7 +11,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/locket)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
 	op("locket_insert_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Locket insert item"), needs(req_is(nameof(open), TRUE, because = MSG(locket/no_open))), then(PROC_REF(locket_insert_item)))
 

@@ -61,7 +61,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/messenger_plugins
 
 CAPABILITIES(/obj/item/cartridge)
-	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)

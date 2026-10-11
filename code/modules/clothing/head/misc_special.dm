@@ -33,7 +33,7 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
 	op("head_welding_toggle_verb", menu(), label("Adjust welding mask"), needs(carried()), then(PROC_REF(head_welding_toggle_verb_op)))
 
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /*
  * Kitty ears
@@ -353,7 +353,7 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	armor_spec = "melee=5"
 
 CAPABILITIES(/obj/item/clothing/head/cone)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SHOES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 
 /obj/item/clothing/head/cone
 	sprite_sheets = list(

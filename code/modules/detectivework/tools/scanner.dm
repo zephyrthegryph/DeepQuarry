@@ -16,7 +16,7 @@
 
 
 CAPABILITIES(/obj/item/detective_scanner)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_many(nameof(stored))
 	// The stored records are shown one per second (a lap each), so moving stops the spam.
 	op("examine_data_effect", menu(), label("Examine Forensic Data"), needs(req(PROC_REF(has_stored_data), silent = TRUE)), wait(1 SECOND, repeats = PROC_REF(display_more), after_step = PROC_REF(display_record)))

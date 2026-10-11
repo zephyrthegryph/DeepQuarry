@@ -122,7 +122,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("bundle_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("bundle_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("bundle_rename", menu(), label("Rename bundle"), needs(carried()), then(PROC_REF(bundle_rename_op)))

@@ -1695,7 +1695,7 @@
 	worn_state = "golem"  //It's basically just a coincidentally black iconstate in the file.
 
 CAPABILITIES(/obj/item/clothing/under/permit)
-	configure(uses_power(equip = TRAIT_NONE))
+	configure(item_sounds(equip = TRAIT_NONE))
 
 /obj/item/clothing/under/hyperfiber
 	name = "HYPER jumpsuit"

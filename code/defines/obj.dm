@@ -174,7 +174,7 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	throw_range = 20
 
 CAPABILITIES(/obj/item/beach_ball)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/beach_ball/afterattack(atom/target as mob|obj|turf|area, mob/user as mob)
 	user.drop_item()
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/beach_ball)
 	throw_range = 15
 
 CAPABILITIES(/obj/item/beach_ball/dodgeball)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))
 
 /obj/effect/spawner
 	name = "object spawner"

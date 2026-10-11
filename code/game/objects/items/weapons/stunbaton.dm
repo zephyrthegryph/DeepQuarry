@@ -27,7 +27,7 @@
 TRACKED(/obj/item/melee/baton, status)
 
 CAPABILITIES(/obj/item/melee/baton)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
 	drag_onto(PROC_REF(mousedrop_input))

@@ -135,7 +135,7 @@
 	icon_state = "synth-1"
 
 CAPABILITIES(/obj/item/digestion_remains/synth)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// Who digested whom (its constructor params, dropped once noted).
 /obj/item/digestion_remains/var/tmp/mob/living/pred_at_make
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/digestion_remains/synth)
 		update_transform()
 
 CAPABILITIES(/obj/item/digestion_remains)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODWEAPON))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODWEAPON))
 	op("remains_crumble_self", in_hand(), stance(I_HURT), label("Crumble"), then(PROC_REF(remains_crumble_self)))
 	param(nameof(pred_at_make), pos = 1, keep = FALSE)
 	param(nameof(prey_at_make), pos = 2, apply = PROC_REF(note_meal), keep = FALSE)

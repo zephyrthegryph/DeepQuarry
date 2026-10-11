@@ -59,7 +59,7 @@ TRACKED(/obj/item/powersink, mode)
 
 
 CAPABILITIES(/obj/item/powersink)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Drains the attached powernet while operating.
 	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))

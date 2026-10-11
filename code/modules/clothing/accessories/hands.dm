@@ -16,7 +16,7 @@
 		)
 
 CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 //bracelets
 

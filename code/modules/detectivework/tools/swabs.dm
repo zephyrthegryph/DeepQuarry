@@ -7,7 +7,7 @@
 	var/used
 
 CAPABILITIES(/obj/item/forensics/swab)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/forensics/swab/proc/is_used()
 	return used

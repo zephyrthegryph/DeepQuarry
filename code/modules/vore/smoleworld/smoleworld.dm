@@ -44,7 +44,7 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/stack/material/smolebricks)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SMOLEMATERIAL, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SMOLEMATERIAL, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 
 //smolebrick case to make for easy bricks.
 /obj/item/storage/smolebrickcase
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/stack/material/smolebricks)
 	)
 
 CAPABILITIES(/obj/item/storage/smolebrickcase)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Track code
@@ -378,7 +378,7 @@ CAPABILITIES(/obj/structure/smoleruins)
 	nutriment_desc = list(REAGENT_ID_SUGAR = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/moon)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgo3b
 	name = "Virgo 3B"
@@ -391,7 +391,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/moon)
 	nutriment_desc = list("spicy" = 2, "tang" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/phoron
 	name = "phoron giant"
@@ -404,7 +404,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b)
 	nutriment_desc = list("spicy" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/phoron)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	name = "Virgo Prime"
@@ -417,7 +417,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/phoron)
 	nutriment_desc = list("salty" = 2)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/storage/bagoplanets
 	name = "bag o' planets"
@@ -433,5 +433,5 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime)
 
 
 CAPABILITIES(/obj/item/storage/bagoplanets)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	configure(storage(max_size = ITEMSIZE_NORMAL))

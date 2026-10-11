@@ -12,7 +12,7 @@
 	slot_flags = SLOT_BACK
 
 CAPABILITIES(/obj/item/material/twohanded/baseballbat)
-	configure(uses_power(hit = SFX_WEAPONS_GENHIT3))
+	configure(item_sounds(hit = SFX_WEAPONS_GENHIT3))
 
 //Predefined materials go here.
 TYPE_TABLE(/obj/item/material/twohanded/baseballbat/metal, weapon_forced_material, MAT_STEEL)

@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/gun/energy/clockwork)
 	hud_state = "taser"
 
 CAPABILITIES(/obj/item/projectile/beam/shock/clockwork)
-	configure(uses_power(hit = SFX_EFFECTS_LIGHTNINGSHOCK))
+	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGSHOCK))
 
 /obj/effect/projectile/muzzle/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'

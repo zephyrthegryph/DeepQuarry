@@ -38,7 +38,7 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 // An item put into a bible turns a page first, and then goes on to the storage's insertion (passes()). Used in hand by a chaplain: the first use chooses the
 // skin from a ring around the user, a later one invokes the religion.
 CAPABILITIES(/obj/item/storage/bible)
-	configure(uses_power(drop = SFX_BUREAUCRACY_BOOKCLOSE))
+	configure(item_sounds(drop = SFX_BUREAUCRACY_BOOKCLOSE))
 	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes())
 	op("skin", in_hand(), when(req_bool(PROC_REF(chaplain_unconfigured))), label("Choose a bible"),
 		asks(/datum/prompt/choice, fields = list("question" = "Choose a bible", "choices" = computed(PROC_REF(skin_choices)), "radial" = TRUE, "radius" = 40)),

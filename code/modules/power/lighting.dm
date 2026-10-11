@@ -1007,7 +1007,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
 	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))

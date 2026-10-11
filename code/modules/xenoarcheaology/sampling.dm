@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/rocksliver)
 	var/obj/item/evidencebag/filled_bag
 
 CAPABILITIES(/obj/item/core_sampler)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(filled_bag), /obj/item/evidencebag)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/whetstone)
 	sharpen_time = material.density * 3 // weight renamed to density.
 
 CAPABILITIES(/obj/item/material/sharpeningkit)
-	configure(uses_power(hit = SFX_WEAPONS_GENHIT3))
+	configure(item_sounds(hit = SFX_WEAPONS_GENHIT3))
 	op("sharpen", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(sharpeningkit_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.

@@ -77,7 +77,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Eftpos", title = "EFTPOS scanner")
 	without("ui_open")
 	op("change_code", ui_act("change_code"), then(PROC_REF(ui_act_change_code)))

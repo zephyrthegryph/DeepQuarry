@@ -16,4 +16,4 @@
 	w_class = ITEMSIZE_HUGE
 
 CAPABILITIES(/obj/item/ratvarian_spear)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

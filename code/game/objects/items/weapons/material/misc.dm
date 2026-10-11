@@ -23,7 +23,7 @@
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/knife/machete/hatchet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/item/material/whip)
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
 
 CAPABILITIES(/obj/item/material/butterfly/saw)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/material/butterfly/saw/update_force()
 	if(active)

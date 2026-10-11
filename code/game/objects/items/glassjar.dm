@@ -49,7 +49,7 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		return
 
 CAPABILITIES(/obj/item/glass_jar)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	slot(CONTAINER_SLOT_JAR)
 	// the old attack_self: empty the jar (help keeps a fish's water in)
 	op("empty", in_hand(), stance(I_HELP), label("Empty"), then(PROC_REF(emptied_gently)))

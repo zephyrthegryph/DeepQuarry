@@ -5,7 +5,7 @@
 	no_variants = FALSE
 
 CAPABILITIES(/obj/item/stack/material/sandstone)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/stack/material/marble
 	name = MAT_MARBLE + " brick"
@@ -14,7 +14,7 @@ CAPABILITIES(/obj/item/stack/material/sandstone)
 	no_variants = FALSE
 
 CAPABILITIES(/obj/item/stack/material/marble)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/stack/material/flint
 	name = MAT_FLINT + " piece"
@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/stack/material/marble)
 	apply_colour = TRUE
 
 CAPABILITIES(/obj/item/stack/material/flint)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/stack/material/concrete
 	name = MAT_CONCRETE + " brick"

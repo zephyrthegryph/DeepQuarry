@@ -21,7 +21,7 @@
 TRACKED(/obj/item/blobcore_chunk, should_tick)
 
 CAPABILITIES(/obj/item/blobcore_chunk)
-	configure(uses_power(drop = SFX_EFFECTS_SLIME_SQUISH))
+	configure(item_sounds(drop = SFX_EFFECTS_SLIME_SQUISH))
 	every(2 SECONDS, then(PROC_REF(chunk_passive_step)), when = nameof(should_tick))
 	reagents(120)
 	owns_one(nameof(blob_type), /datum/blob_type)

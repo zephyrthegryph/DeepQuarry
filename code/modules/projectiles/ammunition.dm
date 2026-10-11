@@ -16,7 +16,7 @@
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
 CAPABILITIES(/obj/item/ammo_casing)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -376,7 +376,7 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	caliber = ".357"
 
 CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
-	configure(uses_power(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old click_alt.

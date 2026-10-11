@@ -117,7 +117,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("folder_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("folder_label", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), label("Use"),

@@ -60,7 +60,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	glass_handling()
 	glass_container()
 
@@ -180,7 +180,7 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	var/rating = 1
 
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/reagent_containers/glass/beaker/get_rating()
 	return rating
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added)))
 	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed)))
 	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"),
@@ -353,7 +353,7 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))
 	extend("sensor", needs(req(PROC_REF(electronics_welcome))))
 
@@ -391,7 +391,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle)
 	MATERIAL_BULK(MAT_WOOD, 50)
 
 CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/reagent_containers/glass/beaker/vial/sustenance
 	name = "vial (artificial sustenance)"
@@ -409,7 +409,7 @@ CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug)
 	MATERIAL_BULK(MAT_STEEL, 50)
 
 CAPABILITIES(/obj/item/reagent_containers/glass/kettle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
 
 
 

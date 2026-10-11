@@ -116,7 +116,7 @@
 	return OP_FAILED
 
 CAPABILITIES(/obj/item/bodysnatcher)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("activate", in_hand(), then(PROC_REF(activated)))
 	// The swap itself, started by swap_confirmed() once the user agreed; the victim is passed in.
 	op("swap", ai(), takes("victim"), wait(35 SECONDS), then(PROC_REF(attack_timed_done)))

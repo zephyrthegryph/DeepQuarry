@@ -20,7 +20,7 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 
 CAPABILITIES(/obj/item/debugger)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)
 	if(istype(O, /obj/machinery/power/apc))

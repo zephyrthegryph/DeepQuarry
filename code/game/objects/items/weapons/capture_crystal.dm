@@ -22,7 +22,7 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(bound_mob), /mob/living)
 	// the old attack_self: an ownerless crystal with a mob in it asks to be claimed first, then the crystal is used

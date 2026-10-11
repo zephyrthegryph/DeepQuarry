@@ -11,7 +11,7 @@
 	attack_verb = list("called", "rang")
 
 CAPABILITIES(/obj/item/phone)
-	configure(uses_power(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/rsp
 	name = "\improper Rapid-Seed-Producer (RSP)"
@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/phone)
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/rsp)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/bikehorn
 	name = "bike horn"
@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/bikehorn)
 	icon = 'icons/obj/discs_vr.dmi'
 
 CAPABILITIES(/obj/item/disk)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 
 /obj/item/disk/nuclear
 	name = "nuclear authentication disk"
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/disk)
 	MATERIAL_BULK(MAT_STEEL, 100)
 
 CAPABILITIES(/obj/item/SWF_uplink)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/staff
 	name = "wizards staff"
@@ -169,7 +169,7 @@ CAPABILITIES(/obj/item/SWF_uplink)
 	var/mtype = 1						// 1=electronic 2=hardware
 
 CAPABILITIES(/obj/item/module)
-	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 /obj/item/module/card_reader
 	name = "card reader module"
@@ -269,7 +269,7 @@ CAPABILITIES(/obj/item/camera_bug)
 	var/rating = 1
 
 CAPABILITIES(/obj/item/stock_parts)
-	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	rolls(nameof(pixel_x), range_of(-5.0, 5))
 	rolls(nameof(pixel_y), range_of(-5.0, 5))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

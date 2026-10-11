@@ -14,7 +14,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	configure(reagents(contents_from = PROC_REF(seed_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(seed_nutriment_taste))))

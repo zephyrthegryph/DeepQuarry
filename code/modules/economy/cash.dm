@@ -99,7 +99,7 @@ TRACKED(/obj/item/spacecash, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecash)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(register_sellable)))
 	rolls(nameof(note_seed), range_of(0, 49))
 	op("cash_take", in_hand(), label("Use"),
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/item/spacecash)
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/spacecash/ewallet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
 /// A charge card keeps its mapped look and name.

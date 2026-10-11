@@ -24,7 +24,7 @@
 	var/list/files
 
 CAPABILITIES(/obj/item/card)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 
 /obj/item/card/Initialize(mapload)
 	. = ..()
@@ -199,7 +199,7 @@ TRACKED(/obj/item/card_fluff, sprite_stack)
 			look.overlay(image(base_icon, iconstate))
 
 CAPABILITIES(/obj/item/card_fluff)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 	op("customize", in_hand(), label("Customize card"), needs(carried(), req_capable()),
 		asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)),
 		asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)),
@@ -325,5 +325,5 @@ CAPABILITIES(/obj/item/card/emag/used)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/card/data)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))

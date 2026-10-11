@@ -10,7 +10,7 @@
 	reach = 2
 
 CAPABILITIES(/obj/item/melee/chainofcommand)
-	configure(uses_power(hit = SFX_WEAPONS_WHIP))
+	configure(item_sounds(hit = SFX_WEAPONS_WHIP))
 
 /obj/item/melee/chainofcommand/curator_whip
 	name = "leather whip"
@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/melee/umbrella/random)
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 CAPABILITIES(/obj/item/melee/cursedblade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	owns_many(nameof(voice_mobs))
 
 
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 	attack_verb = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")
 
 CAPABILITIES(/obj/item/melee/rapier)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/melee/hammer
 	name = "claw hammer"

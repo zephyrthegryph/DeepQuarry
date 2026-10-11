@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/flame)
 	attack_verb = list("burnt", "singed")
 
 CAPABILITIES(/obj/item/flame/match)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/flame/match/flame_step(datum/act/timer/A)
 	if(isliving(loc))
@@ -133,7 +133,7 @@ SETTER(/obj/item/clothing/mask/smokable, lit)
 SETTER(/obj/item/clothing/mask/smokable, smoketime)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable)
-	configure(uses_power(drop = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF))
+	configure(item_sounds(drop = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF))
 	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
 	op("item_applied", item(/obj/item), passes(), when(req_bool(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))

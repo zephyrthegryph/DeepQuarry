@@ -577,7 +577,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 	reagents(5)
 	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))

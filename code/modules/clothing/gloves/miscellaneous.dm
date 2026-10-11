@@ -57,7 +57,7 @@
 	fingerprint_chance = 25
 
 CAPABILITIES(/obj/item/clothing/gloves/sterile)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 //TODO: Make inflating gloves a thing
 /*/obj/item/clothing/gloves/sterile/proc/Inflate(/mob/living/carbon/human/user)
@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/clothing/gloves/sterile)
 	siemens_coefficient = 0.75 //thick work gloves
 
 CAPABILITIES(/obj/item/clothing/gloves/botanic_leather)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/clothing/gloves/duty
 	desc = "These brown duty gloves are made from a durable synthetic."
@@ -122,7 +122,7 @@ CAPABILITIES(/obj/item/clothing/gloves/botanic_leather)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/vox)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
 

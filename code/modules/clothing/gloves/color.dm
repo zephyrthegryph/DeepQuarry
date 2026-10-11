@@ -8,7 +8,7 @@
 	permeability_coefficient = 0.05
 
 CAPABILITIES(/obj/item/clothing/gloves/yellow)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 // start: More gloves give cold/heat protection.
 	cold_protection = HANDS
@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/clothing/gloves/yellow)
 	permeability_coefficient = 0.05
 
 CAPABILITIES(/obj/item/clothing/gloves/fyellow)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 // ALLOW(init/INSTANCE_STATE): rolls how well these gloves insulate
 /obj/item/clothing/gloves/fyellow/Initialize(mapload)

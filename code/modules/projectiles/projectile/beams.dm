@@ -23,7 +23,7 @@
 	hud_state_empty = "battery_empty"
 
 CAPABILITIES(/obj/item/projectile/beam)
-	configure(uses_power(hit = SFX_WEAPONS_SEAR))
+	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/beam/practice
 	name = "laser"
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/projectile/beam)
 	light_color = "#FFFFFF"
 
 CAPABILITIES(/obj/item/projectile/beam/stun)
-	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 
 	combustion = FALSE
@@ -369,7 +369,7 @@ CAPABILITIES(/obj/item/projectile/beam/stun)
 	hud_state = "taser"
 
 CAPABILITIES(/obj/item/projectile/beam/shock)
-	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/shock/weak
 	damage = 5

@@ -62,7 +62,7 @@ TRACKED(/obj/item/kinetic_crusher, integ_light_on)
 
 
 CAPABILITIES(/obj/item/kinetic_crusher)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 
@@ -223,7 +223,7 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 	slot_flags = null
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
-	configure(uses_power(hit = SFX_WEAPONS_RESONATOR_BLAST))
+	configure(item_sounds(hit = SFX_WEAPONS_RESONATOR_BLAST))
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(1 SECOND, then(PROC_REF(gauntlets_step)), when = nameof(gauntlets_worn))

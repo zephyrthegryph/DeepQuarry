@@ -62,7 +62,7 @@
 	A.name = "[A.name] ([label])"
 
 CAPABILITIES(/obj/item/hand_labeler)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	op("labeler_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

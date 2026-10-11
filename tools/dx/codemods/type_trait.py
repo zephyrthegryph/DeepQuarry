@@ -233,7 +233,7 @@ def main():
             line = raw.rstrip("\r")
             tm = TYPE_LINE.match(line)
             if tm and "/proc/" not in line and "/verb/" not in line:
-                cur = tm.group(1)
+                cur = tm.group(1).rstrip("/")
                 OWNER[0] = None
             elif line and not line.startswith("\t") and not line.startswith(" "):
                 cur = None
@@ -262,7 +262,7 @@ def main():
         for k, v in rows:
             last[k] = v  # a var set twice in one type: the later line won
         args = ", ".join("%s = %s" % (k, v) for k, v in last.items())
-        entry = "\tconfigure(uses_power(%s))" % args
+        entry = "\tconfigure(%s(%s))" % (CTOR, args)
         if t in caps_at:
             p, i = caps_at[t]
             made_blocks.setdefault(p, []).append(("after_caps", t, entry))

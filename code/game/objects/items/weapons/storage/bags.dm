@@ -33,7 +33,7 @@
 	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/storage/bag)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 
 // -----------------------------
 //          Trash bag
@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/storage/bag)
 
 
 CAPABILITIES(/obj/item/storage/bag/trash)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 /obj/item/storage/bag/trash/draw(datum/look/look)
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/storage/bag/trash/holding)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/storage/bag/plasticbag)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 // -----------------------------

@@ -27,7 +27,7 @@ MSG_DEF(tape/eyes_begin, null, span_danger("%U% begins taping over %T%'s eyes!")
 MSG_DEF(tape/mouth_begin, null, span_danger("%U% begins taping up %T%'s mouth!"))
 
 CAPABILITIES(/obj/item/tape_roll)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("tape_eyes", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape over the eyes"),
 		when(PROC_REF(aimed_at_eyes)),
 		needs(req_adjacent(), req(PROC_REF(firm_grip)), req(PROC_REF(has_head)), req(PROC_REF(has_eyes)),
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/item/tape_roll)
 	return OP_PASS
 
 CAPABILITIES(/obj/item/ducttape)
-	configure(uses_power(drop = TRAIT_NONE))
+	configure(item_sounds(drop = TRAIT_NONE))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

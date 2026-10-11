@@ -178,7 +178,7 @@
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/joanaria)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
@@ -494,7 +494,7 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	ear_protection = 1
 
 CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HELM))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM))
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
@@ -1450,7 +1450,7 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	material_total = 0
 
 CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
-	configure(uses_power(drop = TRAIT_NONE, pickup = TRAIT_NONE))
+	configure(item_sounds(drop = TRAIT_NONE, pickup = TRAIT_NONE))
 
 //Coolcrow420 - Jade Davis
 /obj/item/stamp/fluff/jade_horror

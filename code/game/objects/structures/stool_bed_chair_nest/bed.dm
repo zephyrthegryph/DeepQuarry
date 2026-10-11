@@ -307,7 +307,7 @@ CAPABILITIES(/obj/structure/bed/roller)
 	var/bedtype = /obj/structure/bed/roller
 
 CAPABILITIES(/obj/item/roller)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
 	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req_bool(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
 

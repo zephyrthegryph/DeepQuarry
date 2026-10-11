@@ -29,7 +29,7 @@
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/pin)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/clothing/head/pin/pink
 	icon_state = "pinkpin"
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/cardborg)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
 /obj/item/clothing/head/rabbitears
 	name = "rabbit ears"
@@ -339,7 +339,7 @@ CAPABILITIES(/obj/item/clothing/head/cardborg)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/maangtikka)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/head/jingasa
 	name = "jingasa"

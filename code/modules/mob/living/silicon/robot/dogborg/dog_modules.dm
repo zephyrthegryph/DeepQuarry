@@ -121,7 +121,7 @@ MSG_DEF(tongue/cram, span_notice("You begin cramming %T% down your throat..."), 
 MSG_DEF(tongue/lick_clean, span_notice("You begin to lick %T% clean..."), span_filter_notice("%U% begins to lick %T% clean..."))
 
 CAPABILITIES(/obj/item/robot_tongue)
-	configure(uses_power(hit = SFX_EFFECTS_ATTACKBLOB))
+	configure(item_sounds(hit = SFX_EFFECTS_ATTACKBLOB))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	// a lick of anything but a person is five seconds of standing still; a person's face is instant (afterattack)
 	op("tongue_drink_sink", at_target(/obj/structure/sink), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req_bool(PROC_REF(tongue_thirsty), silent = TRUE)), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))

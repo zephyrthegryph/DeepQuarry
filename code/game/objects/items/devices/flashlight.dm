@@ -38,7 +38,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
 	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = cond_all(nameof(on), nameof(power_use)))
@@ -318,7 +318,7 @@ TRACKED(/obj/item/flashlight, power_use)
 	cell_type = null
 
 CAPABILITIES(/obj/item/flashlight/pen)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/flashlight/color	//Default color is blue
 	name = "blue flashlight"
@@ -362,7 +362,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	attack_verb = list ("smacked", "thwacked", "thunked")
 
 CAPABILITIES(/obj/item/flashlight/maglight)
-	configure(uses_power(hit = SFX_SWING_HIT))
+	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/flashlight/drone
 	name = "low-power flashlight"
@@ -437,7 +437,7 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/flare)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	// Flares burn fuel while lit (they have no cell, so power_use is off).
 	every(2 SECONDS, then(PROC_REF(flare_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))

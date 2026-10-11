@@ -109,7 +109,7 @@ TRACKED(/obj/item/floor_painter, paint_dir)
 TRACKED(/obj/item/floor_painter, paint_colour)
 
 CAPABILITIES(/obj/item/floor_painter)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/floor_painter/proc/choose_colour, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/floor_painter/proc/choose_decal, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED)

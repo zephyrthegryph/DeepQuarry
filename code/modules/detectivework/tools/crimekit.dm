@@ -15,5 +15,5 @@
 	storage_slots = 14
 
 CAPABILITIES(/obj/item/storage/briefcase/crimekit)
-	configure(uses_power(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 

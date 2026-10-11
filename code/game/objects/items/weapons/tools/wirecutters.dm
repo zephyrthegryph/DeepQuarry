@@ -24,7 +24,7 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/wirecutters)
-	configure(uses_power(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
+	configure(item_sounds(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
 
 /obj/item/tool/wirecutters/Initialize(mapload)
 	. = ..()
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/tool/wirecutters)
 	reach = 2
 
 CAPABILITIES(/obj/item/tool/wirecutters/hybrid)
-	configure(uses_power(use = SFX_EFFECTS_STEALTHOFF))
+	configure(item_sounds(use = SFX_EFFECTS_STEALTHOFF))
 
 /obj/item/tool/wirecutters/power
 	name = "power cutters"
@@ -99,4 +99,4 @@ CAPABILITIES(/obj/item/tool/wirecutters/hybrid)
 	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/wirecutters/power)
-	configure(uses_power(use = SFX_ITEMS_JAWS_CUT))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_CUT))

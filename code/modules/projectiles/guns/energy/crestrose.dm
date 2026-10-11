@@ -25,7 +25,7 @@
 	)
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/fluff/crestrose)
-	configure(uses_power(hit = TRAIT_NONE))
+	configure(item_sounds(hit = TRAIT_NONE))
 
 /obj/item/gun/projectile/automatic/fluff/crestrose/switch_firemodes(mob/user)
 	if(..())

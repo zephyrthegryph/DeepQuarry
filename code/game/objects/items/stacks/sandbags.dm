@@ -31,7 +31,7 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	param(nameof(bag_material), pos = 2)
 
 // ALLOW(init/INSTANCE_STATE): sandbags take their recipes, slowdown and their bags' colour

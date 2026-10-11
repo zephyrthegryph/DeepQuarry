@@ -348,7 +348,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 		|ACCESSORY_SLOT_WRIST)
 
 CAPABILITIES(/obj/item/clothing/gloves)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
 	owns_one(nameof(ring), /obj/item/clothing/accessory)
 	owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type))
@@ -437,7 +437,7 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 ///////////////////////////////////////////////////////////////////////
 //Head
@@ -469,7 +469,7 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
 	op("head_robot_pick_up", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Pick up hat"), then(PROC_REF(head_robot_pick_up)))
 	// A cyborg picking the hat up (head_robot_pick_up()): three seconds beside it.
@@ -585,7 +585,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/list/say_verbs
 
 CAPABILITIES(/obj/item/clothing/mask)
-	configure(uses_power(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
+	configure(item_sounds(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
 
 
 /obj/item/clothing/mask/update_clothing_icon()
@@ -644,7 +644,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
 	// A micro climbing out of the shoes (container_resist()): they are inside them, so what is kept is that the shoes stay where they were and the micro stays put.
 	op("micro_climb_out", ai(), needs(req_capable()), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(micro_climbed_out)))
 	op("micro_escape_macro", ai(), needs(req_capable()), takes("macro", "time"), wait(PROC_REF(micro_escape_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(micro_pinned)), then(PROC_REF(micro_escaped_macro)))
@@ -958,7 +958,7 @@ TRACKED(/obj/item/clothing/suit, hood_up)
 TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
-	configure(uses_power(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
+	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
 TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
@@ -1139,7 +1139,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
-	configure(uses_power(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
+	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))
 	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
 	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))

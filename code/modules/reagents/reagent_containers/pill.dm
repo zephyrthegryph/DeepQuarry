@@ -22,7 +22,7 @@
 // A pill is a sealed holder of its volume that is taken whole and used up (dose(), code/library/reagents/dose.dm): swallowed at once by yourself, forced down
 // somebody else's throat in three seconds, dissolved in an open container. A sharp thing or an ID card cuts it up into a powder.
 CAPABILITIES(/obj/item/reagent_containers/pill)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

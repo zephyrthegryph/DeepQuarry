@@ -12,7 +12,7 @@
 	var/flash_strength = 10
 
 CAPABILITIES(/obj/item/projectile/energy)
-	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 //releases a burst of light on impact or after travelling a distance
 /obj/item/projectile/energy/flash
@@ -185,7 +185,7 @@ CAPABILITIES(/obj/item/projectile/energy)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/acid)
-	configure(uses_power(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
+	configure(item_sounds(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin
 	name = "neurotoxic spit"
@@ -200,7 +200,7 @@ CAPABILITIES(/obj/item/projectile/energy/acid)
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
-	configure(uses_power(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
+	configure(item_sounds(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin/toxic //New alien mob projectile to match the player-variant's projectiles.
 	name = "neurotoxic spit"
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/projectile/energy/anomaly)
 	hud_state = "laser_overcharge"
 
 CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
-	configure(uses_power(hit = SFX_WEAPONS_SEAR))
+	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/energy/phase
 	name = "phase wave"

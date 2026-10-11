@@ -15,7 +15,7 @@
 	var/stamptext = null
 
 CAPABILITIES(/obj/item/stamp)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/stamp/captain
 	name = "site manager's rubber stamp"

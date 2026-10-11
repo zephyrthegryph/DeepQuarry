@@ -16,7 +16,7 @@
 	tool_qualities = list(TOOL_WRENCH)
 
 CAPABILITIES(/obj/item/tool/wrench)
-	configure(uses_power(use = SFX_ITEMS_RATCHET, drop = SFX_ITEMS_DROP_WRENCH, pickup = SFX_ITEMS_PICKUP_WRENCH))
+	configure(item_sounds(use = SFX_ITEMS_RATCHET, drop = SFX_ITEMS_DROP_WRENCH, pickup = SFX_ITEMS_PICKUP_WRENCH))
 
 /obj/item/tool/wrench/pipe
 	name = "pipe wrench"
@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/tool/wrench)
 	reach = 2
 
 CAPABILITIES(/obj/item/tool/wrench/hybrid)
-	configure(uses_power(use = SFX_EFFECTS_STEALTHOFF))
+	configure(item_sounds(use = SFX_EFFECTS_STEALTHOFF))
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_wrench
 	name = "Precursor Alpha Object - Fastener Torque Tool"
@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/tool/wrench/hybrid)
 	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/wrench/alien)
-	configure(uses_power(use = SFX_EFFECTS_EMPULSE))
+	configure(item_sounds(use = SFX_EFFECTS_EMPULSE))
 
 /obj/item/tool/wrench/power
 	name = "power wrench"
@@ -77,4 +77,4 @@ CAPABILITIES(/obj/item/tool/wrench/alien)
 	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/wrench/power)
-	configure(uses_power(use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))

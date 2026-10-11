@@ -21,7 +21,7 @@
 	var/sev4_range = 1
 
 CAPABILITIES(/obj/item/projectile/ion)
-	configure(uses_power(hit = SFX_WEAPONS_IONRIFLE))
+	configure(item_sounds(hit = SFX_WEAPONS_IONRIFLE))
 
 /obj/item/projectile/ion/on_impact(atom/target)
 	empulse(target, sev1_range, sev2_range, sev3_range, sev4_range)

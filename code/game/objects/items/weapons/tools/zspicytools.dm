@@ -11,7 +11,7 @@
 	force = 30
 
 CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
-	configure(uses_power(use = SFX_WEAPONS_GUNSHOT_CANNON))
+	configure(item_sounds(use = SFX_WEAPONS_GUNSHOT_CANNON))
 
 /obj/item/weldingtool/lasercannon
 	name = "laser cannon welding tool"
@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
 	always_process = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/lasercannon)
-	configure(uses_power(use = SFX_WEAPONS_LASERCANNONFIRE))
+	configure(item_sounds(use = SFX_WEAPONS_LASERCANNONFIRE))
 
 /obj/item/weldingtool/lasercannon/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/weldingtool/lasercannon)
 	force = 30
 
 CAPABILITIES(/obj/item/tool/wrench/fuelrod)
-	configure(uses_power(use = SFX_WEAPONS_RAILGUN))
+	configure(item_sounds(use = SFX_WEAPONS_RAILGUN))
 
 /obj/item/tool/wirecutters/chainsaw
 	name = "chainsaw wirecutters"
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/tool/wrench/fuelrod)
 	force = 30
 
 CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
-	configure(uses_power(use = SFX_WEAPONS_CHAINSAW_ATTACK))
+	configure(item_sounds(use = SFX_WEAPONS_CHAINSAW_ATTACK))
 
 /obj/item/tool/screwdriver/diamonddrill
 	name = "diamond drill power screwdriver"
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
 	force = 30
 
 CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
-	configure(uses_power(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/stack/cable_coil/alien/blood
 	name = "Blood cable coil"

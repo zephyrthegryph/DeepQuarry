@@ -9,7 +9,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 
@@ -29,7 +29,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
 
@@ -150,7 +150,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/slippers)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 
@@ -212,7 +212,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 
@@ -444,7 +444,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
 
 /obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/act/notice/A)

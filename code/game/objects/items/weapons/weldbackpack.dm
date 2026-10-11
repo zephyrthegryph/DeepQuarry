@@ -11,7 +11,7 @@
 	var/nozzle_attached = 0
 
 CAPABILITIES(/obj/item/weldpack)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	owns_one(nameof(nozzle), /obj/item, starts = nameof(nozzle_type))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

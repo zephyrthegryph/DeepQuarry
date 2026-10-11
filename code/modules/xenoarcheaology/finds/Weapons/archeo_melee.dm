@@ -36,7 +36,7 @@
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 	op("convert_turf", ai(), takes("turf"), wait(PROC_REF(convert_time)), then(PROC_REF(convert_turf_done)))
 	ref_one(nameof(last_touched))
 	every(2 SECONDS, then(PROC_REF(artifact_blade_step)), when = nameof(last_touched))

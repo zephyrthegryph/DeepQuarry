@@ -35,7 +35,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pen)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("pen_click", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click)))
 	op("pen_click_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click_alt)))
 

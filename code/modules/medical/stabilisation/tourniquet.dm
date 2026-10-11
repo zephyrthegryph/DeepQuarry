@@ -30,7 +30,7 @@
 // A tourniquet goes on the limb the user is aiming at. Every refusal is a balloon over the user, as before; the limb is the one aimed at when the cinch
 // begins, and the wait ends if the user moves, loses the tourniquet or lets the patient go.
 CAPABILITIES(/obj/item/tourniquet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 	op("cinch", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Cinch"),
 		needs(req(PROC_REF(target_is_human), because = MSG(tourniquet/wont_fit)), req(PROC_REF(user_is_dexterous), because = MSG(tourniquet/clumsy))),
 		starts(PROC_REF(cinch_started)), wait(TOURNIQUET_APPLY_TIME), on_interrupt(PROC_REF(cinch_failed)), then(PROC_REF(cinch_done)))

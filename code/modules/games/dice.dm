@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/dice)
 	icon_state = "dicebag"
 
 CAPABILITIES(/obj/item/storage/pill_bottle/dice)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 
 /obj/item/storage/pill_bottle/dice
 	starts_with = list(
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/storage/pill_bottle/dice)
 	icon_state = "magicdicebag"
 
 CAPABILITIES(/obj/item/storage/pill_bottle/dice_nerd)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 
 /obj/item/storage/pill_bottle/dice_nerd
 	starts_with = list(

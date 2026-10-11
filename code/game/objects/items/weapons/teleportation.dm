@@ -29,7 +29,7 @@
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
 CAPABILITIES(/obj/item/locator)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
 	interface("Locator", title = "Persistent Signal Locator")
 	without("ui_open")

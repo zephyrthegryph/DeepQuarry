@@ -25,7 +25,7 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	//TODO: make it heat up the surroundings when not in space
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))

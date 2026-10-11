@@ -25,7 +25,7 @@
 	var/apply_colour //temp pending icon rewrite
 
 CAPABILITIES(/obj/item/stack/material)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	without("ui_open")
 	op("material_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Material self"), then(PROC_REF(material_self)))
 	op("material_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(material_interaction_item)))

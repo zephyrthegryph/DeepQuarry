@@ -20,7 +20,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
 
 CAPABILITIES(/obj/item/fusion_coil)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))
 TRACKED(/obj/item/fusion_coil, coil_damaged)
 
 /obj/item/fusion_coil/draw(datum/look/look)

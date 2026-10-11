@@ -88,7 +88,7 @@ BLIND     // can't see anything
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 CAPABILITIES(/obj/item/clothing/glasses)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
@@ -205,7 +205,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYP
 	var/eye = null
 
 CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
@@ -230,7 +230,7 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
 	var/eye = null
 
 CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("eyepatchwhite_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatchwhite_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
@@ -457,7 +457,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 	tint = BLIND
 
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/blindfold)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 
 /obj/item/clothing/glasses/sunglasses/blindfold/whiteblindfold
 	name = "white blindfold"

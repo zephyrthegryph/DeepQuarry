@@ -583,7 +583,7 @@ CAPABILITIES(/obj/structure/cable)
 	return GLOB.possible_cable_coil_colours
 
 CAPABILITIES(/obj/item/stack/cable_coil)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), asks(/datum/prompt/choice, fields = list("question" = "Pick new colour.", "title" = "Cable Colour", "choices" = computed(PROC_REF(colour_choices))), step = "colour"), then(PROC_REF(multitool_used)))
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
 	param(nameof(color), pos = 2)

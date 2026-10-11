@@ -11,7 +11,7 @@
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/cultblade/cultify()
 	return

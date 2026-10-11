@@ -26,8 +26,8 @@
 	var/open_state
 	var/closed_state
 
-CAPABILITIES(/obj/item/storage/fancy/)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+CAPABILITIES(/obj/item/storage/fancy)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
 TRACKED(/obj/item/storage/fancy, open)
 

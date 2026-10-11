@@ -85,7 +85,7 @@ TRACKED(/obj/item/photo, tiny)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(assign_photo_id)))
 	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("photo_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

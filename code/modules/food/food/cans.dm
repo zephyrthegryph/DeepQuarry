@@ -11,7 +11,7 @@ TRACKED(/obj/item/reagent_containers/food/drinks/cans, shaken)
 
 // A can is opened by using it, except in a hostile stance, where it is shaken (shaking a shut can makes it foam when it is opened).
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	every(2 SECONDS, then(PROC_REF(cans_step)), when = nameof(shaken))
 	extend("open", stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(maybe_unlucky)))
 	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up)))
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/decaf_cola)
 	cant_chance = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
@@ -702,5 +702,5 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_one)
 	volume = 150
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
 	configure(reagents(add = list(REAGENT_ID_WATER = 120)))

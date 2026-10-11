@@ -6,7 +6,7 @@
 	default_type = MAT_SNOW
 
 CAPABILITIES(/obj/item/stack/material/snow)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /obj/item/stack/material/snowbrick
 	name = "snow brick"
@@ -15,4 +15,4 @@ CAPABILITIES(/obj/item/stack/material/snow)
 	default_type = MAT_SNOWBRICK
 
 CAPABILITIES(/obj/item/stack/material/snowbrick)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_CLOTHING))

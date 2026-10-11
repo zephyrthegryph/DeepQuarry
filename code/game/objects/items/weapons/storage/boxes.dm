@@ -38,7 +38,7 @@
 TRACKED(/obj/item/storage/box, trash)
 
 CAPABILITIES(/obj/item/storage/box)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
 	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))
 	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up)))
@@ -200,7 +200,7 @@ CAPABILITIES(/obj/item/storage/box)
 	starts_with = list(/obj/item/grenade/flashbang = 7)
 
 CAPABILITIES(/obj/item/storage/box/flashbangs)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/emps
 	name = "box of emp grenades"
@@ -209,7 +209,7 @@ CAPABILITIES(/obj/item/storage/box/flashbangs)
 	starts_with = list(/obj/item/grenade/empgrenade = 7)
 
 CAPABILITIES(/obj/item/storage/box/emps)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/empslite
 	name = "box of low yield emp grenades"
@@ -218,7 +218,7 @@ CAPABILITIES(/obj/item/storage/box/emps)
 	starts_with = list(/obj/item/grenade/empgrenade/low_yield = 7)
 
 CAPABILITIES(/obj/item/storage/box/empslite)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/smokes
 	name = "box of smoke bombs"
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/item/storage/box/empslite)
 	starts_with = list(/obj/item/grenade/smokebomb = 7)
 
 CAPABILITIES(/obj/item/storage/box/smokes)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/anti_photons
 	name = "box of anti-photon grenades"
@@ -236,7 +236,7 @@ CAPABILITIES(/obj/item/storage/box/smokes)
 	starts_with = list(/obj/item/grenade/anti_photon = 7)
 
 CAPABILITIES(/obj/item/storage/box/anti_photons)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/frags
 	name = "box of fragmentation grenades (WARNING)"
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/item/storage/box/anti_photons)
 	starts_with = list(/obj/item/grenade/explosive = 7)
 
 CAPABILITIES(/obj/item/storage/box/frags)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/frags_half_box
 	name = "box of fragmentation grenades (WARNING)"
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/item/storage/box/frags)
 	starts_with = list(/obj/item/grenade/explosive = 4)
 
 CAPABILITIES(/obj/item/storage/box/frags_half_box)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/metalfoam
 	name = "box of metal foam grenades."
@@ -467,7 +467,7 @@ CAPABILITIES(/obj/item/storage/box/snappops)
 
 
 CAPABILITIES(/obj/item/storage/box/matches)
-	configure(uses_power(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	configure(storage(accepts = list(/obj/item/flame/match)))
 	op("strike", item(/obj/item/flame/match), label("Strike"), then(PROC_REF(strike_match)))
 
@@ -686,7 +686,7 @@ CAPABILITIES(/obj/item/storage/box/brainzsnax)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 3
 
 CAPABILITIES(/obj/item/storage/box/altevian_ammo)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/weapon_cells
 	name = "box of weapon cells"

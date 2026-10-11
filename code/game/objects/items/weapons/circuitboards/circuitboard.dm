@@ -19,7 +19,7 @@
 	var/hidden = FALSE
 
 CAPABILITIES(/obj/item/circuitboard)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// board_type is a /datum/frame/frame_types instance owned only by this
 /// board (or, for a few boards, a plain string) -- see the frame_type codec.

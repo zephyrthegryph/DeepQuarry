@@ -113,7 +113,7 @@
 
 //all credit to skasi for toy mech fun ideas
 CAPABILITIES(/obj/item/toy/mecha)
-	configure(uses_power(drop = SFX_MECHA_MECHSTEP))
+	configure(item_sounds(drop = SFX_MECHA_MECHSTEP))
 	// the old attack_self (and attack_tk): play with it
 	op("play", in_hand(), label("Play"), then(PROC_REF(interaction_self)))
 	op("play_tk", tk(), label("Play"), then(PROC_REF(interaction_tk)))

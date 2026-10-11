@@ -8,7 +8,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
 
 TYPE_TABLE(/obj/item/clothing/gloves/arm_guard, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/gloves/arm_guard/proc/suit_clearance, null))))
 

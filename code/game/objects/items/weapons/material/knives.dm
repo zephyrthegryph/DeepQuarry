@@ -44,7 +44,7 @@
 TRACKED(/obj/item/material/butterfly, active)
 
 CAPABILITIES(/obj/item/material/butterfly)
-	configure(uses_power(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
+	configure(item_sounds(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 	op("flip", in_hand(), label("Open or conceal blade"), then(PROC_REF(blade_flipped)))
 
 /// Preserve the blade subtype's complete force and equipment update.
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/material/butterfly)
 	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 
 CAPABILITIES(/obj/item/material/knife)
-	configure(uses_power(drop = SFX_ITEMS_DROP_KNIFE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE))
 
 // These no longer inherit from hatchets.
 /obj/item/material/knife/tacknife

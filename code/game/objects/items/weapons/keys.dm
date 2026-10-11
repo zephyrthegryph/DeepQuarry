@@ -8,4 +8,4 @@
 	var/key_id = "placeholder_DONOTUSE"	//needs to match the associated door's LOCK_ID var
 
 CAPABILITIES(/obj/item/simple_key)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))

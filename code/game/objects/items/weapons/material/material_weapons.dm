@@ -95,7 +95,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
 	// The whetstone's repair and the sharpening kit's re-edging take the time the tool says; the amount and the new material come from the tool.
 	op("repair", ai(), takes("repair_amount", "repair_time"), wait(PROC_REF(repair_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_timed_done)))

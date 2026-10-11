@@ -6,7 +6,7 @@
 	apply_colour = TRUE
 
 CAPABILITIES(/obj/item/stack/material/glass)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/glass/reinforced
 	name = "reinforced glass"
@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/stack/material/glass)
 	default_type = MAT_TITANIUMGLASS
 
 CAPABILITIES(/obj/item/stack/material/glass/titanium)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))
 
 /obj/item/stack/material/glass/plastitanium
 	name = "plastitanium glass sheets"
@@ -54,4 +54,4 @@ CAPABILITIES(/obj/item/stack/material/glass/titanium)
 	default_type = MAT_PLASTITANIUMGLASS
 
 CAPABILITIES(/obj/item/stack/material/glass/plastitanium)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))

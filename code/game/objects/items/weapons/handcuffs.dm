@@ -63,7 +63,7 @@
 
 /// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
 CAPABILITIES(/obj/item/handcuffs)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("cuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(attempt_to_cuff_timed_done)))
 
 /obj/item/handcuffs/proc/cuff_time(datum/act/op/A)

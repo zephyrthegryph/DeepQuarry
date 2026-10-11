@@ -18,7 +18,7 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(bcell), /obj/item/cell, starts = nameof(bcell))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

@@ -17,7 +17,7 @@ TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 /obj/item/clothing/mask/chewable/var/chewing = FALSE
 TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
 	reagents(nameof(chem_volume))
 	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
 	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco = 6)
 
 CAPABILITIES(/obj/item/storage/chewables)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SHOVEL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL))
 
 /obj/item/storage/chewables/Initialize(mapload)
 	. = ..()
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/item/storage/chewables)
 	var/closed_state
 
 CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/Initialize(mapload)
 	if(!open_state)
@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 
 
 CAPABILITIES(/obj/item/storage/box/gum)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/chewable/candy/gum,
 		/obj/item/trash/spitgum)))
@@ -362,7 +362,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
 
 
 CAPABILITIES(/obj/item/storage/box/pocky)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky)))
 
 /obj/item/clothing/mask/chewable/candy/pocky

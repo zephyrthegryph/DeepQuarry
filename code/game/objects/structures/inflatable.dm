@@ -7,7 +7,7 @@
 	var/deploy_path = /obj/structure/inflatable
 
 CAPABILITIES(/obj/item/inflatable)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 	op("inflate", in_hand(), label("Inflate"), then(PROC_REF(inflatable_self)))
 
 /// Old attack_self: inflate here. A torn one re-declares the op.

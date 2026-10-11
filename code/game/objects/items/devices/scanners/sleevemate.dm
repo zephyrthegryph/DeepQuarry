@@ -98,7 +98,7 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
 	// The timed scans and transfers, started by the topic ops above once they have checked the target.
 	op("mindscan_wait", ai(), takes("subject", "nif"), wait(8 SECONDS), on_interrupt(PROC_REF(Topic_timed_failed)), then(PROC_REF(Topic_timed_done)))

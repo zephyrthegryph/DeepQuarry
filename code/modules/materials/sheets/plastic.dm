@@ -14,4 +14,4 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/cardboard)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))

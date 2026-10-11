@@ -77,7 +77,7 @@ CAPABILITIES(/obj/effect/spresent)
 	return OP_OK
 
 CAPABILITIES(/obj/item/a_gift)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// the old attack_self: open it (an advanced present rolls its own loot table)
 	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open_gift)))
 
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/a_gift)
 	var/amount = 20.0
 
 CAPABILITIES(/obj/item/wrapping_paper)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

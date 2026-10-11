@@ -14,7 +14,7 @@
 
 // A bottle is stoppered at first.
 CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	configure(reagent_container(starts_open = FALSE))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
 

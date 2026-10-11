@@ -7,7 +7,7 @@
 	step_volume_mod = 1.2
 
 CAPABILITIES(/obj/item/clothing/shoes/boots)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS))
 
 /obj/item/clothing/shoes/boots/cowboy
 	name = "cowboy boots"
@@ -17,7 +17,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots)
 	cold_protection = FEET|LEGS
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER))
 
 /obj/item/clothing/shoes/boots/cowboy/classic
 	name = "classic cowboy boots"
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
 	siemens_coefficient = 0.7
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/jackboots/toeless
 	name = "toe-less jackboots"
@@ -113,7 +113,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, nul
 	siemens_coefficient = 0.7
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/workboots)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/workboots/toeless
 	name = "toe-less workboots"

@@ -43,7 +43,7 @@
 			stacktype = material.stack_type
 
 CAPABILITIES(/obj/item/stack/tile)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/stack/tile/proc/welder_used(datum/act/op/A)
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/stack/tile)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/grass)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/stack/tile/grass/sif
 	name = "sivian grass tile"
@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/stack/tile/grass)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/wood)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/tile/wood/alt
 	name = "wood floor tile"
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/stack/tile/wood)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/carpet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 
 /obj/item/stack/tile/carpet/teal
 	desc = "A piece of teal carpet. It is the same size as a normal floor tile!"

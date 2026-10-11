@@ -15,7 +15,7 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	var/recent_fail = 0
 
 CAPABILITIES(/obj/item/reagent_scanner)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/item/reagent_scanner/afterattack(obj/O, mob/living/user, proximity)
 	if(!proximity || user.stat || !istype(O))

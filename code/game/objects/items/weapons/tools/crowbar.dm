@@ -18,7 +18,7 @@
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/tool/crowbar)
-	configure(uses_power(use = SFX_ITEMS_CROWBAR, drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
+	configure(item_sounds(use = SFX_ITEMS_CROWBAR, drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/tool/crowbar/red
 	icon = 'icons/obj/tools.dmi'
@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/tool/crowbar)
 	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/crowbar/alien)
-	configure(uses_power(use = SFX_WEAPONS_SONIC_JACKHAMMER))
+	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/hybrid
 	name = "strange crowbar"
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/tool/crowbar/alien)
 	reach = 2
 
 CAPABILITIES(/obj/item/tool/crowbar/hybrid)
-	configure(uses_power(use = SFX_WEAPONS_SONIC_JACKHAMMER))
+	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/power
 	name = "power pryer"
@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/tool/crowbar/hybrid)
 	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/crowbar/power)
-	configure(uses_power(use = SFX_ITEMS_JAWS_PRY))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /*
  * Prybar
@@ -101,6 +101,6 @@ CAPABILITIES(/obj/item/tool/crowbar/power)
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/prybar)
-	configure(uses_power(use = SFX_ITEMS_CROWBAR))
+	configure(item_sounds(use = SFX_ITEMS_CROWBAR))
 	rolls(nameof(icon_state), pick_one(list("prybar", "prybar_green", "prybar_aubergine", "prybar_blue")), when = nameof(random_color))
 

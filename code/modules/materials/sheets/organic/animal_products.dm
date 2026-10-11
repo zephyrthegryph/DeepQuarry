@@ -8,7 +8,7 @@
 	strict_color_stacking = TRUE
 
 CAPABILITIES(/obj/item/stack/material/chitin)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 //don't see anywhere else to put these, maybe together they could be used to make the xenos suit?
 /obj/item/stack/xenochitin
@@ -105,7 +105,7 @@ CAPABILITIES(/obj/item/stack/material/chitin)
 	apply_colour = TRUE
 
 CAPABILITIES(/obj/item/stack/material/fur)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /obj/item/stack/material/fur/wool
 	name = MAT_WOOL

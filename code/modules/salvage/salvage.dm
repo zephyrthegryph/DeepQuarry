@@ -10,7 +10,7 @@
 	var/worth = 100
 
 CAPABILITIES(/obj/item/salvage)
-	configure(uses_power(hit = SFX_ITEMS_SALVAGE_SALVAGEPICKUP, drop = SFX_ITEMS_SALVAGE_SALVAGEDROP))
+	configure(item_sounds(hit = SFX_ITEMS_SALVAGE_SALVAGEPICKUP, drop = SFX_ITEMS_SALVAGE_SALVAGEDROP))
 	after_init(0, then(PROC_REF(become_sellable)))
 
 /// Salvage with a worth can be sold.
@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/salvage)
 	icon_state = "lego_brick"
 
 CAPABILITIES(/obj/item/salvage/ruin/brick)
-	configure(uses_power(hit = SFX_ITEMS_SMOLESMALLBUILD, drop = SFX_ITEMS_DROP_SMOLEMATERIAL))
+	configure(item_sounds(hit = SFX_ITEMS_SMOLESMALLBUILD, drop = SFX_ITEMS_DROP_SMOLEMATERIAL))
 
 /obj/item/salvage/ruin/nanotrasen
 	name = "lost research notes"
@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/salvage/ruin/brick)
 	icon_state = "research_doc"
 
 CAPABILITIES(/obj/item/salvage/ruin/nanotrasen)
-	configure(uses_power(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))
+	configure(item_sounds(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))
 	after_init(0, then(PROC_REF(turn_anomalous)))
 
 /// The notes carry an anomalous effect from the start.
@@ -63,7 +63,7 @@ CAPABILITIES(/obj/item/salvage/ruin/nanotrasen)
 	icon_state = "dragon_scales"
 
 CAPABILITIES(/obj/item/salvage/ruin/carp)
-	configure(uses_power(hit = SFX_EFFECTS_GLASS_STEP, pickup = SFX_EFFECTS_GLASS_STEP, drop = SFX_EFFECTS_GLASS_STEP))
+	configure(item_sounds(hit = SFX_EFFECTS_GLASS_STEP, pickup = SFX_EFFECTS_GLASS_STEP, drop = SFX_EFFECTS_GLASS_STEP))
 
 /obj/item/salvage/loot
 	desc = "A tonne of salvage looted from a fallen foe. Who spawned the base type? Report this on the github."
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/salvage/ruin/carp)
 	icon_state = "pirate_treasure"
 
 CAPABILITIES(/obj/item/salvage/loot/pirate)
-	configure(uses_power(hit = SFX_ITEMS_TAPERECORDER_DROP, pickup = SFX_ITEMS_TAPERECORDER_PICKUP, drop = SFX_ITEMS_TAPERECORDER_DROP))
+	configure(item_sounds(hit = SFX_ITEMS_TAPERECORDER_DROP, pickup = SFX_ITEMS_TAPERECORDER_PICKUP, drop = SFX_ITEMS_TAPERECORDER_DROP))
 
 /obj/item/salvage/loot/russian
 	name = "siosp manual"
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/salvage/loot/pirate)
 	icon_state = "ussp_manual"
 
 CAPABILITIES(/obj/item/salvage/loot/russian)
-	configure(uses_power(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))
+	configure(item_sounds(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))
 
 /obj/item/salvage/loot/syndicate
 	name = "syndicate intel"
@@ -90,4 +90,4 @@ CAPABILITIES(/obj/item/salvage/loot/russian)
 	icon_state = "syndie_doc"
 
 CAPABILITIES(/obj/item/salvage/loot/syndicate)
-	configure(uses_power(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))
+	configure(item_sounds(hit = SFX_ITEMS_PICKUP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER, drop = SFX_ITEMS_DROP_PAPER))

@@ -17,7 +17,7 @@
 // containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it
 // moves is set from 1 to its largest. What it holds is told to two tiles.
 CAPABILITIES(/obj/item/reagent_containers/dropper)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

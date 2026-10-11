@@ -1122,11 +1122,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 // ---- what an item sounds like: the item_sounds() type trait ----
 //
-// The sounds an item makes are per-type data, declared in its CAPABILITIES block, not vars on /obj/item:
-//
-//	CAPABILITIES(/obj/item/card)
-//		configure(item_sounds(pickup = SFX_ITEMS_PICKUP_CARD, drop = SFX_ITEMS_DROP_CARD))
-//
+// The sounds an item makes are per-type data, declared in its CAPABILITIES block, not vars on /obj/item: a card's block holds
+// configure(item_sounds(pickup = SFX_ITEMS_PICKUP_CARD, drop = SFX_ITEMS_DROP_CARD)).
 // hit (a strike), use (used as a tool), throw_hit (thrown into a mob), equip (worn), pickup and drop. A subtype names only what it changes;
 // TRAIT_NONE silences a sound it inherits. Read with sounds_of(I).hit ... (sounds_of_type(path) for a type's declaration); an item whose
 // sound changes at run time (a lit welder) writes it with set_hitsound() / set_usesound() / ..., which give it its own copy and publish

@@ -19,7 +19,7 @@
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
 
 CAPABILITIES(/obj/item/storage/toolbox)
-	configure(uses_power(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Emergency

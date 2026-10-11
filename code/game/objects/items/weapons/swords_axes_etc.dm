@@ -27,7 +27,7 @@
 	force = 10
 
 CAPABILITIES(/obj/item/melee/classic_baton)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/melee/classic_baton)
 TRACKED(/obj/item/melee/telebaton, on)
 
 CAPABILITIES(/obj/item/melee/telebaton)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))
 
 /// The native held-item activation preserves the complete equipment change.

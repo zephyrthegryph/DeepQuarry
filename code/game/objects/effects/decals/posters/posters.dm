@@ -22,7 +22,7 @@
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
 
 CAPABILITIES(/obj/item/poster)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(design_at_make), pos = 1, apply = PROC_REF(choose_design), keep = FALSE)
 	op("place", at_target(/turf), starts(PROC_REF(placing_started)), begins(MSG(poster/placing)), wait(1.7 SECONDS), then(PROC_REF(placed)))
 

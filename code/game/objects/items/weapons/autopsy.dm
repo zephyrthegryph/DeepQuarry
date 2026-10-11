@@ -15,7 +15,7 @@
 	var/timeofdeath = null
 
 CAPABILITIES(/obj/item/autopsy_scanner)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	owns_many(nameof(chemtraces))
 	owns_many(nameof(wdata))
 	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(can_print_data_holds), because = PROC_REF(can_print_data_refusal))), then(PROC_REF(print_data_effect)))

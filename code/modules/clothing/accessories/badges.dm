@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge)
 	w_class = ITEMSIZE_TINY
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/press)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 
 /obj/item/clothing/accessory/badge/press/independent

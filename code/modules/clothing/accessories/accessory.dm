@@ -87,7 +87,7 @@
 		forceMove(get_turf(src))
 
 CAPABILITIES(/obj/item/clothing/accessory)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("accessory_attached_hand", hand(), then(PROC_REF(accessory_attached_hand)))
 
 /// Old attack_hand: an attached accessory isn't picked up.
@@ -320,7 +320,7 @@ CAPABILITIES(/obj/item/clothing/accessory)
 	slot = ACCESSORY_SLOT_MEDAL
 
 CAPABILITIES(/obj/item/clothing/accessory/medal)
-	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/clothing/accessory/medal/conduct
 	name = "distinguished conduct medal"

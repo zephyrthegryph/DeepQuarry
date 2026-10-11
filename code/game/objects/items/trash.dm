@@ -10,7 +10,7 @@
 	var/age = 0
 
 CAPABILITIES(/obj/item/trash)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(age), pos = 1)
 
 // ALLOW(init/INSTANCE_STATE): trash not loaded with the map is tracked for persistence
@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/trash)
 	icon_state = "unathitinred"
 
 CAPABILITIES(/obj/item/trash/unajerky)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/syndi_cakes
 	name = "syndi cakes box"
@@ -96,35 +96,35 @@ CAPABILITIES(/obj/item/trash/unajerky)
 	icon_state = "plate"
 
 CAPABILITIES(/obj/item/trash/plate)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/asian_bowl
 	name = "asian bowl"
 	icon_state	= "asian_bowl"
 
 CAPABILITIES(/obj/item/trash/asian_bowl)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/snack_bowl
 	name = "snack bowl"
 	icon_state	= "snack_bowl"
 
 CAPABILITIES(/obj/item/trash/snack_bowl)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/small_bowl
 	name = "small bowl"
 	icon_state	= "small_bowl"
 
 CAPABILITIES(/obj/item/trash/small_bowl)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/turkeybones
 	name = "turkey bones"
 	icon_state	= "turkeybones"
 
 CAPABILITIES(/obj/item/trash/turkeybones)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/pistachios
 	name = "pistachios packet"
@@ -159,21 +159,21 @@ CAPABILITIES(/obj/item/trash/turkeybones)
 	icon_state = "coffee_vended"
 
 CAPABILITIES(/obj/item/trash/coffee)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 
 /obj/item/trash/ramen
 	name = "cup ramen"
 	icon_state = "ramen"
 
 CAPABILITIES(/obj/item/trash/ramen)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
 
 /obj/item/trash/tray
 	name = "tray"
 	icon_state = "tray"
 
 CAPABILITIES(/obj/item/trash/tray)
-	configure(uses_power(drop = SFX_ITEMS_TRAYHIT1))
+	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
 
 /obj/item/trash/candle
 	name = "candle"
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/trash/tray)
 	icon_state = "candle4"
 
 CAPABILITIES(/obj/item/trash/candle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 
 /obj/item/trash/liquidfood
 	name = "\improper \"LiquidFood\" ration packet"
@@ -205,28 +205,28 @@ CAPABILITIES(/obj/item/trash/candle)
 	icon_state = "brownies"
 
 CAPABILITIES(/obj/item/trash/brownies)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/snacktray
 	name = "snacktray"
 	icon_state = "snacktray"
 
 CAPABILITIES(/obj/item/trash/snacktray)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/dipbowl
 	name = "dip bowl"
 	icon_state = "dipbowl"
 
 CAPABILITIES(/obj/item/trash/dipbowl)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/chipbasket
 	name = "empty chip basket"
 	icon_state = "chipbasket_empty"
 
 CAPABILITIES(/obj/item/trash/chipbasket)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/trash/spitgum
 	name = "old gum"
@@ -235,7 +235,7 @@ CAPABILITIES(/obj/item/trash/chipbasket)
 	icon_state = "spit-gum"
 
 CAPABILITIES(/obj/item/trash/spitgum)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 
 /obj/item/trash/lollibutt
 	name = "lollipop stick"
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/item/trash/spitgum)
 	icon_state = "pop-stick"
 
 CAPABILITIES(/obj/item/trash/lollibutt)
-	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 /obj/item/trash/spitwad
 	name = "spit wad"
@@ -254,56 +254,56 @@ CAPABILITIES(/obj/item/trash/lollibutt)
 	slot_flags = SLOT_EARS | SLOT_MASK
 
 CAPABILITIES(/obj/item/trash/spitwad)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 
 /obj/item/trash/beef
 	name = "empty beef can"
 	icon_state = "beef"
 
 CAPABILITIES(/obj/item/trash/beef)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/beans
 	name = "empty bean can"
 	icon_state = "beans"
 
 CAPABILITIES(/obj/item/trash/beans)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/tomato
 	name = "empty tomato soup can"
 	icon_state = "tomato"
 
 CAPABILITIES(/obj/item/trash/tomato)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/spinach
 	name = "empty spinach can"
 	icon_state = "spinach"
 
 CAPABILITIES(/obj/item/trash/spinach)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/fishegg
 	name = "empty fisheggs can"
 	icon_state = "fisheggs"
 
 CAPABILITIES(/obj/item/trash/fishegg)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/carpegg
 	name = "empty carpeggs can"
 	icon_state = "carpeggs"
 
 CAPABILITIES(/obj/item/trash/carpegg)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/ntbeans
 	name = "empty baked bean can"
 	icon_state = "ntbeans"
 
 CAPABILITIES(/obj/item/trash/ntbeans)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/salo
 	name = "salo pack"
@@ -375,7 +375,7 @@ CAPABILITIES(/obj/item/trash/ntbeans)
 	icon_state = "maps"
 
 CAPABILITIES(/obj/item/trash/maps)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/spacer_cake_wrap
 	name = "snack cake wrapper"
@@ -402,7 +402,7 @@ CAPABILITIES(/obj/item/trash/maps)
 	icon_state = "appleberry"
 
 CAPABILITIES(/obj/item/trash/appleberry)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/hakarl
 	name = "\improper Indigo Co. Hákarl bag"
@@ -453,14 +453,14 @@ CAPABILITIES(/obj/item/trash/appleberry)
 	icon_state = "brainzsnax"
 
 CAPABILITIES(/obj/item/trash/brainzsnax)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/brainzsnaxred
 	name = "\improper BrainzSnax RED can"
 	icon_state = "brainzsnaxred"
 
 CAPABILITIES(/obj/item/trash/brainzsnaxred)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 
 /obj/item/trash/pasty
 	name = "pasty packaging"

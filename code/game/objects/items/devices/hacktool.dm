@@ -19,7 +19,7 @@
 	return 5 + R.number(1, 3)
 
 CAPABILITIES(/obj/item/multitool/hacktool)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	// The hacks, started by attempt_hack() with the target and the rolled time; the tool is claimed (busy) until one ends.

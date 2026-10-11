@@ -69,7 +69,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	owns_one(nameof(contract_document), /datum/contract_document)
 	interface("Paper")
 	without("ui_open")

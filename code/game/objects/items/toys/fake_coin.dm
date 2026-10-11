@@ -101,7 +101,7 @@
 	icon_state = "coin_verdantium"
 
 CAPABILITIES(/obj/item/fake_coin)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 

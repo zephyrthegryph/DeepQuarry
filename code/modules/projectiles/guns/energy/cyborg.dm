@@ -161,7 +161,7 @@
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws)
-	configure(uses_power(hit = SFX_WEAPONS_BITE))
+	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
 /obj/item/melee/robotic/jaws/big
 	name = "combat jaws"
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	var/dogborg = FALSE
 
 CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
-	configure(uses_power(hit = SFX_WEAPONS_GENHIT1))
+	configure(item_sounds(hit = SFX_WEAPONS_GENHIT1))
 
 /obj/item/melee/robotic/borg_combat_shocker/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc
@@ -317,7 +317,7 @@ CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
 	var/lcolor = "#38e541"
 
 CAPABILITIES(/obj/item/melee/robotic/blade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADE1))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
 		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "confirm"),
@@ -472,7 +472,7 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 TRACKED(/obj/item/melee/robotic/baton, status)
 
 CAPABILITIES(/obj/item/melee/robotic/baton)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
 	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
 	op("item_pass", item(/obj/item), when(req(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())

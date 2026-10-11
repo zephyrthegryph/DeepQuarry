@@ -20,7 +20,7 @@
 
 
 CAPABILITIES(/obj/item/storage/part_replacer)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL))
 	op("reskin", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Reskin"), then(PROC_REF(interaction_reskin_alt)))
 

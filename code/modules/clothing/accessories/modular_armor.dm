@@ -81,7 +81,7 @@
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///armored boots
 
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///snowflake leg guards
 

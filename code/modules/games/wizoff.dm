@@ -98,4 +98,4 @@
 		"}
 
 CAPABILITIES(/obj/item/book/manual/wizzoffguide)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))

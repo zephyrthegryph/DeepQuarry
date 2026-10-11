@@ -53,7 +53,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 
 CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
-	configure(uses_power(use = SFX_ITEMS_JAWS_PRY))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /obj/item/tool/transforming/jawsoflife/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
@@ -92,7 +92,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_SCREWDRIVER)
 
 CAPABILITIES(/obj/item/tool/transforming/powerdrill)
-	configure(uses_power(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/tool/transforming/powerdrill/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 	weldertype = /obj/item/weldingtool/dummy/altevian
 
 CAPABILITIES(/obj/item/tool/transforming/altevian)
-	configure(uses_power(hit = SFX_WEAPONS_SMASH))
+	configure(item_sounds(hit = SFX_WEAPONS_SMASH))
 
 /obj/item/tool/transforming/altevian/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))

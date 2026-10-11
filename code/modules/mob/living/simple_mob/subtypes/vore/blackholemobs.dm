@@ -910,7 +910,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	hud_state = "taser"
 
 CAPABILITIES(/obj/item/projectile/beam/shock/bh1)
-	configure(uses_power(hit = SFX_EFFECTS_LIGHTNINGSHOCK))
+	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGSHOCK))
 
 /obj/item/projectile/explosive_rocket/blackhole
 	name = "80mm rocket propelled grenade"

@@ -47,7 +47,7 @@
 	rand_overlays = 0
 
 CAPABILITIES(/obj/item/extinguisher/mini)
-	configure(uses_power(hit = TRAIT_NONE))
+	configure(item_sounds(hit = TRAIT_NONE))
 	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 150)))
 CAPABILITIES(/obj/item/extinguisher/atmo)
 	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
-	configure(uses_power(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
+	configure(item_sounds(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	reagents(nameof(max_water), starts = list(REAGENT_ID_FIREFOAM = 300))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 

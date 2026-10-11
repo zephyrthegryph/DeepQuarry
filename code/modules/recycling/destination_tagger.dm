@@ -31,7 +31,7 @@
 	return data
 
 CAPABILITIES(/obj/item/destTagger)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("DestinationTagger", state = nameof(GLOB.tgui_inventory_state))
 	op("set_tag", ui_act("set_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_set_tag)))

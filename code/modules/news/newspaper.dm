@@ -34,7 +34,7 @@ MSG_DEF_SELF(newspaper/unintelligible, "the paper is full of unintelligible symb
 	return OP_OK
 
 CAPABILITIES(/obj/item/newspaper)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_actor_kind(/mob/living/carbon/human, because = MSG(newspaper/unintelligible))), then(PROC_REF(interaction_self)))
 	op("scribble", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), asks(/datum/prompt/text, fields = list("question" = "Write something", "title" = "Newspaper"), step = "scribble", when = PROC_REF(scribble_free)), passes(), then(PROC_REF(interaction_item)))
 	interface("Newspaper", title = "The Griffon")

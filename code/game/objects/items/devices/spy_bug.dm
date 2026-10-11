@@ -17,7 +17,7 @@
 
 
 CAPABILITIES(/obj/item/camerabug)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
@@ -64,7 +64,7 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 	throw_speed = 3
 
 CAPABILITIES(/obj/item/brokenbug)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 
 /obj/item/brokenbug/spy
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/brokenbug)
 	radio = new(src)
 */
 CAPABILITIES(/obj/item/bug_monitor)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
 	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))
 

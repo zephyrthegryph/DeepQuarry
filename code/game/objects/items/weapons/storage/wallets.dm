@@ -14,7 +14,7 @@
 
 
 CAPABILITIES(/obj/item/storage/wallet)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 	configure(storage(accepts = list(
 		/obj/item/spacecash,
 		/obj/item/card,

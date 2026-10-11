@@ -449,7 +449,7 @@ CAPABILITIES(/obj/item/gun/energy/bfgtaser)
 	hitsound_wall = SFX_EFFECTS_SPARKS7
 
 CAPABILITIES(/obj/item/projectile/beam/stun/weak/BFG)
-	configure(uses_power(hit = SFX_EFFECTS_SPARKS4))
+	configure(item_sounds(hit = SFX_EFFECTS_SPARKS4))
 
 /obj/item/projectile/bullet/BFGtaser
 	name = "lightning ball"
@@ -463,7 +463,7 @@ CAPABILITIES(/obj/item/projectile/beam/stun/weak/BFG)
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
 
 CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
-	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/bullet/BFGtaser/projectile_step()
 	var/list/victims = list()

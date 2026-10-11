@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/instrument)
 	allowed_instrument_ids = "violin"
 
 CAPABILITIES(/obj/item/instrument/violin)
-	configure(uses_power(hit = SFX_SWING_HIT))
+	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/instrument/violin/golden
 	name = "golden violin"
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/instrument/violin)
 	allowed_instrument_ids = "banjo"
 
 CAPABILITIES(/obj/item/instrument/banjo)
-	configure(uses_power(hit = SFX_WEAPONS_BANJOSLAP))
+	configure(item_sounds(hit = SFX_WEAPONS_BANJOSLAP))
 
 /obj/item/instrument/guitar
 	name = "guitar"
@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/instrument/banjo)
 	allowed_instrument_ids = list("guitar","csteelgt","cnylongt", "ccleangt", "cmutedgt")
 
 CAPABILITIES(/obj/item/instrument/guitar)
-	configure(uses_power(hit = SFX_WEAPONS_STRINGSMASH))
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/eguitar
 	name = "electric guitar"
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/instrument/guitar)
 	allowed_instrument_ids = "eguitar"
 
 CAPABILITIES(/obj/item/instrument/eguitar)
-	configure(uses_power(hit = SFX_WEAPONS_STRINGSMASH))
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/glockenspiel
 	name = "glockenspiel"
@@ -194,7 +194,7 @@ CAPABILITIES(/obj/item/instrument/eguitar)
 	throw_range = 15
 
 CAPABILITIES(/obj/item/instrument/bikehorn)
-	configure(uses_power(hit = SFX_ITEMS_BIKEHORN))
+	configure(item_sounds(hit = SFX_ITEMS_BIKEHORN))
 
 /obj/item/instrument/musicalmoth
 	name = "musical moth"
@@ -206,7 +206,7 @@ CAPABILITIES(/obj/item/instrument/bikehorn)
 	force = 0
 
 CAPABILITIES(/obj/item/instrument/musicalmoth)
-	configure(uses_power(hit = SFX_VOICE_MOTH_SCREAM_MOTH))
+	configure(item_sounds(hit = SFX_VOICE_MOTH_SCREAM_MOTH))
 
 //////////////Fluff items
 

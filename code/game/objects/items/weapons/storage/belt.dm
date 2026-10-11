@@ -20,7 +20,7 @@ TRACKED(/obj/item/storage/belt, show_above_suit)
 MSG_DEF_SELF(belt/under_suit, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/storage/belt)
-	configure(uses_power(equip = SFX_ITEMS_TOOLBELT_EQUIP, drop = SFX_ITEMS_DROP_TOOLBELT, pickup = SFX_ITEMS_PICKUP_TOOLBELT))
+	configure(item_sounds(equip = SFX_ITEMS_TOOLBELT_EQUIP, drop = SFX_ITEMS_DROP_TOOLBELT, pickup = SFX_ITEMS_PICKUP_TOOLBELT))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	op("layer", menu(), label("Switch Belt Layer"), needs(carried(), req(PROC_REF(can_switch_layer))), then(PROC_REF(toggle_layer_effect)))
 

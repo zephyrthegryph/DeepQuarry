@@ -20,7 +20,7 @@
 TRACKED(/obj/item/uv_light, on)
 
 CAPABILITIES(/obj/item/uv_light)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))
 

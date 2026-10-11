@@ -32,7 +32,7 @@
 		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 	op("breath_mask_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(breath_mask_adjust_self)))
 	op("breath_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(breath_toggle_verb)))
 
@@ -86,6 +86,6 @@ CAPABILITIES(/obj/item/clothing/mask/breath)
 	permeability_coefficient = 0.50
 
 CAPABILITIES(/obj/item/clothing/mask/altevian_breath)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 
 TYPE_TABLE(/obj/item/clothing/mask/altevian_breath, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))

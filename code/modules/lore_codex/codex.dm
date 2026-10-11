@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/book/codex)
 	libcategory = "Reference"
 
 CAPABILITIES(/obj/item/book/codex/lore/news)
-	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE))
 
 /* // REMOVAL
 // Combines SOP/Regs/Law

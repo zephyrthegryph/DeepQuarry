@@ -19,7 +19,7 @@
 	slowdown = 0
 
 CAPABILITIES(/obj/item/clothing/accessory/ring)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /////////////////////////////////////////
 //Standard Rings
@@ -216,7 +216,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/ring/material/void_opal, ring_forced_mat
 	icon_state = "ringworld1"
 
 CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld1)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))
 
 /obj/item/clothing/accessory/ring/ringworld2
 	name = "world ring"
@@ -225,4 +225,4 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld1)
 	icon_state = "ringworld2"
 
 CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld2)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))

@@ -1053,7 +1053,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SHOES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 	op("caution_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(caution_toggle_self)))
 	op("caution_toggle_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle"), then(PROC_REF(caution_toggle_alt)))
 

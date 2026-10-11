@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/deck)
 	var/deck_size = 1 // # of times we will generate cards within this deck
 
 CAPABILITIES(/obj/item/deck/cards)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 
 /obj/item/deck/cards/proc/init_cards()
 	PROTECTED_PROC(TRUE)
@@ -473,7 +473,7 @@ CAPABILITIES(/obj/item/deck/cards)
 	var/parentdeck = null // This variable is added here so that card pack dependent card can be mixed together by defining a "parentdeck" for them
 
 CAPABILITIES(/obj/item/pack)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	owns_many(nameof(cards))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -552,7 +552,7 @@ CAPABILITIES(/obj/item/pack)
 		spent(src, user)
 
 CAPABILITIES(/obj/item/hand)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	rolls(nameof(jitter_x), range_of(-5, 5))
 	rolls(nameof(jitter_y), range_of(-5, 5))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))

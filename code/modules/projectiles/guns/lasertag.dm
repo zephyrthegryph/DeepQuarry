@@ -108,7 +108,7 @@
 	///What vests we are allowed to hit with the knife.
 
 CAPABILITIES(/obj/item/lasertagknife)
-	configure(uses_power(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
+	configure(item_sounds(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 
 TYPE_TABLE_DECLARE(/obj/item/lasertagknife, lasertag_knife_allowed_suits, list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni))
 

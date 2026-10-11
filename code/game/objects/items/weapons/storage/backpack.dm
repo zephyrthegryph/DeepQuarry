@@ -20,7 +20,7 @@
 
 
 CAPABILITIES(/obj/item/storage/backpack)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	configure(storage(max_size = ITEMSIZE_LARGE))
 
 /obj/item/storage/backpack/equipped(mob/user, slot)

@@ -73,7 +73,7 @@ TRACKED(/obj/item/lightreplacer, max_uses)
 TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),
 		needs(req_bool(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req_bool(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in)))

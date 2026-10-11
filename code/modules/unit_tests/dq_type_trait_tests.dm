@@ -48,3 +48,21 @@ CAPABILITIES(/obj/machinery/dq_power_trait_probe/child)
 	A.update_power_channel(LIGHT)
 	TEST_ASSERT_EQUAL(power_of(A).channel, LIGHT, "the channel moves")
 	TEST_ASSERT(A.draws_light(null) && !A.draws_environ(null), "and the draw follows it")
+
+/datum/unit_test/dq_type_trait/item_sounds_declared
+
+/// The item sounds trait: the base's defaults, a subtype's configure() and TRAIT_NONE silencing an inherited sound; a run-time write is the item's own.
+/datum/unit_test/dq_type_trait/item_sounds_declared/Run()
+	var/datum/type_trait/item_sounds/base = sounds_of_type(/obj/item)
+	TEST_ASSERT_EQUAL(base.pickup, SFX_GENERIC_PICKUP, "an item picks up with the generic sound")
+	TEST_ASSERT_EQUAL(base.hit, SFX_SWING_HIT, "and strikes with the swing")
+	var/datum/type_trait/item_sounds/card = sounds_of_type(/obj/item/card)
+	TEST_ASSERT_EQUAL(card.pickup, SFX_ITEMS_PICKUP_CARD, "a card has its own pickup sound")
+	TEST_ASSERT_EQUAL(card.hit, SFX_SWING_HIT, "and inherits the strike")
+	var/datum/type_trait/item_sounds/knife = sounds_of_type(/obj/item/material/butterfly)
+	TEST_ASSERT_NULL(knife.hit, "TRAIT_NONE silences an inherited sound")
+	var/obj/item/card/A = allocate(/obj/item/card, test_floor())
+	var/obj/item/card/B = allocate(/obj/item/card, test_floor())
+	TEST_ASSERT(A.set_drop_sound(SFX_GENERIC_DROP), "a run-time write takes")
+	TEST_ASSERT_EQUAL(sounds_of(A).drop, SFX_GENERIC_DROP, "the item reads its own")
+	TEST_ASSERT_EQUAL(sounds_of(B).drop, card.drop, "a sibling keeps the type's")

@@ -25,7 +25,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/hardhat)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 
 /obj/item/clothing/head/hardhat/orange
 	icon_state = "hardhat0_orange"

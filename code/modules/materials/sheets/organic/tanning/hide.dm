@@ -12,7 +12,7 @@
 
 //Step one - dehairing.
 CAPABILITIES(/obj/item/stack/animalhide)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	// One hide every 2.5 seconds until the stack is used up or the user stops.
 	op("animalhide_interaction_item", item(/obj/item), when(req(PROC_REF(held_cuts))), begins(MSG(animalhide/cutting), blind = "You hear the sound of a knife rubbing against flesh"),
 		wait(2.5 SECONDS, repeats = PROC_REF(scrape_more), after_step = PROC_REF(scrape_one)), on_interrupt(PROC_REF(scrape_report)), then(PROC_REF(scrape_finished)))
@@ -66,7 +66,7 @@ MSG_DEF(animalhide/cutting, span_notice("You start cutting the hair off %T%"), s
 	stacktype = "hide-human"
 
 CAPABILITIES(/obj/item/stack/animalhide/human)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/stack/animalhide/corgi
 	name = "corgi hide"

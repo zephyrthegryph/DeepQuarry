@@ -14,7 +14,7 @@
 // in a holder is stuffed into it (when it takes them: food_can_insert_micro and stuffing_refusal()). Whoever is stuffed in is in its contents, and drops
 // out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food)
-	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL)
 	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req_bool(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"),
 		then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested)))

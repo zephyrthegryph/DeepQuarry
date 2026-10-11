@@ -9,7 +9,7 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/leather)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/stack/material/cloth
 	name = MAT_CLOTH
@@ -22,7 +22,7 @@ CAPABILITIES(/obj/item/stack/material/leather)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/cloth)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /obj/item/stack/material/cloth/diyaab
 	color = "#c6ccf0"
@@ -39,7 +39,7 @@ CAPABILITIES(/obj/item/stack/material/cloth)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/cotton)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /obj/item/stack/material/fiber
 	name = "plant fiber"
@@ -51,4 +51,4 @@ CAPABILITIES(/obj/item/stack/material/cotton)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/material/fiber)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))

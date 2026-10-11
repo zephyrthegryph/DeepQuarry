@@ -40,7 +40,7 @@
 TRACKED(/obj/item/perfect_tele, beacons_left)
 
 CAPABILITIES(/obj/item/perfect_tele)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(beacons))
 	// Sending someone, started by afterattack() once the checks passed; the struggle of a resisting target is the wait.
 	op("translocate", ai(), takes("subject", "struggle", "ignore_fail_chance"), wait(PROC_REF(translocate_wait)), then(PROC_REF(teleport_now)))

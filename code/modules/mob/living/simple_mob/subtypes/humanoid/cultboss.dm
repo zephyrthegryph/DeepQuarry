@@ -210,7 +210,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/voidblade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/capture_crystal/demon
 	spawn_mob_type = /mob/living/simple_mob/vore/demonAI

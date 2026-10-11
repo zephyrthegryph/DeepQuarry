@@ -18,7 +18,7 @@
 TRACKED(/obj/item/modkit, parts)
 
 CAPABILITIES(/obj/item/modkit)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	examine_line(PROC_REF(refit_description))
 	op("refit", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Refit hardsuit"),
 		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req_bool(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), then(PROC_REF(refitted)))

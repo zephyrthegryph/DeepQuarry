@@ -7,7 +7,7 @@
 	var/amount = 25.0
 
 CAPABILITIES(/obj/item/packageWrap)
-	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 
 /obj/item/packageWrap/afterattack(obj/target, mob/user, proximity)
 	if(!proximity) return

@@ -30,7 +30,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 		slowdown += 3
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
 /// Old attack_self: toggle the magnetic grip, after the shoes' own self-use (the old ..()).

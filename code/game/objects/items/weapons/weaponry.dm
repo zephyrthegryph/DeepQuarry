@@ -11,7 +11,7 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/nullrod)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/nullrod/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

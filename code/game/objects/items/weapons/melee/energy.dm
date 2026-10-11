@@ -292,7 +292,7 @@ CAPABILITIES(/obj/item/melee/energy)
 	projectile_parry_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/energy/sword/dropped(mob/user, equipping, slot)
 	..()

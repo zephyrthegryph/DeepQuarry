@@ -13,7 +13,7 @@
 	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/arrow)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
 	return
@@ -31,7 +31,7 @@ CAPABILITIES(/obj/item/arrow)
 	item_state = "bolt"
 
 CAPABILITIES(/obj/item/spike)
-	configure(uses_power(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/quill
 	name = "alien quill"

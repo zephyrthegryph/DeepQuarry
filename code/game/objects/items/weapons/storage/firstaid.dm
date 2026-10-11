@@ -128,7 +128,7 @@ TRACKED(/obj/item/storage/pill_bottle, wrapper_color)
 		look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 
 CAPABILITIES(/obj/item/storage/pill_bottle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 	configure(storage(accepts = list(
 		/obj/item/reagent_containers/pill,
 		/obj/item/dice,

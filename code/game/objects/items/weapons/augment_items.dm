@@ -26,7 +26,7 @@
 	projectile_parry_chance = 5
 
 CAPABILITIES(/obj/item/melee/augment/blade)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/melee/augment/blade/arm
 	name = "armblade"

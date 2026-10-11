@@ -6,7 +6,7 @@
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/tajaran/furs)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/clothing/head/tajaran/scarf	//This stays in /suits because it goes with the furs above
 	name = "headscarf"
@@ -16,4 +16,4 @@ CAPABILITIES(/obj/item/clothing/suit/tajaran/furs)
 	body_parts_covered = HEAD|FACE
 
 CAPABILITIES(/obj/item/clothing/head/tajaran/scarf)
-	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))

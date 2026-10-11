@@ -22,7 +22,7 @@
 	force = 0
 
 CAPABILITIES(/obj/item/clothing/shoes/primitive)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /*
  * Tribal Clothing

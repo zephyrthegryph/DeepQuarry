@@ -362,7 +362,7 @@ CAPABILITIES(/obj/item/holo/esword)
 	unacidable = TRUE
 
 CAPABILITIES(/obj/item/beach_ball/holoball)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL, pickup = SFX_ITEMS_PICKUP_BASKETBALL))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL, pickup = SFX_ITEMS_PICKUP_BASKETBALL))
 
 /obj/structure/holohoop
 	name = "basketball hoop"

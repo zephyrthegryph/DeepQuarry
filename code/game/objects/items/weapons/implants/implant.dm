@@ -77,7 +77,7 @@
 		post_implant(H)
 
 CAPABILITIES(/obj/item/implant)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("load_implanter", item(/obj/item/implanter), passes(), label("Load implanter"), then(PROC_REF(load_implanter)))
 
 /// An implanter takes the implant (when it is empty); the click goes on.

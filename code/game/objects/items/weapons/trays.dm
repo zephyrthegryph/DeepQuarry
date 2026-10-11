@@ -86,7 +86,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/tray)
-	configure(uses_power(drop = SFX_ITEMS_TRAYHIT1))
+	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

@@ -31,7 +31,7 @@ TRACKED(/obj/item/reagent_containers/glass/rag, rag_lit)
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
 // below). It keeps the glass handling: a label, a dip, a hot thing over blood.
 CAPABILITIES(/obj/item/reagent_containers/glass/rag)
-	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	without(CAP_GLASS_CONTAINER)
 	reagent_container(
 		volume = nameof(volume),

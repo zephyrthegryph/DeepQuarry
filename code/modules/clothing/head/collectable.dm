@@ -39,7 +39,7 @@
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/collectable/paper)
-	configure(uses_power(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 
 /obj/item/clothing/head/collectable/tophat
 	name = "collectable top hat"

@@ -61,7 +61,7 @@ TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
 
 CAPABILITIES(/obj/item/clothing/ears/skrell/chain)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/chain/silver
 	name = "Silver headtail chains"
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/clothing/ears/skrell/chain)
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
 
 CAPABILITIES(/obj/item/clothing/ears/skrell/band)
-	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/band/silver
 	name = "Silver headtail bands"

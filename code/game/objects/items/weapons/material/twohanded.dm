@@ -28,7 +28,7 @@
 	var/unwielded_force_divisor = 0.25
 
 CAPABILITIES(/obj/item/material/twohanded)
-	configure(uses_power(hit = SFX_SWING_HIT, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	configure(item_sounds(hit = SFX_SWING_HIT, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 TRACKED(/obj/item/material/twohanded, wielded)
 
@@ -102,7 +102,7 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	can_cleave = TRUE
 
 CAPABILITIES(/obj/item/material/twohanded/fireaxe)
-	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe)
 	attackspeed = 14
 
 CAPABILITIES(/obj/item/material/twohanded/spear)
-	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
 //This is mostly for centaurs.
 /obj/item/material/twohanded/spear/lance
@@ -231,7 +231,7 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 		)
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
-	configure(uses_power(hit = SFX_WEAPONS_HEAVYSMASH))
+	configure(item_sounds(hit = SFX_WEAPONS_HEAVYSMASH))
 
 /obj/item/material/twohanded/sledgehammer/update_held_icon()
 	var/mob/living/M = loc
@@ -277,7 +277,7 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	slowdown = 0
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
-	configure(uses_power(hit = SFX_EFFECTS_LIGHTNINGBOLT))
+	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGBOLT))
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	..()

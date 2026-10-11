@@ -318,7 +318,7 @@
 	slot_flags = SLOT_HOLSTER
 
 CAPABILITIES(/obj/item/holder/fish)
-	configure(uses_power(hit = SFX_EFFECTS_SLIME_SQUISH))
+	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)
 	if(!target)

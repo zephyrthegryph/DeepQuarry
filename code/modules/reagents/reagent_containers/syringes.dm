@@ -49,7 +49,7 @@ TRACKED(/obj/item/reagent_containers/syringe, mode)
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

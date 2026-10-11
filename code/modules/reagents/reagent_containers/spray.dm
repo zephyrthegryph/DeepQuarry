@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
 	volume = 10
 
 CAPABILITIES(/obj/item/reagent_containers/spray/waterflower)
-	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	configure(reagent_container(starts = list(REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/spray/chemsprayer

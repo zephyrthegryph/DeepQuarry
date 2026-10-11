@@ -27,7 +27,7 @@ TRACKED(/obj/item/flame/candle, wax)
 	return "[icon_type][appearance_wax_stage()][lit ? "_lit" : ""]"
 
 CAPABILITIES(/obj/item/flame/candle)
-	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
 	op("light_from", item(/obj/item), passes(), when(req_bool(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))

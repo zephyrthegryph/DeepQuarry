@@ -152,7 +152,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
-	configure(uses_power(use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/tool/crowbar/cyborg
 	name = "hydraulic crowbar"
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
 	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/crowbar/cyborg)
-	configure(uses_power(use = SFX_ITEMS_JAWS_PRY))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /obj/item/tool/crowbar/cyborg/jaws
 	name = "puppy jaws"
@@ -174,7 +174,7 @@ CAPABILITIES(/obj/item/tool/crowbar/cyborg)
 	force = 15
 
 CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
-	configure(uses_power(hit = SFX_WEAPONS_BITE))
+	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
 /obj/item/weldingtool/electric/mounted/cyborg
 	name = "integrated electric welding tool"
@@ -186,7 +186,7 @@ CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
 	no_passive_burn = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
-	configure(uses_power(use = SFX_ITEMS_WELDER2))
+	configure(item_sounds(use = SFX_ITEMS_WELDER2))
 
 /obj/item/tool/wirecutters/cyborg
 	name = "wirecutters"
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
 	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
-	configure(uses_power(use = SFX_ITEMS_JAWS_CUT))
+	configure(item_sounds(use = SFX_ITEMS_JAWS_CUT))
 
 /obj/item/tool/wrench/cyborg
 	name = "automatic wrench"
@@ -207,7 +207,7 @@ CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
 	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/wrench/cyborg)
-	configure(uses_power(use = SFX_ITEMS_DRILL_USE_2))
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/multitool/cyborg
 	name = "multitool"
@@ -600,7 +600,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(current_pocket))
 	ref_one(nameof(our_robot))
 	ref_one(nameof(held_item), /obj/item)

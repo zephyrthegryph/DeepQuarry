@@ -9,7 +9,7 @@
 			)
 
 CAPABILITIES(/obj/item/melee)
-	configure(uses_power(drop = SFX_ITEMS_DROP_METALWEAPON))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON))
 
 // Attacks mobs (atm only simple ones due to friendly fire issues) that are adjacent to the target and user.
 /obj/item/proc/cleave(mob/living/user, atom/target)

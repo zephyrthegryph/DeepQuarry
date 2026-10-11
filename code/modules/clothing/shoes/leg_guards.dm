@@ -9,7 +9,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
-	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, fit_spec, null)
 

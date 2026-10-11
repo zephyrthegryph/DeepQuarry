@@ -25,7 +25,7 @@ TRACKED(/obj/item/t_scanner, on)
 	look.state("t-ray[on]")
 
 CAPABILITIES(/obj/item/t_scanner)
-	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Scans underfloor objects while switched on.
 	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
 	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))

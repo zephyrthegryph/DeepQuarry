@@ -12,7 +12,7 @@
 	force = 10
 
 CAPABILITIES(/obj/item/scrying)
-	configure(uses_power(hit = SFX_ITEMS_WELDER2))
+	configure(item_sounds(hit = SFX_ITEMS_WELDER2))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
