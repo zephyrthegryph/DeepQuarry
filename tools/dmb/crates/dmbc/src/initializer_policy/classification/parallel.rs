@@ -196,7 +196,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     // admitted receipts hold their leaves and replay every original observation.
     let mut tokens = super::token_owner::RequestTokens::new(
         debug_defined,
-        reuse.map(|reuse| &reuse.store.roster),
+        reuse.map(|reuse| reuse.store.roster.as_ref()),
     );
     let receipt_pool = reuse.map(|_| artifact::ReceiptPool::default());
     let classified = map_buckets(buckets, evaluator, executor, |index, bucket, worker| {

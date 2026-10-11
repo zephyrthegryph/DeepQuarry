@@ -5,6 +5,7 @@ use crate::modified_initializers::ExpressionRecipe;
 use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_ir::{Resolver, SymRef, SymbolTable};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 pub(super) fn current_keys(
     classified: &crate::initializer_policy::ClassifiedInitializers,

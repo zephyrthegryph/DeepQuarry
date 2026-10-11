@@ -37,7 +37,6 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
             Ok(CommandOutcome::Completed)
         }
         Command::Gc { project } => {
-            let publishable_artifacts = command == BuildCommand::Compile && demand.is_none();
             let project = std::fs::canonicalize(project)?;
             dmbc::daemon_println!(
                 "{}",
@@ -109,6 +108,7 @@ fn run_build_attempt(
         no_daemon: _,
         trace_path,
     } = request;
+    let publishable_artifacts = command == BuildCommand::Compile && demand.is_none();
     let project = std::fs::canonicalize(project)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
         return Err("record and replay inputs are mutually exclusive".into());
