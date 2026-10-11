@@ -35,24 +35,24 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, "You remove the faceplate from the [src]")
-	var/obj/structure/frame/A = new /obj/structure/frame(loc)
+	var/obj/structure/frame/frame = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	rel_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
-	board.forceMove(A)
-	own_move(board, A, nameof(A.circuit)) // the board goes from this machine to the frame
-	A.need_circuit = FALSE
-	A.pixel_x = pixel_x
-	A.pixel_y = pixel_y
-	A.set_dir(dir)
-	A.set_anchored(TRUE)
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	board.forceMove(frame)
+	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame
+	frame.need_circuit = FALSE
+	frame.pixel_x = pixel_x
+	frame.pixel_y = pixel_y
+	frame.set_dir(dir)
+	frame.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(C, /obj/item/circuitboard))
-			C.forceMove(A)
+			C.forceMove(frame)
 			continue
 		C.forceMove(loc)
-	rel_move(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
-	A.set_state(FRAME_WIRED)
+	rel_move(src, nameof(forensic_data), frame, nameof(frame.forensic_data)) //carry crime data over.
+	frame.set_state(FRAME_WIRED)
 	destroyed(src, user, "deconstructed")
 	return OP_OK
 

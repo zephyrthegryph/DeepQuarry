@@ -208,6 +208,9 @@ def convert_text(text, path, report, all_text):
             # done proc rewrite
             ds, de = proc_span(lines, di)
             dbody = lines[ds + 1:de]
+            if any(re.search(r"\bA\b", l) for l in dbody):
+                report.append("skip %s %s/%s: %s already names a local A" % (rel(path), typ, handler, done))
+                continue
             uses_user = any(re.search(r"\buser\b", l) for l in dbody)
             newd = ["%s/proc/%s(datum/act/op/A)" % (typ, done)]
             if uses_user:
