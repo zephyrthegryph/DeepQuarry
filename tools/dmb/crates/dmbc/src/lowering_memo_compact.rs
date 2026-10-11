@@ -247,11 +247,15 @@ pub(crate) fn encode<'a>(
         recipes: BoundedVec(recipes.iter().map(|r| r.disk_evidence()).collect()),
         instances: BoundedVec(artifact.disk_instances().to_vec()),
     };
+    mandatory_declaration_reads(payload.identity, &payload.reads.0).then_some(())?;
     dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD).ok()
 }
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     let value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
     crate::lowering_memo_wire::validate_versions(&value.versions.0)?;
+    if !mandatory_declaration_reads(value.identity, &value.reads.0) {
+        return Err("missing/malformed compact declaration receipt".into());
+    }
     if !valid_plain_instances(&value.instances.0, &value.reads.0)
         || value
             .helpers
@@ -280,6 +284,34 @@ pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
         return Err("plain and modified instance rosters overlap".into());
     }
     Ok(value)
+}
+/// The ordinary memo producer records these two exact own-declaration reads
+/// even when the body contains no lookup. A complete typed bucket must carry
+/// them before any candidate can invoke a current resolver or output issuer.
+fn mandatory_declaration_reads(identity: ProcedureIdentity, reads: &[ReadWire<'_>]) -> bool {
+    let required = [
+        ResolveQuery::Ancestry(identity.owner),
+        ResolveQuery::DeclarationChain {
+            owner: identity.owner,
+            name: identity.name,
+            verb: identity.verb,
+        },
+    ];
+    required.iter().all(|query| {
+        let mut matching = reads.iter().filter(|read| read.query == *query);
+        let Some(read) = matching.next() else {
+            return false;
+        };
+        // Canonical transport framing, not an answer-kind whitelist: opaque
+        // answers retain ordinary exact replay and may conservatively decline.
+        let framed = |read: &ReadWire<'_>| {
+            read.answer.starts_with(b"dm-resolved-meaning-v1\0")
+                && read.answer.len() > b"dm-resolved-meaning-v1\0".len()
+        };
+        // Repeated query observations remain separate proof obligations under
+        // Receipt's existing contract; replay must validate every answer.
+        framed(read) && matching.all(framed)
+    })
 }
 fn valid_plain_instances(instances: &[(SymbolId, SymbolId)], reads: &[ReadWire<'_>]) -> bool {
     !instances.windows(2).any(|pair| pair[0].0 >= pair[1].0)

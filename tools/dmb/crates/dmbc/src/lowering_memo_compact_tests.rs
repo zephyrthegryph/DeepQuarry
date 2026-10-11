@@ -164,6 +164,13 @@ fn check_replay_features(
     let host = InstanceHost(&base_host, plain);
     let recorder = crate::lowering_memo::RecordingResolver::new(&host);
     recorder.resolve(ResolveQuery::GlobalVar(SymbolId::of("absent")));
+    let issued = crate::lowering::source_unit_identity(&front, &front.bodies[0]).unwrap();
+    recorder.record_declaration_occurrence(ProcedureIdentity {
+        owner: issued.identity.owner,
+        name: issued.identity.name,
+        verb: issued.identity.namespace == crate::lowering::Namespace::Verb,
+        occurrence: issued.identity.occurrence,
+    });
     let startup = crate::startup::capture(&front).unwrap();
     let pool = dm_exec::BuildExecutor::new(1).unwrap();
     let abi =
@@ -295,6 +302,48 @@ fn check_replay_features(
     );
     let payload = decode(&bytes).unwrap();
     assert!(payload.changed_read(&host).is_none());
+    for missing in [
+        ResolveQuery::Ancestry(payload.identity.owner),
+        ResolveQuery::DeclarationChain {
+            owner: payload.identity.owner,
+            name: payload.identity.name,
+            verb: payload.identity.verb,
+        },
+    ] {
+        let mut corrupt = decode(&bytes).unwrap();
+        corrupt.reads.0.retain(|read| read.query != missing);
+        let corrupt_bytes = dm_wire::encode_bounded(SCHEMA, &corrupt, MAX_RECORD).unwrap();
+        assert!(
+            decode(&corrupt_bytes).is_err(),
+            "missing mandatory receipt must fail preflight"
+        );
+        let mut duplicate = decode(&bytes).unwrap();
+        let original = duplicate
+            .reads
+            .0
+            .iter()
+            .find(|read| read.query == missing)
+            .unwrap();
+        let answer = original.answer.to_vec();
+        duplicate.reads.0.push(ReadWire {
+            query: missing,
+            answer: Cow::Owned(answer),
+        });
+        let duplicate_bytes = dm_wire::encode_bounded(SCHEMA, &duplicate, MAX_RECORD).unwrap();
+        assert!(
+            decode(&duplicate_bytes).is_ok(),
+            "repeated exact observations retain ordinary receipt semantics"
+        );
+    }
+    let mandatory = recorder.reads();
+    let omitted: Vec<_> = mandatory
+        .iter()
+        .filter(|read| !matches!(read.query, ResolveQuery::Ancestry(_)))
+        .collect();
+    assert!(
+        encode(b"exact-source-and-policy", omitted, &[], &value, &offsets).is_none(),
+        "encoder cannot stage an incomplete producer ledger"
+    );
     assert_eq!(!payload.helpers.0.is_empty(), helpers);
     assert_eq!(!payload.recipes.0.is_empty(), modifiers);
     assert_eq!(
