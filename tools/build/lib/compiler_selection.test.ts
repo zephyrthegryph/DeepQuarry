@@ -48,6 +48,7 @@ test('native uses current manifest/defines and successful compilation does not r
   expect(recorded).toContain('6');
   expect(recorded).not.toContain('--artifact-directory');
   expect(recorded).toContain('--compile-result-file');
+  expect(recorded.filter(argument => argument === '--progress')).toHaveLength(1);
 });
 test('native infrastructure status never falls back', async () => {
   process.env.DQ_COMPILER = 'native';

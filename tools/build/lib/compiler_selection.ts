@@ -111,7 +111,9 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
     throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
   }
-  const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
+  // Existing stage events stream through Juke while the child is running, so
+  // an external watchdog retains the last observed stage even without a result.
+  const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--progress', '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
   if (nativeNoDaemon()) args.push('--no-daemon');
   for (const define of options.defines ?? []) args.push(`-D${define}`);
   if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--record-inputs', path.join(artifacts, 'inputs'), '--exact-inputs', '--no-cache');
