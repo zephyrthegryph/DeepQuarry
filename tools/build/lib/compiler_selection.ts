@@ -237,7 +237,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       throw error;
     }
     if (native.code !== 0) {
-      const reference = byondResult ? byondResult.outcome : failedCompileOutcome(undefined);
+      const reference = (byondResult ? byondResult.outcome : undefined) ?? failedCompileOutcome(undefined);
       recordShadowCompileComparison(artifacts, observedCompileOutcome(native.code, native.combined, native.code, native.signal ?? null), reference);
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);

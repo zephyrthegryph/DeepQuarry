@@ -611,3 +611,25 @@ test('shadow preserves native rejection evidence when observed BYOND compilation
     expect(report.inputClosure.status).toBe('incomplete');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+
+test('shadow legacy successful callback does not fabricate reference diagnostics', async () => {
+  const root = fs.mkdtempSync('E:/dq-cache/shadow-unobserved-reference-fixture-');
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_SHADOW_ROOT = path.join(root, 'shadow');
+  process.env.DQ_NATIVE_RUN_ROOT = path.join(root, 'run');
+  try {
+    await expect(selectedCompiler(path.join(root, 'probe.dme'), {}, async () => ({ invocation: {
+      command: ['dm', 'probe.dme'], version: 516, build: 1687,
+    } }), async () => ({ code: 2, combined: 'source.dm:1:error: missing\n' }))).rejects.toBeInstanceOf(Juke.ExitCode);
+    const shadow = path.join(root, 'shadow');
+    const directory = fs.readdirSync(shadow).find(name => name.startsWith('shadow-'))!;
+    const report = JSON.parse(fs.readFileSync(path.join(shadow, directory, 'shadow-compile-comparison.json'), 'utf8'));
+    expect(report.byond.diagnosticsCaptured).toBe(false);
+    expect(report.byond.processExit).toBe(null);
+    expect(report.buildExitAgrees).toBe(null);
+    expect(report.diagnosticsAgree).toBe(null);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
