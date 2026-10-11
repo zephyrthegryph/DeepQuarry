@@ -119,6 +119,8 @@ def main():
     parser.add_argument('--security', choices=('trusted', 'safe', 'ultrasafe'), required=True)
     parser.add_argument('--define', action='append', default=[])
     parser.add_argument('--focus', action='append', required=True)
+    parser.add_argument('--require-snapshot-runtime-abi', action='store_true',
+                        help='Decline incoherent captured DM/Rust bindings before compiler launch; not DLL provenance')
     parser.add_argument('--job-memory-mib', type=int, default=4096)
     parser.add_argument('--seconds', type=int, default=900)
     args = parser.parse_args()
@@ -138,6 +140,9 @@ def main():
     args.checkout = absolute_nonreparse(args.checkout)
     args.prepared_root = absolute_nonreparse(args.prepared_root)
     args.output = absolute_nonreparse(args.output)
+    if args.require_snapshot_runtime_abi:
+        from snapshot_runtime_library import preflight
+        preflight(args.prepared_root)
     job_bytes = memory_bytes(args.job_memory_mib)
     deadline = time.monotonic() + args.seconds
     job = OwnedJob(memory_bytes=job_bytes)
