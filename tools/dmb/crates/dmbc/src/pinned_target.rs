@@ -5,6 +5,38 @@ use std::collections::BTreeMap;
 pub const DM_VERSION: &str = "516";
 pub const DM_BUILD: &str = "1687";
 
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ConfigurationReceipt {
+    pub schema_version: u32,
+    pub version: u32,
+    pub build: u32,
+    pub engine_template_sha256: String,
+    pub effective_defines: BTreeMap<String, String>,
+    pub implicit_predefines_complete: bool,
+}
+/// Called only by successful native publication, after the ordinary target gate.
+pub(crate) fn configuration(
+    defines: &BTreeMap<String, String>,
+    engine_identity: u128,
+) -> Option<ConfigurationReceipt> {
+    use sha2::{Digest, Sha256};
+    let engine = include_bytes!("../../../fixtures/native_template.bin");
+    if engine_identity != xxhash_rust::xxh3::xxh3_128(engine)
+        || defines.get("DM_VERSION").map(String::as_str) != Some(DM_VERSION)
+        || defines.get("DM_BUILD").map(String::as_str) != Some(DM_BUILD)
+    {
+        return None;
+    }
+    Some(ConfigurationReceipt {
+        schema_version: 1,
+        version: 516,
+        build: 1687,
+        engine_template_sha256: format!("{:x}", Sha256::digest(engine)),
+        effective_defines: defines.clone(),
+        implicit_predefines_complete: false,
+    })
+}
+
 /// Validate both supplied macros before adding either missing default.
 /// A different macro must not select source for an ABI/catalog we do not support.
 /// Values are exact preprocessor tokens, not evaluated caller expressions.
@@ -29,6 +61,21 @@ pub fn admit_defines(defines: &mut BTreeMap<String, String>) -> Result<(), Reque
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn configuration_receipt_requires_actual_engine_and_admitted_defines() {
+        let mut defines = BTreeMap::new();
+        let engine =
+            xxhash_rust::xxh3::xxh3_128(include_bytes!("../../../fixtures/native_template.bin"));
+        assert!(configuration(&defines, engine).is_none());
+        admit_defines(&mut defines).unwrap();
+        let receipt = configuration(&defines, engine).unwrap();
+        assert_eq!(receipt.effective_defines, defines);
+        assert_eq!(receipt.engine_template_sha256.len(), 64);
+        assert!(!receipt.implicit_predefines_complete);
+        assert!(configuration(&defines, engine ^ 1).is_none());
+        defines.insert("DM_BUILD".into(), "9999".into());
+        assert!(configuration(&defines, engine).is_none());
+    }
 
     #[test]
     fn omitted_target_macros_receive_pinned_defaults_without_changing_other_defines() {

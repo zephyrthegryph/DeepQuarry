@@ -155,6 +155,19 @@ export type PreparedDreamMaker = {
   readonly version: number; readonly build: number;
   readonly defines: readonly string[]; readonly namedDmVersion: string | null;
 };
+const issuedDreamMakers = new WeakSet<PreparedDreamMaker>();
+/** Only the current preparation producer can issue this configuration evidence.
+ * This does not certify all implicit predefines or any input/resource closure.
+ */
+export function currentDreamMakerConfiguration(prepared: PreparedDreamMaker, defines: readonly string[]) {
+  if (!issuedDreamMakers.has(prepared)) throw new Error('DreamMaker configuration was not issued by current preparation.');
+  if (prepared.identity.status !== 'observed') throw new Error('DreamMaker configuration requires a resolved executable identity.');
+  if (JSON.stringify(prepared.defines) !== JSON.stringify(defines)) throw new Error('DreamMaker configuration ordered defines changed.');
+  checkDreamMakerIdentity(prepared);
+  return Object.freeze({ compilerSha256: prepared.identity.sha256, executable: prepared.identity.executable,
+    version: prepared.version, build: prepared.build, orderedDefines: prepared.defines,
+    implicitPredefinesComplete: false as const, inputClosureAuthenticated: false as const });
+}
 /** A bare command uses process search rules; never hash a similarly named cwd file. */
 export function observeDreamMakerIdentity(executable: string): DreamMakerIdentity {
   if (!path.isAbsolute(executable) && !/[\\/]/.test(executable)) {
@@ -178,6 +191,7 @@ export async function prepareDreamMaker(options: DreamMakerOptions): Promise<Pre
   const prepared = Object.freeze({ executable: identity.executable, identity: Object.freeze(identity), ...version,
     defines: Object.freeze([...(options.defines ?? [])]), namedDmVersion: options.namedDmVersion ?? null });
   checkDreamMakerIdentity(prepared);
+  issuedDreamMakers.add(prepared);
   return prepared;
 }
 async function testDmVersion(dmPath: string) {

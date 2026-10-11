@@ -19,6 +19,16 @@ test('optional native proof retains native-only scope and exact generation', () 
   expect(() => parseNativePublicationProof({ ...proof, shared_input_closure_complete: true }, pair, store)).toThrow('scope');
 });
 
+test('versioned native target configuration preserves admitted defines and rejects invented completeness', () => {
+  const target = { schema_version: 1, version: 516, build: 1687, engine_template_sha256: 'a'.repeat(64),
+    effective_defines: { DM_VERSION: '516', DM_BUILD: '1687', FEATURE: '1' }, implicit_predefines_complete: false };
+  expect(parseNativePublicationProof({ ...proof, target_configuration: target }, pair, store)?.target_configuration).toEqual(target);
+  for (const changed of [{ ...target, build: 9999 }, { ...target, implicit_predefines_complete: true },
+    { ...target, effective_defines: { DM_VERSION: '516', DM_BUILD: '9999' } }]) {
+    expect(() => parseNativePublicationProof({ ...proof, target_configuration: changed }, pair, store)).toThrow();
+  }
+});
+
 test('proof metadata rejects malformed sizes, digests and escaped document paths', () => {
   for (const bytes of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
     expect(() => parseNativePublicationProof({ ...proof, document_bytes: bytes }, pair, store)).toThrow('document_bytes');

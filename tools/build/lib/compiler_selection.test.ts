@@ -7,6 +7,8 @@ import fs from 'node:fs';
 import { captureShadowOutputPair } from './shadow_output';
 import path from 'node:path';
 import { compilerInvocation } from './compiler_invocation';
+import { withCompiledOutput } from './native_pair';
+import { createHash } from 'node:crypto';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
   for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
@@ -517,4 +519,60 @@ test('compiler outcomes preserve warning policy and signal exits without invente
   expect(setup.diagnosticsCaptured).toBe(false);
   expect(setup.processExit).toBe(null);
   expect(setup.diagnostics).toEqual([]);
+});
+
+test('captured native launch, provenance and acquisition use the same caller-resolved executable', async () => {
+  fs.mkdirSync('E:/dq-cache', { recursive: true });
+  const owned = fs.mkdtempSync('E:/dq-cache/native-executable-binding-');
+  try {
+    const callerCompiler = path.join(owned, 'caller', 'compiler.exe');
+    const capturedRoot = path.join(owned, 'captured');
+    fs.mkdirSync(path.dirname(callerCompiler));
+    fs.mkdirSync(capturedRoot);
+    fs.writeFileSync(callerCompiler, 'caller compiler identity');
+    fs.writeFileSync(path.join(capturedRoot, 'compiler.exe'), 'different captured compiler');
+    const actualCompiler = fs.realpathSync.native(callerCompiler);
+    const expectedSha = createHash('sha256').update(fs.readFileSync(callerCompiler)).digest('hex');
+    process.env.DQ_COMPILER = 'native';
+    process.env.DQ_NATIVE_COMPILER = path.relative(process.cwd(), callerCompiler);
+    process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+    process.env.DQ_NATIVE_RUN_ROOT = path.join(owned, 'run');
+    const launched: string[] = [];
+    const execute = async (executable: string, args: string[], options?: { cwd?: string }) => {
+      launched.push(executable);
+      expect(executable).toBe(actualCompiler);
+      if (args[0] === 'compile') {
+        expect(options?.cwd).toBe(capturedRoot);
+        fs.writeFileSync(args[args.indexOf('--compile-result-file') + 1], JSON.stringify({
+          schema_version: 1, kind: 'native_pair', store: path.join(owned, 'store'),
+          pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32),
+          dmb_bytes: 1, rsc_bytes: 2, output_project: path.join(capturedRoot, 'probe.dme'),
+        }));
+      } else {
+        expect(args[0]).toBe('acquire');
+        const slot = path.join(args[args.indexOf('--slots') + 1], 'owned-slot');
+        fs.mkdirSync(slot);
+        fs.writeFileSync(path.join(slot, 'deepquarry.dmb'), 'D');
+        fs.writeFileSync(path.join(slot, 'deepquarry.rsc'), 'RS');
+        fs.writeFileSync(path.join(slot, 'slot-complete'), '1'.repeat(32));
+        fs.writeFileSync(args[args.indexOf('--result-file') + 1], JSON.stringify({
+          schema_version: 1, kind: 'acquired_pair', store: path.join(owned, 'store'),
+          pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32),
+          dmb_bytes: 1, rsc_bytes: 2, slot, dmb: path.join(slot, 'deepquarry.dmb'), rsc: path.join(slot, 'deepquarry.rsc'),
+        }));
+      }
+      return { code: 0, combined: '', signal: null };
+    };
+    const output = await selectedCompiler('caller.dme', {}, async () => { throw new Error('unexpected fallback'); },
+      execute, undefined, compilerInvocation(capturedRoot, 'probe.dme', []));
+    expect(output.kind).toBe('native_pair');
+    expect(output.provenance?.compiler.executable).toBe(actualCompiler);
+    expect(output.provenance?.compiler.sha256).toBe(expectedSha);
+    if (output.kind !== 'native_pair') throw new Error('native pair required');
+    expect(output.compiler).toBe(actualCompiler);
+    await withCompiledOutput(output, execute, async dmb => { expect(fs.readFileSync(dmb, 'utf8')).toBe('D'); });
+    expect(launched).toEqual([actualCompiler, actualCompiler]);
+  } finally {
+    fs.rmSync(owned, { recursive: true, force: true });
+  }
 });

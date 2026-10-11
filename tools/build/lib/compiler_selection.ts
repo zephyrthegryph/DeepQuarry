@@ -97,11 +97,15 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   if (unsupported.length) {
     throw new Error(`Native compiler does not support requested DreamMaker options: ${unsupported.join(', ')}.`);
   }
-  const executable = process.env.DQ_NATIVE_COMPILER;
+  const configuredExecutable = process.env.DQ_NATIVE_COMPILER;
   const template = process.env.DQ_NATIVE_ENGINE_TEMPLATE;
-  if (!executable || !template) {
+  if (!configuredExecutable || !template) {
     throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE.');
   }
+  // Resolve path-bearing configuration in the caller's cwd, before the child
+  // switches to its captured namespace. PATH commands stay explicitly unobserved.
+  const executable = path.isAbsolute(configuredExecutable) || /[\\/]/.test(configuredExecutable)
+    ? fs.realpathSync.native(path.resolve(configuredExecutable)) : configuredExecutable;
   const workers = process.env.DQ_NATIVE_WORKERS ?? '8';
   if (!/^[1-9][0-9]*$/.test(workers) || !Number.isSafeInteger(Number(workers))) {
     throw new Error('DQ_NATIVE_WORKERS must be a positive integer.');
@@ -113,6 +117,20 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   return [executable, args];
 }
 class NativeResultError extends Error {}
+const issuedNativeOutputs = new WeakMap<NativePairOutput, {
+  configuration: NonNullable<NonNullable<NativePairOutput['publicationProof']>['target_configuration']> | undefined;
+  compiler: Readonly<{ executable: string; sha256: string | null }>;
+}>();
+export function currentNativeTargetConfiguration(output: NativePairOutput) {
+  const issued = issuedNativeOutputs.get(output);
+  if (!issued) throw new Error('Native target configuration requires current compiler-issued output.');
+  const { configuration, compiler } = issued;
+  if (!configuration) throw new Error('Native output has no issued target configuration receipt.');
+  if (!compiler.sha256 || observedExecutable(compiler.executable).sha256 !== compiler.sha256) {
+    throw new Error('Native target configuration executable identity is unavailable or changed.');
+  }
+  return { configuration, compiler };
+}
 async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string, invocation?: CompilerInvocation): Promise<{ code: number | null; combined: string; signal?: string | null; output?: NativePairOutput }> {
   const [executable, args] = nativeCommand(dme, options, artifacts, invocation);
   const compilerIdentity = observedExecutable(executable);
@@ -129,6 +147,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     try {
       const output = parseCompileResult(readNativeResult(receipt), executable, outputProject);
       output.provenance = nativeProvenance(output, options.defines ?? [], compilerIdentity);
+      issuedNativeOutputs.set(output, { configuration: output.publicationProof?.target_configuration, compiler: Object.freeze({ ...compilerIdentity }) });
       return { ...result, output };
     }
     catch (error) { throw new NativeResultError(`Native compile succeeded without an authenticated pair result: ${error}`); }

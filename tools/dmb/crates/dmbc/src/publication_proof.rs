@@ -9,6 +9,8 @@ use std::{
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NativePublicationProof {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_configuration: Option<crate::pinned_target::ConfigurationReceipt>,
     pub schema_version: u32,
     pub kind: String,
     pub native_inputs_admitted: bool,
@@ -22,6 +24,8 @@ pub struct NativePublicationProof {
 }
 #[derive(Serialize)]
 struct Document<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    target_configuration: Option<crate::pinned_target::ConfigurationReceipt>,
     schema_version: u32,
     kind: &'static str,
     scope: &'static str,
@@ -47,6 +51,7 @@ fn encode(
     let digest = xxhash_rust::xxh3::xxh3_128(&snapshot);
     let text = std::str::from_utf8(&snapshot).map_err(io::Error::other)?;
     let bytes = serde_json::to_vec(&Document {
+        target_configuration: crate::pinned_target::configuration(defines, engine_identity),
         schema_version: 1,
         kind: "native_publication_inputs",
         scope: "native admitted inputs only; BYOND access completeness is not issued",
@@ -131,6 +136,7 @@ pub(crate) fn issue(
         Err(error) => return Err(error),
     }
     Ok(NativePublicationProof {
+        target_configuration: crate::pinned_target::configuration(defines, engine_identity),
         schema_version: 1,
         kind: "native_publication_inputs".into(),
         native_inputs_admitted: true,
