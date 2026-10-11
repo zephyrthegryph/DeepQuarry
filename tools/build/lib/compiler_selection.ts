@@ -124,7 +124,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     const result = await execute(executable, args, { throw: false, ...(invocation ? { cwd: invocation.root } : {}) });
     const currentIdentity = observedExecutable(executable);
     if (JSON.stringify(currentIdentity) !== JSON.stringify(compilerIdentity)) throw new NativeResultError('Native executable changed during compilation.');
-    if (result.code !== 0) return result;
+    if (result.code !== 0 || result.signal) return result;
     const outputProject = artifacts ? path.join(artifacts, path.basename(invocation?.relativeManifest ?? dme)) : invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
     try {
       const output = parseCompileResult(readNativeResult(receipt), executable, outputProject);
@@ -151,11 +151,11 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
   }
   if (mode === 'native') {
     const result = await nativeCompile(dme, options, execute, undefined, invocation);
-    if (result.code === 0) return result.output!;
+    if (result.code === 0 && !result.signal) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain
     // their original error/status and never invoke another compiler.
-    if (result.code !== 70) throw new Juke.ExitCode(result.code ?? 1);
+    if (result.code !== 70 || result.signal) throw new Juke.ExitCode(result.code || 1, result.signal ?? null);
     Juke.logger.warn('Native fallback to DreamMaker: native compiler exited 70; diagnostics are above.');
     const fallback = await byond(invocation?.relativeManifest, undefined, invocation);
     return { ...conventionalOutput(outputProject), provenance: byondProvenance(mode, options.defines ?? [], fallback, 'internal_error_70') };
@@ -175,7 +175,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     const native = await nativeCompile(dme, options, execute, artifacts, invocation);
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
     // Cancellation ends the request before any comparison compiler or inspector.
-    if (native.code === 75) throw new Juke.ExitCode(75);
+    if (native.code === 75 || native.signal) throw new Juke.ExitCode(native.code || 1, native.signal ?? null);
     let byondResult: ByondCompilationResult | void;
     try {
       byondResult = await byond(invocation?.relativeManifest, preparedByond, invocation);

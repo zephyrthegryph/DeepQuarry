@@ -71,6 +71,24 @@ test('typed source and cancellation statuses never fall back', async () => {
   }
 });
 
+test('signalled native children preserve termination identity and never invoke BYOND', async () => {
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  for (const mode of ['native', 'shadow']) {
+    process.env.DQ_COMPILER = mode;
+    for (const code of [null, 70, 0]) {
+      let byondCalls = 0;
+      const failure = await selectedCompiler('project.dme', {}, async () => { byondCalls++; },
+        async () => ({ code, combined: 'terminated child evidence', signal: 'SIGTERM' }))
+        .then(() => null, error => error);
+      expect(failure).toBeInstanceOf(Juke.ExitCode);
+      expect(failure.signal).toBe('SIGTERM');
+      expect(failure.code).toBe(code || 1);
+      expect(byondCalls).toBe(0);
+    }
+  }
+});
+
 test('successful native status without machine pair result never falls back', async () => {
   process.env.DQ_COMPILER = 'native';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
