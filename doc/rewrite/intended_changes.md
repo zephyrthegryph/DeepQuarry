@@ -4572,3 +4572,30 @@ stream (a converted `rand()`/`pick()`/`prob()` no longer draws from the world RN
   foam's spread delay derive at init**, during the root of Initialize() instead of before or after the type's own code; nothing reads them in between.
 * **`derives()` no longer breaks after a holder that used it is destroyed**: `GLOB.derives_running` was LAZYREMOVE()d to null, and every later
   derives() runtimed (bad index) — the "param_write" failure framework_gaps.md noted for the fusion field.
+
+## Mob screen elements on the client HUD (base_vars lane B, bv-hud)
+
+The 20 screen refs (`hands`, `healths`, `internals`, `pain`, `zone_sel`, the gun, ling, borer, wizard, shadekin, lleill, xenochimera and
+autowhisper displays, ...), `plane_holder`, `vis_enabled` and `planes_visible` leave `/mob` for `/datum/hud` (`hud_element()`, read
+`hud_of(M)?.x`; 649 sites, `tools/dx/codemods/move_to_hud.py`). The unused `purged` screen var is deleted.
+
+* **Logout drops the hud** (screens, plane masters and vision lists); Login builds a new one and `recalculate_vis()` rebuilds what the mob
+  sees. Before, the hud lived on until the next login.
+* **A mob without a client has no target zone selector**: `hud_of(M)?.zone_sel?.selecting` reads null where `M.zone_sel.selecting` would
+  have raised a runtime error (it was already null without a client). Vision toggles on a client-less mob (`plane_holder?.set_vis()`) do
+  nothing until a client logs in, as before for a mob that never had one.
+* Test mobs get an empty hud with `dq_test_hud(M)`.
+
+## Sparse slots and base-type cooldown tables (base_vars lane B, bv-hud)
+
+`sparse()` slots replace the per-instance vars of `code/datums/sparse_vars/` (belly cycles, recursive listeners, moved-recently stamp,
+dynamic lights, cloak, parachute, softfall/hovering overrides, catalogue delay, chat colour cache, observer listeners, z-update images)
+and `special_voice`, `custom_heat`/`custom_cold`, the buildmode selection marker and the vomit-in-progress flag (was `lastpuke`).
+Seventeen base-type cooldowns (`next_click`, `next_move`, `last_special`, `resist_cooldown`, `cpr_time`, `slip_protect`, the taste,
+spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move into the cooldown table (`cooldown_start`/`cooldown_ready`;
+161 macro and 142 raw sites, `tools/dx/codemods/var_to_table.py`). The darksight overlay moves onto the client hud.
+
+* **A per-instance catalogue delay is no longer saved** with the atom (sparse slots are runtime state); the per-type default still applies.
+* **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
+  adjustment for a client-less mob (it adjusted an image nobody saw).
+* **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.

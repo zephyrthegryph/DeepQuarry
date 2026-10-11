@@ -103,7 +103,7 @@
 	user.enable_godmode()
 	var/obj/item/pen/crayon/rainbow/crayon = allocate(/obj/item/pen/crayon/rainbow, run_loc_floor_bottom_left)
 	TEST_ASSERT(user.put_in_active_hand(crayon), "the real crayon enters the actor's hand")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, crayon, crayon)
 	test_drain()
 	var/datum/request/request = SSrequests.open_for(user)
@@ -122,7 +122,7 @@
 	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "the accepted shade answer commits its actual color")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "the two accepted answers finish the chain")
 
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, crayon, crayon)
 	test_drain()
 	request = SSrequests.open_for(user)
@@ -139,7 +139,7 @@
 	TEST_ASSERT_EQUAL(crayon.shadeColour, "#405060", "shade cancellation retains shade color after rejected input")
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "the cancellation chain after rejected input finishes")
 
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, crayon, crayon)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "a new held use opens main color")
@@ -156,7 +156,7 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(user), "shade cancellation finishes without another prompt")
 
 	TEST_ASSERT(user.put_in_active_hand(crayon), "the actor actually picks the crayon back up")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, crayon, crayon)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "another main request opens for the carried recheck control")

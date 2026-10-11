@@ -600,23 +600,23 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	if(target.is_muzzled())
 		covered_mouth = TRUE
 
-	if(H.zone_sel.selecting == BP_HEAD)
+	if(hud_of(H)?.zone_sel?.selecting == BP_HEAD)
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent head patting!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
-	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_R_HAND || hud_of(H)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
-	else if(H.zone_sel.selecting == "mouth")
+	else if(hud_of(H)?.zone_sel?.selecting == "mouth")
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent nose booping!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
-	else if(H.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_GROIN)
 		H.vore_bellyrub(target)
 	else
 		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \

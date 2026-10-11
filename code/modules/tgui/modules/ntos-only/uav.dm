@@ -229,18 +229,18 @@ CAPABILITIES(/datum/tgui_module/uav)
 
 // We are responsible for restoring the health UI's icons on removal
 /datum/remote_view_config/uav_control/attached_to_mob( datum/remote_view/owner_component, mob/host_mob)
-	original_health_hud_icon = host_mob.healths?.icon
+	original_health_hud_icon = hud_of(host_mob)?.healths?.icon
 
 /datum/remote_view_config/uav_control/detatch_from_mob( datum/remote_view/owner_component, mob/host_mob)
-	if(host_mob.healths && original_health_hud_icon)
-		host_mob.healths.icon = original_health_hud_icon
-		host_mob.healths.appearance = null
+	if(hud_of(host_mob)?.healths && original_health_hud_icon)
+		hud_of(host_mob)?.healths?.icon = original_health_hud_icon
+		hud_of(host_mob)?.healths?.appearance = null
 
 // Show the uav health instead of the mob's while it is viewing
 /datum/remote_view_config/uav_control/handle_hud_health( datum/remote_view/owner_component, mob/host_mob)
 	var/datum/tgui_module/uav/tgui_owner = owner_component.get_coordinator()
 
-	var/mutable_appearance/MA = new (host_mob.healths)
+	var/mutable_appearance/MA = new (hud_of(host_mob)?.healths)
 	MA.icon = 'icons/mob/screen1_robot_minimalist.dmi'
 	MA.cut_overlays()
 
@@ -263,8 +263,8 @@ CAPABILITIES(/datum/tgui_module/uav)
 			else
 				MA.icon_state = "health6"
 
-	host_mob.healths.icon_state = "blank"
-	host_mob.healths.appearance = MA
+	hud_of(host_mob)?.healths?.icon_state = "blank"
+	hud_of(host_mob)?.healths?.appearance = MA
 	return HEALTH_ICON_EVENT_HANDLED
 
 /// The UAV we're watching (a relation view: null once that is deleted).

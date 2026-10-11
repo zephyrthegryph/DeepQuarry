@@ -145,9 +145,9 @@
 	dq_area_load(get_turf(A), 2000, EQUIP)
 	A.set_operating(TRUE)
 	A.set_chargemode(TRUE)
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	A.cell.charge = A.cell.maxcharge * 0.001
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
@@ -211,9 +211,9 @@
 	A.connect_to_network()
 	A.set_operating(TRUE)
 	A.set_chargemode(TRUE)
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)

@@ -299,7 +299,7 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	return ..()
 
 /obj/item/storage/fancy/cigarettes/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(M == user && user.zone_sel.selecting == O_MOUTH)
+	if(M == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		// Find ourselves a cig. Note that we could be full of lighters.
 		var/obj/item/clothing/mask/smokable/cigarette/cig
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))

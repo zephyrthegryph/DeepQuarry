@@ -642,7 +642,7 @@ MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
 		for(var/mob/living/M in range(src, 5)) //Let's only hit people nearby us.
 			to_chat(M, span_danger("[pick("A high-pitched [pick("keening","wailing","whistle")]","A rumbling noise like [pick("thunder","heavy machinery")]")] somehow penetrates your mind before fading away!"))
 			if(pain)
-				flick("pain",M.pain)
+				flick("hud_used?.pain",hud_of(M)?.pain)
 			M.flash_eyes()
 			if(prob(50))
 				M.status_at_least(STAT_STUNNED, 5)

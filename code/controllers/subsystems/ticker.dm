@@ -427,7 +427,7 @@ SYSTEM_DEF(ticker)
 			if(player.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 				var/obj/item/implant/backup/imp = new(src)
 
-				if(imp.handle_implant(player,player.zone_sel.selecting))
+				if(imp.handle_implant(player,hud_of(player)?.zone_sel?.selecting))
 					imp.post_implant(player)
 		// ition End
 		CHECK_TICK

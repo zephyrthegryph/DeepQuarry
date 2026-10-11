@@ -760,7 +760,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -967,7 +967,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1031,7 +1031,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1194,7 +1194,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		M.ignite_mob()
 		add_attack_logs(user, M, "Lit on fire with [src]")
 
-	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if (M == user)
 			cig.attackby(src, user)

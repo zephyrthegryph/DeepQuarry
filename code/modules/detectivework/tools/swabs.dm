@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/forensics/swab)
 		act_message(user, H, others = span_danger("%U% tries to take a swab sample from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
-	if(user.zone_sel.selecting == O_MOUTH)
+	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		if(!H.organs_by_name[BP_HEAD])
 			to_chat(user, span_warning("They don't have a head."))
 			return ITEM_INTERACT_FAILURE
@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/forensics/swab)
 		dna = list(H.dna.unique_enzymes)
 		sample_type = "DNA"
 
-	else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 		var/has_hand
 		var/obj/item/organ/external/O = H.organs_by_name[BP_R_HAND]
 		if(istype(O) && !O.is_stump())

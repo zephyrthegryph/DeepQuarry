@@ -360,10 +360,10 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
 			rel_clear(location, nameof(location.internal))
-			location.internals.icon_state = "internal0"
+			hud_of(location)?.internals?.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
-			if (location.internals)
-				location.internals.icon_state = "internal0"
+			if (hud_of(location)?.internals)
+				hud_of(location)?.internals?.icon_state = "internal0"
 		else
 			var/can_open_valve
 			if(location.get_equipped_item(SLOT_ID_MASK) && (location.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
@@ -376,8 +376,8 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 			if(can_open_valve)
 				rel_set(location, nameof(location.internal), src)
 				to_chat(user, span_notice("You open \the [src] valve."))
-				if (location.internals)
-					location.internals.icon_state = "internal1"
+				if (hud_of(location)?.internals)
+					hud_of(location)?.internals?.icon_state = "internal1"
 			else
 				to_chat(user, span_warning("You need something to connect to \the [src]."))
 

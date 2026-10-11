@@ -5,9 +5,9 @@
 	TEST_ASSERT_NOTNULL(cell, "the actual APC has its installed cell")
 	cell.charge = cell.maxcharge / 2
 	var/charge_before = cell.charge
-	apc.lighting = POWERCHAN_OFF
-	apc.equipment = POWERCHAN_ON
-	apc.environ = POWERCHAN_OFF_AUTO
+	apc.set_lighting(POWERCHAN_OFF)
+	apc.set_equipment(POWERCHAN_ON)
+	apc.set_environ(POWERCHAN_OFF_AUTO)
 	apc.set_operating(TRUE)
 	apc.set_chargemode(FALSE)
 	apc.charging = 2

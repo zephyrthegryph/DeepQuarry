@@ -711,8 +711,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(ismob(src))
 		var/mob/M = src
 		PUBLISH_CHANGE(M, MOB_KEY_STATUS)
-		if(M.pullin)
-			M.pullin.icon_state = "pull1"
+		if(hud_of(M)?.pullin)
+			hud_of(M)?.pullin?.icon_state = "pull1"
 	if(ismob(AM))
 		var/mob/pulled = AM
 		pulled.inertia_dir = 0
@@ -728,8 +728,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return
 	var/mob/M = src
 	PUBLISH_CHANGE(M, MOB_KEY_STATUS)
-	if(M.pullin)
-		M.pullin.icon_state = "pull0"
+	if(hud_of(M)?.pullin)
+		hud_of(M)?.pullin?.icon_state = "pull0"
 
 /mob/proc/continue_pulling(atom/movable/AM)
 
@@ -866,7 +866,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return ""
 
 /mob/proc/flash_weak_pain()
-	flick("weak_pain",pain)
+	flick("weak_pain",hud_used?.pain)
 
 /mob/proc/get_visible_implants(class = 0)
 	var/list/visible_implants = list()
@@ -1138,13 +1138,13 @@ SETTER(/mob, stat)
 
 /mob/proc/throw_mode_off()
 	in_throw_mode = 0
-	if(throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
-		throw_icon.icon_state = "act_throw_off"
+	if(hud_used?.throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
+		hud_used?.throw_icon?.icon_state = "act_throw_off"
 
 /mob/proc/throw_mode_on()
 	in_throw_mode = 1
-	if(throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
-		throw_icon.icon_state = "act_throw_on"
+	if(hud_used?.throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
+		hud_used?.throw_icon?.icon_state = "act_throw_on"
 
 /mob/verb/spacebar_throw_on()
 	set name = ".throwon"
@@ -1168,7 +1168,7 @@ SETTER(/mob, stat)
 		exploit_record += exploitmsg
 
 /client/proc/check_has_body_select()
-	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
+	return mob && mob.hud_used && istype(hud_of(mob)?.zone_sel, /atom/movable/screen/zone_sel)
 
 /client/verb/body_toggle_head()
 	set name = "body-toggle-head"
@@ -1208,8 +1208,8 @@ SETTER(/mob, stat)
 /client/proc/toggle_zone_sel(list/zones)
 	if(!check_has_body_select())
 		return
-	var/atom/movable/screen/zone_sel/selector = mob.zone_sel
-	selector.set_selected_zone(next_in_list(mob.zone_sel.selecting,zones))
+	var/atom/movable/screen/zone_sel/selector = hud_of(mob)?.zone_sel
+	selector.set_selected_zone(next_in_list(hud_of(mob)?.zone_sel?.selecting,zones))
 
 // This handles setting the client's color variable, which makes everything look a specific color.
 // This proc is here so it can be called without needing to check if the client exists, or if the client relogs.

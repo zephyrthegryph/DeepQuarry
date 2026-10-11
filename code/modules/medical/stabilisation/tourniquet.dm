@@ -55,7 +55,7 @@ MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
 		return E
 	var/mob/living/carbon/human/H = A.target
 	var/mob/living/user = A.actor
-	return istype(H) ? H.get_organ(user.zone_sel?.selecting) : null
+	return istype(H) ? H.get_organ(hud_of(user)?.zone_sel?.selecting) : null
 
 /// The cinch begins: the limb aimed at must take a tourniquet (a balloon says why not), it is fixed now, and everyone around sees it.
 /obj/item/tourniquet/proc/cinch_started(datum/act/op/A)

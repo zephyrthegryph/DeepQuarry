@@ -96,9 +96,9 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(B) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
 	B.is_wide = !B.is_wide
 	if(B.is_wide)
 		visible_message(span_infoplain(span_bold("[name]") + " flows outwards, their goop expanding!"))
@@ -112,9 +112,9 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(B) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
 	B.shiny = !B.shiny
 	if(B.shiny)
 		visible_message(span_infoplain(span_bold("[name]") + " glistens and sparkles, shining brilliantly."))
@@ -126,9 +126,9 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
-	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
 	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/prommie_colour_chosen(datum/act/request/A)

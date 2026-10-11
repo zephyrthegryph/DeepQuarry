@@ -145,7 +145,7 @@
 		affecting.drop_r_hand()
 
 		if(iscarbon(affecting))
-			handle_eye_mouth_covering(affecting, assailant, assailant.zone_sel.selecting)
+			handle_eye_mouth_covering(affecting, assailant, hud_of(assailant)?.zone_sel?.selecting)
 
 		if(force_down)
 			if(affecting.loc != assailant.loc || size_difference(affecting, assailant) > 0)
@@ -345,7 +345,7 @@ CAPABILITIES(/obj/item/grab)
 	if(M == affecting)
 		if(ishuman(affecting))
 			var/mob/living/carbon/human/H = affecting
-			var/hit_zone = assailant.zone_sel.selecting
+			var/hit_zone = hud_of(assailant)?.zone_sel?.selecting
 			flick(hud.icon_state, hud)
 			switch(stance) // the victim's per-stance item interaction (Use on / Shove with / Hold with / Hit)
 				if(I_HELP)

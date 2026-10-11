@@ -131,7 +131,7 @@ TRACKED(/obj/item/flashlight, power_use)
 
 /obj/item/flashlight/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	add_fingerprint(user)
-	if(on && user.zone_sel.selecting == O_EYES)
+	if(on && hud_of(user)?.zone_sel?.selecting == O_EYES)
 
 		if(CLUMSY_FAIL_CHANCE(user))	//too dumb to use flashlight properly
 			return ..()	//just hit them in the head
