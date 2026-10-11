@@ -3,7 +3,8 @@ use super::*;
 
 pub(crate) struct PreparedBody<'frontend> {
     frontend: &'frontend ColdFrontend,
-    input: dm_tree::frontend::IssuedBodyInput<'frontend>,
+    input: std::sync::OnceLock<dm_tree::frontend::IssuedBodyInput<'frontend>>,
+    code: dm_tree::frontend::IssuedBodyCode<'frontend>,
     source: SourceUnitIdentity,
 }
 #[cfg(test)]
@@ -14,19 +15,34 @@ impl<'frontend> PreparedBody<'frontend> {
         frontend: &'frontend ColdFrontend,
         body: &BodyOccurrence,
     ) -> Result<Self, String> {
-        let input = frontend.body_input(body).map_err(|error| error.message)?;
-        let source = source_identity::from_issued(frontend, &input)?;
+        let code = frontend.body_code(body).map_err(|error| error.message)?;
+        let source = source_identity::from_current_body(frontend, code.occurrence())?;
         Ok(Self {
             frontend,
-            input,
+            input: std::sync::OnceLock::new(),
+            code,
             source,
         })
     }
     pub(crate) fn body(&self) -> &'frontend BodyOccurrence {
-        self.input.occurrence()
+        self.code.occurrence()
     }
     pub(crate) fn input(&self) -> &dm_tree::frontend::IssuedBodyInput<'frontend> {
-        &self.input
+        self.input.get_or_init(|| {
+            self.frontend
+                .body_input(self.code.occurrence())
+                .expect("private current body code authenticates the immutable input envelope")
+        })
+    }
+    pub(crate) fn code_identity(&self) -> &Arc<dm_tree::frontend::BodyCodeIdentity> {
+        self.code.identity()
+    }
+    pub(crate) fn termination(&self) -> dm_syntax::BodyTermination {
+        self.code.termination()
+    }
+    #[cfg(test)]
+    pub(crate) fn input_bound(&self) -> bool {
+        self.input.get().is_some()
     }
     pub(crate) fn source(&self) -> SourceUnitIdentity {
         self.source
@@ -41,7 +57,7 @@ impl<'frontend> PreparedBody<'frontend> {
     ) -> bool {
         self.authenticates(frontend)
             && (std::ptr::eq(self.body(), body)
-                || frontend.validate_body_input(&self.input, body).is_ok())
+                || frontend.validate_body_input(self.input(), body).is_ok())
     }
 }
 pub(crate) struct PreparedBodyRoster<'frontend> {

@@ -224,6 +224,7 @@ pub struct ColdFrontend {
     abi_settings_complete: bool,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
+    issued_body_codes: Arc<[body_code::BodyCodeOwner]>,
     issued_settings: Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>,
     issued_syntax: Arc<DeclarationSyntax>,
     issued_arena: dm_preprocess::SourceText,
@@ -499,6 +500,10 @@ impl<'a> IssuedBodyInput<'a> {
 
 #[path = "frontend_relative_declarations.rs"]
 mod relative_declarations;
+#[path = "frontend_body_code.rs"]
+mod body_code;
+pub use body_code::IssuedBodyCode;
+pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
 mod body_arena;
@@ -869,8 +874,10 @@ fn collect_bodies(
     mapping: &Mapping<'_>,
     bodies: &mut Vec<BodyOccurrence>,
     settings: &mut Vec<Option<Arc<dm_ir::ProcedureMetadata>>>,
+    codes: &mut Vec<Arc<BodyCodeIdentity>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for recipe in syntax.body_recipes() {
+        codes.push(recipe.code_identity());
         let span = recipe.span();
         let declaration = declarations
             .get(&span.start)

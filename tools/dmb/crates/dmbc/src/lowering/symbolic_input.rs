@@ -83,7 +83,7 @@ pub(crate) struct Admission {
 }
 impl Admission {
     pub(super) fn with_local(mut self, local: Option<local::Certificate>) -> Self {
-        self.local = local;
+        self.local = local.map(|certificate| certificate.bind_key(&self.key));
         self
     }
     pub(super) fn with_metadata(mut self, metadata: Arc<dm_ir::ProcedureMetadata>) -> Self {

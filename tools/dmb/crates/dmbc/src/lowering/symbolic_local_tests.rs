@@ -57,7 +57,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     let licensed = policy
         .current_local_inputs(&front, front.snapshot.tree.symbols())
         .unwrap();
-    let certificate = Certificate::issue(&licensed, row, 7).unwrap();
+    let mut certificate = Certificate::issue(&licensed, row, 7).unwrap();
     assert!(
         certificate.selected.is_some(),
         "the actual successful ABI producer issues this unit owner"
@@ -72,6 +72,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             .unwrap();
     let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared).unwrap();
     let key: Arc<[u8]> = current.materialize(&tail).into();
+    certificate = certificate.bind_key(&key);
     let mut record = Record {
         local: Some(certificate.clone()),
         recipe: crate::lowering_memo::key_recipe::KeyRecipe::new(
@@ -154,6 +155,9 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     let admission = RequestAdmission::new(front.snapshot.tree.as_ref());
     let candidates = next.candidate_roster(&admission).unwrap();
     let fresh_arena = dm_tree::frontend::BodyArena::new(&front);
+    let replay_roster = PreparedBodyRoster::issue(&front).unwrap();
+    let replay_row = replay_roster.ordered().next().unwrap();
+    assert!(!replay_row.input_bound());
     let replay = next
         .lookup_unchanged_local(
             &licensed,
@@ -161,10 +165,14 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             7,
             front.snapshot.tree.as_ref(),
             &front,
-            row,
+            replay_row,
             &fresh_arena,
         )
         .unwrap();
+    assert!(
+        !replay_row.input_bound(),
+        "exact producer owner hit must not bind the source envelope"
+    );
     assert_eq!(replay.identity(), row.source().identity);
     assert_eq!(replay.into_selected().source(), &row.body().source);
 }

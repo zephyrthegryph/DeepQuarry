@@ -194,3 +194,22 @@ fn prepared_roster_borrows_issued_recipe_without_reconstructing_order_or_namespa
         );
     }
 }
+
+#[test]
+fn current_prepared_roster_defers_source_envelopes_until_an_actual_consumer_needs_one() {
+    let front = frontend("/proc/p()\n    return 1\n/proc/q()\n    return 2\n");
+    let roster = PreparedBodyRoster::issue(&front).ok().unwrap();
+    assert_eq!(roster.ordered().filter(|row| row.input_bound()).count(), 0);
+    let row = roster.at(0);
+    assert_eq!(
+        row.termination(),
+        front.body_input(row.body()).unwrap().termination()
+    );
+    assert!(!row.input_bound());
+    assert_eq!(
+        row.input().source(),
+        front.body_input(row.body()).unwrap().source()
+    );
+    assert_eq!(roster.ordered().filter(|row| row.input_bound()).count(), 1);
+    assert!(std::ptr::eq(row.input(), row.input()));
+}

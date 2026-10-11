@@ -395,6 +395,9 @@ impl HeapCensus {
         );
         self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
         self.slice("frontend.body_index", &frontend.bodies, true);
+        frontend.visit_body_code_storage(|address, logical, capacity| {
+            self.buffer("frontend.body_code", address, logical, capacity);
+        });
         self.slice(
             "frontend.settings_index",
             frontend.settings_owner_storage(),

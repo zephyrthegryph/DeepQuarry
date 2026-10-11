@@ -11,7 +11,12 @@ pub(crate) fn from_issued(
     frontend: &ColdFrontend,
     issued: &dm_tree::frontend::IssuedBodyInput<'_>,
 ) -> Result<SourceUnitIdentity, String> {
-    let body = issued.occurrence();
+    from_current_body(frontend, issued.occurrence())
+}
+pub(crate) fn from_current_body(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+) -> Result<SourceUnitIdentity, String> {
     let tree = &frontend.snapshot.tree;
     let node = tree
         .member(body.member)

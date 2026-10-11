@@ -397,6 +397,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         .collect();
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
+    let mut body_codes = Vec::new();
     collect_bodies(
         &syntax,
         &snapshot.tree,
@@ -404,6 +405,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
         &mapping,
         &mut bodies,
         &mut issued_settings,
+        &mut body_codes,
     )?;
     let callable_roster = match semantic_state {
         Some(state) => state.bind_callable_roster(&snapshot.tree, &bodies),
@@ -443,6 +445,18 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     if let Some(request) = &declaration_request {
         request.publish_successful();
     }
+    let issued_body_codes = bodies
+        .iter()
+        .zip(body_codes)
+        .map(|(body, identity)| body_code::BodyCodeOwner {
+            identity,
+            termination: dm_syntax::termination_after_with_context(
+                &expanded.text,
+                body.expanded_span.end,
+                &|offset| syntax.declaration_header_at(offset),
+            ),
+        })
+        .collect();
     Ok(ColdFrontend {
         callable_roster,
         abi_settings_complete,
@@ -472,6 +486,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 .collect(),
         ),
         issued_bodies: Arc::clone(&bodies),
+        issued_body_codes,
         issued_settings: issued_settings.into(),
         bodies,
         emission_order: emission_order.into(),

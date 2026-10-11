@@ -17,8 +17,14 @@ pub struct RelativeSyntax {
     max_end: usize,
     bodies: Vec<RelativeBody>,
 }
+/// Exact source-capture capability. Only this parser-owned producer can mint it.
+#[derive(Debug)]
+pub struct BodyCodeIdentity {
+    _private: u8,
+}
 #[derive(Debug)]
 struct RelativeBody {
+    code: Arc<BodyCodeIdentity>,
     path: Arc<[usize]>,
     span: Span,
     settings: Arc<[Span]>,
@@ -38,6 +44,7 @@ fn capture_bodies(
             let mut settings = Vec::new();
             crate::settings::setting_spans(&item.children, &mut settings);
             output.push(RelativeBody {
+                code: Arc::new(BodyCodeIdentity { _private: 0 }),
                 path: path.clone().into(),
                 span: item.span,
                 settings: settings.into(),
@@ -64,6 +71,9 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     root_prefix: usize,
 }
 impl CurrentBodyRecipe<'_> {
+    pub(crate) fn code_identity(&self) -> Arc<BodyCodeIdentity> {
+        Arc::clone(&self.relative.code)
+    }
     pub(crate) fn settings_owner(&self) -> Option<Arc<dm_ir::ProcedureMetadata>> {
         self.relative.settings_owner.clone()
     }
@@ -140,6 +150,11 @@ impl RelativeSyntax {
     }
     pub fn visit_settings_owners(&self, mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>)) {
         for body in &self.bodies {
+            visit(
+                Arc::as_ptr(&body.code) as usize,
+                std::mem::size_of::<BodyCodeIdentity>(),
+                std::mem::size_of::<BodyCodeIdentity>(),
+            );
             if let Some(owner) = &body.settings_owner {
                 visit(owner);
             }

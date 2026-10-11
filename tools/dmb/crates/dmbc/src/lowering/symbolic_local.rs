@@ -9,6 +9,8 @@ pub(in crate::lowering) struct Certificate {
     identity: UnitIdentity,
     policy: u128,
     termination: u8,
+    key: Option<Arc<[u8]>>,
+    code: Arc<dm_tree::frontend::BodyCodeIdentity>,
 }
 #[cfg(test)]
 #[path = "symbolic_local_tests.rs"]
@@ -34,8 +36,14 @@ impl Certificate {
             abi: prepared.abi?,
             identity: row.source().identity,
             policy,
-            termination: row.input().termination().canonical_tag(),
+            termination: row.termination().canonical_tag(),
+            code: Arc::clone(row.code_identity()),
+            key: None,
         })
+    }
+    pub(super) fn bind_key(mut self, key: &Arc<[u8]>) -> Self {
+        self.key = Some(Arc::clone(key));
+        self
     }
     fn matches(
         &self,
@@ -49,7 +57,7 @@ impl Certificate {
         // or uncaptured preparation keeps the conservative whole-graph guard.
         if self.policy != policy
             || self.identity != row.source().identity
-            || self.termination != row.input().termination().canonical_tag()
+            || self.termination != row.termination().canonical_tag()
         {
             return None;
         }
@@ -62,16 +70,25 @@ impl Certificate {
         if !Arc::ptr_eq(&self.inputs, &prepared.inputs)
             || !Arc::ptr_eq(&self.abi, prepared.abi.as_ref()?)
             || record.recipe.as_ref()?.metadata.as_ref() != roster.metadata(row)?.as_ref()
-            || !record
-                .recipe
-                .as_ref()?
-                .source_matches(&record.key, row.input().source().as_bytes())
+            || (!(Arc::ptr_eq(&self.code, row.code_identity())
+                && self
+                    .key
+                    .as_ref()
+                    .is_some_and(|key| Arc::ptr_eq(key, &record.key)))
+                && !record
+                    .recipe
+                    .as_ref()?
+                    .source_matches(&record.key, row.input().source().as_bytes()))
         {
             return None;
         }
         Some(prepared)
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.arc_object("frontend.body_code_identity", &self.code);
+        if let Some(key) = &self.key {
+            census.slice("procedure.local_key", key.as_ref(), true);
+        }
         if let Some(selected) = &self.selected {
             if census.arc_object("prepared_abi.unit_payload", selected) {
                 if let Some(canonical) = &selected.canonical {
