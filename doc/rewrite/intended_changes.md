@@ -4952,3 +4952,14 @@ Teppi needs actual setup and tracked eye field investigation: neither relocation
 
 
 Additional HOLD: all eight /mob/living/simple_mob/animal/sif/glitterfly/tidy rows are new whole-type coverage (including AI debug/win32 overlays), not only a rolled color. They need constructor/type-coverage attribution before acceptance. Final exact candidates210; held28.
+
+### Additional exact reviewed look-pin classes
+
+- Glass roulette-ball state coverage (8 new semantic rows): master `15c00c9f84` replaces the legacy provider's cross-object `trapped.held_mob` appearance read with native `draw(look)` over real `TRACKED holds_mob`. The current generated plan explicitly includes holds_mob; its actual setter is generated, and the real drawer chooses roulette_ball_glass_full when truthy. Probing 1 and 2 therefore changes both base state and its emissive/blocker overlay, producing four rows per value. The existing look-state root file was empty, so the normal snapshot comparator auto-recorded these newly observed state probes. This is meaningful newly measurable coverage of master's conversion, not a producer artifact to erase merely because auto-recorded. Preserve these eight rows only with this explicit coverage-expansion cause; no ball production code changed in this hygiene batch.
+
+- Fitness flask deterministic roll sampling (12 changed semantic rows): glass2 fitnessflask declares `rolls(lid_color, pick_one(black, red, blue))` from master `4e099fac0f`; its real draw_contents uses base_icon plus that lid. The older drinkingglass fitnessflask declares native `rolls(icon_state, pick_one(fitness-cup_black, fitness-cup_red, fitness-cup_black))` from `a4992b57c4`, inherited by its proteinshake. Hygiene fixture's scoped native per-type seed now samples glass2 red instead of prior black, and the two drinkingglass forms black instead of prior red. Each type changes state and matching overlay (six added and six removed rows). Document this as fixture stream stabilization, not a production palette change.
+
+- Eclectus deterministic gender sampling (2 changed rows): master `85f8779132` declares native gender and dependent gendered sprite rolls. Scoped native type seeding samples FEMALE and real roll_gendered_look returns eclectusf; the former recorded state was eclectus. Only that exact state replacement is justified; no unseen rows are included.
+
+- Gelatinous cube deterministic color sampling (2 changed rows): master `85f8779132` declares color via real roll_color calling R.saturated_colour(). The scoped native stream samples #163717 instead of prior #cd87eb. Only that exact color replacement is justified; allowable colors and cube production code are unchanged.
+
