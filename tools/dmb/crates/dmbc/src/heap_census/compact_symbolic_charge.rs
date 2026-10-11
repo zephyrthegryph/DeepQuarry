@@ -17,12 +17,12 @@ impl HeapCensus {
         });
         census
     }
-    pub(crate) fn compact_symbolic_allocations(limit: usize) -> Self {
+    pub(crate) fn compact_pressure_allocations(limit: usize) -> Self {
         let mut census = Self::compact_symbolic_charge(limit);
         census.compact_charge.as_mut().unwrap().allocations = Some(Vec::new());
         census
     }
-    pub(crate) fn finish_compact_symbolic_allocations(
+    pub(crate) fn finish_compact_pressure_allocations(
         mut self,
     ) -> Option<Vec<dm_session::PressureAllocation>> {
         let allocations = self.compact_charge.as_mut()?.allocations.take()?;
@@ -174,5 +174,19 @@ mod tests {
         }
         assert!(rejected.allocations.is_empty());
         assert!(rejected.finish_compact_symbolic_charge().is_none());
+    }
+    #[test]
+    fn pressure_footprints_deduplicate_actual_buffers_and_decline_unknown_capacity() {
+        let bytes: Arc<[u8]> = Arc::from([1u8, 2, 3]);
+        let mut census = HeapCensus::compact_pressure_allocations(1024);
+        census.slice("first", &bytes, true);
+        census.slice("second", &bytes, true);
+        let footprint = census.finish_compact_pressure_allocations().unwrap();
+        assert_eq!(footprint.len(), 1);
+        assert_eq!(footprint[0].address, bytes.as_ptr() as usize);
+        assert_eq!(footprint[0].bytes, bytes.len() + 64);
+        let mut unknown = HeapCensus::compact_pressure_allocations(1024);
+        unknown.slice("unknown_capacity", &bytes, false);
+        assert!(unknown.finish_compact_pressure_allocations().is_none());
     }
 }

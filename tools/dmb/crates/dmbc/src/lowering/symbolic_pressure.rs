@@ -48,8 +48,8 @@ fn shared_charge(
     record: &std::sync::Arc<super::super::Record>,
     limit: usize,
 ) -> Option<Vec<dm_session::PressureAllocation>> {
-    let mut census = HeapCensus::compact_symbolic_allocations(limit);
+    let mut census = HeapCensus::compact_pressure_allocations(limit);
     census.slice("compact_symbolic.locator", key, true);
     census_record(record, &mut census);
-    census.finish_compact_symbolic_allocations()
+    census.finish_compact_pressure_allocations()
 }

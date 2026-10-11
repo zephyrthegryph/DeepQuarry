@@ -34,6 +34,39 @@ fn compact_classification_retains_exact_receipts_and_rebinds_current_ordinal() {
         .unwrap()
     };
     let first = lower(0);
+    let mut inspected = 0;
+    store.visit_storage(|view| {
+        if let dm_session::ArtifactStorageView::Entry {
+            key,
+            reads,
+            versions,
+            value,
+        } = view
+        {
+            let allocations = crate::heap_census::initializer_artifacts::compact_allocations(
+                key,
+                reads,
+                versions,
+                value,
+                usize::MAX,
+            )
+            .expect("actual scalar classification is fully exposed");
+            let payload: usize = allocations.iter().map(|item| item.bytes).sum();
+            assert!(payload > std::mem::size_of::<SemanticClassification>());
+            assert!(
+                crate::heap_census::initializer_artifacts::compact_allocations(
+                    key,
+                    reads,
+                    versions,
+                    value,
+                    payload - 1
+                )
+                .is_none()
+            );
+            inspected += 1;
+        }
+    });
+    assert_eq!(inspected, 1);
     let report = store.compact_for_pressure(1024 * 1024);
     assert_eq!(report.retained_entries, 1);
     assert!(report.charged_bytes > std::mem::size_of::<SemanticClassification>());
