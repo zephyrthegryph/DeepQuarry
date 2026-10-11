@@ -139,16 +139,18 @@ mod tests {
             .unwrap();
         let detached = {
             let mut state = store.state.lock().unwrap();
-            let (report, detached) = reconcile(&mut state, &retained, usize::MAX, 0);
-            assert!(report.is_none());
-            detached.unwrap()
+            let wave = reconcile(&mut state, &retained, usize::MAX, 0);
+            assert!(wave.complete.is_none());
+            assert_eq!(wave.victims.len(), 1);
+            let (hash, weak) = &wave.victims[0];
+            detach_weak(&mut state, *hash, weak).unwrap()
         };
         assert!(Arc::ptr_eq(&detached.value, &late));
         drop(detached);
         let mut state = store.state.lock().unwrap();
-        let (report, detached) = reconcile(&mut state, &retained, usize::MAX, 1);
-        let report = report.unwrap();
-        assert!(detached.is_none());
+        let wave = reconcile(&mut state, &retained, usize::MAX, 1);
+        let report = wave.complete.unwrap();
+        assert!(wave.victims.is_empty());
         assert_eq!(report.retained_entries, 1);
         assert_eq!(report.evicted_entries, 1);
         assert_eq!(state.bytes, report.charged_bytes);
@@ -177,15 +179,84 @@ mod tests {
         assert!(changed.is_none());
         let detached = {
             let mut state = store.state.lock().unwrap();
-            let (report, detached) = reconcile(&mut state, &retained, original.charged_bytes, 0);
-            assert!(report.is_none());
+            let wave = reconcile(&mut state, &retained, original.charged_bytes, 0);
+            assert!(wave.complete.is_none());
+            let (hash, weak) = &wave.victims[0];
+            let detached = detach_weak(&mut state, *hash, weak).unwrap();
             assert!(state.claims.is_empty());
             assert!(state.leases.values().all(|roster| roster.is_empty()));
-            detached.unwrap()
+            detached
         };
         drop(detached);
         assert_eq!(value.as_slice(), &[1; 8]);
         drop((first, second));
+    }
+    #[test]
+    fn weak_victim_never_detaches_a_replacement_with_the_same_key() {
+        let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
+        let lease = store.lease();
+        let escaped = lease
+            .insert_with_owned(
+                Arc::from(b"replacement".as_slice()),
+                vec![],
+                vec![],
+                1,
+                || vec![1],
+            )
+            .unwrap();
+        let mut state = store.state.lock().unwrap();
+        let wave = reconcile(&mut state, &BTreeMap::new(), 0, 0);
+        let (hash, weak) = &wave.victims[0];
+        // Simulate replacement between the locked wave and exact detachment.
+        // The old weak control block remains live and cannot alias the new Arc.
+        let replacement = Arc::new(vec![2]);
+        state.buckets.get_mut(hash).unwrap()[0].value = Arc::clone(&replacement);
+        assert!(detach_weak(&mut state, *hash, weak).is_none());
+        assert!(Arc::ptr_eq(&state.buckets[hash][0].value, &replacement));
+        assert_eq!(escaped.as_slice(), &[1]);
+        // Restore the test's original claim owner before normal lease cleanup.
+        state.buckets.get_mut(hash).unwrap()[0].value = Arc::clone(&escaped);
+    }
+
+    #[test]
+    fn many_late_victims_use_one_scalar_scan_per_wave() {
+        let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
+        let lease = store.lease();
+        let mut retained = BTreeMap::new();
+        for index in 0u32..128 {
+            let value = lease
+                .insert_with_owned(Arc::from(index.to_le_bytes()), vec![], vec![], 1, || {
+                    vec![1; 8]
+                })
+                .unwrap();
+            if index < 64 {
+                retained.insert(Arc::as_ptr(&value) as usize, value.capacity());
+            }
+        }
+        let wave = {
+            let mut state = store.state.lock().unwrap();
+            reconcile(&mut state, &retained, usize::MAX, 0)
+        };
+        assert_eq!(wave.visits, 128);
+        assert_eq!(wave.victims.len(), 64);
+        assert!(wave.complete.is_none());
+        for (hash, weak) in wave.victims {
+            let detached = {
+                let mut state = store.state.lock().unwrap();
+                detach_weak(&mut state, hash, &weak)
+            };
+            assert!(detached.is_some());
+            drop(detached);
+        }
+        let mut state = store.state.lock().unwrap();
+        let wave = reconcile(&mut state, &retained, usize::MAX, 64);
+        assert_eq!(wave.visits, 64);
+        let report = wave.complete.unwrap();
+        assert_eq!(report.retained_entries, 64);
+        assert_eq!(report.evicted_entries, 64);
+        assert_eq!(state.bytes, report.charged_bytes);
+        drop(state);
+        drop(lease);
     }
 }
 
@@ -347,38 +418,59 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                 break;
             }
         }
-        // The streaming cursor cannot certify rows inserted behind it, nor
-        // claims added to an already visited row. Reconcile the CURRENT state
-        // under one lock before returning. Only an offending row is detached;
-        // its potentially large payload is destroyed outside the lock, then
-        // reconciliation starts again. No whole-store strong snapshot is held.
+        // Release the initial weak roster before constructing a current victim
+        // wave. Neither roster pins payloads, and only one exists at a time.
+        drop(snapshot);
+        // A wave scans current rows once, then detaches only exact weak victims.
+        // Outside-lock destruction may reenter the store; the next locked wave
+        // rechecks all current claims and rows before committing accounting.
         loop {
-            let (complete, detached) = {
+            let wave = {
                 let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
                 reconcile(&mut state, &retained, limit, report.evicted_entries)
             };
-            if let Some(complete) = complete {
+            if let Some(complete) = wave.complete {
                 return complete;
             }
-            report.evicted_entries += 1;
-            drop(detached);
+            for (hash, weak) in wave.victims {
+                let detached = {
+                    let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                    detach_weak(&mut state, hash, &weak)
+                };
+                if detached.is_some() {
+                    report.evicted_entries += 1;
+                }
+                drop(detached);
+            }
         }
     }
 }
 
+struct Reconciliation<T> {
+    complete: Option<PressurePrune>,
+    victims: Vec<(u128, std::sync::Weak<T>)>,
+    #[cfg(test)]
+    visits: usize,
+}
 fn reconcile<T, Q, A, D: Copy + Ord>(
     state: &mut Resident<T, Q, A, D>,
     retained: &BTreeMap<usize, usize>,
     limit: usize,
     evicted_entries: usize,
-) -> (Option<PressurePrune>, Option<Variant<T, Q, A, D>>) {
+) -> Reconciliation<T> {
     let mut report = PressurePrune {
         evicted_entries,
         ..PressurePrune::default()
     };
-    let mut rejected = None;
+    let mut victims = Vec::new();
+    #[cfg(test)]
+    let mut visits = 0;
     for (hash, bucket) in &state.buckets {
         for (position, entry) in bucket.iter().enumerate() {
+            #[cfg(test)]
+            {
+                visits += 1;
+            }
             let pointer = Arc::as_ptr(&entry.value) as usize;
             let index = entry_index_charge(state, *hash, position);
             let admitted = retained.get(&pointer).and_then(|payload| {
@@ -391,23 +483,24 @@ fn reconcile<T, Q, A, D: Copy + Ord>(
                 })
             });
             let Some((payload, total)) = admitted else {
-                rejected = Some((*hash, position));
-                break;
+                victims.push((*hash, Arc::downgrade(&entry.value)));
+                continue;
             };
             report.charged_bytes = total;
             report.payload_bytes += payload;
             report.index_logical_bytes += index;
             report.retained_entries += 1;
         }
-        if rejected.is_some() {
-            break;
-        }
     }
-    if let Some((hash, position)) = rejected {
-        return (None, detach(state, hash, position));
+    if !victims.is_empty() {
+        return Reconciliation {
+            complete: None,
+            victims,
+            #[cfg(test)]
+            visits,
+        };
     }
     // Still holding the same lock: commit exactly the weights just validated.
-    // No insertion or claim change can intervene between proof and accounting.
     let mut cursor = None;
     loop {
         let hash = match cursor {
@@ -430,7 +523,25 @@ fn reconcile<T, Q, A, D: Copy + Ord>(
         }
     }
     state.bytes = report.charged_bytes;
-    (Some(report), None)
+    Reconciliation {
+        complete: Some(report),
+        victims,
+        #[cfg(test)]
+        visits,
+    }
+}
+
+fn detach_weak<T, Q, A, D>(
+    state: &mut Resident<T, Q, A, D>,
+    hash: u128,
+    weak: &std::sync::Weak<T>,
+) -> Option<Variant<T, Q, A, D>> {
+    let position = state
+        .buckets
+        .get(&hash)?
+        .iter()
+        .position(|entry| std::ptr::eq(Arc::as_ptr(&entry.value), weak.as_ptr()))?;
+    detach(state, hash, position)
 }
 
 /// Occupied scalar slot plus a modeled link/control envelope. This deliberately
