@@ -38,11 +38,24 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
+TRACKED(/obj/item/grenade, det_time)
+
+MSG_DEF_SELF(grenade/timer_1s, "You set %T% for 1 second detonation time.")
+MSG_DEF_SELF(grenade/timer_3s, "You set %T% for 3 second detonation time.")
+MSG_DEF_SELF(grenade/timer_5s, "You set %T% for 5 second detonation time.")
+MSG_DEF_SELF(grenade/timer_instant, "You set %T% for instant detonation.")
+
 CAPABILITIES(/obj/item/grenade)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
 	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	// the screwdriver turns the timer round: instant, 1 s, 3 s, 5 s; a grenade with another fuse only takes the prints
+	stages(nameof(det_time),
+		stage_step(1, 10, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_1s)), then(PROC_REF(timer_handled))),
+		stage_step(10, 30, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_3s)), then(PROC_REF(timer_handled))),
+		stage_step(30, 50, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_5s)), then(PROC_REF(timer_handled))),
+		stage_step(50, 1, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_instant)), then(PROC_REF(timer_handled))))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(timer_handled)))
 
 /obj/item/grenade/proc/grenade_primed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -76,22 +89,9 @@ CAPABILITIES(/obj/item/grenade)
 		T.hotspot_expose(700,125)
 		SSmotiontracker.ping(src,100)
 
-/obj/item/grenade/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	switch(det_time)
-		if(1)
-			det_time = 10
-			to_chat(user, span_notice("You set the [name] for 1 second detonation time."))
-		if(10)
-			det_time = 30
-			to_chat(user, span_notice("You set the [name] for 3 second detonation time."))
-		if(30)
-			det_time = 50
-			to_chat(user, span_notice("You set the [name] for 5 second detonation time."))
-		if(50)
-			det_time = 1
-			to_chat(user, span_notice("You set the [name] for instant detonation."))
-	add_fingerprint(user)
+/// The screwdriver leaves its user's prints.
+/obj/item/grenade/proc/timer_handled(datum/act/op/A)
+	add_fingerprint(A.actor)
 	return OP_OK
 
 /// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.

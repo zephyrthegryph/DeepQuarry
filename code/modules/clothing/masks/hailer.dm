@@ -55,14 +55,25 @@
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	sechailer_halt_verb(user)
 
+TRACKED(/obj/item/clothing/mask/gas/sechailer, aggressiveness)
+
 CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))
 	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
 	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	// the aggressiveness restrictor: the screwdriver turns it 1 -> 2 -> 3 -> 4 -> 1 (each with its opening phrase); wirecutters break it (5)
+	stages(nameof(aggressiveness),
+		stage_step(1, 2, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_2)), then(PROC_REF(restrictor_turned))),
+		stage_step(2, 3, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_3)), then(PROC_REF(restrictor_turned))),
+		stage_step(3, 4, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_4)), then(PROC_REF(restrictor_turned))),
+		stage_step(4, 1, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_1)), then(PROC_REF(restrictor_turned))),
+		stage_step(1, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_1"),
+		stage_step(2, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_2"),
+		stage_step(3, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_3"),
+		stage_step(4, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_4"))
+	op("restrictor_broken", tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), when(req_stage(nameof(aggressiveness), 5)), wait(0), says(MSG(sechailer/restrictor_dead)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), needs(req(PROC_REF(hailer_removal_refusal))), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
 /obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb_op(datum/act/op/A)
@@ -121,35 +132,22 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 		return OP_DECLINE
 	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	switch(aggressiveness)
-		if(1)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the second position."))
-			aggressiveness = 2
-			phrase = 7
-		if(2)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the third position."))
-			aggressiveness = 3
-			phrase = 13
-		if(3)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the fourth position."))
-			aggressiveness = 4
-			phrase = 1
-		if(4)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the first position."))
-			aggressiveness = 1
-			phrase = 1
-		if(5)
-			to_chat(user, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
-	return OP_OK
+MSG_DEF_SELF(sechailer/restrictor_1, span_notice("You set the aggressiveness restrictor to the first position."))
+MSG_DEF_SELF(sechailer/restrictor_2, span_notice("You set the aggressiveness restrictor to the second position."))
+MSG_DEF_SELF(sechailer/restrictor_3, span_notice("You set the aggressiveness restrictor to the third position."))
+MSG_DEF_SELF(sechailer/restrictor_4, span_notice("You set the aggressiveness restrictor to the fourth position."))
+MSG_DEF_SELF(sechailer/restrictor_broken, span_warning("You broke it!"))
+MSG_DEF_SELF(sechailer/restrictor_dead, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
 
-/obj/item/clothing/mask/gas/sechailer/proc/wirecutter_used(datum/act/op/A)
-	var/mob/user = A.actor
-	if(aggressiveness == 5)
-		return OP_OK
-	to_chat(user, span_warning("You broke it!"))
-	aggressiveness = 5
+/// Each restrictor position opens on its own phrase.
+/obj/item/clothing/mask/gas/sechailer/proc/restrictor_turned(datum/act/op/A)
+	switch(aggressiveness)
+		if(2)
+			phrase = 7
+		if(3)
+			phrase = 13
+		else
+			phrase = 1
 	return OP_OK
 
 /// The hailer comes off only a mask that has a separate one, and only when the mask's holder lets it go.
