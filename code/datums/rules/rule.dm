@@ -110,6 +110,8 @@ CAPABILITIES(/datum/rule)
 		if(length(native_compiler.errors))
 			errors += native_compiler.errors
 		rel_clear(src, nameof(native_compiler))
+		if(!compiled_condition && !length(errors))
+			errors += "condition compiler produced no root"
 		if(length(errors) || !compiled_condition)
 			rel_clear(src, nameof(compiled_condition))
 		else

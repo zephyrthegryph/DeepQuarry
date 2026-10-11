@@ -140,7 +140,7 @@ CAPABILITIES(/datum/simulation_condition)
 	if(!result || length(errors) != error_count)
 		rel_clear(src, nameof(scratch))
 		return null
-	return rel_take(src, nameof(scratch), result)
+	return rel_take(src, nameof(scratch))
 
 /// Attach before configuration or recursion: one declared owner covers every failure.
 /datum/simulation_condition_compiler/proc/allocate_node(datum/simulation_condition/parent)
