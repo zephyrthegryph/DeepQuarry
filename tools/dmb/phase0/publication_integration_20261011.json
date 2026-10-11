@@ -10,7 +10,8 @@
     "compiler_artifact_and_composition_lifecycle": 17,
     "resource_comparison": 5,
     "procedure_hit_verification": 4,
-    "batch_spool_and_orphan_lifecycle": 9
+    "batch_spool_and_orphan_lifecycle": 10,
+    "authenticated_body_fork": 1
   },
   "focused_failure": {
     "test": "failed_header_pruning_preserves_published_selector_owner",
@@ -29,7 +30,9 @@
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053547-d39cea37-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060501-d03936c9-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json",
-    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060530-c8b5c89a-focused.json"
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060530-c8b5c89a-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-061747-3e0bf6ab-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060655-e847dfa9-focused.json"
   ],
   "resources": {
     "distinct_assets": 3852,
@@ -44,7 +47,7 @@
   "latest_full_game_incremental_benchmark": "open",
   "six_worktree_acceptance": "open",
   "shared_configuration_and_input_closure": "open",
-  "verification_scope": "named executable procedure memo hits only; initializer verifier implementation pending",
+  "verification_scope": "Named executable procedure memo hits validated; initializer verifier implementation and one-shot portable shared-core migration await focused compilation/execution gates.",
   "runtime_fixture_revisions": {
     "nested_map": 6,
     "initializer_inheritance_resources": 14,
@@ -52,5 +55,17 @@
     "matches_fresh_native_bytes": true,
     "full_game_acceptance": false,
     "source": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b"
+  },
+  "focused_real_game_runtime": {
+    "native_passed": 11,
+    "byond_passed": 11,
+    "status_and_runtime_observations_match": true,
+    "runtime_errors": 0,
+    "native_compilation_seconds": 114.94,
+    "native_profile": "prototype, dmbc opt-level 0; not optimized benchmark acceptance",
+    "evidence": "tools/dmb/bench/receipts/focused-runtime-observations-20261011-power-damage.json",
+    "full_suite": false,
+    "shared_input_closure_authenticated": false,
+    "accepted_runtime_baseline": false
   }
 }
