@@ -7,7 +7,7 @@ impl dm_preprocess::SourceProvider for Text {
         Ok(self.0.into())
     }
 }
-fn frontend(source: &'static str, engine: &EngineSnapshot) -> ColdFrontend {
+pub(super) fn frontend(source: &'static str, engine: &EngineSnapshot) -> ColdFrontend {
     let seed = engine.frontend_seed();
     dm_tree::frontend::build_with_config(
         Path::new("abi-retained.dme"),

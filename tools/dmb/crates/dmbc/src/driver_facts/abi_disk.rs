@@ -15,10 +15,10 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::{Arc, OnceLock},
 };
-const SCHEMA: u32 = 0x0204_0010;
+const SCHEMA: u32 = 0x0204_0012;
 const ENGINE_SCHEMA: u32 = 0x0204_0011;
 const LIMIT: usize = 1024 * 1024;
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 #[derive(Serialize, Deserialize, PartialEq)]
 struct EngineProof {
     bytes: Vec<u8>,
@@ -65,6 +65,7 @@ struct AbiWire {
 }
 #[derive(Serialize, Deserialize)]
 struct UnitWire {
+    identity: ProcedureIdentity,
     key: Vec<u8>,
     proof: InputsProof,
     inputs: InputWire,
@@ -145,6 +146,7 @@ impl Transport {
     pub(super) fn lookup(
         &self,
         key: &[u8],
+        identity: ProcedureIdentity,
         current: &observations::Current<'_>,
         pure: Option<&[u8]>,
         recording: &dyn Resolver,
@@ -163,7 +165,7 @@ impl Transport {
             // older variant must not be hidden by an otherwise matching first row.
             let decoded = decode_bucket(bytes)?;
             for wire in decoded {
-                if wire.key != key || wire.proof != proof {
+                if wire.key != key || wire.identity != identity || wire.proof != proof {
                     continue;
                 }
                 if !wire.reads.iter().all(|(query, answer)| {
@@ -183,6 +185,7 @@ impl Transport {
     pub(super) fn stage(
         &self,
         key: &[u8],
+        identity: ProcedureIdentity,
         current: &observations::Inputs,
         pure: Option<&[u8]>,
         artifact: &UnitArtifact,
@@ -198,6 +201,7 @@ impl Transport {
             return;
         }
         let wire = UnitWire {
+            identity,
             key: key.to_vec(),
             proof,
             inputs: InputWire::capture(&artifact.inputs),
@@ -402,6 +406,34 @@ fn path(value: &str, root: bool) -> bool {
 }
 impl UnitWire {
     fn validate(&self) -> Result<(), String> {
+        let identity = self.identity;
+        let issued_locator = observations::locator(crate::lowering::UnitIdentity {
+            owner: identity.owner,
+            name: identity.name,
+            occurrence: identity.occurrence,
+            namespace: if identity.verb {
+                crate::lowering::Namespace::Verb
+            } else {
+                crate::lowering::Namespace::Proc
+            },
+        });
+        let mandatory = [
+            ResolveQuery::Ancestry(identity.owner),
+            ResolveQuery::DeclarationChain {
+                owner: identity.owner,
+                name: identity.name,
+                verb: identity.verb,
+            },
+        ];
+        let mandatory_reads = mandatory.iter().all(|query| {
+            self.reads.iter().any(|(old, answer)| {
+                old == query
+                    && answer.starts_with(b"dm-resolved-meaning-v1\0")
+                    && answer
+                        .get(b"dm-resolved-meaning-v1\0".len())
+                        .is_some_and(|tag| *tag != 1)
+            })
+        });
         let count = self.inputs.parameters.len();
         let input = &self.inputs;
         // Production prepare_verified_procedure populates every vector once per
@@ -438,7 +470,10 @@ impl UnitWire {
             || (self.proof.boundary.len() == 18
                 && self.proof.boundary[0] == 2
                 && self.proof.boundary[17] <= 1);
-        if self.key.is_empty()
+        if self.key != issued_locator.as_ref()
+            || !mandatory_reads
+            || input.identity.is_some_and(|current| current != identity)
+            || self.key.is_empty()
             || self.key.len() > 128
             || count > 255
             || !vectors
@@ -501,8 +536,48 @@ mod tests {
             }],
             source_helpers: Vec::new(),
         };
+        let identity = ProcedureIdentity {
+            owner: dm_ir::SymbolId::of("/"),
+            name: dm_ir::SymbolId::of("probe"),
+            verb: false,
+            occurrence: 0,
+        };
+        let locator = observations::locator(crate::lowering::UnitIdentity {
+            owner: identity.owner,
+            name: identity.name,
+            occurrence: identity.occurrence,
+            namespace: crate::lowering::Namespace::Proc,
+        });
+        let engine = crate::runner_host::EnginePayload::capture(
+            include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+            1,
+            true,
+            0,
+        )
+        .unwrap();
+        let frontend = super::super::production_tests::frontend(
+            "/proc/probe(value=7)\n    return value\n",
+            &engine.snapshot,
+        );
+        let mut reads = [
+            ResolveQuery::Ancestry(identity.owner),
+            ResolveQuery::DeclarationChain {
+                owner: identity.owner,
+                name: identity.name,
+                verb: false,
+            },
+        ]
+        .into_iter()
+        .map(|query| {
+            let answer = Resolver::resolve(frontend.snapshot.tree.as_ref(), query);
+            assert!(portable(&answer));
+            (query, answer.canonical_bytes())
+        })
+        .collect::<Vec<_>>();
+        reads.sort_by_key(|(query, _)| *query);
         let wire = UnitWire {
-            key: vec![1],
+            identity,
+            key: locator.to_vec(),
             proof: InputsProof {
                 engine: (1, true, 0),
                 pure_policy: None,
@@ -515,10 +590,27 @@ mod tests {
             },
             inputs: InputWire::capture(&inputs),
             abi: AbiWire::capture(&abi).unwrap(),
-            reads: Vec::new(),
+            reads,
         };
         let bytes = dm_wire::encode(SCHEMA, &wire).unwrap();
         let corruptions: &[fn(&mut UnitWire)] = &[
+            |wire| {
+                wire.reads
+                    .retain(|(query, _)| !matches!(query, ResolveQuery::Ancestry(_)));
+            },
+            |wire| {
+                wire.reads
+                    .retain(|(query, _)| !matches!(query, ResolveQuery::DeclarationChain { .. }));
+            },
+            |wire| {
+                wire.identity.occurrence += 1;
+            },
+            |wire| {
+                wire.key[0] ^= 1;
+            },
+            |wire| {
+                wire.reads[0].1.clear();
+            },
             |wire| {
                 wire.inputs.flags.clear();
             },

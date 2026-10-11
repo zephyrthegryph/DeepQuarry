@@ -234,12 +234,12 @@ pub(super) fn prepare(
         }
     }
     let recording = dm_session::RecordingResolver::new(&base);
-    recording.record_declaration_occurrence(dm_ir::ProcedureIdentity {
+    let issued_identity = dm_ir::ProcedureIdentity {
         owner: context.identity.owner,
         name: context.identity.name,
         verb: context.identity.namespace == Namespace::Verb,
         occurrence: context.identity.occurrence,
-    });
+    };
     let evaluated = DriverEvaluator {
         pure_calls: evaluator.pure_calls,
         resource_search_context: evaluator.resource_search_context,
@@ -268,14 +268,21 @@ pub(super) fn prepare(
         .map_or(Some(None), |calls| calls.immutable_policy_bytes().map(Some));
     let disk = store.disk.as_ref().filter(|_| portable_policy.is_some());
     let transported = disk.and_then(|disk| {
-        current
-            .as_ref()
-            .and_then(|current| disk.lookup(&key, current, portable_policy.flatten(), &recording))
+        current.as_ref().and_then(|current| {
+            disk.lookup(
+                &key,
+                issued_identity,
+                current,
+                portable_policy.flatten(),
+                &recording,
+            )
+        })
     });
     let mut unit = if let Some(unit) = transported {
         store.reused.fetch_add(1, Ordering::Relaxed);
         unit
     } else {
+        recording.record_declaration_occurrence(issued_identity);
         store.recomputed.fetch_add(1, Ordering::Relaxed);
         policy.prepare_view(metadata, parsed, &recorded_context)?
     };
@@ -291,6 +298,7 @@ pub(super) fn prepare(
         if let Some(disk) = disk {
             disk.stage(
                 &key,
+                issued_identity,
                 &current.inputs,
                 portable_policy.flatten(),
                 &UnitArtifact {
