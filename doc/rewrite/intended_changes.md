@@ -4710,3 +4710,4 @@ The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reac
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
