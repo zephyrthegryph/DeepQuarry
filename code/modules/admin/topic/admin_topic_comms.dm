@@ -6,7 +6,7 @@ MSG_DEF_SELF(admin_topic/syndicate_unreachable, "The person you are trying to co
 
 /datum/admins/proc/centcom_reply_possible(datum/act/op/A)
 	var/mob/living/L = A.args["CentComReply"]
-	return L?.can_centcom_reply()
+	return (L?.can_centcom_reply()) ? null : MSG(admin_topic/centcom_unreachable)
 
 /datum/admins/proc/centcom_reply_question(datum/act/op/A)
 	return "Please enter a message to reply to [key_name(A.args["CentComReply"])] via their headset."
@@ -28,7 +28,7 @@ MSG_DEF_SELF(admin_topic/syndicate_unreachable, "The person you are trying to co
 
 /datum/admins/proc/syndicate_reply_possible(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.args["SyndicateReply"]
-	return istype(H) && (istype(H.get_equipped_item(SLOT_ID_EAR_L), /obj/item/radio/headset) || istype(H.get_equipped_item(SLOT_ID_EAR_R), /obj/item/radio/headset))
+	return (istype(H) && (istype(H.get_equipped_item(SLOT_ID_EAR_L), /obj/item/radio/headset) || istype(H.get_equipped_item(SLOT_ID_EAR_R), /obj/item/radio/headset))) ? null : MSG(admin_topic/syndicate_unreachable)
 
 /datum/admins/proc/syndicate_reply_question(datum/act/op/A)
 	return "Please enter a message to reply to [key_name(A.args["SyndicateReply"])] via their headset."

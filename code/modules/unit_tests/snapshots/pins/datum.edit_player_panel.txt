@@ -1,0 +1,2 @@
+runtime while making it: OWN: /datum/edit_player_panel.holder is declared /datum/admins, refused a /turf/simulated/floor/tiled/steel
+

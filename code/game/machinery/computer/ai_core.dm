@@ -327,7 +327,7 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 
 /// The admin still holds the rights to do this when the answer arrives.
 /datum/admins/proc/empty_ai_core_latejoin_valid(datum/act/op/A)
-	return read_once(A.actor?.client) == read_once(owner()) && check_rights_for(read_once(owner()), R_ADMIN|R_SERVER|R_EVENT)
+	return (read_once(A.actor?.client) == read_once(owner()) && check_rights_for(read_once(owner()), R_ADMIN|R_SERVER|R_EVENT)) ? null : "administrator rights required"
 
 /datum/admins/proc/empty_ai_core_latejoin_chosen(datum/act/op/A)
 	var/id = A.step_value("core")

@@ -29,7 +29,7 @@
 /obj/mecha/working/ripley/dq_topic_guard_fixture
 
 /obj/mecha/working/ripley/dq_topic_guard_fixture/topic_usable(datum/act/op/A)
-	return !!A.actor && !A.actor.stat
+	return (!!A.actor && !A.actor.stat) ? null : MSG(op/topic_gate)
 
 /datum/unit_test/om/dq_topic_guards
 

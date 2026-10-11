@@ -649,6 +649,31 @@
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_sixth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
+// Self-contained OLD proof draft for fresh origin/master; no F helper dependency.
+/datum/unit_test/dq_requirement_eighth_boundary
+	parent_type = /datum/unit_test
+
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check(datum/holder, mob/actor, key, callback, expected, obj/held = null, atom/target = null)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real [holder.type] [key] op exists")
+	var/datum/entry/part/req/selected
+	var/matches = 0
+	for(var/datum/entry/part/req/R as anything in P.needs)
+		if(LAZYACCESS(R.args, "what") == callback)
+			selected = R
+			matches++
+	TEST_ASSERT_EQUAL(matches, 1, "Exactly one real compiled requirement names [callback]")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.held = held
+	A.target = target || holder
+	A.oplan = P
+	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "[key]/[callback] preserves exact allow/refusal")
+
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check_when(datum/holder, mob/actor, key, expected, obj/held = null, atom/target = null)
 	var/datum/op_plan/P = op_plan_for(holder, key)
 	TEST_ASSERT_NOTNULL(P, "The real [holder.type] [key] op exists")
 	TEST_ASSERT(length(P.conds), "The actual op carries a selector")
@@ -946,3 +971,120 @@
 	TEST_ASSERT_NULL(U.cell, "The real relation is empty again")
 	check_when(U, H, "insert_cell", TRUE, C)
 	check(U, H, "use_screwdriver", "has_cell", /datum/msg/req_silent)
+/datum/unit_test/dq_requirement_eighth_boundary/kit_order_family/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/item/kit/K = allocate(/obj/item/kit, H.loc)
+	var/list/first_types = list(/obj/item/flashlight, /obj/item/radio/headset)
+	for(var/type in first_types)
+		var/obj/item/I = allocate(type, H.loc)
+		check_when(I, H, "kit_customize", TRUE, K)
+		check_when(I, H, "kit_customize_last", FALSE, K)
+	var/list/last_types = list(/obj/item/clothing/head/helmet/space/void, /obj/item/clothing/suit/space/void, /obj/item/clothing/suit/storage/hooded, /obj/item/rig)
+	for(var/type in last_types)
+		var/obj/item/I = allocate(type, H.loc)
+		check_when(I, H, "kit_customize", FALSE, K)
+		check_when(I, H, "kit_customize_last", TRUE, K)
+
+/datum/unit_test/dq_requirement_eighth_boundary/harm_click_protocol/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/smoleruins/ruins = allocate(/obj/structure/smoleruins, H.loc)
+	var/obj/item/flashlight/I = allocate(/obj/item/flashlight, H.loc)
+	H.set_combat_mode(FALSE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), MSG(harm_click_only), I)
+	H.set_combat_mode(TRUE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), null, I)
+	H.set_combat_mode(FALSE)
+	check(ruins, H, "smoleruins_item", TYPE_PROC_REF(/atom, harm_click_only), MSG(harm_click_only), I)
+
+/datum/unit_test/dq_requirement_eighth_boundary/player_effects_target/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, H.loc)
+	var/datum/eventkit/player_effects/panel = allocate(/datum/eventkit/player_effects)
+	rel_set(panel, nameof(panel.target), ghost)
+	check(panel, H, "quick_nif", "nif_target_ok", /datum/msg/player_effects/nif_unsuitable)
+	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_not_living)
+	rel_set(panel, nameof(panel.target), H)
+	TEST_ASSERT_NOTNULL(H.get_organ(BP_HEAD), "The real target has a head for the NIF")
+	TEST_ASSERT_NULL(H.nif, "The real target begins without a NIF")
+	check(panel, H, "quick_nif", "nif_target_ok", null)
+	check(panel, H, "ai", "ai_target_ok", null)
+	H.teleop = ghost
+	check(panel, H, "ai", "ai_target_ok", /datum/msg/player_effects/ai_player)
+	H.teleop = null
+	check(panel, H, "ai", "ai_target_ok", null)
+	var/obj/item/nif/N = allocate(/obj/item/nif, H.loc)
+	TEST_ASSERT(N.quick_implant(H), "The actual implant preparation succeeds")
+	N.quick_install(H) // Complete the real delayed callback for the state-boundary fixture.
+	TEST_ASSERT_EQUAL(H.nif, N, "The real NIF is implanted into the target")
+	check(panel, H, "quick_nif", "nif_target_ok", /datum/msg/player_effects/nif_present)
+	N.unimplant(H)
+	check(panel, H, "quick_nif", "nif_target_ok", null)
+	// No item_tf positive case: a genuine keyed player is required, not a fake ckey.
+	check(panel, H, "item_tf", "item_tf_ready", /datum/msg/req_silent)
+// Evaluate the selected real compiled requirement with actual topic arguments.
+// This isolates target eligibility and does not claim administrator authorization.
+/datum/unit_test/dq_requirement_eighth_boundary/proc/check_args(datum/holder, mob/actor, key, callback, expected, list/args)
+	var/datum/op_plan/P = op_plan_for(holder, key)
+	TEST_ASSERT_NOTNULL(P, "The real topic op exists")
+	var/datum/entry/part/req/selected
+	var/matches = 0
+	for(var/datum/entry/part/req/R as anything in P.needs)
+		if(LAZYACCESS(R.args, "what") == callback)
+			selected = R
+			matches++
+	TEST_ASSERT_EQUAL(matches, 1, "One actual requirement owns this target predicate")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = holder
+	A.actor = actor
+	A.target = holder
+	A.oplan = P
+	A.args = args
+	var/actual = op_req_holds(A, selected) ? null : op_req_refusal(A, selected)
+	A.release()
+	TEST_ASSERT_EQUAL(actual, expected, "The actual topic target requirement preserves the exact reason")
+
+/datum/unit_test/dq_requirement_eighth_boundary/admin_target_without_rights/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/observer/dead/G = allocate(/mob/observer/dead, H.loc)
+	// The real constructor needs ranks and an identity; this holder has no rights or client.
+	set_global(nameof(GLOB.admin_datums), GLOB.admin_datums.Copy())
+	set_global(nameof(GLOB.deadmins), GLOB.deadmins.Copy())
+	var/fixture_key = "dq_requirement_eighth_target"
+	var/datum/admins/holder = allocate(/datum/admins, list(), fixture_key)
+	GLOB.admin_datums -= fixture_key
+	check_args(holder, H, "sendbacktolobby", "lobby_target_observer", MSG(admin_topic/lobby_not_ghost), list("sendbacktolobby" = H))
+	check_args(holder, H, "sendbacktolobby", "lobby_target_observer", null, list("sendbacktolobby" = G))
+	check_args(holder, H, "sendbacktolobby", "lobby_target_client", MSG(admin_topic/lobby_no_client), list("sendbacktolobby" = G))
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", MSG(admin_topic/syndicate_unreachable), list("SyndicateReply" = H))
+	var/obj/item/radio/headset/headset = allocate(/obj/item/radio/headset, H.loc)
+	TEST_ASSERT(H.equip_to_slot_if_possible(headset, SLOT_ID_EAR_L, disable_warning = TRUE), "A real headset equips into the ear")
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", null, list("SyndicateReply" = H))
+	TEST_ASSERT(H.unEquip(headset), "The actual headset can be removed")
+	check_args(holder, H, "SyndicateReply", "syndicate_reply_possible", MSG(admin_topic/syndicate_unreachable), list("SyndicateReply" = H))
+
+/datum/unit_test/dq_requirement_eighth_pin
+	parent_type = /datum/unit_test/dq_conversion_pin
+	capture_roots = list(/datum/edit_player_panel, /datum/eventkit/player_effects, /datum/newscaster_panel, /datum/tgui_module/appearance_changer, /datum/tgui_module/cardmod, /datum/tgui_module/crew_monitor, /datum/tgui_module/late_choices, /datum/tgui_module/law_manager, /datum/tgui_module/rcon, /datum/tgui_module/ship/nav, /obj/structure/ghost_pod/ghost_activated/maint_lurker, /obj/structure/ghost_pod/ghost_activated/unified_hole, /obj/item/communicator, /obj/item/areaeditor, /obj/item/rcd, /obj/item/sleevemate, /obj/mecha/working/ripley, /obj/item/mecha_parts/mecha_equipment/tool/passenger, /obj/machinery/syndicate_beacon, /obj/item/flashlight, /obj/item/radio/headset, /obj/item/paicard, /obj/structure/ghost_pod/manual, /obj/structure/ghost_pod/ghost_activated, /obj/structure/trash_pile, /obj/machinery/computer/specops_shuttle, /obj/machinery/magnetic_controller, /obj/structure/smoleruins, /obj/structure/smolebuilding)
+
+/datum/unit_test/dq_requirement_eighth_boundary/topic_inherited_parent/Run()
+	var/mob/living/carbon/human/external = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/pilot = allocate(/mob/living/carbon/human, external.loc)
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, external.loc)
+	TEST_ASSERT_NULL(external.client, "The external actor really has no attached client")
+	var/datum/act/op/A = take(/datum/act/op)
+	A.actor = external
+	A.holder = mech
+	A.target = mech
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A real nonpilot preserves parent denial")
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot, pilot), "The real containment API establishes a pilot")
+	TEST_ASSERT_EQUAL(mech.slot_item(MECHA_SLOT_PILOT), pilot, "The real slot identifies that pilot")
+	A.actor = pilot
+	TEST_ASSERT_NULL(mech.topic_usable(A), "The actual pilot is allowed through the pilot exception")
+	A.actor = external
+	TEST_ASSERT_EQUAL(mech.topic_usable(A), MSG(op/topic_gate), "A different actor remains refused after boarding")
+	for(var/type in list(/obj/item/rcd, /obj/item/areaeditor, /obj/item/sleevemate))
+		var/obj/item/I = allocate(type, external.loc)
+		A.holder = I
+		A.target = I
+		TEST_ASSERT_EQUAL(I.topic_usable(A), MSG(op/topic_gate), "[type] must preserve its real parent client denial")
+	A.release()
