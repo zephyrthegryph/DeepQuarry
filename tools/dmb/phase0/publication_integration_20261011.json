@@ -746,7 +746,12 @@
     "reserved_abi_map_charge_commit": "f0501e7249",
     "benchmark_status": "not measured on these commits",
     "analysis_owner_capture_commit": "99a80a9ecb",
-    "abi_production_helper_commit": "d12dd3be0e"
+    "abi_production_helper_commit": "d12dd3be0e",
+    "eager_duplicate_freezer_removed_commit": "3e98dc49b7",
+    "current_rich_promotion_reads_commit": "5ce80e276c",
+    "shadow_rejection_evidence_commit": "b751155e4a",
+    "fixed_word_roles_commit": "58947ada75",
+    "captured_input_role_commit": "f3199ff696"
   },
   "shared_core_focused_20261011": {
     "source_commit": "b8c62168126f1b1aca4004d53eedbfcf02034af7",
@@ -761,5 +766,46 @@
     "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141952-a54276b1-job-cargo.json",
     "passed": true,
     "scope": "All six packages and test targets typecheck; this is not fixture execution or whole-program parity"
+  },
+  "latest_d12_build_attempt": {
+    "compiler_commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
+    "archive_sha256": "c2ed60c480932940567ba5e4366a3625c6b6abf0d32e75cfe59270c8e2fd0e7a",
+    "watchdog_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-142115-08f08d72-job-cargo.json",
+    "first_exit_code": 124,
+    "reaped": true,
+    "scope": "Rust dependency rebuild stopped at300s, not a DM benchmark; identical bounded warm retry running"
+  },
+  "latest_d12_validation": {
+    "compiler_commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
+    "binary_sha256": "4e9b46ff78d8b3b06eb54abd5bbf3e06adb5c82ee7d5ad3b854a353b68c96266",
+    "pin": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-d12dd3be0e-dmbc.exe.pin.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-142625-54978e0d-job-cargo.json",
+    "build_passed": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/20261011-d12/80fcb293c6cc4ec8a4ef2621f75b6a79/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_fresh_oracles_passed": 5,
+    "scope": "Prototype profile; later source changes not included; focused runtime and real benchmark pending",
+    "runtime_contract": {
+      "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-d12/7d113c426d2941ae91260cf5418d2146/receipt.json",
+      "complete": false,
+      "matches": false,
+      "passed_revisions": 12,
+      "failed_revision": "resource_replace",
+      "cause": "reporting panic on 128-bit ResourceIn.search_context serialized as JSON number",
+      "fix_commit": "13a852d0b3",
+      "daemon_reaped": true,
+      "scope": "First12 retained/fresh/BYOND explicit runtime observations agree with fresh byte oracle; asset replacement gate remains open until fixed binary rerun"
+    }
+  },
+  "cli_selection_focused_20261011": {
+    "source_commits": [
+      "b751155e4a",
+      "f8cec40ede"
+    ],
+    "passed": 28,
+    "failed": 0,
+    "assertions": 245,
+    "runtime": "Bun1.3.14",
+    "scope": "mocked process outcomes and publication contracts; not real integration or DM runtime proof"
   }
 }
