@@ -4703,3 +4703,4 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
 Also re-blessed for master commits that landed without their pins: the pipe, cannon frame, pipe dispenser and smoletrack rotation ops, and the food reagent fills in `dq_reagents_start_snapshot`.
+The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reaches the VR sleeper refusal rows, and `rand(1, 999)` at init made them follow how much RNG earlier tests drew.
