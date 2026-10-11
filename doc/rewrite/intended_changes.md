@@ -4385,3 +4385,7 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **A floor light's damage flicker is rolled when it is damaged** (it was rolled by the first draw after the damage).
 * **Lights that were set at init are declared**: the technomancer auras, modifiers, chroma (spell and the light it leaves), flame tongue, radiance and
   reflect, and the slime extract flashlight. The modifiers' colour moved from the base `light_color` to their own `spell_light_color`.
+
+### Holder constructor diagnostic stack lines (requirements-zero-1010-h)
+
+Master commit `d7f737b36b` (2026-10-10 20:23:35 -0500) adds two explanatory lines before the parameter apply handler in `code/engine/lifeforms/params.dm`. The conversion pins for `/obj/item/holder`, `/obj/item/holder/mouse` and `/obj/item/holder/micro` therefore record that handler at line 239 instead of 237. Their existing missing-mob diagnostic, constructor behavior and all interaction rows are unchanged. Only these three diagnostic rows were refreshed from the final focused capture; this is a master-source location change, not a simulation-rule behavior change.
