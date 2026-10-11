@@ -4536,6 +4536,19 @@ trait (no instance var to name as its state var). `protection_of(null)` answers 
 still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
 as a body temperature).
 
+## Mob screen elements on the client HUD (base_vars lane B, bv-hud)
+
+The 20 screen refs (`hands`, `healths`, `internals`, `pain`, `zone_sel`, the gun, ling, borer, wizard, shadekin, lleill, xenochimera and
+autowhisper displays, ...), `plane_holder`, `vis_enabled` and `planes_visible` leave `/mob` for `/datum/hud` (`hud_element()`, read
+`hud_of(M)?.x`; 649 sites, `tools/dx/codemods/move_to_hud.py`). The unused `purged` screen var is deleted.
+
+* **Logout drops the hud** (screens, plane masters and vision lists); Login builds a new one and `recalculate_vis()` rebuilds what the mob
+  sees. Before, the hud lived on until the next login.
+* **A mob without a client has no target zone selector**: `hud_of(M)?.zone_sel?.selecting` reads null where `M.zone_sel.selecting` would
+  have raised a runtime error (it was already null without a client). Vision toggles on a client-less mob (`plane_holder?.set_vis()`) do
+  nothing until a client logs in, as before for a mob that never had one.
+* Test mobs get an empty hud with `dq_test_hud(M)`.
+
 **base_vars tooling (lane bv-traits, `doc/rewrite/proposals/base_vars.md`).** `set_trait(holder, kind, field, value)` is the one trait writer;
 the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV route a write of a var that moved into a trait block (or
 `@kind.field`, which VV now lists) through it; a map edit of any other unknown var is a stack trace instead of a runtime. A compiled map

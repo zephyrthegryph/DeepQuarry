@@ -144,8 +144,8 @@
 	if(!ishuman(owner))
 		seq_extra_remove(owner, /datum/sequence/life, src)
 	revoke(owner, granted_verb(/mob/living/proc/shadekin_control_panel), src)
-	if(!QDELING(owner) && owner.shadekin_display)
-		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
+	if(!QDELING(owner) && hud_of(owner)?.shadekin_display)
+		hud_of(owner)?.shadekin_display?.invisibility = INVISIBILITY_ABSTRACT
 
 /datum/shadekin/proc/recalc_values()
 	set_shadekin_eyecolor() //Gets what eye color we are.

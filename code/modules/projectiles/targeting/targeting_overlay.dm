@@ -39,29 +39,29 @@ CAPABILITIES(/obj/aiming_overlay)
 		target_permissions |= perm
 
 	// Update HUD icons.
-	if(owner().gun_move_icon)
+	if(hud_of(owner())?.gun_move_icon)
 		if(!(target_permissions & TARGET_CAN_MOVE))
-			owner().gun_move_icon.icon_state = "no_walk0"
-			owner().gun_move_icon.name = "Allow Movement"
+			hud_of(owner())?.gun_move_icon?.icon_state = "no_walk0"
+			hud_of(owner())?.gun_move_icon?.name = "Allow Movement"
 		else
-			owner().gun_move_icon.icon_state = "no_walk1"
-			owner().gun_move_icon.name = "Disallow Movement"
+			hud_of(owner())?.gun_move_icon?.icon_state = "no_walk1"
+			hud_of(owner())?.gun_move_icon?.name = "Disallow Movement"
 
-	if(owner().item_use_icon)
+	if(hud_of(owner())?.item_use_icon)
 		if(!(target_permissions & TARGET_CAN_CLICK))
-			owner().item_use_icon.icon_state = "no_item0"
-			owner().item_use_icon.name = "Allow Item Use"
+			hud_of(owner())?.item_use_icon?.icon_state = "no_item0"
+			hud_of(owner())?.item_use_icon?.name = "Allow Item Use"
 		else
-			owner().item_use_icon.icon_state = "no_item1"
-			owner().item_use_icon.name = "Disallow Item Use"
+			hud_of(owner())?.item_use_icon?.icon_state = "no_item1"
+			hud_of(owner())?.item_use_icon?.name = "Disallow Item Use"
 
-	if(owner().radio_use_icon)
+	if(hud_of(owner())?.radio_use_icon)
 		if(!(target_permissions & TARGET_CAN_RADIO))
-			owner().radio_use_icon.icon_state = "no_radio0"
-			owner().radio_use_icon.name = "Allow Radio Use"
+			hud_of(owner())?.radio_use_icon?.icon_state = "no_radio0"
+			hud_of(owner())?.radio_use_icon?.name = "Allow Radio Use"
 		else
-			owner().radio_use_icon.icon_state = "no_radio1"
-			owner().radio_use_icon.name = "Disallow Radio Use"
+			hud_of(owner())?.radio_use_icon?.icon_state = "no_radio1"
+			hud_of(owner())?.radio_use_icon?.name = "Disallow Radio Use"
 
 	var/message = "no longer permitted to "
 	var/use_span = "warning"
@@ -201,7 +201,7 @@ TRACKED(/obj/aiming_overlay, locked)
 		else
 			to_chat(owner(), span_notice("You will no longer aim rather than fire."))
 			owner().client.remove_gun_icons()
-		owner().gun_setting_icon?.icon_state = "gun[active]"
+		hud_of(owner())?.gun_setting_icon?.icon_state = "gun[active]"
 
 /obj/aiming_overlay/proc/cancel_aiming(no_message = 0)
 	if(!aiming_with() || !aiming_at)

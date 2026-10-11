@@ -8,7 +8,7 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/ambient_occlusion/apply_to_client(client/client, value)
-	var/datum/plane_holder/PH = client?.mob?.plane_holder
+	var/datum/plane_holder/PH = hud_of(client?.mob)?.plane_holder
 	if(PH)
 		PH.set_ao(VIS_OBJS, value)
 		PH.set_ao(VIS_MOBS, value)
@@ -50,7 +50,7 @@
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/status_indicators/apply_to_client(client/client, value)
-	var/datum/plane_holder/PH = client?.mob?.plane_holder
+	var/datum/plane_holder/PH = hud_of(client?.mob)?.plane_holder
 	if(PH)
 		PH.set_vis(VIS_STATUS, value)
 

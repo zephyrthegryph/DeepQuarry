@@ -99,5 +99,5 @@
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_HAND_R)
 			rel_set(H, nameof(H.internal), H.get_equipped_item(SLOT_ID_HAND_R))
-			if(istype(H.internal,/obj/item/tank) && H.internals)
-				H.internals.icon_state = "internal1"
+			if(istype(H.internal,/obj/item/tank) && hud_of(H)?.internals)
+				hud_of(H)?.internals?.icon_state = "internal1"

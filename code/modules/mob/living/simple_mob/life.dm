@@ -29,8 +29,8 @@
 /mob/living/simple_mob/proc/update_health_display()
 	get_injury_level()
 	//Update our hud if we have one
-	if(healths)
-		healths.icon_state = vitality_health_band(src)
+	if(hud_used?.healths)
+		hud_used?.healths?.icon_state = vitality_health_band(src)
 
 	//Updates the nutrition while we're here
 	switch(nutrition)

@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/stack/medical/field)
 	if(!ishuman(M))
 		return ITEM_INTERACT_SUCCESS
 	var/mob/living/carbon/human/H = M
-	var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel?.selecting)
+	var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!affecting)
 		return ITEM_INTERACT_FAILURE
 	if(allowed_zones && !(affecting.organ_tag in allowed_zones))

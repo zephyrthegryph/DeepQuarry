@@ -133,7 +133,7 @@ MSG_DEF(backup_implanter/implanting, null, "%U% is injecting a backup implant in
 	act_message(M, user, others = span_notice("%U% has been backup implanted by %T%."))
 
 	var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
-	if(imp.handle_implant(M,user.zone_sel.selecting))
+	if(imp.handle_implant(M,hud_of(user)?.zone_sel?.selecting))
 		imp.post_implant(M, user)
 		own_take_member(src, nameof(imps), imp)
 		add_attack_logs(user,M,"Implanted backup implant")
@@ -199,7 +199,7 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 	imp.germ_level = 0
 
 	//Implant the implant.
-	if(imp.handle_implant(user, user.zone_sel.selecting))
+	if(imp.handle_implant(user, hud_of(user)?.zone_sel?.selecting))
 		imp.post_implant(user, user)
 		add_attack_logs(user, user, "Implanted backup implant")
 		act_message(user, null, others = span_notice("%U% has been backup implanted by %U%."))

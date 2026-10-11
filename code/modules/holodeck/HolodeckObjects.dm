@@ -172,7 +172,7 @@ CAPABILITIES(/turf/simulated/floor/holofloor/desert)
 		play_sfx(target, SFX_WEAPONS_PUNCHMISS)
 		act_message(user, target, others = span_danger("%U% has attempted to punch %T%!"))
 		return TRUE
-	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
+	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(hud_of(user)?.zone_sel?.selecting))
 	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
 
 	if(user.has_mutation(HULK))

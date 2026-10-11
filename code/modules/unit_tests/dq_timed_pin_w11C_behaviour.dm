@@ -63,7 +63,7 @@
 /datum/unit_test/dq_timed_pin_w11C/splint_other/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_L_ARM
+	hud_of(user)?.zone_sel.selecting = BP_L_ARM
 	target = person(get_step(user, NORTH))
 	held = hold(/obj/item/stack/medical/splint)
 
@@ -82,7 +82,7 @@
 /datum/unit_test/dq_timed_pin_w11C/ointment_burn/setup_scene()
 	user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_L_ARM
+	hud_of(user)?.zone_sel.selecting = BP_L_ARM
 	var/mob/living/carbon/human/patient = person(get_step(user, NORTH))
 	patient.disable_godmode() // a godmode body takes no wound
 	patient.injure(INJURY_BURN, 15, BP_L_ARM)

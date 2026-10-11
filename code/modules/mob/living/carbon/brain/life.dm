@@ -149,7 +149,7 @@
 
 /mob/living/carbon/brain/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
-	src.healths.icon_state = vitality_health_band(src)
+	hud_used?.healths?.icon_state = vitality_health_band(src)

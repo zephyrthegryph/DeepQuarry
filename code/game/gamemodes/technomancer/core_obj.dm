@@ -222,12 +222,12 @@ CAPABILITIES(/obj/spellbutton)
 	if(client && hud_used)
 		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
 			var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
-			wiz_energy_display.invisibility = INVISIBILITY_NONE
+			hud_used?.wiz_energy_display?.invisibility = INVISIBILITY_NONE
 			var/ratio = core.energy / core.max_energy
 			ratio = max(round(ratio, 0.05) * 100, 5)
-			wiz_energy_display.icon_state = "wiz_energy[ratio]"
+			hud_used?.wiz_energy_display?.icon_state = "wiz_energy[ratio]"
 		else
-			wiz_energy_display.invisibility = INVISIBILITY_ABSTRACT
+			hud_used?.wiz_energy_display?.invisibility = INVISIBILITY_ABSTRACT
 
 //Resonance Aperture
 

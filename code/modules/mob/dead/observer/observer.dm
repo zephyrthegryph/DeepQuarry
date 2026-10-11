@@ -317,8 +317,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	set desc = "Toggles Medical HUD allowing you to see how everyone is doing"
 
 	medHUD = !medHUD
-	plane_holder.set_vis(VIS_CH_HEALTH, medHUD)
-	plane_holder.set_vis(VIS_CH_STATUS_OOC, medHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH, medHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_OOC, medHUD)
 	to_chat(src, span_boldnotice("Medical HUD [medHUD ? "Enabled" : "Disabled"]"))
 
 /mob/observer/dead/verb/toggle_secHUD()
@@ -327,11 +327,11 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	set desc = "Toggles Security HUD allowing you to see people's displayed ID's job, wanted status, etc"
 
 	secHUD = !secHUD
-	plane_holder.set_vis(VIS_CH_ID, secHUD)
-	plane_holder.set_vis(VIS_CH_WANTED, secHUD)
-	plane_holder.set_vis(VIS_CH_IMPTRACK, secHUD)
-	plane_holder.set_vis(VIS_CH_IMPLOYAL, secHUD)
-	plane_holder.set_vis(VIS_CH_IMPCHEM, secHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_ID, secHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_WANTED, secHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK, secHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL, secHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM, secHUD)
 	to_chat(src, span_boldnotice("Security HUD [secHUD ? "Enabled" : "Disabled"]"))
 
 /mob/observer/dead/verb/toggle_antagHUD()
@@ -362,7 +362,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		has_enabled_antagHUD = TRUE
 
 	antagHUD = !antagHUD
-	plane_holder.set_vis(VIS_CH_SPECIAL, antagHUD)
+	hud_used?.plane_holder?.set_vis(VIS_CH_SPECIAL, antagHUD)
 	to_chat(src, span_boldnotice("AntagHUD [antagHUD ? "Enabled" : "Disabled"]"))
 
 /mob/observer/dead/proc/jumpable_areas()
@@ -995,9 +995,9 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	to_chat(src, span_filter_notice("Your vision now has [darkness_names[index]]."))
 
 /mob/observer/dead/proc/updateghostsight()
-	plane_holder.set_desired_alpha(VIS_LIGHTING, lighting_alpha)
-	plane_holder.set_vis(VIS_LIGHTING, lighting_alpha)
-	plane_holder.set_vis(VIS_GHOSTS, ghostvision)
+	hud_used?.plane_holder?.set_desired_alpha(VIS_LIGHTING, lighting_alpha)
+	hud_used?.plane_holder?.set_vis(VIS_LIGHTING, lighting_alpha)
+	hud_used?.plane_holder?.set_vis(VIS_GHOSTS, ghostvision)
 
 /mob/observer/dead/MayRespawn(feedback = FALSE)
 	if(!client)

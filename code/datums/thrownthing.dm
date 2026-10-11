@@ -90,7 +90,7 @@ CAPABILITIES(/datum/thrownthing)
 	src.then_with = then_with
 	src.target_zone = target_zone
 	if(!QDELETED(thrower) && ismob(thrower))
-		src.target_zone = thrower.zone_sel ? thrower.zone_sel.selecting : null
+		src.target_zone = hud_of(thrower)?.zone_sel ? hud_of(thrower)?.zone_sel?.selecting : null
 
 	dist_x = abs(target.x - thrownthing.x)
 	dist_y = abs(target.y - thrownthing.y)

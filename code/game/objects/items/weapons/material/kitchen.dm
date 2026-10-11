@@ -89,7 +89,7 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 		return ..()
 
 	if(stance != I_HELP)
-		if(user.zone_sel.selecting == BP_HEAD || user.zone_sel.selecting == O_EYES)
+		if(hud_of(user)?.zone_sel?.selecting == BP_HEAD || hud_of(user)?.zone_sel?.selecting == O_EYES)
 			if(CLUMSY_HARM_CHANCE(user))
 				M = user
 			return eyestab(M,user)
