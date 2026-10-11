@@ -46,11 +46,29 @@
     "semantic_equivalent": true,
     "shared_input_closure_authenticated": false
   },
+  "focused_validation_0725": {
+    "dmbc_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-072008-9457c50c-job-cargo.json",
+    "dmbc_binary_sha256": "3e83053d0cef09404765f307376f0a5d0d2b27516621169ab6a435b4a71129c4",
+    "passed": 19,
+    "failed": 7,
+    "scope": "26 selected fixtures; transport, verifier and certificate replay gates remain open",
+    "receipts": [
+      "20261011-072326-39c5a048-focused.json",
+      "20261011-072348-73f1e9a1-focused.json",
+      "20261011-072409-daa8eb9d-focused.json",
+      "20261011-072430-6fb14484-focused.json",
+      "20261011-072439-1ee3dd1a-focused.json",
+      "20261011-072450-3e4776fc-focused.json",
+      "20261011-072519-50bf907a-focused.json"
+    ],
+    "session_payload_tests_passed": 2,
+    "session_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-072450-2e23d121-job-cargo.json"
+  },
   "full_runtime_baseline": "open",
   "latest_full_game_incremental_benchmark": "open",
   "six_worktree_acceptance": "open",
   "shared_configuration_and_input_closure": "open",
-  "verification_scope": "Named executable procedure memo hits validated; initializer verifier implementation and one-shot portable shared-core migration await focused compilation/execution gates.",
+  "verification_scope": "Named executable procedure memo hits validated. Current initializer and publication sources compile, but focused execution found initializer transport/verifier and certificate replay failures; these gates remain open.",
   "runtime_fixture_revisions": {
     "nested_map": 6,
     "initializer_inheritance_resources": 14,
@@ -94,14 +112,6 @@
         "unproven custom evaluator policies",
         "failure payloads"
       ]
-    },
-    {
-      "commit": "4a8de8750d",
-      "change": "Generic exact local input delta and authenticated frontend procedure issuer",
-      "tests_run": false,
-      "semantic_read_coverage": "UncoveredAll",
-      "scheduler_skip_enabled": false,
-      "abi_graph_comparison": "once per revision pair"
     }
   ],
   "validation_blocker": {
