@@ -1,6 +1,8 @@
 //! Opt-in retained-owner census. This observes container payloads/capacities,
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
+#[path = "heap_census/body_contexts.rs"]
+mod body_contexts;
 use serde::Serialize;
 mod abi_certificates;
 mod cache_batch;
@@ -17,8 +19,8 @@ mod metadata_dependencies;
 mod resident_map_outputs;
 mod source_text;
 mod storage_inventory;
-pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 pub(crate) use resident_map_outputs::unit_weight as resident_map_unit_weight;
+pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
 mod prepared;
 mod prepared_inputs;
 mod relocation_metrics;
@@ -394,7 +396,7 @@ impl HeapCensus {
             "private hash indexes and persistent macro map nodes are not exposed",
         );
         self.declaration_syntax("frontend.declaration_ast", &frontend.syntax);
-        self.slice("frontend.body_index", &frontend.bodies, true);
+        self.body_occurrences("frontend.body_index", &frontend.bodies);
         frontend.visit_body_code_storage(|address, logical, capacity| {
             self.buffer("frontend.body_code", address, logical, capacity);
         });
@@ -405,14 +407,6 @@ impl HeapCensus {
         );
         for owner in frontend.settings_owner_storage().iter().flatten() {
             self.procedure_metadata("frontend.settings_owner", owner);
-        }
-        for body in frontend.bodies.iter() {
-            self.slice("frontend.body_index", &body.ast_path, true);
-            self.slice("frontend.body_index", &body.setting_context_origins, true);
-            self.source_location("frontend.body_index", &body.source);
-            for location in body.setting_context_origins.iter() {
-                self.source_location("frontend.body_index", location);
-            }
         }
         self.slice("frontend.body_index", &frontend.emission_order, true);
         self.unknown(
@@ -887,7 +881,8 @@ impl HeapCensus {
             self.frozen_code(&helper.frozen);
             self.slice("frozen_units.warnings", &helper.warnings, true);
             self.frozen_debug("frozen_units", &helper.debug_origins);
-            self.arc_object("helper.local_names", &helper.local_names); self.strings("frozen_units", &helper.local_names);
+            self.arc_object("helper.local_names", &helper.local_names);
+            self.strings("frozen_units", &helper.local_names);
         }
         for initializer in &batch.initializers {
             self.latest_image(initializer.latest_image());

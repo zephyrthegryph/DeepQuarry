@@ -29,6 +29,8 @@ pub(crate) struct SourceSnapshot {
     pub(crate) source_revision: u128,
     pub(crate) outcome: &'static str,
     occurrences: Arc<dm_tree::OccurrenceTable>,
+    /// Same immutable current producer owner; no parsed syntax or source arena.
+    bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
     replay_proof: Option<ReplayProof>,
@@ -58,6 +60,9 @@ impl SourceSnapshot {
             tree: Arc::clone(&self.tree),
             occurrences: Arc::clone(&self.occurrences),
         });
+        if let Some(bodies) = &self.bodies {
+            census.body_occurrences("query_snapshot.bodies", bodies);
+        }
         self.selected.census(census);
         if let Some(proof) = &self.replay_proof {
             proof
@@ -139,6 +144,10 @@ impl SourceSnapshot {
             selected: Default::default(),
             replay_proof: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
+            bodies: frontend
+                .callable_roster()
+                .ok()
+                .map(|_| Arc::clone(&frontend.bodies)),
             paths: frontend
                 .files
                 .iter()
@@ -358,3 +367,7 @@ impl Drop for QueryAttempt {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "runner_query_body_context_tests.rs"]
+mod body_context_tests;

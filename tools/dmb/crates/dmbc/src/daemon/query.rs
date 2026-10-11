@@ -49,6 +49,11 @@ pub enum SourceQuery {
         start: u32,
         limit: u32,
     },
+    /// Current issued source envelopes/settings context, not executable syntax.
+    BodyContextsPage {
+        start: u32,
+        limit: u32,
+    },
     /// Only facts already issued by explicit analyze --resolved; never relowers.
     SelectedReferences {
         ordinal: u32,
@@ -186,7 +191,7 @@ fn validate_reply(
             source_rows += 1;
             continue;
         }
-        if row["row"] == "source_occurrences_page" {
+        if row["row"] == "source_occurrences_page" || row["row"] == "source_body_contexts_page" {
             occurrence_pages::validate(&row, reply.source_revision.as_deref())?;
             source_rows += 1;
             continue;
@@ -276,7 +281,7 @@ impl QueryRequest {
                 "query batch exceeds count or subject limit",
             ));
         }
-        if self.source_queries.iter().any(|query| matches!(query, SourceQuery::OccurrencesPage { limit, .. } if !(1..=128).contains(limit))) {
+        if self.source_queries.iter().any(|query| matches!(query, SourceQuery::OccurrencesPage { limit, .. } | SourceQuery::BodyContextsPage { limit, .. } if !(1..=128).contains(limit))) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "occurrence page limit must be 1..128"));
         }
         if serde_json::to_vec(self).map_err(io::Error::other)?.len() > MAX_REQUEST {
@@ -396,6 +401,10 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_occurrences_page(*start, *limit, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::BodyContextsPage { start, limit } = question {
+            snapshot.write_body_contexts_page(*start, *limit, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::SelectedReferences { ordinal } = question {
             snapshot.write_selected(*ordinal, &mut output)?;
             continue;
@@ -405,6 +414,7 @@ pub(crate) fn evaluate_snapshot(
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
             SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
+            | SourceQuery::BodyContextsPage { .. }
             | SourceQuery::SemanticTypesPage { .. }
             | SourceQuery::SemanticMembersPage { .. }
             | SourceQuery::SemanticIntrinsicMembersPage { .. } => {

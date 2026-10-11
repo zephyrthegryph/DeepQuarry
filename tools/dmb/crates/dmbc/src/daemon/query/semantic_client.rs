@@ -32,6 +32,8 @@ pub enum Catalog {
     Intrinsics,
     /// Current issued source occurrences, requiring both revision pins.
     Occurrences,
+    /// Source body envelopes and setting-context locations, without parsed syntax.
+    BodyContexts,
 }
 #[derive(Clone, Copy)]
 pub struct TraversalLimits {
@@ -110,7 +112,8 @@ fn visit_catalog_with(
     mut execute: impl FnMut(QueryRequest) -> Result<super::QueryReply, Box<dyn std::error::Error>>,
 ) -> Result<TraversalResult, Box<dyn std::error::Error>> {
     if template.expected_revision.is_none()
-        || (matches!(catalog, Catalog::Occurrences) && template.expected_source_revision.is_none())
+        || (matches!(catalog, Catalog::Occurrences | Catalog::BodyContexts)
+            && template.expected_source_revision.is_none())
         || !template.queries.is_empty()
         || !template.source_queries.is_empty()
         || !(1..=128).contains(&limits.page_size)
@@ -160,6 +163,10 @@ fn visit_catalog_with(
                 start,
                 limit: limits.page_size,
             },
+            Catalog::BodyContexts => SourceQuery::BodyContextsPage {
+                start,
+                limit: limits.page_size,
+            },
         });
         let reply = execute(request)?;
         check()?;
@@ -168,18 +175,19 @@ fn visit_catalog_with(
         let row: serde_json::Value = serde_json::from_str(reply.jsonl.trim())?;
         let total = number(&row, "total")?;
         let returned = number(&row, "returned")?;
-        let (inventory, hierarchy) = if matches!(catalog, Catalog::Occurrences) {
-            (false, false)
-        } else {
-            (
-                row["intrinsic_inventory_complete"]
-                    .as_bool()
-                    .ok_or_else(|| invalid("missing catalog completeness"))?,
-                row["hierarchy_certified"]
-                    .as_bool()
-                    .ok_or_else(|| invalid("missing hierarchy completeness"))?,
-            )
-        };
+        let (inventory, hierarchy) =
+            if matches!(catalog, Catalog::Occurrences | Catalog::BodyContexts) {
+                (false, false)
+            } else {
+                (
+                    row["intrinsic_inventory_complete"]
+                        .as_bool()
+                        .ok_or_else(|| invalid("missing catalog completeness"))?,
+                    row["hierarchy_certified"]
+                        .as_bool()
+                        .ok_or_else(|| invalid("missing hierarchy completeness"))?,
+                )
+            };
         let current = result.get_or_insert_with(|| TraversalResult {
             revision: reply.revision.clone(),
             source_revision: reply.source_revision.clone(),

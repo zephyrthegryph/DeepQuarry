@@ -386,18 +386,23 @@ pub fn write_jsonl(
         counts.occurrence_rows += 1;
     }
     for body in frontend.bodies.iter() {
-        emit(
-            writer,
-            json!({"row":"body","declaration":body.declaration.0,
-            "member":target_key(Target::Member(body.member))?,
-            "expanded_start":body.expanded_span.start,"expanded_end":body.expanded_span.end,
-            "source":source(&body.source),
-            "setting_context_origins":body.setting_context_origins.iter().map(source).collect::<Vec<_>>()}),
-        )?;
+        emit(writer, source_body_row(tree, body)?)?;
         counts.body_rows += 1;
     }
     counts.semantic_rows += query_export::write_member_queries(tree, &member_keys, writer)?;
     Ok(counts)
+}
+
+/// Current source envelope only: this never parses or resolves executable syntax.
+pub fn source_body_row(
+    tree: &SemanticTree,
+    body: &dm_tree::frontend::BodyOccurrence,
+) -> Result<Value, ExportError> {
+    Ok(json!({"row":"body","declaration":body.declaration.0,
+        "member":member_row::member_key(tree,body.member)?,
+        "expanded_start":body.expanded_span.start,"expanded_end":body.expanded_span.end,
+        "source":source(&body.source),
+        "setting_context_origins":body.setting_context_origins.iter().map(source).collect::<Vec<_>>()}))
 }
 
 #[cfg(test)]

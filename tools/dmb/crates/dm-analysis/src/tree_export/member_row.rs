@@ -1,6 +1,9 @@
 //! Shared current-tree member serializer for full exports and retained pages.
 use super::*;
-fn member_key(tree: &SemanticTree, id: dm_tree::MemberId) -> Result<String, ExportError> {
+pub(super) fn member_key(
+    tree: &SemanticTree,
+    id: dm_tree::MemberId,
+) -> Result<String, ExportError> {
     let member = tree
         .member(id)
         .ok_or(ExportError::InvalidModel("unknown exported member"))?;

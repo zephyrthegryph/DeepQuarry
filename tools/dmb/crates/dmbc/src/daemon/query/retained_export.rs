@@ -6,7 +6,7 @@ use super::{Catalog, QueryRequest, TraversalLimits, VisitControl};
 use std::io::{self, Read, Write};
 use std::time::Instant;
 const SCHEMA: &str = "dm-session-retained-export-v1";
-const SCOPE: &str = "semantic type facts, authored member metadata, captured engine intrinsic selectors, and current parser-issued source occurrences";
+const SCOPE: &str = "semantic type facts, authored member metadata, captured engine intrinsic selectors, current parser-issued source occurrences, and source body contexts";
 
 pub fn run_export_file(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let mut bytes = Vec::new();
@@ -54,7 +54,7 @@ fn export_with(
                         "compiler_version":env!("CARGO_PKG_VERSION"),"query_schema":"dm-session-query-v2",
                         "semantic_revision":request.expected_revision,"source_revision":request.expected_source_revision,
                         "item_scope":SCOPE,"complete":false,"executable_facts_included":false,
-                        "full_member_metadata_included":true,"resolved_references_included":false,
+                        "full_member_metadata_included":true,"source_body_contexts_included":true,"resolved_references_included":false,
                         "provenance_complete":false}),
     )?;
     for catalog in [
@@ -62,6 +62,7 @@ fn export_with(
         Catalog::Members,
         Catalog::Intrinsics,
         Catalog::Occurrences,
+        Catalog::BodyContexts,
     ] {
         let limits = TraversalLimits {
             max_pages: 4096 - pages,
@@ -95,7 +96,7 @@ fn export_with(
             &serde_json::json!({"schema":SCHEMA,"row":"retained_roster_complete",
             "semantic_revision":result.revision,"source_revision":result.source_revision,
             "roster":match catalog {Catalog::Types=>"types",Catalog::Members=>"members",
-                Catalog::Intrinsics=>"intrinsics",Catalog::Occurrences=>"occurrences"},
+                Catalog::Intrinsics=>"intrinsics",Catalog::Occurrences=>"occurrences",Catalog::BodyContexts=>"body_contexts"},
             "total":result.total,"pages":result.pages,"roster_finished":result.roster_finished,
             "intrinsic_inventory_complete":result.intrinsic_inventory_complete,
             "hierarchy_certified":result.hierarchy_certified,"complete":false}),

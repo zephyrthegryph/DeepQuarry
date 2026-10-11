@@ -68,7 +68,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         rows.iter()
             .filter(|row| row["row"] == "retained_roster_complete")
             .count(),
-        4
+        5
     );
     assert!(rows
         .iter()
@@ -77,7 +77,9 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         .iter()
         .any(|row| row["row"] == "member" && row["name"] == "value"));
     assert!(rows.iter().any(|row| row["row"] == "source_occurrence"));
-    assert!(!rows.iter().any(|row| row["row"] == "body"));
+    assert!(rows
+        .iter()
+        .any(|row| row["row"] == "body" && row["executable_facts_included"] == false));
     assert_eq!(
         rows.iter().filter(|row| row["row"] == "type").count(),
         frontend.snapshot.tree.types().len()
@@ -94,11 +96,18 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         .unwrap()
         .lines()
         .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
-        .filter(|row| row["row"] == "member" || row["row"] == "type")
+        .filter(|row| row["row"] == "member" || row["row"] == "type" || row["row"] == "body")
     {
         let resident = rows
             .iter()
-            .find(|row| row["row"] == full_row["row"] && row["id"] == full_row["id"])
+            .find(|row| {
+                row["row"] == full_row["row"]
+                    && if full_row["row"] == "body" {
+                        row["declaration"] == full_row["declaration"]
+                    } else {
+                        row["id"] == full_row["id"]
+                    }
+            })
             .unwrap();
         for (field, value) in full_row.as_object().unwrap() {
             assert_eq!(&resident[field], value, "current semantic field {field}");

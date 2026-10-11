@@ -14,8 +14,9 @@ fn number(row: &serde_json::Value, key: &str) -> io::Result<u32> {
         .ok_or_else(invalid)
 }
 pub(super) fn validate(row: &serde_json::Value, revision: Option<&str>) -> io::Result<()> {
+    let bodies = row["row"] == "source_body_contexts_page";
     if row["schema"] != "dm-session-source-query-v1"
-        || row["row"] != "source_occurrences_page"
+        || (!bodies && row["row"] != "source_occurrences_page")
         || row["source_revision"].as_str() != revision
         || revision.is_none()
         || row["complete"] != false
@@ -49,10 +50,15 @@ pub(super) fn validate(row: &serde_json::Value, revision: Option<&str>) -> io::R
     }
     for (index, item) in items.iter().enumerate() {
         if item["schema"] != "dm-session-source-query-v1"
-            || item["row"] != "source_occurrence"
+            || item["row"] != if bodies { "body" } else { "source_occurrence" }
             || item["source_revision"].as_str() != revision
-            || item["occurrence"].as_u64() != Some(u64::from(start) + index as u64)
-            || item["provenance_complete"] != false
+            || item[if bodies { "ordinal" } else { "occurrence" }].as_u64()
+                != Some(u64::from(start) + index as u64)
+            || (if bodies {
+                item["executable_facts_included"] != false
+            } else {
+                item["provenance_complete"] != false
+            })
         {
             return Err(invalid());
         }
@@ -61,14 +67,24 @@ pub(super) fn validate(row: &serde_json::Value, revision: Option<&str>) -> io::R
 }
 pub(super) fn validate_requested(reply: &QueryReply, queries: &[SourceQuery]) -> io::Result<()> {
     let mut requested = queries.iter().filter_map(|query| match query {
-        SourceQuery::OccurrencesPage { start, limit } => Some((*start, *limit)),
+        SourceQuery::OccurrencesPage { start, limit } => {
+            Some(("source_occurrences_page", *start, *limit))
+        }
+        SourceQuery::BodyContextsPage { start, limit } => {
+            Some(("source_body_contexts_page", *start, *limit))
+        }
         _ => None,
     });
     for line in reply.jsonl.lines() {
         let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
-        if row["row"] == "source_occurrences_page" {
+        if row["row"] == "source_occurrences_page" || row["row"] == "source_body_contexts_page" {
             let expected = requested.next().ok_or_else(invalid)?;
-            if (number(&row, "start")?, number(&row, "limit")?) != expected {
+            if (
+                row["row"].as_str().ok_or_else(invalid)?,
+                number(&row, "start")?,
+                number(&row, "limit")?,
+            ) != expected
+            {
                 return Err(invalid());
             }
         }
