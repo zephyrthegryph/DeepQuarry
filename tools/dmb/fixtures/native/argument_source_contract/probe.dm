@@ -27,7 +27,7 @@ var/global/source_frame_calls = 0
 /proc/first_source(first in observe_frame("first_source", 1, args.len, null))
     return first
 
-/proc/third_source(first as num = 7, second in observe_frame("second", first, args.len, args[1]), third in observe_frame("third", second, args.len, args[1]))
+/proc/third_source(first = 7 as num, second in observe_frame("second", first, args.len, args[1]), third in observe_frame("third", second, args.len, args[1]))
     return third
 
 /world/New()
