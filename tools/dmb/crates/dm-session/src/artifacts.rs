@@ -20,7 +20,7 @@ mod borrowed_lookup;
 mod incidence_tests;
 mod leased;
 mod pressure;
-pub use pressure::PressurePrune;
+pub use pressure::{PressureAllocation, PressurePrune};
 #[cfg(test)]
 mod payload_validation_tests;
 pub use leased::ObservedArtifactLease;

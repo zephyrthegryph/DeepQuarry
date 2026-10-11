@@ -21,12 +21,13 @@ impl SessionSymbolicMemo {
         };
         owner
             .values
-            .prune_for_pressure_with_budget(limit, |key, _, _, record, allowance| {
-                charge(key, record, allowance)
+            .prune_for_pressure_shared(limit, |key, _, _, record, allowance| {
+                shared_charge(key, record, allowance)
             })
     }
 }
 
+#[cfg(test)]
 fn charge(
     key: &std::sync::Arc<[u8]>,
     record: &std::sync::Arc<super::super::Record>,
@@ -41,3 +42,14 @@ fn charge(
 #[cfg(test)]
 #[path = "symbolic_pressure_tests.rs"]
 mod tests;
+
+fn shared_charge(
+    key: &std::sync::Arc<[u8]>,
+    record: &std::sync::Arc<super::super::Record>,
+    limit: usize,
+) -> Option<Vec<dm_session::PressureAllocation>> {
+    let mut census = HeapCensus::compact_symbolic_allocations(limit);
+    census.slice("compact_symbolic.locator", key, true);
+    census_record(record, &mut census);
+    census.finish_compact_symbolic_allocations()
+}

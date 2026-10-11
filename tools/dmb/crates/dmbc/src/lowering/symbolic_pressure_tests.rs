@@ -156,3 +156,48 @@ fn compact_charge_matches_diagnostic_capacity_and_declines_before_pointer_growth
     }
     assert!(census.finish_compact_symbolic_charge().is_none());
 }
+
+#[test]
+fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
+    let first = record();
+    let second = Arc::new(super::super::super::Record {
+        local: None,
+        recipe: None,
+        key: Arc::from([4u8, 5, 6]),
+        reads: first.reads.clone(),
+        versions: Arc::clone(&first.versions),
+        value: match &first.value {
+            super::super::super::RecordValue::Executable(value) => {
+                super::super::super::RecordValue::Executable(Arc::clone(value))
+            }
+            _ => unreachable!(),
+        },
+        relative_debug: first.relative_debug.clone(),
+        required_types: Arc::clone(&first.required_types),
+        modified_recipes: Arc::clone(&first.modified_recipes),
+    });
+    let a = shared_charge(&first.key, &first, usize::MAX).unwrap();
+    let b = shared_charge(&second.key, &second, usize::MAX).unwrap();
+    let left: std::collections::BTreeMap<_, _> =
+        a.iter().map(|item| (item.address, item.bytes)).collect();
+    let shared: usize = b
+        .iter()
+        .filter_map(|item| {
+            left.get(&item.address).map(|old| {
+                assert_eq!(*old, item.bytes);
+                item.bytes
+            })
+        })
+        .sum();
+    assert!(shared > 0, "actual frozen code/frame owners must be shared");
+    let standalone_a: usize = a.iter().map(|item| item.bytes).sum();
+    assert_eq!(
+        standalone_a,
+        charge(&first.key, &first, usize::MAX).unwrap()
+    );
+    assert!(
+        shared < standalone_a,
+        "record and current debug buffers remain unique"
+    );
+    assert!(shared_charge(&first.key, &first, 0).is_none());
+}

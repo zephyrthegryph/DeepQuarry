@@ -5,7 +5,7 @@ mod publication;
 mod reads;
 pub use artifacts::{
     AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact, ObservedArtifactLease,
-    ObservedArtifactStorageView, ObservedArtifactStore, PressurePrune, UnchangedCandidate,
+    ObservedArtifactStorageView, ObservedArtifactStore, PressureAllocation, PressurePrune, UnchangedCandidate,
     UnchangedCandidates, DEFAULT_RESIDENT_BYTES,
 };
 pub use publication::{ArtifactAttempt, ArtifactGeneration, ArtifactPublication};

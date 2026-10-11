@@ -4,6 +4,7 @@ pub(super) struct Budget {
     limit: usize,
     charged: usize,
     pub(super) declined: bool,
+    allocations: Option<Vec<dm_session::PressureAllocation>>,
 }
 impl HeapCensus {
     pub(crate) fn compact_symbolic_charge(limit: usize) -> Self {
@@ -12,8 +13,24 @@ impl HeapCensus {
             limit,
             charged: 0,
             declined: false,
+            allocations: None,
         });
         census
+    }
+    pub(crate) fn compact_symbolic_allocations(limit: usize) -> Self {
+        let mut census = Self::compact_symbolic_charge(limit);
+        census.compact_charge.as_mut().unwrap().allocations = Some(Vec::new());
+        census
+    }
+    pub(crate) fn finish_compact_symbolic_allocations(
+        mut self,
+    ) -> Option<Vec<dm_session::PressureAllocation>> {
+        let allocations = self.compact_charge.as_mut()?.allocations.take()?;
+        let charge = self.finish_compact_symbolic_charge()?;
+        let total = allocations
+            .iter()
+            .try_fold(0usize, |sum, item| sum.checked_add(item.bytes))?;
+        (total == charge).then_some(allocations)
     }
     pub(super) fn admit_compact_buffer(&mut self, pointer: usize, capacity: usize) -> bool {
         let Some(budget) = &mut self.compact_charge else {
@@ -32,6 +49,12 @@ impl HeapCensus {
         match charged.filter(|n| *n <= budget.limit) {
             Some(charged) => {
                 budget.charged = charged;
+                if let Some(allocations) = &mut budget.allocations {
+                    allocations.push(dm_session::PressureAllocation {
+                        address: pointer,
+                        bytes: capacity.checked_add(64).unwrap(),
+                    });
+                }
                 true
             }
             None => {

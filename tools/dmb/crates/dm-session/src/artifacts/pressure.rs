@@ -1,5 +1,8 @@
 //! Explicit performance-cache pruning, independent of publication identity.
 use super::*;
+#[path = "pressure_shared.rs"]
+mod shared;
+pub use shared::PressureAllocation;
 
 #[cfg(test)]
 #[path = "pressure_lifecycle_tests.rs"]
