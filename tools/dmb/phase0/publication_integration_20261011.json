@@ -1162,5 +1162,17 @@
       "test_build_captured_verdigris"
     ],
     "scope": "Pure focused source-policy checks passed from phase0 directory. Actual captured Rust library and full DeepQuarry runtime comparison remain pending."
+  },
+  "fresh_owner_10d_focused": {
+    "source_commit": "10d402a958cd09ab09389f04a6e7c51f974fb8cf",
+    "source_archive_sha256": "43e049ff53cda2d2737284ab7e29f74410f32866d3359ff63b15fdb38e4f058c",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172037-591dc915-job-cargo.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172504-8908399d-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172504-fceb21f7-focused.json"
+    ],
+    "passed": 25,
+    "failed": 0,
+    "scope": "Shared fresh insertion two, qualified admission five, full targeted classification fourteen (including both formerly failing current-target/owner tests), modifier two, startup allocation/final one and inventory one. Build260.344s reaped under4GB, peak Job2,993,147,904 bytes. Does not validate later projection/compact changes or full runtime/performance gates."
   }
 }
