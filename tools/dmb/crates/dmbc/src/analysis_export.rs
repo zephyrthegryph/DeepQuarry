@@ -151,9 +151,12 @@ pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
         &prepared.prepared,
         std::sync::Arc::clone(startup.unit_members()),
     )?;
+    // ABI preparation already installs this overlay internally. Executable
+    // selection must use the SAME current startup-issued static namespace.
+    let static_resolver = startup.resolver(frontend, resolver)?;
     let diagnostics = match crate::selected_query::visit(
         frontend,
-        resolver,
+        &static_resolver,
         &policy,
         crate::lowering::LoweringConfig {
             workers: executor.workers(),

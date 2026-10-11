@@ -37,14 +37,15 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     let memo = crate::lowering_memo::ProcedureMemo::new(123);
     let mut expected = Vec::new();
     let mut captured = None;
-    crate::analysis_export::write_resolved_selected_with_owners(
+    let mut analysis_output = Vec::new();
+    let returned = crate::analysis_export::write_resolved_selected_with_owners(
         &frontend,
         &engine.snapshot,
         &resolver,
         &links.inventory.spellings,
         &executor,
         &memo,
-        &mut io::sink(),
+        &mut analysis_output,
         None,
         |row: &crate::selected_query::CurrentProcedureReferences| -> std::io::Result<()> {
             row.write_jsonl(&mut expected).map_err(io::Error::other)?;
@@ -56,6 +57,21 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         },
     )
     .unwrap();
+    assert_eq!(
+        returned, 1,
+        "ordinary analysis must issue this static-bearing procedure"
+    );
+    assert!(
+        !expected.is_empty(),
+        "the independently produced current oracle must contain references"
+    );
+    for line in String::from_utf8(analysis_output).unwrap().lines() {
+        let row: serde_json::Value = serde_json::from_str(line).unwrap();
+        assert_ne!(
+            row["row"], "diagnostic",
+            "ordinary producer diagnostic: {row}"
+        );
+    }
     let archive = frontend.body_archive().unwrap();
     let declaration = frontend.bodies[0].declaration.0;
     let (abi, startup) = captured.expect("successful SAME analysis issued owners");
