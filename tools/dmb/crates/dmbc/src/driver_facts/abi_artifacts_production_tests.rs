@@ -616,3 +616,75 @@ fn batch_binding_survives_request_drop_and_replacement_releases_old_binding() {
         "store release drops only retained binding"
     );
 }
+
+#[test]
+fn abi_disk_transport_rebinds_current_body_and_rejects_signature_change() {
+    let root = std::path::PathBuf::from("E:/dq-cache/dmb-abi-disk-tests").join(format!(
+        "{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    struct Owned(std::path::PathBuf);
+    impl Drop for Owned {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _owned = Owned(root.clone());
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let first_disk = Arc::new(crate::runner_host::disk::LazyDisk::new(root.clone()));
+    let first_store = AbiArtifacts::with_disk(owner.clone(), first_disk.clone(), 17);
+    let first = frontend("/proc/probe(value=7)\n    return value\n", engine);
+    same(
+        &prepared(&first, engine, Some(&first_store)),
+        &prepared(&first, engine, None),
+    );
+    assert!(first_disk.finish_batch().unwrap().records >= 2);
+    // Drop every process-issued store and request binding before loading again.
+    drop(first_store);
+    drop(first_disk);
+    let second_disk = Arc::new(crate::runner_host::disk::LazyDisk::new(root.clone()));
+    let second_store = AbiArtifacts::with_disk(owner.clone(), second_disk.clone(), 17);
+    let shifted = frontend(
+        "// shifted current source\n/proc/probe(value=7)\n    return value+1\n",
+        engine,
+    );
+    same(
+        &prepared(&shifted, engine, Some(&second_store)),
+        &prepared(&shifted, engine, None),
+    );
+    assert!(
+        second_store.totals().0 > 0,
+        "source-neutral disk ABI must be admitted"
+    );
+    drop(second_store);
+    drop(second_disk);
+    let third_store = AbiArtifacts::with_disk(
+        owner.clone(),
+        Arc::new(crate::runner_host::disk::LazyDisk::new(root)),
+        17,
+    );
+    let changed = frontend(
+        "/proc/probe(value=9,other=2)\n    return value+other\n",
+        engine,
+    );
+    same(
+        &prepared(&changed, engine, Some(&third_store)),
+        &prepared(&changed, engine, None),
+    );
+    assert_eq!(
+        third_store.totals().0,
+        0,
+        "changed signature must prepare currently"
+    );
+}

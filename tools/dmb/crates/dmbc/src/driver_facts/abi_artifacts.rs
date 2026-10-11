@@ -19,6 +19,8 @@ pub(crate) struct UnitArtifact {
 }
 #[path = "abi_batch.rs"]
 pub(super) mod batch;
+#[path = "abi_disk.rs"]
+mod disk;
 pub(crate) enum Artifact {
     Unit(Arc<UnitArtifact>),
     Batch(Arc<batch::Recipe>),
@@ -26,6 +28,7 @@ pub(crate) enum Artifact {
 pub struct AbiArtifacts {
     pub(super) store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
+    disk: Option<disk::Transport>,
     groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
@@ -39,6 +42,7 @@ impl Default for AbiArtifacts {
         Self {
             store: dm_session::ObservedArtifactStore::current_revision(),
             engine_owner: None,
+            disk: None,
             groups: Default::default(),
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
@@ -54,6 +58,17 @@ impl AbiArtifacts {
         Self {
             engine_owner: Some(engine_owner),
             ..Self::default()
+        }
+    }
+
+    pub(crate) fn with_disk(
+        engine: Arc<crate::runner_host::EnginePayload>,
+        disk: Arc<crate::runner_host::disk::LazyDisk>,
+        policy: u128,
+    ) -> Self {
+        Self {
+            disk: Some(disk::Transport::new(disk, policy, Arc::clone(&engine))),
+            ..Self::with_engine_owner(engine)
         }
     }
 
@@ -246,8 +261,24 @@ pub(super) fn prepare(
         resolver: &recording,
         ..*context
     };
-    let mut unit = policy.prepare_view(metadata, parsed, &recorded_context)?;
-    store.recomputed.fetch_add(1, Ordering::Relaxed);
+    // Unknown custom policies have no portable proof. They use the exact current
+    // producer and resident admission, never a hash-only disk shortcut.
+    let portable_policy = evaluator
+        .pure_calls
+        .map_or(Some(None), |calls| calls.immutable_policy_bytes().map(Some));
+    let disk = store.disk.as_ref().filter(|_| portable_policy.is_some());
+    let transported = disk.and_then(|disk| {
+        current
+            .as_ref()
+            .and_then(|current| disk.lookup(&key, current, portable_policy.flatten(), &recording))
+    });
+    let mut unit = if let Some(unit) = transported {
+        store.reused.fetch_add(1, Ordering::Relaxed);
+        unit
+    } else {
+        store.recomputed.fetch_add(1, Ordering::Relaxed);
+        policy.prepare_view(metadata, parsed, &recorded_context)?
+    };
     unit.issue_canonical();
     if let Some(current) = current {
         let abi = Arc::clone(
@@ -256,7 +287,21 @@ pub(super) fn prepare(
                 .ok_or_else(|| AbiError::invariant("production ABI missing"))?,
         );
         let inputs = Arc::clone(&unit.inputs);
-        let reads = observations::reads(current.inputs, recording.reads());
+        let semantic_reads = recording.reads();
+        if let Some(disk) = disk {
+            disk.stage(
+                &key,
+                &current.inputs,
+                portable_policy.flatten(),
+                &UnitArtifact {
+                    canonical: unit.canonical.clone(),
+                    inputs: Arc::clone(&inputs),
+                    abi: Arc::clone(&abi),
+                },
+                &semantic_reads,
+            );
+        }
+        let reads = observations::reads(current.inputs, semantic_reads);
         // Inputs stays a separate leaf; semantic runs share only exact individual
         // observations and domain identities. No dependency edges are collapsed.
         let reads = store

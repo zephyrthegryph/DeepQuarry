@@ -357,7 +357,20 @@ impl BuildHost {
     ) -> Option<crate::lowering_memo::ProcedureMemo> {
         if self.memo.is_none() {
             return disk.map(|snapshot| {
-                crate::lowering_memo::ProcedureMemo::with_lazy_disk_only(policy, snapshot)
+                let mut memo = crate::lowering_memo::ProcedureMemo::with_lazy_disk_only(
+                    policy,
+                    Arc::clone(&snapshot),
+                );
+                // A one-shot request owns this facade; neither disk handles nor
+                // current source authority escape into daemon resident state.
+                if let Some(engine) = self.engine.as_ref() {
+                    memo.abi = Some(Arc::new(crate::driver_facts::AbiArtifacts::with_disk(
+                        engine.abi_engine_owner(),
+                        snapshot,
+                        policy,
+                    )));
+                }
+                memo
             });
         }
         if self

@@ -49,6 +49,12 @@ pub trait PureCalls: Sync {
     fn immutable_policy_identity(&self) -> Option<u128> {
         None
     }
+    /// Exact, source-independent immutable policy evidence for disk transport.
+    /// Equal bytes must guarantee equal semantics for every input. A process-local
+    /// identity or policy with external reads must return None.
+    fn immutable_policy_bytes(&self) -> Option<&[u8]> {
+        None
+    }
     fn identity(&self) -> u128;
     fn accepts(&self, name: &str) -> bool;
     fn evaluate(

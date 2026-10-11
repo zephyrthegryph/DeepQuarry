@@ -46,6 +46,9 @@ impl EnginePayload {
             normalized: Arc::new(dm_tree::SharedNormalizedDeclarations::default()),
         }))
     }
+    pub(crate) fn disk_abi_authority(&self) -> (&[u8], u128, bool, u128) {
+        (&self.bytes, self.schema, self.bootstrap, self.compiler)
+    }
     pub(crate) fn frontend_seed(&self) -> &dm_tree::frontend::EngineSeed {
         self.seed.get_or_init(|| self.snapshot.frontend_seed())
     }

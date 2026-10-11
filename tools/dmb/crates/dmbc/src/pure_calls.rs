@@ -26,6 +26,19 @@ impl PureCalls for PinnedPureCalls {
     fn immutable_policy_identity(&self) -> Option<u128> {
         Some(self.identity)
     }
+    fn immutable_policy_bytes(&self) -> Option<&[u8]> {
+        // The engine template is authenticated separately, without hash-only
+        // admission. Include the complete native evidence, not its digest.
+        static EVIDENCE: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+        Some(EVIDENCE.get_or_init(|| {
+            let mut bytes =
+                b"byond5161687-rgb-v1:3or4-finite-numeric:clamp-truncate-lowerhex\0".to_vec();
+            bytes.extend_from_slice(include_bytes!(
+                "../../../fixtures/phase1/native_rgb_initializers/positive.native.bin"
+            ));
+            bytes
+        }))
+    }
     fn identity(&self) -> u128 {
         self.identity
     }
