@@ -54,7 +54,7 @@ impl Site {
         }
     }
 }
-pub(super) struct RetainedUnit {
+pub(in crate::map_memo) struct RetainedUnit {
     code: crate::InitializerCode,
     sites: Vec<Site>,
     recipes: Vec<ExpressionRecipe>,

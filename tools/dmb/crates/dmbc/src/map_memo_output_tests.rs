@@ -241,6 +241,18 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
             &Facts { shared: false },
         )
         .unwrap();
+        let mut retained_units = 0;
+        owner.outputs.visit_storage(&mut |view| {
+            if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
+                if matches!(value.as_ref(), outputs::MapOutputs::Unit(_)) {
+                    retained_units += 1;
+                }
+            }
+        });
+        assert!(
+            retained_units > 0,
+            "modified unit did not populate the existing output store"
+        );
         assert_eq!(memo.counts.output_hits.load(Ordering::Relaxed), 0);
         assert_eq!(
             memo.counts.unit_hits.load(Ordering::Relaxed),
@@ -272,7 +284,18 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
             assert!(!Arc::ptr_eq(code, current[0].code.code_owner()));
         }
         previous = Some(Arc::clone(current[0].code.code_owner()));
-        let changed = MapMemo::with_resident(1, owner.clone(), None);
+        // Failed requests prune their partial roster on Drop. Keep that
+        // independent rejection control from deleting the successful owner's
+        // units before the next identical/shifted-source admission above.
+        let changed = MapMemo::with_resident(1, Arc::new(RetainedMaps::current_revision()), None);
+        prepare(
+            &changed,
+            &frontend,
+            &captured.maps,
+            &projection,
+            &Facts { shared: false },
+        )
+        .unwrap();
         assert!(prepare(
             &changed,
             &frontend,
