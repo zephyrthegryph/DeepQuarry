@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from session_acceptance import required_edit_coverage
+from session_acceptance import session_edit_coverage
 from worktree_authority import _registrations
 
 
@@ -37,7 +37,7 @@ def prepare(roots, registrations, options):
         data = file.read_bytes()
         pins[name] = {'path': str(file), 'sha256': hashlib.sha256(data).hexdigest()}
         json.loads(data)
-    coverage = required_edit_coverage(json.loads(Path(options.edits).read_text(encoding='utf8')))
+    coverage = session_edit_coverage(json.loads(Path(options.edits).read_text(encoding='utf8')), len(roots))
     argv = [sys.executable, str(Path(__file__).with_name('native-iteration.py'))]
     for name in ('compiler', 'inspector', 'template', 'byond_dmb', 'byond_pin', 'build_receipt', 'edits', 'scenarios', 'source_snapshot', 'input_closure'):
         argv.extend(['--' + name.replace('_', '-'), str(Path(getattr(options, name)).resolve())])
@@ -48,7 +48,7 @@ def prepare(roots, registrations, options):
     return {'schema': 'dm-six-worktree-preparation-v1', 'status': 'prepared_not_executed',
             'worktrees': selected, 'inputs': pins, 'required_edit_coverage': coverage,
             'argv': argv, 'captured_source_authenticated': False,
-            'scope': 'registered same-HEAD roots only; no source copies, compiler execution or runtime acceptance'}
+            'scope': 'registered same-HEAD roots and shared edit-assignment admission only; classification describes requested coverage, not executed acceptance'}
 
 
 def main():
