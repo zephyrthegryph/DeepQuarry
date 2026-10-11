@@ -44,7 +44,6 @@
 	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	var/do_seasons = TRUE
 	picked_color = FALSE
@@ -153,6 +152,7 @@
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_movement(softfall = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
 	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))
 	after_init(0, then(PROC_REF(season_coat)))

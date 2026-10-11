@@ -14,7 +14,6 @@
 	melee_attack_delay = 1.5 SECOND
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	melee_damage_lower = 8
@@ -24,6 +23,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /*

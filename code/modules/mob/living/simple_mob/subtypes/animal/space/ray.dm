@@ -39,7 +39,6 @@
 	faction = FACTION_RAY
 	endurance = 125
 	movement_cooldown = 0 // Carp go fast
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "strokes the"
 	response_disarm = "gently pushes aside the"
@@ -62,6 +61,7 @@
 	var/knockdown_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 18))
 	configure(mob_movement(bump = 0))
 

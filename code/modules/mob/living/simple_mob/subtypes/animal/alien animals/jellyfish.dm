@@ -22,7 +22,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	icon_living = "space_jellyfish"
 	icon_dead = "space_jellyfish_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	faction = FACTION_JELLYFISH
@@ -107,6 +106,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
 
 /// The jellyfish this one budded from (its constructor param).

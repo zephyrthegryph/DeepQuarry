@@ -66,7 +66,6 @@
 
 	endurance = 300
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 10
 	melee_damage_upper = 25
@@ -77,6 +76,9 @@
 	animate_movement = SLIDE_STEPS
 
 	var/segment_count = 6
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
+	configure(mob_movement(hovering = TRUE))
 
 /mob/living/simple_mob/animal/space/space_worm/head/severed
 	segment_count = 0
