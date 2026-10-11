@@ -185,6 +185,21 @@ fn changed_row_reuses_sibling_and_prunes_deleted_or_failed_rows() {
     let Ok(PreparedMetadata::Retained(sibling)) = &prepared[1] else {
         panic!("retained sibling");
     };
+    // Forking the existing composition plan retains the same immutable recipe,
+    // rather than copying every row and identity before current admission.
+    let fork = roster.clone();
+    assert!(Arc::ptr_eq(&roster.rows, &fork.rows));
+    assert!(Arc::ptr_eq(&roster.identities, &fork.identities));
+    let unchanged = roster
+        .admit_current(&slots, &batch, None, &symbols, &references)
+        .unwrap();
+    assert!(unchanged.complete);
+    assert!(unchanged.current_order);
+    let deleted = roster
+        .admit_current(&slots[1..], &batch, None, &symbols, &references)
+        .unwrap();
+    assert!(deleted.complete);
+    assert!(!deleted.current_order);
     // Structural edits can reorder dense slots and their artifact positions.
     // Metadata follows the exact declaration owner; emission rebinds ProcIDs.
     let reordered = [
@@ -197,6 +212,11 @@ fn changed_row_reuses_sibling_and_prunes_deleted_or_failed_rows() {
             ..slots[0]
         },
     ];
+    let reordered_admission = roster
+        .admit_current(&reordered, &batch, None, &symbols, &references)
+        .unwrap();
+    assert!(reordered_admission.complete);
+    assert!(!reordered_admission.current_order);
     let rebound = roster
         .admit(&reordered, &batch, None, &symbols, &references)
         .unwrap();
@@ -227,6 +247,11 @@ fn changed_row_reuses_sibling_and_prunes_deleted_or_failed_rows() {
     // A distinct equal ABI is deliberately not the exact admitted owner.
     let abi = batch.units[0].lowered.abi.as_ref().unwrap();
     batch.units[0].lowered.abi = Some(Arc::new(abi.as_ref().clone()));
+    let changed_admission = roster
+        .admit_current(&slots, &batch, None, &symbols, &references)
+        .unwrap();
+    assert!(!changed_admission.complete);
+    assert!(!changed_admission.current_order);
     let admitted = roster
         .admit(&slots, &batch, None, &symbols, &references)
         .unwrap();

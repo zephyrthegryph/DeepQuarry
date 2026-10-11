@@ -215,10 +215,11 @@ impl CachedPlan {
         let admitted = self
             .metadata
             .as_ref()
-            .and_then(|owner| owner.admit(slots, batch, projection, symbols, references));
-        if let Some(rows) = &admitted {
-            if rows.iter().all(Option::is_some) {
-                let prepared = rows
+            .and_then(|owner| owner.admit_current(slots, batch, projection, symbols, references));
+        if let Some(admission) = &admitted {
+            if admission.complete {
+                let prepared = admission
+                    .rows
                     .iter()
                     .map(|row| {
                         Ok(PreparedMetadata::Retained(std::sync::Arc::clone(
@@ -226,11 +227,7 @@ impl CachedPlan {
                         )))
                     })
                     .collect::<Vec<_>>();
-                if !self
-                    .metadata
-                    .as_ref()
-                    .is_some_and(|owner| owner.is_current_roster(slots, &prepared))
-                {
+                if !admission.current_order {
                     self.metadata = metadata_roster::MetadataRoster::capture(
                         slots, batch, projection, references, &prepared,
                     );
@@ -246,7 +243,7 @@ impl CachedPlan {
             references,
             executor,
             true,
-            admitted.as_deref(),
+            admitted.as_ref().map(|admission| admission.rows.as_slice()),
         );
         self.metadata = metadata_roster::MetadataRoster::capture(
             slots, batch, projection, references, &prepared,

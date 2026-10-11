@@ -11,8 +11,16 @@ struct Row {
 }
 #[derive(Clone)]
 pub(super) struct MetadataRoster {
-    rows: Vec<Option<Row>>,
-    identities: Vec<(UnitIdentity, usize)>,
+    // Plan forks share this immutable recipe; current admission never mutates it.
+    rows: Arc<Vec<Option<Row>>>,
+    identities: Arc<Vec<(UnitIdentity, usize)>>,
+}
+/// Facts produced by the same mandatory row admission. `current_order` only
+/// permits retaining the old performance index; it grants no semantic admission.
+pub(super) struct Admission {
+    pub(super) rows: Vec<Option<Arc<super::super::frame_contribution::FrameContribution>>>,
+    pub(super) complete: bool,
+    pub(super) current_order: bool,
 }
 impl MetadataRoster {
     pub(super) fn capture(
@@ -55,29 +63,37 @@ impl MetadataRoster {
         if identities.windows(2).any(|pair| pair[0].0 == pair[1].0) {
             return None;
         }
-        Some(Self { rows, identities })
+        Some(Self {
+            rows: Arc::new(rows),
+            identities: Arc::new(identities),
+        })
     }
-    pub(super) fn admit(
+    pub(super) fn admit_current(
         &self,
         slots: &[Slot<UnitIdentity>],
         batch: &FrozenBatch,
         projection: Option<&crate::class_projection::ClassProjection>,
         symbols: &SymbolTable,
         references: &Arc<dm_link::ArgumentSourceReferences>,
-    ) -> Option<Vec<Option<Arc<super::super::frame_contribution::FrameContribution>>>> {
+    ) -> Option<Admission> {
         // Current identities select old owners independently of physical roster
         // positions. The frame's existing metadata admission checks the exact
         // current declaration and every embedded helper binding. Final emission
         // still checks string/variable frontiers and rebinds procedure/list IDs.
-        Some(
-            slots
-                .iter()
-                .map(|slot| {
+        let mut complete = true;
+        let mut current_order = self.rows.len() == slots.len();
+        let rows = slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| {
+                let admitted = (|| {
                     let position = self
                         .identities
                         .binary_search_by_key(&slot.identity, |row| row.0)
                         .ok()?;
-                    let row = self.rows.get(self.identities[position].1)?.as_ref()?;
+                    let old_index = self.identities[position].1;
+                    current_order &= old_index == index;
+                    let row = self.rows.get(old_index)?.as_ref()?;
                     let unit = batch.units.get(slot.artifact?)?;
                     if row.identity != slot.identity
                         || unit.lowered.identity != row.identity
@@ -93,14 +109,26 @@ impl MetadataRoster {
                         return None;
                     }
                     Some(Arc::clone(&row.prepared))
-                })
-                .collect(),
-        )
+                })();
+                complete &= admitted.is_some();
+                current_order &= admitted.is_some();
+                admitted
+            })
+            .collect();
+        Some(Admission {
+            rows,
+            complete,
+            current_order,
+        })
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         let label = "composition.metadata_roster";
-        census.vec_payload(label, &self.rows);
-        census.vec_payload(label, &self.identities);
+        if census.arc_object(label, &self.rows) {
+            census.vec_payload(label, &self.rows);
+        }
+        if census.arc_object(label, &self.identities) {
+            census.vec_payload(label, &self.identities);
+        }
         for row in self.rows.iter().flatten() {
             census.frozen_frame(label, &row.frame);
             census.abi(&row.abi);
@@ -110,27 +138,17 @@ impl MetadataRoster {
             }
         }
     }
-    /// Performance-only index retention after every current row was admitted.
-    /// Reordered/deleted rows get a new index; numeric slot IDs need not persist.
-    pub(super) fn is_current_roster(
+    #[cfg(test)]
+    fn admit(
         &self,
         slots: &[Slot<UnitIdentity>],
-        prepared: &[Result<PreparedMetadata, CompositionError>],
-    ) -> bool {
-        self.rows.len() == slots.len()
-            && prepared.len() == slots.len()
-            && self
-                .rows
-                .iter()
-                .zip(slots)
-                .zip(prepared)
-                .all(|((row, slot), prepared)| {
-                    let (Some(row), Ok(PreparedMetadata::Retained(prepared))) = (row, prepared)
-                    else {
-                        return false;
-                    };
-                    row.identity == slot.identity && Arc::ptr_eq(&row.prepared, prepared)
-                })
+        batch: &FrozenBatch,
+        projection: Option<&crate::class_projection::ClassProjection>,
+        symbols: &SymbolTable,
+        references: &Arc<dm_link::ArgumentSourceReferences>,
+    ) -> Option<Vec<Option<Arc<super::super::frame_contribution::FrameContribution>>>> {
+        self.admit_current(slots, batch, projection, symbols, references)
+            .map(|admission| admission.rows)
     }
 }
 #[cfg(test)]
