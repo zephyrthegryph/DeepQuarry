@@ -18,12 +18,12 @@
 // the hole asks which critter instead of a yes
 CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	without("inhabit")
-	op("critter", observer(), label("Inhabit"), needs(req_bool(PROC_REF(can_inhabit), because = PROC_REF(inhabit_refusal))),
+	op("critter", observer(), label("Inhabit"), needs(req(PROC_REF(can_inhabit))),
 		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(inhabit_title)), "question" = computed(PROC_REF(inhabit_question)), "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "buttons" = TRUE, "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(critter_type_chosen)))
 
 /// Requirement for the critter hole: not banned, OOC notes set, unused.
-/obj/structure/ghost_pod/ghost_activated/unified_hole/inhabit_refusal(datum/act/op/A)
+/obj/structure/ghost_pod/ghost_activated/unified_hole/can_inhabit(datum/act/op/A)
 	var/why = ghost_role_refusal(A.actor, "You cannot use this spawnpoint because you are banned from playing ghost roles.")
 	if(why)
 		return why

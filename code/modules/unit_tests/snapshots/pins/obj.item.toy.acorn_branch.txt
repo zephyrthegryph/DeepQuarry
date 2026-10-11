@@ -2,41 +2,36 @@
 @obj robot|none
 @obj.item ai|none
 @obj.item ghost|none
-@obj.item.toy human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+2 click: nothing
-@obj.item.toy human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+2 click: nothing
-@obj.item.toy human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+2 click: nothing
-@obj.item.toy human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+2 click: nothing
-@obj.item.toy human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+2 click: nothing
-@obj.item.toy human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+2 click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
 @obj.item.toy human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +3 click: nothing
-@obj.item.toy human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+2 click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
 @obj.item.toy human|/obj/item/card/id
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +3 click: nothing
 @obj.item.toy human|/obj/item/kit
 -menu: Use

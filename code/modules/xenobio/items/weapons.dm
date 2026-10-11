@@ -222,23 +222,20 @@ TRACKED(/obj/item/slime_grinder, cube_making)
 CAPABILITIES(/obj/item/slime_grinder)
 	every(1 SECOND, then(PROC_REF(make_cubes)), when = nameof(cube_making))
 	op("grind_monkey", at_target(/mob/living/carbon/human/monkey), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
-		needs(req_adjacent(), req_bool(PROC_REF(grinder_free), silent = TRUE), req_bool(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable))),
 		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_monkey)))
 	op("grind_slime", at_target(/mob/living/simple_mob/slime), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
-		needs(req_adjacent(), req_bool(PROC_REF(grinder_free), silent = TRUE), req_bool(PROC_REF(target_processable), because = PROC_REF(cannot_process_text))),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable))),
 		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_core_done)))
 
 /// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.
 /obj/item/slime_grinder/proc/grinder_free(datum/act/op/A)
 	var/working = read_once(grinding) // a plain var: the juicer starts inside the wait, and a published write there would re-check the op half-started
-	return isnull(working) || working == "\ref[A.target]"
+	return (isnull(working) || working == "\ref[A.target]") ? null : MSG(req_failed)
 
 /// Requirement: the target is a dead slime or a dead monkey.
 /obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
-	return can_insert(A.target)
-
-/obj/item/slime_grinder/proc/cannot_process_text(datum/act/op/A)
-	return span_warning("\The [src] cannot process \the [A.target] at this time.")
+	return (can_insert(A.target)) ? null : span_warning("\The [src] cannot process \the [A.target] at this time.")
 
 /// The juicer starts and the grinder is busy until the grind ends.
 /obj/item/slime_grinder/proc/grind_started(datum/act/op/A)

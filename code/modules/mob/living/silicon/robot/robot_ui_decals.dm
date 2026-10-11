@@ -3,7 +3,7 @@
 	name = "Robot Decal & Animation Control"
 
 CAPABILITIES(/datum/tgui_module/robot_ui_decals)
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("RobotDecals", state = nameof(GLOB.tgui_self_state))
 	op("toggle_decal", ui_act("toggle_decal", arg("value", schema_text(4096))), then(PROC_REF(ui_act_toggle_decal)))
 	op("flick_animation", ui_act("flick_animation", arg("value", schema_text(4096))), then(PROC_REF(ui_act_flick_animation)))
@@ -34,7 +34,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_decals)
 /// A robot with no sprite has no decals to work (silently).
 /datum/tgui_module/robot_ui_decals/proc/ui_gate(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
-	return !!R?.sprite_datum
+	return (!!R?.sprite_datum) ? null : /datum/msg/req_silent
 
 /datum/tgui_module/robot_ui_decals/proc/ui_act_toggle_decal(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()

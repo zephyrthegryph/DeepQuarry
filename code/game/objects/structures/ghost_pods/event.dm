@@ -108,7 +108,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	var/redgate_restricted = FALSE
 
 /// Requirement for the lurker spawners: not banned, whitelisted for the loaded species, OOC notes set, unused.
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/inhabit_refusal(datum/act/op/A)
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/can_inhabit(datum/act/op/A)
 	var/mob/observer/dead/user = A.actor
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		return "You cannot use this spawnpoint because you are banned from playing ghost roles."

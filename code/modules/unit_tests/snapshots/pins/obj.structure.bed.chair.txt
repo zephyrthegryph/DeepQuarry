@@ -1,0 +1,57 @@
+human|none click: nothing
+robot|none click: nothing
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.bed human|/obj/item/tool/screwdriver
+-menu: Disassemble
+-click: Click: Disassemble
++3 click: nothing
+@obj.structure.bed human|/obj/item/tool/crowbar
+-menu: Disassemble
+-click: Click: Disassemble
++3 click: nothing
+@obj.structure.bed human|/obj/item/tool/wrench
+-menu: Disassemble
+-click: Click: Disassemble
++0 menu: Dismantle
++4 click: Click: Dismantle
+@obj.structure.bed human|/obj/item/tool/wirecutters
+-menu: Disassemble
+-click: Click: Disassemble
++2 menu: Remove padding (refused: It has no padding to remove.)
++4 click: Click: Remove padding
+@obj.structure.bed human|/obj/item/multitool
+-menu: Disassemble
+-click: Click: Disassemble
++3 click: nothing
+@obj.structure.bed human|/obj/item/weldingtool
+-menu: Disassemble
+-click: Click: Disassemble
++3 click: nothing
+@obj.structure.bed human|/obj/item/stack/cable_coil
+-menu: Disassemble
+-click: Click: Disassemble
++3 menu: Pad (refused: You cannot pad that with that.)
++5 click: Click: Pad
+@obj.structure.bed human|/obj/item/stack/material/steel
+-menu: Disassemble
+-click: Click: Disassemble
++2 menu: Pad (refused: You cannot pad that with that.)
++4 click: Click: Pad
+@obj.structure.bed human|/obj/item/card/id
+-menu: Disassemble
+-click: Click: Disassemble
++4 click: nothing
+@obj.structure.bed human|/obj/item
+-menu: Disassemble
+-click: Click: Disassemble
++3 click: nothing
+@obj human|/obj/item/stack
+@obj human|/obj/item/disk
+@obj human|/obj/item/toy/plushie
+human|/obj/item/assembly/shock_kit menu: Attach kit (refused: The kit is not ready to be attached!)
+human|/obj/item/assembly/shock_kit menu: Hit
+human|/obj/item/assembly/shock_kit menu: Move To Top
+human|/obj/item/assembly/shock_kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/shock_kit click: Click: Attach kit
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, interaction_tk, melee_hit, pad, shock_kit, tuck_disk, tuck_plushie, unpad

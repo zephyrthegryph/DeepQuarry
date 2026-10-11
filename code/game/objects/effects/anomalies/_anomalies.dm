@@ -33,7 +33,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
-	op("buffer_anomaly", item(/obj/item/anomaly_scanner), label("Scan"), when(req_bool(PROC_REF(has_stats))), wait(1 SECOND), then(PROC_REF(anomaly_buffered)))
+	op("buffer_anomaly", item(/obj/item/anomaly_scanner), label("Scan"), when(req(PROC_REF(has_stats))), wait(1 SECOND), then(PROC_REF(anomaly_buffered)))
 	param(nameof(lifespan), pos = 1)
 	param(nameof(drops_core), pos = 2)
 
@@ -144,7 +144,7 @@ CAPABILITIES(/obj/effect/anomaly)
 
 /// A scanner buffers an anomaly that has stats.
 /obj/effect/anomaly/proc/has_stats(datum/act/op/A)
-	return !!stats
+	return (!!stats) ? null : MSG(req_failed)
 
 /obj/effect/anomaly/proc/anomaly_buffered(datum/act/op/A)
 	var/obj/item/anomaly_scanner/scanner = A.held

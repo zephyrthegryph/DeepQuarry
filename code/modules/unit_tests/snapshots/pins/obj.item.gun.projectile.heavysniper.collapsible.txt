@@ -1,0 +1,43 @@
+@obj.item.gun human|none
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun robot|none
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item ai|none
+@obj.item.gun ghost|none
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Disassemble Rifle (refused: You can't do that.)
++1 menu: Fit
++2 menu: Give DNA (refused: You can't do that.)
++4 menu: Remove DNA (refused: You can't do that.)
++5 menu: Remove the DNA lock (refused: the anti-materiel rifle is not accepting modifications at this time)
++7 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++8 menu: Unload
++9 menu: Use Scope (refused: You can't do that.)
++10 click: Click: Remove the DNA lock
+@obj.item.gun human|/obj/item/tool/crowbar
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/tool/wrench
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/tool/wirecutters
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/multitool
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/weldingtool
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/stack/cable_coil
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/stack/material/steel
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/card/id
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/kit
++1 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/storage
++1 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item/card/emag
++0 menu: Disassemble Rifle (refused: You can't do that.)
+@obj.item.gun human|/obj/item
++0 menu: Disassemble Rifle (refused: You can't do that.)
+keys: bolt_work, chamber_round, collapsible_sniper_verb_take_down, collect_item, drag_buckle, emag.subvert, emag.use, feed_rounds, gen_silicon_item_silicon_equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, heavysniper_verb_scope, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver

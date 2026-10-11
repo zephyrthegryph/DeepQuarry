@@ -1,0 +1,58 @@
+@obj.structure human|none
++0 menu: Fold up
+@obj.structure robot|none
++0 menu: Fold up
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Fold up
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++5 click: nothing
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++5 click: nothing
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++0 menu: Fold up
++4 click: nothing
+keys: drag_buckle, fold_up, melee_hit

@@ -77,12 +77,12 @@ CAPABILITIES(/obj/item/stack/material/wood)
 
 CAPABILITIES(/obj/item/stack/material/log)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
-	op("log_cut", item(/obj/item), when(req_bool(PROC_REF(item_cuts))), wait(PROC_REF(cut_time)), then(PROC_REF(cut_planks_done)))
+	op("log_cut", item(/obj/item), when(req(PROC_REF(item_cuts))), wait(PROC_REF(cut_time)), then(PROC_REF(cut_planks_done)))
 
 /// The held item has a cutting edge and some force.
 /obj/item/stack/material/log/proc/item_cuts(datum/act/op/A)
 	var/obj/item/W = A.held
-	return read_once(istype(W) && W.force > 0 && W.sharp && W.edge)
+	return (read_once(istype(W) && W.force > 0 && W.sharp && W.edge)) ? null : MSG(req_failed)
 
 /// A sharper, stronger blade cuts faster.
 /obj/item/stack/material/log/proc/cut_time(datum/act/op/A)
