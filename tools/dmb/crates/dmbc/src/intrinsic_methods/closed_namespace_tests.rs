@@ -5,7 +5,7 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
-            Ok("/datum/probe/proc/present()\n    return 1\n/datum/open\n    parent_type = /client\n/datum/probe/verb/Copy()\n    return 2\n/datum/probe/verb/verb_only()\n    return 3\n".into())
+            Ok("/proc/user_callable()\n    return 4\n/datum/probe/proc/present()\n    return 1\n/datum/open\n    parent_type = /client\n/datum/probe/verb/Copy()\n    return 2\n/datum/probe/verb/verb_only()\n    return 3\n".into())
         }
     }
     let engine = crate::engine::EngineSnapshot::from_bytes(
@@ -43,14 +43,23 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
         crate::engine_host::Completeness::Partial,
     )
     .unwrap();
-    let host = crate::engine_host::EngineResolverHost::new(
+    let unissued = crate::engine_host::EngineResolverHost::new(
         frontend.snapshot.tree.clone(),
         constants,
         runtime,
-    )
-    .with_pinned_callables(&engine, &frontend)
-    .unwrap();
+    );
     use dm_ir::Resolver;
+    for query in [
+        ResolveQuery::GlobalProc(SymbolId::of("arbitrary_missing_one")),
+        ResolveQuery::RuntimeType(SymbolId::of("/datum/formerly_missing_type")),
+    ] {
+        assert_eq!(unissued.resolve(query), ResolvedMeaning::Unsupported(query));
+    }
+    let host = unissued.with_pinned_callables(&engine, &frontend).unwrap();
+    assert!(matches!(
+        host.resolve(ResolveQuery::GlobalProc(SymbolId::of("user_callable"))),
+        ResolvedMeaning::Member { .. }
+    ));
     assert!(matches!(
         host.resolve(ResolveQuery::Proc {
             owner: SymbolId::of("/list"),
@@ -142,7 +151,21 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
     let opaque = ResolveQuery::MemberCallableName(SymbolId::of("ODHotReloadInterface"));
     assert_eq!(host.resolve(opaque), ResolvedMeaning::Unsupported(opaque));
     let query = ResolveQuery::GlobalProc(SymbolId::of("arbitrary_missing_one"));
-    assert_eq!(host.resolve(query), ResolvedMeaning::Unsupported(query));
+    assert_eq!(host.resolve(query), ResolvedMeaning::Missing);
+    for name in ["rand", "ASSERT", "load_ext", "ODHotReloadInterface"] {
+        let query = ResolveQuery::GlobalProc(SymbolId::of(name));
+        assert!(!matches!(host.resolve(query), ResolvedMeaning::Missing));
+    }
+    assert_eq!(
+        host.resolve(ResolveQuery::RuntimeType(SymbolId::of(
+            "/datum/formerly_missing_type"
+        ))),
+        ResolvedMeaning::Missing
+    );
+    assert_eq!(
+        host.resolve(ResolveQuery::RuntimeType(SymbolId::of("/datum/probe"))),
+        ResolvedMeaning::Symbol(SymbolId::of("/datum/probe"))
+    );
     assert!(!matches!(
         host.resolve(ResolveQuery::Proc {
             owner: SymbolId::of("/datum"),
@@ -246,11 +269,14 @@ fn list_negative_declines_authored_foreign_parent_but_source_positive_wins() {
         SymbolId::of("missing")
     ));
     assert!(matches!(
-        dm_ir::Resolver::resolve(frontend.snapshot.tree.as_ref(), ResolveQuery::Proc {
-            owner: SymbolId::of("/list"),
-            name: SymbolId::of("source_present"),
-            verb: false,
-        }),
+        dm_ir::Resolver::resolve(
+            frontend.snapshot.tree.as_ref(),
+            ResolveQuery::Proc {
+                owner: SymbolId::of("/list"),
+                name: SymbolId::of("source_present"),
+                verb: false,
+            }
+        ),
         ResolvedMeaning::Member { .. }
     ));
     let mut changed = catalog;

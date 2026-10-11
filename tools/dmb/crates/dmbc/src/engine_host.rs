@@ -365,6 +365,8 @@ impl<R: Resolver> EngineResolverHost<R> {
         }
         if self.callable_absence.is_some() {
             bytes.extend_from_slice(intrinsic_methods::CLOSED_NAMESPACE_POLICY);
+            bytes.extend_from_slice(intrinsic_methods::ORDINARY_CALL_POLICY);
+            bytes.extend_from_slice(intrinsic_methods::ORDINARY_TYPE_POLICY.as_bytes());
             bytes.extend_from_slice(b"pinned-callable-policy-v6;documented-list-exclusion-union;documented-member-name-union;documented-datum-closed-namespace;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
@@ -543,6 +545,13 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     return M::Symbol(path);
                 }
                 if self.runtime.completeness == Completeness::Partial {
+                    if let Some(meaning) = self
+                        .intrinsic_methods
+                        .as_ref()
+                        .and_then(|provider| provider.resolve(query))
+                    {
+                        return meaning;
+                    }
                     return M::Unsupported(query);
                 }
                 match self.tree.resolve(Q::Type(path)) {
@@ -717,7 +726,9 @@ fn verify_lexical_type_namespace(
                 .as_array()
                 .ok_or("native const variable catalog malformed")?
             {
-                let name = value.as_str().ok_or("native const variable name malformed")?;
+                let name = value
+                    .as_str()
+                    .ok_or("native const variable name malformed")?;
                 if matches!(name, "__TYPE__" | "__IMPLIED_TYPE__") {
                     return Err(format!("pinned catalog declares {name} constant storage"));
                 }

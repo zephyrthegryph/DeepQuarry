@@ -354,12 +354,26 @@ impl ProjectResolver<'_> {
     }
     pub fn runtime_type(&self, path: &str) -> Result<SymbolId, LowerError> {
         self.runtime_type_symbol(SymbolId::of(path))
+            .map_err(|mut failure| {
+                if failure.kind == crate::LowerErrorKind::SourceError {
+                    failure.reason = format!("{path}: undefined type path");
+                }
+                failure
+            })
     }
     pub fn runtime_type_symbol(&self, alias: SymbolId) -> Result<SymbolId, LowerError> {
         let query = Q::RuntimeType(alias);
         let runtime_type = match self.answer(query)? {
             M::Symbol(id) => id,
-            M::Missing => return Err(self.error(query, "runtime type coverage is missing")),
+            M::Missing => {
+                let mut failure = self.error(query, "runtime type coverage is missing");
+                failure.kind = crate::LowerErrorKind::SourceError;
+                failure.reason = "undefined type path".into();
+                if let Some(path) = self.symbols.text(alias) {
+                    failure.reason = format!("{path}: undefined type path");
+                }
+                return Err(failure);
+            }
             _ => return Err(self.error(query, "invalid runtime type answer")),
         };
         let old = self.runtime_types.borrow_mut().insert(alias, runtime_type);

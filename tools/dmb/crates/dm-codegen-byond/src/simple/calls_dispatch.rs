@@ -107,6 +107,7 @@ impl Compiler<'_> {
                     // rejection. Opaque queries fail in has_global_proc itself.
                     if self.lookup.is_some() {
                         failure.kind = LowerErrorKind::SourceError;
+                        failure.reason = format!("{selector}: undefined proc");
                     }
                     return Err(failure);
                 }

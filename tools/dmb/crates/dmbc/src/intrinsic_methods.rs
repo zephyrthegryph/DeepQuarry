@@ -6,8 +6,12 @@ use std::{collections::BTreeMap, sync::Arc};
 
 #[path = "intrinsic_methods/closed_namespace.rs"]
 mod closed_namespace;
+#[path = "intrinsic_methods/ordinary_calls.rs"]
+mod ordinary_calls;
 pub(super) use closed_namespace::ClosedNamespace;
 pub(super) use closed_namespace::EVIDENCE as CLOSED_NAMESPACE_POLICY;
+pub(super) use ordinary_calls::POLICY as ORDINARY_CALL_POLICY;
+pub(super) use ordinary_calls::TYPE_POLICY as ORDINARY_TYPE_POLICY;
 
 pub(super) type NativeMethods = Arc<BTreeMap<(SymbolId, SymbolId), Arc<[u8]>>>;
 #[derive(Clone, Debug)]
@@ -141,6 +145,29 @@ impl IntrinsicMethods {
         Ok((Arc::new(methods), spellings))
     }
     pub(super) fn resolve(&self, query: ResolveQuery) -> Option<ResolvedMeaning> {
+        if let ResolveQuery::RuntimeType(path) = query {
+            return (self.closed.as_ref()?.ordinary_type(path)
+                && self.source.lookup_type(path).is_none())
+            .then_some(ResolvedMeaning::Missing);
+        }
+        if let ResolveQuery::HasMemberProc { owner, name } = query {
+            if owner == SymbolId::of("/") && self.closed.as_ref()?.ordinary_call(name) {
+                return Some(ResolvedMeaning::Presence(false));
+            }
+        }
+        if let ResolveQuery::GlobalProc(name)
+        | ResolveQuery::Proc {
+            owner: _,
+            name,
+            verb: false,
+        } = query
+        {
+            let global = matches!(query, ResolveQuery::GlobalProc(_))
+                || matches!(query, ResolveQuery::Proc { owner, .. } if owner == SymbolId::of("/"));
+            if global && self.closed.as_ref()?.ordinary_call(name) {
+                return Some(ResolvedMeaning::Missing);
+            }
+        }
         if let ResolveQuery::MemberCallableVerbName(name) = query {
             return self.closed.as_ref()?.verb_selector(&self.source, name);
         }

@@ -71,9 +71,48 @@ fn certified_missing_calls_are_source_errors_but_opaque_calls_are_unsupported() 
             if opaque {
                 assert!(errors[0].reason.contains("unsupported semantic query"));
             } else {
-                assert!(errors[0].reason.contains("unresolved"));
-                assert!(errors[0].reason.contains("member_only"));
+                assert_eq!(errors[0].reason, "member_only: undefined proc");
             }
+        }
+    }
+}
+
+#[test]
+fn certified_missing_runtime_type_is_source_error_and_opaque_type_is_unsupported() {
+    struct TypeHost(bool);
+    impl Resolver for TypeHost {
+        fn resolve(&self, query: Q) -> M {
+            match query {
+                Q::RuntimeType(_) if !self.0 => M::Missing,
+                _ => M::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols = SymbolTable::default();
+    symbols.intern("/datum/formerly_missing_type").unwrap();
+    let ast = dm_syntax::parse("/proc/probe()\n    return new /datum/formerly_missing_type\n");
+    for opaque in [false, true] {
+        let errors = crate::compile_simple_proc_with_resolver(
+            &ast.items[0].children,
+            &ProcedureInputs::default(),
+            &symbols,
+            &TypeHost(opaque),
+        )
+        .err()
+        .expect("missing type");
+        assert_eq!(
+            errors[0].kind,
+            if opaque {
+                LowerErrorKind::UnsupportedModel
+            } else {
+                LowerErrorKind::SourceError
+            }
+        );
+        if !opaque {
+            assert_eq!(
+                errors[0].reason,
+                "/datum/formerly_missing_type: undefined type path"
+            );
         }
     }
 }

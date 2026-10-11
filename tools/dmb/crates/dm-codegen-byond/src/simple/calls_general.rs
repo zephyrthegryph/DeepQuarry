@@ -541,6 +541,7 @@ impl Compiler<'_> {
                 // Legacy fixture bindings do not issue that semantic proof.
                 if self.lookup.is_some() {
                     failure.kind = LowerErrorKind::SourceError;
+                    failure.reason = format!("{name}: undefined proc");
                 }
                 return Err(failure);
             }

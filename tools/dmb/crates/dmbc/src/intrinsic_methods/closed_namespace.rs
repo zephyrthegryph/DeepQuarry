@@ -1,4 +1,4 @@
-//! Pinned documented native receiver namespaces; global builtin names stay open.
+//! Pinned receiver namespaces and ordinary-name lexical callable policy.
 use super::*;
 use std::collections::BTreeSet;
 pub(crate) const EVIDENCE: &[u8] = include_bytes!(
@@ -11,6 +11,7 @@ pub(crate) struct ClosedNamespace {
     list_names: BTreeSet<SymbolId>,
     documented_names: BTreeSet<SymbolId>,
     ambiguous_names: BTreeSet<SymbolId>,
+    ordinary_call_exclusions: BTreeSet<SymbolId>,
 }
 impl ClosedNamespace {
     pub(crate) fn capture(catalog: &serde_json::Value) -> Result<Arc<Self>, String> {
@@ -202,7 +203,20 @@ impl ClosedNamespace {
             list_names,
             documented_names,
             ambiguous_names,
+            ordinary_call_exclusions: ordinary_calls::exclusions(catalog)?,
         }))
+    }
+    pub(super) fn ordinary_call(&self, name: SymbolId) -> bool {
+        !self.ordinary_call_exclusions.contains(&name)
+    }
+    pub(super) fn ordinary_type(&self, path: SymbolId) -> bool {
+        !self.native_owners.contains(&path)
+            && !ordinary_calls::TYPE_POLICY
+                .split('\0')
+                .nth(1)
+                .unwrap_or("")
+                .split_whitespace()
+                .any(|name| SymbolId::of(name) == path)
     }
     pub(super) fn member_name(
         &self,
@@ -301,7 +315,8 @@ impl ClosedNamespace {
                     + self.datum_names.len()
                     + self.list_names.len()
                     + self.documented_names.len()
-                    + self.ambiguous_names.len(),
+                    + self.ambiguous_names.len()
+                    + self.ordinary_call_exclusions.len(),
             );
             census.unknown(
                 "host.callable.closed_namespace",
