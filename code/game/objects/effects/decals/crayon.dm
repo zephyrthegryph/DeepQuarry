@@ -10,7 +10,7 @@
 	var/art_shade
 
 CAPABILITIES(/obj/effect/decal/cleanable/crayon)
-	param(nameof(art_color), pos = 1, default = "#FFFFFF")
+	param(nameof(art_color), pos = 1, default = "#FFFFFF", overrides = TRUE)
 	param(nameof(art_shade), pos = 2, default = "#000000")
 	param(nameof(drawing_kind), pos = 3, apply = PROC_REF(draw_kind))
 	param(nameof(age), pos = 4)

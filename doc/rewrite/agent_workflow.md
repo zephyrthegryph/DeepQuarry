@@ -330,3 +330,20 @@ checker from the pushing worktree, so a worktree that predates it pushes as befo
 - Line numbers are the engine's (universal newlines): `sem::procs::engine_line()` maps the parser's numbering, which differs after a
   lone carriage return.
 - When the model cannot be built the lints fall back to the old text rules, so a parse failure never passes a site silently.
+
+## 16. Constructor arguments are checked (October 2026, `tooling-fix`)
+
+The `lifeforms` lint now judges positional constructors on the typed tree (`tools/analyze/src/sem/ctor_args.rs`; final_api section 6,
+"param() and make()"):
+
+- `ctor_dead_arg`: `new /T(loc, x, ...)` (or `var/T/v = new(loc, x, ...)`) where no `param(..., pos = N)` of `/T` takes position N and no
+  `New()`/`Initialize()` of `/T` or an ancestor reads it. Drop the argument, or declare the param it was meant for. A literal `null` is no
+  argument.
+- `ctor_forward_only`: an override whose trailing extra parameters only reach `..()`; drop them (`..()` passes the caller's arguments).
+- `param_pos_override`: a subtype's `param(..., pos = N)` that takes over a position an ancestor maps needs `overrides = TRUE`
+  (`param_overrides_nothing` rejects one that overrides nothing).
+
+All four are hard errors. `python3 tools/dx/codemods/ctor_args.py --apply` rewrites the sites the lint reports (dead trailing arguments
+removed, a dead one before a live one written `null`, forward-only parameters dropped with an exact `..(params)` becoming `..()`, and
+`overrides = TRUE` added); anything it cannot do exactly it prints as residue. The first run removed 22 dead arguments, 37 forward-only
+parameter lists and marked 33 position takeovers.

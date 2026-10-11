@@ -193,7 +193,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 					to_chat(user, span_warning("This [W] does not seem to fit."))
 					return OP_PASS
 
-			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE, TRUE)
+			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE)
 			if(!O)	return OP_PASS
 
 			if(!move_into(O, nameof(O.mmi), W, user))

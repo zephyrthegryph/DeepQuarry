@@ -14,7 +14,7 @@
 	var/image/filling
 
 
-/obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload,ingredient)
+/obj/item/reagent_containers/food/snacks/customizable/Initialize(mapload)
 	. = ..()
 	topping = image(icon,,"[initial(icon_state)]_top")
 	filling = image(icon,,"[initial(icon_state)]_filling")
@@ -261,7 +261,7 @@ CAPABILITIES(/obj/item/trash/bowl)
 
 /obj/item/trash/bowl/proc/soup_started(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/reagent_containers/food/snacks/customizable/F = new /obj/item/reagent_containers/food/snacks/customizable/soup(get_turf(src), A.held)
+	var/obj/item/reagent_containers/food/snacks/customizable/F = new /obj/item/reagent_containers/food/snacks/customizable/soup(get_turf(src))
 	F.add_ingredient(user, A.held)
 	consume(src, user)
 	return OP_OK

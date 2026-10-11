@@ -74,7 +74,7 @@ TRACKED(/obj/item/organ, robotic)
 	return
 
 
-/obj/item/organ/Initialize(mapload, internal)
+/obj/item/organ/Initialize(mapload)
 	. = ..()
 	if(isliving(loc))
 		var/mob/living/born_in = loc
