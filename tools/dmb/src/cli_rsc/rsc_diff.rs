@@ -17,14 +17,35 @@ struct Report {
     differences: usize,
     unknown_wrappers: usize,
     examples: Vec<String>,
+    semantic_equivalent: bool,
+    expected_records: usize,
+    actual_records: usize,
+    expected_duplicate_records: usize,
+    actual_duplicate_records: usize,
+    duplicate_names: Vec<Multiplicity>,
+    distinct_name_order_equal: bool,
+    timestamp_differences: usize,
+}
+#[derive(Serialize)]
+struct Multiplicity {
+    name: String,
+    expected: usize,
+    actual: usize,
+    expected_conflict: bool,
+    actual_conflict: bool,
 }
 struct Row {
     offset: u64,
     kind: u8,
     bytes: usize,
+    id: u32,
+    timestamp: u32,
+    source_timestamp: u32,
+    records: usize,
+    conflict: bool,
 }
 fn index(reader: &mut (impl Read + Seek)) -> io::Result<(BTreeMap<Vec<u8>, Row>, usize)> {
-    let mut rows = BTreeMap::new();
+    let mut rows: BTreeMap<Vec<u8>, Row> = BTreeMap::new();
     let mut unknown = 0;
     let mut count = 0;
     let mut name_bytes = 0usize;
@@ -61,12 +82,38 @@ fn index(reader: &mut (impl Read + Seek)) -> io::Result<(BTreeMap<Vec<u8>, Row>,
                     offset,
                     kind: resource.kind,
                     bytes: resource.data.len(),
+                    id: resource.id,
+                    timestamp: resource.timestamp,
+                    source_timestamp: resource.source_timestamp,
+                    records: 1,
+                    conflict: false,
                 };
-                if rows.insert(resource.name, row).is_some() {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "duplicate live RSC filename",
-                    ));
+                if let Some(first) = rows.get_mut(&resource.name) {
+                    let resume = reader.stream_position()?;
+                    reader.seek(SeekFrom::Start(first.offset))?;
+                    let prior = read_entry_with_limit(reader, ENTRY_LIMIT)?;
+                    reader.seek(SeekFrom::Start(resume))?;
+                    match prior {
+                        Some(Entry::Named(prior))
+                            if prior.name == resource.name
+                                && prior.kind == first.kind
+                                && prior.id == first.id
+                                && prior.data.len() == first.bytes =>
+                        {
+                            first.conflict |= prior.kind != resource.kind
+                                || prior.id != resource.id
+                                || prior.data != resource.data;
+                        }
+                        _ => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                "RSC changed during duplicate comparison",
+                            ))
+                        }
+                    }
+                    first.records += 1;
+                } else {
+                    rows.insert(resource.name, row);
                 }
             }
             Entry::Opaque { wrapper: 0, .. } => {}
@@ -83,7 +130,7 @@ fn compare(
     let (left, lu) = index(expected)?;
     let (right, ru) = index(actual)?;
     let mut report = Report {
-        schema_version: 1,
+        schema_version: 2,
         snapshot_id: snapshot.into(),
         complete: lu + ru == 0,
         expected_resources: left.len(),
@@ -91,7 +138,50 @@ fn compare(
         differences: 0,
         unknown_wrappers: lu + ru,
         examples: Vec::new(),
+        semantic_equivalent: false,
+        expected_records: left.values().map(|row| row.records).sum(),
+        actual_records: right.values().map(|row| row.records).sum(),
+        expected_duplicate_records: left.values().map(|row| row.records - 1).sum(),
+        actual_duplicate_records: right.values().map(|row| row.records - 1).sum(),
+        duplicate_names: Vec::new(),
+        distinct_name_order_equal: {
+            let ordered = |rows: &BTreeMap<Vec<u8>, Row>| {
+                let mut rows: Vec<_> = rows
+                    .iter()
+                    .map(|(name, row)| (row.offset, name.clone()))
+                    .collect();
+                rows.sort_by_key(|row| row.0);
+                rows.into_iter().map(|row| row.1).collect::<Vec<_>>()
+            };
+            ordered(&left) == ordered(&right)
+        },
+        timestamp_differences: left
+            .iter()
+            .filter(|(name, row)| {
+                right.get(*name).is_some_and(|other| {
+                    row.timestamp != other.timestamp
+                        || row.source_timestamp != other.source_timestamp
+                })
+            })
+            .count(),
     };
+    for name in left
+        .keys()
+        .chain(right.keys())
+        .collect::<std::collections::BTreeSet<_>>()
+    {
+        let a = left.get(name);
+        let b = right.get(name);
+        if a.is_some_and(|row| row.records > 1) || b.is_some_and(|row| row.records > 1) {
+            report.duplicate_names.push(Multiplicity {
+                name: String::from_utf8_lossy(name).into_owned(),
+                expected: a.map_or(0, |row| row.records),
+                actual: b.map_or(0, |row| row.records),
+                expected_conflict: a.is_some_and(|row| row.conflict),
+                actual_conflict: b.is_some_and(|row| row.conflict),
+            });
+        }
+    }
     let mut difference = |kind: &str, name: &[u8]| {
         report.differences += 1;
         if report.examples.len() < 20 {
@@ -101,10 +191,17 @@ fn compare(
         }
     };
     for (name, row) in &left {
+        if row.conflict {
+            difference("conflicting expected duplicate", name);
+        }
         let Some(other) = right.get(name) else {
             difference("missing", name);
             continue;
         };
+        if row.id != other.id {
+            difference("resource id", name);
+            continue;
+        }
         if row.kind != other.kind {
             difference("kind", name);
             continue;
@@ -124,6 +221,8 @@ fn compare(
                     && b.name == *name
                     && a.kind == row.kind
                     && b.kind == other.kind
+                    && a.id == row.id
+                    && b.id == other.id
                     && a.data.len() == row.bytes
                     && b.data.len() == other.bytes =>
             {
@@ -139,11 +238,15 @@ fn compare(
             }
         }
     }
-    for name in right.keys() {
+    for (name, row) in &right {
+        if row.conflict {
+            difference("conflicting actual duplicate", name);
+        }
         if !left.contains_key(name) {
             difference("extra", name);
         }
     }
+    report.semantic_equivalent = report.complete && report.differences == 0;
     Ok(report)
 }
 pub(super) fn execute(args: &[String]) -> io::Result<()> {
@@ -213,7 +316,16 @@ mod tests {
     }
     #[test]
     fn duplicate_truncated_and_unknown_records_do_not_claim_complete_parity() {
-        assert!(index(&mut archive(&[("a", b"x"), ("a", b"x")])).is_err());
+        let report = compare(
+            &mut archive(&[("a", b"x"), ("a", b"different")]),
+            &mut archive(&[("a", b"x")]),
+            "fixture",
+        )
+        .unwrap();
+        assert!(report.complete);
+        assert!(!report.semantic_equivalent);
+        assert_eq!(report.differences, 1);
+        assert!(report.duplicate_names[0].expected_conflict);
         let mut truncated = archive(&[("a", b"x")]).into_inner();
         truncated.pop();
         assert!(index(&mut Cursor::new(truncated)).is_err());
@@ -229,5 +341,55 @@ mod tests {
         let report = compare(&mut archive(&[]), &mut Cursor::new(bytes), "fixture").unwrap();
         assert!(!report.complete);
         assert_eq!(report.unknown_wrappers, 1);
+    }
+    #[test]
+    fn identical_duplicate_payloads_are_equivalent_with_multiplicity_preserved() {
+        let mut repeated = archive(&[
+            ("a", b"same"),
+            ("b", b"second"),
+            ("a", b"same"),
+            ("a", b"same"),
+            ("a", b"same"),
+            ("a", b"same"),
+            ("a", b"same"),
+            ("a", b"same"),
+            ("a", b"same"),
+        ]);
+        let mut unique = archive(&[("b", b"second"), ("a", b"same")]);
+        let report = compare(&mut repeated, &mut unique, "fixture").unwrap();
+        assert!(report.complete && report.semantic_equivalent);
+        assert_eq!(report.differences, 0);
+        assert_eq!(report.expected_records, 9);
+        assert_eq!(report.actual_records, 2);
+        assert_eq!(report.expected_duplicate_records, 7);
+        assert_eq!(report.duplicate_names[0].expected, 8);
+        assert_eq!(report.duplicate_names[0].actual, 1);
+        assert!(!report.distinct_name_order_equal);
+        assert!(!report.duplicate_names[0].expected_conflict);
+    }
+    #[test]
+    fn timestamp_changes_are_harmless_but_equal_conflicting_duplicates_are_not() {
+        let mut expected = archive(&[("a", b"same"), ("a", b"same")]).into_inner();
+        expected[10..14].copy_from_slice(&123u32.to_le_bytes());
+        let report = compare(
+            &mut Cursor::new(expected),
+            &mut archive(&[("a", b"same")]),
+            "fixture",
+        )
+        .unwrap();
+        assert!(report.semantic_equivalent);
+        assert_eq!(report.timestamp_differences, 1);
+        let report = compare(
+            &mut archive(&[("a", b"same"), ("a", b"Same")]),
+            &mut archive(&[("a", b"same"), ("a", b"Same")]),
+            "fixture",
+        )
+        .unwrap();
+        assert!(!report.semantic_equivalent);
+        assert_eq!(report.differences, 2);
+        assert!(
+            report.duplicate_names[0].expected_conflict
+                && report.duplicate_names[0].actual_conflict
+        );
     }
 }
