@@ -60,8 +60,9 @@ impl Compiler<'_> {
                     }
                     return self.source_feature_reference(expression, true, statement);
                 };
-                let query = dm_ir::procedure_value_query(path)
-                    .unwrap_or(dm_ir::ResolveQuery::Type(SymbolId::of(path)));
+                let query =
+                    reflective_procedure_query(path, self.bindings.current_type_path.as_deref())
+                        .unwrap_or(dm_ir::ResolveQuery::Type(SymbolId::of(path)));
                 let answer = self.semantic(lookup.answer(query))?;
                 match (query, answer) {
                     (
@@ -78,6 +79,23 @@ impl Compiler<'_> {
                         && identity.verb == verb =>
                     {
                         ()
+                    }
+                    (
+                        dm_ir::ResolveQuery::MethodProcedureValue { owner, name, verb },
+                        dm_ir::ResolvedMeaning::Value(dm_ir::SemanticValue::Procedure(identity)),
+                    ) if identity.name == name && identity.verb == verb => {
+                        let ancestry_query = dm_ir::ResolveQuery::Ancestry(owner);
+                        match self.semantic(lookup.answer(ancestry_query))? {
+                            dm_ir::ResolvedMeaning::Symbols(ancestry)
+                                if ancestry.contains(&identity.owner) =>
+                            {
+                                ()
+                            }
+                            _ => return self.semantic(Err(lookup.error(
+                                ancestry_query,
+                                "nameof formal declaration is outside current receiver ancestry",
+                            ))),
+                        }
                     }
                     (_, dm_ir::ResolvedMeaning::Missing) => {
                         return Err(LowerError {
@@ -112,6 +130,42 @@ impl Compiler<'_> {
         }
         self.source_feature_reference(expression, true, statement)
     }
+}
+
+/// Dot-formal paths select the current receiver's actual formal anchor,
+/// including inheritance. Relative `.proc` is issued in lexical type scope;
+/// it is never a semantic type named `.proc/name`.
+fn reflective_procedure_query(
+    path: &str,
+    current_type: Option<&str>,
+) -> Option<dm_ir::ResolveQuery> {
+    let selection = path
+        .rsplit_once(".proc/")
+        .map(|(owner, name)| (owner, name, false))
+        .or_else(|| {
+            path.rsplit_once(".verb/")
+                .map(|(owner, name)| (owner, name, true))
+        });
+    if let Some((owner, name, verb)) = selection {
+        if name.is_empty() || name.contains('/') {
+            return None;
+        }
+        let owner = if owner.is_empty() || owner == "type" {
+            current_type?
+        } else {
+            owner
+        };
+        return Some(dm_ir::ResolveQuery::MethodProcedureValue {
+            owner: SymbolId::of(owner),
+            name: SymbolId::of(name),
+            verb,
+        });
+    }
+    if let Some(tail) = path.strip_prefix("type/") {
+        let path = format!("{}/{}", current_type?, tail);
+        return dm_ir::procedure_value_query(&path);
+    }
+    dm_ir::procedure_value_query(path)
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ReflectiveTypeRole {

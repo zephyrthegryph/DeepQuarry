@@ -6,7 +6,7 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
-            Ok("/obj/probe\n/proc/probe(world/W, list/L, icon/I)\n    return 1\n".into())
+            Ok("/obj/probe\n/proc/probe(world/W, list/L, icon/I)\n    return 1\n/datum/base/proc/known()\n    return 1\n/datum/base/child\n".into())
         }
     }
     let engine = crate::engine::EngineSnapshot::from_bytes(
@@ -73,5 +73,37 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
             "{source}"
         );
         assert_eq!(facts.native_graphics, source == "/obj::icon", "{source}");
+    }
+    let bindings = dm_codegen_byond::LowerBindings {
+        current_type_path: Some("/datum/base/child".into()),
+        ..Default::default()
+    };
+    for source in [
+        ".proc/known",
+        "/datum/base/child.proc/known",
+        "/datum/base.proc/known",
+    ] {
+        let expression = dm_syntax::parse_expression(source).expr.unwrap();
+        let recorder = dm_session::RecordingResolver::new(&host);
+        dm_codegen_byond::observe_reference_source_features(
+            &expression,
+            &bindings,
+            &symbols,
+            &recorder,
+        )
+        .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let reads = recorder.reads();
+        assert!(
+            reads
+                .iter()
+                .any(|read| matches!(read.query, Q::MethodProcedureValue { .. })),
+            "{source}"
+        );
+        assert!(
+            !reads
+                .iter()
+                .any(|read| matches!(read.query, Q::Type(path) if path == SymbolId::of(source))),
+            "{source}"
+        );
     }
 }
