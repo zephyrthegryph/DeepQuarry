@@ -110,22 +110,13 @@ impl ResolvedContext {
                     || removed.contains(&(statement.header_span.start, statement.header_span.end))
             },
         );
-        if statements
+        let view = dm_syntax::StatementView::masked(&statements.parsed().statements, &mask);
+        let typed_ready = statements
             .parsed()
             .diagnostics
             .iter()
-            .any(|diagnostic| !mask.hides_diagnostic(diagnostic))
-        {
-            return Err(io::Error::other(
-                "current body has parser diagnostics; selected model unavailable",
-            ));
-        }
-        let view = dm_syntax::StatementView::masked(&statements.parsed().statements, &mask);
-        if !dm_codegen_byond::typed_statement_view_supported(view) {
-            return Err(io::Error::other(
-                "current body requires lossless fallback; selected model unavailable",
-            ));
-        }
+            .all(|diagnostic| mask.hides_diagnostic(diagnostic))
+            && dm_codegen_byond::typed_statement_view_supported(view);
         let metadata = body
             .tree()
             .member(occurrence.member)
@@ -138,7 +129,7 @@ impl ResolvedContext {
             ),
             sites: RefCell::new(BTreeMap::new()),
         };
-        let (_, facts) = crate::lowering::append_selected_grammar(
+        let emitted = if typed_ready {
             crate::lowering::compile_selected_view(
                 view,
                 &inputs,
@@ -146,20 +137,36 @@ impl ResolvedContext {
                 self.resolver.as_ref(),
                 Some(&debug),
                 occurrence.expanded_span,
-            ),
-            statements,
-        )
-        .map_err(|errors| {
-            io::Error::other(format!(
-                "current selected producer rejected body: {}",
-                errors
-                    .iter()
-                    .map(|error| error.reason.as_str())
-                    .collect::<Vec<_>>()
-                    .join("; ")
-            ))
-        })?;
-        crate::selected_query::bind_current(unit, occurrence, Some(&facts), |offset| {
+            )
+            .map(|(_, facts)| Some(facts))
+        } else {
+            // Consume the SAME lossless item producer and setting/static filters.
+            // The fallback emitter currently issues no selected-reference ledger;
+            // ordinary lowering reports this as unavailable coordinates as well.
+            let executable = dm_tree::settings::strip_setting_items(body.header().children.clone());
+            let executable =
+                dm_tree::procedure_statics::filter_executable_items(executable, &removed);
+            crate::lowering::compile_selected_lossless(
+                &executable,
+                &inputs,
+                symbols,
+                self.resolver.as_ref(),
+                Some(&debug),
+            )
+            .map(|_| None)
+        };
+        let facts =
+            crate::lowering::append_selected_grammar(emitted, statements).map_err(|errors| {
+                io::Error::other(format!(
+                    "current selected producer rejected body: {}",
+                    errors
+                        .iter()
+                        .map(|error| error.reason.as_str())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                ))
+            })?;
+        crate::selected_query::bind_current(unit, occurrence, facts.as_ref(), |offset| {
             body.location(offset)
         })
         .map_err(|errors| {

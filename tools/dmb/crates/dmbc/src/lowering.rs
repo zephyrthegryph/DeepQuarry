@@ -23,7 +23,7 @@ mod diagnostic_anchor_tests;
 mod error_anchor;
 #[path = "lowering/selection_kernel.rs"]
 mod selection_kernel;
-pub(crate) use selection_kernel::{compile_selected_view, append_selected_grammar};
+pub(crate) use selection_kernel::{compile_selected_view, compile_selected_lossless, append_selected_grammar};
 #[path = "lowering/grammar.rs"]
 mod grammar;
 fn replay_errors(

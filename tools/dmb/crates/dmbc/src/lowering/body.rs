@@ -396,7 +396,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 host,
                 Some(&debug),
             ),
-            _ if typed_attempted => dm_codegen_byond::compile_preparsed_lossless_with_resolver(
+            _ if typed_attempted => super::compile_selected_lossless(
                 &executable_body,
                 &inputs,
                 symbols,
