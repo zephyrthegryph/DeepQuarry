@@ -10,8 +10,6 @@
 	w_class = ITEMSIZE_SMALL
 	var/colour = "#FFFFFF"
 	var/open = FALSE
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 // ALLOW(init/INSTANCE_STATE): its description and sprite show the colour it was given
 /obj/item/nailpolish/Initialize(mapload)
@@ -30,6 +28,7 @@ SETTER(/obj/item/nailpolish, colour)
 TRACKED(/obj/item/nailpolish, open)
 
 CAPABILITIES(/obj/item/nailpolish)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("nail_paint", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint nails"),
 		needs(req(PROC_REF(polish_is_open), silent = TRUE)), starts(PROC_REF(paint_started)), wait(PROC_REF(paint_time)), on_interrupt(PROC_REF(paint_failed)), then(PROC_REF(paint_done)))
@@ -121,8 +120,6 @@ MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to pain
 /obj/item/nailpolish_remover
 	name = "nail polish remover"
 	desc = "Paint thinner, acetone, nail polish remover; whatever you call it, it gets the job done."
-	drop_sound = SFX_ITEMS_DROP_HELM
-	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	icon = 'icons/obj/nailpolish_vr.dmi'
 	icon_state = "nailpolishremover"
 	var/open = FALSE
@@ -130,6 +127,7 @@ MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to pain
 TRACKED(/obj/item/nailpolish_remover, open)
 
 CAPABILITIES(/obj/item/nailpolish_remover)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("nail_remove", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Remove nail polish"),
 		needs(req(PROC_REF(remover_is_open), silent = TRUE)), starts(PROC_REF(remove_started)), wait(PROC_REF(remove_time)), on_interrupt(PROC_REF(remove_failed)), then(PROC_REF(remove_done)))

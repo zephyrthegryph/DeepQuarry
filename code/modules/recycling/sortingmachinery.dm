@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/disposal/deliveryChute)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	c_mode = !c_mode
-	playsound(src, I.usesound, 50, 1)
+	playsound(src, sounds_of(I).use, 50, 1)
 	to_chat(user, "You [c_mode ? "remove" : "attach"] the screws around the power connection.")
 	return OP_OK
 

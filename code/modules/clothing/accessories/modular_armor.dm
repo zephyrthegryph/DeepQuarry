@@ -79,8 +79,9 @@
 	slowdown = 0.1
 	w_class = ITEMSIZE_NORMAL
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
-	drop_sound = SFX_ITEMS_DROP_BOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
+
+CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///armored boots
 
@@ -102,9 +103,10 @@
 	overshoes = 1
 	shoes_under_pants = -1
 	can_hold_knife = TRUE
-	drop_sound = SFX_ITEMS_DROP_BOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
+
+CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///snowflake leg guards
 

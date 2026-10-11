@@ -8,11 +8,10 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 
 CAPABILITIES(/obj/item/storage/briefcase)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/briefcase/clutch

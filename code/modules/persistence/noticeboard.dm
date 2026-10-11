@@ -130,7 +130,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	SStgui.update_uis(src)
 
 /obj/structure/noticeboard/proc/apply_noticeboard_offset(choice, obj/item/tool)
-	playsound(loc, tool.usesound, 50, TRUE)
+	playsound(loc, sounds_of(tool).use, 50, TRUE)
 	switch(choice)
 		if("North")
 			pixel_x = 0

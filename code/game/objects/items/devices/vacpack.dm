@@ -326,8 +326,8 @@ CAPABILITIES(/obj/item/vac_attachment)
 		return
 	if(isitem(target))
 		var/obj/item/target_item = target
-		if(target_item.drop_sound)
-			playsound(src, target_item.drop_sound, vac_power * 5, 1, -1)
+		if(sounds_of(target_item).drop)
+			playsound(src, sounds_of(target_item).drop, vac_power * 5, 1, -1)
 	play_sfx(src, SFX_RAKSHASA_CORROSION3, volume = auto_setting * 15)
 	if(isbelly(output_atom))
 		var/obj/belly/output_belly = output_atom

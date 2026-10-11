@@ -20,8 +20,9 @@
 	desc = "Some patched together rags. Better than being barefoot."
 	icon_state = "rag"
 	force = 0
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
+
+CAPABILITIES(/obj/item/clothing/shoes/primitive)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /*
  * Tribal Clothing

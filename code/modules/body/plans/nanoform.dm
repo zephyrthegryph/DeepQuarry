@@ -320,7 +320,7 @@
 	var/step = revival_step
 	switch(step)
 		if(DORMANCY_SEALED)
-			playsound(site, W.usesound, 50, 1)
+			playsound(site, sounds_of(W).use, 50, 1)
 		if(DORMANCY_PASTED)
 			var/obj/item/shockpaddles/paddles = W
 			if(!paddles.can_use(user))

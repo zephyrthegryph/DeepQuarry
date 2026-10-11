@@ -29,12 +29,11 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_HEAVY
-	drop_sound = SFX_ITEMS_DROP_HELM
-	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
 	op("head_welding_toggle_verb", menu(), label("Adjust welding mask"), needs(carried()), then(PROC_REF(head_welding_toggle_verb_op)))
 
@@ -213,8 +212,9 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 	light_range = 2
 	light_overlay = "jackolantern"
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /*
  * Kitty ears
@@ -343,7 +343,6 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2
@@ -352,6 +351,9 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	body_parts_covered = HEAD
 	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
+
+CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 
 /obj/item/clothing/head/cone
 	sprite_sheets = list(

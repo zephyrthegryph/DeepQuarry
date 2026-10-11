@@ -7,8 +7,6 @@
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
 	slot_flags = SLOT_HOLSTER
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
@@ -16,6 +14,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	configure(reagents(contents_from = PROC_REF(seed_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(seed_nutriment_taste))))
@@ -422,8 +421,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
 
 	name = "[S.seed_name] slice"
 	desc = "A slice of \a [S.seed_name]. Tasty, probably."
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+	set_drop_sound(SFX_ITEMS_DROP_HERB)
+	set_pickup_sound(SFX_ITEMS_PICKUP_HERB)
 
 	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)

@@ -907,8 +907,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	agony = 1
 	eyeblur = 1
 	fire_sound = SFX_EFFECTS_LIGHTNINGBOLT
-	hitsound = SFX_EFFECTS_LIGHTNINGSHOCK
 	hud_state = "taser"
+
+CAPABILITIES(/obj/item/projectile/beam/shock/bh1)
+	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGSHOCK))
 
 /obj/item/projectile/explosive_rocket/blackhole
 	name = "80mm rocket propelled grenade"

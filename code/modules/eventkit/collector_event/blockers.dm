@@ -152,7 +152,7 @@ CAPABILITIES(/obj/structure/event_collector_blocker)
 			var/obj/item/weldingtool/welder = O.get_welder()
 			if(welder)
 				welder.remove_fuel(5,user)
-				playsound(src, welder.usesound, 50, 1)
+				playsound(src, sounds_of(welder).use, 50, 1)
 
 		if(TOOL_CABLE_COIL)
 			var/obj/item/stack/cable_coil/coil = O

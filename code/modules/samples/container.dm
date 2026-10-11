@@ -13,12 +13,11 @@
 	max_storage_space = ITEMSIZE_TINY * 8
 	var/lightcolor = "#EFF1BF"
 
-	drop_sound = SFX_ITEMS_DROP_GASCAN
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 
 
 CAPABILITIES(/obj/item/storage/sample_container)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY))
 
 /obj/item/storage/sample_container/draw(datum/look/look)

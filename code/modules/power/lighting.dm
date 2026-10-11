@@ -539,7 +539,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /// A screwdriver opens an empty fixture into a wired frame of its kind, facing the way it did.
 /obj/machinery/light/proc/open_casing(datum/act/op/A)
 	var/mob/user = A.actor
-	playsound(src, A.held.usesound, 75, TRUE)
+	playsound(src, sounds_of(A.held).use, 75, TRUE)
 	act_message(user, src, MSG_SELF("You open %T%'s casing."), MSG_OTHERS("[user.name] opens %T%'s casing."), MSG_BLIND("You hear a noise."))
 	replace_with(src, construct_type, null, FALSE, null, src)
 	return OP_OK
@@ -928,8 +928,6 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	///Replaces brightness_color during nightshifts.
 	var/nightshift_color = LIGHT_COLOR_NIGHTSHIFT
 
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 	var/init_brightness_range = 8
 	var/init_brightness_power = 1
@@ -1009,6 +1007,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
 	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
@@ -1435,7 +1434,7 @@ MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 	return OP_OK
 
 /obj/machinery/light/flamp/proc/shade_off(datum/act/op/A)
-	playsound(src, A.held.usesound, 75, TRUE)
+	playsound(src, sounds_of(A.held).use, 75, TRUE)
 	act_message(A.actor, src, MSG_SELF("You remove %T%'s lamp shade."), MSG_OTHERS("[A.actor.name] removes %T%'s lamp shade."), MSG_BLIND("You hear a noise."))
 	set_lamp_shade(FALSE)
 	new /obj/item/lampshade(loc)

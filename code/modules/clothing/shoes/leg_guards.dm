@@ -6,9 +6,10 @@
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
 	can_hold_knife = TRUE
-	drop_sound = SFX_ITEMS_DROP_BOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, fit_spec, null)
 

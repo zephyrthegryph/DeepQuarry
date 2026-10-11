@@ -17,11 +17,11 @@
 
 	var/can_genesis = TRUE	// Can the core chunk be used to grow a new blob?
 
-	drop_sound = SFX_EFFECTS_SLIME_SQUISH
 
 TRACKED(/obj/item/blobcore_chunk, should_tick)
 
 CAPABILITIES(/obj/item/blobcore_chunk)
+	configure(item_sounds(drop = SFX_EFFECTS_SLIME_SQUISH))
 	every(2 SECONDS, then(PROC_REF(chunk_passive_step)), when = nameof(should_tick))
 	reagents(120)
 	owns_one(nameof(blob_type), /datum/blob_type)

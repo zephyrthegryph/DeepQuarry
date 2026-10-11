@@ -21,8 +21,9 @@
 	edge = TRUE
 	attack_verb = list("chopped", "torn", "cut")
 	applies_material_colour = 0
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
@@ -230,13 +231,15 @@ CAPABILITIES(/obj/item/material/whip)
 	item_state = "cleaving_saw"
 	active = 0
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = SFX_WEAPONS_BLADESLICE
 	w_class = ITEMSIZE_LARGE
 	edge = 1
 	sharp = 1
 	injury_kind = INJURY_CUT
 	force_divisor = 0.7 //42 When Wielded in line with a sword
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
+
+CAPABILITIES(/obj/item/material/butterfly/saw)
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/material/butterfly/saw/update_force()
 	if(active)

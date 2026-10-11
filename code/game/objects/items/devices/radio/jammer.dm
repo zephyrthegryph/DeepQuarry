@@ -27,10 +27,9 @@
 	var/obj/item/cell/device/weapon/power_source
 	var/tick_cost = 5 // For the ERPs.
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/radio_jammer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(power_source), /obj/item/cell/device/weapon, starts = /obj/item/cell/device/weapon)
 	/// Drains its cell while switched on.
 	every(2 SECONDS, then(PROC_REF(radio_jammer_step)), when = nameof(on))

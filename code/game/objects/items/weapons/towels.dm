@@ -6,10 +6,7 @@
 	force = 3.0
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("whipped")
-	hitsound = SFX_WEAPONS_TOWELWHIP
 	desc = "A soft cotton towel."
-	drop_sound = SFX_ITEMS_DROP_CLOTH
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 /obj/item/towel/equipped(M, slot)
 	..()
@@ -22,6 +19,7 @@
 			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi')
 
 CAPABILITIES(/obj/item/towel)
+	configure(item_sounds(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	op("wipe", in_hand(), label("Towel yourself off"), then(PROC_REF(toweled_off)))
 
 /// The towel keeps the same wiping effect on its actual actor.

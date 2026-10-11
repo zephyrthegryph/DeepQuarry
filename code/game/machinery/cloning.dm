@@ -335,7 +335,7 @@ MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
 		rel_clear(src, nameof(connected))
 	else
 		set_anchored(TRUE)
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] %T% to the floor."), \
 		MSG_OTHERS("%U% [anchored ? "secures" : "unsecures"] %T% to the floor."))
 	return OP_OK

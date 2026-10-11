@@ -147,12 +147,12 @@ CAPABILITIES(/obj/item/stool)
 	return !!padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
 /obj/item/stool/proc/unpadded(datum/act/op/A)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	remove_padding()
 	return OP_OK
 
 /obj/item/stool/proc/taken_apart(datum/act/op/A)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	return dismantle(A.actor) ? OP_OK : OP_REFUSED
 
 

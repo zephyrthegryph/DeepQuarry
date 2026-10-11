@@ -2,8 +2,6 @@
 	name = "silver locket"
 	desc = "A small locket of high-quality metal."
 	icon_state = "locket"
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_MASK | SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
@@ -13,6 +11,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/accessory/locket)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
 	op("locket_insert_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Locket insert item"), needs(req_is(nameof(open), TRUE, because = MSG(locket/no_open))), then(PROC_REF(locket_insert_item)))
 

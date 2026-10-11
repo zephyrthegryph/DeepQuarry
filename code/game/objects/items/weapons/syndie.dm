@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/flame/lighter/zippo/c4detonator)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	set_detonator_mode(!detonator_mode)
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
 	return OP_OK
 

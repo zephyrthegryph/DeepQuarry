@@ -15,7 +15,6 @@
 /obj/item/toy/mecha
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
-	drop_sound = SFX_MECHA_MECHSTEP
 	reach = 2 // So you can battle across the table!
 
 	// Mech Battle Vars
@@ -114,6 +113,7 @@
 
 //all credit to skasi for toy mech fun ideas
 CAPABILITIES(/obj/item/toy/mecha)
+	configure(item_sounds(drop = SFX_MECHA_MECHSTEP))
 	// the old attack_self (and attack_tk): play with it
 	op("play", in_hand(), label("Play"), then(PROC_REF(interaction_self)))
 	op("play_tk", tk(), label("Play"), then(PROC_REF(interaction_tk)))

@@ -263,7 +263,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 	if(shock_live(src) && shock(user, 100))
 		return OP_OK
 	set_panel_open(!panel_open)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
 	return OP_OK
 

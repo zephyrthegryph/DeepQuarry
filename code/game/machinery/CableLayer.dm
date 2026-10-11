@@ -65,7 +65,7 @@ MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 		return OP_OK
 	var/amount = min(A.answer.value, cable.get_amount(), 30)
 	if(amount > 0)
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		use_cable(amount)
 		var/obj/item/stack/cable_coil/cut_cable = new(get_turf(src))
 		cut_cable.set_amount(amount)

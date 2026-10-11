@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/extrapolator)
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
 	rel_take(src, nameof(scanner))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
 /obj/item/extrapolator/proc/extrapolator_mode_selected(datum/act/op/A)

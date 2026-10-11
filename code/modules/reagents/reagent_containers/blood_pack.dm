@@ -14,8 +14,6 @@
 	icon = 'icons/obj/bloodpack.dmi'
 	icon_state = "empty"
 	item_state = "bloodpack_empty"
-	drop_sound = SFX_ITEMS_DROP_FOOD
-	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	volume = 200
 	var/label_text = ""
 
@@ -59,6 +57,7 @@
 // A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
 // characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
 CAPABILITIES(/obj/item/reagent_containers/blood)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	configure(reagents(starts_from = list(nameof(reag_id) = PROC_REF(stock_blood_units)), data = list(nameof(reag_id) = PROC_REF(stock_blood_data))))
 	reagent_container(
 		volume = nameof(volume),

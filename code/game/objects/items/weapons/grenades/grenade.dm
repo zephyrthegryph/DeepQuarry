@@ -19,8 +19,6 @@
 	///Var for special attack_self handling
 	var/special_handling = FALSE
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/grenade/proc/clown_check(mob/living/user)
 	if(CLUMSY_HARM_CHANCE(user))
@@ -41,6 +39,7 @@
 			. += "\The [src] is set for instant detonation."
 
 CAPABILITIES(/obj/item/grenade)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
 	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

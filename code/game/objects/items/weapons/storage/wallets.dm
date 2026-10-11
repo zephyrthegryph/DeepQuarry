@@ -9,13 +9,12 @@
 
 	var/obj/item/card/id/front_id
 
-	drop_sound = SFX_ITEMS_DROP_LEATHER
-	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 
 	var/original_name // Due to loadout customizations and such
 
 
 CAPABILITIES(/obj/item/storage/wallet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 	configure(storage(accepts = list(
 		/obj/item/spacecash,
 		/obj/item/card,

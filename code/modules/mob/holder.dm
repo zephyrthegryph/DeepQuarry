@@ -315,8 +315,10 @@
 
 /obj/item/holder/fish
 	attack_verb = list("fished", "disrespected", "smacked", "smackereled")
-	hitsound = SFX_EFFECTS_SLIME_SQUISH
 	slot_flags = SLOT_HOLSTER
+
+CAPABILITIES(/obj/item/holder/fish)
+	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)
 	if(!target)

@@ -37,8 +37,9 @@
 	desc = "What looks like an ordinary paper hat, is actually a rare and valuable collector's edition paper hat. Keep away from water, fire and Librarians."
 	icon_state = "paper"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
+
+CAPABILITIES(/obj/item/clothing/head/collectable/paper)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 
 /obj/item/clothing/head/collectable/tophat
 	name = "collectable top hat"

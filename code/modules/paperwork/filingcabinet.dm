@@ -60,7 +60,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 /obj/structure/filingcabinet/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return OP_OK
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	return OP_OK
 
 /obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You take the [name] apart."))
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)

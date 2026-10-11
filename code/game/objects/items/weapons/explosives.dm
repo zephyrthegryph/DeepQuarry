@@ -33,7 +33,7 @@
 	var/obj/item/tool = A.held
 	open_panel = !open_panel
 	to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/item/plastique/proc/wirecutter_used(datum/act/op/A)

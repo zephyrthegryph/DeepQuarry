@@ -55,8 +55,9 @@
 	permeability_coefficient = 0.01
 	germ_level = 0
 	fingerprint_chance = 25
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+
+CAPABILITIES(/obj/item/clothing/gloves/sterile)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 //TODO: Make inflating gloves a thing
 /*/obj/item/clothing/gloves/sterile/proc/Inflate(/mob/living/carbon/human/user)
@@ -80,8 +81,9 @@
 	item_state_slots = list(slot_r_hand_str = "lightbrown", slot_l_hand_str = "lightbrown")
 	permeability_coefficient = 0.05
 	siemens_coefficient = 0.75 //thick work gloves
-	drop_sound = SFX_ITEMS_DROP_LEATHER
-	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
+
+CAPABILITIES(/obj/item/clothing/gloves/botanic_leather)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/clothing/gloves/duty
 	desc = "These brown duty gloves are made from a durable synthetic."
@@ -113,13 +115,14 @@
 	flags = PHORONGUARD
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	armor_spec = "melee=20;bullet=15;laser=10;energy=10;bomb=5;bio=30;rad=30" // gently bumped up Heavy engineering gloves value for protection //
 
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/vox)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
 

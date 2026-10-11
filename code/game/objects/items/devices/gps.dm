@@ -18,8 +18,6 @@
 	var/list/showing_tracked_names
 	var/obj/compass_holder/compass
 	var/theme
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -86,6 +84,7 @@ TRACKED(/obj/item/gps, tracking)
 STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/item/gps)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(holder))
 	// The compass refreshes while a carried GPS is tracking.
 	every(2 SECONDS, then(PROC_REF(gps_step)), when = cond_all(nameof(tracking), nameof(holder)))

@@ -59,8 +59,9 @@ TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	desc = "A delicate golden chain worn by female skrell to decorate their head tails."
 	icon_state = "skrell_chain"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/ears/skrell/chain)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/chain/silver
 	name = "Silver headtail chains"
@@ -91,8 +92,9 @@ TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	desc = "Golden metallic bands worn by male skrell to adorn their head tails."
 	icon_state = "skrell_band"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/ears/skrell/band)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/band/silver
 	name = "Silver headtail bands"

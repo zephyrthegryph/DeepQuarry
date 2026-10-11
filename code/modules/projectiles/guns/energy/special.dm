@@ -71,7 +71,7 @@
 	if(emitter)
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
-		playsound(src, tool.usesound, 50, 1)
+		playsound(src, sounds_of(tool).use, 50, 1)
 		rel_take(src, nameof(emitter))
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
@@ -446,8 +446,10 @@ CAPABILITIES(/obj/item/gun/energy/bfgtaser)
 
 /obj/item/projectile/beam/stun/weak/BFG
 	fire_sound = SFX_EFFECTS_SPARKS6
-	hitsound = SFX_EFFECTS_SPARKS4
 	hitsound_wall = SFX_EFFECTS_SPARKS7
+
+CAPABILITIES(/obj/item/projectile/beam/stun/weak/BFG)
+	configure(item_sounds(hit = SFX_EFFECTS_SPARKS4))
 
 /obj/item/projectile/bullet/BFGtaser
 	name = "lightning ball"
@@ -457,9 +459,11 @@ CAPABILITIES(/obj/item/gun/energy/bfgtaser)
 	damage = 100
 	injury_kind = INJURY_PAIN
 	embed_chance = 0
-	hitsound = SFX_WEAPONS_ZAPBANG
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
+
+CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/bullet/BFGtaser/projectile_step()
 	var/list/victims = list()

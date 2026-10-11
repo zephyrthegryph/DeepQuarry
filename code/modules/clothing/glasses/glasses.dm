@@ -27,8 +27,6 @@ BLIND     // can't see anything
 	var/activation_sound = SFX_ITEMS_GOGGLES_CHARGE
 	var/tmp/atom/movable/screen/overlay
 	var/list/away_planes //Holder for disabled planes
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	resistance_flags = FIRE_PROOF
 
 	sprite_sheets = list(
@@ -90,6 +88,7 @@ BLIND     // can't see anything
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 CAPABILITIES(/obj/item/clothing/glasses)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
@@ -204,10 +203,9 @@ TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYP
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	body_parts_covered = 0
 	var/eye = null
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
@@ -230,10 +228,9 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	body_parts_covered = 0
 	var/eye = null
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("eyepatchwhite_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatchwhite_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
@@ -458,8 +455,9 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 	flash_protection = FLASH_PROTECTION_MAJOR
 	body_parts_covered = EYES
 	tint = BLIND
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/blindfold)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 
 /obj/item/clothing/glasses/sunglasses/blindfold/whiteblindfold
 	name = "white blindfold"

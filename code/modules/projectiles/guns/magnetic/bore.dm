@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed)
 		return OP_OK
 	user.put_in_hands(manipulator)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	mat_cost = initial(mat_cost)
 	rel_take(src, nameof(manipulator))
 	update_rating_mod()
