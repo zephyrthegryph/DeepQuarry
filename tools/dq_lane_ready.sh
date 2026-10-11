@@ -71,6 +71,13 @@ gate_args=(--snapshot-output)
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
 bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
 
+# An interrupted gate can return without evidence; absence is never a passing result.
+ok_file="data/merge-gates/${tested:0:12}.ok"
+[ -s "$ok_file" ] && grep -Fxq "$tested" "$ok_file" || die "the gates produced no matching result; nothing was stamped"
+for marker in dm ratchets analyze; do
+	[ "$(cat "data/merge-gates/${tested:0:12}.${marker}.ok" 2>/dev/null)" = "$tested" ] || die "missing $marker evidence; nothing was stamped"
+done
+
 # The pins re-record look_keys.txt and the look snapshots after a pass; anything else the gates changed is a mistake.
 git update-index -q --refresh >/dev/null 2>&1
 changed="$(git status --porcelain --untracked-files=no)"
@@ -94,8 +101,16 @@ failed="$(sed -n 's/^failed=//p' "$ok_file")"
 new_failed="$(sed -n 's/^new_failed=//p' "$ok_file")"
 new_failed="${new_failed:-${failed:-0}}"
 tests_json="$(sed -n 's/^tests_json=//p' "$ok_file")"
+MSYS2_ARG_CONV_EXCL='*' node -e '
+	const fs = require("fs");
+	const [file, passed, failed, newFailed] = process.argv.slice(1);
+	if (![passed, failed, newFailed].every(x => /^[0-9]+$/.test(x)) || Number(passed) < 1 || Number(newFailed) !== 0) process.exit(1);
+	let result;
+	try { result = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
+	if (result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
+' "$tests_json" "$passed" "$failed" "$new_failed" || die "missing or inconsistent test evidence; nothing was stamped"
 mkdir -p data/lane-ready
-stamp_json="$(node -e '
+stamp_json="$(MSYS2_ARG_CONV_EXCL='*' node -e '
 	const fs = require("fs");
 	const [branch, head, tested, master, testsCsv, coversCsv, passed, failed, testsJson, timingsFile, started, newFailed] = process.argv.slice(1);
 	const timings = {};

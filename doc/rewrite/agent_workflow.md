@@ -369,3 +369,7 @@ values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-on
 (225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
 `A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the
 current one part, which names the part that moved.
+
+## 18. Interrupted lane-ready runs never stamp
+
+Lane-ready requires the gate result for its exact tested commit, the production compile/DreamChecker, analyzer and ratchet markers, and a test-result JSON whose counts match the gate. An interrupted run or missing evidence is refused. The controlled wrapper regression is `bash tools/ci/test_lane_ready_evidence.sh`; it runs no compiler or DM world. DM selectors passed to the note writer retain their literal paths on Windows.
