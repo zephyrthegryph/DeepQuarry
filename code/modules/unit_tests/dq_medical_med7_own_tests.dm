@@ -78,7 +78,7 @@
 	R.set_nutrition(0)
 	R.set_bodytemperature(350)
 	R.rejuvenate()
-	TEST_ASSERT_EQUAL(R.nutrition, 0, "a borg has no nutrition to refill")
+	TEST_ASSERT_EQUAL(nutrition_of(R), 0, "a borg has no nutrition_of(src) to refill")
 	TEST_ASSERT_EQUAL(R.body_temperature(), 350, "a borg's temperature is not reset to T20C")
 
 /// C11: a ticking body no longer rebuilds the treatment snapshot every cycle; regeneration is

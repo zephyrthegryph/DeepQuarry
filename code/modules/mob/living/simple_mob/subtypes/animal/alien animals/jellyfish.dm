@@ -27,7 +27,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	faction = FACTION_JELLYFISH
 	endurance = 100
-	nutrition = 150
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
@@ -101,7 +100,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
@@ -125,7 +124,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
-	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
+	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition_of(src))
 
 // the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/lifecycle_dematerialize()
@@ -151,7 +150,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 		return
 	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
 		return
-	if(nutrition < 500)
+	if(nutrition_of(src) < 500)
 		return
 	if(prob(10))
 		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
@@ -178,3 +177,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
 /// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
 /obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
 	return ..() + nutriment_amt + inherited_nutriment
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/starting_nutrition()
+	return 150

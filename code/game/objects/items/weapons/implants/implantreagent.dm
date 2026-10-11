@@ -228,7 +228,7 @@ CAPABILITIES(/obj/item/implant/reagent_generator)
 		before_gen = reagents.total_volume
 		var/mob/living/L = imp_in()
 		if(reagents.total_volume < reagents.maximum_volume)
-			if(L.nutrition >= gen_cost)
+			if(nutrition_of(L) >= gen_cost)
 				do_generation(L)
 		else
 			return

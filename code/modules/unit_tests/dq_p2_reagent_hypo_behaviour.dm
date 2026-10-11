@@ -329,7 +329,7 @@
 /datum/unit_test/dq_p2_reagents/blood_pack_is_drunk/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/blood/APlus/pack = allocate(/obj/item/reagent_containers/blood/APlus)
-	var/nutrition = H.nutrition
+	var/nutrition = nutrition_of(H)
 	H.drop_item()
 	H.put_in_active_hand(pack)
 	H.set_use_stance(I_HURT)
@@ -338,7 +338,7 @@
 	rc_settle()
 	H.set_use_stance(I_HELP)
 	TEST_ASSERT_EQUAL(rc_units(pack), 180, "a tenth is drunk")
-	TEST_ASSERT(H.nutrition > nutrition, "and feeds")
+	TEST_ASSERT(nutrition_of(H) > nutrition_of(src), "and feeds")
 	rc_use(H, pack)
 	TEST_ASSERT_EQUAL(rc_units(pack), 180, "in a friendly stance nothing is drunk")
 	var/obj/item/reagent_containers/blood/empty/water = allocate(/obj/item/reagent_containers/blood/empty)

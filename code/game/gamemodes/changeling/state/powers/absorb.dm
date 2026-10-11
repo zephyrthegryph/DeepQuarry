@@ -121,7 +121,7 @@
 		return //No double dipping! You already ate or absorbed them once this shift, glutton!
 	absorbDNA(newDNA)
 	if(drain)
-		adjust_nutrition(victim.nutrition)
+		adjust_nutrition(nutrition_of(victim))
 	changeling.chem_charges += 10
 	if(changeling.readapts <= 0)
 		changeling.readapts = 0 //SANITYYYYYY

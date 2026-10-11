@@ -67,7 +67,7 @@
 			if(prob(1))
 				to_chat(host, span_danger("You feel sick."))
 			if(prob(5))
-				if(host.nutrition > 10)
+				if(nutrition_of(host) > 10)
 					host.emote("vomit")
 				else
 					to_chat(host, span_danger("Your stomach lurches painfully"))

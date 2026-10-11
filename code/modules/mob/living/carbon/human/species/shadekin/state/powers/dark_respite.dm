@@ -57,7 +57,7 @@ MSG_DEF_SELF(shadekin_ability/respite_forced, "you cannot manually end a Dark Re
 	if(istype(L, /mob/living/carbon/human))
 		H = L
 	var/in_dark = istype(get_area(H), /area/shadekin)
-	update_respite_factors(L, in_dark, H?.nutrition > 0)
+	update_respite_factors(L, in_dark, nutrition_of(H) > 0)
 
 	if(in_dark)
 		//Very good healing, but only in the Dark.

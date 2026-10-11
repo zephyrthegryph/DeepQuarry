@@ -81,16 +81,16 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/trait_state/photosynth/alraune/P = H.add_trait_state(/datum/trait_state/photosynth/alraune)
 	TEST_ASSERT(istype(P), "the alraune photosynthesis state attaches")
-	H.adjust_nutrition(-H.nutrition)
+	H.adjust_nutrition(-nutrition_of(H))
 	H.adjust_nutrition(100)
 	P.feed(1, 0)
-	TEST_ASSERT_EQUAL(H.nutrition, 105, "full light feeds 5 without CO2")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 105, "full light feeds 5 without CO2")
 	P.feed(1, 1)
-	TEST_ASSERT_EQUAL(H.nutrition, 135, "full CO2 multiplies the gain by 6")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 135, "full CO2 multiplies the gain by 6")
 	H.adjust_nutrition(1000)
-	var/capped = H.nutrition
+	var/capped = nutrition_of(H)
 	P.feed(1, 0)
-	TEST_ASSERT_EQUAL(H.nutrition, capped, "no gain above the cap")
+	TEST_ASSERT_EQUAL(nutrition_of(H), capped, "no gain above the cap")
 
 	var/mob/living/carbon/human/D = allocate(/mob/living/carbon/human)
 	D.set_species(SPECIES_DIONA)
@@ -107,11 +107,11 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/total, src)
 	var/cycle = H.breath_cycle
-	var/nutrition = H.nutrition
+	var/nutrition = nutrition_of(H)
 	for(var/i in 1 to 6)
 		seq_run_frame_now(H, /datum/sequence/life)
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle, "total stasis takes no breath")
-	TEST_ASSERT_EQUAL(H.nutrition, nutrition, "total stasis metabolises nothing")
+	TEST_ASSERT_EQUAL(nutrition_of(H), nutrition_of(src), "total stasis metabolises nothing")
 	H.set_stasis(null, src)
 
 /// P2-S5: species facts replace species-name checks.
@@ -152,7 +152,7 @@
 
 /datum/unit_test/dq_k_a_status_idle_rule/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.set_fear(50)
+	H.status_set(STAT_FEAR, 50)
 	TEST_ASSERT(H.life_status_due(), "fear counting down keeps the status step awake")
-	H.set_fear(0)
+	H.status_set(STAT_FEAR, 0)
 	TEST_ASSERT(H.life_status_rewake() > 0, "a living human's status step has a rewake for raw writes")

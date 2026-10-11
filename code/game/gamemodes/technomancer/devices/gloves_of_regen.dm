@@ -52,20 +52,20 @@ CAPABILITIES(/obj/item/clothing/gloves/regen)
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
 		set_regenerating(FALSE)
 		return
-	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
+	if(!ishuman(H) || H.stat == DEAD || nutrition_of(H) <= 10)
 		return // Dead people don't have a metabolism.
 
 	// Organic treatment tags: synthetic parts are left alone (and don't cost nutrition).
 	if(H.mend(TREAT_TISSUE_REPAIR, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_BURN_CARE, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_ANTITOXIN, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_OXYGENATION, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
-		H.set_nutrition(max(H.nutrition - 20, 0))
+		H.set_nutrition(max(nutrition_of(H) - 20, 0))
 
 /obj/item/clothing/gloves/regen/equipped(mob/user, slot)
 	. = ..()

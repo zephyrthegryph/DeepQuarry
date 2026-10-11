@@ -64,7 +64,6 @@ CAPABILITIES(/mob/living/carbon/human)
 	owns_one(nameof(dna), /datum/dna, starts = /datum/dna, starts_args = NO_LOC, early = TRUE) // set_species() writes it before the parents' init
 	rolls(nameof(real_name), PROC_REF(roll_species_name))
 	rolls(nameof(name), PROC_REF(roll_species_name), from = list(nameof(real_name)))
-	rolls(nameof(nutrition), range_of(200, 400))
 	derives(nameof(hide_underwear), PROC_REF(underwear_all_shown))
 	hose_sockets(list(/datum/hose_connector/inflation)) // drop to disable all human mob inflation mechanics
 	// Stripping (stripping.dm): the inventory panel's handle_strip() starts these by key; the stripper has to stay next to them and keep what is in hand.
@@ -148,3 +147,6 @@ CAPABILITIES(/mob/living/silicon/robot)
 	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_wire(WIRE_BORG_CAMERA, cut = PROC_REF(camera_wire_cut), pulse = PROC_REF(camera_wire_pulsed))
 	on_wire(WIRE_BORG_LOCKED, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+
+/mob/living/carbon/human/starting_nutrition() // a human starts with 200-400 (was a rolls() entry)
+	return rand(200, 400)

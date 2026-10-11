@@ -29,12 +29,12 @@
 		if(source_cell.charge >= source_cell.maxcharge)
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
-		if(!living_user.nutrition)
+		if(!nutrition_of(living_user))
 			living_user.show_message(span_warning("You feel too drained to charge [source_cell]."))
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
-		var/todrain = max(100, (living_user.nutrition * 0.2))
-		if(living_user.nutrition < todrain)
+		var/todrain = max(100, (nutrition_of(living_user) * 0.2))
+		if(nutrition_of(living_user) < todrain)
 			living_user.show_message(span_warning("You don't have enough energy to charge [source_cell]."))
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 

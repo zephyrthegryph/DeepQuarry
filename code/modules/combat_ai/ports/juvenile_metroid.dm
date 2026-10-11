@@ -131,7 +131,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 	var/mob/living/simple_mob/metroid/juvenile/MJ = brain.holder
 	if(!istype(MJ))
 		return null
-	if(MJ.nutrition < MJ.evo_point)
+	if(nutrition_of(MJ) < MJ.evo_point)
 		return null
 	return DQAI_RESULT(2, MJ)
 

@@ -172,9 +172,9 @@
 /datum/body_effect/gluttonyregeneration/on_tick(mob/living/L)
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		var/starting_nutrition = H.nutrition
+		var/starting_nutrition = nutrition_of(H)
 		H.adjust_nutrition(-10)
-		var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.
+		var/healing_amount = starting_nutrition - nutrition_of(H) //Anything above 9 nutrition_of(src) will return 10. Anything below will give 0-9. Nutrition is capped at 0.
 		if(healing_amount)
 			H.occult_mend(healing_amount * 0.25, healing_amount * 0.25)
 			H.mend(TREAT_OXYGENATION, healing_amount * 0.25)

@@ -113,7 +113,7 @@
 
 			else if(isliving(src)) // . Are they a mob, and are they currently flying??
 				var/mob/living/H = src
-				if(H.flying)
+				if(stat_value(H, STAT_FLYING))
 					if(H.incapacitated(INCAPACITATION_ALL))
 						to_chat(src, span_notice("You can't fly in your current state."))
 						H.stop_flying() //Should already be done, but just in case.
@@ -149,7 +149,7 @@
 /mob/proc/zmove_timed_done(datum/act/op/A)
 	if(A.arg("flight"))
 		var/mob/living/H = src
-		if(!istype(H) || !H.flying)
+		if(!istype(H) || !stat_value(H, STAT_FLYING))
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
 	to_chat(src, span_notice(A.arg("done")))
@@ -243,7 +243,7 @@
 	if(dq_get_hovering(src) || is_incorporeal())
 		return TRUE
 
-	if(flying) // . Allows movement up/down with wings.
+	if(stat_value(src, STAT_FLYING)) // . Allows movement up/down with wings.
 		return TRUE
 
 	if(Process_Spacemove())
@@ -324,20 +324,20 @@
 	// . Flight on mobs.
 	if(isliving(src))
 		var/mob/living/L = src // . Flight on mobs.
-		if(L.flying) //Some other checks are done in the wings_toggle proc
-			if(L.nutrition > 0.5)
+		if(stat_value(L, STAT_FLYING)) //Some other checks are done in the wings_toggle proc
+			if(nutrition_of(L) > 0.5)
 				L.adjust_nutrition(-0.5) //You use up -0.5 nutrition per TILE and tick of flying above open spaces. If people wanna flap their wings in the hallways, shouldn't penalize them for it.
 			if(L.incapacitated(INCAPACITATION_ALL))
 				L.stop_flying()
 				//Just here to see if the person is KO'd, stunned, etc. If so, it'll move onto can_fall.
-			else if(L.nutrition < 300 && L.nutrition > 299.4) //290 would be risky, as metabolism could mess it up. Let's do 289.
+			else if(nutrition_of(L) < 300 && nutrition_of(L) > 299.4) //290 would be risky, as metabolism could mess it up. Let's do 289.
 				to_chat(L, span_danger("You are starting to get fatigued... You probably have a good minute left in the air, if that. Even less if you continue to fly around! You should get to the ground soon!")) //Ticks are, on average, 3 seconds. So this would most likely be 90 seconds, but lets just say 60.
 				L.adjust_nutrition(-0.5)
 				return
-			else if(L.nutrition < 100 && L.nutrition > 99.4)
+			else if(nutrition_of(L) < 100 && nutrition_of(L) > 99.4)
 				to_chat(L, span_danger("You're seriously fatigued! You need to get to the ground immediately and eat before you fall!"))
 				return
-			else if(L.nutrition < 10) //Should have listened to the warnings!
+			else if(nutrition_of(L) < 10) //Should have listened to the warnings!
 				to_chat(L, span_danger("You lack the strength to keep yourself up in the air..."))
 				L.stop_flying()
 			else
@@ -796,7 +796,7 @@
 
 	//Checking if there's any point trying to climb
 	var/turf/above_wall = GetAbove(src)
-	if(L.nutrition <= nutrition_cost)
+	if(nutrition_of(L) <= nutrition_cost)
 		to_chat(L, span_warning("You [HAS_SYNTHETIC_BIOLOGY(L) ? "lack the energy" : "are too hungry"] for such strenous activities!"))
 		return
 	if(!above_wall) //No multiZ
@@ -880,10 +880,10 @@
 		if(climbing_delay_min > 1.0)
 			climb_time += 2.5 SECONDS
 
-	if(L.nutrition >= 100 && L.nutrition <= 200)
+	if(nutrition_of(L) >= 100 && nutrition_of(L) <= 200)
 		to_chat(L, span_notice("Climbing while [HAS_SYNTHETIC_BIOLOGY(L) ? "low on power" : "hungry"] slows you down"))
 		climb_time += 1 SECONDS
-	else if(L.nutrition >= nutrition_cost && L.nutrition < 100)
+	else if(nutrition_of(L) >= nutrition_cost && nutrition_of(L) < 100)
 		to_chat(L, span_danger("You [HAS_SYNTHETIC_BIOLOGY(L) ? "lack enough power" : "are too hungry"] to climb safely!"))
 		climb_time +=3 SECONDS
 		if(fall_chance < 30)
@@ -944,7 +944,7 @@
 
 
 	//Check if we can even try to climb
-	if(nutrition <= nutrition_cost)
+	if(nutrition_of(src) <= nutrition_cost)
 		to_chat(src, span_warning("You [HAS_SYNTHETIC_BIOLOGY(src) ? "lack the energy" : "are too hungry"] for such strenous activities!"))
 		return
 	var/turf/below_wall = GetBelow(our_turf)
@@ -1019,10 +1019,10 @@
 			climb_time += 10 SECONDS
 		if(climbing_delay_min > 1.0)
 			climb_time += 2.5 SECONDS
-	if(nutrition >= 100 && nutrition <= 200)
+	if(nutrition_of(src) >= 100 && nutrition_of(src) <= 200)
 		to_chat(src, span_notice("Climbing while [HAS_SYNTHETIC_BIOLOGY(src) ? "low on power" : "hungry"] slows you down"))
 		climb_time += 1 SECONDS
-	else if(nutrition >= nutrition_cost && nutrition < 100)
+	else if(nutrition_of(src) >= nutrition_cost && nutrition_of(src) < 100)
 		to_chat(src, span_danger("You [HAS_SYNTHETIC_BIOLOGY(src) ? "lack enough power" : "are too hungry"] to climb safely!"))
 		climb_time +=3 SECONDS
 		if(fall_chance < 30)

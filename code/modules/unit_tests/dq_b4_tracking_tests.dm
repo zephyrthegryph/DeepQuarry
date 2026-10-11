@@ -87,7 +87,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/rx_table/T = GLOB.rx_tables[H.type] || rx_table_build(H)
 	TEST_ASSERT(T, "a human has a reactions table")
-	for(var/key in list("nutrition", "fear", "tiredness", "blinded", "on_fire", "block_hud", "absorbed", "status_flags", \
+	for(var/key in list(MOB_KEY_NUTRITION, MOB_KEY_STATUS, "stat:[STAT_ON_FIRE]", "blinded", "block_hud", "absorbed", "status_flags", \
 		MOB_KEY_HUD_FLAGS, MOB_KEY_VIEW, "species", "mind"))
 		var/found = FALSE
 		for(var/datum/reaction/R in T.by_key[key])
@@ -124,6 +124,12 @@
 		H.hud_runs = 0
 		if(name == "nutrition")
 			H.adjust_nutrition(-50)
+		else if(name == "fear")
+			H.status_set(STAT_FEAR, changes[name])
+		else if(name == "tiredness")
+			H.status_set(STAT_TIREDNESS, changes[name])
+		else if(name == "on_fire")
+			hold(H, STAT_ON_FIRE, TRUE, SRC_FIRE_STACKS)
 		else
 			call(H, "set_[name]")(changes[name])
 		TEST_ASSERT(life_test_rx_queued(H, TYPE_PROC_REF(/mob/living, life_hud_changed)), "changing [name] queues the HUD pass")
@@ -164,12 +170,12 @@
 	H.pretend_client = TRUE
 	dq_b4_settle(H)
 	H.hud_runs = 0
-	H.set_fear(10)
+	H.status_set(STAT_FEAR, 10)
 	rx_drain()
 	TEST_ASSERT_EQUAL(H.hud_runs, 1, "the first change draws at the drain")
 	for(var/i in 1 to 5)
-		H.set_fear(10 + i)
-		H.set_tiredness(i)
+		H.status_set(STAT_FEAR, 10 + i)
+		H.status_set(STAT_TIREDNESS, i)
 		H.adjust_nutrition(-1)
 		H.flag_hud_update(HEALTH_HUD)
 		rx_drain()

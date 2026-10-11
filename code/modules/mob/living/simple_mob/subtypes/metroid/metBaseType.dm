@@ -1,7 +1,6 @@
 // The top-level metroid defines. Xenobio slimes and feral slimes will inherit from this. Stolen from as much slime code as possible.
 
 /mob/living/simple_mob/metroid
-	nutrition = 100 //Have them start off pretty hungry still.
 	name = "metroid"
 	desc = "Some sort of person eaty thing! This is the prototype mob and shouldn't be spawned. If you see this, yell at your local dev or event manager who spawned this one >.>"
 	tt_desc = "Headamus Suckumus"
@@ -50,7 +49,6 @@
 	vore_pounce_chance = 25
 	vore_icons = SA_ICON_LIVING
 
-	nutrition = 1000 //This actually gets overridden further down on initialize.
 	max_nutrition = 2200
 	var/evo_point = 0
 	var/evo_limit = 0
@@ -125,3 +123,10 @@ CAPABILITIES(/mob/living/simple_mob/metroid)
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
 	..()
+
+
+/mob/living/simple_mob/metroid/starting_nutrition() //This actually gets overridden further down on initialize.
+	return 1000
+
+/mob/living/simple_mob/metroid/starting_nutrition() //Have them start off pretty hungry still.
+	return 100

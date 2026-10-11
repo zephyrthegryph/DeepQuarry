@@ -19,7 +19,7 @@
 
 /// Heals only while hurt and fed.
 /mob/living/simple_mob/proc/life_simple_healing_due()
-	return src.nutrition >= 150 && src.is_injured()
+	return nutrition_of(src) >= 150 && src.is_injured()
 
 /mob/living/simple_mob/life_type_post_due()
 	return FALSE
@@ -33,7 +33,7 @@
 		hud_used?.healths?.icon_state = vitality_health_band(src)
 
 	//Updates the nutrition while we're here
-	switch(nutrition)
+	switch(nutrition_of(src))
 		if(250 to INFINITY)
 			clear_alert("nutrition")
 		if(150 to 250)
@@ -46,7 +46,7 @@
 //Slow enough that it should affect combat basically not at all
 
 /mob/living/simple_mob/proc/do_healing()
-	if(nutrition < 150)
+	if(nutrition_of(src) < 150)
 		return
 	if(!is_injured())
 		return

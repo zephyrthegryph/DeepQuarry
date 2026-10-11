@@ -148,7 +148,7 @@
 /mob/living/simple_mob/ysbryd/proc/handle_target()
 	if(!chosen_target)
 		return
-	chosen_target.fear = min((chosen_target.fear + 3),102)
+	chosen_target.status_set(STAT_FEAR, min((chosen_target.status_units(STAT_FEAR) + 3),102))
 	if(COOLDOWN_FINISHED(src, effect_cooldown))
 		if(prob(5))
 			chosen_target.status_at_least(STAT_HALLUCINATING, 10)

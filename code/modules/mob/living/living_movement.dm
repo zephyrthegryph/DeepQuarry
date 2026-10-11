@@ -180,7 +180,7 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING))
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)
@@ -319,7 +319,7 @@ default behaviour is:
 		return
 	else if(lastarea?.get_gravity() == 0)
 		inertial_drift()
-	else if(flying)
+	else if(stat_value(src, STAT_FLYING))
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))

@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/towel)
 	var/mob/living/user = A.actor
 	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
 	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
-	if(user.fire_stacks > 0)
+	if(fire_stacks_of(user) > 0)
 		user.adjust_fire_stacks(-1.5)
 	return OP_OK
 

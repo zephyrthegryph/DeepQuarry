@@ -243,7 +243,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
-	nutrition = 20	//To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
 	vore_taste = "cheese"
 
 	restrict_vore_ventcrawl = TRUE
@@ -344,3 +343,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/beastmode)
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 
 DECLARE_REGISTRY(/mob/living/simple_mob/animal/passive/mouse, REGISTRY_GHOST_PODS)
+
+
+/mob/living/simple_mob/animal/passive/mouse/starting_nutrition() //To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
+	return 20
