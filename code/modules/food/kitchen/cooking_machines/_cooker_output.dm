@@ -34,7 +34,7 @@
 /// The cooking has finished: it takes the size of what it was made of (its carrying weight scales with it) and its first size word in front of its name.
 /obj/item/reagent_containers/food/snacks/variable/proc/settle_size()
 	scale = scale_for(reagents?.total_volume)
-	w_class *= scale
+	set_w_class(w_class * scale)
 	if (!prefix)
 		if (scale == min_scale)
 			prefix = "tiny"

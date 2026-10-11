@@ -1,14 +1,13 @@
 // Native acceptance foundation regression coverage.
 
 // Declaration inheritance, override, and pooled-context behavior.
-#define DQ_ACCEPTANCE_CHANNEL "dq-acceptance"
 /obj/item/dq_acceptance_native
 	var/acceptance_limit = 0
 	var/list/acceptance_changes
 TRACKED(/obj/item/dq_acceptance_native, acceptance_limit)
 TRACKED(/obj/item/dq_acceptance_native, acceptance_changes)
 CAPABILITIES(/obj/item/dq_acceptance_native)
-	acceptance(DQ_ACCEPTANCE_CHANNEL, req(PROC_REF(first_reason)))
+	acceptance("dq-acceptance", req(PROC_REF(first_reason)))
 /obj/item/dq_acceptance_native/proc/first_reason(datum/act/op/A)
 	return acceptance_limit < 1 ? "first limit" : null
 /obj/item/dq_acceptance_native/acceptance_overrides()
@@ -17,37 +16,37 @@ CAPABILITIES(/obj/item/dq_acceptance_native)
 	return list(list(src, nameof(acceptance_changes)))
 /obj/item/dq_acceptance_native/appended
 CAPABILITIES(/obj/item/dq_acceptance_native/appended)
-	acceptance(DQ_ACCEPTANCE_CHANNEL, req(PROC_REF(second_reason)))
+	acceptance("dq-acceptance", req(PROC_REF(second_reason)))
 /obj/item/dq_acceptance_native/appended/proc/second_reason(datum/act/op/A)
 	return acceptance_limit < 2 ? "second limit" : null
 /obj/item/dq_acceptance_native/replaced
 CAPABILITIES(/obj/item/dq_acceptance_native/replaced)
-	acceptance(DQ_ACCEPTANCE_CHANNEL, req(PROC_REF(silent_reason)), mode = ACCEPTANCE_REPLACE)
+	acceptance("dq-acceptance", req(PROC_REF(silent_reason)), mode = ACCEPTANCE_REPLACE)
 /obj/item/dq_acceptance_native/replaced/proc/silent_reason(datum/act/op/A)
 	return ""
 /obj/item/dq_acceptance_native/empty
 CAPABILITIES(/obj/item/dq_acceptance_native/empty)
-	acceptance(DQ_ACCEPTANCE_CHANNEL, mode = ACCEPTANCE_EMPTY)
+	acceptance("dq-acceptance", mode = ACCEPTANCE_EMPTY)
 
 /datum/unit_test/dq_acceptance_native_foundation/Run()
 	var/obj/item/dq_acceptance_native/appended/D = allocate(/obj/item/dq_acceptance_native/appended)
 	var/obj/item/I = allocate(/obj/item)
-	TEST_ASSERT_EQUAL(acceptance_reason(D, DQ_ACCEPTANCE_CHANNEL, D, I), "first limit", "Parent first refusal remains exact")
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-acceptance", D, I), "first limit", "Parent first refusal remains exact")
 	D.set_acceptance_limit(1)
-	TEST_ASSERT_EQUAL(acceptance_reason(D, DQ_ACCEPTANCE_CHANNEL, D, I), "second limit", "Append preserves ordered child refusal")
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-acceptance", D, I), "second limit", "Append preserves ordered child refusal")
 	D.set_acceptance_limit(2)
-	TEST_ASSERT_NULL(acceptance_reason(D, DQ_ACCEPTANCE_CHANNEL, D, I), "Both native requirements allow")
+	TEST_ASSERT_NULL(acceptance_reason(D, "dq-acceptance", D, I), "Both native requirements allow")
 	var/obj/item/dq_acceptance_native/replaced/R = allocate(/obj/item/dq_acceptance_native/replaced)
-	TEST_ASSERT_EQUAL(acceptance_reason(R, DQ_ACCEPTANCE_CHANNEL, R, I), /datum/msg/req_silent, "Replacement drops inherited reason and preserves silent refusal")
+	TEST_ASSERT_EQUAL(acceptance_reason(R, "dq-acceptance", R, I), /datum/msg/req_silent, "Replacement drops inherited reason and preserves silent refusal")
 	var/obj/item/dq_acceptance_native/empty/E = allocate(/obj/item/dq_acceptance_native/empty)
-	TEST_ASSERT(!acceptance_declared(E, DQ_ACCEPTANCE_CHANNEL), "Explicit empty remains distinct from effective declared storage")
-	TEST_ASSERT_NULL(acceptance_reason(E, DQ_ACCEPTANCE_CHANNEL, E, I), "Empty requirements allow when consumer does not require channel presence")
+	TEST_ASSERT(!acceptance_declared(E, "dq-acceptance"), "Explicit empty remains distinct from effective declared storage")
+	TEST_ASSERT_NULL(acceptance_reason(E, "dq-acceptance", E, I), "Empty requirements allow when consumer does not require channel presence")
 	var/list/before = D.acceptance_changes
-	D.set_acceptance_changes(acceptance_override(D, before, DQ_ACCEPTANCE_CHANNEL, acceptance(DQ_ACCEPTANCE_CHANNEL, mode = ACCEPTANCE_EMPTY)))
+	D.set_acceptance_changes(acceptance_override(D, before, "dq-acceptance", acceptance("dq-acceptance", mode = ACCEPTANCE_EMPTY)))
 	TEST_ASSERT_NULL(before, "Override setter does not mutate prior snapshot")
-	TEST_ASSERT(!acceptance_declared(D, DQ_ACCEPTANCE_CHANNEL), "Explicit empty override wins")
-	D.set_acceptance_changes(acceptance_inherit(D.acceptance_changes, DQ_ACCEPTANCE_CHANNEL))
-	TEST_ASSERT(acceptance_declared(D, DQ_ACCEPTANCE_CHANNEL), "Removing override restores inheritance")
+	TEST_ASSERT(!acceptance_declared(D, "dq-acceptance"), "Explicit empty override wins")
+	D.set_acceptance_changes(acceptance_inherit(D.acceptance_changes, "dq-acceptance"))
+	TEST_ASSERT(acceptance_declared(D, "dq-acceptance"), "Removing override restores inheritance")
 	var/datum/act/op/acceptance/A = acceptance_act(D, D, I)
 	var/datum/acceptance_context/C = A.acceptance
 	acceptance_act_release(A)
@@ -56,16 +55,13 @@ CAPABILITIES(/obj/item/dq_acceptance_native/empty)
 	TEST_ASSERT_NULL(C.holder, "Released context clears borrowed holder")
 	TEST_ASSERT(!QDELETED(D) && !QDELETED(I), "Pool release cannot delete borrowed entities")
 
-#undef DQ_ACCEPTANCE_CHANNEL
 
 
 // Cold allocation and nested query purity.
-#define DQ_ACCEPTANCE_PURE "dq-acceptance-pure"
-#define DQ_ACCEPTANCE_NESTED "dq-acceptance-nested"
 /obj/item/dq_acceptance_pure
 CAPABILITIES(/obj/item/dq_acceptance_pure)
-	acceptance(DQ_ACCEPTANCE_PURE, req(PROC_REF(context_reason)))
-	acceptance(DQ_ACCEPTANCE_NESTED, part_make(/datum/entry/part/req/dq_nested_acceptance))
+	acceptance("dq-acceptance-pure", req(PROC_REF(context_reason)))
+	acceptance("dq-acceptance-nested", part_make(/datum/entry/part/req/dq_nested_acceptance))
 /obj/item/dq_acceptance_pure/proc/context_reason(datum/act/op/A)
 	var/datum/acceptance_context/C = A.acceptance
 	if(C.options?["fault"])
@@ -77,13 +73,13 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	return null
 // The nested requirement supplies the actual inner plan's dynamic dependencies.
 /datum/entry/part/req/dq_nested_acceptance/check(datum/act/op/A)
-	return acceptance_reason(A.holder, DQ_ACCEPTANCE_PURE, A.acceptance.holder, A.acceptance.candidate)
+	return acceptance_reason(A.holder, "dq-acceptance-pure", A.acceptance.holder, A.acceptance.candidate)
 /datum/entry/part/req/dq_nested_acceptance/holds(datum/act/op/A)
 	return isnull(check(A))
 /datum/entry/part/req/dq_nested_acceptance/refusal(datum/act/op/A)
 	return check(A)
 /datum/entry/part/req/dq_nested_acceptance/read_keys(datum/act/op/A)
-	return acceptance_read_keys(A.holder, DQ_ACCEPTANCE_PURE, A.acceptance.holder, A.acceptance.candidate)
+	return acceptance_read_keys(A.holder, "dq-acceptance-pure", A.acceptance.holder, A.acceptance.candidate)
 
 // Unique pooled subtypes prove genuinely cold allocation independent of other tests.
 /datum/act/op/acceptance/dq_acceptance_cold
@@ -92,7 +88,7 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 /datum/unit_test/dq_acceptance_cold_pool/Run()
 	var/obj/item/dq_acceptance_pure/D = allocate(/obj/item/dq_acceptance_pure)
 	var/obj/item/I = allocate(/obj/item)
-	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(D, DQ_ACCEPTANCE_PURE)
+	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(D, "dq-acceptance-pure")
 	TEST_ASSERT_NULL(GLOB.object_pools[/datum/act/op/acceptance/dq_acceptance_cold], "Unique act pool starts genuinely cold")
 	TEST_ASSERT_NULL(GLOB.object_pools[/datum/acceptance_context/dq_acceptance_cold], "Unique context pool starts genuinely cold")
 	var/datum/rx_state/DS = rx_of(D)
@@ -136,21 +132,21 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	// First native acceptance use exercises cold pools when not used earlier; subsequent lap always exercises repeats.
 	for(var/lap in 1 to 2)
 		op_pure_begin()
-		var/why = acceptance_reason(D, DQ_ACCEPTANCE_PURE, D, I)
+		var/why = acceptance_reason(D, "dq-acceptance-pure", D, I)
 		op_pure_end()
 		TEST_ASSERT_NULL(why, "Pure admission allows real held-provider context")
 		op_pure_begin()
-		why = acceptance_reason(D, DQ_ACCEPTANCE_PURE, D, I, options = list("refuse" = TRUE))
+		why = acceptance_reason(D, "dq-acceptance-pure", D, I, options = list("refuse" = TRUE))
 		op_pure_end()
 		TEST_ASSERT_EQUAL(why, "exact refusal", "Pure refusal text remains exact")
 		op_pure_begin()
-		why = acceptance_reason(D, DQ_ACCEPTANCE_NESTED, D, I)
+		why = acceptance_reason(D, "dq-acceptance-nested", D, I)
 		op_pure_end()
 		TEST_ASSERT_NULL(why, "Nested admission owns independent synchronous contexts")
 		var/caught = FALSE
 		op_pure_begin()
 		try
-			acceptance_reason(D, DQ_ACCEPTANCE_PURE, D, I, options = list("fault" = TRUE))
+			acceptance_reason(D, "dq-acceptance-pure", D, I, options = list("fault" = TRUE))
 		catch(var/exception/fault)
 			caught = TRUE
 		op_pure_end()
@@ -168,12 +164,11 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	TEST_ASSERT_NULL(C.candidate, "Released context cannot retain candidate")
 	TEST_ASSERT_NULL(C.holder, "Released context cannot retain destination")
 
-#define DQ_ACCEPTANCE_METADATA_FAULT "dq-acceptance-metadata-fault"
 /obj/item/dq_acceptance_metadata_fault
 	var/probe = 0
 TRACKED(/obj/item/dq_acceptance_metadata_fault, probe)
 CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
-	acceptance(DQ_ACCEPTANCE_METADATA_FAULT, part_make(/datum/entry/part/req/dq_acceptance_metadata_fault))
+	acceptance("dq-acceptance-metadata-fault", part_make(/datum/entry/part/req/dq_acceptance_metadata_fault))
 /datum/entry/part/req/dq_acceptance_metadata_fault/check(datum/act/op/A)
 	return null
 /datum/entry/part/req/dq_acceptance_metadata_fault/read_keys(datum/act/op/A)
@@ -185,7 +180,7 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 	var/obj/item/dq_acceptance_metadata_fault/D = allocate(/obj/item/dq_acceptance_metadata_fault)
 	var/obj/item/I = allocate(/obj/item)
 	// Precompile declaration and initialize tracked state outside admission.
-	TEST_ASSERT(acceptance_plan_for(D, DQ_ACCEPTANCE_METADATA_FAULT), "Real native metadata plan compiled")
+	TEST_ASSERT(acceptance_plan_for(D, "dq-acceptance-metadata-fault"), "Real native metadata plan compiled")
 	rx_of(D)
 	rx_of(I)
 	var/list/previous_violations = GLOB.op_pure_violations.Copy()
@@ -203,9 +198,9 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 		var/caught = FALSE
 		try
 			if(query == 1)
-				acceptance_reason(D, DQ_ACCEPTANCE_METADATA_FAULT, D, I)
+				acceptance_reason(D, "dq-acceptance-metadata-fault", D, I)
 			else
-				acceptance_read_keys(D, DQ_ACCEPTANCE_METADATA_FAULT, D, I)
+				acceptance_read_keys(D, "dq-acceptance-metadata-fault", D, I)
 		catch(var/exception/fault)
 			caught = TRUE
 		TEST_ASSERT(caught, "Direct metadata callback fault propagates")
@@ -220,9 +215,6 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 	GLOB.op_pure_violations = previous_violations
 	TEST_ASSERT(!QDELETED(D) && !QDELETED(I), "Fault cleanup keeps borrowed entities alive")
 
-#undef DQ_ACCEPTANCE_METADATA_FAULT
-#undef DQ_ACCEPTANCE_NESTED
-#undef DQ_ACCEPTANCE_PURE
 
 
 /datum/dq_acceptance_dependency
@@ -385,7 +377,7 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	var/count_before = length(GLOB.op_pure_violations)
 	try
 		P.watch_reconcile(P.act)
-	catch(var/exception/fault)
+	catch(var/exception/metadata_fault_0)
 		caught = TRUE
 	TEST_ASSERT(caught, "Pending metadata fault propagates")
 	TEST_ASSERT_EQUAL(F.probe, 1, "Real metadata setter ran")
@@ -410,7 +402,7 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 		caught = FALSE
 		try
 			op_menu(M, target, null)
-		catch(var/exception/fault)
+		catch(var/exception/metadata_fault_1)
 			caught = TRUE
 		TEST_ASSERT(caught, "Real menu metadata callback fault propagates")
 		TEST_ASSERT_EQUAL(pool.out, out_before, "Menu fault releases the actual pooled candidate act")

@@ -3,18 +3,42 @@
 // used for slimes but it may be useful for changelings later.
 GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
-/mob/living/carbon/human
-	var/wrapped_bodytype
-
-SETTER(/mob/living/carbon/human, wrapped_bodytype)
-/mob/living/carbon/human/proc/set_wrapped_bodytype(value)
-	if(TRACKED_UNCHANGED(wrapped_bodytype, value))
+CAPABILITY_TYPE(wrapped_species_form, CAP_WRAPPED_SPECIES_FORM, /datum/capability/lib/wrapped_species_form, key = NONE)
+/datum/capability/lib/wrapped_species_form
+/datum/capability/lib/wrapped_species_form/cap_data_type()
+	return /datum/cap_data/wrapped_species_form
+/datum/capability/lib/wrapped_species_form/on_holder_init(datum/act/eval/A)
+	var/mob/living/carbon/human/H = A.holder
+	var/datum/activation/activation = cap_activation(H, CAP_WRAPPED_SPECIES_FORM, null, TRUE)
+	var/datum/cap_data/wrapped_species_form/S = cap_data(activation)
+	rel_set(S, nameof(S.holder), H)
+/datum/cap_data/wrapped_species_form
+	var/bodytype
+	var/mob/living/carbon/human/holder
+CAPABILITIES(/datum/cap_data/wrapped_species_form)
+	ref_one(nameof(holder))
+SETTER(/datum/cap_data/wrapped_species_form, bodytype)
+/datum/cap_data/wrapped_species_form/proc/set_bodytype(value)
+	if(TRACKED_UNCHANGED(bodytype, value))
 		return FALSE
-	wrapped_bodytype = value
-	// Compatibility mirror; live readers use the authoritative tracked selector.
-	GLOB.wrapped_species_by_ref["\ref[src]"] = value
-	tracked_changed(src, nameof(wrapped_bodytype))
+	bodytype = value
+	if(holder)
+		GLOB.wrapped_species_by_ref["\ref[holder]"] = value
+	tracked_changed(src, nameof(bodytype))
 	return TRUE
+/mob/living/carbon/human/proc/wrapped_species_state(create = FALSE)
+	RETURN_TYPE(/datum/cap_data/wrapped_species_form)
+	var/datum/activation/A = cap_activation(src, CAP_WRAPPED_SPECIES_FORM, null, create)
+	if(!A)
+		return null
+	var/datum/cap_data/wrapped_species_form/S = create ? cap_data(A) : A.data
+	return S
+/mob/living/carbon/human/proc/wrapped_bodytype()
+	var/datum/cap_data/wrapped_species_form/S = wrapped_species_state()
+	return S?.bodytype
+/mob/living/carbon/human/proc/set_wrapped_bodytype(value)
+	var/datum/cap_data/wrapped_species_form/S = wrapped_species_state(TRUE)
+	return S ? S.set_bodytype(value) : FALSE
 
 /datum/species/shapeshifter
 
@@ -36,45 +60,45 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /datum/species/shapeshifter/get_icobase(mob/living/carbon/human/H, get_deform)
 	if(!H) return ..(null, get_deform)
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_icobase(H, get_deform)
 
 /datum/species/shapeshifter/get_race_key(mob/living/carbon/human/H)
-	return "[..()]-[H?.wrapped_bodytype]"
+	return "[..()]-[H?.wrapped_bodytype()]"
 
 /datum/species/shapeshifter/get_bodytype(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_bodytype(H)
 
 /datum/species/shapeshifter/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_blood_mask(H)
 
 /datum/species/shapeshifter/get_damage_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_damage_mask(H)
 
 /datum/species/shapeshifter/get_damage_overlays(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_damage_overlays(H)
 
 /datum/species/shapeshifter/get_tail(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail(H)
 
 /datum/species/shapeshifter/get_tail_animation(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail_animation(H)
 
 /datum/species/shapeshifter/get_tail_hair(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	return S.get_tail_hair(H)
 
 /datum/species/shapeshifter/handle_post_spawn(mob/living/carbon/human/H)
@@ -251,7 +275,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		return
 	var/mob/living/carbon/human/shifter = asker || answerer
 	var/choice = value
-	if(!GLOB.all_species[choice] || shifter.wrapped_bodytype == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
+	if(!GLOB.all_species[choice] || shifter.wrapped_bodytype() == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
 		return "not a form to take"
 	return null
 
@@ -998,11 +1022,12 @@ CAPABILITIES(/datum/prompt/choice/copy_body_flavour)
 	. = ..()
 	if(!H)
 		return
-	. += list(list(H, nameof(H.wrapped_bodytype)))
+	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()
+	. += list(list(form, nameof(form.bodytype)))
 	var/list/visited = seen ? seen.Copy() : list()
 	if(src in visited)
 		return
 	visited += src
-	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(S && !(S in visited))
 		. += S.acceptance_bodytype_reads(H, visited)

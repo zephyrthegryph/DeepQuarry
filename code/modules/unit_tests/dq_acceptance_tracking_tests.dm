@@ -91,11 +91,13 @@ CAPABILITIES(/obj/item/dq_acceptance_size_cache_probe)
 	var/map_key = "\ref[H]"
 	var/map_before = GLOB.wrapped_species_by_ref[map_key]
 	H.set_wrapped_bodytype(SPECIES_TESHARI)
-	TEST_ASSERT_EQUAL(H.wrapped_bodytype, SPECIES_TESHARI, "Tracked selector stores the chosen wrapped species")
+	TEST_ASSERT_EQUAL(H.wrapped_bodytype(), SPECIES_TESHARI, "Tracked selector stores the chosen wrapped species")
 	TEST_ASSERT_EQUAL(GLOB.wrapped_species_by_ref["\ref[H]"], SPECIES_TESHARI, "Existing compatibility map mirrors the setter")
 	TEST_ASSERT_EQUAL(S.get_bodytype(H), GLOB.all_species[SPECIES_TESHARI].get_bodytype(H), "Real shapeshifter getter delegates to the selected species")
 	TEST_ASSERT(!H.set_wrapped_bodytype(SPECIES_TESHARI), "Unchanged scalar selector emits no write")
-	H.vv_edit_var(nameof(H.wrapped_bodytype), SPECIES_HUMAN)
+	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()
+	form.vv_edit_var(nameof(form.bodytype), SPECIES_HUMAN)
+	TEST_ASSERT_EQUAL(GLOB.wrapped_species_by_ref[map_key], SPECIES_HUMAN, "Capability-state VV preserves compatibility mirror")
 	TEST_ASSERT_EQUAL(S.get_bodytype(H), GLOB.all_species[SPECIES_HUMAN].get_bodytype(H), "Actual VV setter changes delegated form")
 	if(isnull(map_before))
 		GLOB.wrapped_species_by_ref -= map_key

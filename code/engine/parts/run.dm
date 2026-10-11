@@ -890,7 +890,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	for(var/cond in oplan.conds)
 		if(!op_cond(A, cond))
 			return /datum/msg/op/not_available
-	var/why = op_require_reason(A, oplan, binding)
+	why = op_require_reason(A, oplan, binding)
 	if(isnull(why) && watch_ready)
 		watch_reconcile(A)
 	return why
