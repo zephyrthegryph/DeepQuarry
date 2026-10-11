@@ -65,15 +65,35 @@ fn native_icon_constructor_counts_and_filter_modes_are_scalar_not_table_ids() {
 
 #[test]
 fn explicit_count_roles_preserve_unknown_receivers_and_unproved_input_radius() {
-    for opcode in [0xde, 0x115, 0x12b] {
+    for opcode in [0xde, 0x106, 0x110, 0x115, 0x12b] {
         assert_eq!(fixed_word_role(opcode, 0), FixedWordRole::Scalar);
         assert_eq!(fixed_word_role(opcode, 1), FixedWordRole::Opaque);
     }
-    // These receiver-bearing instructions still need independent decoder-shape
-    // evidence; their operand widths alone cannot establish semantic coverage.
-    assert_eq!(fixed_word_role(0x106, 0), FixedWordRole::Opaque);
-    assert_eq!(fixed_word_role(0x110, 0), FixedWordRole::Opaque);
+    // Receiver grammar remains independent of the proved argument-count role.
+    // An extra fixed word must not gain scalar authority.
+    assert_eq!(fixed_word_role(0x106, 1), FixedWordRole::Opaque);
+    assert_eq!(fixed_word_role(0x110, 1), FixedWordRole::Opaque);
     assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[1, 1, 64]));
     assert_eq!(fixed_word_role(0x30, 1), FixedWordRole::ProcedureId);
     assert!(!fixed_word_is_scalar(0xdead, 0));
+}
+
+#[test]
+fn pinned_icon_insert_and_map_colors_counts_remain_exact_scalars() {
+    for (path, opcode, expected) in [
+        (b"/icon/Insert".as_slice(), 0x106, vec![7]),
+        (b"/icon/MapColors".as_slice(), 0x110, vec![4, 5, 12, 20]),
+    ] {
+        let instructions: Vec<_> = native_code(path)
+            .into_iter()
+            .filter(|item| item.opcode == opcode)
+            .collect();
+        let counts: Vec<_> = instructions.iter().map(|item| item.operands[0]).collect();
+        assert_eq!(counts, expected);
+        for instruction in instructions {
+            assert_eq!(fixed_word_role(opcode, 0), FixedWordRole::Scalar);
+            assert_eq!(fixed_word_role(opcode, 1), FixedWordRole::Opaque);
+            assert!(contextual_fixed_word_is_scalar(opcode, 0, &instruction.operands));
+        }
+    }
 }
