@@ -6,7 +6,7 @@ from pathlib import Path
 VERSION = {"version": 516, "build": 1687}
 NO_VALUE = {"--no-daemon", "--no-cache", "--exact-inputs", "--progress"}
 WITH_VALUE = {"--workers", "--trace", "--record-inputs", "--replay-inputs",
-              "--artifact-directory", "--output-store"}
+              "--artifact-directory", "--output-store", "--compile-result-file"}
 
 
 def define(defines, text):
@@ -49,8 +49,8 @@ def command_configuration(project, arguments, sha):
                 raise ValueError(option + " requires a value")
             if option == "--workers" and (not value.isascii() or not value.isdecimal() or not 0 < int(value) < 2**64):
                 raise ValueError("--workers requires a positive usize")
-            if option == "--output-store" and option in seen:
-                raise ValueError("--output-store accepts one directory")
+            if option in {"--output-store", "--compile-result-file"} and option in seen:
+                raise ValueError(option + " accepts one path")
             seen.add(option)
         else:
             raise ValueError("unclassified semantic option/positional argument: " + str(option))

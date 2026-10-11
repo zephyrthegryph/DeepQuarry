@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import time
+import sys
 from recapture_iteration_baseline import (verify_source, file_version, write, sha)
 from recover_iteration_source import absolute_nonreparse, regular
 import semantic_configuration
@@ -68,7 +69,7 @@ def capture(root, output, byond, native, template, pins, defines, launch, deadli
     verify_source(source, snapshot['files'], deadline)
     args = ['--no-daemon', '--no-cache', '--workers', '2', '--engine-template', str(template),
             '--bootstrap-catalog', '--exact-inputs', '--output-store', str(output / 'store'),
-            '--artifact-directory', str(output / 'native'), *flags]
+            '--artifact-directory', str(output / 'native'), '--compile-result-file', str(output / 'native-result.json'), *flags]
     native_result = launch([str(native), 'compile', 'comparison.dme', *args], source, output / 'native.log', deadline)
     if native_result['exit_code'] != 0 or native_result['timeout']:
         raise ValueError('focused native compile failed')
@@ -95,6 +96,7 @@ def capture(root, output, byond, native, template, pins, defines, launch, deadli
             'sourceRosterAuthenticated': True, 'inputClosureAuthenticated': False,
             'implicitCompilerReads': 'unissued', 'acceptedRuntimeBaseline': False,
             'pin': str(output / 'focused-source-pin.json'), 'configuration': configuration,
+            'orderedDefines': list(defines), 'sourceRoot': str(source),
             'runtime': 'not run', 'byond': byond_result, 'native': native_result}
 
 
@@ -109,6 +111,11 @@ def main():
     for name in ('byond', 'native', 'template'):
         parser.add_argument('--' + name, type=Path, required=True)
         parser.add_argument('--' + name + '-sha256', required=True)
+    parser.add_argument('--checkout', type=Path, required=True)
+    for name in ('bun', 'bash', 'dd'):
+        parser.add_argument('--' + name, type=Path, required=True)
+        parser.add_argument('--' + name + '-sha256', required=True)
+    parser.add_argument('--security', choices=('trusted', 'safe', 'ultrasafe'), required=True)
     parser.add_argument('--define', action='append', default=[])
     parser.add_argument('--focus', action='append', required=True)
     parser.add_argument('--seconds', type=int, default=900)
@@ -160,6 +167,67 @@ def main():
             report.update(status='failed', error='owned Job failed to reap')
         if args.output.is_dir():
             write(args.output / 'focused-pair-receipt.json', report)
+    if report['status'] == 'passed':
+        job = OwnedJob(memory_bytes=4_000_000_000)
+        runtime = {'schema': 1, 'status': 'running', 'focus': args.focus,
+                   'sourceRosterAuthenticated': True, 'inputClosureAuthenticated': False,
+                   'implicitCompilerReads': 'unissued', 'acceptedRuntimeBaseline': False}
+        try:
+            for name in ('bun', 'bash', 'dd'):
+                tool = absolute_nonreparse(getattr(args, name))
+                regular(tool)
+                if sha(tool, deadline) != getattr(args, name + '_sha256'):
+                    raise ValueError(name + ' executable pin mismatch')
+                setattr(args, name, tool)
+            adapter = Path(__file__).with_name('focused_pair_runtime_capture.ts')
+            adapted = launch([str(args.bun), str(adapter), str(args.output), sha(args.output / 'focused-pair-receipt.json', deadline)],
+                             Path(args.checkout).resolve(strict=True), args.output / 'runtime-adapter.log', deadline)
+            if adapted['exit_code'] != 0:
+                raise ValueError('focused runtime capture issuer rejected pair')
+            captures = {}
+            for line in (args.output / 'runtime-adapter.log').read_text(encoding='utf-8-sig').splitlines():
+                if line.startswith('{'):
+                    row = json.loads(line)
+                    if row.get('backend') in ('native', 'byond'):
+                        if row['backend'] in captures:
+                            raise ValueError('duplicate runtime capture')
+                        captures[row['backend']] = row
+            if set(captures) != {'native', 'byond'}:
+                raise ValueError('runtime capture issuer did not return both pairs')
+            suite = Path(__file__).resolve().parent.parent / 'bench/runtime-suite.py'
+            runtime['executions'] = {}
+            for backend in ('byond', 'native'):
+                remaining = min(300, int(deadline - time.monotonic()))
+                if remaining < 1:
+                    raise TimeoutError('focused runtime aggregate watchdog')
+                command = [sys.executable, str(suite), '--checkout', str(args.checkout),
+                           '--output', str(args.output / (backend + '-runtime')), '--backend', backend,
+                           '--security', args.security, '--workers', '2', '--seconds', str(remaining),
+                           '--focused-compiled-output', captures[backend]['capture'],
+                           '--focused-compiled-output-sha256', captures[backend]['sha256']]
+                for name in ('bash', 'byond', 'dd'):
+                    command += ['--' + name + '-exe', str(getattr(args, name)), '--' + name + '-sha256', getattr(args, name + '_sha256')]
+                if backend == 'native':
+                    command += ['--native-exe', str(args.native), '--native-sha256', args.native_sha256,
+                                '--template', str(args.template), '--template-sha256', args.template_sha256]
+                for value in args.define:
+                    command += ['--define', value]
+                for value in args.focus:
+                    command += ['--focus', value]
+                result = launch(command, Path(args.checkout).resolve(strict=True), args.output / (backend + '-runtime.log'), deadline)
+                runtime['executions'][backend] = result
+                if result['exit_code'] != 0:
+                    raise ValueError(backend + ' focused runtime failed')
+            verify_source(args.prepared_root / 'source', json.loads((args.prepared_root / 'source-snapshot.json').read_text())['files'], deadline)
+            runtime['status'] = 'passed'
+        except Exception as error:
+            runtime.update(status='failed', error=str(error))
+        finally:
+            runtime['owned_child_cleanup'] = job.close()
+            if not runtime['owned_child_cleanup'].get('reaped'):
+                runtime['status'] = 'failed'
+            write(args.output / 'focused-runtime-pair-receipt.json', runtime)
+        report['status'] = runtime['status']
     return 0 if report['status'] == 'passed' else 1
 
 
