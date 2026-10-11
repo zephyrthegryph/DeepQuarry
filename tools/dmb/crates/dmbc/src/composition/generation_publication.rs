@@ -89,7 +89,7 @@ impl RetainedGeneration {
             }
         });
     }
-    pub(super) fn encode(
+    pub(in crate::composition) fn encode(
         &self,
         inputs: CertifiedGenerationInputs,
         executor: Option<&dm_exec::BuildExecutor>,
@@ -105,7 +105,7 @@ impl RetainedGeneration {
                 Ok(encoded)
             })
     }
-    pub(super) fn bind_plan(
+    pub(in crate::composition) fn bind_plan(
         &self,
         raw: procedure_plan::CompositionPlan,
         batch: &FrozenBatch,
@@ -119,7 +119,7 @@ impl RetainedGeneration {
                 raw.bind(batch)
             })
     }
-    pub(super) fn argument_sources(
+    pub(in crate::composition) fn argument_sources(
         &self,
         tables: &dm_link::LinkTables,
         start: usize,
@@ -131,7 +131,7 @@ impl RetainedGeneration {
                 dm_link::ArgumentSourceReferences::assign(tables, start, order).map(Arc::new)
             })
     }
-    pub(super) fn prepare_metadata(
+    pub(in crate::composition) fn prepare_metadata(
         &self,
         slots: &[procedure_plan::Slot<crate::lowering::UnitIdentity>],
         batch: &FrozenBatch,
