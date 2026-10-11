@@ -28,7 +28,11 @@ impl dm_ir::Resolver for TypedGlobal {
                 name,
             },
             Q::DeclaredVarType { owner: o, name: n } if o == owner && n == name => {
-                R::DeclaredType((self.0 != 4).then_some(path))
+                if self.0 == 5 {
+                    R::Unsupported(query)
+                } else {
+                    R::DeclaredType((self.0 != 4).then_some(path))
+                }
             }
             Q::RuntimeType(p) if p == path => match self.0 {
                 0 => R::Missing,
@@ -84,6 +88,21 @@ fn body_read_validates_selected_declared_type_with_current_span_and_alias_author
     assert!(
         compile(&TypedGlobal(4)).is_ok(),
         "known untyped slot must not require RuntimeType authority"
+    );
+    assert!(
+        compile(&TypedGlobal(5)).is_ok(),
+        "proven value storage survives opaque optional type metadata"
+    );
+    let receiver = dm_syntax::parse("/proc/read()\n    return value.member\n");
+    let receiver = crate::compile_simple_proc_with_resolver(
+        &receiver.items[0].children,
+        &inputs,
+        &symbols,
+        &TypedGlobal(5),
+    );
+    assert!(
+        receiver.is_err(),
+        "receiver type operations still require their own authority"
     );
 }
 struct Answers(bool);

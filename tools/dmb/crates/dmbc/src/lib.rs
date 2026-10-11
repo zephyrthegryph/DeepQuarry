@@ -119,3 +119,5 @@ mod analysis_export;
 
 #[cfg(test)]
 mod string_continuation_receipts;
+#[cfg(test)]
+mod declared_read_validity_tests;

@@ -125,9 +125,26 @@ impl Compiler<'_> {
             // Do not infer their validity from an unrelated global declaration.
             _ => return Ok(()),
         };
-        let Some(path) = self.declared_type_text(query)? else {
+        // Storage selection already succeeded. Opaque declared-type knowledge
+        // cannot invalidate a value read that needs no receiver type. Record
+        // the ordinary query through the same host, but do not promote this
+        // exact optional absence of authority into a lowering failure.
+        let declared = match lookup.resolver.resolve(query) {
+            dm_ir::ResolvedMeaning::Unsupported(opaque) if opaque == query => return Ok(()),
+            dm_ir::ResolvedMeaning::DeclaredType(path) => path,
+            dm_ir::ResolvedMeaning::Missing => None,
+            dm_ir::ResolvedMeaning::Member { data, .. } => data.declared_type,
+            other => {
+                return self.semantic(Err(lookup.error(
+                    query,
+                    &format!("invalid selected declaration type answer: {other:?}"),
+                )))
+            }
+        };
+        let Some(path) = declared else {
             return Ok(());
         };
+        let path = self.semantic(lookup.text(query, path))?;
         let result = lookup.runtime_type(&path).map_err(|mut failure| {
             if failure.kind == LowerErrorKind::SourceError {
                 failure.reason =
