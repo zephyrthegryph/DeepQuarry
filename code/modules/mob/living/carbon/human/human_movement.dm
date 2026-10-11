@@ -26,7 +26,7 @@
 		if(amount_hurt >= 25) //In enough pain for it to be significant?
 			. += CLAMP((amount_hurt / 25), 0, 4)
 
-	var/hungry = (500 - nutrition) / 5 //Fixed 500 here instead of our huge MAX_NUTRITION
+	var/hungry = (500 - nutrition_of(src)) / 5 //Fixed 500 here instead of our huge MAX_NUTRITION
 	if(hungry >= 70)
 		. += hungry/50
 
@@ -169,7 +169,7 @@
 	if(!T)
 		return 0
 
-	if(T.movement_cost && !flying) //If you are flying you are probably not affected by the terrain on the ground.
+	if(T.movement_cost && !stat_value(src, STAT_FLYING)) //If you are stat_value(src, STAT_FLYING) you are probably not affected by the terrain on the ground.
 		var/turf_move_cost = T.movement_cost
 		if(locate_on(T, /obj/structure/catwalk)) //catwalks prevent turfs from slowing your
 			return 0
@@ -223,7 +223,7 @@
 	if(species.can_space_freemove || (species.can_zero_g_move && !istype(get_turf(src), /turf/space)))
 		return TRUE
 
-	if(flying) //If you're flying, you glide around!
+	if(stat_value(src, STAT_FLYING)) //If you're stat_value(src, STAT_FLYING), you glide around!
 		return TRUE
 
 	//Do we have a working jetpack?
@@ -238,7 +238,7 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
-	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !flying)
+	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING))
 		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
 		PUBLISH_LEGACY(shoes, /datum/notice/shoes_step, src, m_intent)
 	return

@@ -1,6 +1,6 @@
 """Moves base-type vars into a per-instance table (cooldown table or sparse slots), driven by the compiler's "undefined var" errors.
 
-  python tools/dx/codemods/var_to_table.py <cooldown|sparse> <compile log> <name> [<name> ...] [--apply] [--files ...] [--dirs ...]
+  python tools/dx/codemods/var_to_table.py <cooldown|sparse|stat:STAT_X:setter|expr|READ|WRITE> <compile log> <name> [<name> ...] [--apply] [--files ...] [--dirs ...]
 
 Run after the vars were deleted (and declared with cooldowns() / sparse()) and the tree compiled once: every
 `file:line:error: <expr>: undefined var` whose last name is one of <name>s is rewritten on that line.
@@ -18,10 +18,29 @@ ERR = re.compile(r"^(?P<file>[^:]+\.dm):(?P<line>\d+):error: (?P<expr>.*?): unde
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 MODE, LOG, NAMES = args[0], args[1], set(args[2:])
+TEMPLATES = None
 if MODE == "cooldown":
     GET, SET = "cooldown_end", "cooldown_set_end"
-else:
+elif MODE == "sparse":
     GET, SET = "sparse_get", "sparse_set"
+elif MODE.startswith("stat:"):
+    # stat:STAT_X:setter -- reads stat_value(X, STAT_X), writes setter(X, v)
+    _, STAT_ID, SETTER = MODE.split(":")
+    GET, SET = None, None
+    TEMPLATES = ("stat_value({h}, %s)" % STAT_ID, SETTER + "({h}, {v})")
+else:
+    # expr|<read template>|<write template>, with {h} the holder and {v} the value: expr|nutrition_of({h})|{h}.set_nutrition({v})
+    _, READ_T, WRITE_T = MODE.split("|")
+    GET, SET = None, None
+    TEMPLATES = (READ_T, WRITE_T)
+
+
+def get(h, n):
+    return TEMPLATES[0].format(h=h) if TEMPLATES else "%s(%s, %s)" % (GET, h, n)
+
+
+def put(h, n, v):
+    return TEMPLATES[1].format(h=h, v=v) if TEMPLATES else "%s(%s, %s, %s)" % (SET, h, n, v)
 
 
 def rewrite(line, n):
@@ -31,19 +50,20 @@ def rewrite(line, n):
     if m:
         indent, ref, op, value, comment = m.groups()
         ref = ref or "src"
+        value = re.sub(r"(?<![\w.:/])(" + REF + r")\??\." + n + r"\b(?!\s*\()", lambda x: get(x.group(1), n), value)
         if op:
-            value = "%s(%s, %s) %s (%s)" % (GET, ref, n, op, value)
-        return "%s%s(%s, %s, %s)%s" % (indent, SET, ref, n, value, (" " + comment) if comment else "")
-    line = re.sub(r"(?<![\w.:/])(" + REF + r")\??\." + n + r"\b(?!\s*\()", lambda m: "%s(%s, %s)" % (GET, m.group(1), n), line)
+            value = "%s %s (%s)" % (get(ref, n), op, value)
+        return "%s%s%s" % (indent, put(ref, n, value), (" " + comment) if comment else "")
+    line = re.sub(r"(?<![\w.:/])(" + REF + r")\??\." + n + r"\b(?!\s*\()", lambda x: get(x.group(1), n), line)
     # bare reads (src's): skip the name where it already sits inside a table call (`cooldown_end(X, n)`)
-    keep = re.compile(r"(?:cooldown_\w+|sparse_\w+)\([^()]*?,\s*" + n + r"\b")
+    keep = re.compile(r"(?:cooldown_\w+|sparse_\w+|stat_value)\([^()]*?,\s*" + n + r"\b")
     spans = [m.span() for m in keep.finditer(line)]
     out, pos = [], 0
     for m in re.finditer(r"(?<![\w.:/?#])\b" + n + r"\b(?!\s*[(:])", line):
         if any(a <= m.start() < b for a, b in spans):
             continue
         out.append(line[pos:m.start()])
-        out.append("%s(src, %s)" % (GET, n))
+        out.append(get("src", n))
         pos = m.end()
     out.append(line[pos:])
     line = "".join(out)

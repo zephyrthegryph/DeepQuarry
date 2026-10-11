@@ -121,7 +121,7 @@
 
 /// Requirement: enough nutrition to regenerate on.
 /mob/living/simple_mob/proc/hungry_enough_to_heal(datum/act/op/A)
-	return read_once(nutrition) >= 10 ? null : span_warning("You are too hungry to regenerate health.")
+	return read_once(nutrition_of(src)) >= 10 ? null : span_warning("You are too hungry to regenerate health.")
 
 /mob/living/simple_mob/proc/nutrition_heal_question(datum/act/op/A)
 	var/endurance_now = get_endurance()
@@ -132,7 +132,7 @@
 	var/heal_amount = A.step_value("amount")
 	var/missing = round((1 - vitality()) * get_endurance())
 	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
-	return CLAMP(heal_amount, 1, nutrition / 10)
+	return CLAMP(heal_amount, 1, nutrition_of(src) / 10)
 
 /// A second per hitpoint.
 /mob/living/simple_mob/proc/nutrition_heal_time(datum/act/op/A)

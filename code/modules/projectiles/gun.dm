@@ -700,7 +700,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		if(H.species)
 			P.accuracy += H.species.gun_accuracy_mod
 			P.dispersion = max(P.dispersion + H.species.gun_accuracy_dispersion_mod, 0)
-		if(H.fear > 30)
+		if(H.status_units(STAT_FEAR) > 30)
 			P.accuracy -= 35
 
 //does the actual launching of the projectile

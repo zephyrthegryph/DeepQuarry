@@ -291,7 +291,6 @@
 	harvest_results = list(
 		/obj/item/stack/material/tritium = 10
 		)
-	nutrition = 150
 	var/build_type = /obj/random/ant_building
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special_due()
@@ -355,7 +354,6 @@
 	butchery_loot = list(\
 		/obj/item/stack/material/valhollide = 4\
 		)
-	nutrition = 630
 	var/build_type = /obj/effect/spider/spiderling/antling
 
 
@@ -572,7 +570,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
 
 /// The build op, started on `T` when the ant is hungry enough, the turf is free of ant work and the ant is idle.
 /mob/living/simple_mob/animal/tyr/mineral_ants/proc/start_building(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)) || is_working())
+	if(nutrition_of(src) < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)) || is_working())
 		return FALSE
 	var/datum/op_result/R = perform_op(src, T, "build", null, ORIGIN_AI, AUTH_AI)
 	return !!R && R.outcome != ACT_REFUSED
@@ -587,3 +585,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/act/op/A)
 	to_chat(src, span_warning("You need to stay still to build on \the [A.target]."))
+
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/starting_nutrition()
+	return 150
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/starting_nutrition()
+	return 630

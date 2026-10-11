@@ -118,7 +118,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 
 /// A heavy raptor wears its fat sprite: the living state follows the weight state, then the tracked weight state redraws it.
 /mob/living/simple_mob/vore/raptor/proc/consider_wg()
-	var/new_state = (nutrition >= 900) ? 1 : 0
+	var/new_state = (nutrition_of(src) >= 900) ? 1 : 0
 	if(new_state == wg_state)
 		return
 	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")

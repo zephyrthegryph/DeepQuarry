@@ -284,7 +284,7 @@ CAPABILITIES(/obj/item/clothing/gloves/toxinregen)
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
 		set_purging(FALSE)
 		return
-	if(!H || H.stat == DEAD || H.nutrition <= 10)
+	if(!H || H.stat == DEAD || nutrition_of(H) <= 10)
 		return
 	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected
 

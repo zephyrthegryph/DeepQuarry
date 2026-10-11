@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 									if(H.size_multiplier < 0.5)
 										beat_size = pick("quiet ", "hushed " ,"low " ,"hushed ")
 									message_holder = pick("You can hear disparate heartbeats as well.", "You can hear a different [beat_size]heartbeat too.", "It sounds like there is more than one heartbeat." ,"You can pick up a [beat_size]heatbeat along with everything else.")
-							if(M.nutrition > 900)	//dead
+							if(nutrition_of(M) > 900)	//dead
 								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
 							var/obj/item/organ/internal/heart/heart = M.organ_in(O_HEART)

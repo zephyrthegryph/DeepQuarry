@@ -12,7 +12,6 @@
 	icon_rest = "cockroach_rest"
 
 	endurance = 1
-	nutrition = 20
 
 	movement_cooldown = -1
 
@@ -85,3 +84,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
 	desc = "Green squishy mess."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "greenshatter"
+
+
+/mob/living/simple_mob/animal/passive/cockroach/starting_nutrition()
+	return 20

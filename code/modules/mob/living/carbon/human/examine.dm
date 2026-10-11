@@ -280,9 +280,9 @@
 			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))
 		after(src, 1.5 SECONDS, PROC_REF(pulse_check_result), with = list(user))
 
-	if(fire_stacks)
+	if(fire_stacks_of(src))
 		. += "[p_Theyre()] covered in some liquid."
-	if(on_fire)
+	if(stat_value(src, STAT_ON_FIRE))
 		. += span_warning("[p_Theyre()] on fire!.")
 
 	. += examine_ssd_lines()
@@ -477,7 +477,7 @@
 	if(nutrition_hidden) // Chomp Edit
 		return ""
 	var/message = ""
-	var/nutrition_examine = round(nutrition)
+	var/nutrition_examine = round(nutrition_of(src))
 	switch(nutrition_examine)
 		if(0 to 49)
 			message = nutrition_messages[1]

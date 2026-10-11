@@ -382,7 +382,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 	if(M.has_status(STAT_STUNNED))			//What's the matter???
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.on_fire)			//AAAAAAAA
+	if(stat_value(M, STAT_ON_FIRE))			//AAAAAAAA
 		capture_chance += 0.1
 		effect_count += 1
 	if(M.has_status(STAT_PARALYZED))			//Oh noooo

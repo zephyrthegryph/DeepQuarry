@@ -493,7 +493,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 		if(resting)
 			to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 			return
-		if(nutrition >= 5000)
+		if(nutrition_of(src) >= 5000)
 			act_message(user, O, MSG_SELF(span_notice("You try to feed %T% to \the [src], but it only snoofts at it.")), MSG_OTHERS(span_notice("%U% tries to feed %T% to \the [src]. It snoofs but does not eat.")))
 			return
 		var/nutriment_amount = O.reagents?.get_reagent_amount(REAGENT_ID_NUTRIMENT) //does it have nutriment, if so how much?
@@ -535,7 +535,7 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 			to_chat(user, span_notice("\The [src] leans in close, spreading its jaws in front of you. A hot, humid gust of breath blows over you as the weight of \the [src]'s presses you over, knocking you off of your feet as the warm gooey tough of jaws scromf over your figure, rapidly guzzling you away with the [O], leaving you to tumble down into the depths of its body..."))
 			playsound(src, SFX_BODYFALL, 75, 1)
 			teppi_pounce(user)
-		if(yum && nutrition >= 500)
+		if(yum && nutrition_of(src) >= 500)
 			to_chat(user, span_notice("\The [src] seems satisfied."))
 		return
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
@@ -629,9 +629,9 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 	. = ..()
 	if(item_type)
 		. += span_notice("They are wearing a [item_type] with [name] written on it.")
-	if(nutrition >= 1000)
+	if(nutrition_of(src) >= 1000)
 		. += span_notice("They look well fed.")
-	if(nutrition <= 500)
+	if(nutrition_of(src) <= 500)
 		. += span_notice("They look hungry.")
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
@@ -657,7 +657,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	src.wantpet += rand(0,2) * src.affection_factor
 	src.amount_grown += rand(1,5)
 	var/not_hungy = FALSE
-	if(src.nutrition >= 500)
+	if(nutrition_of(src) >= 500)
 		not_hungy = TRUE
 	if(src.amount_grown >= 1000)
 		if(src.teppi_adult)
@@ -667,7 +667,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 				src.breedable = TRUE
 				src.meat_amount += rand(0,2)
 		else if (not_hungy)
-			var/nutrition_cost = 500 + (src.nutrition / 2)
+			var/nutrition_cost = 500 + (nutrition_of(src) / 2)
 			src.adjust_nutrition(-nutrition_cost)
 			replace_with(src, /mob/living/simple_mob/vore/alienanimals/teppi, src.store_teppi_data(src))
 			return
@@ -934,7 +934,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 		"faction" = teppi.faction,
 		"affinity" = teppi.affinity || list(),
 		"affection_factor" = teppi.affection_factor,
-		"nutrition" = teppi.nutrition,
+		"nutrition_of(src)" = nutrition_of(teppi),
 		"allergen_preference" = teppi.allergen_preference,
 		"allergen_unpreference" = teppi.allergen_unpreference,
 		"color" = teppi.color,
@@ -1012,7 +1012,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	if(baby_countdown > 0)
 		to_chat(src, span_notice("It is not time yet..."))
 		return
-	if(!breedable || nutrition < 500)
+	if(!breedable || nutrition_of(src) < 500)
 		to_chat(src, span_notice("The conditions are not right to produce offspring."))
 		return
 	if(GLOB.teppi_count >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners
@@ -1020,7 +1020,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 		return
 	. = FALSE
 	for(var/mob/living/simple_mob/vore/alienanimals/teppi/alltep in oview(1,src))
-		if(!alltep.teppi_adult || alltep.nutrition < 250 || alltep.prevent_breeding || alltep.stat == DEAD)
+		if(!alltep.teppi_adult || nutrition_of(alltep) < 250 || alltep.prevent_breeding || alltep.stat == DEAD)
 			continue
 		if(alltep)
 			log_admin("[key_name_admin(src)] produced a baby teppi at [get_area(src)] - [COORD(src)]") //Won't show up in the chat, but makes a log of who's having babies where, for investigative purposes.

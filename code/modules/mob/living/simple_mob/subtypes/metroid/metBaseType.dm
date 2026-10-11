@@ -52,7 +52,6 @@
 	vore_pounce_chance = 25
 	vore_icons = SA_ICON_LIVING
 
-	nutrition = 1000 //This actually gets overridden further down on initialize.
 	max_nutrition = 2200
 	var/evo_point = 0
 	var/evo_limit = 0
@@ -125,3 +124,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
 	..()
+
+
+/mob/living/simple_mob/metroid/starting_nutrition() //This actually gets overridden further down on initialize.
+	return 1000

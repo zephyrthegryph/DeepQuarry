@@ -137,9 +137,9 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 		src.devourable = FALSE
 		src.digestable = FALSE
 	if(src.ckey && src.control_node)
-		if(src.nutrition <= 200)
+		if(nutrition_of(src) <= 200)
 			src.adjust_affinity(-10)
-		else if(src.nutrition < 500)
+		else if(nutrition_of(src) < 500)
 			src.adjust_affinity(-3)
 		else
 			src.adjust_affinity(-1)
@@ -192,7 +192,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/adjust_affinity(amount)
 	if(amount > 0)
-		var/multiplier = nutrition / 250
+		var/multiplier = nutrition_of(src) / 250
 		affinity += (amount * multiplier)
 	if(amount < 0)
 		affinity += amount
@@ -337,7 +337,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	set name = "Transition"
 	set desc = "Attempt to go to the location you have arrived at, or return to space!"
 	set category = VERB_CAT_ABILITIES_STARDOG
-	if(nutrition <= 500)
+	if(nutrition_of(src) <= 500)
 		to_chat(src, span_warning("You're too hungry..."))
 		return
 	if(istype(loc, /turf/unsimulated/map))
@@ -1325,7 +1325,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			rel_set(src, nameof(linked_mob), s.parent) //dogge
 
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
-		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)
+		damage += clamp(((500 - nutrition_of(linked_mob)) / 100), 1 , 5)
 	var/list/stuff = list()
 	for(var/thing in contents_of(src))
 		if(can_digest(thing))
@@ -1350,7 +1350,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 					continue
 				H.drop_from_inventory(W)
 			if(linked_mob)
-				var/how_much = H.mob_size + H.nutrition
+				var/how_much = H.mob_size + nutrition_of(H)
 				if(!H.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
@@ -1373,7 +1373,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			L.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			L.release_vore_contents()
 			if(linked_mob)
-				var/how_much = L.mob_size + L.nutrition
+				var/how_much = L.mob_size + nutrition_of(L)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)

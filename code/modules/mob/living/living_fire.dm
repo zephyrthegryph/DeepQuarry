@@ -23,10 +23,10 @@
 			return
 		if(FIRE_REACTION_IGNITE)
 			// No stacks from hotspots, but a hotspot can still ignite it.
-			if(!on_fire)
+			if(!stat_value(src, STAT_ON_FIRE))
 				ignite_mob()
 		else
-			if(!exposed_temperature || fire_stacks < exposed_temperature / 1500) // Subject to balance
+			if(!exposed_temperature || fire_stacks_of(src) < exposed_temperature / 1500) // Subject to balance
 				adjust_fire_stacks(2)
 			ignite_mob()
 	if(fire_heats_body && exposed_temperature)
@@ -37,7 +37,7 @@
 GLOBAL_LIST_EMPTY(fire_appearances)
 
 /mob/living/proc/ignite_mob(silent)
-	if(fire_stacks <= 0)
+	if(fire_stacks_of(src) <= 0)
 		return FALSE
 
 	var/datum/status_effect/fire_handler/fire_stacks/fire_status = has_status_effect(/datum/status_effect/fire_handler/fire_stacks)
@@ -77,14 +77,14 @@ GLOBAL_LIST_EMPTY(fire_appearances)
 	if(stacks < 0)
 		if(has_trait(src, TRAIT_NO_EXTINGUISH)) //You can't reduce fire stacks of the everlasting flames
 			return
-		stacks = max(-fire_stacks, stacks)
+		stacks = max(-fire_stacks_of(src), stacks)
 	apply_status_effect(fire_type, stacks)
 
 /mob/living/proc/adjust_wet_stacks(stacks, wet_type = /datum/status_effect/fire_handler/wet_stacks)
 	if(has_trait(src, TRAIT_NO_EXTINGUISH)) //The everlasting flames will not be extinguished
 		return
 	if(stacks < 0)
-		stacks = max(fire_stacks, stacks)
+		stacks = max(fire_stacks_of(src), stacks)
 	apply_status_effect(wet_type, stacks)
 
 /**
@@ -143,14 +143,14 @@ GLOBAL_LIST_EMPTY(fire_appearances)
 	var/datum/status_effect/fire_handler/fire_stacks/their_fire_status = spread_to.has_status_effect(/datum/status_effect/fire_handler/fire_stacks)
 	if(fire_status && fire_status.on_fire)
 		if(their_fire_status && their_fire_status.on_fire)
-			var/firesplit = (fire_stacks + spread_to.fire_stacks) / 2
-			var/fire_type = (spread_to.fire_stacks > fire_stacks) ? their_fire_status.type : fire_status.type
+			var/firesplit = (fire_stacks_of(src) + fire_stacks_of(spread_to)) / 2
+			var/fire_type = (fire_stacks_of(spread_to) > fire_stacks_of(src)) ? their_fire_status.type : fire_status.type
 			set_fire_stacks(firesplit, fire_type)
 			spread_to.set_fire_stacks(firesplit, fire_type)
 			return
 
-		adjust_fire_stacks(-fire_stacks / 2, fire_status.type)
-		spread_to.adjust_fire_stacks(fire_stacks, fire_status.type)
+		adjust_fire_stacks(-fire_stacks_of(src) / 2, fire_status.type)
+		spread_to.adjust_fire_stacks(fire_stacks_of(src), fire_status.type)
 		if(spread_to.ignite_mob())
 			message_admins("[key_name(src)] bumped into [key_name(spread_to)] and set them on fire.")
 		return
@@ -158,8 +158,8 @@ GLOBAL_LIST_EMPTY(fire_appearances)
 	if(!their_fire_status || !their_fire_status.on_fire)
 		return
 
-	spread_to.adjust_fire_stacks(-spread_to.fire_stacks / 2, their_fire_status.type)
-	adjust_fire_stacks(spread_to.fire_stacks, their_fire_status.type)
+	spread_to.adjust_fire_stacks(-fire_stacks_of(spread_to) / 2, their_fire_status.type)
+	adjust_fire_stacks(fire_stacks_of(spread_to), their_fire_status.type)
 	ignite_mob()
 
 /**

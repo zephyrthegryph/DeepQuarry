@@ -63,7 +63,7 @@
 	if(has_light_organ())
 		light = owner.skin_light_level(sealed_light_mult)
 	else if(light_organ)
-		if(owner.nutrition < starve_below_nutrition)
+		if(nutrition_of(owner) < starve_below_nutrition)
 			wither()
 		return
 	if(light <= 0)
@@ -87,10 +87,10 @@
 
 /datum/trait_state/photosynth/proc/feed(light, boost)
 	var/cap = nutrition_max + boost * boosted_nutrition_max
-	if(owner.nutrition >= cap)
+	if(nutrition_of(owner) >= cap)
 		return
 	var/gain = light * nutrition_per_light * (1 + boost * boosted_nutrition_mult)
-	owner.adjust_nutrition(min(gain, cap - owner.nutrition))
+	owner.adjust_nutrition(min(gain, cap - nutrition_of(owner)))
 
 /datum/trait_state/photosynth/proc/heal(light, boost)
 	var/scale = light

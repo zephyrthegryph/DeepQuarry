@@ -80,7 +80,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -131,7 +130,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, 
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -190,7 +188,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Alphas lose their vulnerability to cold.
 	minbodytemp = 0
@@ -251,7 +248,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 	ranged_cooldown_time = 5 SECOND
 	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
@@ -331,7 +327,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	makes_dirt = TRUE
 
@@ -416,7 +411,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 	makes_dirt = TRUE
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
@@ -502,7 +496,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 	makes_dirt = TRUE
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
@@ -567,3 +560,25 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
 
 	threaten_sound = 'sound/metroid/metroidqueen.ogg'
 	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+/mob/living/simple_mob/metroid/juvenile/baby/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/super/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/alpha/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/gamma/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/zeta/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/omega/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/queen/starting_nutrition()
+	return 0

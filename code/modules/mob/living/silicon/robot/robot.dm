@@ -9,7 +9,6 @@
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "robot"
 	endurance = 200
-	nutrition = 0
 
 	mob_bump_flag = ROBOT
 	mob_swap_flags = ~HEAVY
@@ -1793,3 +1792,7 @@ TRACKED(/mob/living/silicon/robot, lockdown)
 				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
+
+
+/mob/living/silicon/robot/starting_nutrition()
+	return 0

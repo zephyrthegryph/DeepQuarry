@@ -662,10 +662,10 @@ CAPABILITIES(/atom/movable/screen)
 					to_chat(user, span_notice("You are currently <b>calm and collected.</b>"))
 				if(xc.feral > 0)
 					var/feral_passing = TRUE
-					if(H.traumatic_shock > min(60, H.nutrition/10))
+					if(H.traumatic_shock > min(60, nutrition_of(H)/10))
 						to_chat(user, span_warning("Your pain prevents you from regaining focus."))
 						feral_passing = FALSE
-					if(xc.feral + H.nutrition < 150)
+					if(xc.feral + nutrition_of(H) < 150)
 						to_chat(user, span_warning("Your hunger prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(H.status_units(STAT_JITTERY) >= 100)
@@ -680,7 +680,7 @@ CAPABILITIES(/atom/movable/screen)
 						else
 							to_chat(user, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
 				else
-					if(H.nutrition < 150)
+					if(nutrition_of(H) < 150)
 						to_chat(user, span_warning("Your hunger is slowly making you unstable."))
 
 		if("Reconstructing Form") // Allow Viewing Reconstruction Timer + Hatching for 'chimera

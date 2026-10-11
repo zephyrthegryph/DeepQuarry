@@ -584,8 +584,8 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 	if(prey.loc != B)
 		note("[mode_id]: the prey would not go in")
 	var/injury_before = total_injury(prey)
-	var/pred_nutrition_before = pred.nutrition
-	var/prey_nutrition_before = prey.nutrition
+	var/pred_nutrition_before = nutrition_of(pred)
+	var/prey_nutrition_before = nutrition_of(prey)
 	var/prey_size_before = prey.size_multiplier
 	var/elapsed = 0
 	while(elapsed < BALANCE_DIGEST_SECONDS)
@@ -596,8 +596,8 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 		elapsed += BALANCE_LIFE_SECONDS
 	var/prey_gone = QDELETED(prey)
 	record("[prefix].prey_injury_delta", prey_gone ? null : total_injury(prey) - injury_before, "points")
-	record("[prefix].prey_nutrition_delta", prey_gone ? null : prey.nutrition - prey_nutrition_before, "nutrition")
-	record("[prefix].pred_nutrition_delta", pred.nutrition - pred_nutrition_before, "nutrition")
+	record("[prefix].prey_nutrition_delta", prey_gone ? null : nutrition_of(prey) - prey_nutrition_before, "nutrition_of(src)")
+	record("[prefix].pred_nutrition_delta", nutrition_of(pred) - pred_nutrition_before, "nutrition_of(src)")
 	record("[prefix].prey_size_delta", prey_gone ? null : prey.size_multiplier - prey_size_before, "size")
 	record("[prefix].prey_absorbed", (!prey_gone && prey.absorbed) ? 1 : 0)
 	record("[prefix].prey_dead", is_dead(prey) ? 1 : 0)

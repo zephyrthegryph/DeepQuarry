@@ -18,7 +18,7 @@
 		return FALSE
 	add_attack_logs(src,T,"Unfat sting (changeling)")
 	to_chat(T, span_danger("you feel a small prick as stomach churns violently and you become to feel skinnier."))
-	T.adjust_nutrition(-max(100, T.nutrition/1.15)) //Decrease their nutrition by 100 or 85%, whatever is higher. Ex: 1000 nutrition becomes ~130. 6000 nutrition becomes 800.
+	T.adjust_nutrition(-max(100, nutrition_of(T)/1.15)) //Decrease their nutrition_of(src) by 100 or 85%, whatever is higher. Ex: 1000 nutrition_of(src) becomes ~130. 6000 nutrition_of(src) becomes 800.
 	feedback_add_details("changeling_powers","US")
 	return TRUE
 

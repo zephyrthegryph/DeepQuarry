@@ -1633,8 +1633,6 @@ init_lines	code/game/objects/items/weapons/inducer.dm	if(!cell && cell_type)
 init_lines	code/game/objects/items/weapons/inducer.dm	rel_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 init_lines	code/game/objects/items/weapons/inducer.dm	if(!istype(hume))
 init_lines	code/game/objects/items/weapons/inducer.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/weapons/inducer.dm	set_charge(hume.nutrition)
-init_lines	code/game/objects/items/weapons/inducer.dm	set_maxcharge(initial(hume.nutrition))
 init_lines	code/game/objects/items/weapons/inducer.dm	expire(20 SECONDS)
 init_lines	code/game/objects/items/weapons/manuals.dm	dat = {"
 init_lines	code/game/objects/items/weapons/manuals.dm	<html><head>
@@ -4595,13 +4593,6 @@ init_lines	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //
 init_lines	code/modules/mob/living/living.dm	rel_clear(src, nameof(hud_list))
 init_lines	code/modules/mob/living/living.dm	hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 init_lines	code/modules/mob/living/living.dm	make_hud_overlays()
-init_lines	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-init_lines	code/modules/mob/living/living.dm	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-init_lines	code/modules/mob/living/living.dm	dsma.alpha = 0
-init_lines	code/modules/mob/living/living.dm	dsma.plane = PLANE_LIGHTING
-init_lines	code/modules/mob/living/living.dm	dsma.blend_mode = BLEND_ADD
-init_lines	code/modules/mob/living/living.dm	dsoverlay.appearance = dsma
-init_lines	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 init_lines	code/modules/mob/living/living.dm	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
@@ -7629,8 +7620,6 @@ world_reads	code/modules/mob/living/carbon/brain/brain.dm	default_language = GLO
 world_reads	code/modules/mob/living/carbon/carbon.dm	default_language = GLOB.all_languages[species_language]
 world_reads	code/modules/mob/living/carbon/human/human.dm	for(var/category in GLOB.global_underwear.categories_by_name)
 world_reads	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-world_reads	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-world_reads	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 world_reads	code/modules/mob/living/silicon/ai/ai.dm	var/list/possibleNames = GLOB.ai_names
 world_reads	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_names)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)

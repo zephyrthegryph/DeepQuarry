@@ -865,9 +865,9 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	if(cool_rotations <= 0)
 		cool_rotations = 0.5
 	cool_rotations = default_power_gen / cool_rotations
-	switch(runner.nutrition)
+	switch(nutrition_of(runner))
 		if(1000 to INFINITY)	//VERY WELL FED, ZOOM!!!!
-			cool_rotations *= (runner.nutrition * 0.001)
+			cool_rotations *= (nutrition_of(runner) * 0.001)
 		if(500 to 1000)	//Well fed!
 			cool_rotations = cool_rotations
 		if(400 to 500)

@@ -26,9 +26,9 @@
 	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
 	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 3 SECONDS, "it lasts three seconds")
 	test_time(2 SECONDS)
-	TEST_ASSERT(user.nutrition > 395, "nothing is spent before the end")
+	TEST_ASSERT(nutrition_of(user) > 395, "nothing is spent before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(user.nutrition < 395 && user.nutrition > 385, "it costs ten nutrition")
+	TEST_ASSERT(nutrition_of(user) < 395 && nutrition_of(user) > 385, "it costs ten nutrition_of(src)")
 	TEST_ASSERT(said(user, "You successfully perform"), "it says it finished")
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_cancel_on_move
@@ -43,7 +43,7 @@
 	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
 	user.forceMove(get_step(user, EAST))
 	test_time(5 SECONDS)
-	TEST_ASSERT(user.nutrition > 395, "moving cancels: nothing is spent")
+	TEST_ASSERT(nutrition_of(user) > 395, "moving cancels: nothing is spent")
 	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_cancel_on_drop
@@ -58,7 +58,7 @@
 	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
 	user.drop_from_inventory(D)
 	test_time(5 SECONDS)
-	TEST_ASSERT(user.nutrition > 395, "dropping it cancels: nothing is spent")
+	TEST_ASSERT(nutrition_of(user) > 395, "dropping it cancels: nothing is spent")
 	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_too_hungry
@@ -73,7 +73,7 @@
 	TEST_ASSERT_NULL(running(user), "a hungry user starts nothing")
 	TEST_ASSERT(said(user, "too hungry"), "and is told why")
 	test_time(5 SECONDS)
-	TEST_ASSERT(user.nutrition < 55, "and spends nothing")
+	TEST_ASSERT(nutrition_of(user) < 55, "and spends nothing")
 
 // ---- Anomaly core: an anomaly releaser used on it ----
 

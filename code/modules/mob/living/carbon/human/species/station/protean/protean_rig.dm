@@ -517,7 +517,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /// The swarm feeds its cluster's cell from its own nutrition.
 /obj/item/rig/protean/proc/recharge_from(mob/living/P)
-	if(!cell || inert || cell.charge >= cell.maxcharge || P.nutrition <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
+	if(!cell || inert || cell.charge >= cell.maxcharge || nutrition_of(P) <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
 		return 0
 	var/stored = add_power(ROBOT_CELL_JOULES(PROTEAN_RIG_RECHARGE_UNITS), P)
 	if(stored > 0)

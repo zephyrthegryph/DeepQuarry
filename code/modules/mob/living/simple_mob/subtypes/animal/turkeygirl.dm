@@ -64,9 +64,9 @@
 	if(stat == DEAD)
 		return
 	var/state = look.state_so_far(src)
-	if(vore_fullness == 2 || nutrition >= 5000)
+	if(vore_fullness == 2 || nutrition_of(src) >= 5000)
 		state = "[icon_living]-2"
-	else if(vore_fullness == 1 || nutrition >= 2500)
+	else if(vore_fullness == 1 || nutrition_of(src) >= 2500)
 		state = "[icon_living]-1"
 	if(resting)
 		state = "[state]-resting"
@@ -86,7 +86,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
 		return OP_DECLINE
 
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return

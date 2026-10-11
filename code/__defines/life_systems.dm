@@ -42,6 +42,8 @@
 #define MOB_KEY_VIEW "mob_view"
 /// HUD-list bits were marked stale (flag_hud_update()).
 #define MOB_KEY_HUD_FLAGS "mob_hud_flags"
+/// A living mob's nutrition changed (set_nutrition()); nutrition_of() reads as it.
+#define MOB_KEY_NUTRITION "mob_nutrition"
 /// A mob picked up, dropped or swapped what it holds in its hands (a window that needs a held tool re-checks its status).
 #define MOB_KEY_HANDS "mob_hands"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).

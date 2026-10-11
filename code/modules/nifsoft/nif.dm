@@ -362,7 +362,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 				nifsoft.life(human)
 
 		if(NIF_POWFAIL)
-			if(human && human.nutrition < 100)
+			if(human && nutrition_of(human) < 100)
 				return FALSE
 			else
 				set_stat(NIF_WORKING)
@@ -399,7 +399,7 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 		return TRUE
 
 	//Not enough nutrition/charge left.
-	if(!human || human.nutrition < use_charge)
+	if(!human || nutrition_of(human) < use_charge)
 		return FALSE
 
 	//Was enough, reduce and return.

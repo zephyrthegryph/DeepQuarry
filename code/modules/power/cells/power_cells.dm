@@ -207,7 +207,7 @@
 	if(!used && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(HAS_SYNTHETIC_BIOLOGY(H))
-			if(H.nutrition <= amount)
+			if(nutrition_of(H) <= amount)
 				use(user,H)
 				return ITEM_INTERACT_SUCCESS
 			else

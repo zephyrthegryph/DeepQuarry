@@ -578,10 +578,10 @@ CAPABILITIES(/datum/lleill_contact_review)
 	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% complete their contact."))
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy = species.lleill_energy_max
-	adjust_nutrition((chosen_target.nutrition / 2))
+	adjust_nutrition((nutrition_of(chosen_target) / 2))
 	to_chat(src, span_warning("You feel revitalised."))
-	chosen_target.set_tiredness(chosen_target.tiredness + 70)
-	chosen_target.set_nutrition(max((chosen_target.nutrition / 2),75))
+	chosen_target.status_set(STAT_TIREDNESS, chosen_target.status_units(STAT_TIREDNESS) + 70)
+	chosen_target.set_nutrition(max((nutrition_of(chosen_target) / 2),75))
 	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
 	chosen_target.status_adjust(STAT_BLURRY, 20)
 	to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
