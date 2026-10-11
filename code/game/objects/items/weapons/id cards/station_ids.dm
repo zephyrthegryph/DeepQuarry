@@ -134,11 +134,10 @@ CAPABILITIES(/obj/item/card/id)
 
 	return ..()
 
-/obj/item/card/id/Initialize(mapload)
-	. = ..()
+/// The access it starts with (derives(), at init): its rank's job's, else what it was given. A special card answers its own.
+/obj/item/card/id/proc/starting_access()
 	var/datum/job/J = SSjob.get_job(rank)
-	if(J)
-		access = J.get_access()
+	return J ? J.get_access() : access
 
 /obj/item/card/id/silver
 	name = "identification card"
