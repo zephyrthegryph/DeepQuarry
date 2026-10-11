@@ -1,0 +1,5 @@
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Wrench
+human|/obj/item/tool/wrench click: Click: Wrench

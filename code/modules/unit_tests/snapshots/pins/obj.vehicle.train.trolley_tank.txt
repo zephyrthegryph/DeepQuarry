@@ -1,155 +1,121 @@
-human|none menu: Climb
-human|none menu: Interaction train hand
-human|none menu: Unlatch
-human|none click: Click: Interaction train hand
-robot|none menu: Climb
-robot|none menu: Interaction train hand
-robot|none menu: Unlatch
-robot|none click: Click: Interaction train hand
-ai|none click: nothing
+@obj.vehicle human|none
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
+@obj.vehicle robot|none
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
+@obj.vehicle ai|none
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Unlatch (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Climb
-human|/obj/item/tool/screwdriver menu: Hit
-human|/obj/item/tool/screwdriver menu: Interaction train hand
-human|/obj/item/tool/screwdriver menu: Interaction trolley tank drag
-human|/obj/item/tool/screwdriver menu: Load
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Unlatch
-human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver menu: Vehicle item
-human|/obj/item/tool/screwdriver click: Click: Use screwdriver
-human|/obj/item/tool/crowbar menu: Climb
-human|/obj/item/tool/crowbar menu: Hit
-human|/obj/item/tool/crowbar menu: Interaction train hand
-human|/obj/item/tool/crowbar menu: Interaction trolley tank drag
-human|/obj/item/tool/crowbar menu: Load
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Unlatch
-human|/obj/item/tool/crowbar menu: Use crowbar
-human|/obj/item/tool/crowbar menu: Vehicle item
-human|/obj/item/tool/crowbar click: Click: Use crowbar
-human|/obj/item/tool/wrench menu: Climb
-human|/obj/item/tool/wrench menu: Hit
-human|/obj/item/tool/wrench menu: Interaction train hand
-human|/obj/item/tool/wrench menu: Interaction trolley tank drag
-human|/obj/item/tool/wrench menu: Load
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Unlatch
-human|/obj/item/tool/wrench menu: Vehicle item
-human|/obj/item/tool/wrench click: Click: Vehicle item
-human|/obj/item/tool/wirecutters menu: Climb
-human|/obj/item/tool/wirecutters menu: Hit
-human|/obj/item/tool/wirecutters menu: Interaction train hand
-human|/obj/item/tool/wirecutters menu: Interaction trolley tank drag
-human|/obj/item/tool/wirecutters menu: Load
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Unlatch
-human|/obj/item/tool/wirecutters menu: Vehicle item
-human|/obj/item/tool/wirecutters click: Click: Vehicle item
-human|/obj/item/multitool menu: Climb
-human|/obj/item/multitool menu: Hit
-human|/obj/item/multitool menu: Interaction train hand
-human|/obj/item/multitool menu: Interaction trolley tank drag
-human|/obj/item/multitool menu: Load
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Repaint
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Unlatch
-human|/obj/item/multitool menu: Vehicle item
-human|/obj/item/multitool click: Click: Repaint
-human|/obj/item/weldingtool menu: Climb
-human|/obj/item/weldingtool menu: Hit
-human|/obj/item/weldingtool menu: Interaction train hand
-human|/obj/item/weldingtool menu: Interaction trolley tank drag
-human|/obj/item/weldingtool menu: Load
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Unlatch
-human|/obj/item/weldingtool menu: Use welder
-human|/obj/item/weldingtool menu: Vehicle item
-human|/obj/item/weldingtool click: Click: Use welder
-human|/obj/item/stack/cable_coil menu: Climb
-human|/obj/item/stack/cable_coil menu: Hit
-human|/obj/item/stack/cable_coil menu: Interaction train hand
-human|/obj/item/stack/cable_coil menu: Interaction trolley tank drag
-human|/obj/item/stack/cable_coil menu: Load
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Unlatch
-human|/obj/item/stack/cable_coil menu: Vehicle item
-human|/obj/item/stack/cable_coil click: Click: Vehicle item
-human|/obj/item/stack/material/steel menu: Climb
-human|/obj/item/stack/material/steel menu: Hit
-human|/obj/item/stack/material/steel menu: Interaction train hand
-human|/obj/item/stack/material/steel menu: Interaction trolley tank drag
-human|/obj/item/stack/material/steel menu: Load
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Unlatch
-human|/obj/item/stack/material/steel menu: Vehicle item
-human|/obj/item/stack/material/steel click: Click: Vehicle item
-human|/obj/item/card/id menu: Climb
-human|/obj/item/card/id menu: Hit
-human|/obj/item/card/id menu: Interaction train hand
-human|/obj/item/card/id menu: Interaction trolley tank drag
-human|/obj/item/card/id menu: Load
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Unlatch
-human|/obj/item/card/id menu: Vehicle item
-human|/obj/item/card/id click: Click: Vehicle item
-human|/obj/item menu: Climb
-human|/obj/item menu: Hit
-human|/obj/item menu: Interaction train hand
-human|/obj/item menu: Interaction trolley tank drag
-human|/obj/item menu: Load
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Unlatch
-human|/obj/item menu: Vehicle item
-human|/obj/item click: Click: Vehicle item
-human|/obj/item/card/emag menu: Climb
-human|/obj/item/card/emag menu: Hit
-human|/obj/item/card/emag menu: Interaction train hand
-human|/obj/item/card/emag menu: Interaction trolley tank drag
-human|/obj/item/card/emag menu: Load
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Unlatch
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Vehicle item
-human|/obj/item/card/emag click: Click: Use
-human|/obj/item/reagent_containers/glass menu: Climb
-human|/obj/item/reagent_containers/glass menu: Fill container
-human|/obj/item/reagent_containers/glass menu: Hit
-human|/obj/item/reagent_containers/glass menu: Interaction train hand
-human|/obj/item/reagent_containers/glass menu: Interaction trolley tank drag
-human|/obj/item/reagent_containers/glass menu: Load
-human|/obj/item/reagent_containers/glass menu: Move To Top
-human|/obj/item/reagent_containers/glass menu: Open or close the lid
-human|/obj/item/reagent_containers/glass menu: Set transfer amount
-human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/reagent_containers/glass menu: Unlatch
-human|/obj/item/reagent_containers/glass menu: Vehicle item
-human|/obj/item/reagent_containers/glass click: Click: Fill container
-human|/obj/item/pen menu: Climb
-human|/obj/item/pen menu: Hit
-human|/obj/item/pen menu: Interaction train hand
-human|/obj/item/pen menu: Interaction trolley tank drag
-human|/obj/item/pen menu: Load
-human|/obj/item/pen menu: Move To Top
-human|/obj/item/pen menu: Relabel
-human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/pen menu: Unlatch
-human|/obj/item/pen menu: Vehicle item
-human|/obj/item/pen click: Click: Relabel
+@obj.vehicle human|/obj/item/tool/screwdriver
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/tool/crowbar
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/tool/wrench
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/tool/wirecutters
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/multitool
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
+-click: Click: Vehicle item
++0 menu: Climb
++3 menu: Interaction trolley tank drag
++6 menu: Repaint
++10 click: Click: Repaint
+@obj.vehicle human|/obj/item/weldingtool
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/stack/cable_coil
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/stack/material/steel
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/card/id
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj.vehicle human|/obj/item/card/emag
+-menu: Insert key
+-menu: Remove key
+-menu: Start engine
+-menu: Stop engine (refused: The engine is already stopped.)
++0 menu: Climb
++3 menu: Interaction trolley tank drag
+@obj human|/obj/item/reagent_containers/glass
+-menu: Eject Beaker
+-menu: Insert container
+-menu: Use
+-click: Click: Insert container
++0 menu: Climb
++1 menu: Fill container
++2 menu: Hit
++3 menu: Interaction train hand
++4 menu: Interaction trolley tank drag
++5 menu: Load
++10 menu: Unlatch
++11 menu: Vehicle item
++12 click: Click: Fill container
+@obj human|/obj/item/pen
+-menu: Rename
+-click: Click: Rename
++0 menu: Climb
++1 menu: Hit
++2 menu: Interaction train hand
++3 menu: Interaction trolley tank drag
++4 menu: Load
++6 menu: Relabel
++8 menu: Unlatch
++9 menu: Vehicle item
++10 click: Click: Relabel
 keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, use_crowbar, use_screwdriver, use_welder, vehicle_item
-

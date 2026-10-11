@@ -1,102 +1,59 @@
-human|none menu: Move To Top
-human|none menu: Pick up
-human|none menu: Remove Area Colors (refused: You can't do that.)
-human|none menu: Show Area Colors (refused: You can't do that.)
-human|none menu: Show Room Colors (refused: You can't do that.)
-human|none menu: Toggle Digestable (refused: You can't do that.)
-human|none click: Click: Pick up
-robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Move To Top
-robot|none menu: Pick up
-robot|none menu: Remove Area Colors (refused: You can't do that.)
-robot|none menu: Show Area Colors (refused: You can't do that.)
-robot|none menu: Show Room Colors (refused: You can't do that.)
-robot|none menu: Toggle Digestable (refused: You can't do that.)
-robot|none click: Click: Pick up
-ai|none menu: Equip (refused: not possible right now)
-ai|none click: nothing
-ghost|none menu: Move To Top (refused: You can't reach that.)
-ghost|none menu: Remove Area Colors (refused: You can't do that.)
-ghost|none menu: Show Area Colors (refused: You can't do that.)
-ghost|none menu: Show Room Colors (refused: You can't do that.)
-ghost|none menu: Toggle Digestable (refused: You can't reach that.)
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/multitool menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/multitool menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/card/id menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/card/id menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/kit menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/kit menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit click: Click: Customise
-human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/storage menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/storage menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Collect
-human|/obj/item/areaeditor menu: Add material
-human|/obj/item/areaeditor menu: Move To Top
-human|/obj/item/areaeditor menu: Remove Area Colors (refused: You can't do that.)
-human|/obj/item/areaeditor menu: Show Area Colors (refused: You can't do that.)
-human|/obj/item/areaeditor menu: Show Room Colors (refused: You can't do that.)
-human|/obj/item/areaeditor menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/areaeditor click: Click: Add material
+@obj human|none
++2 menu: Remove Area Colors (refused: You can't do that.)
++3 menu: Show Area Colors (refused: You can't do that.)
++4 menu: Show Room Colors (refused: You can't do that.)
+@obj robot|none
++3 menu: Remove Area Colors (refused: You can't do that.)
++4 menu: Show Area Colors (refused: You can't do that.)
++5 menu: Show Room Colors (refused: You can't do that.)
+@obj.item ai|none
+@obj.item ghost|none
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/tool/crowbar
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/tool/wrench
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/tool/wirecutters
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/multitool
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/weldingtool
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/stack/cable_coil
++2 menu: Remove Area Colors (refused: You can't do that.)
++3 menu: Show Area Colors (refused: You can't do that.)
++4 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/stack/material/steel
++1 menu: Remove Area Colors (refused: You can't do that.)
++2 menu: Show Area Colors (refused: You can't do that.)
++3 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/card/id
++2 menu: Remove Area Colors (refused: You can't do that.)
++3 menu: Show Area Colors (refused: You can't do that.)
++4 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/kit
++2 menu: Remove Area Colors (refused: You can't do that.)
++3 menu: Show Area Colors (refused: You can't do that.)
++4 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/storage
++2 menu: Remove Area Colors (refused: You can't do that.)
++3 menu: Show Area Colors (refused: You can't do that.)
++4 menu: Show Room Colors (refused: You can't do that.)
+@obj human|/obj/item/areaeditor
 keys: add_charges, area_colors, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, read, remove_colors, room_colors, toggle_digestable
-

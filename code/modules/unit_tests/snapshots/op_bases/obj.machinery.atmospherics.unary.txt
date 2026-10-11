@@ -1,0 +1,5 @@
+human|/obj/item/multitool menu: Configure
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Configure

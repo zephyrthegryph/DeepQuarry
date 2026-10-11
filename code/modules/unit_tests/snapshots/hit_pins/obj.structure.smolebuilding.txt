@@ -1,6 +1,6 @@
 blob | survives
 emag | nothing
-emp 1 | refresh_queued: 131071 -> 0
+emp 1 | refresh_queued: DEP_ALL -> 0
 emp 2 | nothing
 explosion 1 | deleted
 explosion 1 | turf: +/obj/structure/smoleruins x1

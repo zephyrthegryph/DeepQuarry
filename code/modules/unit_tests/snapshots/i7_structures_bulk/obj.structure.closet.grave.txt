@@ -3,8 +3,9 @@ human|none click: Click: Climb in
 robot|none menu: Climb in
 robot|none menu: Use
 robot|none click: Click: Climb in
-ai|none click: nothing
-ghost|none click: nothing
+@obj.structure ai|none
+@obj.structure.closet ghost|none
+-menu: Toggle Lock
 human|/obj/item/tool/screwdriver menu: Climb in
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Put down (refused: You can't put that down there.)
@@ -15,12 +16,13 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Put down (refused: You can't put that down there.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Climb in
-human|/obj/item/tool/wrench menu: Climb in
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Put down (refused: You can't put that down there.)
-human|/obj/item/tool/wrench menu: Toggle
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Toggle
+@obj.structure.closet human|/obj/item/tool/wrench
+-menu: Hit
+-menu: Toggle (refused: You can't reach the anchoring bolts when the door is closed!)
+-menu: Toggle Lock
++0 menu: Climb in
++2 menu: Put down (refused: You can't put that down there.)
++3 menu: Toggle
 human|/obj/item/tool/wirecutters menu: Climb in
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Put down (refused: You can't put that down there.)
@@ -37,12 +39,13 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Put down (refused: You can't put that down there.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Cut apart
-human|/obj/item/stack/cable_coil menu: Climb in
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Put down (refused: You can't put that down there.)
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Climb in
+@obj.structure.closet human|/obj/item/stack/cable_coil
+-menu: Hit
+-menu: Toggle Lock
+-click: Click: Toggle Lock
++0 menu: Climb in
++3 menu: Put down (refused: You can't put that down there.)
++5 click: Click: Climb in
 human|/obj/item/stack/material/steel menu: Climb in
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Put down (refused: You can't put that down there.)
@@ -54,14 +57,12 @@ human|/obj/item/card/id menu: Put down (refused: You can't put that down there.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Climb in
-human|/obj/item/storage/laundry_basket menu: Climb in
-human|/obj/item/storage/laundry_basket menu: Empty contents
-human|/obj/item/storage/laundry_basket menu: Empty into
-human|/obj/item/storage/laundry_basket menu: Move To Top
-human|/obj/item/storage/laundry_basket menu: Put down (refused: You can't put that down there.)
-human|/obj/item/storage/laundry_basket menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/laundry_basket menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage/laundry_basket click: Click: Empty into
+@obj human|/obj/item/storage/laundry_basket
+-menu: Hit
+-menu: Toggle Open
++0 menu: Climb in
++2 menu: Empty into
++4 menu: Put down (refused: You can't put that down there.)
 human|/obj/item menu: Climb in
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Put down (refused: You can't put that down there.)
@@ -74,4 +75,3 @@ human|/obj/item/shovel menu: Put down (refused: You can't put that down there.)
 human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/shovel click: Click: Fill in
 keys: anchor.toggle, break_out, climb_in, cut_apart, drag_buckle, empty_basket, fill, set_down, silicon_hand, smooth_over, stuff_grab, unearth
-
