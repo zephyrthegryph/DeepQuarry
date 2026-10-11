@@ -66,6 +66,46 @@ impl AssignmentFragment {
         })
     }
 
+    /// Recertify a source-neutral transported continuation using the SAME
+    /// producer invariants. Semantic/current-source admission remains external.
+    pub fn from_transport(code: ResolverProc) -> Result<Self, InitializerError> {
+        if !code.modified_instances.is_empty() {
+            return Err(invalid(
+                "transported fragment requires current modified recipes",
+            ));
+        }
+        Self::certify(code)
+    }
+
+    /// The assembly producer appends exactly one End. Validate its frame,
+    /// closed labels and current local source roster with the fragment validator.
+    pub fn validate_assembly_transport(
+        code: &ResolverProc,
+        root_count: usize,
+    ) -> Result<(), InitializerError> {
+        let mut continuation = code.clone();
+        match continuation.procedure.code.items.pop() {
+            Some(Item::Instruction(instruction))
+                if instruction.opcode == opcode::END && instruction.operands.is_empty() => {}
+            _ => return Err(invalid("transported assembly requires terminal End")),
+        }
+        for item in &mut continuation.procedure.code.items {
+            if let Item::Instruction(instruction) = item {
+                for word in &mut instruction.operands {
+                    if let Word::SourceFile(index) | Word::SourceLine(index) = word {
+                        if *index as usize >= root_count {
+                            return Err(invalid(
+                                "transported assembly has unissued source ordinal",
+                            ));
+                        }
+                        *index = 0;
+                    }
+                }
+            }
+        }
+        Self::from_transport(continuation).map(|_| ())
+    }
+
     /// Modified descriptors still require a current typed-expression reissuer.
     /// Fresh continuations support them; retained continuations decline them.
     pub fn can_retain(&self) -> bool {

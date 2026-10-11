@@ -9,6 +9,14 @@ pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
     census.finish()
 }
 pub(super) fn inspect_into(mut census: &mut HeapCensus, store: &InitializerAssemblies) {
+    store.visit_disk_storage(|address, len, capacity| {
+        census.buffer(
+            "initializer_assemblies.disk_transport",
+            address,
+            len,
+            capacity,
+        );
+    });
     store.visit_storage(|view| match view {
         View::Store { buckets, entries } => {
             census.owner("initializer_assemblies.index").observed_items += entries as u64;
@@ -72,7 +80,9 @@ impl HeapCensus {
             return;
         }
         match inputs.as_ref() {
-            Inputs::Modified { canonical, .. } => { self.slice(owner, canonical, true); }
+            Inputs::Modified { canonical, .. } => {
+                self.slice(owner, canonical, true);
+            }
             Inputs::Fragment(input) => {
                 match &input.write.value {
                     dm_ir::InitializerValue::Expression(value) => self.expression(owner, value),

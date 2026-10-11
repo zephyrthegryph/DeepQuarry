@@ -11,6 +11,8 @@ mod engine_payload;
 mod idle;
 #[path = "runner_host_idle_census.rs"]
 mod idle_census;
+#[path = "runner_host_initializers.rs"]
+mod initializers;
 #[path = "runner_host_memo.rs"]
 mod memo;
 #[path = "runner_query_snapshot.rs"]
@@ -358,22 +360,12 @@ impl BuildHost {
         publishable: bool,
     ) -> Option<crate::lowering_memo::ProcedureMemo> {
         if self.memo.is_none() {
-            return disk.map(|snapshot| {
-                let mut memo = crate::lowering_memo::ProcedureMemo::with_lazy_disk_only(
-                    policy,
-                    Arc::clone(&snapshot),
-                );
-                // A one-shot request owns this facade; neither disk handles nor
-                // current source authority escape into daemon resident state.
-                if let Some(engine) = self.engine.as_ref() {
-                    memo.abi = Some(Arc::new(crate::driver_facts::AbiArtifacts::with_disk(
-                        engine.abi_engine_owner(),
-                        snapshot,
-                        policy,
-                    )));
-                }
-                memo
-            });
+            return Some(initializers::one_shot(
+                policy,
+                disk,
+                publishable,
+                self.engine.as_ref(),
+            ));
         }
         if self
             .procedures
@@ -776,9 +768,12 @@ mod tests {
         );
         let changed = host.procedure_memo(2, None, true).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &changed.values));
-        assert!(BuildHost::one_shot()
-            .procedure_memo(1, None, true)
-            .is_none());
+        let mut one_shot = BuildHost::one_shot();
+        let request = one_shot.procedure_memo(1, None, true).unwrap();
+        assert!(request.initializer_fragments.is_some());
+        assert!(request.initializer_assemblies.is_some());
+        assert!(one_shot.procedures.is_none());
+        assert!(one_shot.initializer_fragments.is_none());
     }
     #[test]
     fn retained_requests_reuse_physical_workers_and_count_switch_replaces_them() {
@@ -809,10 +804,14 @@ mod tests {
         assert_eq!(execution.run(worker_ids).unwrap().len(), 1);
     }
     #[test]
-    fn one_shot_without_disk_has_no_memo_and_engine_capture_does_not_enable_it() {
+    fn one_shot_without_disk_has_no_expansion_memo_or_retained_procedure_owner() {
         let mut host = BuildHost::one_shot();
         assert!(host.expansion_memo(None).is_none());
         capture(&mut host, BTreeMap::new());
+        let request = host.procedure_memo(1, None, true).unwrap();
+        assert!(request.initializer_fragments.is_some());
+        assert!(request.initializer_assemblies.is_some());
+        assert!(host.procedures.is_none());
         assert!(host.expansion_memo(None).is_none());
         host.clear_regions();
         assert!(host.expansion_memo(None).is_none());

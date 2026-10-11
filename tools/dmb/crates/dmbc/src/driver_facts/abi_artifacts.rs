@@ -21,6 +21,7 @@ pub(crate) struct UnitArtifact {
 pub(super) mod batch;
 #[path = "abi_disk.rs"]
 mod disk;
+pub(crate) use disk::{admit_initializer_engine_bucket, initializer_engine_record};
 pub(crate) enum Artifact {
     Unit(Arc<UnitArtifact>),
     Batch(Arc<batch::Recipe>),

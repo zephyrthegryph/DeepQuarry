@@ -61,7 +61,7 @@ struct HelperWire {
     body: CodeWire,
 }
 #[derive(Serialize, Deserialize)]
-struct CodeWire {
+pub(crate) struct CodeWire {
     #[serde(with = "simple_proc_wire")]
     code: dm_codegen_byond::SimpleProc,
     slots: Vec<(SymRef, SymbolId, SymbolId, SymbolId)>,
@@ -72,7 +72,7 @@ struct CodeWire {
     modified: Vec<(SymRef, private::DescriptorWire)>,
 }
 impl CodeWire {
-    fn capture(code: &ResolverProc) -> Self {
+    pub(crate) fn capture(code: &ResolverProc) -> Self {
         Self {
             code: code.procedure.clone(),
             slots: code
@@ -95,7 +95,23 @@ impl CodeWire {
                 .collect(),
         }
     }
-    fn rehydrate<R: Resolver>(self, host: &R, debug_count: usize) -> Option<ResolverProc> {
+    pub(crate) fn source_neutral_initializer(&self) -> bool {
+        let mut resource_reference = false;
+        // Includes nested variable/value/switch operands, not only side tables.
+        self.code.code.for_each_reference(|reference| {
+            resource_reference |= matches!(reference, SymRef::Resource(_));
+        });
+        !resource_reference
+            && self.modified.is_empty()
+            && self.code.warnings.is_empty()
+            && self.resources.is_empty()
+            && self.code.resources.is_empty()
+    }
+    pub(crate) fn rehydrate<R: Resolver>(
+        self,
+        host: &R,
+        debug_count: usize,
+    ) -> Option<ResolverProc> {
         if self.code.warnings.iter().any(|warning| {
             !crate::procedure_warnings::valid_receipt(warning, debug_count, |id| {
                 self.code
@@ -925,3 +941,6 @@ pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool 
                     && verification_code_equal(&a.code, &b.code)
             })
 }
+
+#[path = "lowering_memo_wire_initializer.rs"]
+pub(crate) mod initializer;

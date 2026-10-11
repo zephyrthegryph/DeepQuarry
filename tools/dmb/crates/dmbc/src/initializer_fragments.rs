@@ -18,6 +18,7 @@ mod modified;
 pub(crate) mod verify;
 
 pub struct InitializerFragments {
+    disk: Option<Arc<super::disk::Transport>>,
     values: receipts::Store<RetainedFragment>,
     roster: std::sync::Mutex<(Vec<Arc<[u8]>>, Vec<Arc<[u8]>>)>,
     pub hits: AtomicU64,
@@ -82,6 +83,7 @@ impl RetainedFragment {
 impl Default for InitializerFragments {
     fn default() -> Self {
         Self {
+            disk: None,
             values: receipts::Store::current_revision(),
             roster: Default::default(),
             hits: AtomicU64::new(0),
@@ -152,8 +154,26 @@ fn semantic_key(
     )
 }
 impl InitializerFragments {
+    pub(crate) fn with_disk_transport(mut self, disk: Arc<super::disk::Transport>) -> Self {
+        self.disk = Some(disk);
+        self
+    }
+    pub(super) fn configure_disk(
+        &self,
+        context: Option<crate::initializer_policy::ParallelEvaluator<'_>>,
+    ) {
+        if let Some(disk) = &self.disk {
+            disk.configure(context);
+        }
+    }
+    pub(crate) fn visit_disk_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        if let Some(disk) = &self.disk {
+            disk.visit_storage(visit);
+        }
+    }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         Arc::new(Self {
+            disk: self.disk.clone(),
             values: self.values.for_request(publishable),
             roster: Default::default(),
             hits: AtomicU64::new(0),
@@ -247,14 +267,43 @@ impl InitializerFragments {
             resolver: host,
         };
         // No original receipt allocation or producer work when verification is off.
-        let accepted = verify_hit
+        let mut accepted = verify_hit
             .then(|| self.values.lookup_accepted(&key.key, &admission_host))
             .flatten();
-        let candidate = if verify_hit {
+        let mut candidate = if verify_hit {
             accepted.as_ref().map(|value| Arc::clone(&value.value))
         } else {
             self.values.lookup(&key.key, &admission_host)
         };
+        if candidate.is_none() {
+            if let Some((code, semantic_reads)) = self
+                .disk
+                .as_ref()
+                .and_then(|disk| disk.lookup(key, &[root], host))
+            {
+                if let Ok(code) = AssignmentFragment::from_transport(code) {
+                    self.values.insert_with(
+                        Arc::clone(&key.key),
+                        receipts::reads(key, semantic_reads),
+                        Vec::new(),
+                        std::mem::size_of::<RetainedFragment>(),
+                        || RetainedFragment {
+                            code: RetainedCode::Assignment(code),
+                            recipes: Vec::new(),
+                            references: Vec::new(),
+                            root_indexes: Vec::new(),
+                        },
+                    );
+                    // Re-enter the SAME typed Input/read admission after transport.
+                    if verify_hit {
+                        accepted = self.values.lookup_accepted(&key.key, &admission_host);
+                        candidate = accepted.as_ref().map(|a| Arc::clone(&a.value));
+                    } else {
+                        candidate = self.values.lookup(&key.key, &admission_host);
+                    }
+                }
+            }
+        }
         if let Some(fragment) = candidate {
             let current = crate::lowering_memo::RecordingResolver::new(host);
             let captured = fragment
@@ -302,7 +351,11 @@ impl InitializerFragments {
             return Ok(None);
         };
         self.recomputed.fetch_add(1, Ordering::Relaxed);
-        let reads = receipts::reads(key, recorder.reads());
+        let semantic_reads = recorder.reads();
+        if let Some(disk) = &self.disk {
+            disk.stage(key, &[root], &semantic_reads, fragment.code());
+        }
+        let reads = receipts::reads(key, semantic_reads);
         let versions = receipts::versions(recorder.domain_receipts());
         let (stripped, captures) = fragment.clone().split_modified();
         let recipes = captures

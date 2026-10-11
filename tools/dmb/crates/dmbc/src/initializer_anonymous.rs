@@ -1,6 +1,6 @@
-//! Live one-shot anonymous initializer disk adapter. Source recipes remain global
-//! group transport here; migration to shared per-write fragment/assembly adapters
-//! is still required for no-daemon builds. This is not a second semantic producer.
+//! Compatibility adapter for explicitly constructed memos without typed stores.
+//! Production one-shot and retained factories both use shared per-write fragments
+//! and assemblies. This wrapper preserves existing standalone callers/tests.
 use super::*;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn lower<'a, R: Resolver>(

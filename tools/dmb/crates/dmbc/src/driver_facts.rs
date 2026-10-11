@@ -961,3 +961,5 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
 #[cfg(test)]
 #[path = "driver_facts/abi_body_release_tests.rs"]
 mod abi_body_release_tests;
+
+pub(crate) use abi_artifacts::{admit_initializer_engine_bucket, initializer_engine_record};

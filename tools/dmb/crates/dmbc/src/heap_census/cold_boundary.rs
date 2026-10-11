@@ -34,6 +34,14 @@ impl HeapCensus {
         }
         if let Some(store) = &memo.initializer_fragments {
             if self.arc_object("cold_boundary.fragment_store", store) {
+                store.visit_disk_storage(|address, len, capacity| {
+                    self.buffer(
+                        "cold_boundary.initializer_disk_transport",
+                        address,
+                        len,
+                        capacity,
+                    );
+                });
                 store.visit_key_roster(|ordinary, modified| {
                     for keys in [ordinary, modified] {
                         if self.vec_payload("cold_boundary.fragment_key_roster", keys) {

@@ -18,6 +18,10 @@ pub use fragments::InitializerFragments;
 #[path = "initializer_assemblies.rs"]
 mod assemblies;
 pub use assemblies::InitializerAssemblies;
+#[path = "initializer_disk.rs"]
+pub(crate) mod disk;
+#[path = "initializer_disk_recipe.rs"]
+mod disk_recipe;
 
 #[derive(Clone, Copy, Debug)]
 pub enum InitializerStage {
@@ -386,6 +390,18 @@ fn lower_plan<R: Resolver>(
     }
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
+    // Capture portable policy once, before parallel fragment/assembly consumers.
+    let disk_context = parallel
+        .map(|(context, _)| context)
+        .or_else(|| evaluator.parallel_evaluator());
+    if let Some(memo) = memo {
+        if let Some(store) = &memo.initializer_fragments {
+            store.configure_disk(disk_context);
+        }
+        if let Some(store) = &memo.initializer_assemblies {
+            store.configure_disk(disk_context);
+        }
+    }
     let fragment_store = memo.and_then(|memo| memo.initializer_fragments.as_deref());
     let assembly_store = memo.and_then(|memo| memo.initializer_assemblies.as_deref());
     let fragment_keys =

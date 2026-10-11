@@ -48,6 +48,7 @@ pub(super) fn current_keys(
 }
 
 pub struct InitializerAssemblies {
+    disk: Option<Arc<super::disk::Transport>>,
     values: receipts::Store<RetainedAssembly>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
@@ -109,6 +110,7 @@ impl<R: Resolver> Resolver for AssemblyHost<'_, R> {
 impl Default for InitializerAssemblies {
     fn default() -> Self {
         Self {
+            disk: None,
             values: receipts::Store::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
@@ -119,8 +121,26 @@ impl Default for InitializerAssemblies {
     }
 }
 impl InitializerAssemblies {
+    pub(crate) fn with_disk_transport(mut self, disk: Arc<super::disk::Transport>) -> Self {
+        self.disk = Some(disk);
+        self
+    }
+    pub(super) fn configure_disk(
+        &self,
+        context: Option<crate::initializer_policy::ParallelEvaluator<'_>>,
+    ) {
+        if let Some(disk) = &self.disk {
+            disk.configure(context);
+        }
+    }
+    pub(crate) fn visit_disk_storage(&self, visit: impl FnMut(usize, usize, usize)) {
+        if let Some(disk) = &self.disk {
+            disk.visit_storage(visit);
+        }
+    }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         Arc::new(Self {
+            disk: self.disk.clone(),
             values: self.values.for_request(publishable),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
@@ -226,16 +246,50 @@ impl InitializerAssemblies {
             binding: key,
             resolver: host,
         };
-        let accepted = verify
+        let mut accepted = verify
             .as_ref()
             .and_then(|_| self.values.lookup_accepted(&key.key, &admission_host));
-        let payload = match if verify.is_some() {
+        let mut payload = if verify.is_some() {
             accepted.as_ref().map(|value| Arc::clone(&value.value))
         } else {
             self.values.lookup(&key.key, &admission_host)
-        } {
-            Some(payload) => payload,
-            None => return Ok(None),
+        };
+        if payload.is_none() {
+            if let Some(disk) = &self.disk {
+                // Disk-only misses borrow current expressions to authenticate the
+                // complete classification recipe. Resident hits remain lazy.
+                let roots = (0..root_count).map(&mut root).collect::<Option<Vec<_>>>();
+                if let Some(roots) = roots {
+                    let refs = roots.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
+                    if let Some((code, semantic_reads)) = disk.lookup(key, &refs, host) {
+                        let code = Arc::new(code);
+                        let encoding = Arc::new(crate::symbolic::InitializerEncoding::new(&code));
+                        self.values.insert_with(
+                            Arc::clone(&key.key),
+                            receipts::reads(key, semantic_reads),
+                            Vec::new(),
+                            std::mem::size_of::<RetainedAssembly>(),
+                            || RetainedAssembly {
+                                code,
+                                encoding,
+                                recipes: Vec::new(),
+                                root_indexes: Vec::new(),
+                                references: Vec::new(),
+                                root_count,
+                            },
+                        );
+                        if verify.is_some() {
+                            accepted = self.values.lookup_accepted(&key.key, &admission_host);
+                            payload = accepted.as_ref().map(|a| Arc::clone(&a.value));
+                        } else {
+                            payload = self.values.lookup(&key.key, &admission_host);
+                        }
+                    }
+                }
+            }
+        }
+        let Some(payload) = payload else {
+            return Ok(None);
         };
         if root_count != payload.root_count || payload.recipes.len() != payload.root_indexes.len() {
             return Ok(None);
@@ -350,7 +404,12 @@ impl InitializerAssemblies {
             stripped.modified_instances.clear();
             std::sync::Arc::new(stripped)
         };
-        let reads = receipts::reads(key, recorder.reads());
+        let semantic_reads = recorder.reads();
+        if let Some(disk) = &self.disk {
+            let roots = roots.iter().map(|root| root.value).collect::<Vec<_>>();
+            disk.stage(key, &roots, &semantic_reads, code);
+        }
+        let reads = receipts::reads(key, semantic_reads);
         let versions = receipts::versions(recorder.domain_receipts());
         // This store retains the current roster without a byte admission budget.
         // Full resident ownership is measured only by the opt-in census.

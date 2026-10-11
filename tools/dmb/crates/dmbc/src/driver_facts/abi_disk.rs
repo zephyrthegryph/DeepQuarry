@@ -73,6 +73,51 @@ struct UnitWire {
     abi: AbiWire,
     reads: Vec<(ResolveQuery, Vec<u8>)>,
 }
+/// Shared exact engine-proof record format used by ABI and initializer transport.
+/// The hash locates a bucket; callers must compare this complete payload before
+/// admitting any associated unit. No process-local identity is restored.
+pub(crate) fn initializer_engine_record(
+    engine: &crate::runner_host::EnginePayload,
+    policy: u128,
+    evaluator_policy: &[u8],
+) -> Option<dm_cache::Record> {
+    let (bytes, schema, bootstrap, compiler) = engine.disk_abi_authority();
+    if bytes != include_bytes!("../../../../fixtures/native_template.bin") {
+        return None;
+    }
+    let proof = EngineProof {
+        bytes: bytes.to_vec(),
+        schema,
+        bootstrap,
+        compiler,
+        pure_policy: Some(evaluator_policy.to_vec()),
+    };
+    let bytes = dm_wire::encode(ENGINE_SCHEMA, &proof).ok()?;
+    let mut locator = policy.to_le_bytes().to_vec();
+    locator.extend_from_slice(&bytes);
+    Some(dm_cache::Record {
+        key: dm_cache::RecordKey {
+            stage: 10,
+            version: VERSION,
+            content: xxhash_rust::xxh3::xxh3_128(&locator),
+        },
+        symbols: Vec::new(),
+        payload: bytes.into(),
+    })
+}
+pub(crate) fn admit_initializer_engine_bucket(
+    bytes: &[u8],
+    expected: &[u8],
+) -> Result<bool, String> {
+    let variants = dm_cache::decode_variants(bytes)?;
+    // Type every row before a matching row is accepted.
+    let decoded = variants
+        .iter()
+        .map(|row| dm_wire::decode::<EngineProof>(ENGINE_SCHEMA, row, 32 * LIMIT))
+        .collect::<Result<Vec<_>, _>>()?;
+    let current: EngineProof = dm_wire::decode(ENGINE_SCHEMA, expected, 32 * LIMIT)?;
+    Ok(decoded.iter().any(|old| old == &current))
+}
 pub(super) struct Transport {
     disk: Arc<LazyDisk>,
     policy: u128,
