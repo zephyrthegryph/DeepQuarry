@@ -1174,5 +1174,15 @@
     "passed": 25,
     "failed": 0,
     "scope": "Shared fresh insertion two, qualified admission five, full targeted classification fourteen (including both formerly failing current-target/owner tests), modifier two, startup allocation/final one and inventory one. Build260.344s reaped under4GB, peak Job2,993,147,904 bytes. Does not validate later projection/compact changes or full runtime/performance gates."
+  },
+  "projection_compact_f5_focused": {
+    "source_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "source_archive_sha256": "debdc2f9b6fd72e476deb25848001c8d8d7374c63b32df68dfb9260a45ecd8fd",
+    "failed_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172558-8122068d-job-cargo.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-172738-1e67769c-job-cargo.json",
+    "focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-173043-4cdbbc1c-focused.json",
+    "passed": 19,
+    "failed": 0,
+    "scope": "Nine complete retained projection fixtures and ten compact disk fixtures passed. First build caught branch return mismatch, fixed f5. Corrected177.703s build reaped under4GB. Source fixes include rejected local default refresh and mandatory own declaration receipt checks. No runtime/performance/mapped-word migration gate claim."
   }
 }
