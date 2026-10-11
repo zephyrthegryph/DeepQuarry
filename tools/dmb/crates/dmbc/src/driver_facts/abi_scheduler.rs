@@ -39,7 +39,6 @@ pub(super) fn admitted(
     };
     store.store.enable_incidence();
     let mut candidates = BTreeMap::new();
-    let mut changed_domains = BTreeSet::new();
     let Ok(Some(current_roster)) = frontend.callable_abi_roster() else {
         return BTreeMap::new();
     };
@@ -111,26 +110,6 @@ pub(super) fn admitted(
                 );
             }
         });
-    for candidate in candidates.values() {
-        let versions = &candidate.versions;
-        for (domain, previous) in versions.iter() {
-            if let Domain::Semantic(domain) = domain {
-                let now = admission
-                    .map(|request| request.current_version(&Domain::Semantic(*domain)))
-                    .unwrap_or_else(|| evaluator.resolver.domain_version(*domain));
-                if now.is_some_and(|now| now != *previous) {
-                    changed_domains.insert(Domain::Semantic(*domain));
-                }
-            }
-        }
-    }
-    let mut dirty_keys = BTreeSet::new();
-    store.store.visit_affected(
-        &changed_domains.into_iter().collect::<Vec<_>>(),
-        |key, _| {
-            dirty_keys.insert(key.clone());
-        },
-    );
     let mut layouts = HashMap::new();
     for entry in entries {
         let identity = identity(entry.identity);
@@ -154,15 +133,10 @@ pub(super) fn admitted(
     let mut qualified_ordinals = BTreeSet::new();
     let mut accepted = BTreeMap::new();
     let mut dirty = BTreeSet::new();
-    // Incidence prioritizes possibly changed receipts; it never establishes
-    // semantic invalidation. Coarse version changes still replay exact answers.
-    let encounter = entries.iter().enumerate();
-    let (affected, remaining): (Vec<_>, Vec<_>) = encounter.partition(|(_, entry)| {
-        dirty_keys.contains(&abi_artifacts::observations::locator(identity(
-            entry.identity,
-        )))
-    });
-    for (ordinal, entry) in affected.into_iter().chain(remaining) {
+    // The shared incidence subscription capability selects qualified candidates.
+    // Do not rebuild a second coarse domain-delta hint by walking every unit's
+    // version array. Uncovered rows still replay their exact current receipts.
+    for (ordinal, entry) in entries.iter().enumerate() {
         let identity = identity(entry.identity);
         let key = abi_artifacts::observations::locator(identity);
         let candidate = candidates.get(&key);
