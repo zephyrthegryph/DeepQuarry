@@ -26,12 +26,16 @@ TRACKED(/obj/item/multitool/ai_detector, sensing)
 
 CAPABILITIES(/obj/item/multitool/ai_detector)
 	every(2 SECONDS, then(PROC_REF(sense_step)), when = nameof(sensing))
+	derives(nameof(range_alert), PROC_REF(view_range))
+	derives(nameof(range_warning), PROC_REF(near_range))
 
-/obj/item/multitool/ai_detector/Initialize(mapload)
-	. = ..()
-	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
-	range_alert = world.view
-	range_warning = world.view * 2
+/// It turns red within the AI's view (derives(), at init: world.view hardly ever changes, but why not be futureproof anyways?).
+/obj/item/multitool/ai_detector/proc/view_range()
+	return world.view
+
+/// And yellow within twice that, when the AI's eye is near.
+/obj/item/multitool/ai_detector/proc/near_range()
+	return world.view * 2
 
 /obj/item/multitool/ai_detector/proc/sense_step(datum/act/A)
 	if(!ismob(loc))

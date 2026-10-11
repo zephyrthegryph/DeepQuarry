@@ -19,11 +19,11 @@
 		/obj/item/clothing/head/soft)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/cargotech)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/cargotech/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(75))
 		. += /obj/item/storage/backpack
 	else
@@ -65,11 +65,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/cargotech)
 		/obj/item/clothing/shoes/boots/winter/supply)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/quartermaster)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/quartermaster/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(75))
 		. += /obj/item/storage/backpack
 	else
@@ -102,11 +102,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/quartermaster)
 		/obj/item/storage/sample_container)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/miner)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/miner/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/industrial
 	else
@@ -134,11 +134,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/miner)
 		/obj/item/stack/marker_beacon/thirty)
 
 CAPABILITIES(/obj/structure/closet/lumber)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/lumber/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/industrial
 	else

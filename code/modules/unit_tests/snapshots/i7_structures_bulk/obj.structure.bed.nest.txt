@@ -7,63 +7,13 @@ robot|none click: Click: Use
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/tool/crowbar
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/tool/wrench
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/multitool
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/weldingtool
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Disassemble
--click: Click: Disassemble
-+2 menu: Melt
-+5 menu: Use
-+6 click: Click: Use
 @obj.structure.bed human|/obj/item/stack/material/steel
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
 @obj.structure.bed human|/obj/item/card/id
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+5 menu: Use
-+6 click: Click: Use
 @obj.structure.bed human|/obj/item
--menu: Disassemble
--click: Click: Disassemble
-+1 menu: Melt
-+4 menu: Use
-+5 click: Click: Use
-keys: hand, item, melee_hit, melt
+keys: hand, item, melee_hit, melt, rotatable.turn_around

@@ -22,5 +22,5 @@
 @obj.item.stack human|/obj/item/kit
 @obj.item.stack human|/obj/item/storage
 @obj human|/obj/item/gripper
-@obj.item human|/obj/item/stack
+@obj human|/obj/item/stack
 keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable, ui_open, use_welder

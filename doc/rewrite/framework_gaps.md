@@ -709,3 +709,14 @@ total was raised. `ALLOW(init/CODE)` still has to name a reason code, but it no 
 an override goes to a form or to a named `setup(PROC_REF(x))` hook (`name_prefix(prefix)` for the "empty [name]" pattern), and the override
 is deleted with its last line. setup() hooks run when the instance's `Initialize()` chain has returned, before `after_init()`
 (`code/engine/lifeforms/setup.dm`).
+
+## O. Objects init burn-down forms (rewrite/init-objects, 2026-10-11)
+
+| ID | Form | Change |
+|---|---|---|
+| IO1 (DONE) | `initial_contents(nameof(type_var) \| pick_one(list) \| PROC_REF(x), chance = p)` (`code/engine/lifeforms/contents.dm`) | Rolled starting contents: x(datum/roller/R) answers a type, a list of types, `type = count`, or instances it made in nullspace; every draw comes from the holder's stream. Replaced the closets', kits', toolboxes', wallets' and crates' `if(prob()) new X(src)` and `switch(pick())` blocks. Tested by `dq_lifeform_rolled_contents`. |
+| IO2 (DONE) | `lives_for(nameof(var) \| delay)` (`code/engine/lifeforms/lifetimes.dm`) | The holder lapses that long after its init is complete; a var that is 0 when due means never. Replaced `if(time_to_die) expire(time_to_die)` (temporary effects and visuals, smoke, confetti). A constant lifetime stays `lifecycle_lifetime`. Tested by `dq_lifeform_lives_for`. |
+| IO3 (DONE) | `rolls(ROLL_PIXEL, WALL_OFFSET(x, y), when = nameof(building))` (`code/__defines/engine/lifeforms.dm`, `roll_generate()`) | The wall-mount offset a thing built in play takes from its dir (mirrors, extinguisher cabinets, paintings). Four machinery and power sites (doorbell, frame, petrification, lightswitch) can use it. |
+| IO4 (DONE) | `GLOB.derives_running` teardown | `lifeform_destroy()` LAZYREMOVE()d it to null, so every `derives()` after the first holder with one ended runtimed ("bad index"). It is a plain `-=` now. |
+| IO5 (open) | `rolls()` on a var whose compiled default is a list | `roll_target_untouched()` compares with `initial()`, which is null for a list var, so such a roll never runs. The closets' `rolls(nameof(starts_with), ...)` silently did nothing; they roll their extras through `initial_contents(PROC_REF(...))` now, and the crates' rolled `starts_with` defaults to null. A list target should compare with the type's pristine list (state_type_list_default() answers it for latent-safe types) or the declaration should be refused. |
+| IO6 (open) | A `setup()`/`after_init()` handler naming a proc inherited from a far ancestor (`PROC_REF(update_transform)` on `/obj/structure/flora`) | It failed to compile in the generated `declared_entries()` ("undefined type path"); a local wrapper proc works. dmb-check did not catch it. |

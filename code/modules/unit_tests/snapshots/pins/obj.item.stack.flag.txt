@@ -37,7 +37,7 @@
 +1 menu: Knock down
 +5 menu: Use
 @obj human|/obj/item/gripper
-@obj.item human|/obj/item/stack
+@obj human|/obj/item/stack
 +1 menu: Knock down
 +5 menu: Use
 @obj.item.stack human|/obj/item

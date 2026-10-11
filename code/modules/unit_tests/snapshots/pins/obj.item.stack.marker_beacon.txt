@@ -28,6 +28,6 @@
 @obj.item.stack human|/obj/item/storage
 +1 menu: Color
 @obj human|/obj/item/gripper
-@obj.item human|/obj/item/stack
+@obj human|/obj/item/stack
 +0 menu: Color
 keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, place, recolor, split, toggle_digestable

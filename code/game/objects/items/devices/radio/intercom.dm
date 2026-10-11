@@ -20,31 +20,12 @@
 TRACKED(/obj/item/radio/intercom, on)
 TRACKED(/obj/item/radio/intercom, wiresexposed)
 
-TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
-
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
 	if(A)
 		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
 	set_on(A?.powered(EQUIP))
-	switch(TYPE_TABLE_GET(src, intercom_channel_setup))
-		if(/obj/item/radio/intercom/department/medbay)
-			internal_channels = GLOB.default_medbay_channels.Copy()
-		if(/obj/item/radio/intercom/department/security)
-			internal_channels = list(
-				num2text(PUB_FREQ) = list(),
-				num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
-			)
-		if(/obj/item/radio/intercom/entertainment)
-			internal_channels = list(
-				num2text(PUB_FREQ) = list(),
-				num2text(ENT_FREQ) = list()
-			)
-		if(/obj/item/radio/intercom/syndicate)
-			internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
-		if(/obj/item/radio/intercom/raider)
-			internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -113,15 +94,26 @@ CAPABILITIES(/obj/item/radio/intercom)
 
 /obj/item/radio/intercom/omni
 	name = "global announcer"
-/obj/item/radio/intercom/omni/Initialize(mapload)
-	channels = GLOB.radiochannels.Copy()
-	return ..()
 
-TYPE_TABLE(/obj/item/radio/intercom/department/medbay, intercom_channel_setup, /obj/item/radio/intercom/department/medbay)
+CAPABILITIES(/obj/item/radio/intercom/omni)
+	derives(nameof(channels), PROC_REF(all_channels))
 
-TYPE_TABLE(/obj/item/radio/intercom/department/security, intercom_channel_setup, /obj/item/radio/intercom/department/security)
+/// The global announcer speaks on every channel (derives(), at init).
+/obj/item/radio/intercom/omni/proc/all_channels()
+	return GLOB.radiochannels.Copy()
 
-TYPE_TABLE(/obj/item/radio/intercom/entertainment, intercom_channel_setup, /obj/item/radio/intercom/entertainment)
+/obj/item/radio/intercom/department/medbay/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
+
+/obj/item/radio/intercom/department/security/starting_channels()
+	return list(
+		num2text(PUB_FREQ) = list(),
+		num2text(SEC_I_FREQ) = list(ACCESS_SECURITY))
+
+/obj/item/radio/intercom/entertainment/starting_channels()
+	return list(
+		num2text(PUB_FREQ) = list(),
+		num2text(ENT_FREQ) = list())
 
 /obj/item/radio/intercom/syndicate
 	name = "illicit intercom"
@@ -130,7 +122,9 @@ TYPE_TABLE(/obj/item/radio/intercom/entertainment, intercom_channel_setup, /obj/
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-TYPE_TABLE(/obj/item/radio/intercom/syndicate, intercom_channel_setup, /obj/item/radio/intercom/syndicate)
+/obj/item/radio/intercom/syndicate/starting_channels()
+	. = ..()
+	.[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/raider
 	name = "illicit intercom"
@@ -139,7 +133,9 @@ TYPE_TABLE(/obj/item/radio/intercom/syndicate, intercom_channel_setup, /obj/item
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/radio/intercom/raider)
+/obj/item/radio/intercom/raider/starting_channels()
+	. = ..()
+	.[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
 /// Old attack_hand, and old attack_ai (the same body).
 /obj/item/radio/intercom/proc/interaction_hand(datum/act/op/A)
