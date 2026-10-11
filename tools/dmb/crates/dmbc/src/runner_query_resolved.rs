@@ -77,6 +77,31 @@ impl ResolvedContext {
                 &frontend.snapshot.tree,
             )
     }
+    pub(super) fn write_queries(
+        &self,
+        queries: &[crate::daemon::query::QueryItem],
+        output: &mut impl io::Write,
+    ) -> io::Result<()> {
+        let resolver = dm_tree::procedure_statics::StaticResolver::from_inventory(
+            &self.resolver,
+            Arc::clone(self.startup.static_inventory()),
+        )
+        .map_err(io::Error::other)?;
+        for query in queries {
+            crate::daemon::control::checkpoint()?;
+            dm_analysis::tree_export::write_queries_jsonl(
+                self.startup.plan().symbols.as_ref(),
+                &resolver,
+                [dm_analysis::tree_export::AnalysisQuery {
+                    subject: query.subject.as_deref(),
+                    query: query.query,
+                }],
+                output,
+            )
+            .map_err(io::Error::other)?;
+        }
+        Ok(())
+    }
     pub(super) fn query(
         &self,
         archive: &dm_tree::frontend::BodyArchive,

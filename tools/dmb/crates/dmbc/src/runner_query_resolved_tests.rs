@@ -59,6 +59,31 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     let archive = frontend.body_archive().unwrap();
     let declaration = frontend.bodies[0].declaration.0;
     let (abi, startup) = captured.expect("successful SAME analysis issued owners");
+    let static_plan = startup.procedure(frontend.bodies[0].declaration).unwrap();
+    let question = crate::daemon::query::QueryItem {
+        subject: Some("actual procedure static".into()),
+        query: dm_ir::ResolveQuery::ProcedureStatic {
+            procedure: static_plan.procedure,
+            name: static_plan.declarations[0].identity.name,
+        },
+    };
+    let mut expected_host = Vec::new();
+    let ordinary = dm_tree::procedure_statics::StaticResolver::from_inventory(
+        &resolver,
+        Arc::clone(startup.static_inventory()),
+    )
+    .unwrap();
+    dm_analysis::tree_export::write_queries_jsonl(
+        frontend.snapshot.tree.symbols(),
+        &ordinary,
+        [dm_analysis::tree_export::AnalysisQuery {
+            subject: question.subject.as_deref(),
+            query: question.query,
+        }],
+        &mut expected_host,
+    )
+    .unwrap();
+    drop(ordinary);
     let tree = Arc::clone(&frontend.snapshot.tree);
     let source_revision = dm_analysis::tree_export::source_revision(&frontend);
     let state = Arc::new(std::sync::Mutex::new(super::super::QueryState::default()));
@@ -71,7 +96,7 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     attempt.finish_analyzed();
     drop(attempt);
     drop(frontend);
-    let request = crate::daemon::query::QueryRequest {
+    let mut request = crate::daemon::query::QueryRequest {
         timeout_seconds: None,
         project: "project.dme".into(),
         defines: Default::default(),
@@ -88,8 +113,49 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         crate::daemon::query::evaluate_snapshot(&request, &tree, &state.lock().unwrap()).unwrap();
     let row: serde_json::Value = serde_json::from_str(answer.jsonl.trim()).unwrap();
     assert_eq!(row["captured_jsonl"].as_str().unwrap().as_bytes(), expected);
-    assert!(String::from_utf8(expected).unwrap().contains("shared"),
-        "the full ordinary oracle must retain the procedure static reference");
+    assert!(
+        String::from_utf8(expected).unwrap().contains("shared"),
+        "the full ordinary oracle must retain the procedure static reference"
+    );
+    request.source_queries = vec![crate::daemon::query::SourceQuery::ResolvedQueries {
+        queries: vec![question.clone()],
+    }];
+    let answer =
+        crate::daemon::query::evaluate_snapshot(&request, &tree, &state.lock().unwrap()).unwrap();
+    let row: serde_json::Value = serde_json::from_str(answer.jsonl.trim()).unwrap();
+    assert_eq!(
+        row["captured_jsonl"].as_str().unwrap().as_bytes(),
+        expected_host
+    );
+    assert!(String::from_utf8(expected_host)
+        .unwrap()
+        .contains("procedure_static"));
+    let mut stale = request.clone();
+    stale.expected_source_revision = Some("00000000000000000000000000000000".into());
+    assert_eq!(
+        crate::daemon::query::evaluate_snapshot(&stale, &tree, &state.lock().unwrap())
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidInput
+    );
+    let mut unpinned = request.clone();
+    unpinned.expected_source_revision = None;
+    assert_eq!(
+        crate::daemon::query::evaluate_snapshot(&unpinned, &tree, &state.lock().unwrap())
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidInput
+    );
+    let mut oversized = request.clone();
+    oversized.source_queries = vec![crate::daemon::query::SourceQuery::ResolvedQueries {
+        queries: vec![question; 129],
+    }];
+    assert_eq!(
+        crate::daemon::query::evaluate_snapshot(&oversized, &tree, &state.lock().unwrap())
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidInput
+    );
     assert_eq!(archive.len(), 1);
     state
         .lock()

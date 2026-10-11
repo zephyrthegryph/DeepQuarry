@@ -527,3 +527,49 @@ impl SourceSnapshot {
         output.write_all(b"\n")
     }
 }
+
+impl SourceSnapshot {
+    pub(crate) fn write_resolved_queries(
+        &self,
+        queries: &[crate::daemon::query::QueryItem],
+        tree: &dm_tree::SemanticTree,
+        output: &mut impl std::io::Write,
+    ) -> std::io::Result<()> {
+        use std::io::{self, Write};
+        if !self.matches_tree(tree) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "current compiler host tree differs",
+            ));
+        }
+        let context = self.resolved.as_ref().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                "current compiler resolver unavailable or pressure-evicted",
+            )
+        })?;
+        struct Bounded(Vec<u8>);
+        impl Write for Bounded {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                crate::daemon::control::checkpoint()?;
+                if bytes.len() > (192usize * 1024).saturating_sub(self.0.len()) {
+                    return Err(io::Error::other("resolved query rows exceed output budget"));
+                }
+                self.0.extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        let mut rows = Bounded(Vec::new());
+        context.write_queries(queries, &mut rows)?;
+        serde_json::to_writer(&mut *output, &serde_json::json!({
+            "row":"source_resolved_queries", "schema":"dm-session-source-query-v1",
+            "source_revision":format!("{:032x}",self.source_revision),
+            "semantic_revision":format!("{:032x}",tree.identity()), "complete":false,
+            "query_count":queries.len(), "captured_jsonl":String::from_utf8(rows.0).map_err(io::Error::other)?
+        })).map_err(io::Error::other)?;
+        output.write_all(b"\n")
+    }
+}

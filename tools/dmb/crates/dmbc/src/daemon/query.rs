@@ -30,6 +30,10 @@ pub struct QueryRequest {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SourceQuery {
+    /// SAME current compiler host facts; both semantic/source revisions required.
+    ResolvedQueries {
+        queries: Vec<QueryItem>,
+    },
     SemanticIntrinsicMembersPage {
         start: u32,
         limit: u32,
@@ -140,6 +144,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected_source.as_deref(),
             )?;
             validate_body_requests(&reply, &source_questions)?;
+            validate_resolved_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
             semantic_pages::validate_requested(&reply, &source_questions)?;
             Ok(reply)
@@ -147,6 +152,44 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
         super::protocol::Reply::Rejected(error) => Err(error.into()),
         _ => Err("unexpected read-only query reply".into()),
     }
+}
+fn validate_resolved_requests(reply: &QueryReply, questions: &[SourceQuery]) -> io::Result<()> {
+    let mut expected = questions.iter().filter_map(|question| match question {
+        SourceQuery::ResolvedQueries { queries } => Some(queries),
+        _ => None,
+    });
+    for line in reply.jsonl.lines() {
+        let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+        if row["row"] != "source_resolved_queries" {
+            continue;
+        }
+        let queries = expected
+            .next()
+            .ok_or_else(|| io::Error::other("unrequested resolved batch"))?;
+        let nested = row["captured_jsonl"]
+            .as_str()
+            .ok_or_else(|| io::Error::other("missing resolved batch"))?;
+        if nested.lines().count() != queries.len() {
+            return Err(io::Error::other("resolved request count differs"));
+        }
+        for (line, query) in nested.lines().zip(queries) {
+            let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+            if row["query_wire"].as_str()
+                != Some(
+                    serde_json::to_string(&query.query)
+                        .map_err(io::Error::other)?
+                        .as_str(),
+                )
+                || row["subject"].as_str() != query.subject.as_deref()
+            {
+                return Err(io::Error::other("resolved request identity differs"));
+            }
+        }
+    }
+    if expected.next().is_some() {
+        return Err(io::Error::other("resolved batch missing"));
+    }
+    Ok(())
 }
 fn validate_body_requests(reply: &QueryReply, questions: &[SourceQuery]) -> io::Result<()> {
     let mut expected = questions.iter().filter_map(|q| match q {
@@ -216,6 +259,36 @@ fn validate_reply(
         }
         if row["row"] == "source_occurrences_page" || row["row"] == "source_body_contexts_page" {
             occurrence_pages::validate(&row, reply.source_revision.as_deref())?;
+            source_rows += 1;
+            continue;
+        }
+        if row["row"] == "source_resolved_queries" {
+            if row["schema"] != "dm-session-source-query-v1"
+                || row["source_revision"].as_str() != reply.source_revision.as_deref()
+                || row["semantic_revision"].as_str() != Some(reply.revision.as_str())
+                || row["complete"] != false
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "invalid current resolved query envelope",
+                ));
+            }
+            let nested = row["captured_jsonl"]
+                .as_str()
+                .ok_or_else(|| io::Error::other("missing resolved rows"))?;
+            let count = row["query_count"]
+                .as_u64()
+                .ok_or_else(|| io::Error::other("missing resolved count"))?;
+            if count == 0 || count > MAX_QUERIES as u64 || nested.lines().count() as u64 != count {
+                return Err(io::Error::other("invalid resolved row count"));
+            }
+            for line in nested.lines() {
+                let nested: serde_json::Value =
+                    serde_json::from_str(line).map_err(io::Error::other)?;
+                if nested["schema"] != "dm-resolved-query-v1" || nested["row"] != "resolved_query" {
+                    return Err(io::Error::other("invalid resolved row"));
+                }
+            }
             source_rows += 1;
             continue;
         }
@@ -307,7 +380,15 @@ impl QueryRequest {
     }
     pub(crate) fn validate(&self) -> io::Result<()> {
         self.timeout()?;
-        if self.queries.len().saturating_add(self.source_queries.len()) > MAX_QUERIES
+        let source_count = self
+            .source_queries
+            .iter()
+            .map(|query| match query {
+                SourceQuery::ResolvedQueries { queries } => queries.len(),
+                _ => 1,
+            })
+            .sum::<usize>();
+        if self.queries.len().saturating_add(source_count) > MAX_QUERIES
             || self.queries.iter().any(|query| {
                 query
                     .subject
@@ -319,6 +400,9 @@ impl QueryRequest {
                 io::ErrorKind::InvalidInput,
                 "query batch exceeds count or subject limit",
             ));
+        }
+        if self.source_queries.iter().any(|query| matches!(query, SourceQuery::ResolvedQueries { queries } if queries.is_empty() || queries.iter().any(|item| item.subject.as_ref().is_some_and(|subject| subject.len() > 256)))) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "resolved query batch is empty or subject exceeds limit"));
         }
         if self.source_queries.iter().any(|query| matches!(query, SourceQuery::OccurrencesPage { limit, .. } | SourceQuery::BodyContextsPage { limit, .. } if !(1..=128).contains(limit))) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "occurrence page limit must be 1..128"));
@@ -436,6 +520,10 @@ pub(crate) fn evaluate_snapshot(
         let snapshot = snapshot.ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "source snapshot unavailable")
         })?;
+        if let SourceQuery::ResolvedQueries { queries } = question {
+            snapshot.write_resolved_queries(queries, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::OccurrencesPage { start, limit } = question {
             snapshot.write_occurrences_page(*start, *limit, tree, &mut output)?;
             continue;
@@ -455,7 +543,8 @@ pub(crate) fn evaluate_snapshot(
         let (ordinal, provenance) = match question {
             SourceQuery::Occurrence { ordinal } => (*ordinal, false),
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
-            SourceQuery::BodyModel { .. }
+            SourceQuery::ResolvedQueries { .. }
+            | SourceQuery::BodyModel { .. }
             | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }
@@ -474,7 +563,7 @@ pub(crate) fn evaluate_snapshot(
     }
     Ok(QueryReply {
         schema: "dm-session-query-v2".into(), revision, complete: false,
-        coverage: "semantic tree and bounded revision-pinned semantic type/authored member-node/captured intrinsic roster selectors (intrinsic completeness explicit; inherited effective lookup uses parent links and Resolver, not an expanded roster) plus caller-selected issued declaration occurrences and source/definition spans; bounded previously captured compiler-selected references only; complete executable resolution, full macro traces and pinned resource/runtime host facts excluded".into(),
+        coverage: "semantic tree and bounded revision-pinned semantic type/authored member-node/captured intrinsic roster selectors (intrinsic completeness explicit; inherited effective lookup uses parent links and Resolver, not an expanded roster) plus caller-selected issued declaration occurrences and source/definition spans; bounded lazy compiler-selected references and explicitly source-pinned current compiler-host queries; full aggregate executable coverage and implicit external host reads remain excluded".into(),
         query_count: request.queries.len(), source_query_count: request.source_queries.len(), source_revision,
         snapshot_outcome: snapshot.map_or("semantic_snapshot_only", |snapshot| snapshot.outcome).into(),
         last_request_outcome: state.last_request_outcome.into(),
