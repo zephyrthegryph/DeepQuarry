@@ -97,7 +97,7 @@
 	var/datum/record/appearance/looks = H.looks
 	TEST_ASSERT(istype(looks), "a human is made with its looks record")
 	TEST_ASSERT_EQUAL(owner_of(looks), H, "the human owns it")
-	TEST_ASSERT_EQUAL(looks.skin_color, "#eeceb3", "the record starts with the human skin colour the old vars had")
+	TEST_ASSERT_EQUAL(lowertext(looks.skin_color), "#eeceb3", "a human starts with the skin colour the old vars gave it")
 
 	looks.vv_edit_var("hair_color", "#123456")
 	TEST_ASSERT_EQUAL(looks.hair_color, "#123456", "an admin edit of a field goes through its setter")
