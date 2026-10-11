@@ -1099,9 +1099,6 @@ init_lines	code/game/objects/effects/chem/foam.dm	update_nearby_tiles(1)
 init_lines	code/game/objects/effects/countdown.dm	attach(loc)
 init_lines	code/game/objects/effects/dark_growth.dm	if(check_glow && prob(5))
 init_lines	code/game/objects/effects/dark_growth.dm	add_glow()
-init_lines	code/game/objects/effects/dark_growth.dm	check_glow = !isspace(loc)
-init_lines	code/game/objects/effects/dark_growth.dm	if(isspace(loc))
-init_lines	code/game/objects/effects/dark_growth.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	if(!isturf(loc))
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/effects/decals/Cleanable/fuel.dm	if(!quiet_spill)
@@ -1200,7 +1197,6 @@ init_lines	code/game/objects/effects/landmarks.dm	if("tdomeadmin")
 init_lines	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 init_lines	code/game/objects/effects/landmarks.dm	if("tdomeobserve")
 init_lines	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
-init_lines	code/game/objects/effects/landmarks_events.dm	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
 init_lines	code/game/objects/effects/landmarks_poi.dm	SSpois.enqueue(src)
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	if(make_beams_on_init)
 init_lines	code/game/objects/effects/map_effects/beam_point.dm	create_beams()
@@ -1210,8 +1206,6 @@ init_lines	code/game/objects/effects/map_effects/effect_emitter.dm	effect_system
 init_lines	code/game/objects/effects/map_effects/effect_emitter.dm	configure_effects()
 init_lines	code/game/objects/effects/map_effects/portal.dm	find_lines()
 init_lines	code/game/objects/effects/mines.dm	register_dangerous_to_step()
-init_lines	code/game/objects/effects/mines.dm	if(camo_net)
-init_lines	code/game/objects/effects/mines.dm	alpha = 50
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
 init_lines	code/game/objects/effects/misc.dm	vis_contents += light_spot
@@ -1237,8 +1231,6 @@ init_lines	code/game/objects/effects/shared_particle_holder.dm	particles = new p
 init_lines	code/game/objects/effects/step_triggers.dm	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 init_lines	code/game/objects/effects/step_triggers.dm	if(mark.landmark_id == landmark_id)
 init_lines	code/game/objects/effects/step_triggers.dm	rel_set(src, nameof(the_landmark), mark)
-init_lines	code/game/objects/effects/step_triggers.dm	teleport_z = src.z //This is for use in gateways, so mappers can hard map the X and Y without worrying about going to brazil
-init_lines	code/game/objects/effects/step_triggers.dm	teleport_z = src.z
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	alpha = initial(alpha)
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	if(mimiced_atom)
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	name = mimiced_atom.name
@@ -1420,22 +1412,6 @@ init_lines	code/game/objects/items/weapons/inducer.dm	return INITIALIZE_HINT_QDE
 init_lines	code/game/objects/items/weapons/inducer.dm	set_charge(hume.nutrition)
 init_lines	code/game/objects/items/weapons/inducer.dm	set_maxcharge(initial(hume.nutrition))
 init_lines	code/game/objects/items/weapons/inducer.dm	expire(20 SECONDS)
-init_lines	code/game/objects/items/weapons/manuals.dm	dat = {"
-init_lines	code/game/objects/items/weapons/manuals.dm	<html><head>
-init_lines	code/game/objects/items/weapons/manuals.dm	</head>
-init_lines	code/game/objects/items/weapons/manuals.dm	<body>
-init_lines	code/game/objects/items/weapons/manuals.dm	<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)]Standard_Operating_Procedure&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
-init_lines	code/game/objects/items/weapons/manuals.dm	</body>
-init_lines	code/game/objects/items/weapons/manuals.dm	</html>
-init_lines	code/game/objects/items/weapons/manuals.dm	"}
-init_lines	code/game/objects/items/weapons/manuals.dm	dat = {"
-init_lines	code/game/objects/items/weapons/manuals.dm	<html><head>
-init_lines	code/game/objects/items/weapons/manuals.dm	</head>
-init_lines	code/game/objects/items/weapons/manuals.dm	<body>
-init_lines	code/game/objects/items/weapons/manuals.dm	<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)]Chain_of_Command&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
-init_lines	code/game/objects/items/weapons/manuals.dm	</body>
-init_lines	code/game/objects/items/weapons/manuals.dm	</html>
-init_lines	code/game/objects/items/weapons/manuals.dm	"}
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	if(!material)
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by its look
@@ -1480,17 +1456,6 @@ init_lines	code/game/objects/items/weapons/policetape.dm	var/obj/machinery/door/
 init_lines	code/game/objects/items/weapons/policetape.dm	if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 init_lines	code/game/objects/items/weapons/policetape.dm	afterattack(door, null, TRUE)
 init_lines	code/game/objects/items/weapons/policetape.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/first = TRUE
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	for(var/pet in pet_list)
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	if(first)
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	desc += " Contains: "
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	first = FALSE
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	else
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	desc += ", "
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/obj/item/reagent_containers/food/snacks/monkeycube/pet/wrapped/C = new(src)
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	C.name ="[pet] pet cube"
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	C.pet_path = pet_list[pet]
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	desc += "[pet]"
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	var/obj/item/pen/crayon/C = new(src)
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.variant = v
@@ -3895,13 +3860,6 @@ init_lines	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //
 init_lines	code/modules/mob/living/living.dm	rel_clear(src, nameof(hud_list))
 init_lines	code/modules/mob/living/living.dm	hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 init_lines	code/modules/mob/living/living.dm	make_hud_overlays()
-init_lines	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-init_lines	code/modules/mob/living/living.dm	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-init_lines	code/modules/mob/living/living.dm	dsma.alpha = 0
-init_lines	code/modules/mob/living/living.dm	dsma.plane = PLANE_LIGHTING
-init_lines	code/modules/mob/living/living.dm	dsma.blend_mode = BLEND_ADD
-init_lines	code/modules/mob/living/living.dm	dsoverlay.appearance = dsma
-init_lines	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 init_lines	code/modules/mob/living/living.dm	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
@@ -6910,8 +6868,6 @@ world_reads	code/modules/mob/living/carbon/brain/brain.dm	default_language = GLO
 world_reads	code/modules/mob/living/carbon/carbon.dm	default_language = GLOB.all_languages[species_language]
 world_reads	code/modules/mob/living/carbon/human/human.dm	for(var/category in GLOB.global_underwear.categories_by_name)
 world_reads	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-world_reads	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-world_reads	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 world_reads	code/modules/mob/living/silicon/ai/ai.dm	var/list/possibleNames = GLOB.ai_names
 world_reads	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_names)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)
