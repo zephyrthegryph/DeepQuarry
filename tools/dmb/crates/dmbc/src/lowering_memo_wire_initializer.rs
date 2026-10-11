@@ -4,7 +4,7 @@ use super::{CodeWire, ResolverProc};
 use dm_codegen_byond::initializer::AssignmentFragment;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 use serde::{Deserialize, Serialize};
-const SCHEMA: u32 = 0x0206_001d;
+const SCHEMA: u32 = 0x0206_0020;
 pub(crate) const LIMIT: usize = 8 * 1024 * 1024;
 #[derive(Serialize, Deserialize)]
 struct Payload {

@@ -327,7 +327,7 @@ fn parse_key(policy: u128, captured: &CapturedMap) -> Vec<u8> {
     )
 }
 fn parse_key_with_identity(policy: u128, captured: &CapturedMap, source_identity: u128) -> Vec<u8> {
-    let mut key = b"dmbc-map-parse-v1\0".to_vec();
+    let mut key = b"dmbc-map-parse-v2-safe-colon\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     frame(
         &mut key,
@@ -339,7 +339,7 @@ fn parse_key_with_identity(policy: u128, captured: &CapturedMap, source_identity
     key
 }
 fn geometry_key(policy: u128, maps: &[MapPlan], defaults: WorldDefaults) -> Vec<u8> {
-    let mut key = b"dmbc-map-geometry-v1\0".to_vec();
+    let mut key = b"dmbc-map-geometry-v2-safe-colon\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.extend_from_slice(&defaults.turf.bits().to_le_bytes());
     key.extend_from_slice(&defaults.area.bits().to_le_bytes());

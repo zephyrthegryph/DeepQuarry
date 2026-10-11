@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 // Revision 7 includes lexical-owner qualification for sibling field defaults.
 // Older fragments may contain semantically misplaced declaration facts.
 // Revision 11 binds malformed-signature cursors to current expanded text.
-pub(super) const VERSION: u32 = 11;
+// Revision 12 distinguishes safe dot and safe colon expression selectors.
+pub(super) const VERSION: u32 = 12;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,

@@ -18,7 +18,7 @@ enum ExprWire {
     StaticMember(Box<Self>, String),
     TypeFilter(Box<Self>, Vec<String>),
     Object(Box<Self>, Vec<(String, Self)>),
-    SafeMember(Box<Self>, String),
+    SafeMember(Box<Self>, String, bool),
     Index(Box<Self>, Box<Self>),
     SafeIndex(Box<Self>, Box<Self>),
     Group(Box<Self>),
@@ -39,7 +39,7 @@ enum ExprWireSerde {
     StaticMember(Box<ExprWire>, String),
     TypeFilter(Box<ExprWire>, Vec<String>),
     Object(Box<ExprWire>, Vec<(String, ExprWire)>),
-    SafeMember(Box<ExprWire>, String),
+    SafeMember(Box<ExprWire>, String, bool),
     Index(Box<ExprWire>, Box<ExprWire>),
     SafeIndex(Box<ExprWire>, Box<ExprWire>),
     Group(Box<ExprWire>),
@@ -127,9 +127,15 @@ impl ExprWire {
                     .map(|(name, value)| (name.clone(), Self::capture(value)))
                     .collect(),
             ),
-            E::SafeMember { object, selector } => {
-                Self::SafeMember(Box::new(Self::capture(object)), selector.clone())
-            }
+            E::SafeMember {
+                object,
+                selector,
+                via_colon,
+            } => Self::SafeMember(
+                Box::new(Self::capture(object)),
+                selector.clone(),
+                *via_colon,
+            ),
             E::Index { object, index } => Self::Index(
                 Box::new(Self::capture(object)),
                 Box::new(Self::capture(index)),
@@ -194,9 +200,10 @@ impl ExprWire {
                     .map(|(name, value)| Some((name, value.rebuild(depth + 1, budget)?)))
                     .collect::<Option<_>>()?,
             },
-            Self::SafeMember(o, selector) => E::SafeMember {
+            Self::SafeMember(o, selector, via_colon) => E::SafeMember {
                 object: child(*o, budget)?,
                 selector,
+                via_colon,
             },
             Self::Index(o, i) => E::Index {
                 object: child(*o, budget)?,
@@ -329,6 +336,30 @@ impl DescriptorWire {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn safe_selector_wire_preserves_dot_colon_property_and_call_callees() {
+        for (source, expected_colon) in [
+            ("receiver?.field", false),
+            ("receiver?:field", true),
+            ("receiver?.method()", false),
+            ("receiver?:method()", true),
+        ] {
+            let parsed = dm_syntax::parse_expression(source);
+            assert!(parsed.diagnostics.is_empty());
+            let wire = ExprWire::capture(parsed.expr.as_ref().unwrap());
+            let bytes = dm_wire::encode(0x0e26_0001, &wire).unwrap();
+            let wire: ExprWire = dm_wire::decode(0x0e26_0001, &bytes, bytes.len()).unwrap();
+            let restored = wire.rebuild(0, &mut 4096).unwrap();
+            let selected = match &restored.kind {
+                ExprKind::Call { callee, .. } => callee.as_ref(),
+                _ => &restored,
+            };
+            let ExprKind::SafeMember { via_colon, .. } = &selected.kind else {
+                panic!("safe selector survives wire");
+            };
+            assert_eq!(*via_colon, expected_colon);
+        }
+    }
     struct Host;
     impl Resolver for Host {
         fn resolve(&self, q: Q) -> M {

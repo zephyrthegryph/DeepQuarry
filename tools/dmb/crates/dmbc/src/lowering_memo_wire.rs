@@ -7,7 +7,7 @@ use dm_codegen_byond::procedure_abi::{ArgumentSource, Category, ProcLayout};
 use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, SymRef, SymbolId};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
-const EXECUTABLE_SCHEMA: u32 = 0x0206_001c;
+const EXECUTABLE_SCHEMA: u32 = 0x0206_001e;
 const FAILURE_SCHEMA: u32 = 0x0206_0017;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;

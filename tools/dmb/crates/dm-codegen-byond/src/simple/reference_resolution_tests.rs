@@ -31,7 +31,7 @@ impl dm_ir::Resolver for TypedGlobal {
                 if self.0 == 5 {
                     R::Unsupported(query)
                 } else {
-                    R::DeclaredType((self.0 != 4).then_some(path))
+                    R::DeclaredType((!matches!(self.0, 3 | 4)).then_some(path))
                 }
             }
             Q::RuntimeType(p) if p == path => match self.0 {
