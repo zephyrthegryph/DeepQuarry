@@ -180,7 +180,7 @@
 /obj/item/cell/emergency_light/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
-	if(!A.lightswitch || !A.light_power)
+	if(!A.lightswitch || !glow_of(A).power)
 		set_charge(0) //For naturally depowered areas, we start with no power
 
 /*
@@ -201,7 +201,7 @@
 	if(!used && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(HAS_SYNTHETIC_BIOLOGY(H))
-			if(H.nutrition <= amount)
+			if(nutrition_of(H) <= amount)
 				use(user,H)
 				return ITEM_INTERACT_SUCCESS
 			else

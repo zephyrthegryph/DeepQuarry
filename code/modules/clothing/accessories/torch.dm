@@ -194,8 +194,10 @@ badges
 	name = "security forces badge"
 	desc = "A silver law enforcement badge. Stamped with the words 'Master at Arms'."
 	icon_state = "silverbadge"
-	slot_flags = SLOT_TIE
 	badge_string = "Sol Central Government"
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/solgov/security)
+	configure(item_worn(slots = SLOT_TIE))
 
 /obj/item/clothing/accessory/badge/solgov/tags
 	name = "dog tags"
@@ -203,7 +205,9 @@ badges
 	gender = PLURAL
 	icon_state = "tags"
 	badge_string = "Sol Central Government"
-	slot_flags = SLOT_MASK | SLOT_TIE
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/solgov/tags)
+	configure(item_worn(slots = SLOT_MASK | SLOT_TIE))
 
 // ALLOW(init/INSTANCE_STATE): names its tags after the human it is made on
 /obj/item/clothing/accessory/badge/solgov/tags/Initialize(mapload)
@@ -224,8 +228,10 @@ badges
 	name = "representative's badge"
 	desc = "A leather-backed plastic badge with a variety of information printed on it. Belongs to a representative of the Terran Commonwealth."
 	icon_state = "solbadge"
-	slot_flags = SLOT_TIE
 	badge_string = "Terran Commonwealth"
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/solgov/representative)
+	configure(item_worn(slots = SLOT_TIE))
 
 /*******
 armbands

@@ -42,8 +42,10 @@
 	base_spread = 90	//lower means the pellets spread more across body parts. If zero then this is considered a shrapnel explosion instead of a shrapnel cone
 	spread_step = 10
 	embed_chance = 0
-	sharp = FALSE
 	injury_kind = INJURY_BLUNT
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/e_shot_stun)
+	configure(item_combat(sharp = FALSE))
 
 /obj/item/ammo_casing/microbattery/combat/ion
 	name = "\'NSFW\' microbattery - ION"
@@ -62,8 +64,10 @@
 	nodamage = 1
 	agony = 5
 	embed_chance = 0
-	sharp = FALSE
 	injury_kind = INJURY_BLUNT
+
+CAPABILITIES(/obj/item/projectile/bullet/stripper)
+	configure(item_combat(sharp = FALSE))
 
 /obj/item/projectile/bullet/stripper/on_hit(atom/stripped)
 	if(ishuman(stripped))
@@ -93,11 +97,13 @@
 	nodamage = 1
 	agony = 5
 	injury_kind = INJURY_PAIN
-	light_color = "#00CC33"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/final_option)
+	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/final_option/on_hit(atom/impacted)
 	if(isliving(impacted))

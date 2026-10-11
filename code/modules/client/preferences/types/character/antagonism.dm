@@ -30,7 +30,7 @@
 	return GLOB.faction_choices + list("None")
 
 /datum/preference/text/human/antag_faction/apply_to_human(mob/living/carbon/human/target, value)
-	target.antag_faction = value
+	target.bio.antag_faction = value
 
 
 /datum/preference/choiced/human/antag_vis
@@ -44,7 +44,7 @@ TYPE_TABLE(/datum/preference/choiced/human/antag_vis, pref_choices, GLOB.antag_v
 	return "Hidden"
 
 /datum/preference/choiced/human/antag_vis/apply_to_human(mob/living/carbon/human/target, value)
-	target.antag_vis = value
+	target.bio.antag_vis = value
 
 
 /datum/preference/text/human/exploit_record
@@ -58,7 +58,7 @@ TYPE_TABLE(/datum/preference/choiced/human/antag_vis, pref_choices, GLOB.antag_v
 	return ""
 
 /datum/preference/text/human/exploit_record/apply_to_human(mob/living/carbon/human/target, value)
-	target.exploit_record = value
+	target.bio.exploit_record = value
 
 
 /datum/preference/toggle/human/vantag_volunteer

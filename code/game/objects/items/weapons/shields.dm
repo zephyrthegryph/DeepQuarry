@@ -62,13 +62,9 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	desc = "A shield adept for close quarters engagement.  It's also capable of protecting from less powerful projectiles."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "riot"
-	slot_flags = SLOT_BACK
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
-	attack_verb = list("shoved", "bashed")
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 
 /obj/item/shield/riot/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -83,12 +79,12 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 			//to strong bullets and lasers.  They still do fine to pistol rounds of all kinds, however.
 			if(istype(damage_source, /obj/item/projectile))
 				var/obj/item/projectile/P = damage_source
-				if((is_sharp(P) && P.armor_penetration >= 10) || istype(P, /obj/item/projectile/beam))
+				if((is_sharp(P) && combat_of(P).armor_penetration >= 10) || istype(P, /obj/item/projectile/beam))
 					//If we're at this point, the bullet/beam is going to go through the shield, however it will hit for less damage.
 					//Bullets get slowed down, while beams are diffused as they hit the shield, so these shields are not /completely/
 					//useless.  Extremely penetrating projectiles will go through the shield without less damage.
 					act_message(user, src, others = span_danger("%U%'s [src.name] is pierced by [attack_text]!"))
-					if(P.armor_penetration < 30) //PTR bullets and x-rays will bypass this entirely.
+					if(combat_of(P).armor_penetration < 30) //PTR bullets and x-rays will bypass this entirely.
 						P.damage = P.damage / 2
 					return 0
 			//Otherwise, if we're here, we're gonna stop the attack entirely.
@@ -98,6 +94,9 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	return 0
 
 CAPABILITIES(/obj/item/shield/riot)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))
 	op("baton_bash", item(/obj/item/melee/baton), label("Bash shield"), then(PROC_REF(baton_bashed)), passes())
 
 /obj/item/shield/riot/proc/baton_bashed(datum/act/op/A)
@@ -117,17 +116,13 @@ CAPABILITIES(/obj/item/shield/riot)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "eshield"
 	item_state = "eshield"
-	slot_flags = SLOT_EARS
 	flags = NOCONDUCT
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 	var/lrange = 1.5
 	var/lpower = 1.5
 	var/lcolor = "#006AFF"
-	attack_verb = list("shoved", "bashed")
 	var/active = 0
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
@@ -154,6 +149,9 @@ TRACKED(/obj/item/shield/energy, active)
 TRACKED(/obj/item/shield/energy, lcolor)
 
 CAPABILITIES(/obj/item/shield/energy)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0, attack_verbs = list("shoved", "bashed")))
 	op("toggle", in_hand(), label("Toggle shield"), then(PROC_REF(shield_toggled)))
 	op("recolor", inputs(hand(), in_hand()), answers(INTENT_TOGGLE), label("Recolor shield"),
 		needs(req_adjacent()),
@@ -180,16 +178,16 @@ CAPABILITIES(/obj/item/shield/energy)
 		user.injure(INJURY_BLUNT, 5, source = src)
 	set_active(!active)
 	if (active)
-		force = 10
+		set_force(10)
 		w_class = ITEMSIZE_LARGE
-		slot_flags = null
+		set_slot_flags(null)
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("\The [src] is now active."))
 
 	else
-		force = 3
+		set_force(3)
 		w_class = ITEMSIZE_TINY
-		slot_flags = SLOT_EARS
+		set_slot_flags(SLOT_EARS)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("\The [src] can now be concealed."))
 
@@ -232,9 +230,6 @@ CAPABILITIES(/obj/item/shield/energy)
 	desc = "An advanced riot shield made of lightweight materials that collapses for easy storage."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "teleriot0"
-	slot_flags = null
-	force = 3
-	throwforce = 3
 	throw_speed = 3
 	throw_range = 4
 	w_class = ITEMSIZE_NORMAL
@@ -249,6 +244,9 @@ CAPABILITIES(/obj/item/shield/energy)
 TRACKED(/obj/item/shield/riot/tele, active)
 
 CAPABILITIES(/obj/item/shield/riot/tele)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 3))
 	op("toggle", in_hand(), label("Extend or retract shield"), then(PROC_REF(shield_toggled)))
 
 /obj/item/shield/riot/tele/proc/shield_toggled(datum/act/op/A)
@@ -258,18 +256,18 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 
 	if(active)
-		force = 8
-		throwforce = 5
+		set_force(8)
+		set_throwforce(5)
 		throw_speed = 2
 		w_class = ITEMSIZE_LARGE
-		slot_flags = SLOT_BACK
+		set_slot_flags(SLOT_BACK)
 		to_chat(user, span_notice("You extend \the [src]."))
 	else
-		force = 3
-		throwforce = 3
+		set_force(3)
+		set_throwforce(3)
 		throw_speed = 3
 		w_class = ITEMSIZE_NORMAL
-		slot_flags = null
+		set_slot_flags(null)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
 	if(ishuman(user))
@@ -293,14 +291,15 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 	desc = "A shiny silvery shield with a large red leaf symbol in the center."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "wolfgirlshield"
-	slot_flags = SLOT_BACK | SLOT_OCLOTHING
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 2
 	throw_range = 6
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
-	attack_verb = list("shoved", "bashed")
 	var/cooldown = 0 //shield bash cooldown. based on world.time
+
+CAPABILITIES(/obj/item/shield/fluff/wolfgirlshield)
+	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))
 
 
 /obj/item/shield/riot/explorer
@@ -313,7 +312,6 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 		slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi'
 	)
 	base_block_chance = 40
-	slot_flags = SLOT_BACK
 	var/brightness_on
 	brightness_on = 6
 	var/on = 0
@@ -342,10 +340,10 @@ TRACKED(/obj/item/shield/riot/explorer, on)
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)
 	if(on && !light_applied)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 		light_applied = 1
 	else if(!on && light_applied)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		light_applied = 0
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
@@ -361,6 +359,7 @@ TRACKED(/obj/item/shield/riot/explorer, on)
 	icon_state = "explorer_shield_P"
 
 CAPABILITIES(/obj/item/shield/riot/explorer)
+	configure(item_worn(slots = SLOT_BACK))
 	op("machete_bash", item(/obj/item/material/knife/machete), label("Bash shield"), then(PROC_REF(machete_bashed)), passes())
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 

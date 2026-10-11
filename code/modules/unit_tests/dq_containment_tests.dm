@@ -18,7 +18,9 @@
 /obj/item/dq_containment_test/wood
 	w_class = ITEMSIZE_TINY
 	MATERIAL_BULK(MAT_WOOD, 2000)
-	sharp = TRUE
+
+CAPABILITIES(/obj/item/dq_containment_test/wood)
+	configure(item_combat(sharp = TRUE))
 
 /obj/item/dq_containment_test/anchored
 	anchored = TRUE
@@ -616,8 +618,10 @@ CAPABILITIES(/datum/unit_test/dq_containment_conservation_fuzz)
 
 /obj/item/dq_containment_test/hooked
 	name = "hooked test item"
-	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
 	var/list/log
+
+CAPABILITIES(/obj/item/dq_containment_test/hooked)
+	configure(item_combat(sharp = TRUE))
 
 /obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
 	LAZYADD(log, "on:[holder]:[slot_id]")

@@ -138,7 +138,7 @@ CAPABILITIES(/obj/soulgem)
 
 // The capture function which transfers the given mob's mind into the soulcatcher
 /obj/soulgem/proc/catch_mob(mob/M, custom_name)
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 	if(!M.mind)	return
 	if(isbrain(owner())) return
 	//Create a new brain mob
@@ -385,8 +385,8 @@ CAPABILITIES(/obj/soulgem)
 	taken_over_name = null
 
 /obj/soulgem/proc/take_control(mob/M)
-	if(!(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
+	if(!(owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
 	if(!own_mind())
 		if(issilicon(owner()) || isanimal(owner()))
 			taken_over_name = owner().name
@@ -427,7 +427,7 @@ CAPABILITIES(/obj/soulgem)
 	for(var/mob/M in range(1, get_turf(owner())))
 		if(M == owner())
 			continue
-		if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
+		if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 			continue
 		if(M.client && M.soulgem)
 			valid_objects += M.soulgem
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/soulgem)
 
 /obj/soulgem/proc/soulgem_selected_stage(obj/selected_target, prompted = FALSE)
 	if(!selected_soul()) return
-	if(!(selected_soul().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER)) return
+	if(!(selected_soul().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER)) return
 	var/list/valid_objects = find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
@@ -507,7 +507,7 @@ CAPABILITIES(/obj/soulgem)
 		return
 	if(!in_range(gem.owner(), owner()))
 		return
-	if(!(gem.owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
+	if(!(gem.owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 		return
 	if(M.mind == own_mind())
 		rel_clear(src, nameof(own_mind))
@@ -562,9 +562,9 @@ CAPABILITIES(/obj/soulgem)
 
 /obj/soulgem/proc/soulgem_delete_stage(mob/M, response, prompted = FALSE)
 	if(is_taken_over()) return FALSE
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
 		if(!prompted)
 			open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_delete_answered), answerer = M, soulgem_mob = M, question = "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES, buttons = TRUE)
 			return

@@ -320,7 +320,7 @@ CAPABILITIES(/obj/machinery/door)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		if(W.force < min_force)
+		if(combat_of(W).force < min_force)
 			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 		else
 			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)

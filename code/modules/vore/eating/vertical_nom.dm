@@ -23,7 +23,7 @@
 				T = GetBelow(T)
 			if(T)
 				for(var/mob/living/L in contents_of(T))
-					if(L.devourable && L.can_be_drop_prey)
+					if(L.vore_prefs.devourable && L.vore_prefs.can_be_drop_prey)
 						targets += L
 
 	if(!(targets.len))
@@ -86,7 +86,7 @@
 				T = GetBelow(T)
 			if(T)
 				for(var/mob/living/L in contents_of(T))
-					if(L.devourable && L.can_be_drop_prey)
+					if(L.vore_prefs.devourable && L.vore_prefs.can_be_drop_prey)
 						return null
 	return VERTICAL_NOM_TARGETS
 

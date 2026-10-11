@@ -167,7 +167,6 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 
 	integrated_object_type = null
 
-	toolspeed = 0.8
 
 	/// Tool path -> each stowed tool this augment carries (owned), built in Initialize() from
 	/// tool_types(). The deployed tool is owned by integrated_object instead, and moves back here
@@ -180,6 +179,7 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/list/synths
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
+	configure(item_tooling(speed = 0.8))
 	owns_many(nameof(synths), starts = PROC_REF(starting_synths))
 	owns_many(nameof(integrated_tools), starts = PROC_REF(starting_tools))
 
@@ -222,7 +222,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 
 	for(var/obj/item/I as anything in tools)
 		I.canremove = FALSE
-		I.toolspeed = toolspeed
+		I.set_toolspeed(tooling_of(src).speed)
 		rel_set(I, nameof(I.my_augment), src)
 		I.name = "integrated [I.name]"
 

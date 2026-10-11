@@ -145,12 +145,12 @@
 	if(!glows)
 		if(living_guy.glow_override) //Toggled glow off while we were still actively glowing.
 			living_guy.set_glow_override(FALSE)
-			living_guy.set_light(0)
+			set_glow(living_guy, GLOW(0, null, null))
 			living_guy.remove_filter("rad_glow")
 		return
 	if(living_guy.radiation < radiation_glow_threshold)
 		living_guy.set_glow_override(FALSE)
-		living_guy.set_light(0)
+		set_glow(living_guy, GLOW(0, null, null))
 		living_guy.remove_filter("rad_glow")
 		return
 
@@ -158,7 +158,7 @@
 		var/light_range = CLAMP((living_guy.radiation/range_coefficient) * range_mod, 1, 7) //Min 1, max 7
 		var/light_power = CLAMP(living_guy.radiation/intensity_coefficient * intensity_mod, 1, 10)
 
-		living_guy.set_light(l_range = light_range, l_power = light_power, l_color = radiation_color, l_on = TRUE)
+		set_glow(living_guy, GLOW(light_range, light_power, radiation_color), TRUE)
 		living_guy.set_glow_override(TRUE)
 		if(toony)
 			var/filter = living_guy.get_filter("rad_glow")
@@ -200,7 +200,7 @@
 	var/rads_to_utilize
 
 	if(radiation_nutrition)
-		if(living_guy.nutrition < radiation_nutrition_cap)
+		if(nutrition_of(living_guy) < radiation_nutrition_cap)
 			rads_to_utilize = rads * rad_removal_mod
 			living_guy.adjust_nutrition(rads_to_utilize)
 
@@ -290,7 +290,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 		"radiation_nutrition" = radiation_nutrition,
 		"nutrition_toggle" = nutrition_toggle,
 		"radiation_nutrition_cap" = radiation_nutrition_cap,
-		"current_nutrition" = living_guy.nutrition
+		"current_nutrition" = nutrition_of(living_guy)
 	)
 
 	return data

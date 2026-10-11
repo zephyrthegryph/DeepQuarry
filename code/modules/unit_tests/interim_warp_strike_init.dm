@@ -25,7 +25,7 @@
 	TEST_ASSERT(destination && !destination.density, "The real target floor must be two tiles away and passable")
 	// Native view requires world illumination: use a real lamp and drain the actual lighting service's pending work.
 	var/obj/item/flashlight/lamp/lamp = allocate(/obj/item/flashlight/lamp, destination)
-	TEST_ASSERT(lamp.on && lamp.light_range == 5, "The actual desk lamp starts lit with its normal five-tile illumination")
+	TEST_ASSERT(lamp.on && glow_of(lamp).range == 5, "The actual desk lamp starts lit with its normal five-tile illumination")
 	SSlighting.light_step(0, TRUE)
 	TEST_ASSERT_NOTNULL(lamp.light, "The actual lamp constructor creates its real world light source")
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, start)
@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(spell.owner_ref(), actor, "The parent constructor records the exact caster")
 	TEST_ASSERT(actor.put_in_active_hand(spell), "The caster holds its actual initialized warp spell")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, start)
-	TEST_ASSERT_EQUAL(pen.force, 0, "The actual ordinary pen provides the harmless off-hand attack")
+	TEST_ASSERT_EQUAL(combat_of(pen).force, 0, "The actual ordinary pen provides the harmless off-hand attack")
 	TEST_ASSERT(actor.put_in_inactive_hand(pen), "The real pen occupies the caster's inactive hand")
 	TEST_ASSERT_EQUAL(opponent.stat, CONSCIOUS, "The actual target starts conscious without artificial status setup")
 	TEST_ASSERT(!spell.is_ally(opponent), "The actual unrelated target is not a caster ally")

@@ -51,9 +51,9 @@
 		var/mob/living/carbon/human/H
 		if(ishuman(user))
 			H = user
-			general.fields["age"] = H.age
+			general.fields["age"] = H.bio.age
 		else
-			general.fields["age"] = initial(H.age)
+			general.fields["age"] = initial(H.bio.age)
 		var/assignment = GetAssignment(user)
 		general.fields["rank"] = assignment
 		general.fields["real_rank"] = assignment

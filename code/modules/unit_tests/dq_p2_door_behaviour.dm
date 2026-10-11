@@ -250,7 +250,7 @@
 /// A fast tool of `type` in `H`'s active hand.
 /datum/unit_test/dq_p2_door/proc/give_tool(mob/living/carbon/human/H, type)
 	var/obj/item/tool = allocate(type, H.loc)
-	tool.toolspeed = 0
+	tool.set_toolspeed(0)
 	return hold(H, tool)
 
 /// A lit, fuelled welder in `H`'s active hand.
@@ -1140,7 +1140,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 30
+	bar.set_force(30)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)
@@ -1151,7 +1151,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 2
+	bar.set_force(2)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)
@@ -1721,9 +1721,9 @@
 	settle()
 	p2_door_set_power(D, FALSE)
 	var/obj/item/crowbar = give_tool(H, /obj/item/tool/crowbar)
-	crowbar.toolspeed = 1
+	crowbar.set_toolspeed(1)
 	var/obj/item/second = give_tool(other, /obj/item/tool/crowbar)
-	second.toolspeed = 1
+	second.set_toolspeed(1)
 	p2_door_click(H, D, crowbar)
 	TEST_ASSERT(op_claimed(D), "a crowbar at work claims the door")
 	p2_door_click(other, D, second)
@@ -1881,11 +1881,11 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
 	H.set_combat_mode(TRUE)
-	bar.force = 5
+	bar.set_force(5)
 	var/before = B.get_integrity()
 	click(H, B, bar)
 	TEST_ASSERT_EQUAL(B.get_integrity(), before, "a weak hit leaves no mark")
-	bar.force = 60
+	bar.set_force(60)
 	click(H, B, bar)
 	TEST_ASSERT(B.get_integrity() < before, "a hard one damages it")
 
@@ -2028,7 +2028,7 @@
 	var/obj/machinery/door/window/D = make_door(/obj/machinery/door/window, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(null, tile(1, 2))
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 20
+	bar.set_force(20)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)

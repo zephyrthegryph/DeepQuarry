@@ -5,6 +5,10 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
+	profile(nameof(looks), /datum/record/appearance)
+	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human))
+	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
 	cooldowns(push_lying_cooldown, disarm_cooldown, breath_sound_cooldown, chew_cooldown, xylophone)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
@@ -61,7 +65,6 @@ CAPABILITIES(/mob/living/carbon/human)
 	owns_one(nameof(dna), /datum/dna, starts = /datum/dna, starts_args = NO_LOC, early = TRUE) // set_species() writes it before the parents' init
 	rolls(nameof(real_name), PROC_REF(roll_species_name))
 	rolls(nameof(name), PROC_REF(roll_species_name), from = list(nameof(real_name)))
-	rolls(nameof(nutrition), range_of(200, 400))
 	derives(nameof(hide_underwear), PROC_REF(underwear_all_shown))
 	hose_sockets(list(/datum/hose_connector/inflation)) // drop to disable all human mob inflation mechanics
 	// Stripping (stripping.dm): the inventory panel's handle_strip() starts these by key; the stripper has to stay next to them and keep what is in hand.
@@ -100,6 +103,8 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	configure(mob_kind(death_message = "shudders violently for a moment, then becomes motionless, its eyes slowly darkening.", can_be_antagged = TRUE))
+	configure(mob_movement(bump = ROBOT, swap = ~HEAVY, push = ~HEAVY))
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
 	ref_one(nameof(cell))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -143,3 +148,6 @@ CAPABILITIES(/mob/living/silicon/robot)
 	on_wire(WIRE_AI_CONTROL, cut = PROC_REF(ai_wire_cut), pulse = PROC_REF(ai_wire_pulsed))
 	on_wire(WIRE_BORG_CAMERA, cut = PROC_REF(camera_wire_cut), pulse = PROC_REF(camera_wire_pulsed))
 	on_wire(WIRE_BORG_LOCKED, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+
+/mob/living/carbon/human/starting_nutrition() // a human starts with 200-400 (was a rolls() entry)
+	return rand(200, 400)

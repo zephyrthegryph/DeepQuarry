@@ -4,7 +4,6 @@
 	icon = 'icons/obj/deadringer.dmi'
 	icon_state = "deadringer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
 	var/tmp/mob/living/carbon/human/corpse
@@ -18,6 +17,7 @@ TRACKED(/obj/item/deadringer, activated)
 TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
@@ -150,17 +150,15 @@ CAPABILITIES(/obj/item/deadringer)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	corpse().identifying_gender = H.identifying_gender
-	corpse().flavor_texts = H.flavor_texts?.Copy()
+	corpse().bio.flavor_texts = H.bio.flavor_texts?.Copy()
 	corpse().real_name = H.real_name
 	corpse().name = H.name
 	corpse().emote("deathgasp") //Done after the name is set.
 	corpse().death(1) //Kills the new mob
 	corpse().set_species(corpse().dna.species)
-	corpse().change_hair(H.h_style)
-	corpse().change_facial_hair(H.f_style)
-	corpse().change_hair_color(H.r_hair, H.g_hair, H.b_hair)
-	corpse().change_facial_hair_color(H.r_facial, H.g_facial, H.b_facial)
-	corpse().change_skin_color(H.r_skin, H.g_skin, H.b_skin)
+	record_copy(corpse().looks, H.looks) // the fake body looks like its wearer
+	corpse().force_update_limbs()
+	corpse().update_hair()
 	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()

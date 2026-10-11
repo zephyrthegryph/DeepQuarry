@@ -19,7 +19,6 @@
 	icon_living = "space_ghost"
 	icon_dead = "space_ghost_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
@@ -67,7 +66,11 @@
 	reload_count = 0
 	reload_time = 7 SECONDS
 
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
 
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)
@@ -95,7 +98,6 @@
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost
 	delete_on_death = TRUE
-	death_message = "fades away!"
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
 	. = ..()
@@ -110,7 +112,6 @@
 	icon_state = "spookyghost-1"
 	icon_living = "spookyghost-1"
 	icon_dead = "space_ghost_dead"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
@@ -149,7 +150,6 @@
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 	delete_on_death = TRUE
-	death_message = "fades away!"
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
 	. = ..()
@@ -172,6 +172,8 @@
 		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
 	after_init(35 SECONDS, then(PROC_REF(fade_out)))
 	rolls(nameof(icon_living), pick_one(list("spookyghost-1", "spookyghost-2")))
 	look_from(nameof(icon_living), state = "*")

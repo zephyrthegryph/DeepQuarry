@@ -622,7 +622,7 @@
 
 /datum/reagent/thermite/venom/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_BURN, 3 * removed, source = src)
-	if(M.fire_stacks <= 1.5)
+	if(fire_stacks_of(M) <= 1.5)
 		M.adjust_fire_stacks(0.15)
 	if(inert_for(M))
 		return
@@ -1148,25 +1148,19 @@
 	return ..()
 
 /mob/living/carbon/human/proc/slime_color_shift(color_shift)
-	var/mob/living/carbon/human/H = src
-	if(prob(33))
-		if(H.r_skin)
-			H.r_skin = max(0, min(255, H.r_skin + color_shift))
-		if(H.r_hair)
-			H.r_hair = max(0, min(255, H.r_hair + color_shift))
-		if(H.r_facial)
-			H.r_facial = max(0, min(255, H.r_facial + color_shift))
-	if(prob(33))
-		if(H.g_skin)
-			H.g_skin = max(0, min(255, H.g_skin + color_shift))
-		if(H.g_hair)
-			H.g_hair = max(0, min(255, H.g_hair + color_shift))
-		if(H.g_facial)
-			H.g_facial = max(0, min(255, H.g_facial + color_shift))
-	if(prob(33))
-		if(H.b_skin)
-			H.b_skin = max(0, min(255, H.b_skin + color_shift))
-		if(H.b_hair)
-			H.b_hair = max(0, min(255, H.b_hair + color_shift))
-		if(H.b_facial)
-			H.b_facial = max(0, min(255, H.b_facial + color_shift))
+	// each channel (red, green, blue) of skin, hair and beard shifts at a one-in-three chance; a zero channel stays
+	for(var/channel in 1 to 3)
+		if(!prob(33))
+			continue
+		var/list/channels = hex2rgb(looks.skin_color)
+		var/value = channels[channel]
+		if(value)
+			looks.set_skin_color(colour_set_channel(looks.skin_color, channel, value + color_shift))
+		channels = hex2rgb(looks.hair_color)
+		value = channels[channel]
+		if(value)
+			looks.set_hair_color(colour_set_channel(looks.hair_color, channel, value + color_shift))
+		channels = hex2rgb(looks.facial_color)
+		value = channels[channel]
+		if(value)
+			looks.set_facial_color(colour_set_channel(looks.facial_color, channel, value + color_shift))

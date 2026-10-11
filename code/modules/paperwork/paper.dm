@@ -9,16 +9,12 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paper"
 	item_state = "paper"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_range = 1
 	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
-	slot_flags = SLOT_HEAD
-	body_parts_covered = HEAD
-	attack_verb = list("bapped")
 
 	var/info		//What's actually written on the paper.
 	var/tmp/info_links	//A different version of the paper which includes html links at fields and EOF
@@ -69,6 +65,9 @@
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/paper)
+	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
+	configure(item_thrown(force = 0))
+	configure(item_combat(attack_verbs = list("bapped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	owns_one(nameof(contract_document), /datum/contract_document)
 	interface("Paper")
@@ -94,7 +93,9 @@ CAPABILITIES(/obj/item/paper)
 	name = "blank card"
 	desc = "A gift card with space to write on the cover."
 	icon_state = "greetingcard"
-	slot_flags = null //no fun allowed!!!!
+
+CAPABILITIES(/obj/item/paper/card)
+	configure(item_worn(slots = TRAIT_NONE))
 
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
@@ -421,7 +422,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 /obj/item/paper/proc/wipe_lipstick_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	act_message(A.actor, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
-	H.set_lip_style(null)
+	H.looks.set_lip_style(null)
 	H.update_icons_body()
 	return OP_OK
 
@@ -436,7 +437,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 			var/mob/living/carbon/human/H = M
 			if(H == user)
 				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
-				H.set_lip_style(null)
+				H.looks.set_lip_style(null)
 				H.update_icons_body()
 
 /obj/item/paper/proc/set_content(text,title)

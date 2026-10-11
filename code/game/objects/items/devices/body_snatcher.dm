@@ -5,7 +5,6 @@
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "sleevemate" //Give this a fancier sprite later.
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 200)
 	flags = NOBLUDGEON
@@ -56,7 +55,7 @@
 			to_chat(user,span_warning("A warning pops up on the device, informing you that [M] appears braindead."))
 			return ITEM_INTERACT_FAILURE
 
-		if(!M.allow_mind_transfer)
+		if(!M.vore_prefs.allow_mind_transfer)
 			to_chat(user,span_danger("The target's mind is too complex to be affected!"))
 			return ITEM_INTERACT_FAILURE
 
@@ -116,6 +115,7 @@
 	return OP_FAILED
 
 CAPABILITIES(/obj/item/bodysnatcher)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("activate", in_hand(), then(PROC_REF(activated)))
 	// The swap itself, started by swap_confirmed() once the user agreed; the victim is passed in.

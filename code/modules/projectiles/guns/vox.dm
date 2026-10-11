@@ -84,20 +84,20 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	taser_effect = 1
 	agony = 55
 	injury_kind = INJURY_PAIN
-	light_color = "#8837A3"
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun
 	tracer_type = /obj/effect/projectile/tracer/darkmatterstun
 	impact_type = /obj/effect/projectile/impact/darkmatterstun
+
+CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/beam/darkmatter
 	name = "dark matter bolt"
 	icon_state = "darkb"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 35
-	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
 
@@ -105,16 +105,22 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
 
+CAPABILITIES(/obj/item/projectile/beam/darkmatter)
+	configure(light_glow(color = "#8837A3"))
+	configure(item_combat(armor_penetration = 35))
+
 /obj/item/projectile/energy/darkmatter
 	name = "dark matter pellet"
 	icon_state = "dark_pellet"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 20
-	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
+
+CAPABILITIES(/obj/item/projectile/energy/darkmatter)
+	configure(light_glow(color = "#8837A3"))
+	configure(item_combat(armor_penetration = 35))
 
 /*
  * Vox Sonic Cannon
@@ -142,9 +148,11 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	icon_state = "sound"
 	fire_sound = SFX_EFFECTS_BASSCANNON
 	damage = 5
-	armor_penetration = 30
 	embed_chance = 0
 	vacuum_traversal = 0
+
+CAPABILITIES(/obj/item/projectile/sonic)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/sonic/weak
 	agony = 50

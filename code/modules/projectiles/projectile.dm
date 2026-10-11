@@ -538,7 +538,7 @@ CAPABILITIES(/obj/item/projectile)
 		M.Turn(original_angle)
 		thing.transform = M
 		thing.color = color
-		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
+		set_glow(thing, GLOW(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color))
 		rel_add(drawn, nameof(drawn.beam_components), thing)
 	if(impacting && impact_type && duration > 0)
 		var/datum/point/p = points[length(points)]
@@ -548,7 +548,7 @@ CAPABILITIES(/obj/item/projectile)
 		M.Turn(Angle)
 		thing.transform = M
 		thing.color = color
-		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
+		set_glow(thing, GLOW(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color))
 		rel_add(drawn, nameof(drawn.beam_components), thing)
 	drawn.expire(duration)
 
@@ -700,7 +700,7 @@ CAPABILITIES(/obj/item/projectile)
 		return 0
 	if(emp_on_hit)
 		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 

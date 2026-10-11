@@ -45,9 +45,9 @@
 
 /obj/effect/shield/proc/update_glow()
 	if(density)
-		set_light(3, 3, "#66FFFF")
+		set_glow(src, GLOW(3, 3, "#66FFFF"))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 /obj/effect/shield/proc/update_opacity()
 	if(gen()?.check_flag(MODEFLAG_PHOTONIC) && !disabled_for && !diffused_for)
@@ -279,11 +279,11 @@ CAPABILITIES(/obj/effect/shield)
 	if(gen().check_flag(MODEFLAG_HYPERKINETIC))
 		act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = I)
 		if(I.obj_damage_type() == BURN)
-			take_damage(I.force, SHIELD_DAMTYPE_HEAT)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_HEAT)
 		else if (I.obj_damage_type() == BRUTE)
-			take_damage(I.force, SHIELD_DAMTYPE_PHYSICAL)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_PHYSICAL)
 		else
-			take_damage(I.force, SHIELD_DAMTYPE_EM)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_EM)
 	else
 		act_message(user, src, others = span_danger("%U% tries to attack %T% with %I%, but it passes through!"), item = I)
 	return OP_PASS

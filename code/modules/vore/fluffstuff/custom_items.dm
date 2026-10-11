@@ -172,12 +172,10 @@
 	icon_state = "joanaria"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "joanariamob"
-	force = 15
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -214,7 +212,9 @@ CAPABILITIES(/obj/item/sword/fluff/joanaria)
 	desc = "Large hammer that looks like it can do a great deal of damage if properly used."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "harmonymjollnir"
-	attack_verb = list("attacked", "hammered", "smashed", "slammed", "crushed")
+
+CAPABILITIES(/obj/item/twohanded/fireaxe/fluff/mjollnir)
+	configure(item_combat(attack_verbs = list("attacked", "hammered", "smashed", "slammed", "crushed")))
 
 //JoanRisu:Joan Risu
 /obj/item/card/id/centcom/station/fluff/joanbadge
@@ -351,11 +351,13 @@ CAPABILITIES(/obj/item/flag)
 /obj/item/toy/plushie/mouse/fluff
 	name = "Mouse Plushie"
 	desc = "A plushie of a delightful mouse! What was once considered a vile rodent is now your very best friend."
-	slot_flags = SLOT_HEAD
 	icon_state = "mouse_brown"
 	item_state = "mouse_brown_head"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_items_vr.dmi'
+
+CAPABILITIES(/obj/item/toy/plushie/mouse/fluff)
+	configure(item_worn(slots = SLOT_HEAD))
 
 //zodiacshadow: Nehi Maximus
 /obj/item/radio/headset/fluff/zodiacshadow
@@ -365,8 +367,10 @@ CAPABILITIES(/obj/item/flag)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "nehiphones"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "nehiphones"
+
+CAPABILITIES(/obj/item/radio/headset/fluff/zodiacshadow)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //zodiacshadow: Nehi Maximus
 /obj/item/clothing/accessory/medal/silver/fluff/zodiacshadow
@@ -388,18 +392,20 @@ CAPABILITIES(/obj/item/flag)
 	item_state = "holochain_mob"
 
 	flags = NOBLOODY
-	slot_flags = SLOT_BELT
-	force = 10
-	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_PAIN
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")))
 
 //General use
 /obj/item/melee/fluff/holochain/mass
 	desc = "A mass produced version of the original. It has faux leather and an aluminium base, but still stings like the original."
-	force = 8
-	attack_verb = list("flogged", "whipped", "lashed", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain/mass)
+	configure(item_combat(force = 8, attack_verbs = list("flogged", "whipped", "lashed", "flayed")))
 
 // joey4298:Emoticon
 /obj/item/fluff/id_kit_mime
@@ -473,7 +479,9 @@ CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "serdy_armor"
 	item_state = "serdy_armor"
-	body_parts_covered = CHEST|LEGS|ARMS //It's a full body suit, minus hands and feet. Arms and legs should be protected, not just the torso. Retains normal security armor values still.
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
+	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 
@@ -512,10 +520,10 @@ CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
 	name = "purple robes"
 	desc = "Heavy, royal purple robes threaded with silver lining."
 	icon_state = "psyamp"
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	var/unbuttoned = 0
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
+	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	op("purp_robes_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(purp_robes_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
@@ -539,7 +547,9 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 	name = "pink tourmaline tiara"
 	desc = "A small, steel tiara with a large, pink tourmaline gem in the center."
 	icon_state = "amp"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/fluff/pink_tiara)
+	configure(item_worn(covers = 0))
 
 //Lots of people are using this now.
 /obj/item/clothing/accessory/collar/khcrystal
@@ -555,7 +565,6 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 	item_state = "khlife_overlay"
 	overlay_state = "khlife_overlay"
 
-	slot_flags = SLOT_TIE
 
 	var/mob/owner = null
 	var/client/owner_c = null //They'll be dead when we message them probably.
@@ -573,6 +582,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 	..()
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
+	configure(item_worn(slots = SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
 	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
 
@@ -680,11 +690,12 @@ CAPABILITIES(/obj/item/storage/box/khcrystal)
 	icon_state = "browncane"
 	item_icons = list (slot_r_hand_str = 'icons/vore/custom_items_vr.dmi', slot_l_hand_str = 'icons/vore/custom_items_vr.dmi')
 	item_state_slots = list(slot_r_hand_str = "browncane_r", slot_l_hand_str = "browncane_l")
-	force = 5.0
-	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 50)
-	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+
+CAPABILITIES(/obj/item/cane/fluff)
+	configure(item_thrown(force = 7.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("bludgeoned", "whacked", "disciplined", "thrashed")))
 
 /obj/item/cane/fluff/tasald
 	name = "Ornate Walking Cane"
@@ -760,7 +771,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 			var/mob/M = loc
 			M.update_inv_back()
 		ambulance_state = FALSE
-		set_light(2, 1, "#FF0000")
+		set_glow(src, GLOW(2, 1, "#FF0000"))
 		soundloop.start()
 	else
 		item_state = "tempestsaddlebag"
@@ -768,7 +779,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.update_inv_back()
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		soundloop.stop()
 
 /obj/item/storage/backpack/saddlebag/tempest/proc/tempest_step(datum/act/timer/A)
@@ -780,7 +791,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.update_inv_back()
-		set_light(2, 1, newlight)
+		set_glow(src, GLOW(2, 1, newlight))
 		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 
@@ -838,7 +849,9 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 	desc = "The goggles really do nothing this time!"
 	icon_state = "purple"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	item_flags = AIRTIGHT
+
+CAPABILITIES(/obj/item/clothing/glasses/fluff/science_proper)
+	configure(item_worn(flags = AIRTIGHT))
 
 //General use, Verk felt like sharing.
 /obj/item/clothing/glasses/fluff/spiffygogs
@@ -847,10 +860,12 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "spiffygogs"
-	slot_flags = SLOT_EYES | SLOT_EARS
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
 	off_state = "spiffygogsup"
+
+CAPABILITIES(/obj/item/clothing/glasses/fluff/spiffygogs)
+	configure(item_worn(slots = SLOT_EYES | SLOT_EARS))
 
 //General use
 /obj/item/clothing/accessory/tronket
@@ -861,8 +876,10 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 	icon_state = "tronket"
 	item_state = "tronket"
 	overlay_state = "tronket"
-	slot_flags = SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/tronket)
+	configure(item_worn(slots = SLOT_TIE))
 
 /obj/item/clothing/accessory/flops
 	name = "drop straps"
@@ -872,8 +889,10 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 	icon_state = "flops"
 	item_state = "flops"
 	overlay_state = "flops"
-	slot_flags = SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/flops)
+	configure(item_worn(slots = SLOT_TIE))
 
 //InterroLouis: Ruda Lizden
 /obj/item/clothing/accessory/badge/holo/detective/ruda
@@ -982,12 +1001,7 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 	item_icons = list(slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 	icon_state = "stunstaff00"
 	var/base_icon = "stunstaff"
-	force = 5
-	sharp = FALSE
-	edge = FALSE
-	throwforce = 7
 	w_class = ITEMSIZE_HUGE
-	attack_verb = list("beaten")
 	lightcolor = "#CC33FF"
 
 	//Two Handed
@@ -998,6 +1012,8 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 TRACKED(/obj/item/melee/baton/fluff/stunstaff, wielded)
 
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 5, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
 	op("stunstaff_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(stunstaff_toggle_self)))
 
@@ -1005,11 +1021,11 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		force = 15
+		set_force(15)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		force = 8
+		set_force(8)
 		name = "[base_name]"
 	..()
 
@@ -1062,7 +1078,6 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "holster_stunstaff"
 	desc = "A sturdy synthetic leather sheath with matching belt and rubberized interior."
-	slot_flags = SLOT_BACK
 	item_icons = list(slot_back_str = 'icons/vore/custom_clothes_mob.dmi', slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 
 	w_class = ITEMSIZE_HUGE
@@ -1070,6 +1085,7 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 
 
 CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE))
 
 /*
@@ -1081,18 +1097,16 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	var/active_throwforce
 	var/active_w_class
 	var/active_embed_chance = 0
-	sharp = FALSE
-	edge = FALSE
 
 /obj/item/melee/fluffstuff/proc/activate(mob/living/user)
 	if(active)
 		return
 	active = 1
 	embed_chance = active_embed_chance
-	force = active_force
-	throwforce = active_throwforce
-	sharp = TRUE
-	edge = TRUE
+	set_force(active_force)
+	set_throwforce(active_throwforce)
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
@@ -1102,13 +1116,14 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
 	embed_chance = initial(embed_chance)
-	force = initial(force)
-	throwforce = initial(throwforce)
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_force(combat_of_type(type).force)
+	set_throwforce(thrown_of_type(type).force)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
 	w_class = initial(w_class)
 
 CAPABILITIES(/obj/item/melee/fluffstuff)
+	configure(item_combat(sharp = FALSE, edge = FALSE))
 	op("fluffstuff_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(fluffstuff_toggle_self)))
 
 /// Old attack_self: activate or deactivate the blade.
@@ -1137,18 +1152,20 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	desc = "A replica of a large, scimitar-like sword with a dull edge. Ceremonial... until it isn't."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "wolfgirlsword"
-	slot_flags = SLOT_BACK | SLOT_OCLOTHING
 	active_force = 15
 	active_throwforce = 7
 	active_w_class = ITEMSIZE_LARGE
-	force = 1
-	throwforce = 1
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
+
+CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
+	configure(item_thrown(force = 1))
+	configure(item_combat(force = 1))
 
 TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
@@ -1162,9 +1179,9 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 		to_chat(user, span_notice("The [src] is now sharpened. It will cut!"))
 
 	..()
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	sharp = TRUE
-	edge = TRUE
+	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	icon_state = "[active_state]_sharp"
 	injury_kind = INJURY_CUT
 
@@ -1172,7 +1189,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	if(active)
 		to_chat(user, span_notice("The [src] grows dull!"))
 	..()
-	attack_verb = list("bapped", "thwapped", "bonked", "whacked")
+	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
 	icon_state = initial(icon_state)
 	injury_kind = initial(injury_kind)
 
@@ -1257,7 +1274,6 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 	name = "weird necklace"
 	desc = "A necklace with a brilliantly blue crystal encased in protective glass."
 	icon = 'icons/vore/custom_clothes_vr.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	suit_type = "probably not magical"
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
@@ -1277,6 +1293,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 CAPABILITIES(/obj/item/rig/nikki)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
 	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 
@@ -1410,9 +1427,11 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 /obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette
 	name = "sawtooth ritual knife"
 	desc = "A mostly decorative knife made from thin ceramic and toothed with large black fangs. Printed on the flat is an eight-armed cross, like an asterisk with an extra stroke, ringed by a calligraphy-style crescent."
-	attack_verb = list("mauled", "bit", "sawed", "butchered")
 	dulled = 1
 	default_material = MAT_GLASS
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette)
+	configure(item_combat(attack_verbs = list("mauled", "bit", "sawed", "butchered")))
 
 //Ashling - Antoinette deKaultieste
 /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette
@@ -1497,10 +1516,10 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon_state = "revclaymore"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "revclaymoremob"
-	force = 1
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/sword/fluff/revolver)
+	configure(item_combat(force = 1, sharp = TRUE, edge = TRUE))
 
 //YeCrowbarMan - Lemon Yellow
 /obj/item/toy/plushie/fluff/lemonplush
@@ -1508,7 +1527,9 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	desc = "A well-worn slime custom-made yellow plushie, extensively hugged and loved. It reeks of lemon."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "lemonplush"
-	attack_verb = list("blorbled", "slimed", "absorbed", "glomped")
+
+CAPABILITIES(/obj/item/toy/plushie/fluff/lemonplush)
+	configure(item_combat(attack_verbs = list("blorbled", "slimed", "absorbed", "glomped")))
 
 //Bricker98:Nettie Stough
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie
@@ -1543,7 +1564,6 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "pandorba"
 	pokephrase = "Gecker!"
-	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(datum/act/op/A)
@@ -1556,6 +1576,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
+	configure(item_combat(attack_verbs = list("fluffed", "fwomped", "fuwa'd", "squirmshed")))
 	op("mofuorb_search", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Search"), when(req(PROC_REF(search_ready))), claims(), wait(1 SECOND), then(PROC_REF(search_done)))
 	op("mofuorb_hug", in_hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Hug"), then(PROC_REF(mofuorb_hug)))
 	op("mofuorb_poke", in_hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Poke"), then(PROC_REF(mofuorb_poke)))
@@ -1651,8 +1672,10 @@ CAPABILITIES(/obj/item/dice/loaded/ceph)
 	icon_state = "collar_inactive"
 	icon_root = "collar"
 	item_state = "on_mob_collar"
-	slot_flags = SLOT_MASK | SLOT_OCLOTHING
 	replacementType = /obj/item/remote_scene_tool/tally_doll
+
+CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
+	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
 TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
 
@@ -1665,6 +1688,8 @@ TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(
 	icon = 'icons/vore/custom_remote_scene_tools.dmi'
 	icon_state = "doll_inactive"
 	icon_root = "doll"
-	slot_flags = NONE
 	can_summon = FALSE
 	can_replace = FALSE
+
+CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
+	configure(item_worn(slots = NONE))

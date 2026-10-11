@@ -31,8 +31,9 @@
 
 	say_list_type = /datum/say_list/lizardman
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/lizardman)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+
 
 
 /datum/say_list/lizardman

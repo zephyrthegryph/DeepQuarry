@@ -38,5 +38,5 @@
 	TEST_ASSERT_EQUAL(child.horn_color, mother.horn_color, "actual inherited horn color overrides the distinct Cass default")
 	TEST_ASSERT_EQUAL(child.eye_color, mother.eye_color, "actual inherited eye color overrides the distinct Cass default")
 	TEST_ASSERT_EQUAL(child.skin_color, mother.skin_color, "actual inherited skin color overrides the distinct Cass default")
-	TEST_ASSERT_EQUAL(mother.nutrition, 500, "actual constructor inheritance debits the mother's configured nutrition")
-	TEST_ASSERT_EQUAL(father.nutrition, 750, "actual constructor inheritance debits the father's configured nutrition")
+	TEST_ASSERT_EQUAL(nutrition_of(mother), 500, "actual constructor inheritance debits the mother's configured nutrition_of(src)")
+	TEST_ASSERT_EQUAL(nutrition_of(father), 750, "actual constructor inheritance debits the father's configured nutrition_of(src)")

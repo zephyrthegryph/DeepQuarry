@@ -3,7 +3,6 @@
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	desc = "A thick wall of writhing tendrils."
-	light_range = 2
 	density = FALSE // This is false because blob mob AI's walk_to() proc appears to never attempt to move onto dense objects even if allowed by CanPass().
 	opacity = FALSE
 	anchored = TRUE
@@ -23,6 +22,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 CAPABILITIES(/obj/structure/blob)
+	configure(light_glow(range = 2))
 	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
 	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
@@ -341,7 +341,7 @@ TRACKED(/obj/structure/blob, look_tint)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	switch(W.obj_damage_type())
 		if(BURN)
 			if(overmind)

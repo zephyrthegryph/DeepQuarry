@@ -128,7 +128,7 @@
 	var/weight = H.weight
 	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
-	TEST_ASSERT(H.nutrition > 100, "the weight-gain drug must add nutrition, got [H.nutrition]")
+	TEST_ASSERT(nutrition_of(H) > 100, "the weight-gain drug must add nutrition_of(src), got [nutrition_of(H)]")
 	TEST_ASSERT(abs((H.weight - weight) - 0.3) < 0.001, "0.2u adds 0.3 weight, got [H.weight - weight]")
 
 /// B3: drawing into a container that holds another donor's blood is refused.
@@ -172,7 +172,7 @@
 	if(!(H.species.allergens & R.allergen_type) && !(H.species.medallergens & R.medallergen_type))
 		expected += (R.nutrition + H.food_preference(R.allergen_type)) * removed
 	R.affect_ingest(H, null, removed)
-	TEST_ASSERT(abs(H.nutrition - expected) < 0.01, "a drink adds [expected - 100] nutrition, got [H.nutrition - 100]")
+	TEST_ASSERT(abs(nutrition_of(H) - expected) < 0.01, "a drink adds [expected - 100] nutrition_of(src), got [nutrition_of(H) - 100]")
 
 /// B19: a species table overrides only the factors it names.
 /datum/unit_test/dq_p1_b19_species_factor_merge

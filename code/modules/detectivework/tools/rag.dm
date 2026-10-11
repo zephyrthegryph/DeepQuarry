@@ -147,7 +147,7 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 			to_chat(user, span_warning("You can't smother this creature."))
 			return OP_REFUSED
 		var/mob/living/carbon/human/H = target
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) //Check human head coverage.
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) //Check human head coverage.
 			to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 			return OP_REFUSED
 		if(!reagents.total_volume)
@@ -206,13 +206,13 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 		destroyed(src, null, "explosion")
 		return
 
-	set_light(2, null, "#E38F46")
+	set_glow(src, GLOW(2, null, "#E38F46"))
 	set_rag_lit(TRUE)
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_rag_lit(FALSE)
 
 	//rags sitting around with 1 second of burn time left is dumb.

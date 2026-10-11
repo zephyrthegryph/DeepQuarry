@@ -74,8 +74,6 @@
 
 	loot_list = list(/obj/item/borg/upgrade/basic/syndicate = 6, /obj/item/borg/upgrade/basic/vtec = 6, /obj/item/material/knife/ritual = 6, /obj/item/disk/nifsoft/compliance = 6)
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi
 	name = "corrupt corrupt hound"
@@ -107,7 +105,6 @@
 		..()
 
 /mob/living/simple_mob/vore/aggressive/corrupthound
-	death_message = "shudders and collapses!"
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/on_death(gibbed)
 	.=..()
@@ -115,6 +112,8 @@
 	icon_state = icon_dead
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
@@ -350,7 +349,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 		..()
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound
-	death_message = "shudders and collapses!"
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/on_death(gibbed)
 	.=..()
@@ -358,6 +356,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	icon_state = icon_dead
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

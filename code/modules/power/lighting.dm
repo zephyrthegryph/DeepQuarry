@@ -290,7 +290,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	if(!shows_alerts)
 		return
 	set_current_alert("atmos")
-	light_color = "#6D6DFC"
+	set_light_color("#6D6DFC")
 	brightness_color = "#6D6DFC"
 	refresh_light()
 
@@ -298,7 +298,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	if(!shows_alerts)
 		return
 	set_current_alert("fire")
-	light_color = "#FF3030"
+	set_light_color("#FF3030")
 	brightness_color = "#FF3030"
 	refresh_light()
 
@@ -320,7 +320,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	if(!shows_alerts)
 		return
 	set_current_alert("eng")
-	light_color = "#ff9900"
+	set_light_color("#ff9900")
 	brightness_color = "#ff9900"
 	refresh_light()
 
@@ -344,7 +344,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 			correct_range = brightness_range
 			correct_power = brightness_power
 			correct_color = brightness_color
-		if(light_range != correct_range || light_power != correct_power || light_color != correct_color || overlay_color != correct_overlay)
+		if(glow_of(src).range != correct_range || glow_of(src).power != correct_power || glow_of(src).color != correct_color || overlay_color != correct_overlay)
 			if(!auto_flicker)
 				switchcount++
 			if(rigged)
@@ -358,10 +358,10 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 				if(status == LIGHT_OK && trigger)
 					set_bulb_status(LIGHT_BURNED)
 					set_on(0)
-					set_light(0)
+					set_glow(src, GLOW(0, null, null))
 			else
 				set_use_power(USE_POWER_ACTIVE)
-				set_light(correct_range, correct_power, correct_color)
+				set_glow(src, GLOW(correct_range, correct_power, correct_color))
 				set_overlay_color(correct_overlay)
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
@@ -371,9 +371,9 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 		begin_emergency_discharge()
 	else
 		set_use_power(USE_POWER_IDLE)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	update_light()
-	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)
+	update_active_power_usage((glow_of(src).range * glow_of(src).power) * LIGHTING_POWER_FACTOR)
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/machinery/light/proc/smashed_by(datum/act/hit/generic/A)
@@ -434,7 +434,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /obj/machinery/light/proc/declare_emergency_cell()
 	var/area/A = get_area(src)
 	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
-	latent_cell_charge = (!A?.lightswitch || !A?.light_power) ? 0 : initial(typed.charge)
+	latent_cell_charge = (!A?.lightswitch || !glow_of(A).power) ? 0 : initial(typed.charge)
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
@@ -512,7 +512,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
-		if(prob(1+W.force * 5))
+		if(prob(1+combat_of(W).force * 5))
 
 			to_chat(user, "You hit the light, and it smashes!")
 			for(var/mob/M in viewers(src))
@@ -661,7 +661,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 			installed_light.set_status(status)
 		return FALSE
 	C.use(pwr, seconds = drain_seconds)
-	set_light(brightness_range * bulb_emergency_brightness_mul, emergency_light_power(C), bulb_emergency_colour)
+	set_glow(src, GLOW(brightness_range * bulb_emergency_brightness_mul, emergency_light_power(C), bulb_emergency_colour))
 	return TRUE
 
 /// The emergency output on cell `C`: the ballast holds the lamp at its emergency level until the cell is down to what the dimmed level needs
@@ -897,8 +897,6 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 /obj/item/light
 	icon = 'icons/obj/lighting.dmi'
-	force = 2
-	throwforce = 5
 	w_class = ITEMSIZE_TINY
 	MATERIAL_BULK(MAT_STEEL, 60)
 
@@ -1007,6 +1005,8 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
@@ -1196,8 +1196,8 @@ CAPABILITIES(/obj/item/light)
 	if(status == LIGHT_OK || status == LIGHT_BURNED)
 		src.visible_message(span_red("[name] shatters."),span_red("You hear a small glass object shatter."))
 		set_status(LIGHT_BROKEN)
-		force = 5
-		sharp = TRUE
+		set_force(5)
+		set_sharp(TRUE)
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 
 //Lamp Shade

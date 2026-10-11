@@ -112,13 +112,13 @@ CAPABILITIES(/datum/overlay_lighting)
 		set_direction(movable_parent.dir)
 	if(!isnull(_range))
 		movable_parent.set_light_range(_range)
-	set_range(owner, movable_parent.light_range)
+	set_range(owner, glow_of(movable_parent).range)
 	if(!isnull(_power))
 		movable_parent.set_light_power(_power)
-	set_power(owner, movable_parent.light_power)
+	set_power(owner, glow_of(movable_parent).power)
 	if(!isnull(_color))
 		movable_parent.set_light_color(_color)
-	set_color(owner, movable_parent.light_color)
+	set_color(owner, glow_of(movable_parent).color)
 	if(!isnull(starts_on))
 		movable_parent.set_light_on(starts_on)
 
@@ -354,7 +354,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_range(source, event.old_range)
 
 /datum/overlay_lighting/proc/set_range(atom/source, old_range)
-	var/new_range = source.light_range
+	var/new_range = glow_of(source).range
 	if(range == new_range)
 		return
 	if(range == 0)
@@ -383,7 +383,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_power(source, event.old_power)
 
 /datum/overlay_lighting/proc/set_power(atom/source, old_power)
-	var/new_power = source.light_power
+	var/new_power = glow_of(source).power
 	set_lum_power(new_power >= 0 ? 0.5 : -0.5)
 	set_alpha = min(230, (abs(new_power) * 120) + 30)
 	visible_mask.alpha = set_alpha
@@ -398,7 +398,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_color(source, event.old_color)
 
 /datum/overlay_lighting/proc/set_color(atom/source, old_color)
-	var/new_color = source.light_color
+	var/new_color = glow_of(source).color
 	visible_mask.color = new_color
 	if(directional)
 		cone.color = new_color

@@ -7,7 +7,6 @@
 	MATERIAL_BULK(MAT_STEEL, 75)
 	subspace_transmission = TRUE
 	canhear_range = 0 // can't hear headsets from very far away
-	slot_flags = SLOT_EARS
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/ears/mob_teshari.dmi',
 						SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',
 						SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
@@ -21,6 +20,7 @@
 
 
 CAPABILITIES(/obj/item/radio/headset)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
@@ -717,15 +717,13 @@ CAPABILITIES(/obj/item/radio/headset)
 	var/list/remove_spells	//Reference to spells that'll get removed
 	/// Movement delay added while worn (a body factor, via worn_factors). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
-	light_range = 6
-	light_power = 0				//Set this to 0 if you don't want a light
-	light_color = "#ffaaaa"
 	var/tele_threshold = 50
 	var/telex = 16
 	var/teley = 16
 	var/telez = 0	//Set this in-round if you want a return point with fake health
 
 CAPABILITIES(/obj/item/radio/headset/event)
+	configure(light_glow(range = 6, power = 0, color = "#ffaaaa"))
 	owns_many(nameof(remove_spells))
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
@@ -733,8 +731,8 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		rel_set(src, nameof(wearer), H)
-		if(light_power)
-			set_light(light_range,light_power,light_color,1)
+		if(glow_of(src).power)
+			set_glow(src, GLOW(glow_of(src).range, glow_of(src).power, glow_of(src).color), 1)
 		if(effect_icon)
 			effect_overlay = image(effect_icon, effect_icon_state, pixel_y = overlay_offset_y*H.size_multiplier)
 			effect_overlay.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
@@ -751,7 +749,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	..()
 	if(wearer())
 		rel_clear(src, nameof(wearer))
-		if(light_power)
+		if(glow_of(src).power)
 			light_on = 0
 		if(effect_icon)
 			H.cut_overlay(effect_overlay)

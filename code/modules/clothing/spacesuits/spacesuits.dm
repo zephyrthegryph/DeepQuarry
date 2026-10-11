@@ -10,10 +10,7 @@
 	center_of_mass_x = 0
 	center_of_mass_y = 0
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD
 	armor_spec = "bio=100;rad=50;cold=60"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 	preserve_item = 1
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
@@ -24,9 +21,10 @@
 
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)
 	light_overlay = "helmet_light"
-	light_range = 4
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(light_glow(range = 4))
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
 	owns_one(nameof(camera), /obj/machinery/camera)
 	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
@@ -71,11 +69,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 	icon_state = "space"
 	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor_spec = "bio=100;rad=50;cold=60"
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.

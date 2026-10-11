@@ -56,7 +56,7 @@ emp_act
 /mob/living/carbon/human/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	var/obj/item/organ/external/affected = get_organ(check_zone(def_zone))
 	var/siemens_coeff = get_siemens_coefficient_organ(affected)
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 	stun_amount *= siemens_coeff
 	agony_amount *= siemens_coeff
@@ -139,7 +139,7 @@ emp_act
 				siemens_value += get_siemens_coefficient_organ(organ) * weight
 				total += weight
 
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_value *= 1.5
 
 	return (siemens_value / max(total, 1))
@@ -153,7 +153,7 @@ emp_act
 	var/list/results = list()
 	var/list/clothing_items = list(get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_SHOES))
 	for(var/obj/item/clothing/C in clothing_items)
-		if(istype(C) && (C.body_parts_covered & def_zone.body_part))
+		if(istype(C) && (worn_of(C).covers & def_zone.body_part))
 			results.Add(C)
 	return results
 
@@ -178,7 +178,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL))
 			return gear
 	return null
 
@@ -186,7 +186,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL) && !(gear.item_flags & ALLOW_SURVIVALFOOD))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL) && !(worn_of(gear).flags & ALLOW_SURVIVALFOOD))
 			return gear
 	return null
 
@@ -205,7 +205,7 @@ emp_act
 		act_message(user, src, others = span_danger("%U% misses %T% with %I%!"), item = I)
 		return null
 
-	if(check_shields(I.force, I, user, target_zone, "the [I.name]"))
+	if(check_shields(combat_of(I).force, I, user, target_zone, "the [I.name]"))
 		return
 
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
@@ -220,9 +220,9 @@ emp_act
 	if(!affecting)
 		return //should be prevented by attacked_with_item() but for sanity.
 
-	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
+	visible_message(span_danger("[src] has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
+	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -348,7 +348,7 @@ emp_act
 						throw_mode_off()
 						return
 
-		var/throw_damage = thrown_object.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
+		var/throw_damage = thrown_of(thrown_object).force*(speed/THROWFORCE_SPEED_DIVISOR)
 
 		if(species && species.throwforce_absorb_threshold >= throw_damage)
 			act_message(src, null, others = span_infoplain(span_bold("%I%") + " simply bounces off of %U%'s body!"), item = thrown_object)
@@ -387,7 +387,7 @@ emp_act
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
 
-		var/armor = armor_against(thrown_object.injury_kind, affecting, thrown_object.armor_penetration)
+		var/armor = armor_against(thrown_object.injury_kind, affecting, combat_of(thrown_object).armor_penetration)
 		if(armor < 100)
 			receive_thrown(thrown_object, throwingdatum, zone = zone)
 
@@ -421,7 +421,7 @@ emp_act
 
 			if(!thrown_object || !src) return
 
-			if(thrown_object.loc == src && thrown_object.sharp) //Projectile is embedded and suitable for pinning.
+			if(thrown_object.loc == src && combat_of(thrown_object).sharp) //Projectile is embedded and suitable for pinning.
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
@@ -441,13 +441,13 @@ emp_act
 		if(temp && !temp.is_usable())
 			return FALSE	// The hand isn't working in the first place
 
-	if(!O.catchable)
+	if(!thrown_of(O).catchable)
 		return FALSE
 
 	// Alright, our hand works? Time to try the catching.
 	var/catch_chance = 90	// Default 90% catch rate
 
-	if(O.sharp)
+	if(combat_of(O).sharp)
 		catch_chance -= 50	// Catching knives is hard
 
 	catch_chance -= get_accuracy_penalty()	// Same issues with shooting a gun, or swinging a weapon
@@ -532,7 +532,7 @@ emp_act
 	for(var/part in weights)
 		var/through = weights[part]
 		for(var/obj/item/clothing/C in worn)
-			if(C.body_parts_covered & part)
+			if(worn_of(C).covers & part)
 				through *= protection_of(C).permeability
 		. += through
 
@@ -574,7 +574,7 @@ emp_act
 	var/obj/item/grab/G = grab_held_by(user)
 	if(!G || !W) //check that we still have a grab
 		return 0
-	var/organ_chance = W.edge ? 75 : 50
+	var/organ_chance = combat_of(W).edge ? 75 : 50
 	var/damage = shank_armor_helper(W, G, user)
 	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
 
@@ -592,7 +592,7 @@ emp_act
 	if(!check_has_mouth())
 		return TRUE
 
-	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FACE))
+	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && worn_of(get_equipped_item(SLOT_ID_SUIT)).covers & FACE))
 		return TRUE
 
 	return FALSE

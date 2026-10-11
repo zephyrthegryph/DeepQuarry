@@ -25,7 +25,6 @@
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "viscerator_attack"
 	icon_living = "viscerator_attack"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_SYNDICATE
 	endurance = 15
@@ -33,13 +32,10 @@
 
 	pass_flags = PASSTABLE | PASSMOB
 	combat_mode = TRUE
-	mob_swap_flags = 0
-	mob_push_flags = 0
 
 	melee_attack_delay = null // No attack delay, as their movement is functionally an attack.
 	melee_damage_lower = 4 // Approx 8 DPS.
 	melee_damage_upper = 4
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_WEAPONS_BLADESLICE
 	attacktext = list("cut", "sliced")
@@ -48,6 +44,9 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 5, death_message = "is smashed into pieces!"))
+	configure(mob_movement(swap = 0, push = 0))
 	after_init(0, then(PROC_REF(viscerator_swarm_ready)))
 
 /mob/living/simple_mob/mechanical/viscerator/proc/viscerator_swarm_ready(datum/act/timer/A)
@@ -55,7 +54,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
 
 /mob/living/simple_mob/mechanical/viscerator
 	delete_on_death = TRUE
-	death_message = "is smashed into pieces!"
 
 /mob/living/simple_mob/mechanical/viscerator/on_death(gibbed)
 	..()
@@ -85,7 +83,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
 
 	melee_damage_lower = 2
 	melee_damage_upper = 5
-	base_attack_cooldown = 8
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator/station)
+	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/mechanical/viscerator/station/IIsAlly(mob/living/L)
 	. = ..()
@@ -99,8 +99,10 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
 // Variant that has high armor pen. Slightly slower attack speed and movement. Meant to be dispersed in groups with other ones
 /mob/living/simple_mob/mechanical/viscerator/piercing
 	attack_armor_pen = 20
-	base_attack_cooldown = 10 // One attack a second or so.
 	movement_cooldown = -1
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator/piercing)
+	configure(mob_kind(attack_cooldown = 10))
 
 /datum/decl/mob_organ_names/viscerator
 TYPE_TABLE(/datum/decl/mob_organ_names/viscerator, mob_organ_hit_zones, list("chassis", "rotor blades", "sensor array"))

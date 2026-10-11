@@ -178,10 +178,10 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 	name = "engine exhaust"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "smoke"
-	light_color = "#ed9200"
 	anchored = TRUE
 
 CAPABILITIES(/obj/effect/engine_exhaust)
+	configure(light_glow(color = "#ed9200"))
 	param(nameof(dir), pos = 1)
 	param(nameof(flame), pos = 2, apply = PROC_REF(ignite))
 
@@ -195,7 +195,7 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 		if(isturf(loc))
 			var/turf/T = loc
 			T.hotspot_expose(1000,125)
-		set_light(0.5, 3)
+		set_glow(src, GLOW(0.5, 3, null))
 	expire(2 SECONDS)
 
 /obj/item/circuitboard/unary_atmos/engine //why don't we move this elsewhere?

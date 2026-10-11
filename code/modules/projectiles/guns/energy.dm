@@ -84,12 +84,12 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 						H = O.owner
 
 				if(istype(H))
-					var/start_nutrition = H.nutrition
+					var/start_nutrition = nutrition_of(H)
 					var/end_nutrition = 0
 
 					H.adjust_nutrition(-rechargeamt / 15)
 
-					end_nutrition = H.nutrition
+					end_nutrition = nutrition_of(H)
 
 					var/deficit = (rechargeamt / 15) - (start_nutrition - max(0, end_nutrition))
 					if(deficit > 0)
@@ -121,7 +121,7 @@ TRACKED(/obj/item/gun/energy, recharge_due)
 	var/obj/item/projectile/projectile = new projectile_type(src)
 	if(output_envelope > 1)
 		projectile.damage *= output_envelope
-		projectile.armor_penetration += round((output_envelope - 1) * 20)
+		projectile.set_armor_penetration(combat_of(projectile).armor_penetration + (round((output_envelope - 1) * 20)))
 		projectile.color = "#88ddff"
 	return projectile
 

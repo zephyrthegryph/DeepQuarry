@@ -13,21 +13,22 @@
 	aspect = ASPECT_DARK
 	spawner_type = /obj/effect/temporary_effect/darkness
 
+CAPABILITIES(/obj/item/spell/spawner/darkness)
+	configure(light_glow(range = 6, power = -20, color = "#FFFFFF"))
+
 /obj/item/spell/spawner/darkness/on_ranged_cast(atom/hit_atom, mob/user)
 	if(pay_energy(500))
 		adjust_instability(4)
 		..()
 
 /obj/item/spell/spawner/darkness
-	light_range = 6
-	light_power = -20
-	light_color = "#FFFFFF"
 	light_on = TRUE
 
 /obj/effect/temporary_effect/darkness
 	name = "darkness"
 	time_to_die = 2 MINUTES
 	invisibility = INVISIBILITY_ABSTRACT
-	light_range = 6
-	light_power = -20
 	light_on = TRUE
+
+CAPABILITIES(/obj/effect/temporary_effect/darkness)
+	configure(light_glow(range = 6, power = -20))

@@ -13,13 +13,9 @@
 
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
-	mob_bump_flag = HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
-	digest_leave_remains = TRUE
 
 	var/tt_desc = null //Tooltip description
 
@@ -42,8 +38,6 @@
 	var/icon_rest = null			// The iconstate for resting, optional
 	var/has_eye_glow = FALSE		// If true, adds an overlay over the lighting plane for [icon_state]-eyes.
 	var/custom_eye_color = null
-	attack_icon = 'icons/effects/effects.dmi' //Just the default, played like the weapon attack anim
-	attack_icon_state = "slash" //Just the default
 
 	//Mob talking settings
 	universal_speak = 0				// Can all mobs in the entire universe understand this one?
@@ -172,7 +166,6 @@
 	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 TRACKED(/mob/living/simple_mob, icon_living)
@@ -184,6 +177,9 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
+	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
 	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
@@ -265,7 +261,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(picked_size)
 		to_chat(src, span_notice("You have already picked a size! If you picked the wrong size, ask an admin to change your picked_size variable to 0."))
 		return
-	if(!resizable)
+	if(!vore_prefs.resizable)
 		to_chat(src, span_warning("You are immune to resizing!"))
 		return
 
@@ -328,12 +324,12 @@ CAPABILITIES(/mob/living/simple_mob)
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)
-	if(T && T.movement_cost && !(dq_get_hovering(src) || flying || is_incorporeal())) // Flying mobs ignore turf-based slowdown. Aquatic mobs ignore water slowdown, and can gain bonus speed in it.
+	if(T && T.movement_cost && !(dq_get_hovering(src) || stat_value(src, STAT_FLYING) || is_incorporeal())) // Flying mobs ignore turf-based slowdown. Aquatic mobs ignore water slowdown, and can gain bonus speed in it.
 		if(istype(T,/turf/simulated/floor/water) && aquatic_movement)
 			. -= aquatic_movement - 1
 		else
 			. += T.movement_cost
-		if(flying)
+		if(stat_value(src, STAT_FLYING))
 			adjust_nutrition(-0.5)
 
 	if(purge)//Purged creatures will move more slowly. The more time before their purge stops, the slower they'll move.
@@ -387,7 +383,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	return verb
 
 /mob/living/simple_mob/is_sentient()
-	return mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
+	return kind_of(src).mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
 
 /mob/living/simple_mob/get_nametag_desc(mob/user)
 	return span_italics("[tt_desc]")
@@ -486,7 +482,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 // === merged from simple_mob_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob
 	melee_attack_delay = 1
-	base_attack_cooldown = 10
 	melee_miss_chance = 25
 
 	var/temperature_range = 40			// How close will they get to environmental temperature before their body stops changing its heat
@@ -531,8 +526,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
 	does_spin = FALSE
-	can_be_drop_pred = TRUE				// Mobs are pred by default.
-	can_be_drop_prey = TRUE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob
@@ -561,10 +554,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		return 0
 	if(M.is_incorporeal()) // No eating the phased ones
 		return 0
-	if(vore_ignores_undigestable && !M.digestable) //Don't eat people with nogurgle prefs
+	if(vore_ignores_undigestable && !M.vore_prefs.digestable) //Don't eat people with nogurgle prefs
 		// ai_log("vr/wont eat [M] because I am picky", 3) // AI TEMPORARY REMOVAL
 		return 0
-	if(!M.allowmobvore || !M.devourable) // Don't eat people who don't want to be ate by mobs
+	if(!M.vore_prefs.allowmobvore || !M.vore_prefs.devourable) // Don't eat people who don't want to be ate by mobs
 		// ai_log("vr/wont eat [M] because they don't allow mob vore", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(LAZYFIND(prey_excludes, M)) // They're excluded
@@ -676,7 +669,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(LAZYLEN(vore_organs))
 		return
 
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	load_default_bellies()
 
 /mob/living/simple_mob/proc/load_default_bellies()
@@ -723,7 +716,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
 		"The stomach glorps and gurgles as it tries to work you into slop.")
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	B.belly_fullscreen = "a_tumby"
 	B.belly_fullscreen_color = "#823232"
 	B.belly_fullscreen_color2 = "#823232"
@@ -938,7 +931,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/spit_projectile = null // what our spit projectile is. Can be anything
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 
 /mob/living/simple_mob/RangedAttack(atom/A)
 	if(!isnull(spit_projectile) && spitting)

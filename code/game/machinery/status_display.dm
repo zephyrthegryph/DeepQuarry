@@ -263,13 +263,13 @@ CAPABILITIES(/obj/machinery/status_display)
 	if(seclevel != newlevel)
 		seclevel = newlevel
 	switch(seclevel)
-		if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
-		if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
-		if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
-		if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
-		if("blue")	set_light(l_range = 2, l_power = 0.25, l_color = "#1024A9")
-		if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-		if("delta")	set_light(l_range = 4, l_power = 0.9, l_color = "#FF6633")
+		if("green")	set_glow(src, GLOW(2, 0.25, "#00ff00"))
+		if("yellow")	set_glow(src, GLOW(2, 0.25, "#ffff00"))
+		if("violet")	set_glow(src, GLOW(2, 0.25, "#9933ff"))
+		if("orange")	set_glow(src, GLOW(2, 0.25, "#ff9900"))
+		if("blue")	set_glow(src, GLOW(2, 0.25, "#1024A9"))
+		if("red")	set_glow(src, GLOW(4, 0.9, "#ff0000"))
+		if("delta")	set_glow(src, GLOW(4, 0.9, "#FF6633"))
 	set_picture("status_display_[seclevel]")
 
 // Called when the alert level is changed.
@@ -278,7 +278,7 @@ CAPABILITIES(/obj/machinery/status_display)
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
 		set_mode(STATUS_DISPLAY_TIME)
-		set_light(0) // Remove any glow we had from the alert previously.
+		set_glow(src, GLOW(0, null, null)) // Remove any glow we had from the alert previously.
 		refresh()
 		return
 	set_mode(STATUS_DISPLAY_ALERT)
@@ -334,16 +334,16 @@ CAPABILITIES(/obj/machinery/status_display)
 	switch(signal.data["command"])
 		if("blank")
 			set_mode(STATUS_DISPLAY_BLANK)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("shuttle")
 			set_mode(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("message")
 			set_mode(STATUS_DISPLAY_MESSAGE)
 			set_message(signal.data["msg1"], signal.data["msg2"])
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("alert")
 			set_mode(STATUS_DISPLAY_ALERT)
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/machinery/status_display)
 
 		if("time")
 			set_mode(STATUS_DISPLAY_TIME)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 	refresh()
 
 #undef FONT_SIZE

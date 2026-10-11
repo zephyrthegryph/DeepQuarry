@@ -129,7 +129,7 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 		var/obj/machinery/light/light = object
 		light.brightness_color = window_colour
 		light.brightness_color_ns = window_colour
-		light.set_light(0)
+		set_glow(light, GLOW(0, null, null))
 		light.refresh_light()
 
 	var/replace_path = get_replacement_object_typepath(object)

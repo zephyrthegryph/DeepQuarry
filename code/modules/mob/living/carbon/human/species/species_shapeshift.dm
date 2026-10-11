@@ -267,7 +267,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	cooldown_start(src, last_special, 5 SECONDS)
 
-	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/shapeshifter_colour_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -276,12 +276,8 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
 
-	r_skin =   hex2num(copytext(new_skin, 2, 4))
-	g_skin =   hex2num(copytext(new_skin, 4, 6))
-	b_skin =   hex2num(copytext(new_skin, 6, 8))
-	r_synth = r_skin
-	g_synth = g_skin
-	b_synth = b_skin
+	looks.set_skin_color(new_skin)
+	looks.set_synth_color_rgb(looks.skin_color)
 
 
 	for(var/obj/item/organ/external/E in organs)
@@ -321,15 +317,15 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 /mob/living/carbon/human/proc/shapeshifter_set_hair_color(new_hair)
 
-	change_hair_color(hex2num(copytext(new_hair, 2, 4)), hex2num(copytext(new_hair, 4, 6)), hex2num(copytext(new_hair, 6, 8)))
+	change_hair_color(new_hair)
 
 /mob/living/carbon/human/proc/shapeshifter_set_grad_color(new_grad)
 
-	change_grad_color(hex2num(copytext(new_grad, 2, 4)), hex2num(copytext(new_grad, 4, 6)), hex2num(copytext(new_grad, 6, 8)))
+	change_grad_color(new_grad)
 
 /mob/living/carbon/human/proc/shapeshifter_set_facial_color(new_fhair)
 
-	change_facial_hair_color(hex2num(copytext(new_fhair, 2, 4)), hex2num(copytext(new_fhair, 4, 6)), hex2num(copytext(new_fhair, 6, 8)))
+	change_facial_hair_color(new_fhair)
 
 // Replaces limbs and copies wounds
 /mob/living/carbon/human/proc/shapeshifter_change_species(new_species)
@@ -388,7 +384,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	cooldown_start(src, last_special, 5 SECONDS)
 
-	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
+	var/current_color = looks.eyes_color
 	open_request(src, /datum/prompt/color, PROC_REF(shapeshifter_eye_colour_chosen), answerer = src, title = "Eye Color", question = "Pick a new color for your eyes.", default = current_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/shapeshifter_eye_colour_chosen(datum/act/request/A)
@@ -400,9 +396,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 
 	var/list/new_color_rgb_list = hex2rgb(new_eyes)
 	// First, update mob vars.
-	r_eyes = new_color_rgb_list[1]
-	g_eyes = new_color_rgb_list[2]
-	b_eyes = new_color_rgb_list[3]
+	looks.set_eyes_color(rgb(new_color_rgb_list[1], new_color_rgb_list[2], new_color_rgb_list[3]))
 	// Now sync the organ's eye_colour list, if possible
 	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(istype(eyes))

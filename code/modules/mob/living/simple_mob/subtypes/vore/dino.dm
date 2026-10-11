@@ -38,8 +38,9 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dino)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/dino

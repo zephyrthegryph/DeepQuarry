@@ -33,7 +33,7 @@ TRACKED(/datum/trait_state/weaver, silk_reserve)
 	..()
 
 /datum/trait_state/weaver/proc/process_weaver_silk()
-	if(silk_reserve < silk_max_reserve && silk_production == TRUE && owner.nutrition > 100)
+	if(silk_reserve < silk_max_reserve && silk_production == TRUE && nutrition_of(owner) > 100)
 		set_silk_reserve(min(silk_reserve + silk_generation_amount, silk_max_reserve))
 		owner.adjust_nutrition(-(nutrtion_per_silk*silk_generation_amount))
 

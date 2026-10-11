@@ -169,8 +169,8 @@
 		for(var/obj/item/clothing/clothes in target)
 			if(target.item_is_in_hands(clothes))
 				continue
-			if(clothes.item_flags & THICKMATERIAL)
-				body_coverage &= ~(clothes.body_parts_covered)
+			if(worn_of(clothes).flags & THICKMATERIAL)
+				body_coverage &= ~(worn_of(clothes).covers)
 
 		if(!body_coverage)
 			return
@@ -198,7 +198,7 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				splat.set_light(blight, 0.5, l_color = clr)
+				set_glow(splat, GLOW(blight, 0.5, clr))
 			var/flesh_colour = get_trait(TRAIT_FLESH_COLOUR)
 			if(!flesh_colour) flesh_colour = get_trait(TRAIT_PRODUCT_COLOUR)
 			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
@@ -211,7 +211,7 @@
 			for(var/obj/item/clothing/clothes in contents_of(M))
 				if(M.item_is_in_hands(clothes))
 					continue
-				body_coverage &= ~(clothes.body_parts_covered)
+				body_coverage &= ~(worn_of(clothes).covers)
 			if(!body_coverage)
 				continue
 			var/datum/reagents/R = M.reagents
@@ -841,9 +841,9 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				product.set_light(blight, 0.5, l_color = clr)
+				set_glow(product, GLOW(blight, 0.5, clr))
 			if(get_trait(TRAIT_STINGS) && isitem(product)) //Sometimes the product can be a mob.
-				product.force = 1
+				product.set_force(1)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(isliving(product))

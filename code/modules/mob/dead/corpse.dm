@@ -93,7 +93,7 @@
 						M.b_ears3 = color_rgb_list[3]
 			M.update_hair()
 	if(hair)
-		M.h_style = hair
+		M.looks.set_hair_style(hair)
 		M.update_hair()
 	// handle secondary ears
 	if(length(ear_secondary_type) && (ear_secondary_type[1] in GLOB.ear_styles_list))
@@ -122,8 +122,8 @@
 			M.update_wing_showing()
 	M.real_name = generateCorpseName()
 	M.set_stat(DEAD) //Kills the new mob
-	M.digest_leave_remains = TRUE
-	M.can_be_drop_prey = TRUE
+	M.vore_prefs.digest_leave_remains = TRUE
+	M.vore_prefs.can_be_drop_prey = TRUE
 	if(corpsesynthtype > 0)
 		if(!corpsesynthbrand)
 			corpsesynthbrand = "Unbranded"

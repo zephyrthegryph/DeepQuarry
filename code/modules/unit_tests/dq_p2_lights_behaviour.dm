@@ -261,9 +261,9 @@
 	var/obj/machinery/light/L = light()
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "a placed fixture has a working tube")
 	TEST_ASSERT(L.on, "it is lit")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "tube range")
-	TEST_ASSERT_EQUAL(L.light_power, 1, "tube power")
-	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_TUBE, "tube colour")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "tube range")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 1, "tube power")
+	TEST_ASSERT_EQUAL(glow_of(L).color, LIGHT_COLOR_INCANDESCENT_TUBE, "tube colour")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "it draws its active power")
 	TEST_ASSERT_EQUAL(power_of(L).active, 12, "two watts for each unit of range times power")
 
@@ -273,9 +273,9 @@
 /datum/unit_test/dq_p2_lights/small_fixture_starts_lit_with_the_bulb_numbers/run_gate()
 	var/obj/machinery/light/small/L = light(/obj/machinery/light/small)
 	TEST_ASSERT(L.on, "lit")
-	TEST_ASSERT_EQUAL(L.light_range, 4, "bulb range")
-	TEST_ASSERT_EQUAL(L.light_power, 1, "bulb power")
-	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_BULB, "bulb colour")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 4, "bulb range")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 1, "bulb power")
+	TEST_ASSERT_EQUAL(glow_of(L).color, LIGHT_COLOR_INCANDESCENT_BULB, "bulb colour")
 	TEST_ASSERT_EQUAL(power_of(L).active, 8, "draw follows range times power")
 
 /// A spotlight takes a large tube and a floor lamp a large bulb.
@@ -283,12 +283,12 @@
 
 /datum/unit_test/dq_p2_lights/spot_and_floor_lamp_take_their_large_lights/run_gate()
 	var/obj/machinery/light/spot/S = light(/obj/machinery/light/spot, tile(1, 3))
-	TEST_ASSERT_EQUAL(S.light_range, 8, "large tube range")
-	TEST_ASSERT_EQUAL(S.light_power, 2, "large tube power")
+	TEST_ASSERT_EQUAL(glow_of(S).range, 8, "large tube range")
+	TEST_ASSERT_EQUAL(glow_of(S).power, 2, "large tube power")
 	TEST_ASSERT_EQUAL(power_of(S).active, 32, "large tube draw")
 	var/obj/machinery/light/flamp/F = light(/obj/machinery/light/flamp, tile(3, 3))
-	TEST_ASSERT_EQUAL(F.light_range, 6, "large bulb range")
-	TEST_ASSERT_EQUAL(F.light_power, 1, "large bulb power")
+	TEST_ASSERT_EQUAL(glow_of(F).range, 6, "large bulb range")
+	TEST_ASSERT_EQUAL(glow_of(F).power, 1, "large bulb power")
 	TEST_ASSERT_EQUAL(power_of(F).active, 12, "large bulb draw")
 
 /// A placed fixture holds a charged emergency cell, unless it is a point-of-interest fixture.
@@ -310,7 +310,7 @@
 	p2l_area.power_light = FALSE
 	var/obj/machinery/light/poi/P = light(/obj/machinery/light/poi, tile(3, 3))
 	TEST_ASSERT(!P.on, "no light power, no light")
-	TEST_ASSERT_EQUAL(P.light_range, 0, "the light is out")
+	TEST_ASSERT_EQUAL(glow_of(P).range, 0, "the light is out")
 	TEST_ASSERT(!p2l_emergency(P), "nothing to run on")
 
 /// The fixture types of the game keep their kind of bulb and their quirks.
@@ -341,10 +341,10 @@
 	set_area_switch(0)
 	TEST_ASSERT(!L.on, "switched off")
 	TEST_ASSERT(!p2l_emergency(L), "a light that is switched off does not use its cell")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "it gives no light")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "it gives no light")
 	set_area_switch(1)
 	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.power_lost()], flick [L.flickering])")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "its light is back")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "its light is back")
 
 /// Losing the light channel puts a fixture with a cell on its emergency power: dim, red, an eighth of the range.
 /datum/unit_test/dq_p2_lights/area_power_loss_puts_a_fixture_on_emergency_power
@@ -354,9 +354,9 @@
 	set_area_power(FALSE)
 	TEST_ASSERT(!L.on, "no longer on the grid")
 	TEST_ASSERT(p2l_emergency(L), "on emergency power")
-	TEST_ASSERT_EQUAL(L.light_range, 6 * 0.25, "a quarter of its range")
-	TEST_ASSERT_EQUAL(L.light_color, L.bulb_emergency_colour, "emergency red")
-	TEST_ASSERT_EQUAL(L.light_power, L.bulb_emergency_pow_mul, "the first level of emergency output")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6 * 0.25, "a quarter of its range")
+	TEST_ASSERT_EQUAL(glow_of(L).color, L.bulb_emergency_colour, "emergency red")
+	TEST_ASSERT_EQUAL(glow_of(L).power, L.bulb_emergency_pow_mul, "the first level of emergency output")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "it draws idle power")
 
 /// A fixture with no cell goes dark when the area loses power.
@@ -368,7 +368,7 @@
 	set_area_power(FALSE)
 	TEST_ASSERT(!L.on, "off")
 	TEST_ASSERT(!p2l_emergency(L), "no cell, no emergency")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "dark")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "dark")
 
 /// A fixture that cannot have emergency lighting (switched off by an AI) goes dark too.
 /datum/unit_test/dq_p2_lights/fixture_without_emergency_goes_dark_on_power_loss
@@ -378,7 +378,7 @@
 	L.no_emergency = TRUE
 	set_area_power(FALSE)
 	TEST_ASSERT(!p2l_emergency(L), "no emergency lighting")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "dark")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "dark")
 
 /// Power returning ends the emergency and the light is back on the grid.
 /datum/unit_test/dq_p2_lights/power_returning_ends_the_emergency
@@ -390,7 +390,7 @@
 	set_area_power(TRUE)
 	TEST_ASSERT(L.on, "back on")
 	TEST_ASSERT(!p2l_emergency(L), "the emergency is over")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "its normal range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "its normal range")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_ACTIVE, "it draws active power again")
 
 /// The light switch off, then power lost: the fixture stays dark (a switched-off light never uses its cell).
@@ -402,7 +402,7 @@
 	set_area_power(FALSE)
 	TEST_ASSERT(!L.on, "off")
 	TEST_ASSERT(!p2l_emergency(L), "a light that is switched off stays dark on a power loss")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "dark")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "dark")
 
 /// A broken, burned or empty fixture stays dark whatever the area does.
 /datum/unit_test/dq_p2_lights/power_changes_do_not_light_a_dead_fixture
@@ -515,7 +515,7 @@
 	settle()
 	set_area_power(FALSE)
 	TEST_ASSERT(!p2l_emergency(L), "no emergency lighting with the APC's switch on")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "dark")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "dark")
 	set_area_power(TRUE)
 	A.set_emergency_lights(FALSE)
 	settle()
@@ -535,14 +535,14 @@
 	A.set_nightshift_setting(NIGHTSHIFT_ALWAYS)
 	settle()
 	TEST_ASSERT(p2l_nightshift(L), "night lighting on")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "the tube's night range")
-	TEST_ASSERT_EQUAL(L.light_power, 0.45, "the tube's night power")
-	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_NIGHTSHIFT, "the night colour")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "the tube's night range")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 0.45, "the tube's night power")
+	TEST_ASSERT_EQUAL(glow_of(L).color, LIGHT_COLOR_NIGHTSHIFT, "the night colour")
 	A.set_nightshift_setting(NIGHTSHIFT_NEVER)
 	settle()
 	TEST_ASSERT(!p2l_nightshift(L), "night lighting off")
-	TEST_ASSERT_EQUAL(L.light_power, 1, "back to the day power")
-	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_TUBE, "back to the day colour")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 1, "back to the day power")
+	TEST_ASSERT_EQUAL(glow_of(L).color, LIGHT_COLOR_INCANDESCENT_TUBE, "back to the day colour")
 
 /// A tube that was tuned to another night range gives its fixture that range at night.
 /datum/unit_test/dq_p2_lights/nightshift_uses_the_tube_night_range
@@ -555,13 +555,13 @@
 	B.nightshift_range = 3
 	click(H, L, null) // the tube comes out and goes back in, so the fixture takes its numbers again
 	click(H, L, B)
-	TEST_ASSERT_EQUAL(L.light_range, 6, "the day range by day")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "the day range by day")
 	A.set_nightshift_setting(NIGHTSHIFT_ALWAYS)
 	settle()
-	TEST_ASSERT_EQUAL(L.light_range, 3, "the tube's night range by night")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 3, "the tube's night range by night")
 	A.set_nightshift_setting(NIGHTSHIFT_NEVER)
 	settle()
-	TEST_ASSERT_EQUAL(L.light_range, 6, "and the day range again")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "and the day range again")
 
 /// A fixture that does not allow night shift keeps its day numbers.
 /datum/unit_test/dq_p2_lights/nightshift_leaves_a_no_nightshift_fixture_alone
@@ -572,7 +572,7 @@
 	A.set_nightshift_setting(NIGHTSHIFT_ALWAYS)
 	settle()
 	TEST_ASSERT(!p2l_nightshift(L), "it does not take night lighting")
-	TEST_ASSERT_EQUAL(L.light_power, 1, "day power")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 1, "day power")
 
 /// A fixture placed while night shift is on starts in night lighting; the night numbers are the bulb's.
 /datum/unit_test/dq_p2_lights/fixture_placed_at_night_starts_in_night_lighting
@@ -583,8 +583,8 @@
 	settle()
 	var/obj/machinery/light/small/L = light(/obj/machinery/light/small)
 	TEST_ASSERT(p2l_nightshift(L), "night lighting on from the start")
-	TEST_ASSERT_EQUAL(L.light_power, 0.45, "the small bulb's night power")
-	TEST_ASSERT_EQUAL(L.light_range, 4, "the small bulb's night range")
+	TEST_ASSERT_EQUAL(glow_of(L).power, 0.45, "the small bulb's night power")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 4, "the small bulb's night range")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Bulbs in and out of a fixture
@@ -609,7 +609,7 @@
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "the tube went in")
 	TEST_ASSERT(p2l_bulb(L) == B && B.loc == L, "it is the tube in the fixture")
 	TEST_ASSERT(L.on, "and the fixture is lit")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "with the tube range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "with the tube range")
 
 /// A light of the wrong kind is not taken.
 /datum/unit_test/dq_p2_lights/wrong_kind_of_light_is_refused
@@ -747,7 +747,7 @@
 	click(H, L, B)
 	TEST_ASSERT(p2l_bulb(L) == B, "the same tube is back in")
 	TEST_ASSERT(L.on, "lit")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "with its range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "with its range")
 
 /// A tube taken out of one fixture keeps its custom numbers into another.
 /datum/unit_test/dq_p2_lights/a_tuned_tube_keeps_its_numbers_between_fixtures
@@ -763,8 +763,8 @@
 	p2l_make_empty(M)
 	settle()
 	click(H, M, B)
-	TEST_ASSERT_EQUAL(M.light_range, 3, "the tuned range (status [p2l_status(M)], on [M.on], bulb [p2l_has_bulb(M)], hand [H.get_active_hand()])")
-	TEST_ASSERT_EQUAL(M.light_color, "#123456", "the tuned colour")
+	TEST_ASSERT_EQUAL(glow_of(M).range, 3, "the tuned range (status [p2l_status(M)], on [M.on], bulb [p2l_has_bulb(M)], hand [H.get_active_hand()])")
+	TEST_ASSERT_EQUAL(glow_of(M).color, "#123456", "the tuned colour")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Hitting, opening and tuning a fixture
@@ -777,12 +777,12 @@
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	I.flags |= NOCONDUCT
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BROKEN, "smashed")
 	TEST_ASSERT(!L.on, "dark")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "no light")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "no light")
 
 /// A feather does not (a one in a hundred roll, seeded).
 /datum/unit_test/dq_p2_lights/weak_item_does_not_smash_the_fixture
@@ -791,7 +791,7 @@
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 0
+	I.set_force(0)
 	I.flags |= NOCONDUCT
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "not smashed")
@@ -806,7 +806,7 @@
 	p2l_make_empty(L)
 	settle()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	click(H, L, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "still empty")
 	TEST_ASSERT(I.loc != L, "the item stays out")
@@ -865,7 +865,7 @@
 	settle()
 	var/obj/item/light/B = p2l_bulb(L)
 	TEST_ASSERT_EQUAL(B.brightness_range, 3, "the tube range changed")
-	TEST_ASSERT_EQUAL(L.light_range, 3, "and the fixture follows")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 3, "and the fixture follows")
 
 /// A multitool on a fixture with no working tube does nothing.
 /datum/unit_test/dq_p2_lights/multitool_does_nothing_to_a_broken_fixture
@@ -907,7 +907,7 @@
 	settle()
 	var/obj/item/light/B = p2l_bulb(L)
 	TEST_ASSERT_EQUAL(B.brightness_color, "#00ff00", "the tube colour")
-	TEST_ASSERT_EQUAL(L.light_color, "#00ff00", "the fixture light")
+	TEST_ASSERT_EQUAL(glow_of(L).color, "#00ff00", "the fixture light")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Flickering
@@ -929,7 +929,7 @@
 	TEST_ASSERT(!p2l_flickering(L), "the run is over")
 	TEST_ASSERT(L.on, "lit again")
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "the tube is whole")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "its range is back")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "its range is back")
 	var/list/after = p2l_numbers(L)
 	TEST_ASSERT_EQUAL(after[3], before[3], "its colour is back")
 
@@ -944,7 +944,7 @@
 	settle()
 	var/list/after = p2l_numbers(L)
 	TEST_ASSERT_EQUAL(after[3], LIGHT_COLOR_INCANDESCENT_TUBE, "the tube colour is back")
-	TEST_ASSERT_EQUAL(L.light_color, LIGHT_COLOR_INCANDESCENT_TUBE, "and the light shows it")
+	TEST_ASSERT_EQUAL(glow_of(L).color, LIGHT_COLOR_INCANDESCENT_TUBE, "and the light shows it")
 
 /// A fixture that is not lit does not flicker.
 /datum/unit_test/dq_p2_lights/flicker_needs_a_lit_fixture
@@ -1012,7 +1012,7 @@
 	settle()
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BROKEN, "broken")
 	TEST_ASSERT(!L.on, "dark")
-	TEST_ASSERT_EQUAL(L.light_range, 0, "no light")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 0, "no light")
 	TEST_ASSERT_EQUAL(L.use_power, USE_POWER_IDLE, "idle power")
 	TEST_ASSERT_EQUAL(B.status, LIGHT_BROKEN, "the tube in it is broken")
 
@@ -1049,7 +1049,7 @@
 	settle()
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "mended")
 	TEST_ASSERT(L.on, "lit")
-	TEST_ASSERT_EQUAL(L.light_range, 6, "its range")
+	TEST_ASSERT_EQUAL(glow_of(L).range, 6, "its range")
 	var/obj/item/light/B = p2l_bulb(L)
 	TEST_ASSERT_EQUAL(B.status, LIGHT_OK, "the tube is whole")
 
@@ -1206,7 +1206,7 @@
 	var/obj/machinery/light/small/torch/T = light(/obj/machinery/light/small/torch)
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/I = allocate(/obj/item, tile(0, 1))
-	I.force = 30
+	I.set_force(30)
 	click(H, T, I, I_HURT)
 	TEST_ASSERT_EQUAL(p2l_status(T), LIGHT_OK, "not smashed")
 	p2l_make_empty(T)
@@ -1243,17 +1243,17 @@
 	var/obj/item/light/tube/B = bulb()
 	B.throw_impact(tile(1, 1))
 	TEST_ASSERT_EQUAL(B.status, LIGHT_BROKEN, "broken")
-	TEST_ASSERT(B.sharp, "sharp")
-	TEST_ASSERT_EQUAL(B.force, 5, "it cuts")
+	TEST_ASSERT(combat_of(B).sharp, "sharp")
+	TEST_ASSERT_EQUAL(combat_of(B).force, 5, "it cuts")
 
 /// A broken light does not shatter twice.
 /datum/unit_test/dq_p2_lights/broken_light_stays_broken
 
 /datum/unit_test/dq_p2_lights/broken_light_stays_broken/run_gate()
 	var/obj/item/light/tube/B = bulb(/obj/item/light/tube, LIGHT_BROKEN)
-	B.force = 2
+	B.set_force(2)
 	B.throw_impact(tile(1, 1))
-	TEST_ASSERT_EQUAL(B.force, 2, "nothing changed")
+	TEST_ASSERT_EQUAL(combat_of(B).force, 2, "nothing changed")
 
 /// A light used to hit something in a harm stance shatters; in any other stance it does not; against a fixture it does not.
 /datum/unit_test/dq_p2_lights/light_hit_in_harm_stance_shatters
@@ -1706,7 +1706,7 @@
 	click(H, L, R)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "a whole tube")
 	TEST_ASSERT(L.on, "lit")
-	TEST_ASSERT_EQUAL(L.light_color, "#ff00ff", "the chosen colour")
+	TEST_ASSERT_EQUAL(glow_of(L).color, "#ff00ff", "the chosen colour")
 	TEST_ASSERT_EQUAL(R.uses, 9, "one light used")
 	TEST_ASSERT_EQUAL(R.bulb_shards, 1, "the broken tube is kept as a shard")
 
@@ -1782,7 +1782,7 @@
 	var/list/night = p2l_night_numbers(L)
 	TEST_ASSERT_EQUAL(numbers[3], "#e0eff0", "the stock colour")
 	TEST_ASSERT_EQUAL(night[3], "#efcc86", "the stock night colour")
-	TEST_ASSERT_EQUAL(L.light_color, "#e0eff0", "the light shows it")
+	TEST_ASSERT_EQUAL(glow_of(L).color, "#e0eff0", "the light shows it")
 	TEST_ASSERT(L.on, "still lit")
 
 /// A painter set to a colour paints a fixture with it, and its night colour is the dimmed one.
@@ -1801,7 +1801,7 @@
 	var/list/night = p2l_night_numbers(L)
 	TEST_ASSERT_EQUAL(numbers[3], "#ff0000", "the chosen colour")
 	TEST_ASSERT_EQUAL(night[3], P.setnightcolor, "the dimmed night colour")
-	TEST_ASSERT_EQUAL(L.light_color, "#ff0000", "the light shows it")
+	TEST_ASSERT_EQUAL(glow_of(L).color, "#ff0000", "the light shows it")
 
 /// Using a painter that is painting puts it back in reset mode.
 /datum/unit_test/dq_p2_lights/using_a_painting_painter_resets_it

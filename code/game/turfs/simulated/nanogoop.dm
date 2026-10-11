@@ -227,7 +227,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		return TRUE
 	if(isliving(AM))
 		var/mob/living/targetmob = AM
-		if(targetmob.unacidable || !targetmob.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
+		if(targetmob.unacidable || !targetmob.vore_prefs.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
 			return FALSE
 		if(isrobot(targetmob))
 			if(!digest_robot)
@@ -297,7 +297,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 				if(istype(targetitem, /obj/item/implant/backup) || istype(targetitem, /obj/item/nif))
 					continue
 				targetcarbon.drop_from_inventory(targetitem)
-			var/how_much = targetcarbon.mob_size + targetcarbon.nutrition
+			var/how_much = targetcarbon.mob_size + nutrition_of(targetcarbon)
 			if(!targetcarbon.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			nutrients += how_much
@@ -321,7 +321,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		if(targetmob.stat == DEAD)
 			targetmob.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			targetmob.release_vore_contents()
-			var/how_much = targetmob.mob_size + targetmob.nutrition
+			var/how_much = targetmob.mob_size + nutrition_of(targetmob)
 			if(!targetmob.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			nutrients += how_much
@@ -344,7 +344,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
 		if(ishuman(nutrienttarget))
 			var/mob/living/carbon/human/targetcarbon = nutrienttarget
 			if(HAS_SYNTHETIC_BIOLOGY(targetcarbon))
-				targetcarbon.set_nutrition(targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
+				targetcarbon.set_nutrition(nutrition_of(targetcarbon)+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
 				return
 	if(isrobot(nutrienttarget))
 		var/mob/living/silicon/robot/targetrobot = nutrienttarget

@@ -854,9 +854,9 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	if(cool_rotations <= 0)
 		cool_rotations = 0.5
 	cool_rotations = default_power_gen / cool_rotations
-	switch(runner.nutrition)
+	switch(nutrition_of(runner))
 		if(1000 to INFINITY)	//VERY WELL FED, ZOOM!!!!
-			cool_rotations *= (runner.nutrition * 0.001)
+			cool_rotations *= (nutrition_of(runner) * 0.001)
 		if(500 to 1000)	//Well fed!
 			cool_rotations = cool_rotations
 		if(400 to 500)
@@ -999,9 +999,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 	layer = ABOVE_MOB_LAYER
 
 /obj/machinery/power/rtg/antimatter_core
-	light_range = 3
-	light_power = 6
-	light_color = "#66FFFF"
 	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
@@ -1021,6 +1018,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 		new /obj/effect/bhole(T)
 
 CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
+	configure(light_glow(range = 3, power = 6, color = "#66FFFF"))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_shrugged))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(antimatter_core_blast))))
 

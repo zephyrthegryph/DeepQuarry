@@ -7,10 +7,11 @@
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 60 //Old 25
-	armor_penetration = 30
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/item/projectile/energy/mob/heavylaser)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/mob/midlaser
 	name = "laser"
@@ -18,7 +19,9 @@
 	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40 //old 20
-	armor_penetration = 10
+
+CAPABILITIES(/obj/item/projectile/energy/mob/midlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/mob/smalllaser
 	name = "laser"
@@ -26,7 +29,9 @@
 	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 30 //Old 10
-	armor_penetration = 0
+
+CAPABILITIES(/obj/item/projectile/energy/mob/smalllaser)
+	configure(item_combat(armor_penetration = 0))
 
 
 /obj/item/projectile/energy/mob/drone
@@ -43,12 +48,12 @@
 	nodamage = 1
 	taser_effect = 1
 	injury_kind = INJURY_PAIN
-	light_color = "#FFFFFF"
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	combustion = FALSE
 	agony = 20
 
 CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
+	configure(light_glow(color = "#FFFFFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/energy/mob/precursor
@@ -56,21 +61,25 @@ CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "impact_prec"
 	fire_sound = SFX_WEAPONS_MEDIUMLASER
-	light_color = "#FF0099"
 
 	hud_state = "plasma_rifle"
 	damage = 48 //Old 25
-	armor_penetration = 10
+
+CAPABILITIES(/obj/item/projectile/energy/mob/precursor)
+	configure(light_glow(color = "#FF0099"))
+	configure(item_combat(armor_penetration = 10))
 
 
 //Eclipse mob stuff
 
 /obj/item/projectile/energy/blob/moth
 	damage = 30 //old 15
-	armor_penetration = 15
 	flammability = 0.25
 	color = "#38b9ff"
 	speed = 3.2
+
+CAPABILITIES(/obj/item/projectile/energy/blob/moth)
+	configure(item_combat(armor_penetration = 15))
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(REAGENT_ID_FUEL, REAGENT_ID_MOLD))
 
@@ -103,12 +112,14 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(RE
 	spread_range = 7
 
 /obj/item/projectile/energy/mob/heavysniper
-	armor_penetration = 40
 	damage = 60 //Old 40, not doubling that lol
 	speed = 1.2
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	name = "sniper beam"
 	icon_state = "impact_xray"
+
+CAPABILITIES(/obj/item/projectile/energy/mob/heavysniper)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/energy/declone/burn
 	damage = 30 //Old 15
@@ -121,6 +132,8 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(RE
 	damage = 20 //Old 10
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	icon_state = "impact_blue"
 	fire_sound = SFX_WEAPONS_LASER
+
+CAPABILITIES(/obj/item/projectile/energy/mob/ionbeam)
+	configure(light_glow(color = "#00CCFF"))

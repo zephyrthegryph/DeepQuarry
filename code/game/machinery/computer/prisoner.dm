@@ -5,7 +5,6 @@
 	desc = "Used to keep those sneaky prisoners in line, if they have an implant."
 	icon_keyboard = "security_key"
 	icon_screen = "explosive"
-	light_color = "#a91515"
 	req_access = list(ACCESS_ARMORY)
 	circuit = /obj/item/circuitboard/prisoner
 	var/id = 0.0
@@ -16,6 +15,7 @@
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
 CAPABILITIES(/obj/machinery/computer/prisoner)
+	configure(light_glow(color = "#a91515"))
 	interface("PrisonerManagement")
 	op("inject", ui_act("inject", arg("imp"), arg("val", num())), then(PROC_REF(ui_act_inject)))
 	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))

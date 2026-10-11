@@ -221,13 +221,11 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 /turf/simulated/shuttle/floor/alien
 	icon_state = "alienpod1"
-	light_range = 3
-	light_power = 0.6
-	light_color = "#66ffff" // Bright cyan.
 	light_on = TRUE
 	block_tele = TRUE
 
 CAPABILITIES(/turf/simulated/shuttle/floor/alien)
+	configure(light_glow(range = 3, power = 0.6, color = "#66ffff"))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -409,7 +407,7 @@ CAPABILITIES(/turf/simulated/floor/flesh)
 	. = ..()
 	if(isliving(AM))
 		icon_state = "floor-on"
-		set_light(3,3,"#26c5a9")
+		set_glow(src, GLOW(3, 3, "#26c5a9"))
 		after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
 CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
@@ -462,7 +460,7 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 
 /turf/simulated/floor/flock/proc/crossing_glow_off()
 	icon_state = "floor"
-	set_light(0,0,"#ffffff")
+	set_glow(src, GLOW(0, 0, "#ffffff"))
 
 
 /// My turf (a relation view).

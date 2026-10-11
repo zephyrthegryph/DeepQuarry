@@ -319,7 +319,7 @@ TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 				MSG_OTHERS(span_warning("%U%'s flesh sizzles where the water touches it!")))
 
 		// Then extinguish people on fire.
-		var/needed = max(0,L.fire_stacks) * 5
+		var/needed = max(0,fire_stacks_of(L)) * 5
 		if(amount > needed)
 			L.extinguish_mob()
 		L.water_act(amount / 25) // Div by 25, as water_act multiplies it by 5 in order to calculate firestack modification.

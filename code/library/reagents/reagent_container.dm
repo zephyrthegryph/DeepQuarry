@@ -263,7 +263,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		return TRUE
 	var/obj/item/holder = A.holder
 	var/mob/user = A.actor
-	return !(user?.combat_mode && !user.attack_variant && holder.force && !(holder.flags & NOBLUDGEON)) // a hostile stance is combat mode with no disarm or grab variant
+	return !(user?.combat_mode && !user.attack_variant && combat_of(holder).force && !(holder.flags & NOBLUDGEON)) // a hostile stance is combat mode with no disarm or grab variant
 
 // ---- requirements (x(datum/act/A), pure) ----
 
@@ -320,7 +320,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /// What is in the container may be given to this one: a mob that does not take what a belly made refuses it.
 /datum/capability/lib/reagent_container/proc/belly_free(datum/act/op/A)
 	var/mob/target = A.target
-	return (!istype(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
+	return (!istype(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
 
 /// Nothing is over the mouth.
 /datum/capability/lib/reagent_container/proc/mouth_free(datum/act/op/A)

@@ -51,8 +51,6 @@
 	vore_default_item_mode = IM_DIGEST
 
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 	species_sounds = "None"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
@@ -230,6 +228,7 @@
 TRACKED(/mob/living/simple_mob/vore/zorgoia, goia_overlays)
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/recolor)
 	verb_entry(/mob/living/proc/injection) //Poison sting c:

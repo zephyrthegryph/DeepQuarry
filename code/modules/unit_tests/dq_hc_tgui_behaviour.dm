@@ -775,9 +775,9 @@
 	var/datum/tgui_module/appearance_changer/M = hct_changer(H)
 	var/style = M.valid_hairstyles[length(M.valid_hairstyles)]
 	cpress(M, H, "hair", list("name" = style))
-	TEST_ASSERT_EQUAL(H.h_style, style, "the hairstyle is changed")
+	TEST_ASSERT_EQUAL(H.looks.hair_style, style, "the hairstyle is changed")
 	cpress(M, H, "hair", list("name" = "no such style"))
-	TEST_ASSERT_EQUAL(H.h_style, style, "an unknown style changes nothing")
+	TEST_ASSERT_EQUAL(H.looks.hair_style, style, "an unknown style changes nothing")
 	var/gender_id = all_genders_define_list[1]
 	cpress(M, H, "gender_id", list("gender_id" = gender_id))
 	TEST_ASSERT_EQUAL(H.identifying_gender, gender_id, "the identifying gender is changed")
@@ -792,10 +792,10 @@
 	var/second = M.valid_hairstyles[length(M.valid_hairstyles)]
 	hct_ui(src, H, M, "hair", list("name" = first))
 	hct_ui(src, H, M, "hair", list("name" = second))
-	TEST_ASSERT_EQUAL(H.h_style, first, "a second button inside half a second is refused")
+	TEST_ASSERT_EQUAL(H.looks.hair_style, first, "a second button inside half a second is refused")
 	M.cooldown = 0
 	hct_ui(src, H, M, "hair", list("name" = second))
-	TEST_ASSERT_EQUAL(H.h_style, second, "and works once the half second has passed")
+	TEST_ASSERT_EQUAL(H.looks.hair_style, second, "and works once the half second has passed")
 
 /datum/unit_test/dq_hc_tgui/appearance_changer_questions
 /datum/unit_test/dq_hc_tgui/appearance_changer_questions/run_gate()
@@ -804,8 +804,7 @@
 	cpress(M, H, "eye_color")
 	TEST_ASSERT(p2cl_has_question(H), "a colour is asked for")
 	canswer(M, H, "#336699")
-	TEST_ASSERT_EQUAL(H.r_eyes, 51, "the eye colour's red is set")
-	TEST_ASSERT_EQUAL(H.b_eyes, 153, "and its blue")
+	TEST_ASSERT_EQUAL(H.looks.eyes_color, "#336699", "the eye colour is set")
 	cpress(M, H, "rename")
 	canswer(M, H, "Zed Quill")
 	TEST_ASSERT_EQUAL(H.real_name, "Zed Quill", "the name is set")
@@ -818,7 +817,7 @@
 	canswer(M, H, "Pounds")
 	TEST_ASSERT_EQUAL(H.weight, 152, "the weight is set (rounded to four pounds)")
 	var/flavor_key = "general"
-	H.flavor_texts = list("general" = "")
+	H.bio.flavor_texts = list("general" = "")
 	cpress(M, H, "flavor_text", list("target" = flavor_key))
 	canswer(M, H, "A tall figure.")
-	TEST_ASSERT_EQUAL(H.flavor_texts[flavor_key], "A tall figure.", "the flavor text is set")
+	TEST_ASSERT_EQUAL(H.bio.flavor_texts[flavor_key], "A tall figure.", "the flavor text is set")

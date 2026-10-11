@@ -245,7 +245,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 //Complex version for catching in-round characters
 /datum/nifsoft/soulcatcher/proc/catch_mob(mob/M)
 	if(!M.mind)	return
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
@@ -297,7 +297,6 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 /mob/living/carbon/brain/caught_soul
 	name = "recorded mind"
 	desc = "A mind recorded and being played on digital hardware."
-	use_me = 1
 	var/ext_deaf = FALSE		//Forbidden from 'ear' access on host
 	var/ext_blind = FALSE		//Forbidden from 'eye' access on host
 	var/parent_mob = FALSE		//If we've captured our owner
@@ -308,6 +307,9 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	var/tmp/obj/item/nif/nif
 	var/tmp/datum/nifsoft/soulcatcher/soulcatcher
 	var/identifying_gender
+
+CAPABILITIES(/mob/living/carbon/brain/caught_soul)
+	configure(mob_kind(use_me = 1))
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()

@@ -77,11 +77,11 @@ CAPABILITIES(/obj/item/projectile/energy)
 	fire_sound = SFX_WEAPONS_GUNSHOT2
 	taser_effect = 1
 	agony = 40
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
 	hud_state = "taser"
 	//Damage will be handled on the MOB side, to prevent window shattering.
+
+CAPABILITIES(/obj/item/projectile/energy/electrode)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/electrode/strong
 	agony = 55
@@ -108,13 +108,13 @@ CAPABILITIES(/obj/item/projectile/energy)
 	nodamage = 1
 	injury_kind = INJURY_CELLULAR
 	irradiate = 40
-	light_range = 2
-	light_power = 0.5
-	light_color = "#33CC00"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
 	combustion = FALSE
 	hud_state = "plasma_pistol"
+
+CAPABILITIES(/obj/item/projectile/energy/declone)
+	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/excavate
 	name = "kinetic blast"
@@ -122,12 +122,14 @@ CAPABILITIES(/obj/item/projectile/energy)
 	fire_sound = SFX_WEAPONS_PULSE3
 	injury_kind = INJURY_BLUNT
 	damage = 30
-	armor_penetration = 60
 	excavation_amount = 200
 
 	vacuum_traversal = 0
 	combustion = FALSE
 	hud_state = "plasma_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/excavate)
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/energy/excavate/weak
 	damage = 15
@@ -178,13 +180,13 @@ CAPABILITIES(/obj/item/projectile/energy)
 	icon_state = "neurotoxin"
 	damage = 30
 	agony = 10
-	armor_penetration = 25	// It's acid
 	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/acid)
+	configure(item_combat(armor_penetration = 25))
 	configure(item_sounds(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin
@@ -193,13 +195,13 @@ CAPABILITIES(/obj/item/projectile/energy/acid)
 	damage = 0
 	injury_kind = INJURY_CORROSIVE
 	agony = 60 // lowered agony damage
-	armor_penetration = 25	// It's acid-based
 	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
 
 CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
+	configure(item_combat(armor_penetration = 25))
 	configure(item_sounds(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin/toxic //New alien mob projectile to match the player-variant's projectiles.
@@ -208,7 +210,9 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	damage = 20
 	agony = 20
 	hud_state = "electrothermal"
-	armor_penetration = 25	// It's acid-based
+
+CAPABILITIES(/obj/item/projectile/energy/neurotoxin/toxic)
+	configure(item_combat(armor_penetration = 25))
 
 /obj/item/projectile/energy/phoron
 	name = "phoron bolt"
@@ -217,24 +221,26 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	damage = 20
 	injury_kind = INJURY_TOXIN
 	irradiate = 20
-	light_range = 2
-	light_power = 0.5
-	light_color = "#33CC00"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "plasma_rifle"
 
 	combustion = FALSE
 
+CAPABILITIES(/obj/item/projectile/energy/phoron)
+	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
+
 /obj/item/projectile/energy/plasmastun
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
 	fire_sound = SFX_WEAPONS_BLASTER
-	armor_penetration = 10
 	range = 4
 	damage = 5
 	agony = 55
 	vacuum_traversal = 0	//Projectile disappears in empty space
 	hud_state = "plasma_rifle_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/plasmastun)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/plasmastun/proc/bang(mob/living/carbon/M)
 
@@ -272,14 +278,16 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	icon_state = "blue_pellet"
 	fire_sound = SFX_WEAPONS_LASER5
 	damage = 5
-	armor_penetration = 75
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
-	light_color = "#00AAFF"
 
 	embed_chance = 0
 	muzzle_type = /obj/effect/projectile/muzzle/pulse
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "plasma_sphere"
+
+CAPABILITIES(/obj/item/projectile/energy/blue_pellet)
+	configure(light_glow(color = "#00AAFF"))
+	configure(item_combat(armor_penetration = 75))
 
 /* ChompEdit, moving over to energy_ch.dm
 /obj/item/projectile/energy/phase
@@ -290,18 +298,30 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	mob_bonus_damage = 45
 	hud_state = "laser_heat"
 
+CAPABILITIES(/obj/item/projectile/energy/phase)
+	configure(item_combat(armor_penetration = -35))
+
 /obj/item/projectile/energy/phase/light
 	range = 4
 	hud_state = "laser_heat"
+
+CAPABILITIES(/obj/item/projectile/energy/phase/light)
+	configure(item_combat(armor_penetration = -50))
 
 /obj/item/projectile/energy/phase/heavy
 	range = 8
 	hud_state = "laser_heat"
 
+CAPABILITIES(/obj/item/projectile/energy/phase/heavy)
+	configure(item_combat(armor_penetration = -25))
+
 /obj/item/projectile/energy/phase/heavy/cannon
 	range = 20 // This range was mediocre, but not worth a cannon.
 	damage = 15
 	hud_state = "laser_heat"
+
+CAPABILITIES(/obj/item/projectile/energy/phase/heavy/cannon)
+	configure(item_combat(armor_penetration = -20))
 */
 
 /obj/item/projectile/energy/electrode/strong
@@ -331,13 +351,13 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 
 /obj/item/projectile/energy/anomaly
 	name = "anomaly emitter projectile"
-	light_color = "#be008f"
 	icon_state = "purple_laser"
 	damage = 5
 	speed = 1.6
 	var/particle_type
 
 CAPABILITIES(/obj/item/projectile/energy/anomaly)
+	configure(light_glow(color = "#be008f"))
 	param(nameof(particle_type), pos = 1)
 
 /obj/item/projectile/energy/phase/bolt
@@ -357,13 +377,13 @@ CAPABILITIES(/obj/item/projectile/energy/anomaly)
 	icon_state = "vepr"
 	fire_sound = SFX_WEAPONS_SERDY_VEPR
 	damage = 30
-	armor_penetration = 10
 	muzzle_type = /obj/effect/projectile/muzzle/vepr
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 	hud_state = "laser_overcharge"
 
 CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
+	configure(item_combat(armor_penetration = 10))
 	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/energy/phase
@@ -373,14 +393,12 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
 	range = 13
 	damage = 5
 	mob_bonus_damage = 45
-	armor_penetration = -35
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/light
 	fire_sound = SFX_WEAPONS_PHASE_NEW_PHASEPISTOL // New sounds.
 	range = 11
 	mob_bonus_damage = 35
-	armor_penetration = -50
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy
@@ -388,7 +406,6 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
 	range = 16 // This range was not great
 	damage = 10
 	mob_bonus_damage = 50
-	armor_penetration = -25
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy/cannon
@@ -396,5 +413,4 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
 	range = 20 // This range was mediocre, but not worth a cannon.
 	damage = 15
 	mob_bonus_damage = 60
-	armor_penetration = -20
 	hud_state = "laser_heat"

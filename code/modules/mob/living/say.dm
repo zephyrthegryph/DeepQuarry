@@ -307,14 +307,14 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	//You'll still stammer if injured or slur if drunk, but it won't have those specific words
 	var/ending = copytext(message, length(message))
 
-	if(custom_whisper && whispering)
-		verb = "[custom_whisper]"
-	else if(custom_exclaim && ending=="!")
-		verb = "[custom_exclaim]"
-	else if(custom_ask && ending=="?")
-		verb = "[custom_ask]"
-	else if(custom_say)
-		verb = "[custom_say]"
+	if(bio.custom_whisper && whispering)
+		verb = "[bio.custom_whisper]"
+	else if(bio.custom_exclaim && ending=="!")
+		verb = "[bio.custom_exclaim]"
+	else if(bio.custom_ask && ending=="?")
+		verb = "[bio.custom_ask]"
+	else if(bio.custom_say)
+		verb = "[bio.custom_say]"
 
 	//Handle nonverbal languages here
 	for(var/datum/multilingual_say_piece/S in message_pieces)

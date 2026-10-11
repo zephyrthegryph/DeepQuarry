@@ -25,7 +25,7 @@
 
 //This unfortunately is gonna be rather messy due to the various mobtypes involved.
 /obj/item/spell/control/proc/select(mob/living/L)
-	if(!(L.mob_class & allowed_mob_classes))
+	if(!(kind_of(L).mob_class & allowed_mob_classes))
 		return FALSE
 
 	if(!(L.ai_brain != null))
@@ -111,7 +111,7 @@
 			trying to use it on yourself, perhaps you're an exception?  Regardless, nothing happens."))
 			return 0
 
-		if(L.mob_class & allowed_mob_classes)
+		if(kind_of(L).mob_class & allowed_mob_classes)
 			if(!(L in controlled_mobs)) //Selecting
 				if(L.client)
 					to_chat(user, span_danger("\The [L] seems to resist you!"))

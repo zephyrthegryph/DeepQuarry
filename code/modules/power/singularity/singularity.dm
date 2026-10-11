@@ -8,7 +8,6 @@
 	anchored = TRUE
 	density = TRUE
 	plane = ABOVE_PLANE
-	light_range = 6
 	unacidable = TRUE //Don't comment this out.
 
 	var/current_size = 1
@@ -43,6 +42,7 @@
 // two wander, pulse the collectors and maybe an event), the registry it joins, its touch and its bump (whatever meets it is consumed), and what
 // hits do to it: a blast feeds it (or rarely disperses it), a projectile passes through.
 CAPABILITIES(/obj/singularity)
+	configure(light_glow(range = 6))
 	// a singularity is not a surface: nothing swung at it lands
 	without("melee_hit")
 	registry(REGISTRY_SINGULARITIES, when = PROC_REF(counts_as_singularity))

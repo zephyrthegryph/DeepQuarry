@@ -61,7 +61,7 @@
 	return
 
 /datum/viral_trait/robotic_adaptation/proc/Replace(mob/living/carbon/human/H)
-	if(!H.allow_spontaneous_tf) // Bwomp.
+	if(!H.vore_prefs.allow_spontaneous_tf) // Bwomp.
 		return FALSE
 
 	if(replaceorgans)

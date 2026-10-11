@@ -15,7 +15,7 @@
 	return null
 
 /datum/preference/text/human/custom_say/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_say = lowertext(trim(value))
+	target.bio.custom_say = lowertext(trim(value))
 
 
 /datum/preference/text/human/custom_whisper
@@ -29,7 +29,7 @@
 	return null
 
 /datum/preference/text/human/custom_whisper/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_whisper = lowertext(trim(value))
+	target.bio.custom_whisper = lowertext(trim(value))
 
 
 /datum/preference/text/human/custom_ask
@@ -43,7 +43,7 @@
 	return null
 
 /datum/preference/text/human/custom_ask/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_ask = lowertext(trim(value))
+	target.bio.custom_ask = lowertext(trim(value))
 
 
 /datum/preference/text/human/custom_exclaim
@@ -57,7 +57,7 @@
 	return null
 
 /datum/preference/text/human/custom_exclaim/apply_to_human(mob/living/carbon/human/target, value)
-	target.custom_exclaim = lowertext(trim(value))
+	target.bio.custom_exclaim = lowertext(trim(value))
 
 
 /datum/preference/text/human/custom_species

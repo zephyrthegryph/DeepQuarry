@@ -38,12 +38,12 @@ default behaviour is:
 	else
 		var/context_flags = FALSE
 		if(swapping)
-			context_flags = swapped.mob_swap_flags
+			context_flags = movement_of(swapped).swap
 		else
-			context_flags = swapped.mob_push_flags
-		if(!mob_bump_flag) //nothing defined, go wild
+			context_flags = movement_of(swapped).push
+		if(!movement_of(src).bump) //nothing defined, go wild
 			return TRUE
-		if(mob_bump_flag & context_flags)
+		if(movement_of(src).bump & context_flags)
 			return TRUE
 		return FALSE
 
@@ -97,7 +97,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((movement_of(tmob).always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -126,7 +126,7 @@ default behaviour is:
 			tmob.forceMove(oldloc)
 			now_pushing = FALSE
 			return
-		else if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
+		else if((movement_of(tmob).always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
 			forceMove(tmob.loc)
 			now_pushing = FALSE
 			return
@@ -153,7 +153,7 @@ default behaviour is:
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
-		if(step_mechanics_pref && tmob.step_mechanics_pref)
+		if(vore_prefs.step_mechanics_pref && tmob.vore_prefs.step_mechanics_pref)
 			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
 			if(handle_micro_bump_other(tmob, 1, stance)) return
@@ -180,13 +180,13 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING))
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)
 		if(isobj(AM))
 			var/obj/I = AM
-			if(!can_pull_size || can_pull_size < I.w_class)
+			if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 				return
 		now_pushing = TRUE
 
@@ -319,7 +319,7 @@ default behaviour is:
 		return
 	else if(lastarea?.get_gravity() == 0)
 		inertial_drift()
-	else if(flying)
+	else if(stat_value(src, STAT_FLYING))
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))

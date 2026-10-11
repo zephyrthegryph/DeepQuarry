@@ -5,7 +5,6 @@
 	icon = 'icons/obj/wallet.dmi'
 	icon_state = "wallet-orange"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID
 
 	var/obj/item/card/id/front_id
 
@@ -14,6 +13,7 @@
 
 
 CAPABILITIES(/obj/item/storage/wallet)
+	configure(item_worn(slots = SLOT_ID))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 	configure(storage(accepts = list(
 		/obj/item/spacecash,

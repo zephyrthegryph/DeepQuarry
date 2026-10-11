@@ -17,11 +17,11 @@
 	desc = "The poster comes with its own automatic adhesive mechanism, for easy pinning to any vertical surface."
 	icon = 'icons/obj/contraband.dmi'
 	icon_state = "rolled_poster"
-	force = 0
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
 
 CAPABILITIES(/obj/item/poster)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	param(nameof(design_at_make), pos = 1, apply = PROC_REF(choose_design), keep = FALSE)
 	op("place", at_target(/turf), starts(PROC_REF(placing_started)), begins(MSG(poster/placing)), wait(1.7 SECONDS), then(PROC_REF(placed)))

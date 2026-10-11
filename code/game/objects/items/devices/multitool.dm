@@ -10,9 +10,7 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "multitool"
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
 
@@ -25,7 +23,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/obj/machinery/clonepod/connecting //same for cryopod linkage
 	var/obj/machinery/connectable	//Used to connect machinery.
 	var/ref_wiring //An IC ref (ic_ref()) for integrated circuitry. This is now the Omnitool.
-	toolspeed = 1
 	tool_qualities = list(TOOL_MULTITOOL)
 
 	var/uplink = FALSE
@@ -33,6 +30,9 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 TRACKED(/obj/item/multitool, uplink)
 
 CAPABILITIES(/obj/item/multitool)
+	configure(item_tooling(speed = 1))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MULTITOOL, pickup = SFX_ITEMS_PICKUP_MULTITOOL))
 	ref_one(nameof(selected_io), /datum/integrated_io)
 	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu
@@ -114,7 +114,9 @@ CAPABILITIES(/obj/item/multitool)
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "multitool"
-	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/multitool/alien)
+	configure(item_tooling(speed = 0.1))
 
 // Alien multitool only has those icon states
 /obj/item/multitool/alien/look_parts(datum/look/look)

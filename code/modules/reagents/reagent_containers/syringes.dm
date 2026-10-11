@@ -16,8 +16,6 @@
 	max_transfer_amount = null
 	volume = 15
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 	unacidable = TRUE //glass
 	var/mode = NEEDLE_CAPPED
@@ -49,6 +47,8 @@ TRACKED(/obj/item/reagent_containers/syringe, mode)
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_combat(sharp = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),

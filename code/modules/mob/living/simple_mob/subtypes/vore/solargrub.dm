@@ -59,9 +59,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	var/powerdraw = 100000
 	var/tracked = FALSE
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 	glow_override = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/solargrub
 	emote_see = list("squelches", "squishes")
@@ -151,7 +152,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 
 /mob/living/simple_mob/vore/solargrub/on_death(gibbed)
 	set_anchored(FALSE)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	..()
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
@@ -162,7 +163,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 /mob/living/simple_mob/vore/solargrub/life_light(datum/seq_frame/life/F)
 	. = ..()
 	if(. == 0 && !src.is_dead())
-		src.set_light(2.5, 1, COLOR_YELLOW)
+		set_glow(src, GLOW(2.5, 1, COLOR_YELLOW))
 		return 1
 	else if(src.is_dead())
 		src.set_glow_override(FALSE)

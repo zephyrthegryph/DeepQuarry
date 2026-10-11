@@ -296,7 +296,7 @@
 /datum/reagent/drugs/citalopram/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 
-	M.set_fear(max((M.fear - 3),0))
+	M.status_set(STAT_FEAR, max((M.status_units(STAT_FEAR) - 3),0))
 
 /datum/reagent/drugs/paroxetine
 	name = REAGENT_PAROXETINE
@@ -313,7 +313,7 @@
 /datum/reagent/drugs/paroxetine/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 
-	M.set_fear(max((M.fear - 6),0))
+	M.status_set(STAT_FEAR, max((M.status_units(STAT_FEAR) - 6),0))
 	if(prob(5) && prob_proc == TRUE)
 		to_chat(M, span_warning("Everything feels out of control..."))
 		M.status_adjust(STAT_HALLUCINATING, 200)

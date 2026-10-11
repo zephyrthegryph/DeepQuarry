@@ -8,8 +8,6 @@
 	icon_state = "sizegun-old-0"
 	var/base_icon_state = "sizegun-old"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/beam_range = 4 // How many tiles away it can scan. Changing this also changes the box size.
 	/// The running beam (sizegun_step()): target, user and held-item handles, the target's starting
 	/// scale, the beam handle, the outline filter, the box segments and the user's client.
@@ -54,13 +52,13 @@ TRACKED(/obj/item/slow_sizegun, busy)
 			unresizable = TRUE
 			return
 
-	if(!(target.resizable))
+	if(!(target.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
 		return TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		return TRUE
 
 	if(!(target.has_large_resize_bounds()) && (target.size_multiplier >= RESIZE_MAXIMUM) && sizeshift_mode == SIZE_GROW)
@@ -122,10 +120,10 @@ TRACKED(/obj/item/slow_sizegun, busy)
 			unresizable = TRUE
 			return
 
-	if(!(L.resizable))
+	if(!(L.vore_prefs.resizable))
 		unresizable = TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
@@ -203,9 +201,9 @@ TRACKED(/obj/item/slow_sizegun, busy)
 		var/mob/living/carbon/human/our_target = L
 		var/size_difference = previous_scale - our_target.size_multiplier
 		if((size_difference >= 0.3) || (size_difference <= -0.3))
-			if(our_target.size_strip_preference == SIZESTRIP_ITEMS)
+			if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 				our_target.drop_all_clothing(FALSE)
-			else if(our_target.size_strip_preference == SIZESTRIP_ALL)
+			else if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ALL)
 				our_target.drop_all_clothing(TRUE)
 
 	// Now clean up the effects.
@@ -217,6 +215,8 @@ TRACKED(/obj/item/slow_sizegun, busy)
 		delete_box(box_segments, C)
 
 CAPABILITIES(/obj/item/slow_sizegun)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
 	op("slow_sizegun_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(slow_sizegun_mode_self)))
 	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
 	// The beam steps every 0.3 s while busy; sizegun_finish() clears busy, which ends the work.

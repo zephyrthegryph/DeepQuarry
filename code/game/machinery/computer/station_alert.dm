@@ -4,7 +4,6 @@
 	desc = "Used to access the station's automated alert system."
 	icon_keyboard = "tech_key"
 	icon_screen = "alert:0"
-	light_color = "#e6ffff"
 	circuit = /obj/item/circuitboard/stationalert_engineering
 	var/datum/tgui_module/alarm_monitor/alarm_monitor
 	var/monitor_type = /datum/tgui_module/alarm_monitor/engineering
@@ -14,6 +13,7 @@
 TRACKED(/obj/machinery/computer/station_alert, alerting)
 
 CAPABILITIES(/obj/machinery/computer/station_alert)
+	configure(light_glow(color = "#e6ffff"))
 	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor, starts = nameof(monitor_type))
 	op("station_alert_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	op("open_ui_impl", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))

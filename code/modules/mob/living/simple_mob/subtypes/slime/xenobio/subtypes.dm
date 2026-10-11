@@ -210,7 +210,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_OK
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
@@ -450,7 +450,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 			var/mob/living/carbon/human/H = L
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
-			H.set_nutrition(between(0, H.nutrition + rand(15, 25), 800))
+			H.set_nutrition(between(0, nutrition_of(H) + rand(15, 25), 800))
 
 /mob/living/simple_mob/slime/xenobio/cerulean
 	desc = "This slime is generally superior in a wide range of attributes, compared to the common slime.  The jack of all trades, but master of none."
@@ -703,7 +703,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_OK
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else

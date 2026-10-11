@@ -180,8 +180,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)
 		set_density(initial(density))
-		can_pull_size = initial(can_pull_size)
-		can_pull_mobs = initial(can_pull_mobs)
+		set_can_pull_size(movement_of_type(type).pull_size)
+		set_can_pull_mobs(movement_of_type(type).pull_mobs)
 		dq_clear_hovering(src) // reset to type-default
 
 		//Cosmetics mostly
@@ -203,7 +203,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 	//Potential phase-in vore
 
-	if(can_be_drop_pred || can_be_drop_prey) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred || vore_prefs.can_be_drop_prey) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		var/mob/living/our_prey
 		if(potentials.len)
@@ -273,8 +273,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 			if(get_equipped_item(SLOT_ID_BACK))
 				unEquip(get_equipped_item(SLOT_ID_BACK))
 
-		can_pull_size = 0
-		can_pull_mobs = MOB_PULL_NONE
+		set_can_pull_size(0)
+		set_can_pull_mobs(MOB_PULL_NONE)
 		dq_set_hovering(src, TRUE)
 		canmove = FALSE
 

@@ -95,4 +95,4 @@
 	return null
 
 /datum/preference/name/nickname/apply_to_human(mob/living/carbon/human/target, value)
-	target.nickname = value // was handled in Bay copy_to_mob, now per-pref
+	target.bio.nickname = value// was handled in Bay copy_to_mob, now per-pref

@@ -101,10 +101,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/list/multicam_screens // REL_LIST (multicam.dm)
 	var/max_multicams = 6
 
-	can_be_antagged = TRUE
 	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_kind(can_be_antagged = TRUE, death_message = "gives one shrill beep before falling lifeless."))
 	// Hardlight nom (vore/eating/silicon.dm): the AI's eye is the actor and has to stay put while the hologram engulfs the prey.
 	op("holo_nom", ai(), takes("prey", "from"), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY), then(PROC_REF(holo_nom_done)))
 	op("ai_status_displays", ai(), label("AI Status"), needs(req_self()), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(status_display_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(ai_status_display_chosen)))
@@ -561,7 +562,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 /mob/living/silicon/ai/reset_perspective(atom/new_eye)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(camera)
-		camera.set_light(0)
+		set_glow(camera, GLOW(0, null, null))
 	if(istype(new_eye,/obj/machinery/camera))
 		rel_set(src, nameof(camera), new_eye)
 	if(new_eye != GLOB.ai_camera_room_landmark)
@@ -573,9 +574,9 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 			reset_perspective(eyeobj)
 	if(istype(new_eye,/obj/machinery/camera))
 		if(camera_light_on)
-			new_eye.set_light(AI_CAMERA_LUMINOSITY)
+			set_glow(new_eye, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		else
-			new_eye.set_light(0)
+			set_glow(new_eye, GLOW(0, null, null))
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -811,7 +812,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	to_chat(src, span_filter_notice("Camera lights [camera_light_on ? "activated" : "deactivated"]."))
 	if(!camera_light_on)
 		if(camera)
-			camera.set_light(0)
+			set_glow(camera, GLOW(0, null, null))
 			rel_clear(src, nameof(camera))
 	else
 		lightNearbyCamera()
@@ -825,20 +826,20 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		if(src.camera)
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && src.camera != camera)
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				if(!camera.light_disabled)
 					rel_set(src, nameof(camera), camera)
-					src.camera.set_light(AI_CAMERA_LUMINOSITY)
+					set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 				else
 					rel_clear(src, nameof(camera))
 			else if(isnull(camera))
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				rel_clear(src, nameof(camera))
 		else
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
 				rel_set(src, nameof(camera), camera)
-				src.camera.set_light(AI_CAMERA_LUMINOSITY)
+				set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
 /// Old attackby: an intelliCard pulls the AI in.

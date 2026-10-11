@@ -6,25 +6,25 @@
 	desc = "Used to remove floors and to pry open doors."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "crowbar"
-	slot_flags = SLOT_BELT
-	force = 6
-	throwforce = 7
-	pry = 1
 	item_state = "crowbar"
 	w_class = ITEMSIZE_SMALL
 	material_total = 50
-	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked")
-	toolspeed = 1
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/tool/crowbar)
+	configure(item_tooling(pry = 1, speed = 1))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 6, attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked")))
 	configure(item_sounds(use = SFX_ITEMS_CROWBAR, drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/tool/crowbar/red
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "red_crowbar"
 	item_state = "crowbar_red"
-	force = 10
+
+CAPABILITIES(/obj/item/tool/crowbar/red)
+	configure(item_combat(force = 10))
 
 /obj/item/tool/crowbar/old
 	icon = 'icons/obj/tools.dmi'
@@ -50,9 +50,9 @@ CAPABILITIES(/obj/item/tool/crowbar)
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "crowbar"
-	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/crowbar/alien)
+	configure(item_tooling(speed = 0.1))
 	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/hybrid
@@ -60,19 +60,19 @@ CAPABILITIES(/obj/item/tool/crowbar/alien)
 	desc = "A crowbar whose head seems to phase in and out of view."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon_state = "hybcrowbar"
-	toolspeed = 0.4
-	reach = 2
 
 CAPABILITIES(/obj/item/tool/crowbar/hybrid)
+	configure(item_tooling(speed = 0.4))
+	configure(item_combat(reach = 2))
 	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/power
 	name = "power pryer"
 	desc = "You shouldn't see this."
-	force = 15
-	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/crowbar/power)
+	configure(item_tooling(speed = 0.25))
+	configure(item_combat(force = 15))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /*
@@ -85,14 +85,8 @@ CAPABILITIES(/obj/item/tool/crowbar/power)
 	icon = 'icons/obj/tools_vr.dmi'
 	icon_state = "prybar"
 	item_state = "crowbar"
-	slot_flags = SLOT_BELT
-	force = 4
-	throwforce = 5
-	pry = 1
 	w_class = ITEMSIZE_SMALL
 	material_total = 30
-	attack_verb = list("whapped", "smacked", "swatted", "thwacked", "hit")
-	toolspeed = 1
 	var/random_color = TRUE
 
 /obj/item/tool/prybar/red
@@ -101,6 +95,10 @@ CAPABILITIES(/obj/item/tool/crowbar/power)
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/prybar)
+	configure(item_tooling(pry = 1, speed = 1))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 4, attack_verbs = list("whapped", "smacked", "swatted", "thwacked", "hit")))
 	configure(item_sounds(use = SFX_ITEMS_CROWBAR))
 	rolls(nameof(icon_state), pick_one(list("prybar", "prybar_green", "prybar_aubergine", "prybar_blue")), when = nameof(random_color))
 

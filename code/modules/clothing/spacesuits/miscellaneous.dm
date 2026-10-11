@@ -3,11 +3,10 @@
 	name = "space helmet"
 	icon_state = "capspace"
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment. Only for the most fashionable of military figureheads."
-	item_flags = 0
-	flags_inv = HIDEFACE|BLOCKHAIR
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
+	configure(item_worn(flags = 0, hides = HIDEFACE|BLOCKHAIR))
 	configure(item_protection(permeability = 0.01))
 
 //Captain's space suit This is not the proper path but I don't currently know enough about how this all works to mess with it.
@@ -16,13 +15,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	desc = "A bulky, heavy-duty piece of exclusive corporate armor. YOU are in charge!"
 	icon_state = "caparmor"
 	w_class = ITEMSIZE_HUGE
-	item_flags = 0
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1.5
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
+	configure(item_worn(flags = 0, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, min_pressure = 0, max_pressure = 2 * ONE_ATMOSPHERE, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 //Deathsquad suit
@@ -34,10 +31,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/captain, suit_storage_spec, list(HOLD_O
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black-red", slot_l_hand_str = "syndicate-helm-black-red")
 	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=100;rad=60;cold=60"
-	item_flags = THICKMATERIAL
-	flags_inv = BLOCKHAIR
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad)
+	configure(item_worn(flags = THICKMATERIAL, hides = BLOCKHAIR))
 	configure(item_protection(siemens = 0.6))
 
 //how is this a space helmet?
@@ -47,10 +43,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad)
 	icon_state = "beret_black_security" //old sprite was lost, this is the next closest.
 	item_state_slots = list(slot_r_hand_str = "beret", slot_l_hand_str = "beret")
 	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=30;rad=30;cold=60"
-	item_flags = 0
-	flags_inv = BLOCKHAIR
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad/beret)
+	configure(item_worn(flags = 0, hides = BLOCKHAIR))
 	configure(item_protection(siemens = 0.9))
 
 //Space santa outfit suit
@@ -58,16 +53,18 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad/beret)
 	name = "Santa's hat"
 	desc = "Ho ho ho. Merrry X-mas!"
 	icon_state = "santahat"
-	item_flags = 0
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/santahat)
+	configure(item_worn(flags = 0, hides = BLOCKHAIR, covers = HEAD))
 
 /obj/item/clothing/suit/space/santa
 	name = "Santa's suit"
 	desc = "Festive!"
 	icon_state = "santa"
 	slowdown = 0
-	item_flags = 0
+
+CAPABILITIES(/obj/item/clothing/suit/space/santa)
+	configure(item_worn(flags = 0))
 
 //Space pirate outfit
 
@@ -77,11 +74,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/santa, suit_storage_spec, list(HOLD_ONL
 	desc = "Yarr."
 	icon_state = "pirate"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
-	item_flags = 0
-	flags_inv = BLOCKHAIR
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
+	configure(item_worn(flags = 0, hides = BLOCKHAIR, covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/suit/space/pirate //Whhhhyyyyyyy???
@@ -91,10 +86,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
-	flags_inv = HIDETAIL|HIDEHOLSTER
-	body_parts_covered = UPPER_TORSO|ARMS
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
+	configure(item_worn(hides = HIDETAIL|HIDEHOLSTER, covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
 
 //Orange emergency space suit

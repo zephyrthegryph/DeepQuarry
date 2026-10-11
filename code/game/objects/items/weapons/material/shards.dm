@@ -6,14 +6,11 @@
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
 	randpixel = 8
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
 	thrown_force_divisor = 0.5
 	item_state = "shard-glass"
-	attack_verb = list("stabbed", "slashed", "sliced", "cut")
 	default_material = MAT_GLASS
 	unbreakable = 1 //It's already broken.
 	drops_debris = 0
@@ -41,6 +38,7 @@
 		spent(src)
 
 CAPABILITIES(/obj/item/material/shard)
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "slashed", "sliced", "cut")))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/material/shard/proc/welder_used(datum/act/op/A)
@@ -82,7 +80,7 @@ CAPABILITIES(/obj/item/material/shard)
 	if(prob(75))
 		will_break = TRUE
 
-	if(user.get_equipped_item(SLOT_ID_GLOVES) && (user.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & HANDS) && istype(user.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
+	if(user.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(user.get_equipped_item(SLOT_ID_GLOVES)).covers & HANDS) && istype(user.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
 		protected_hands = TRUE // If we're wearing gloves we can probably handle it just fine
 		for(var/I in forbidden_gloves)
 			if(istype(user.get_equipped_item(SLOT_ID_GLOVES), I)) // forbidden_gloves is a blacklist, so if we match anything in there, our hands are not protected
@@ -120,7 +118,7 @@ CAPABILITIES(/obj/item/material/shard)
 			if(H.species.siemens_coefficient<0.5) //Thick skin.
 				return
 
-			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 				return
 
 			if(H.species.flags & NO_MINOR_CUT)
@@ -135,7 +133,7 @@ CAPABILITIES(/obj/item/material/shard)
 				if(affecting)
 					if(affecting.is_robotic())
 						return
-					H.injure(INJURY_BLUNT, force, affecting, src)
+					H.injure(INJURY_BLUNT, combat_of(src).force, affecting, src)
 					if(affecting.organ_can_feel_pain())
 						H.status_at_least(STAT_WEAKENED, 3)
 					return

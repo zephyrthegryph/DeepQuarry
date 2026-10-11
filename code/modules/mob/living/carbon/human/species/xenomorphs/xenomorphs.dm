@@ -9,29 +9,37 @@
 
 /mob/living/carbon/human/xdrone
 	species_at_make = SPECIES_XENO_DRONE
+
+CAPABILITIES(/mob/living/carbon/human/xdrone)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xdrone
-	h_style = "Bald"
 /mob/living/carbon/human/xdrone
 	faction = FACTION_XENO
 
 /mob/living/carbon/human/xsentinel
 	species_at_make = SPECIES_XENO_SENTINEL
+
+CAPABILITIES(/mob/living/carbon/human/xsentinel)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xsentinel
-	h_style = "Bald"
 /mob/living/carbon/human/xsentinel
 	faction = FACTION_XENO
 
 /mob/living/carbon/human/xhunter
 	species_at_make = SPECIES_XENO_HUNTER
+
+CAPABILITIES(/mob/living/carbon/human/xhunter)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xhunter
-	h_style = "Bald"
 /mob/living/carbon/human/xhunter
 	faction = FACTION_XENO
 
 /mob/living/carbon/human/xqueen
 	species_at_make = SPECIES_XENO_QUEEN
+
+CAPABILITIES(/mob/living/carbon/human/xqueen)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xqueen
-	h_style = "Bald"
 /mob/living/carbon/human/xqueen
 	faction = FACTION_XENO
 

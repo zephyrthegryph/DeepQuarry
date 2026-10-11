@@ -148,16 +148,16 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		hologram.color = A.holo_color
 
 	if(hologram.color)	//hologram lighting
-		hologram.set_light(2,1,hologram.color)
+		set_glow(hologram, GLOW(2, 1, hologram.color))
 	else
-		hologram.set_light(2)
+		set_glow(hologram, GLOW(2, null, null))
 
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
 	rel_add(src, nameof(holograms), hologram)
 	rel_add(src, nameof(masters), A)
-	set_light(2)			//pad lighting
+	set_glow(src, GLOW(2, null, null))			//pad lighting
 	icon_state = "holopad1"
 	flick("holopadload", src)
 	rel_set(A, nameof(A.holo), src)
@@ -177,7 +177,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		rel_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
 	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
-		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
+		set_glow(src, GLOW(0, null, null))			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
 		icon_state = "holopad0"
 	return 1
 

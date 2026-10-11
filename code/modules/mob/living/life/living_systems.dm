@@ -74,8 +74,8 @@
 	if(src.glow_override)
 		return FALSE
 
-	// Determine the desired light params, then only call set_light() if they changed
-	// since last tick (this runs every Life() tick for every glowing mob).
+	// Determine the desired light params, then only call set_glow() if they differ from the light it casts
+	// (this runs every Life() tick for every glowing mob).
 	var/want_range
 	var/want_intensity
 	var/want_color
@@ -99,14 +99,13 @@
 	else
 		want_range = 0
 
-	if(want_range != src.last_glow_range || want_intensity != src.last_glow_intensity || want_color != src.last_glow_color)
+	var/datum/type_trait/light_glow/now = glow_of(src)
+	var/now_range = light_on ? now.range : 0
+	if(want_range ? (want_range != now_range || want_intensity != now.power || want_color != now.color) : now_range)
 		if(want_range)
-			src.set_light(want_range, want_intensity, want_color)
+			set_glow(src, GLOW(want_range, want_intensity, want_color))
 		else
-			src.set_light(0)
-		src.last_glow_range = want_range
-		src.last_glow_intensity = want_intensity
-		src.last_glow_color = want_color
+			set_glow(src, GLOW(0, null, null))
 
 /// Re-evaluates this mob's glow now (light system).
 /mob/living/proc/refresh_glow()
@@ -118,9 +117,10 @@
 		return FALSE
 	if(src.instability >= TECHNOMANCER_INSTABILITY_MIN_GLOW)
 		return TRUE
+	var/datum/type_trait/light_glow/now = glow_of(src)
 	if(src.glow_toggle && !src.is_ventcrawling)
-		return src.last_glow_range != src.glow_range || src.last_glow_intensity != src.glow_intensity || src.last_glow_color != src.glow_color
-	return src.last_glow_range
+		return !light_on || now.range != src.glow_range || now.power != src.glow_intensity || now.color != src.glow_color
+	return light_on && now.range
 
 // --- Alive block -----------------------------------------------------------------------------------
 
@@ -369,7 +369,7 @@
 	. = ..()
 	. += on_change(list(MOB_KEY_STATUS, nameof(stat)), PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
 	. += on_change(list(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, \
-		MOB_KEY_HUD_FLAGS, nameof(stat), nameof(sdisabilities), nameof(ear_damage)), \
+		MOB_KEY_HUD_FLAGS, MOB_KEY_NUTRITION, "stat:[STAT_ON_FIRE]", nameof(stat), nameof(sdisabilities), nameof(ear_damage)), \
 		PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
 	. += on_change(list(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), \
 		nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), \

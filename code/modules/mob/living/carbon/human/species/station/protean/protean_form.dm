@@ -87,7 +87,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	var/turf/T = get_turf(rig)
 	H.forceMove(T)
 	if(wearer && devour)
-		if(H.can_be_drop_pred && wearer.devourable && wearer.can_be_drop_prey && vore_selected_of(H))
+		if(H.vore_prefs.can_be_drop_pred && wearer.vore_prefs.devourable && wearer.vore_prefs.can_be_drop_prey && vore_selected_of(H))
 			H.begin_instant_nom(H, wearer, H, vore_selected_of(H))
 		else
 			to_chat(H, span_vwarning("You can't assimilate your current host."))

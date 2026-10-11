@@ -46,9 +46,9 @@
 /obj/machinery/crystal/proc/randomize_color()
 	if(prob(30))
 		icon_state = "crystal2"
-		set_light(3, 3, "#CC00CC")
+		set_glow(src, GLOW(3, 3, "#CC00CC"))
 	else
-		set_light(3, 3, "#33CC33")
+		set_glow(src, GLOW(3, 3, "#33CC33"))
 
 // Icy crystals.
 /datum/category_item/catalogue/material/ice_crystal
@@ -66,7 +66,7 @@
 /obj/machinery/crystal/ice/randomize_color()
 	if(prob(30))
 		icon_state = "icecrystal1"
-	set_light(3, 3, "#C4FFFF")
+	set_glow(src, GLOW(3, 3, "#C4FFFF"))
 
 // Magma crystals.
 /datum/category_item/catalogue/material/magma_crystal
@@ -90,7 +90,7 @@
 	if(prob(30))
 		color = "#E03131"
 
-	set_light(3, 3, color)
+	set_glow(src, GLOW(3, 3, color))
 
 //large finds
 			//machinery type artifacts?

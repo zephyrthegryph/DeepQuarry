@@ -24,7 +24,6 @@
 	icon = 'icons/mob/robots_vr.dmi'
 	icon_state = "corrupt-repairbot"
 	icon_living = "corrupt-repairbot"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_UNDERDARK
 	endurance = 25
@@ -32,12 +31,9 @@
 	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	pass_flags = PASSTABLE
-	mob_swap_flags = 0
-	mob_push_flags = 0
 
 	melee_damage_lower = 6 // Approx 12 DPS.
 	melee_damage_upper = 6
-	base_attack_cooldown = 2.5 // Four attacks per second.
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_WEAPONS_BLADESLICE
 	attacktext = list("cut", "sliced")
@@ -45,6 +41,11 @@
 	var/poison_type = "welder fuel"	// The reagent that gets injected when it attacks.
 	var/poison_chance = 35			// Chance for injection to occur.
 	var/poison_per_bite = 5			// Amount added per injection.
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/corrupt_maint_drone)
+	configure(mob_movement(hovering = FALSE))
+	configure(mob_kind(attack_cooldown = 2.5, death_message = "is smashed into pieces!"))
+	configure(mob_movement(swap = 0, push = 0))
 
 
 
@@ -65,7 +66,6 @@
 
 /mob/living/simple_mob/mechanical/corrupt_maint_drone
 	delete_on_death = TRUE
-	death_message = "is smashed into pieces!"
 
 /mob/living/simple_mob/mechanical/corrupt_maint_drone/on_death(gibbed)
 	..()

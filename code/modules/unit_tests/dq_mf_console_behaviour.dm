@@ -71,7 +71,7 @@
 	var/obj/machinery/computer/mfc_probe/C = probe()
 	C.power_change()
 	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(C.light_range, C.light_range_on, "a powered console lights its screen")
+	TEST_ASSERT_EQUAL(glow_of(C).range, C.light_range_on, "a powered console lights its screen")
 	var/area/A = get_area(C)
 	var/requires = A.requires_power
 	var/equip = A.power_equip
@@ -80,7 +80,7 @@
 	A.set_power_equip(FALSE)
 	C.power_change()
 	test_time(1 SECOND)
-	TEST_ASSERT(!C.light_range, "an unpowered one is dark")
+	TEST_ASSERT(!glow_of(C).range, "an unpowered one is dark")
 	A.set_requires_power(requires)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.set_power_equip(equip)

@@ -244,7 +244,7 @@
 /// A fast tool of `type`.
 /datum/unit_test/dq_atmos_m/proc/tool(type, turf/where)
 	var/obj/item/T = allocate(type, where || tile(2, 1))
-	T.toolspeed = 0
+	T.set_toolspeed(0)
 	return T
 
 /// A lit, fuelled welder.

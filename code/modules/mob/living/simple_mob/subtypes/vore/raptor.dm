@@ -47,7 +47,6 @@
 		"raptorwhite"
 	)
 
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/raptor
 
@@ -65,6 +64,7 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	rolls(nameof(initial_icon), nameof(skins), when = nameof(random_skin))
@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 
 /// A heavy raptor wears its fat sprite: the living state follows the weight state, then the tracked weight state redraws it.
 /mob/living/simple_mob/vore/raptor/proc/consider_wg()
-	var/new_state = (nutrition >= 900) ? 1 : 0
+	var/new_state = (nutrition_of(src) >= 900) ? 1 : 0
 	if(new_state == wg_state)
 		return
 	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")

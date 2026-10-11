@@ -63,7 +63,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		if(wearer_is_protean(H))
 			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
 			deactivate(1)
-		else if(P && (H.nutrition >= 100) && (P.nutrition <= 5000))
+		else if(P && (nutrition_of(H) >= 100) && (nutrition_of(P) <= 5000))
 			H.adjust_nutrition(-10)
 			P.adjust_nutrition(10)
 

@@ -89,7 +89,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(20))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its sword!")))
 			if(user)
@@ -189,7 +189,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	corpse = /obj/effect/landmark/mobcorpse/vox/suppressor
 	loot_list = list(/obj/item/gun/energy/sonic = 100)
 
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	needs_reload = TRUE
 	reload_max = 30 //Gotta lay down that fire, son.
 

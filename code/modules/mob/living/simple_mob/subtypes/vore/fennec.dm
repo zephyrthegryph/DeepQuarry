@@ -48,10 +48,12 @@
 
 	say_list_type = /datum/say_list/fennec
 
-	allow_mind_transfer = TRUE
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 	species_sounds = "Vulpine"
+
+CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/fennec
@@ -95,9 +97,7 @@
 	harm_intent_damage = 40
 	melee_damage_lower = 20
 	melee_damage_upper = 60
-	mob_bump_flag = HEAVY
 	grab_resist = 100
-	mob_class = MOB_CLASS_HUMANOID
 	movement_cooldown = -1
 	melee_miss_chance = 10
 
@@ -108,7 +108,6 @@
 	// If you're immune to digestion, they can't digest you anyway!
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
-	devourable = FALSE // until KO'd
 	vore_icons = 0
 
 	// Handled in apply_attack
@@ -124,6 +123,11 @@
 	response_disarm = "somehow shoves aside"
 
 	var/autodoom = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/fennec/huge)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID))
+	configure(mob_movement(bump = HEAVY))
 
 /// The huge fennec's shadow under its body.
 /mob/living/simple_mob/vore/fennec/huge/draw(datum/look/look)
@@ -147,7 +151,7 @@
 	*/
 
 /mob/living/simple_mob/vore/fennec/huge/on_death(gibbed)
-	devourable = TRUE
+	vore_prefs.devourable = TRUE
 	return ..()
 
 /mob/living/simple_mob/vore/fennec/huge/apply_attack(atom/A, damage_to_do, stance = I_HURT)
@@ -160,7 +164,7 @@
 			B.nom_atom(L)
 			ai_brain?.find_target()  // recalc primary threat now that prey is in belly
 			return
-		else if(L.size_multiplier <= 0.5 && L.step_mechanics_pref)
+		else if(L.size_multiplier <= 0.5 && L.vore_prefs.step_mechanics_pref)
 			automatic_custom_emote(message = "stomps [L] into oblivion!")
 			L.gib()
 			return

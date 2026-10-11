@@ -10,9 +10,7 @@
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
 	fire_delay = 8
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_LARGE //huge was dumb for this.
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/midlaser
 	one_handed_penalty = 30
@@ -21,6 +19,10 @@
 		list(mode_name="normal", fire_delay=8, projectile_type=/obj/item/projectile/beam/midlaser, charge_cost = 240),
 		list(mode_name="suppressive", fire_delay=5, projectile_type=/obj/item/projectile/beam/weaklaser, charge_cost = 60),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/laser)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/laser/empty
 	cell_type = null
@@ -76,10 +78,12 @@
 	icon_state = "retro"
 	item_state = "retro"
 	desc = "A 23rd century model of the basic lasergun. Nevertheless, it is still quite deadly and easy to maintain, making it a favorite amongst pirates and other outlaws."
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/beam
 	fire_delay = 10 //old technology
+
+CAPABILITIES(/obj/item/gun/energy/retro)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/energy/retro/mounted
 	self_recharge = 1
@@ -147,8 +151,6 @@
 	description_fluff = "The Lunar Arms Company was founded to provide home-grown arms to the Selene Federation from 2101-2108 during the Second Cold War, the conflict that sparked the \
 	formation of the SCG. The LAC produced the first weapons wholly designed and produced outside of Earth. Post-war, the company relocated and rebranded as MarsTech, which survives \
 	to this day as a major subsidiary of Hephaestus Industries."
-	force = 5
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	unacidable = TRUE
 	projectile_type = /obj/item/projectile/beam
@@ -156,6 +158,10 @@
 	charge_cost = 480	//to compensate a bit for self-recharging
 	cell_type = /obj/item/cell/device/weapon/recharge/captain
 	battery_lock = 1
+
+CAPABILITIES(/obj/item/gun/energy/captain)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 5))
 
 /*
  * Laser Cannon
@@ -168,7 +174,6 @@
 	icon_state = "lasercannon"
 	item_state = null
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/beam/heavylaser/cannon
 	battery_lock = 0 // This thing is worthless with this.
 	fire_delay = 20
@@ -176,6 +181,9 @@
 	one_handed_penalty = 90 // The thing's heavy and huge.
 	accuracy = 45
 	charge_cost = 400 //. Let's give this thing some more shots, seeing as it needs to be recharged at a charger - Most everything else is cheaper on charge cost now or smaller, this can stay the same, but with replacable batteries.
+
+CAPABILITIES(/obj/item/gun/energy/lasercannon)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/gun/energy/lasercannon/mounted
 	name = "mounted laser cannon"
@@ -217,13 +225,11 @@
 	item_state_slots = list(slot_r_hand_str = "lsniper", slot_l_hand_str = "lsniper")
 	wielded_item_state = "lsniper-wielded"
 	projectile_type = /obj/item/projectile/beam/sniper
-	slot_flags = SLOT_BACK
 	actions_types = list(/datum/action/item_action/use_scope)
 	//Begin CHOMPstation Edit for making this thing not trash
 	//battery_lock = 0
 	charge_cost = 360
 	fire_delay = 40
-	force = 10
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
 	accuracy = -30 //shooting at the hip
 	scoped_accuracy = 100
@@ -234,6 +240,8 @@
 	perform_scope_interaction(user, "sniperrifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/sniperrifle)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 	op("sniperrifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(sniperrifle_verb_scope_op)))
 
 /// The sniperrifle_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -262,7 +270,9 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 
 	projectile_type = /obj/item/projectile/scatter/laser
 	w_class = ITEMSIZE_HUGE //.
-	slot_flags = SLOT_BELT|SLOT_BACK //because you can still holster it despite it not fitting in a backpack.
+
+CAPABILITIES(/obj/item/gun/energy/lasershotgun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /*
  * Imperial Pistol
@@ -274,12 +284,14 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	icon_override = 'icons/obj/gun.dmi'
 	icon_state = "ge_pistol"
 	item_state = "ge_pistol"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial
+
+CAPABILITIES(/obj/item/gun/energy/imperial)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 
 /*
  * Mining-Laser Rifle
@@ -290,9 +302,7 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	icon_state = "mininglaser"
 	item_state = "mininglaser"
 	fire_delay = 8
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_LARGE
-	force = 15
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/mininglaser
 
@@ -300,6 +310,10 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 		list(mode_name="mining", fire_delay=8, projectile_type=/obj/item/projectile/beam/mininglaser, charge_cost = 200),
 		list(mode_name="deter", fire_delay=5, projectile_type=/obj/item/projectile/beam/weaklaser, charge_cost = 80),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/mininglaser)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 15))
 
 /*
  * Old Laser Rifle
@@ -312,11 +326,13 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	icon_state = "oldlaser"
 	item_state = "laser"
 	fire_delay = 6
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	force = 8
 	MATERIAL_BULK(MAT_STEEL, 1500)
 	projectile_type = /obj/item/projectile/beam/midlaser
+
+CAPABILITIES(/obj/item/gun/energy/laser/old)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 8))
 
 /*
  * Mono-Rifle
@@ -329,11 +345,9 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	icon_state = "mono"
 	item_state = "shotgun"
 	projectile_type = /obj/item/projectile/beam/sniper
-	slot_flags = SLOT_BACK
 	actions_types = list(/datum/action/item_action/aim_down_sights)
 	charge_cost = 2400
 	fire_delay = 20
-	force = 8
 	w_class = ITEMSIZE_HUGE //.
 	accuracy = 10
 	scoped_accuracy = 15
@@ -344,6 +358,8 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	perform_scope_interaction(user, "monorifle_verb_sights")
 
 CAPABILITIES(/obj/item/gun/energy/monorifle)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 8))
 	op("monorifle_verb_sights", menu(), label("Aim Down Sights"), needs(carried()), then(PROC_REF(monorifle_verb_sights_op)))
 
 /// The monorifle_verb_sights op: the verb's effect, as the old resolver ran it.
@@ -369,9 +385,11 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	icon_state = "cmono"
 	item_state = "cshotgun"
 	charge_cost = 1200
-	force = 12
 	accuracy = 0
 	scoped_accuracy = 20
+
+CAPABILITIES(/obj/item/gun/energy/monorifle/combat)
+	configure(item_combat(force = 12))
 
 /obj/item/gun/energy/zip
 	name = "Zip-Las"
@@ -380,10 +398,12 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	icon_state = "ziplas"
 	item_state = "ziplas"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 1500 //You got 1 shot...
 	projectile_type = /obj/item/projectile/beam/heavylaser //But it hurts a lot
 	cell_type = /obj/item/cell/device/weapon
+
+CAPABILITIES(/obj/item/gun/energy/zip)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/gun/energy/zip/craftable
 	battery_lock = 1 //makeshift gun has flaws
@@ -452,12 +472,14 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		list(mode_name="suppressive", fire_delay=5, projectile_type=/obj/item/projectile/beam/weaklaser, charge_cost = 60),
 		list(mode_name="burst", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, charge_cost = 200),
 		)
-	force = 8
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
-	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	is64x32_override = TRUE
 	accept_cell_type = /obj/item/cell/vepr
 	cell_type = /obj/item/cell/vepr
+
+CAPABILITIES(/obj/item/gun/energy/laser/vepr)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 8))
 
 /obj/item/cell/vepr
 	name = "VEPR cell"
@@ -476,7 +498,6 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	icon_state = "etommy"
 	item_state = "etommy"
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	charge_cost = 60 // 40 shots, lay down the firepower
 	projectile_type = /obj/item/projectile/beam/weaklaser
 	cell_type = /obj/item/cell/device/weapon
@@ -487,6 +508,9 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		list(mode_name="short bursts",	burst=5, fire_delay=10 ,move_delay=6, burst_accuracy = list(65,65,65,65,65), dispersion = list(4,4,4,4,4)),
 		)
 
+CAPABILITIES(/obj/item/gun/energy/tommylaser)
+	configure(item_worn(slots = SLOT_BACK))
+
 /obj/item/gun/energy/vepr/plasma
 	name = "WKHM 'Vepr-Prisma'"
 	desc = "The Vepr-Prisma plasma rifle, in 40 Watt range. A very robust version of the Vepr lasrifle, made to fire energized bolts of plasma. The Vepr-Prisma is very uncommon, reserved mainly for W-K's internal security forces, and organizations with lots of money to spend. Lacks a burst mode, but it probably doesn't need it. This one bears the 'WKHM Adamant' arkship's production stamp."
@@ -496,12 +520,14 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	icon_state = "vepr"
 	fire_delay = 0.5
 	projectile_type = /obj/item/projectile/energy/plasma/vepr
-	force = 8
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
-	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	var/is64x32_override = TRUE
 	accept_cell_type = /obj/item/cell/vepr
 	cell_type = /obj/item/cell/vepr
+
+CAPABILITIES(/obj/item/gun/energy/vepr/plasma)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/floragun
 	charge_cost = 80
@@ -554,6 +580,9 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="riflekill", fire_sound=SFX_WEAPONS_LASER, wielded_item_state="riflekill-wielded", charge_cost = 80),
 		)
 
+CAPABILITIES(/obj/item/gun/energy/gun/rifle)
+	configure(item_combat(force = 8))
+
 /obj/item/gun/energy/gun/burst //Halving since by 3 seems too much
 	firemodes = list(
 		list(mode_name="stun", burst=1, projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="energystun", charge_cost = 50),
@@ -562,11 +591,18 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		list(mode_name="lethal burst", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="energykill"),
 		)
 
+CAPABILITIES(/obj/item/gun/energy/gun/burst)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 8))
+
 /obj/item/gun/energy/gun/etommy //Halving this one
 	firemodes = list(
 		list(mode_name="lethal", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, charge_cost = 100),
 		list(mode_name="lethal burst", burst=4, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/gun/etommy)
+	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/gun/compact
 	firemodes = list(
@@ -594,6 +630,9 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 		list(mode_name="15 laser burst, ye boi.", burst=15, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), dispersion=list(0.0, 0.2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound=SFX_WEAPONS_LASER),
 		)
 
+CAPABILITIES(/obj/item/gun/energy/gun/burst/mg42)
+	configure(item_combat(force = 8))
+
 /obj/item/gun/energy/x01
 	firemodes = list(
 		list(mode_name="stun", fire_delay = 8, projectile_type= /obj/item/projectile/beam/stun, modifystate="x01stun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 80),
@@ -609,15 +648,17 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	icon_state = "gausspistol"
 	item_state = "gauss"
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
-	force = 5
 	fire_sound = SFX_WEAPONS_LASER4 //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	w_class = 2
 	projectile_type = /obj/item/projectile/energy/gauss
 	charge_cost = 250
 	self_recharge = 1
 	charge_meter = 1
 	fire_delay = 10 //old technology
+
+CAPABILITIES(/obj/item/gun/energy/soapenergy/gauss)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/soapenergy/gaussrifle
 	name = "gauss rifle"
@@ -626,9 +667,7 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	item_state = "gaussrifle"
 	item_icons = list(slot_r_hand_str = 'icons/mob/items/righthand_guns_yw.dmi', slot_l_hand_str = 'icons/mob/items/lefthand_guns_yw.dmi', slot_back_str = 'icons/mob/back_yw.dmi')
 	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
-	force = 8
 	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/energy/gaussrifle
 	charge_cost =400
@@ -637,4 +676,8 @@ CAPABILITIES(/obj/item/gun/energy/monorifle)
 	recoil = 1
 	fire_delay = 27 //old technology
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/soapenergy/gaussrifle)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 8))
 ///END OF GAUSS WEAPONRY///

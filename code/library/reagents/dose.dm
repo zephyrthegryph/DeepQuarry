@@ -96,7 +96,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 /// The held thing has an edge (or is a card to scrape it with).
 /datum/capability/lib/dose/proc/held_cuts(datum/act/op/A)
 	var/obj/item/held = A.held
-	return !isnull(held) && (held.sharp || held.edge || istype(held, /obj/item/card/id))
+	return !isnull(held) && (combat_of(held).sharp || combat_of(held).edge || istype(held, /obj/item/card/id))
 
 /datum/capability/lib/dose/proc/target_has_reagents(datum/act/op/A)
 	var/atom/target = A.target
@@ -114,7 +114,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
+	return (target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
 
 /datum/capability/lib/dose/proc/mouth_free(datum/act/op/A)
 	return (isnull(mouth_blocked_reason(A.actor, A.target))) ? null : /datum/msg/reagent_container/mouth_blocked

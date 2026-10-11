@@ -6,7 +6,6 @@
 	icon_state = "powersink0"
 	icon = 'icons/obj/device.dmi'
 	w_class = ITEMSIZE_LARGE
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 2
 
@@ -52,13 +51,14 @@ TRACKED(/obj/item/powersink, mode)
 		set_anchored(FALSE)
 	set_mode(0)
 	act_message(user, src, others = span_notice("%U% detaches %T% from the cable!"))
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	playsound(src, sounds_of(tool).use, 50, 1)
 	icon_state = "powersink0"
 	return OP_OK
 
 
 CAPABILITIES(/obj/item/powersink)
+	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Drains the attached powernet while operating.
 	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/powersink)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
 			set_mode(1)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 			icon_state = "powersink0"
 		
 	return TRUE
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/powersink)
 	if(!PN)
 		return 1
 
-	set_light(12)
+	set_glow(src, GLOW(12, null, null))
 	power_warn(PN)
 	// found a powernet, so drain up to max power from it
 	drained = power_draw(PN, drain_rate)

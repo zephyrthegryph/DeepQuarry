@@ -18,20 +18,22 @@
 	icon_dead = "drone0"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 
 	endurance = 20
 	movement_cooldown = 2
 	melee_attack_delay = 2 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
 
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
+
+CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
 	vore_active = 1
@@ -41,7 +43,6 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = TRUE
 
 //bluenom
 CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
@@ -429,7 +430,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	icon_dead = "slainouroboros"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 	icon_state = "ouroboros"
@@ -440,7 +440,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 
 	melee_damage_lower = 25
@@ -453,6 +452,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/act/A)
@@ -576,22 +577,26 @@ CAPABILITIES(/obj/random/mob/candycritter)
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 20
-	armor_penetration = 30
 	speed = 4.0
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/chilled
 	modifier_duration = 6 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/chocosphere)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/canearrow
 	name = "candy cane arrow"
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 15
-	armor_penetration = 40
 	speed = 2.5
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 12 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/canearrow)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/arc/fragmentation/cherrybomb
 	name = "cherry bomb"
@@ -609,7 +614,9 @@ CAPABILITIES(/obj/random/mob/candycritter)
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "cherry_pit"
 	damage = 25
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/bullet/cherrypit)
+	configure(item_combat(armor_penetration = 30))
 
 //more critters
 //antimelee
@@ -636,7 +643,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 /mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(80))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% deflects %T% with its shell!")))
 			if(user)

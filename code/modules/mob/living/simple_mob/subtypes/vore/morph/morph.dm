@@ -14,7 +14,6 @@
 	movement_cooldown = -1
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
-	mob_bump_flag = SLIME
 
 	min_oxy = 0
 	max_oxy = 0
@@ -60,12 +59,14 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	configure(mob_movement(bump = SLIME))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
 	param(nameof(prey_mind), pos = 1)
 	param(nameof(parent_morph), pos = 2)
@@ -103,7 +104,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 /mob/living/simple_mob/vore/morph/proc/assume(atom/movable/target)
 	var/mob/living/carbon/human/humantarget = target
-	if(istype(humantarget) && !humantarget.allow_mimicry)
+	if(istype(humantarget) && !humantarget.vore_prefs.allow_mimicry)
 		to_chat(src, span_warning("[target] cannot be impersonated!"))
 		return
 	if(morphed)
@@ -217,7 +218,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		else
 			plane = MOB_PLANE
 			to_chat(src,span_notice("Your form quivers back to life, allowing you to move again!"))
-			if(can_be_drop_pred) //Toggleable in vore panel
+			if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 				var/list/potentials = living_mobs(0)
 				if(potentials.len)
 					var/mob/living/target = pick(potentials)
@@ -321,7 +322,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	if(QDELETED(prey))
 		retire()
 		return
-	if(!prey.allow_mimicry)
+	if(!prey.vore_prefs.allow_mimicry)
 		to_chat(actor, span_warning("\The [prey] cannot be impersonated!"))
 		retire()
 		return
@@ -379,8 +380,6 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 /mob/living/simple_mob/vore/morph/dominated_prey
 	name = "subservient node"
 	color = "#171717"
-	digestable = 0
-	devourable = 0
 	var/mob/living/simple_mob/vore/morph/parent_morph
 	var/mob/living/carbon/human/prey_body
 	/// The prey's mind, held in this node while the morph wears the prey.

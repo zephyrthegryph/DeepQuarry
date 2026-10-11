@@ -71,7 +71,7 @@ CAPABILITIES(/obj/structure/cliff)
 	if(ishuman(climber))
 		var/mob/living/carbon/human/H = climber
 		var/obj/item/clothing/shoes/shoes = H.get_equipped_item(SLOT_ID_SHOES)
-		if(shoes && shoes.rock_climbing)
+		if(shoes && tooling_of(shoes).climbing)
 			return null
 	return "\The [src] is too steep to climb unassisted."
 
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 /obj/structure/cliff/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover))
 		var/mob/living/L = mover
-		if(dq_get_hovering(L) || L.flying) // Flying mobs can always pass.
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying mobs can always pass.
 			return TRUE
 		return ..()
 
@@ -184,7 +184,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 			return
 
 /obj/structure/cliff/proc/should_fall(mob/living/L)
-	if(dq_get_hovering(L) || L.flying)
+	if(dq_get_hovering(L) || stat_value(L, STAT_FLYING))
 		return FALSE
 
 	var/turf/T = get_turf(L)

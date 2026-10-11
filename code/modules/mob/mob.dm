@@ -333,7 +333,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(bio.flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
 /mob/proc/flavor_text_entered(datum/act/request/A)
 	if(!A.answer)
@@ -341,16 +341,16 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return flavor_text_apply(A.answer.value)
 
 /mob/proc/flavor_text_apply(new_text)
-	flavor_text = new_text
+	bio.flavor_text = new_text
 
 /mob/proc/warn_flavor_changed()
-	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
+	if(bio.flavor_text && bio.flavor_text != "") // don't spam people that don't use it!
 		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
 		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
 
 /mob/proc/print_flavor_text()
-	if (flavor_text && flavor_text != "")
-		var/msg = replacetext(flavor_text, "\n", " ")
+	if (bio.flavor_text && bio.flavor_text != "")
+		var/msg = replacetext(bio.flavor_text, "\n", " ")
 		if(length(msg) <= 40)
 			return span_notice("[msg]")
 		else
@@ -574,7 +574,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/proc/topic_flavor_more(datum/act/op/A)
 	var/mob/user = A.actor
-	var/examine_text = splittext(flavor_text, "||")
+	var/examine_text = splittext(bio.flavor_text, "||")
 	var/index = 0
 	var/rendered_text = ""
 	for(var/part in examine_text)
@@ -630,15 +630,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	var/mob/M = AM
 	if(ismob(AM))
 
-		if(!can_pull_mobs || !can_pull_size)
+		if(!movement_of(src).pull_mobs || !movement_of(src).pull_size)
 			to_chat(src, span_warning("They won't budge!"))
 			return
 
-		if((mob_size < M.mob_size) && (can_pull_mobs != MOB_PULL_LARGER))
+		if((mob_size < M.mob_size) && (movement_of(src).pull_mobs != MOB_PULL_LARGER))
 			to_chat(src, span_warning("[M] is too large for you to move!"))
 			return
 
-		if((mob_size == M.mob_size) && (can_pull_mobs == MOB_PULL_SMALLER))
+		if((mob_size == M.mob_size) && (movement_of(src).pull_mobs == MOB_PULL_SMALLER))
 			to_chat(src, span_warning("[M] is too heavy for you to move!"))
 			return
 
@@ -663,13 +663,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		else
 			rel_set(M, nameof(M.LAssailant), src)
 
-		if(M.no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
+		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
 			return
 
 	else if(isobj(AM))
 		var/obj/I = AM
-		if(!can_pull_size || can_pull_size < I.w_class)
+		if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 			to_chat(src, span_warning("It won't budge!"))
 			return
 
@@ -1151,9 +1151,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		rel_add(src, nameof(exploit_addons), I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
-		exploit_record += exploitmsg
+		bio.exploit_record = bio.exploit_record + (exploitmsg)
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(hud_of(mob)?.zone_sel, /atom/movable/screen/zone_sel)

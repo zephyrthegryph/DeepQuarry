@@ -3,68 +3,20 @@
 	organs = list()
 	organs_by_name = list()
 
-	//Hair colour and style
-	var/r_hair = 0
-	var/g_hair = 0
-	var/b_hair = 0
-	var/h_style = "Bald"
-
-	var/r_grad = 0
-	var/g_grad = 0
-	var/b_grad = 0
-	var/grad_style = "none"
-	//Facial hair colour and style
-	var/r_facial = 0
-	var/g_facial = 0
-	var/b_facial = 0
-	var/f_style = "Shaved"
-
-	//Eye colour
-	var/r_eyes = 0
-	var/g_eyes = 0
-	var/b_eyes = 0
-
-	var/s_tone = 0	//Skin tone
-
-	//Skin colour
-	var/r_skin = 0
-	var/g_skin = 0
-	var/b_skin = 0
-
-
-	//Synth colors
-	var/synth_color	= 0					//Lets normally uncolorable synth parts be colorable.
-	var/r_synth							//Used with synth_color to color synth parts that normaly can't be colored.
-	var/g_synth							//Same as above
-	var/b_synth							//Same as above
-	var/synth_markings = 0				//Enables/disables markings on synth parts.
-
-	var/digitigrade = 0 // 0 = no digi, 1 = default, 2+ = digi styles... (Not used yet)
+	// Hair, eye, skin and synth colours, styles, skin tone, digitigrade and lips: the looks profile record
+	// (/datum/record/appearance, profile_records.dm).
 
 	var/damage_multiplier = 1 //multiplies melee combat damage
 
-	var/lip_style = null	//no lipstick by default- arguably misleading, as it could be used for general makeup
-
-	var/age = 30		//Player's age (pure fluff)
 
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
 
 	var/list/all_underwear	// Lazy.
 	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
 	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
-	var/headset = 1		//Which headset type the player has chosen.
-	var/backbag = 2		//Which backpack type the player has chosen.
-	var/pdachoice = 1	//Which PDA type the player has chosen.
 
-	// General information
-	var/home_system = ""
-	var/birthplace = ""
-	var/citizenship = ""
-	/// Employer recorded in the station's personnel database. This is not a social reputation faction.
-	var/personal_faction = "NanoTrasen"
-	var/religion = ""
-	var/antag_faction = ""
-	var/antag_vis = ""
+	// Age, background, records, flavour text and kit choices: the bio profile record on /mob
+	// (/datum/record/identity, code/modules/mob/profile_records.dm).
 
 	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
@@ -73,18 +25,13 @@
 
 	var/hand_blood_color
 
-	var/list/flavor_texts	// Lazy.
 	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 
-	mob_bump_flag = HUMAN
-	mob_push_flags = ~HEAVY
-	mob_swap_flags = ~HEAVY
 
 	var/identifying_gender // In case the human identifies as another gender than it's biological
 
 	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 
-	can_be_antagged = TRUE
 
 // Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
 	var/mob/living/carbon/human/vr_holder = null
@@ -92,7 +39,6 @@
 	var/mob/living/carbon/human/vr_link = null
 
 
-	inventory_panel_type = /datum/inventory_panel/human
 	butchery_loot = list(/obj/item/stack/animalhide/human = 1)
 
 	// Horray Furries!
@@ -156,10 +102,6 @@
 
 
 /mob/living/carbon/human
-	r_skin = 238 // TO DO: Set defaults for other races.
-	g_skin = 206
-	b_skin = 179
-
 	var/vantag_pref = VANTAG_NONE //What's my status?
 	var/ability_flags = 0	//Shadekin abilities/potentially other species-based?
 	var/sensorpref = 5		//Suit sensor loadout pref
@@ -185,4 +127,3 @@ TRACKED(/mob/living/carbon/human, vantag_pref)
 /// Limbs and organs attach and detach through the body (body/parts/attach.dm invalidates it): MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
-TRACKED(/mob/living/carbon/human, lip_style)

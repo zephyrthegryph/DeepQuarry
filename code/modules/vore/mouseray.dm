@@ -9,7 +9,6 @@
 	charge_cost = 240
 	projectile_type = /obj/item/projectile/beam/mouselaser
 	battery_lock = 1
-	force = 0
 	var/tf_type = /mob/living/simple_mob/animal/passive/mouse	//This type is what kind of mob it will try to turn people into!
 	var/cooldown = 0											//automatically set when used
 	var/cooldown_time = 15 SECONDS								//the amount of time between shots
@@ -20,6 +19,9 @@
 		"rat" = /mob/living/simple_mob/animal/passive/mouse/rat,
 		"dust jumper" = /mob/living/simple_mob/vore/alienanimals/dustjumper
 		)
+
+CAPABILITIES(/obj/item/gun/energy/mouseray)
+	configure(item_combat(force = 0))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
 /obj/item/gun/energy/mouseray/gun_operate(datum/act/op/A, callback)
@@ -83,7 +85,7 @@
 	if(istype(M,/mob/living/carbon) && !M.mind)
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	M.drop_both_hands()
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
@@ -150,7 +152,7 @@
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			firer.visible_message(span_warning("\The [src] buzzes impolitely."))
 			return
 	if(M.tf_mob_holder)

@@ -5,7 +5,6 @@
 	name = "whetstone"
 	desc = "A simple, fine grit stone, useful for sharpening dull edges and polishing out dents."
 	icon_state = "whetstone"
-	force = 3
 	w_class = ITEMSIZE_SMALL
 	var/repair_amount = 5
 	var/repair_time = 40
@@ -13,6 +12,7 @@
 MSG_DEF_SELF(whetstone/refining, "You begin to refine %T% with %I%...")
 
 CAPABILITIES(/obj/item/whetstone)
+	configure(item_combat(force = 3))
 	op("refine", stack(/obj/item/stack/material, 5), label("Refine"), begins(MSG(whetstone/refining)), wait(7 SECONDS), then(PROC_REF(refined)))
 
 /obj/item/whetstone/proc/refined(datum/act/op/A)

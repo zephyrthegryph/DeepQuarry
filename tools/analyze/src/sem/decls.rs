@@ -226,7 +226,7 @@ impl Decls {
             d.markers.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
             // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
             // declares `a` on /A and `b` on /B.
-            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
+            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
             let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
             let mut found: Vec<(String, String)> = Vec::new();
             for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
@@ -544,7 +544,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 });
             }
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {

@@ -133,6 +133,9 @@
 /obj/effect/map_effect/perma_light
 	init_from_table = TRUE
 
+CAPABILITIES(/obj/effect/map_effect/perma_light)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
+
 /obj/effect/map_effect/portal/line
 	init_from_table = TRUE
 

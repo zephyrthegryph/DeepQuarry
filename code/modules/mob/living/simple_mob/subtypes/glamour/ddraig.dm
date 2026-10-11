@@ -75,7 +75,6 @@
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/ddraig/faster
 	special_attack_cooldown = 10 SECONDS
@@ -85,6 +84,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -152,7 +152,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -188,7 +188,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathstart(atom/A) //Borrowed from le big dragon
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	flames = 1
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
@@ -237,7 +237,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	if(M.tf_mob_holder)
 		M.revert_mob_tf()

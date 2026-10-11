@@ -67,7 +67,7 @@
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -218,8 +218,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_9MMPISTOL
 	projectile_dispersion = 3
 	projectile_accuracy = -15
-	base_attack_cooldown = 8 DECISECONDS
 	reload_max = 12
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged)
+	configure(mob_kind(attack_cooldown = 8 DECISECONDS))
 
 /mob/living/simple_mob/vore/blackhole/ranged/smg
 	name = "Black Hole gunner"
@@ -235,8 +237,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_VITYAZ
 	projectile_dispersion = 3
 	projectile_accuracy = -15
-	base_attack_cooldown = 2
 	reload_max = 25
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/smg)
+	configure(mob_kind(attack_cooldown = 2))
 
 /mob/living/simple_mob/vore/blackhole/ranged/rifle
 	name = "Black Hole rifleman"
@@ -252,8 +256,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_SKS
 	projectile_dispersion = 3
 	projectile_accuracy = -15
-	base_attack_cooldown = 8
 	reload_max = 30
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/rifle)
+	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/vore/blackhole/ranged/lmg
 	name = "Black Hole machinegunner"
@@ -269,8 +275,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 12
 	projectile_accuracy = -25
-	base_attack_cooldown = 0.1
 	reload_max = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
+	configure(mob_kind(attack_cooldown = 0.1))
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///taur specific variations!///
@@ -345,8 +353,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 12
 	projectile_accuracy = -25
-	base_attack_cooldown = 0.1
 	reload_max = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged)
+	configure(mob_kind(attack_cooldown = 0.1))
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged/hmg
 	name = "Black Hole heavy machinegunner"
@@ -360,8 +370,10 @@
 	projectilesound = SFX_WEAPONS_SERDY_STRELA
 	projectile_dispersion = 12
 	projectile_accuracy = -25
-	base_attack_cooldown = 0.5
 	reload_max = 100
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
+	configure(mob_kind(attack_cooldown = 0.5))
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole
 	name = "Black Hole sniper"
@@ -494,7 +506,6 @@
 	projectilesound = SFX_WEAPONS_SERDY_AK74
 	projectile_dispersion = 25
 	projectile_accuracy = -40
-	base_attack_cooldown = 4
 	reload_max = 30
 
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
@@ -551,7 +562,9 @@
 	projectilesound = SFX_EFFECTS_LIGHTNINGBOLT
 	projectile_dispersion = 12
 	projectile_accuracy = -25
-	base_attack_cooldown = 12
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand/blackhole)
+	configure(mob_kind(attack_cooldown = 12))
 
 /obj/structure/loot_pile/mecha/durand/blackhole
 	name = "vulture wreckage"
@@ -604,9 +617,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	melee_damage_upper = 0
 	melee_damage_lower = 0
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	vore_active = 0
 
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
@@ -630,6 +640,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/datum/looping_sound/obelisk/loopy = 1
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	owns_one(nameof(loopy), /datum/looping_sound/obelisk, starts = /datum/looping_sound/obelisk, starts_args = list(TRUE)) // started as it is made
 
 /mob/living/simple_mob/vore/blackhole_obelisk/monolith
@@ -668,7 +679,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/handle_hungry()
-	if(nutrition <= OBELISK_LURE)
+	if(nutrition_of(src) <= OBELISK_LURE)
 		for(var/mob/living/carbon/human/H in oview(6, src))
 			if(!istype(H) || !isliving(H) || H.stat == DEAD)
 				continue
@@ -727,6 +738,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole)
 	rolls(nameof(size_multiplier), range_of(0.9, 1.5, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
+	configure(mob_kind(attack_cooldown = 4))
 	after_init(0, then(PROC_REF(biker_rescale)))
 
 /mob/living/simple_mob/vore/blackhole/bikers/proc/biker_rescale(datum/act/timer/A)
@@ -905,7 +917,9 @@ CAPABILITIES(/obj/item/projectile/beam/shock/bh1)
 	fire_sound = SFX_WEAPONS_RPG
 	damage = 40
 	speed = 0.6
-	armor_penetration = 90
+
+CAPABILITIES(/obj/item/projectile/explosive_rocket/blackhole)
+	configure(item_combat(armor_penetration = 90))
 
 /obj/item/projectile/explosive_rocket/blackhole/on_impact(turf/T)
 	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.

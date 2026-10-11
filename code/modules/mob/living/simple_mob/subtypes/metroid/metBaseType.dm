@@ -1,7 +1,6 @@
 // The top-level metroid defines. Xenobio slimes and feral slimes will inherit from this. Stolen from as much slime code as possible.
 
 /mob/living/simple_mob/metroid
-	nutrition = 100 //Have them start off pretty hungry still.
 	name = "metroid"
 	desc = "Some sort of person eaty thing! This is the prototype mob and shouldn't be spawned. If you see this, yell at your local dev or event manager who spawned this one >.>"
 	tt_desc = "Headamus Suckumus"
@@ -17,8 +16,6 @@
 	endurance = 25
 	movement_cooldown = 1.7
 	pass_flags = PASSTABLE
-	makes_dirt = FALSE	// Floats, mostly.
-	mob_class = MOB_CLASS_SLIME //This needs to be updated in simple_mob.dm and _defines/mobs.dm
 
 	response_help = "pets"
 
@@ -39,7 +36,6 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 10 // One attack a second.
 	attack_sound = SFX_METROID_METROIDATTACK
 	attacktext = list("suckulated")
 	speak_emote = list("chirps")
@@ -53,14 +49,12 @@
 	vore_pounce_chance = 25
 	vore_icons = SA_ICON_LIVING
 
-	nutrition = 1000 //This actually gets overridden further down on initialize.
 	max_nutrition = 2200
 	var/evo_point = 0
 	var/evo_limit = 0
 	var/next
 	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
-	can_be_drop_prey = FALSE
 
 	can_pain_emote = TRUE
 	species_sounds = "Metroid"
@@ -75,6 +69,8 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
+	configure(mob_movement(makes_dirt = FALSE))
 	after_init(0, then(PROC_REF(screech_on_arrival)))
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
@@ -126,3 +122,10 @@ CAPABILITIES(/mob/living/simple_mob/metroid)
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
 	..()
+
+
+/mob/living/simple_mob/metroid/starting_nutrition() //This actually gets overridden further down on initialize.
+	return 1000
+
+/mob/living/simple_mob/metroid/starting_nutrition() //Have them start off pretty hungry still.
+	return 100

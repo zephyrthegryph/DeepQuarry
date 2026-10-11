@@ -6,7 +6,6 @@
 	restricted_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
-	flags_inv = HIDEEARS|BLOCKHEADHAIR
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 	resistance_flags = FIRE_PROOF
@@ -110,10 +109,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/bulletproof)
 	icon_state = "helmet_combat"
 	item_state_slots = list(slot_r_hand_str = "helmet", slot_l_hand_str = "helmet")
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 	valid_accessory_slots = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/combat)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHEADHAIR))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/head/helmet/flexitac
@@ -121,11 +120,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat)
 	desc = "A tan helmet made from advanced ceramic with an integrated tactical flashlight."
 	icon_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
-	light_range = 6
 	light_overlay = "helmet_light_dual_green"
 	actions_types = list(/datum/action/item_action/toggle_head_light)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/flexitac)
+	configure(light_glow(range = 6))
 	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = HEAD))
 
 /obj/item/clothing/head/helmet/explorer
@@ -143,9 +142,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/explorer)
 	desc = "They're often used by highly trained SWAT Officers."
 	icon_state = "swat"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 
 CAPABILITIES(/obj/item/clothing/head/helmet/swat)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHEADHAIR))
 	configure(item_protection(cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.5))
 
 /obj/item/clothing/head/helmet/alien
@@ -176,10 +175,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/thunderdome)
 	desc = "Ave, Imperator, morituri te salutant."
 	icon_state = "gladiator"
 	item_state_slots = list(slot_r_hand_str = "vhelmet", slot_l_hand_str = "vhelmet")
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
 	valid_accessory_slots = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/gladiator)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR))
 	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/head/helmet/tactical
@@ -193,10 +192,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/gladiator)
 		)
 
 	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
-	flags_inv = HIDEEARS|BLOCKHAIR
 	valid_accessory_slots = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/tactical)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/helmet/augment
@@ -205,10 +204,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/tactical)
 	icon_state = "v62"
 	item_state_slots = list(slot_r_hand_str = "head_m", slot_l_hand_str = "head_m")
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHEADHAIR
 	valid_accessory_slots = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/augment)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHEADHAIR))
 	configure(item_protection(cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.5))
 
 //Non-hardsuit ERT helmets.
@@ -312,16 +311,16 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
-			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
+			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = base_state
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
-			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
+			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
@@ -376,16 +375,16 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
-			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
+			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = base_state
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
-			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
+			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")

@@ -252,24 +252,24 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		if(1)
 			to_chat(C, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [C] begins to drain you!"))
-			C.set_nutrition((C.nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.set_nutrition(T.nutrition*0.95)
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			T.set_nutrition(nutrition_of(T)*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel stronger with every passing moment of draining [T]."))
 			src.visible_message(span_danger("[C] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [C] drains you!"))
-			C.set_nutrition((C.nutrition + (T.nutrition*0.1)))
-			T.set_nutrition(T.nutrition*0.9)
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1)))
+			T.set_nutrition(nutrition_of(T)*0.9)
 		if(3 to 99)
-			C.set_nutrition((C.nutrition + (T.nutrition*0.1))) //Just keep draining them.
-			T.set_nutrition(T.nutrition*0.9)
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1))) //Just keep draining them.
+			T.set_nutrition(nutrition_of(T)*0.9)
 			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(T) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			C.set_nutrition((C.nutrition + T.nutrition))
+			C.set_nutrition((nutrition_of(C) + nutrition_of(T)))
 			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
@@ -317,28 +317,28 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 				return 0
 			to_chat(src, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [src] begins to drain you!"))
-			set_nutrition((nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.set_nutrition(T.nutrition*0.95)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			T.set_nutrition(nutrition_of(T)*0.95)
 		if(2)
 			to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
 			act_message(src, T, others = span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
-			set_nutrition((nutrition + (T.nutrition*0.1)))
-			T.set_nutrition(T.nutrition*0.9)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.1)))
+			T.set_nutrition(nutrition_of(T)*0.9)
 		if(3 to 48) //Should be more than enough to get under 100.
-			set_nutrition((nutrition + (T.nutrition*0.1))) //Just keep draining them.
-			T.set_nutrition(T.nutrition*0.9)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.1))) //Just keep draining them.
+			T.set_nutrition(nutrition_of(T)*0.9)
 			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
+			if(nutrition_of(T) < 100)//Did they drop below 100 nutrition_of(src)? If so, do one last check then jump to stage 50 (Lethal!)
 				stage = 49
 		if(49)
-			if(T.nutrition < 100)//Did they somehow not get drained below 100 nutrition yet? If not, go back to stage 3 and repeat until they get drained.
+			if(nutrition_of(T) < 100)//Did they somehow not get drained below 100 nutrition_of(src) yet? If not, go back to stage 3 and repeat until they get drained.
 				stage = 3 //Otherwise, advance to stage 50 (Lethal draining.)
 		if(50)
-			if(!T.digestable)
+			if(!T.vore_prefs.digestable)
 				to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
 				to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
-				set_nutrition((nutrition + T.nutrition))
+				set_nutrition((nutrition_of(src) + nutrition_of(T)))
 				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
@@ -359,7 +359,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
-			set_nutrition((nutrition + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition.
+			set_nutrition((nutrition_of(src) + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition_of(src).
 		if(99)
 			if(drain_finalized != 1)
 				stage = 51
@@ -411,24 +411,24 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		if(1)
 			to_chat(C, span_notice("You begin to feed [T]..."))
 			to_chat(T, span_notice("An odd sensation flows through your body as [C] begins to feed you!"))
-			T.set_nutrition((T.nutrition + (C.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			C.set_nutrition(C.nutrition*0.95)
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			C.set_nutrition(nutrition_of(C)*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel weaker with every passing moment of feeding [T]."))
 			src.visible_message(span_notice("[C] seems to be doing something to [T], resulting in [T]'s body looking stronger with every passing moment!"))
 			to_chat(T, span_notice("You feel stronger with every passing moment as [C] feeds you!"))
-			T.set_nutrition((T.nutrition + (C.nutrition*0.1)))
-			C.set_nutrition(C.nutrition*0.90)
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1)))
+			C.set_nutrition(nutrition_of(C)*0.90)
 		if(3 to 99)
-			T.set_nutrition((T.nutrition + (C.nutrition*0.1))) //Just keep draining them.
-			C.set_nutrition(C.nutrition*0.9)
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1))) //Just keep draining them.
+			C.set_nutrition(nutrition_of(C)*0.9)
 			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-			if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+			if(nutrition_of(C) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			T.set_nutrition((T.nutrition + C.nutrition))
+			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
 			C.set_nutrition(0) //Completely drained of everything.
 			C.absorbing_prey = FALSE
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
@@ -760,13 +760,13 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot fly in this state!")
 		return
-	if(C.nutrition < 25 && !C.flying) //Don't have any food in you?" You can't fly.
+	if(nutrition_of(C) < 25 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't fly.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 
-	C.flying = !C.flying
+	set_flying(C, !stat_value(C, STAT_FLYING))
 	update_floating()
-	to_chat(C, span_notice("You have [C.flying?"started":"stopped"] flying."))
+	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
 
 /mob/living/
 	var/flight_vore = FALSE
@@ -792,13 +792,13 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(!C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
 		to_chat(src, "You don't have wings!")
 		return
-	if(!C.flying)
+	if(!stat_value(C, STAT_FLYING))
 		to_chat(src, "You must be flying to hover!")
 		return
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot hover in your current state!")
 		return
-	if(C.nutrition < 50 && !C.flying) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition. And it's not 25 since we don't want them to immediately fall.
+	if(nutrition_of(C) < 50 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition_of(src). And it's not 25 since we don't want them to immediately fall.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 	if(C.anchored)
@@ -929,7 +929,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 			for(var/mob/living/L in contents_of(T))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.can_be_drop_prey)
+				if(L.vore_prefs.devourable && L.vore_prefs.can_be_drop_prey)
 					targets += L
 	return targets
 
@@ -1035,7 +1035,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 			for(var/mob/living/L in range(5, src))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+				if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 					targets += L
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
@@ -1092,8 +1092,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	muzzle_flash_range = 0
 	impact_light_intensity = 0
 	impact_light_range  = 0
-	light_range = 0 //No your tongue can not glow...For now.
-	light_power = 0
 	light_on = 0 //NO LIGHT
 	combustion = FALSE //No, your tongue can't set the room on fire.
 	pass_flags = PASSTABLE
@@ -1103,6 +1101,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	impact_type = /obj/effect/projectile/impact/appendage
 
 CAPABILITIES(/obj/item/projectile/beam/appendage)
+	configure(light_glow(range = 0, power = 0))
 	configure(item_sounds(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /obj/item/projectile/beam/appendage/generate_hitscan_tracers()
@@ -1156,23 +1155,23 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 /obj/effect/projectile/muzzle/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "muzzle_appendage"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/tracer/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "appendage_beam"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00" //Doesn't matter. Not used.
+
+CAPABILITIES(/obj/effect/projectile/tracer/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/impact/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "impact_appendage_combined"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/impact/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 //LONG VORE ABILITY END
 
 /obj/item/gun/energy/gun/tongue //This is the 'tongue' gun for admin memery.
@@ -1182,7 +1181,6 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	icon_state = "synthtongue"
 	item_state = "gun"
 	fire_delay = null
-	force = 0
 	fire_delay = 1 //Adminspawn. No delay.
 	charge_cost = 0 //This is an adminspawn gun...No reason to force it to have a charge state.
 
@@ -1195,6 +1193,9 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
+CAPABILITIES(/obj/item/gun/energy/gun/tongue)
+	configure(item_combat(force = 0))
+
 /// The look: always the tongue, whatever the charge.
 /obj/item/gun/energy/gun/tongue/draw_charge_state(datum/look/look)
 	look.state("synthtongue")
@@ -1202,13 +1203,15 @@ CAPABILITIES(/obj/item/projectile/beam/appendage)
 /obj/item/gun/energy/bfgtaser/tongue
 	name = "9000-series Ball Tongue Taser"
 	desc = "A banned riot control device."
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser/tongue
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
 	one_handed_penalty = 90 // The thing's heavy and huge.
 	accuracy = 45
 	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
+
+CAPABILITIES(/obj/item/gun/energy/bfgtaser/tongue)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"
@@ -1244,7 +1247,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 				continue
 			if(L == src) //no eating yourself. 1984.
 				continue
-			if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+			if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 				targets += L
 
 		if(!(targets.len))
@@ -1409,9 +1412,9 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 			continue
 		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
 			continue
-		if(!L.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
 			continue
-		if(!L.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
 			continue
 		targets += L
 	return targets
@@ -1727,7 +1730,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 			continue
 		if(potentialtarget == pred)
 			continue
-		if(potentialtarget.devourable)
+		if(potentialtarget.vore_prefs.devourable)
 			targets += potentialtarget
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))

@@ -119,28 +119,28 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		return FALSE
 	if(!has_hands) //This is here so if you WANT to do special code for 'if we don't have hands, do stuff' it can be done here!
 		return FALSE
-	if(istype(M) && attempt_to_scoop(M, H) && !on_fire)
+	if(istype(M) && attempt_to_scoop(M, H) && !stat_value(src, STAT_ON_FIRE))
 		return FALSE;
 
 	// Abdominal thrusts on a choking patient (aim at the chest).
-	if(istype(H) && H != src && !on_fire && hud_of(H)?.zone_sel?.selecting == BP_TORSO && stat != DEAD)
+	if(istype(H) && H != src && !stat_value(src, STAT_ON_FIRE) && hud_of(H)?.zone_sel?.selecting == BP_TORSO && stat != DEAD)
 		var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
 		if(choke)
 			perform_heimlich(H, choke)
 			return TRUE
 
 	//todo: make this whole CPR check into it's own individual proc instead of hogging up attack_hand_help_intent
-	if((istype(H) && has_trait(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
+	if((istype(H) && has_trait(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !stat_value(src, STAT_ON_FIRE) && H != src) //Only humans can do CPR.
 		if(!H.check_has_mouth())
 			to_chat(H, span_danger("You don't have a mouth, you cannot perform CPR!"))
 			return FALSE
 		if(!check_has_mouth())
 			to_chat(H, span_danger("They don't have a mouth, you cannot perform CPR!"))
 			return FALSE
-		if((H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove your mask!"))
 			return FALSE
-		if((get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 

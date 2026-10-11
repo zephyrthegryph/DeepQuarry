@@ -49,7 +49,6 @@ I think I covered everything.
 ///
 
 /mob/living/simple_mob/vore/bigdragon
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	drag_buckle = FALSE
 	name = "large dragon"
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards."
@@ -102,7 +101,6 @@ I think I covered everything.
 	glow_intensity = 3
 	glow_color = "#ED9200"
 	say_list_type = /datum/say_list/bigdragon
-	devourable = 0	//No
 	universal_understand = 1 //So they can hear synth speach
 	max_tox = 0 // for virgo3b survivability
 	max_co2 = 0 // Also needed for 3b Survivability otherwise it chokes to death
@@ -183,7 +181,6 @@ I think I covered everything.
 	)
 	var/eyes
 
-	can_be_drop_prey = FALSE
 
 ///
 ///		Subtypes
@@ -206,7 +203,9 @@ I think I covered everything.
 	endurance = 200
 	melee_damage_lower = 20
 	melee_damage_upper = 15
-	allow_mind_transfer = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 ///
 ///		Misc define stuff
@@ -722,14 +721,14 @@ I think I covered everything.
 		ai_busy_end()
 		return
 	set_status_flags(status_flags | LEAPING)
-	flying  = 1		//So we can thunk into things
+	set_flying(src, 1) //So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
 		set_status_flags(status_flags & ~LEAPING)
-	flying = 0
+	set_flying(src, 0)
 	dq_set_hovering(src, 0)
 
 	var/mob/living/target = null
@@ -749,7 +748,7 @@ I think I covered everything.
 	ai_busy_end()
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	if(!enraged)
 		ai_busy_begin()
 	set_flames(1)
@@ -965,3 +964,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE)
 
+
+/mob/living/simple_mob/vore/bigdragon/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

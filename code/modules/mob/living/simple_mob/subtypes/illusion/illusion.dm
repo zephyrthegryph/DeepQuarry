@@ -11,13 +11,11 @@
 	poison_resist = 1
 
 	movement_cooldown = -2
-	mob_bump_flag = 0 // If the illusion can't be swapped it will be obvious.
 
 	response_help   = "pushes a hand through"
 	response_disarm = "tried to disarm"
 	response_harm   = "tried to punch"
 
-	mob_class = MOB_CLASS_ILLUSION
 	draws_life_state = FALSE
 	biology = BIOLOGY_SYNTHETIC // Holographic: nothing to poison or suffocate, nothing to medicate.
 
@@ -56,6 +54,8 @@
 	return PROJECTILE_FORCE_MISS
 
 CAPABILITIES(/mob/living/simple_mob/illusion)
+	configure(mob_kind(mob_class = MOB_CLASS_ILLUSION))
+	configure(mob_movement(bump = 0))
 	op("illusion_hand_help", hand(), ungated(), stance(I_HELP), label("Hug"), then(PROC_REF(illusion_interaction_hand_help)))
 	op("illusion_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(illusion_interaction_hand_disarm)))
 	op("illusion_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(illusion_interaction_hand_grab)))

@@ -61,11 +61,11 @@ CAPABILITIES(/obj/structure/flora/tree)
 
 	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
 
-	var/damage_to_do = W.force
-	if(!W.sharp && !W.edge)
+	var/damage_to_do = combat_of(W).force
+	if(!combat_of(W).sharp && !combat_of(W).edge)
 		damage_to_do = round(damage_to_do / 4)
 	if(damage_to_do > 0)
-		if(W.sharp && W.edge)
+		if(combat_of(W).sharp && combat_of(W).edge)
 			play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 		else
 			playsound(src, sounds_of(W).hit, 50, 1)
@@ -133,7 +133,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	set_density(FALSE)
 	icon_state = "[base_state]_stump"
 	cut_overlays() // For the Sif tree and other future glowy trees.
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 
 /// A blast tears into the tree through its own health, ruining some of the wood.

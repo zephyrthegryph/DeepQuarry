@@ -88,7 +88,7 @@ CAPABILITIES(/obj/structure/generic_structure)
 
 					if(ishuman(O))
 						var/mob/living/carbon/human/H = O
-						H.set_fear(200)
+						H.status_set(STAT_FEAR, 200)
 			if(sound_activated)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)

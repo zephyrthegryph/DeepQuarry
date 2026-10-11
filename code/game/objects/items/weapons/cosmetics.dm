@@ -5,7 +5,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "lipstick"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/colour = "red"
 	var/open = 0
 
@@ -37,6 +36,7 @@ TRACKED(/obj/item/lipstick, open)
 MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 
 CAPABILITIES(/obj/item/lipstick)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/lipstick)
 	if(!ishuman(A.target))
 		return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 	var/mob/living/carbon/human/H = A.target
-	return (!H.lip_style) ? null : span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
+	return (!H.looks.lip_style) ? null : span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 
 /obj/item/lipstick/proc/application_delay(datum/act/op/A)
 	return A.target == A.actor ? 0 : 2 SECONDS
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/lipstick)
 	else
 		act_message(A.actor, src, MSG_SELF(span_notice("You apply %T%.")), \
 			MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
-	H.set_lip_style(colour)
+	H.looks.set_lip_style(colour)
 	H.update_icons_body()
 	return OP_OK
 
@@ -82,11 +82,11 @@ CAPABILITIES(/obj/item/lipstick)
 	name = "purple comb"
 	desc = "A pristine purple comb made from flexible plastic."
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	icon = 'icons/obj/items.dmi'
 	icon_state = "purplecomb"
 
 CAPABILITIES(/obj/item/haircomb)
+	configure(item_worn(slots = SLOT_EARS))
 	op("comb", in_hand(), label("Comb hair"), then(PROC_REF(hair_combed)))
 
 /obj/item/haircomb/proc/hair_combed(datum/act/op/A)

@@ -38,7 +38,6 @@
 	faction = FACTION_CARP
 	endurance = 25
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	vore_active = TRUE
@@ -49,7 +48,6 @@
 
 	melee_damage_lower = 7 // About 14 DPS.
 	melee_damage_upper = 7
-	base_attack_cooldown = 10 // One attack a second.
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("bitten")
@@ -84,9 +82,11 @@
 	var/static/list/carp_colors_rare = list(\
 	"silver" = "#fdfbf3", \
 	)
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 15))
 	swarming()
 
 // A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet
@@ -284,14 +284,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	icon_dead = "holo4"
 	alpha = 127
 	// Hologram lighting, lit from the start (applied when it materializes).
-	light_range = 2
 	light_on = TRUE
 	icon_gib = null
 	meat_amount = 0
 	meat_type = null
 	vore_icons = FALSE
 
-	mob_class = MOB_CLASS_PHOTONIC // Xeno-taser won't work on this as its not a 'real' carp.
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
+	configure(light_glow(range = 2))
 
 // Presumably the holodeck emag code requires this.
 // Pass TRUE to make safe. Pass FALSE to make unsafe.
@@ -372,7 +373,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 
 // === merged from carp_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/space/carp
-	base_attack_cooldown = 15
 
 
 // === merged from carp_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

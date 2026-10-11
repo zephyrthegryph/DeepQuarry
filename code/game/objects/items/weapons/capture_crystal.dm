@@ -3,8 +3,6 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	throwforce = 0
-	force = 0
 	actions_types = list(/datum/action/item_action/command)
 	w_class = ITEMSIZE_SMALL
 
@@ -22,6 +20,8 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(bound_mob), /mob/living)
@@ -274,7 +274,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 
 /obj/item/capture_crystal/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(bound_mob)
-		if(!bound_mob.devourable)	//Don't eat if prefs are bad
+		if(!bound_mob.vore_prefs.devourable)	//Don't eat if prefs are bad
 			return ITEM_INTERACT_FAILURE
 		if(hud_of(user)?.zone_sel?.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
@@ -382,7 +382,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 	if(M.has_status(STAT_STUNNED))			//What's the matter???
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.on_fire)			//AAAAAAAA
+	if(stat_value(M, STAT_ON_FIRE))			//AAAAAAAA
 		capture_chance += 0.1
 		effect_count += 1
 	if(M.has_status(STAT_PARALYZED))			//Oh noooo
@@ -628,7 +628,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 //IF the crystal somehow ends up in a tummy and digesting with a bound mob who doesn't want to be eaten, let's move them to the ground
 /obj/item/capture_crystal/digest_act(atom/movable/item_storage = null)
 	if(bound_mob)
-		if((bound_mob in contents) && !bound_mob.devourable)
+		if((bound_mob in contents) && !bound_mob.vore_prefs.devourable)
 			bound_mob.forceMove(src.drop_location())
 	return ..()
 

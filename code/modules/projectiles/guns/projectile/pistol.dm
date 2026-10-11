@@ -139,7 +139,6 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	Usually made with mass-production in mind, PCA weapons combine an eye for design with a great desire to make people dead."
 	icon_state = "deagle"
 	item_state = "deagle"
-	force = 14.0
 	caliber = ".44"
 	fire_sound = SFX_WEAPONS_GUNSHOT_DEAGLE
 	load_method = MAGAZINE

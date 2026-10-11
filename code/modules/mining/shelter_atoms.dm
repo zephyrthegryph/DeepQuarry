@@ -714,10 +714,10 @@ CAPABILITIES(/obj/machinery/light_switch/survival_pod)
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')
 		if(target_light().on)
-			target_light().set_light(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color)
+			set_glow(target_light(), GLOW(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color))
 			target_light().overlay_color = target_light().brightness_color
 		else
-			target_light().set_light(0)
+			set_glow(target_light(), GLOW(0, null, null))
 
 	GLOB.lights_switched_on_roundstat++
 	return OP_OK
@@ -826,12 +826,12 @@ CAPABILITIES(/obj/item/gps/computer)
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_range = 5
-	light_power = 1.2
-	light_color = "#DDFFD3"
 	light_on = TRUE
 	pixel_y = -4
 	max_n_of_items = 100
+
+CAPABILITIES(/obj/machinery/smartfridge/survival_pod)
+	configure(light_glow(range = 5, power = 1.2, color = "#DDFFD3"))
 
 // ALLOW(init/INSTANCE_STATE): stocks the items the map placed on its tile
 /obj/machinery/smartfridge/survival_pod/Initialize(mapload)
@@ -899,10 +899,10 @@ CAPABILITIES(/obj/structure/fans)
 	icon_state = "hardlight"
 	buildstackamount = 2
 
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
 	light_on = TRUE
+
+CAPABILITIES(/obj/structure/fans/hardlight)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 
 /obj/structure/fans/hardlight/colorable
 	name = "hardlight shield"

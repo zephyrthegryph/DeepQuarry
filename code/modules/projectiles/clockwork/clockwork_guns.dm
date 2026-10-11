@@ -7,7 +7,6 @@
 	icon_state = "clockrifle"
 	item_state = "clockrifle"
 	wielded_item_state = "clockrifle-wielded"
-	slot_flags = SLOT_BACK
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns_ch.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns_ch.dmi', "slot_back" = 'icons/mob/guns_back_ch.dmi')
 	projectile_type = /obj/item/projectile/bullet/rifle/clockwork
 	w_class = ITEMSIZE_HUGE
@@ -27,6 +26,7 @@
 
 // Recharging is one op that waits a cycle at a time, 5 seconds each, until the cell is full; the gun is claimed for as long as it runs.
 CAPABILITIES(/obj/item/gun/energy/clockwork)
+	configure(item_worn(slots = SLOT_BACK))
 	op("recharge", ai(), claims(), starts(PROC_REF(recharge_started)), wait(5 SECONDS, repeats = PROC_REF(recharge_more), after_step = PROC_REF(recharge_cycle)), on_interrupt(PROC_REF(recharge_end)), then(PROC_REF(recharge_end)))
 
 /obj/item/gun/energy/clockwork/unload_ammo(mob/user)
@@ -78,20 +78,20 @@ CAPABILITIES(/obj/item/projectile/beam/shock/clockwork)
 /obj/effect/projectile/muzzle/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "muzzle_volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))
 
 /obj/effect/projectile/tracer/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/tracer/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))
 
 /obj/effect/projectile/impact/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "impact_volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/impact/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))

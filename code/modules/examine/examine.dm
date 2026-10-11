@@ -42,8 +42,8 @@
 	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
 
 /mob/living/get_description_fluff()
-	if(flavor_text) //Get flavor text for the green text.
-		return flavor_text
+	if(bio.flavor_text) //Get flavor text for the green text.
+		return bio.flavor_text
 	else //No flavor text?  Try for hardcoded fluff instead.
 		return ..()
 
@@ -121,7 +121,7 @@
 			index++
 		if(isliving(A)) //ehhh
 			var/mob/living/B = A
-			if(B.flavor_text)
+			if(B.bio.flavor_text)
 				title = "🔍 | Flavor Text"
 
 		. += span_details(title, rendered_text)

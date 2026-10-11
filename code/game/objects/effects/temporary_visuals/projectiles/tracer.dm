@@ -14,12 +14,12 @@ CAPABILITIES(/datum/beam_components_cache)
 		light_color_override = color
 	PB.apply_vars(angle_between_points(starting, ending), midpoint.return_px(), midpoint.return_py(), color, pixel_length_between_points(starting, ending) / world.icon_size, midpoint.return_turf(), 0)
 	. = PB
-	if(isnull(light_intensity) && !isnull(PB.light_power))
-		light_intensity = PB.light_power
-	if(isnull(light_range) && !isnull(PB.light_range))
-		light_range = PB.light_range
-	if(isnull(light_color_override) && !isnull(PB.light_color))
-		light_color_override = PB.light_color
+	if(isnull(light_intensity) && !isnull(glow_of(PB).power))
+		light_intensity = glow_of(PB).power
+	if(isnull(light_range) && !isnull(glow_of(PB).range))
+		light_range = glow_of(PB).range
+	if(isnull(light_color_override) && !isnull(glow_of(PB).color))
+		light_color_override = glow_of(PB).color
 	if(light_range > 0 && light_intensity > 0)
 		var/list/turf/line = getline(starting.return_turf(), ending.return_turf())
 		tracing_line:
@@ -37,120 +37,120 @@ CAPABILITIES(/datum/beam_components_cache)
 
 /obj/effect/projectile/tracer/stun
 	icon_state = "stun"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/stun)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/effect/projectile/tracer/lightning
 	icon_state = "lightning"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/lightning)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/tracer/laser_pulse
 	icon_state = "u_laser"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser_pulse)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/tracer/emitter
 	icon_state = "emitter"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/tracer/emitter)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/tracer/darkmatterstun
 	icon_state = "darkt"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/tracer/darkmatterstun)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/tracer/laser_omni
 	icon_state = "beam_omni"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser_omni)
+	configure(light_glow(range = 2, power = 0.5, color = "#00C6FF"))
 
 /obj/effect/projectile/tracer/xray
 	icon_state = "xray"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#00CC33"
+
+CAPABILITIES(/obj/effect/projectile/tracer/xray)
+	configure(light_glow(range = 2, power = 0.5, color = "#00CC33"))
 
 /obj/effect/projectile/tracer/laser_heavy
 	icon_state = "beam_heavy"
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser_heavy)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
 
 /obj/effect/projectile/tracer/laser_em
 	icon_state = "em_laser"
-	light_range = 3
-	light_power = 1
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser_em)
+	configure(light_glow(range = 3, power = 1, color = "#00C6FF"))
 
 /obj/effect/projectile/tracer/darkmatter
 	icon_state = "darkb"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#8837A3"
+
+CAPABILITIES(/obj/effect/projectile/tracer/darkmatter)
+	configure(light_glow(range = 2, power = 0.5, color = "#8837A3"))
 
 /obj/effect/projectile/tracer/precursor // add precursor tracer
 	icon = 'icons/obj/projectiles_ch.dmi' // Fix path + replace missing file
 	icon_state = "prec"
-	light_range = 2
-	light_power = 0.7
-	light_color = "#FF0099"
+
+CAPABILITIES(/obj/effect/projectile/tracer/precursor)
+	configure(light_glow(range = 2, power = 0.7, color = "#FF0099"))
 
 /obj/effect/projectile/tracer/inversion
 	icon_state = "invert"
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 
 /obj/effect/projectile/tracer/laser
 	icon_state = "beam"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser)
+	configure(light_glow(range = 2, power = 0.5, color = "#FF0D00"))
 
 /obj/effect/projectile/tracer/laser_blue
 	icon_state = "beam_blue"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#0066FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/laser_blue)
+	configure(light_glow(range = 2, power = 0.5, color = "#0066FF"))
 
 /obj/effect/projectile/tracer/tungsten
 	icon_state = "mhd_laser"
-	light_range = 4
-	light_power = 3
-	light_color = "#3300ff"
+
+CAPABILITIES(/obj/effect/projectile/tracer/tungsten)
+	configure(light_glow(range = 4, power = 3, color = "#3300ff"))
 
 /obj/effect/projectile/tracer/cannon
 	icon_state = "cannon"
-	light_range = 1
-	light_power = 0.5
-	light_color = "#f6f2b6"
+
+CAPABILITIES(/obj/effect/projectile/tracer/cannon)
+	configure(light_glow(range = 1, power = 0.5, color = "#f6f2b6"))
 
 // medigun
 /obj/effect/projectile/tracer/medigun
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "medbeam"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#80F5FF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/medigun)
+	configure(light_glow(range = 2, power = 0.5, color = "#80F5FF"))
 // ends
 /obj/effect/projectile/tracer/pointdefense
 	icon_state = "beam_pointdef"
 
 /obj/effect/projectile/tracer/rainbow
 	icon_state = "rainbow"
-	light_range = 3
-	light_power = 1
-	light_color = "#ffffff"
+
+CAPABILITIES(/obj/effect/projectile/tracer/rainbow)
+	configure(light_glow(range = 3, power = 1, color = "#ffffff"))
 
 /obj/effect/projectile/tracer/coildefense
 	icon_state = "tracer_coildef"
-	light_range = 1
-	light_power = 2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/effect/projectile/tracer/coildefense)
+	configure(light_glow(range = 1, power = 2, color = "#FFFFFF"))

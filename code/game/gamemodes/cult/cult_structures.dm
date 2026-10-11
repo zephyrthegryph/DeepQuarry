@@ -20,8 +20,6 @@
 	name = "Pylon"
 	desc = "A floating crystal that hums with an unearthly energy."
 	icon_state = "pylon"
-	light_range = 5
-	light_color = "#3e0000"
 	var/obj/item/wepon
 
 	var/shatter_message = "The pylon shatters!"
@@ -35,6 +33,7 @@
 /obj/structure/cult/pylon/var/isbroken = FALSE
 TRACKED(/obj/structure/cult/pylon, isbroken)
 CAPABILITIES(/obj/structure/cult/pylon)
+	configure(light_glow(range = 5, color = "#3e0000"))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	/// Surges near players while intact; a broken pylon does nothing until repaired.
 	every(2 SECONDS, then(PROC_REF(pylon_step)), when = cond_all(cond_not(nameof(isbroken)), STAT_RELEVANCE))
@@ -58,7 +57,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 /obj/structure/cult/pylon/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	attackpylon(user, W.force)
+	attackpylon(user, combat_of(W).force)
 	return OP_PASS
 
 /obj/structure/cult/pylon/take_damage(damage)
@@ -75,7 +74,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/proc/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -88,7 +87,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 			set_isbroken(TRUE)
 			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)
@@ -106,7 +105,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 		set_isbroken(FALSE)
 		set_density(TRUE)
 		icon_state = initial(icon_state)
-		set_light(5)
+		set_glow(src, GLOW(5, null, null))
 
 // Returns 1 if the pylon does something special.
 /obj/structure/cult/pylon/proc/pylon_unique()
@@ -137,8 +136,6 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	var/spawnable = null
 
 /obj/effect/gateway/active
-	light_range=5
-	light_color="#ff0000"
 	spawnable=list(
 		/mob/living/simple_mob/animal/space/bats,
 		/mob/living/simple_mob/creature,
@@ -146,18 +143,20 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	)
 
 /obj/effect/gateway/active/cult
-	light_range=5
-	light_color="#ff0000"
 	spawnable=list(
 		/mob/living/simple_mob/animal/space/bats/cult,
 		/mob/living/simple_mob/creature/cult,
 		/mob/living/simple_mob/faithless/cult
 	)
 
+CAPABILITIES(/obj/effect/gateway/active/cult)
+	configure(light_glow(range = 5, color = "#ff0000"))
+
 /obj/effect/gateway/active/cult/cultify()
 	return
 
 CAPABILITIES(/obj/effect/gateway/active)
+	configure(light_glow(range = 5, color = "#ff0000"))
 	after_init(PROC_REF(open_delay), then(PROC_REF(spawn_and_qdel)))
 
 /// An open gateway lets something through after 30 to 60 seconds.

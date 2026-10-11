@@ -159,12 +159,12 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 /// An energy blade cuts in half the time (and its own toolspeed).
 /turf/simulated/wall/proc/plain_cut_time_blade(datum/act/op/A)
 	var/obj/item/held = A.held
-	return max(0, plain_cut_base() * 0.5 * held.toolspeed)
+	return max(0, plain_cut_base() * 0.5 * tooling_of(held).speed)
 
 /// A pickaxe is as slow as the welder less its dig speed (and its own toolspeed).
 /turf/simulated/wall/proc/plain_cut_time_pickaxe(datum/act/op/A)
 	var/obj/item/pickaxe/pick = A.held
-	return max(0, (plain_cut_base() - pick.digspeed) * pick.toolspeed)
+	return max(0, (plain_cut_base() - pick.digspeed) * tooling_of(pick).speed)
 
 /// The pickaxe's own drilling verb.
 /turf/simulated/wall/proc/pickaxe_begins(datum/act/op/A)
@@ -181,12 +181,12 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 /// A plasma cutter slices the metal cover in the time the step takes.
 /turf/simulated/wall/proc/cutter_time_cover(datum/act/op/A)
 	var/obj/item/held = A.held
-	return 6 SECONDS * held.toolspeed
+	return 6 SECONDS * tooling_of(held).speed
 
 /// A plasma cutter slices the support rods in the time the step takes.
 /turf/simulated/wall/proc/cutter_time_rods(datum/act/op/A)
 	var/obj/item/held = A.held
-	return 7 SECONDS * held.toolspeed
+	return 7 SECONDS * tooling_of(held).speed
 
 /turf/simulated/wall/proc/cut_grille(datum/act/op/A)
 	step_done(A)

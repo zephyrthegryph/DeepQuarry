@@ -37,19 +37,19 @@
 	for(var/obj/item/clothing/C in contents_of(src))
 		if(item_is_in_hands(C))
 			continue
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			coverage += list(organs_by_name[BP_HEAD])
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			coverage += list(organs_by_name[BP_TORSO])
-		if(C.body_parts_covered & LOWER_TORSO)
+		if(worn_of(C).covers & LOWER_TORSO)
 			coverage += list(organs_by_name[BP_GROIN])
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			coverage += list(organs_by_name[BP_L_LEG], organs_by_name[BP_R_LEG])
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			coverage += list(organs_by_name[BP_R_ARM], organs_by_name[BP_L_ARM])
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			coverage += list(organs_by_name[BP_L_FOOT], organs_by_name[BP_R_FOOT])
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			coverage += list(organs_by_name[BP_L_HAND], organs_by_name[BP_R_HAND])
 	return coverage
 
@@ -118,13 +118,13 @@
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 
 	//Look at their head
-	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)))
+	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)))
 		if(H && H.robotic == ORGAN_ROBOT) //Exactly robotic, not higher as lifelike is higher
 			return 1
 
 	//Look at their torso
-	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)))
-		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)))
+	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT)))
+		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(worn_of(get_equipped_item(SLOT_ID_UNIFORM)).covers & UPPER_TORSO)))
 			if(T && T.robotic == ORGAN_ROBOT)
 				return 1
 
@@ -389,11 +389,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		options = new /datum/human_transform_options
 	if(options.copy_name)
 		name = character.name
-		nickname = character.nickname
+		bio.nickname = character.bio.nickname
 	gender = character.gender
 	identifying_gender = character.identifying_gender
 
-	copy_colours_from(character)
+	record_copy(looks, character.looks)
 	if(options.apply_bloodtype)
 		dna?.b_type = character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE
 	copy_appendages_from(character)
@@ -409,7 +409,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	markings_len = character.markings_len
 
 	if(options.copy_flavour)
-		flavor_texts = character.flavor_texts?.Copy()
+		bio.flavor_texts = character.bio.flavor_texts?.Copy()
 
 	copy_physique_from(character)
 	if(species)
@@ -423,44 +423,14 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
 
 	custom_species	= character.custom_species
-	custom_say		= character.custom_say
-	custom_ask		= character.custom_ask
-	custom_whisper	= character.custom_whisper
-	custom_exclaim	= character.custom_exclaim
-
-	digitigrade = character.digitigrade
+	bio.custom_say = character.bio.custom_say
+	bio.custom_ask = character.bio.custom_ask
+	bio.custom_whisper = character.bio.custom_whisper
+	bio.custom_exclaim = character.bio.custom_exclaim
 
 	dna?.ResetUIFrom(src)
 	force_update_limbs()
 	regenerate_icons()
-
-/// Eye, hair, gradient, skin and synthetic colours.
-/mob/living/carbon/human/proc/copy_colours_from(mob/living/carbon/human/character)
-	r_eyes = character.r_eyes
-	g_eyes = character.g_eyes
-	b_eyes = character.b_eyes
-	h_style = character.h_style
-	r_hair = character.r_hair
-	g_hair = character.g_hair
-	b_hair = character.b_hair
-	r_grad = character.r_grad
-	g_grad = character.g_grad
-	b_grad = character.b_grad
-	f_style = character.f_style
-	r_facial = character.r_facial
-	g_facial = character.g_facial
-	b_facial = character.b_facial
-	r_skin = character.r_skin
-	g_skin = character.g_skin
-	b_skin = character.b_skin
-	s_tone = character.s_tone
-	grad_style = character.grad_style
-	synth_color = character.synth_color
-	r_synth = character.r_synth
-	g_synth = character.g_synth
-	b_synth = character.b_synth
-	synth_markings = character.synth_markings
-
 
 /// Ears, tail and wings with their colours.
 /mob/living/carbon/human/proc/copy_appendages_from(mob/living/carbon/human/character)

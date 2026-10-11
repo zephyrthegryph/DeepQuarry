@@ -90,7 +90,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	P.injury_kind = kind
 	P.injury_kinds = null
 	P.damage = damage
-	P.armor_penetration = pen
+	P.set_armor_penetration(pen)
 	P.nodamage = FALSE
 	P.emp_on_hit = FALSE
 	return P
@@ -99,9 +99,9 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	var/obj/item/I = allocate(/obj/item)
 	I.injury_kind = kind
 	I.injury_kinds = null
-	I.force = force
-	I.throwforce = throwforce
-	I.armor_penetration = 5
+	I.set_force(force)
+	I.set_throwforce(throwforce)
+	I.set_armor_penetration(5)
 	return I
 
 

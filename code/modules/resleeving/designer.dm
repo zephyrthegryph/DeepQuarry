@@ -11,7 +11,6 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"
 	icon_screen = "explosive"
-	light_color = "#315ab4"
 	circuit = /obj/item/circuitboard/body_designer
 	req_access = list(ACCESS_MEDICAL) // Used for loading people's designs
 	var/datum/tgui_module/appearance_changer/body_designer/designer_gui
@@ -24,6 +23,7 @@
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
 CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	configure(light_glow(color = "#315ab4"))
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
 	op("body_designer_insert_disk", item(/obj/item/disk/body_record), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(body_designer_interaction_insert_disk)))

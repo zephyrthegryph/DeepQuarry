@@ -138,7 +138,7 @@ MSG_DEF_SELF(fishing/already_cast, span_notice("You can only cast one line at a 
 /// How long the line stays in the water before something bites.
 /turf/simulated/floor/water/proc/fishing_wait_time(datum/act/op/A)
 	var/obj/item/material/fishing_rod/R = A.held
-	return rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
+	return rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * tooling_of(R).speed
 
 /// A line in the water until something bites; the water is busy meanwhile.
 /turf/simulated/floor/water/proc/fishing_ended(datum/act/op/A)

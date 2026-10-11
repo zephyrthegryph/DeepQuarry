@@ -59,7 +59,7 @@ MSG_DEF(injector/begin_resisted, "%T% resists your attempt to inject them with %
 
 /datum/capability/lib/injector/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/injector/from_belly
+	return (target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/injector/from_belly
 
 /// The limb the one who injects aims at is on the person.
 /datum/capability/lib/injector/proc/limb_there(datum/act/op/A)

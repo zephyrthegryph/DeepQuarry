@@ -159,7 +159,7 @@ TRACKED(/obj/dq_small_look_subject, noise)
 	TEST_ASSERT_EQUAL(doll.name, "Voodoo doll of [H.name]", "and is named after them")
 	TEST_ASSERT(cap_engine_state_of(H)?.look_watchers?[OWN_KEY(doll)], "a doll on a human composes the human's look")
 	var/drawn = doll.draws
-	H.set_nutrition(H.nutrition + 10)
+	H.set_nutrition(nutrition_of(H) + 10)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(doll.draws, drawn, "a var of the wearer that is not part of its look leaves the doll alone")
 	H.overlays_standing[SKIN_LAYER] = image('icons/obj/stock_parts.dmi', "fix")

@@ -14,7 +14,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	icon_state = "satchel"
-	slot_flags = SLOT_BELT | SLOT_POCKET
 	w_class = ITEMSIZE_NORMAL
 	var/current_capacity = 0
 	var/max_storage_space = 100
@@ -41,26 +40,30 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 	var/last_update = 0
-	item_flags = FLAMMABLE
 
 /obj/item/ore_bag/holding
 	name = "mining satchel of holding"
 	desc = "Like a mining satchel, but when you put your hand in, you're pretty sure you can feel time itself."
 	icon_state = "satchel_bspace"
 	max_storage_space = ITEMSIZE_COST_NORMAL * 15000 // This should never, ever, ever be reached.
-	item_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/ore_bag/holding)
+	configure(item_worn(flags = FIRE_PROOF))
 
 /obj/item/ore_bag/sleeper
 	name = "processing chamber"
 	desc = "A mining satchel built into a sleeper. VORE!!!"
 	icon_state = "satchel_bspace"
 	max_storage_space = 500
-	item_flags = INDESTRUCTIBLE | ABSTRACT
+
+CAPABILITIES(/obj/item/ore_bag/sleeper)
+	configure(item_worn(flags = INDESTRUCTIBLE | ABSTRACT))
 
 TRACKED(/obj/item/ore_bag, current_capacity)
 TRACKED(/obj/item/ore_bag, max_storage_space)
 
 CAPABILITIES(/obj/item/ore_bag)
+	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET, flags = FLAMMABLE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more))), then(PROC_REF(interaction_item)))
 

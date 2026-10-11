@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	name = "special operations shuttle control console"
 	icon_keyboard = "security_key"
 	icon_screen = "syndishuttle"
-	light_color = "#00ffff"
 	req_access = list(ACCESS_CENT_SPECOPS)
 	var/temp = null
 	var/hacked = 0

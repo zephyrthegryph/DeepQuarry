@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(communicating))
 	every(2 SECONDS, then(PROC_REF(communicator_step)), when = PROC_REF(has_connections))
@@ -550,7 +551,7 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	. = TRUE
 	fon = !fon
-	set_light(fon * flum)
+	set_glow(src, GLOW(fon * flum, null, null))
 
 /obj/item/communicator/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
 	add_fingerprint(A.actor)

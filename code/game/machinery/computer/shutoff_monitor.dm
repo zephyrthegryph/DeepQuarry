@@ -3,11 +3,11 @@
 	desc = "Console used to remotely monitor shutoff valves on the station."
 	icon_keyboard = "power_key"
 	icon_screen = "power_monitor"
-	light_color = "#a97faa"
 	circuit = /obj/item/circuitboard/shutoff_monitor
 	var/datum/tgui_module/shutoff_monitor/monitor
 
 CAPABILITIES(/obj/machinery/computer/shutoff_monitor)
+	configure(light_glow(color = "#a97faa"))
 	owns_one(nameof(monitor), /datum/tgui_module/shutoff_monitor, starts = /datum/tgui_module/shutoff_monitor)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 

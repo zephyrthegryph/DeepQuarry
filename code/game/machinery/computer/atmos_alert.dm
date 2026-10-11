@@ -4,7 +4,6 @@
 	circuit = /obj/item/circuitboard/atmos_alert
 	icon_keyboard = "atmos_key"
 	icon_screen = "alert:0"
-	light_color = "#e6ffff"
 
 /// The console listens to the station's atmosphere alarms once it is placed.
 /obj/machinery/computer/atmos_alert/proc/listen_alarms(datum/act/timer/A)
@@ -19,6 +18,7 @@
 	return proximity_flag
 
 CAPABILITIES(/obj/machinery/computer/atmos_alert)
+	configure(light_glow(color = "#e6ffff"))
 	after_init(0, then(PROC_REF(listen_alarms)))
 	interface("AtmosAlertConsole")
 	op("clear", ui_act("clear", arg("ref")), then(PROC_REF(ui_act_clear)))

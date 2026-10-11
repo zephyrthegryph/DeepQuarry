@@ -74,7 +74,7 @@ CAPABILITIES(/obj/effect/portal)
 				return
 			if(istype(M, /mob/living))
 				var/mob/living/L = M
-				if(L.can_be_drop_prey && L.devourable)
+				if(L.vore_prefs.can_be_drop_prey && L.vore_prefs.devourable)
 					do_teleport(M, target_ref())
 					return
 		if(prob(failchance)) //oh dear a problem, put em in deep space

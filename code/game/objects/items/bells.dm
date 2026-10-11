@@ -3,12 +3,9 @@
 	desc = "An annoying bell. Ring for service."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "deskbell"
-	force = 2
-	throwforce = 2
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 50)
 	var/broken
-	attack_verb = list("annoyed")
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
 	var/static/radial_use = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_use")
 	var/static/radial_pickup = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_pickup")
@@ -115,6 +112,8 @@
 
 /// Eight stance-declared specs once, one per stance for the hand and for an item: a harm click hammers, the other stances ring.
 CAPABILITIES(/obj/item/deskbell)
+	configure(item_thrown(force = 2))
+	configure(item_combat(force = 2, attack_verbs = list("annoyed")))
 	op("ring", hand(), when(req_empty_hand()), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_by_hand)))
 	op("hammer", hand(), when(req_empty_hand()), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))
 	op("ring_with_item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_with_item)))

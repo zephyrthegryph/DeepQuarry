@@ -18,9 +18,6 @@
 	melee_damage_upper = 3
 
 	movement_cooldown = -1
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
@@ -35,6 +32,9 @@
 
 	say_list_type = /datum/say_list/bird
 	holder_type = /obj/item/holder/bird
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird)
+	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
 
 /datum/say_list/bird
 	speak = list("Chirp!","Caw!","Screech!","Squawk!")
@@ -102,7 +102,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/bird, mob_organ_hit_zones, list("head", "
 /mob/living/simple_mob/animal/passive/bird/azure_tit/tweeter
 	name = "Tweeter"
 	desc = "A beautiful little blue and white bird, if only excessively loud for no reason sometimes."
-	makes_dirt = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/azure_tit/tweeter)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/bird/azure_tit/great
 	name = "Great Tit"

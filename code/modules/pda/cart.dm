@@ -61,6 +61,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/messenger_plugins
 
 CAPABILITIES(/obj/item/cartridge)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 
@@ -304,7 +305,6 @@ CAPABILITIES(/obj/item/cartridge/syndicate)
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/frame)
 
 /obj/item/cartridge
-	slot_flags = SLOT_EARS
 
 /obj/item/cartridge/explorer
 	name = "\improper Explorator cartridge"

@@ -15,8 +15,6 @@
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = 1
 	movement_cooldown = 0.75 //roughly a bit faster than a person
@@ -29,7 +27,6 @@
 	melee_damage_upper = 7
 	attacktext = list("nips", "bumps", "scratches")
 
-	vore_taste = "wet dog"
 
 	min_oxy = 16 //Require atleast 16kPA oxygen
 	minbodytemp = 223		//Below -50 Degrees Celcius
@@ -43,3 +40,7 @@
 	speak_emote = list("rumbles", "chirr?", "churr")
 
 	say_list_type = /datum/say_list/armadillo
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/stray)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "wet dog"))
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))

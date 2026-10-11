@@ -30,7 +30,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 /obj/singularity/energy_ball/Initialize(mapload)
 	. = ..()
 	if(!miniball)
-		set_light(10, 7, "#EEEEFF")
+		set_glow(src, GLOW(10, 7, "#EEEEFF"))
 
 // its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/on_destroy(force)

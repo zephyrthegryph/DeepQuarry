@@ -10,6 +10,9 @@
 	description_antag = "This is a stealthy weapon which fires poisoned bolts at your target.  When it hits someone, they will suffer a stun effect, in \
 	addition to toxins.  The energy crossbow recharges itself slowly, and can be concealed in your pocket or bag."
 
+CAPABILITIES(/obj/item/gun/energy/crossbow)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
+
 /obj/item/gun/energy/chameleon
 	description_antag = "This gun is actually a hologram projector that can alter its appearance to mimick other weapons.  To change the appearance, use \
 	the appropriate verb in the chameleon items tab. Any beams or projectiles fired from this gun are actually holograms and useless for actual combat. \

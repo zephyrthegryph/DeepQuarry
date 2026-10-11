@@ -11,7 +11,9 @@
 	icon_keyboard = null
 	icon_state = "adv_engines"
 	icon_screen = "adv_engines_screen"
-	light_color = "#05A6A8"
+
+CAPABILITIES(/obj/machinery/computer/ship/engines/adv)
+	configure(light_glow(color = "#05A6A8"))
 
 // The engines window: one op per button; the two thrust limits are asked in the window's op (asks()), the answer applied by its handler.
 CAPABILITIES(/obj/machinery/computer/ship/engines)

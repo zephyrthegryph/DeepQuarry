@@ -22,8 +22,10 @@
 	charge_cost = 600
 
 
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
+
+CAPABILITIES(/obj/item/gun/energy/pummeler)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 //Projectile
 /obj/item/projectile/pummel

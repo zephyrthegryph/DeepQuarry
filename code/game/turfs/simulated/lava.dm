@@ -5,9 +5,6 @@
 	icon = 'icons/turf/outdoors.dmi'
 	icon_state = "lava"
 	edge_blending_priority = -1
-	light_range = 2
-	light_power = 0.75
-	light_color = LIGHT_COLOR_LAVA
 	light_on = TRUE
 	movement_cost = 2
 	can_build_into_floor = TRUE
@@ -18,6 +15,7 @@
 	var/datum/looping_sound/lava/soundloop
 
 CAPABILITIES(/turf/simulated/floor/lava)
+	configure(light_glow(range = 2, power = 0.75, color = LIGHT_COLOR_LAVA))
 	owns_one(nameof(soundloop), /datum/looping_sound/lava, starts = /datum/looping_sound/lava)
 	every(2 SECONDS, then(PROC_REF(lava_step)), when = nameof(burning))
 

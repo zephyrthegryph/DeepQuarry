@@ -37,7 +37,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
-	base_attack_cooldown = 1 SECOND
 	attacktext = list("nipped", "bit", "cut", "clawed")
 	meat_amount = 3
 
@@ -48,7 +47,6 @@
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
 	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
-	can_be_drop_prey = TRUE
 	species_sounds = "Raccoon"
 	pain_emote_1p = list("chitter")
 	pain_emote_3p = list("chitters")
@@ -118,6 +116,8 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

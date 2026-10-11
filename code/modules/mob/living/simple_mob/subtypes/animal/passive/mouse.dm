@@ -44,14 +44,14 @@
 
 	var/list/datum/affliction/contagion/rat_diseases
 
-	can_be_drop_prey = TRUE
-	can_be_drop_pred = FALSE
 	species_sounds = "Mouse"
 
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_3p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	param(nameof(keep_parent_data), pos = 1)
@@ -242,13 +242,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
-	nutrition = 20	//To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
-	vore_taste = "cheese"
 
 	restrict_vore_ventcrawl = TRUE
 
-	can_pull_size = ITEMSIZE_TINY // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
-	can_pull_mobs = MOB_PULL_NONE // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
 
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"
 
@@ -300,6 +296,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 
 CAPABILITIES(/obj/item/holder/mouse)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD | SLOT_ID))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -344,3 +341,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/beastmode)
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 
 DECLARE_REGISTRY(/mob/living/simple_mob/animal/passive/mouse, REGISTRY_GHOST_PODS)
+
+
+/mob/living/simple_mob/animal/passive/mouse/starting_nutrition() //To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
+	return 20

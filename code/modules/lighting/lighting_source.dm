@@ -48,9 +48,9 @@
 	source_turf = isturf(top_atom) ? top_atom : top_atom.loc // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 	pixel_turf = get_turf_pixel(top_atom) || source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 
-	light_power = source_atom.light_power
-	light_range = source_atom.light_range
-	light_color = source_atom.light_color
+	light_power = glow_of(source_atom).power
+	light_range = glow_of(source_atom).range
+	light_color = glow_of(source_atom).color
 
 	PARSE_LIGHT_COLOR(src)
 
@@ -189,12 +189,12 @@
 		spent(src)
 		return
 
-	if (source_atom.light_power != light_power)
-		light_power = source_atom.light_power
+	if (glow_of(source_atom).power != light_power)
+		light_power = glow_of(source_atom).power
 		update = TRUE
 
-	if (source_atom.light_range != light_range)
-		light_range = source_atom.light_range
+	if (glow_of(source_atom).range != light_range)
+		light_range = glow_of(source_atom).range
 		update = TRUE
 
 	if (!top_atom)
@@ -232,8 +232,8 @@
 	if (light_range && light_power && !applied)
 		update = TRUE
 
-	if (source_atom.light_color != light_color)
-		light_color = source_atom.light_color
+	if (glow_of(source_atom).color != light_color)
+		light_color = glow_of(source_atom).color
 		PARSE_LIGHT_COLOR(src)
 		update = TRUE
 

@@ -191,7 +191,7 @@
 	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type) && !(HAS_SYNTHETIC_BIOLOGY(M))) // assuming it doesn't cause a horrible reaction, we get the nutrition effects - (added synth check)
 		M.adjust_nutrition(nutriment_factor * removed)
 
-	if(HAS_SYNTHETIC_BIOLOGY(M) && M.nutrition < 500 && M.species.robo_ethanol_proc)
+	if(HAS_SYNTHETIC_BIOLOGY(M) && nutrition_of(M) < 500 && M.species.robo_ethanol_proc)
 		M.adjust_nutrition(round(max(0,ep_base_power - strength) * removed)/ep_final_mod)	//the stronger it is, the more juice you gain
 
 	var/effective_dose = dose
@@ -555,7 +555,7 @@
 			return
 	if(isbelly(M.loc))
 		var/obj/belly/B = M.loc
-		if(!M.digestable || B.digest_mode != DM_DIGEST)
+		if(!M.vore_prefs.digestable || B.digest_mode != DM_DIGEST)
 			remove_self(volume)
 			return
 		if(B.owner)
@@ -612,7 +612,7 @@
 		return
 	if(isbelly(L.loc))
 		var/obj/belly/B = L.loc
-		if(B.digest_mode != DM_DIGEST || !L.digestable)
+		if(B.digest_mode != DM_DIGEST || !L.vore_prefs.digestable)
 			remove_self(volume)
 			return
 		if(B.owner)

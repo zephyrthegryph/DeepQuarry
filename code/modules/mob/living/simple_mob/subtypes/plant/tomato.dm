@@ -6,7 +6,6 @@
 	icon_living = "tomato"
 	icon_dead = "tomato_dead"
 
-	mob_class = MOB_CLASS_PLANT
 
 	faction = FACTION_PLANTS
 	endurance = 15
@@ -27,8 +26,11 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/tomatomeat
 	meat_amount = 4
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/tomato)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_PLANT))
 
 /datum/decl/mob_organ_names/tomato
 TYPE_TABLE(/datum/decl/mob_organ_names/tomato, mob_organ_hit_zones, list("flesh", "leaf", "mouth"))

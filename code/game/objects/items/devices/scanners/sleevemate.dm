@@ -7,8 +7,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "sleevemate"
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -31,14 +29,14 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	rel_set(src, nameof(stored_mind), M.mind)
 	stored_mind().get_identity() // make sure the identity rides the stored mind
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
-	soulcatcher_pref_flags = M.soulcatcher_pref_flags
+	soulcatcher_pref_flags = M.vore_prefs.soulcatcher_pref_flags
 	M.ghostize()
 	stored_mind().current = null
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE
 	transfer_mind(stored_mind(), M, "sleevemate upload")
-	M.soulcatcher_pref_flags = soulcatcher_pref_flags
+	M.vore_prefs.soulcatcher_pref_flags = soulcatcher_pref_flags
 	clear_mind()
 
 
@@ -98,6 +96,8 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
 	// The timed scans and transfers, started by the topic ops above once they have checked the target.

@@ -27,9 +27,7 @@
 	var/obj/structure/blob/factory/factory = null
 	var/datum/blob_type/blob_type = null	// Used for the blob core items, as they have no overmind mob.
 
-	mob_class = MOB_CLASS_SLIME
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/blob/speech_bubble_appearance()
@@ -45,6 +43,8 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME))
 	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)
 	links(/mob/living/simple_mob/blob::factory, /obj/structure/blob/factory::spores, b_many = TRUE)
 

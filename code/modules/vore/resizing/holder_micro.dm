@@ -5,7 +5,6 @@
 	desc = "Another crewmember, small enough to fit in your hand."
 	icon_state = "micro"
 	icon_override = 'icons/inventory/head/mob.dmi'
-	slot_flags = SLOT_FEET | SLOT_HEAD | SLOT_ID | SLOT_HOLSTER | SLOT_BACK
 	w_class = ITEMSIZE_SMALL
 	item_icons = null // No in-hand sprites (for now, anyway, we could totally add some)
 	pixel_y = 0		  // Override value from parent.
@@ -33,7 +32,7 @@
 		var/colortemp = color //save original color var to a temp var
 		//convert numerical RGB to Hex #000000 format - is this necessary?
 		//then 'inject' changed color (from skin color) into original proc call
-		color = addtext("#", num2hex(H.r_skin, 2), num2hex(H.g_skin, 2), num2hex(H.b_skin, 2))
+		color = H.looks.skin_color
 		. = ..()
 		color = colortemp //reset color var to it's old value after original proc call before proceeding - otherwise we change hand-slot icon color too!
 	else
@@ -46,6 +45,7 @@
 		. += M.examine(user)
 
 CAPABILITIES(/obj/item/holder)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_HOLSTER))
 	drag_onto(PROC_REF(drop_input))
 	op("holder_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(holder_pick_up)))
 	op("holder_squeeze", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), label("Squeeze"), passes(), then(PROC_REF(holder_squeezed)))
@@ -67,6 +67,7 @@ CAPABILITIES(/obj/item/holder)
 		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
 
 CAPABILITIES(/obj/item/holder/micro)
+	configure(item_worn(slots = SLOT_FEET | SLOT_HEAD | SLOT_ID | SLOT_HOLSTER | SLOT_BACK))
 	op("micro_holder_pet_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pet"), then(PROC_REF(micro_holder_pet_self)))
 
 /// Old attack_self: reworked so it works w/ nonhumans.

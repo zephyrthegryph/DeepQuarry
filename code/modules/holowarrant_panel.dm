@@ -1,6 +1,7 @@
 // Holowarrant viewer — structured TGUI panel for arrest/search warrants.
 
 CAPABILITIES(/obj/item/holowarrant)
+	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Holowarrant", title = "Holographic Warrant", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")

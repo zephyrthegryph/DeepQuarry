@@ -19,13 +19,9 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "flashlight"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	actions_types = list(/datum/action/item_action/toggle_flashlight)
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
-	light_range = 4 //luminosity when on
-	light_power = 0.8	//lighting power when on
-	light_color = "#FFFFFF" //LIGHT_COLOR_INCANDESCENT_FLASHLIGHT	//lighting colour when on
 	light_cone_y_offset = -7
 
 	var/obj/item/cell/cell
@@ -38,6 +34,8 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
+	configure(light_glow(range = 4, power = 0.8, color = "#FFFFFF"))
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
@@ -139,7 +137,7 @@ TRACKED(/obj/item/flashlight, power_use)
 		var/mob/living/carbon/human/H = M	//mob has protective eyewear
 		if(istype(H))
 			for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD),H.get_equipped_item(SLOT_ID_MASK),H.get_equipped_item(SLOT_ID_EYES)))
-				if(istype(C) && (C.body_parts_covered & EYES))
+				if(istype(C) && (worn_of(C).covers & EYES))
 					to_chat(user, span_warning("You're going to need to remove [C.name] first."))
 					return ITEM_INTERACT_FAILURE
 
@@ -267,14 +265,14 @@ TRACKED(/obj/item/flashlight, power_use)
 	if(flickering)
 		return
 	if(!flicker_color)
-		flicker_color = light_color //If we don't have a flicker color, use our current light color.
+		flicker_color = glow_of(src).color //If we don't have a flicker color, use our current light color.
 	if((!power_use && !forced) || (!power_usage && !forced))
 		return //We don't use power / have no power, so we're probably a flare or dead.
 	flickering = TRUE
-	var/original_color = light_color
+	var/original_color = glow_of(src).color
 	var/original_on = on
 	var/datum/overlay_lighting/OL = overlay_light //BEWARE, ESOTERIC BULLSHIT HERE.
-	if(flicker_color && light_color != flicker_color)
+	if(flicker_color && glow_of(src).color != flicker_color)
 		set_light_color(flicker_color)
 		OL.directional_atom.color = flicker_color
 	do_flicker(amount, flicker_color, original_color, original_on, OL, 1)
@@ -308,13 +306,13 @@ TRACKED(/obj/item/flashlight, power_use)
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
 	item_state = "pen"
-	slot_flags = SLOT_EARS
-	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
 	cell_type = null
 
 CAPABILITIES(/obj/item/flashlight/pen)
+	configure(light_glow(range = 2))
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/flashlight/color	//Default color is blue
@@ -352,13 +350,12 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	name = "maglight"
 	desc = "A very, very heavy duty flashlight."
 	icon_state = "maglight"
-	light_color = LIGHT_COLOR_FLUORESCENT_FLASHLIGHT
-	force = 10
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list ("smacked", "thwacked", "thunked")
 
 CAPABILITIES(/obj/item/flashlight/maglight)
+	configure(light_glow(color = LIGHT_COLOR_FLUORESCENT_FLASHLIGHT))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/flashlight/drone
@@ -366,10 +363,12 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	desc = "A miniature lamp, that might be used by small robots."
 	icon_state = "penlight"
 	item_state = null
-	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
 	cell_type = null
+
+CAPABILITIES(/obj/item/flashlight/drone)
+	configure(light_glow(range = 2))
 
 /*
  * Lamps
@@ -380,10 +379,8 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	name = "desk lamp"
 	desc = "A desk lamp with an adjustable mount."
 	icon_state = "lamp"
-	force = 10
 	center_of_mass_x = 13
 	center_of_mass_y = 11
-	light_range = 5
 	w_class = ITEMSIZE_LARGE
 	power_use = 0
 	cell_type = null
@@ -402,7 +399,9 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	icon_state = "lampgreen"
 	center_of_mass_x = 15
 	center_of_mass_y = 11
-	light_color = "#FFC58F"
+
+CAPABILITIES(/obj/item/flashlight/lamp/green)
+	configure(light_glow(color = "#FFC58F"))
 
 // clown lamp
 /obj/item/flashlight/lamp/clown
@@ -419,9 +418,6 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	name = "flare"
 	desc = "A red standard-issue flare. There are instructions on the side reading 'pull cord, make light'."
 	w_class = ITEMSIZE_TINY // These can fit in more places.
-	light_range = 8 // Pretty bright.
-	light_power = 0.8
-	light_color = LIGHT_COLOR_FLARE
 	icon_state = "flare"
 	item_state = "flare"
 	actions_types = list() //just pull it manually, neckbeard.
@@ -434,6 +430,7 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/flare)
+	configure(light_glow(range = 8, power = 0.8, color = LIGHT_COLOR_FLARE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	// Flares burn fuel while lit (they have no cell, so power_use is off).
 	every(2 SECONDS, then(PROC_REF(flare_step)), when = nameof(on))
@@ -460,7 +457,7 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
-	src.force = initial(src.force)
+	src.set_force(combat_of_type(src.type).force)
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
@@ -475,13 +472,13 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 	// All good, turn it on.
 	if(. == CAN_USE)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
-		force = on_damage
+		set_force(on_damage)
 		injury_kind = INJURY_BURN
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
 	update_brightness()
-	force = on_damage
+	set_force(on_damage)
 	injury_kind = INJURY_BURN
 	return 1
 
@@ -494,9 +491,6 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 	desc = "A green military-grade chemical light."
 	w_class = ITEMSIZE_TINY // These can fit in more places.
 	light_system = MOVABLE_LIGHT
-	light_range = 4
-	light_power = 0.9
-	light_color = "#49F37C"
 	icon_state = "glowstick_green"
 	item_state = "glowstick_green"
 	var/fuel = 1600
@@ -505,6 +499,7 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/glowstick)
+	configure(light_glow(range = 4, power = 0.9, color = "#49F37C"))
 	every(2 SECONDS, then(PROC_REF(glowstick_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
@@ -542,30 +537,38 @@ TRACKED(/obj/item/flashlight/glowstick, fuel)
 /obj/item/flashlight/glowstick/red
 	name = "red glowstick"
 	desc = "A red military-grade chemical light."
-	light_color = "#FC0F29"
 	icon_state = "glowstick_red"
 	item_state = "glowstick_red"
+
+CAPABILITIES(/obj/item/flashlight/glowstick/red)
+	configure(light_glow(color = "#FC0F29"))
 
 /obj/item/flashlight/glowstick/blue
 	name = "blue glowstick"
 	desc = "A blue military-grade chemical light."
-	light_color = "#599DFF"
 	icon_state = "glowstick_blue"
 	item_state = "glowstick_blue"
+
+CAPABILITIES(/obj/item/flashlight/glowstick/blue)
+	configure(light_glow(color = "#599DFF"))
 
 /obj/item/flashlight/glowstick/orange
 	name = "orange glowstick"
 	desc = "A orange military-grade chemical light."
-	light_color = "#FA7C0B"
 	icon_state = "glowstick_orange"
 	item_state = "glowstick_orange"
+
+CAPABILITIES(/obj/item/flashlight/glowstick/orange)
+	configure(light_glow(color = "#FA7C0B"))
 
 /obj/item/flashlight/glowstick/yellow
 	name = "yellow glowstick"
 	desc = "A yellow military-grade chemical light."
-	light_color = "#FEF923"
 	icon_state = "glowstick_yellow"
 	item_state = "glowstick_yellow"
+
+CAPABILITIES(/obj/item/flashlight/glowstick/yellow)
+	configure(light_glow(color = "#FEF923"))
 
 /obj/item/flashlight/glowstick/radioisotope
 	name = "radioisotope glowstick"
@@ -573,12 +576,14 @@ TRACKED(/obj/item/flashlight/glowstick, fuel)
 	icon_state = "glowstick_isotope"
 	item_state = "glowstick_isotope"
 
-	light_range = 8
-	light_power = 0.1
-	light_color = "#49F37C"
+CAPABILITIES(/obj/item/flashlight/glowstick/radioisotope)
+	configure(light_glow(range = 8, power = 0.1, color = "#49F37C"))
+
 
 #undef CAN_USE
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/flashlight/lamp)
+	configure(light_glow(range = 5))
+	configure(item_combat(force = 10))
 	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))

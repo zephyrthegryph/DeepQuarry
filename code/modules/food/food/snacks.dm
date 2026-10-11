@@ -7,7 +7,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	volume = 80
 
 	var/bitesize = 1
@@ -101,7 +100,7 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && vore_selected_of(eater))
+		if(possessed_voice && possessed_voice.len && eater.vore_prefs.can_be_drop_pred && eater.vore_prefs.food_vore && vore_selected_of(eater))
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
@@ -148,6 +147,7 @@
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
 	edible( 
 		bite = nameof(bitesize),
@@ -1830,7 +1830,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.can_be_drop_pred && Pred.food_vore && vore_selected_of(Pred))
+	if(Pred.vore_prefs.can_be_drop_pred && Pred.vore_prefs.food_vore && vore_selected_of(Pred))
 		vore_selected_of(Pred).nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()
@@ -3571,10 +3571,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/suppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FFFF00"))
+
 /obj/item/reagent_containers/food/snacks/sliceable/suppermatter
-	light_range = 1.4
-	light_power = 2
-	light_color = "#FFFF00"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
@@ -3585,10 +3585,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 3
 	trash = null
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/suppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FFFF00"))
+
 /obj/item/reagent_containers/food/snacks/suppermattershard
-	light_range = 1.4
-	light_power = 1.4
-	light_color = "#FFFF00"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
@@ -3603,10 +3603,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FF0000"))
+
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
-	light_range = 1.4
-	light_power = 2
-	light_color = "#FF0000"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
@@ -3617,10 +3617,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 4
 	trash = null
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FF0000"))
+
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
-	light_range = 1.4
-	light_power = 1.4
-	light_color = "#FF0000"
 	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
@@ -4211,12 +4211,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	filling_color = "#5dadcf"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
+	configure(light_glow(range = 1.4, power = 1, color = "#5dadcf"))
 	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 
 /obj/item/reagent_containers/food/snacks/frostbelle
-	light_range = 1.4
-	light_power = 1
-	light_color = "#5dadcf"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
@@ -4787,7 +4785,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 
 /mob/living/simple_mob/slime
 	composition_reagent = REAGENT_ID_SLIMEJELLY
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals
@@ -5964,7 +5961,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "admint_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
 	use_sound = SFX_ITEMS_DROP_PAPER
@@ -5974,6 +5970,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 

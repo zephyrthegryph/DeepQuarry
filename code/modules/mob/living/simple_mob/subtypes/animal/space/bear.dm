@@ -25,8 +25,9 @@
 
 	say_list_type = /datum/say_list/bear
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+
 
 /datum/say_list/bear
 	speak = list("RAWR!","Rawr!","GRR!","Growl!")

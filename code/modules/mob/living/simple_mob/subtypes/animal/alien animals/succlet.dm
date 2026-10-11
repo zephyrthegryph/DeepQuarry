@@ -55,8 +55,6 @@
 	vore_stomach_name = "stummy"
 	vore_default_item_mode = IM_DIGEST
 
-	vore_taste = "some kind of snack from a distant unseen universe"
-	vore_smell = "some kind of snack from a distant unseen universe"
 
 	var/succlet_move_chance = 2
 	var/succlet_eat_chance = 50
@@ -126,7 +124,6 @@
 	src.succlet_last_health = src.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet
-	death_message = "shrieks in agony as it is eradicated from reality."
 
 /mob/living/simple_mob/vore/alienanimals/succlet/on_death(gibbed)
 	. = ..()
@@ -136,6 +133,8 @@
 	expire(25)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "some kind of snack from a distant unseen universe", "vore_smell" = "some kind of snack from a distant unseen universe"))
+	configure(mob_kind(death_message = "shrieks in agony as it is eradicated from reality."))
 	op("succlet_item", item(/obj/item), then(PROC_REF(succlet_interaction_item)))
 
 /// Old attackby: newspaper swat.
@@ -159,7 +158,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
 
 	if(isliving(target))
 		l = target
-		if(l.devourable && l.allowmobvore && l.can_be_drop_prey)
+		if(l.vore_prefs.devourable && l.vore_prefs.allowmobvore && l.vore_prefs.can_be_drop_prey)
 			target_turf = get_turf(l)
 		else
 			to_chat(src, span_warning("You can't move on to [l], they are watching..."))
@@ -264,8 +263,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/poison)
 	icon_state = "moss_succlet"
 	icon_living = "moss_succlet"
 	icon_rest = "moss_succlet"
-	vore_taste = "moss"
-	vore_smell = "moss"
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/moss)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "moss", "vore_smell" = "moss"))
 
 /mob/living/simple_mob/vore/alienanimals/succlet/king
 	desc = "A big soft, fuzzy, innocent looking star shaped creature. It looks regal with its crown!"
@@ -273,7 +273,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/poison)
 	icon_living = "king_succlet"
 	icon_rest = "king_succlet"
 	succlet_weaken_rate = 60	//The weight of authority is heavy!
-	vore_taste = "the king of snacks from a distant unseen universe"
-	vore_smell = "the king of snacks from a distant unseen universe"
 
 	endurance = 10000
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/king)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "the king of snacks from a distant unseen universe", "vore_smell" = "the king of snacks from a distant unseen universe"))

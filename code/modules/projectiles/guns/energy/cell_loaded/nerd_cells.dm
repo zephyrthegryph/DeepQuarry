@@ -10,7 +10,6 @@
 	icon_state = "medbeam"
 	nodamage = 1
 	damage = 0
-	light_color = "#80F5FF"
 	hud_state = "laser_disabler"
 
 	combustion = FALSE
@@ -20,6 +19,9 @@
 	muzzle_type = /obj/effect/projectile/muzzle/medigun
 	tracer_type = /obj/effect/projectile/tracer/medigun
 	impact_type = /obj/effect/projectile/impact/medigun
+
+CAPABILITIES(/obj/item/projectile/beam/medical_cell)
+	configure(light_glow(color = "#80F5FF"))
 
 /obj/item/projectile/beam/medical_cell/on_hit(mob/living/carbon/human/target) //what does it do when it hits someone?
 	return

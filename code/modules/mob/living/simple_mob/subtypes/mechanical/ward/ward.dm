@@ -9,7 +9,6 @@
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "ward"
 	icon_living = "ward"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	response_help   = "pets"
 	response_disarm = "swats away"
 	response_harm   = "punches"
@@ -19,18 +18,20 @@
 
 	endurance = 15
 	movement_cooldown = -1
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
-	mob_bump_flag = 0
 
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 
 	var/mob/living/owner = null // The mob that made the ward, if any. Used to ensure the ward does not interfere with its creator.
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "is smashed into pieces!"))
+	configure(mob_movement(bump = 0))
+
 /mob/living/simple_mob/mechanical/ward
 	delete_on_death = TRUE
-	death_message = "is smashed into pieces!"
 
 /mob/living/simple_mob/mechanical/ward/on_death(gibbed)
 	..()

@@ -249,7 +249,7 @@ CAPABILITIES(/turf)
 		viable_targets += L
 
 	if(!viable_targets.len) // No valid targets on this tile.
-		if(W.can_cleave)
+		if(combat_of(W).can_cleave)
 			success = W.cleave(user, src)
 	else
 		var/mob/living/victim = pick(viable_targets)
@@ -430,7 +430,7 @@ CAPABILITIES(/turf)
 
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
-	if(!tool || !tool.sharp || !can_engrave())
+	if(!tool || !combat_of(tool).sharp || !can_engrave())
 		return FALSE
 
 	if(jobban_isbanned(vandal, JOB_GRAFFITI))

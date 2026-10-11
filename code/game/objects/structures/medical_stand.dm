@@ -317,7 +317,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
 		to_chat(user, span_warning("\The [target] is already wearing a mask."))
 		return
-	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
+	if(target.get_equipped_item(SLOT_ID_HEAD) && (worn_of(target.get_equipped_item(SLOT_ID_HEAD)).covers & FACE))
 		to_chat(user, span_warning("Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."))
 		return
 	if(!tank)

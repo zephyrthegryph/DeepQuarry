@@ -242,7 +242,7 @@ CAPABILITIES(/obj/machinery/gibber)
 	var/slab_name = occupant.name
 	var/slab_count = 2 + occupant.meat_amount
 	var/slab_type = occupant.meat_type ? occupant.meat_type : /obj/item/reagent_containers/food/snacks/meat
-	var/slab_nutrition = occupant.nutrition / 15
+	var/slab_nutrition = nutrition_of(occupant) / 15
 
 	var/list/byproducts = occupant?.butchery_loot?.Copy()
 

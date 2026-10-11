@@ -113,7 +113,7 @@
 	H.set_nutrition(1000)
 	var/stored = R.recharge_from(H)
 	TEST_ASSERT(stored > 0, "the swarm should recharge its cluster")
-	TEST_ASSERT(H.nutrition < 1000, "recharging should cost nutrition")
+	TEST_ASSERT(nutrition_of(H) < 1000, "recharging should cost nutrition_of(src)")
 
 /// Revival rebuilds cohesion and what the revival steps repaired; afflictions
 /// it didn't touch stay.

@@ -9,9 +9,9 @@
 	name = "boots of speed"
 	desc = "The latest in sure footing technology."
 	icon_state = "swat"
-	item_flags = NOSLIP
 	slowdown = -1
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/speed)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(siemens = 0.6, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 

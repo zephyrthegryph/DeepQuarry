@@ -10,7 +10,6 @@
 
 	faction = FACTION_XENO
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	response_help = "pokes"
 	response_disarm = "shoves"
@@ -31,7 +30,10 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
 	meat_amount = 5
 
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/animal/space/alien/drone
 	name = "alien drone"
@@ -165,7 +167,6 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank
 	name = "alien Tankerling"
 	armor_spec = "melee=-25;bullet=20;laser=20"
-	base_attack_cooldown = 25
 	color = "#ff8214"
 	endurance = 700
 	melee_damage_lower = 25
@@ -176,12 +177,14 @@
 	projectiletype = null
 	size_multiplier = 2
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank)
+	configure(mob_kind(attack_cooldown = 25))
+
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/acid
 	projectiletype = /obj/item/projectile/energy/acid
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/star
 	name = "alien Staticlisk"
-	base_attack_cooldown = 15
 	color = "#38b9ff"
 	endurance = 500
 	armor_spec = "melee=-20;bullet=20;laser=10"
@@ -196,9 +199,11 @@
 	reload_time = 200
 	size_multiplier = 1.5
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/star)
+	configure(mob_kind(attack_cooldown = 15))
+
 /mob/living/simple_mob/animal/space/alien/queen/empress/tank
 	name = "alien tankerlisk"
-	base_attack_cooldown = 25
 	color = "#4a4a4a"
 	endurance = 1250
 	armor_spec = "melee=-20;bullet=20;laser=10"
@@ -210,6 +215,9 @@
 	projectilesound = null
 	projectiletype = null
 	size_multiplier = 3
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/tank)
+	configure(mob_kind(attack_cooldown = 25))
 
 /mob/living/simple_mob/animal/space/alien/sentinel/electro
 	name = "alien Electrosentinel"
@@ -225,13 +233,15 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/pyro
 	name = "alien Pyrosentinel"
 	armor_spec = "laser=15;bio=100;rad=100"
-	base_attack_cooldown = 15
 	color = "#ff7373"
 	endurance = 250
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 	reload_max = 2
 	reload_time = 150
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/pyro)
+	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/space/alien/sentinel/cyro
 	name = "alien cryosentinel"
@@ -253,7 +263,6 @@
 /mob/living/simple_mob/animal/space/alien/hunterling
 	name = "alien hunterling"
 	attack_armor_pen = 1
-	base_attack_cooldown = 2
 	color = "#1cbdff"
 	force_max_speed = 1
 	endurance = 15
@@ -261,14 +270,19 @@
 	melee_damage_upper = 3
 	size_multiplier = 0.5
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/hunterling)
+	configure(mob_kind(attack_cooldown = 2))
+
 /mob/living/simple_mob/animal/space/alien/hunterlisk
 	name = "alien hunterlisk"
-	base_attack_cooldown = 15
 	color = "#575757"
 	endurance = 150
 	melee_damage_upper = 35
 	movement_cooldown = 3
 	size_multiplier = 1.25
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/hunterlisk)
+	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/mother/big
 	needs_reload = 1

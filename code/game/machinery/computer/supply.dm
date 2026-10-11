@@ -24,10 +24,12 @@
 	desc = "Control the cargo shuttle's functions remotely."
 	icon_keyboard = "tech_key"
 	icon_screen = "supply"
-	light_color = "#b88b2e"
 	//req_access = list(ACCESS_CARGO) //removing hard access locks.
 	circuit = /obj/item/circuitboard/supplycomp/control
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
+
+CAPABILITIES(/obj/machinery/computer/supplycomp/control)
+	configure(light_glow(color = "#b88b2e"))
 
 CAPABILITIES(/obj/machinery/computer/supplycomp)
 	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in))), then(TYPE_PROC_REF(/atom, op_open_ui)))

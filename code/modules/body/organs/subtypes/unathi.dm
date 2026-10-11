@@ -12,8 +12,10 @@
 	max_damage = 75
 	min_broken_damage = 70 // Flat doubling of all min_broken_damage
 	eye_icon = "eyes_s"
-	force = 5
-	throwforce = 10
+
+CAPABILITIES(/obj/item/organ/external/head/unathi)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 5))
 
 /obj/item/organ/internal/eyes/unathi
 	icon_state = "unathi_eyes"

@@ -56,9 +56,9 @@
 
 /obj/item/gun/energy/gun/protector/proc/update_brightness(mob/user = null)
 	if(gun_light_on)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 /obj/item/gun/energy/gun/protector/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	..()

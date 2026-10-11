@@ -6,7 +6,6 @@
 	universal_speak = 1
 	density = FALSE
 
-	makes_dirt = FALSE	// No more dirt from Beepsky
 
 	var/obj/item/card/id/botcard = null
 	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
@@ -46,7 +45,6 @@
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
-	allow_mind_transfer = TRUE
 
 /// Whoever presses a button of the bot's window leaves their prints on it.
 /mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
@@ -428,7 +426,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(stat)
 		return 0
 	set_on(1)
-	set_light(light_strength)
+	set_glow(src, GLOW(light_strength, null, null))
 	update_icons()
 	resetTarget()
 	patrol_path = list()
@@ -514,7 +512,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/proc/turn_off()
 	set_on(0)
 	bot_stop_work() // If ever stuck... reboot!
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	update_icons()
 	update_canmove()
 
@@ -685,20 +683,19 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	release_vore_contents()
 	revoke(src, granted_verb(/mob/proc/insidePanel), src)
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
+	vore_prefs.devourable = FALSE
+	vore_prefs.feeding = FALSE
+	vore_prefs.can_be_drop_pred = FALSE
 
 	return ..()
 
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/bot
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
 
 CAPABILITIES(/mob/living/bot)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
+	configure(mob_movement(makes_dirt = FALSE))
 	silicon_hand()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
 	ref_many(nameof(ignore_list))

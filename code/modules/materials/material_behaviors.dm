@@ -61,9 +61,9 @@ CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/mate
 	if(mat_luminescence > 0)
 		var/range = clamp(mat_luminescence / 20, 0.5, 4)
 		var/power = clamp(mat_luminescence / 30, 0.3, 2)
-		set_light(range, power, colour)
+		set_glow(src, GLOW(range, power, colour))
 	else if(old_luminescence > 0)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	if(mat_radioactivity > 0 || mat_toxicity > 0)
 		grant(src, /datum/capability/material_emission, src)
 	else

@@ -73,7 +73,7 @@ MSG_DEF(strip/internals, null, span_danger("%U% is trying to set %T%'s internals
 	if(stripping)
 		if(!istype(target_slot))  // They aren't holding anything valid and there's nothing to remove, why are we even here?
 			return
-		if(!target_slot.canremove || (target_slot.item_flags & NOSTRIP))
+		if(!target_slot.canremove || (worn_of(target_slot).flags & NOSTRIP))
 			to_chat(user, span_warning("You cannot remove \the [src]'s [target_slot.name]."))
 			return
 

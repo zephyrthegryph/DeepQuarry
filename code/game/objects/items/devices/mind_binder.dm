@@ -5,7 +5,6 @@
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "sleevemate"
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 200)
 	possessed_voice = list()
@@ -15,6 +14,7 @@
 TRACKED(/obj/item/mindbinder, self_bind)
 
 CAPABILITIES(/obj/item/mindbinder)
+	configure(item_worn(slots = SLOT_BELT))
 	// The bindings and downloads, started by the confirmed prompts and bind_mob() / bind_item() / store_item() with the subject.
 	op("bind_self_mob", ai(), takes("subject"), wait(30 SECONDS), then(PROC_REF(bind_mob_timed_done)))
 	op("bind_self_item", ai(), takes("subject"), wait(30 SECONDS), then(PROC_REF(bind_item_timed_done)))
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/mindbinder)
 		A = H.held_mob
 	if(istype(A, /mob/living))
 		var/mob/living/M = A
-		if(!M.allow_mind_transfer)
+		if(!M.vore_prefs.allow_mind_transfer)
 			to_chat(user,span_danger("The target's mind is too complex to be affected!"))
 			return
 		if(user == M)

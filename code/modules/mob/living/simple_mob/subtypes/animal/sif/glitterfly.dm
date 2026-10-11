@@ -38,7 +38,6 @@
 	endurance = 10
 
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
@@ -62,6 +61,7 @@
 	say_list_type = /datum/say_list/glitterfly
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(mob_movement(hovering = TRUE))
 	rolls(nameof(color), PROC_REF(roll_colour))
 	rolls(nameof(default_pixel_y), range_of(5, 12))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y), from = list(nameof(default_pixel_y)))
@@ -107,3 +107,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
 /datum/decl/mob_organ_names/smallflying
 //For flying things too tiny to be granular
 TYPE_TABLE(/datum/decl/mob_organ_names/smallflying, mob_organ_hit_zones, list("body", "left wing", "right wing"))
+
+/// The explorers' pet glitterfly on Southern Cross: leaves no dirt (the map edit `makes_dirt = 0` it carried before makes_dirt became the
+/// mob_movement() trait; a compiled map cannot name a var that left the type).
+/mob/living/simple_mob/animal/sif/glitterfly/tidy
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly/tidy)
+	configure(mob_movement(makes_dirt = FALSE))

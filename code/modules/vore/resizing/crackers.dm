@@ -46,8 +46,10 @@ CAPABILITIES(/obj/item/cracker)
 		"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
-/// What it holds (rolled; the cracker kinds are defines local to this file).
+/// What it holds (rolled; the cracker kinds are defines local to this file). A themed subtype keeps its compiled prize.
 /obj/item/cracker/proc/roll_prize(datum/roller/R)
+	if(prize)
+		return prize
 	return R.choose(list(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -167,11 +169,10 @@ CAPABILITIES(/obj/item/cracker)
 	item_state = "paper_crown_blue"
 	item_icons = list(slot_head_str = 'icons/inventory/head/mob.dmi')
 	desc = "A paper crown so thin that you can see through it."
-	flags_inv = 0
-	body_parts_covered = 0
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/head/paper_crown)
+	configure(item_worn(hides = 0, covers = 0))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

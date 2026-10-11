@@ -14,15 +14,15 @@
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_SUIT) == S)
-			if((body_parts_covered & ARMS) && istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
+			if((worn_of(src).covers & ARMS) && istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
 				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
-				if(G.body_parts_covered & ARMS)
+				if(worn_of(G).covers & ARMS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [G], it's in the way."))
 					own_take_member(S, nameof(S.accessories), src)
 					return
-			else if((body_parts_covered & LEGS) && istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing))
+			else if((worn_of(src).covers & LEGS) && istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing))
 				var/obj/item/clothing/Sh = H.get_equipped_item(SLOT_ID_SHOES)
-				if(Sh.body_parts_covered & LEGS)
+				if(worn_of(Sh).covers & LEGS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [Sh], it's in the way."))
 					own_take_member(S, nameof(S.accessories), src)
 					return
@@ -87,11 +87,11 @@
 	name = "light armor plate"
 	desc = "A basic armor plate made of steel-reinforced synthetic fibers. Attaches to a plate carrier."
 	icon_state = "armor_light"
-	body_parts_covered = CHEST
 	armor_spec = "melee=30;bullet=15;laser=40;energy=10;bomb=25"
 	slot = ACCESSORY_SLOT_ARMOR_C
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate)
+	configure(item_worn(covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST))
 
 /obj/item/clothing/accessory/armor/armorplate/explorer
@@ -191,11 +191,11 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/laserproof)
 //	accessory_icons = list(slot_tie_str = 'icons/mob/modular_armor.dmi', slot_wear_suit_str = 'icons/mob/modular_armor.dmi')
 	icon_state = "armguards"
 	gender = PLURAL
-	body_parts_covered = ARMS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_A
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards)
+	configure(item_worn(covers = ARMS))
 	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
 /obj/item/clothing/accessory/armor/armguards/blue
@@ -276,11 +276,11 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/riot)
 //	accessory_icons = list(slot_tie_str = 'icons/mob/modular_armor.dmi', slot_wear_suit_str = 'icons/mob/modular_armor.dmi')
 	icon_state = "legguards"
 	gender = PLURAL
-	body_parts_covered = LEGS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_L
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards)
+	configure(item_worn(covers = LEGS))
 	configure(item_protection(heat_parts = LEGS, cold_parts = LEGS))
 
 /obj/item/clothing/accessory/armor/legguards/blue

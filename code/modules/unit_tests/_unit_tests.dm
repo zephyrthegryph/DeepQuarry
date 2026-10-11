@@ -349,6 +349,7 @@
 #include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"
 #include "dq_preferences_tests.dm"
+#include "dq_profile_records.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_state_tests.dm"
 #include "dq_sys_loot_tests.dm"

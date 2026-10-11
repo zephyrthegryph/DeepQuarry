@@ -9,7 +9,6 @@
 
 	faction = "synthtide"
 
-
 	endurance = 175
 
 	melee_damage_lower = 5
@@ -19,7 +18,6 @@
 	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	// To promote a more diverse weapon selection.
 	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	say_list_type = /datum/say_list/cyber_horror
 
@@ -32,7 +30,10 @@
 	var/emp_damage = 0
 	var/nanobot_chance = 40
 
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 
 /datum/say_list/cyber_horror
 	speak = list("H@!#$$P M@!$#",
@@ -99,7 +100,6 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 	attack_armor_pen = 50
-	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGMELEE
 	attacktext = list ("sliced", "diced", "lashed", "shredded")
@@ -110,7 +110,6 @@
 
 // You do NOT Want to get in touchy range of this thing.
 	armor_spec = "melee=75;bullet=-10;laser=-25;bio=100;rad=100"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 
 // Leaping is a special attack, so these values determine when leap can happen.
@@ -121,6 +120,10 @@
 // How long the leap telegraphing is.
 	var/leap_warmup = 2 SECOND
 	var/leap_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGLEAP
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 2.5))
 
 /datum/say_list/cyber_horror/ling
 	threaten_sound = 'sound/mob/robots/cyber_horror_changeling.ogg'
@@ -303,10 +306,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	endurance = 50
 	say_list_type = /datum/say_list/cyber_horror/corgi
 
-	base_attack_cooldown = 4
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = SFX_WEAPONS_SMALLLASER
 	movement_sound = SFX_EFFECTS_SERVOSTEP
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/corgi)
+	configure(mob_kind(attack_cooldown = 4))
 
 
 /datum/say_list/cyber_horror/corgi
@@ -327,13 +332,10 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	pass_flags = PASSTABLE
-	mob_swap_flags = 0
-	mob_push_flags = 0
 
 	melee_damage_lower = 2
 	melee_damage_upper = 2
 // Four attacks per second.
-	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_WEAPONS_BITE
 
@@ -343,6 +345,10 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	var/poison_chance = 75
 	var/poison_per_bite = 3
 	var/poison_type = REAGENT_ID_MINDBREAKER
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/cat_cyber_horror)
+	configure(mob_kind(attack_cooldown = 2.5))
+	configure(mob_movement(swap = 0, push = 0))
 
 /datum/say_list/cyber_horror/cat
 	threaten_sound = 'sound/mob/robots/cyber_horror_cat.ogg'

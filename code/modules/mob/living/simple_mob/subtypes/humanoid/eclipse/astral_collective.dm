@@ -28,10 +28,7 @@
 	projectile_dispersion = 0
 	armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100" // Simple mob immunuties plus minour armor
 
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
 	pass_flags = PASSTABLE //mostly for the melee mobs.
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	min_oxy = 0
 	max_oxy = 0
@@ -66,7 +63,6 @@
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
 	unacidable = TRUE
-	devourable = FALSE
 
 	movement_cooldown = 0
 
@@ -407,7 +403,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(30))
 			visible_message(span_boldwarning(span_orange("[O] is pulled to the ground!.")))
 			user.drop_item()
@@ -497,6 +493,8 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
+	configure(mob_movement(softfall = TRUE))
 	immune_to_incapacitation()
 	rolls(nameof(experiment_effect), pick_one(list(/datum/body_effect/astralcollect_swift, /datum/body_effect/astralcollect_regen, /datum/body_effect/astralcollect_titan, /datum/body_effect/astralcollect_mistake)))
 	rolls(nameof(size_multiplier), PROC_REF(experiment_size), from = list(nameof(experiment_effect)))

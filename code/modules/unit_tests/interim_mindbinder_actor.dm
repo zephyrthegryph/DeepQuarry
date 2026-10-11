@@ -4,8 +4,8 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
 	var/obj/item/mindbinder/binder = allocate(/obj/item/mindbinder, T)
-	actor.allow_mind_transfer = TRUE
-	other.allow_mind_transfer = FALSE
+	actor.vore_prefs.allow_mind_transfer = TRUE
+	other.vore_prefs.allow_mind_transfer = FALSE
 	TEST_ASSERT(!binder.self_bind, "the binder starts with self-binding disabled")
 	binder.pre_attack(other, actor, null)
 	TEST_ASSERT(!binder.self_bind, "a different refused target does not arm self-binding")

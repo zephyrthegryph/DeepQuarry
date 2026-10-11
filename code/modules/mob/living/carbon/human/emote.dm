@@ -491,8 +491,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set desc = "Toggles your ability to resist resizing attempts"
 	set category = VERB_CAT_IC_SETTINGS
 
-	resizable = !resizable
-	to_chat(src, span_notice("You are now [resizable ? "susceptible" : "immune"] to being resized."))
+	vore_prefs.resizable = !vore_prefs.resizable
+	to_chat(src, span_notice("You are now [vore_prefs.resizable ? "susceptible" : "immune"] to being resized."))
 
 
 /mob/living/carbon/human/proc/handle_flip_vr()

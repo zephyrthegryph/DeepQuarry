@@ -68,11 +68,13 @@
 	desc = "It's made of AUTHENTIC faux-leather and has a price-tag still attached. Its owner must be a real professional."
 	icon_state = "briefcase"
 	item_state = "briefcase"
-	force = 8.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	deliveryamt = 6
+
+CAPABILITIES(/obj/item/grenade/spawnergrenade/spider/briefcase)
+	configure(item_combat(force = 8.0))
 
 /obj/item/grenade/spawnergrenade/manhacks/station/locked
 	desc = "It is set to detonate in 5 seconds. It will deploy three weaponized survey drones. This one has a safety interlock that prevents release if used while in proximity to the facility."
