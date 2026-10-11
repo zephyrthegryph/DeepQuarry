@@ -5,6 +5,19 @@
 use super::*;
 impl<R: Resolver + Send> EngineResolverHost<R> {
     pub(super) fn pinned_namespace_absence(&self, query: Q) -> Option<M> {
+        // Unrelated unsupported domains retain their own admission path and do
+        // not inspect this namespace's native seed roster.
+        if !matches!(
+            query,
+            Q::Type(_)
+                | Q::ProcedureValue { .. }
+                | Q::MethodProcedureValue { .. }
+                | Q::Proc { .. }
+                | Q::GlobalProc(_)
+                | Q::HasMemberProc { .. }
+        ) {
+            return None;
+        }
         let coverage = self.variable_absence.as_ref()?;
         if !coverage.payload.namespace_seeded
             || !coverage.source.intrinsic_hierarchy_certified()
