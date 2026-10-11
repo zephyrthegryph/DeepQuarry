@@ -50,6 +50,7 @@ pub(crate) struct KeyRecipe {
     tail: Range<usize>,
 }
 impl<'a> CurrentKey<'a> {
+    #[cfg(test)]
     pub fn new(
         frontend: &'a dm_tree::frontend::ColdFrontend,
         body: &dm_tree::frontend::BodyOccurrence,

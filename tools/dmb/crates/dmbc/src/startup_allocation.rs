@@ -30,6 +30,7 @@ impl StartupAllocationRoster {
     ) -> Result<Self, String> {
         Self::issue_with_registrations(plan, source_owners, BTreeMap::new(), BTreeMap::new())
     }
+    #[cfg(test)]
     pub(crate) fn issue_current(
         plan: &InitializerPlan,
         source_owners: &[SymbolId],
