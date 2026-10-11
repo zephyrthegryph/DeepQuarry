@@ -12,9 +12,10 @@
 	MATERIAL_BULK(MAT_STEEL, 60)
 	pressure_resistance = 2
 	attack_verb = list("stamped")
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	var/stamptext = null
+
+CAPABILITIES(/obj/item/stamp)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/stamp/captain
 	name = "site manager's rubber stamp"

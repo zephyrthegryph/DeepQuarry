@@ -15,7 +15,6 @@
 	recoil = 2
 	auto_eject = 1
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
-	hitsound = null
 	caliber = "s762"
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762)
@@ -24,6 +23,9 @@
 	list(mode_name="fold", icon_state="crestrose_fold",item_state = "laser",force=3),
 	list(mode_name="scythe", icon_state="crestrose",item_state = "crestrose",force=15),
 	)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/fluff/crestrose)
+	configure(uses_power(hit = TRAIT_NONE))
 
 /obj/item/gun/projectile/automatic/fluff/crestrose/switch_firemodes(mob/user)
 	if(..())

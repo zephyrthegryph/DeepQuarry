@@ -44,10 +44,12 @@
 	taser_effect = 1
 	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
-	hitsound = SFX_WEAPONS_ZAPBANG
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	combustion = FALSE
 	agony = 20
+
+CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
+	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/energy/mob/precursor
 	name = "precursor beam"

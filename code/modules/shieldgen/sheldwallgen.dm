@@ -202,7 +202,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		return OP_OK
 	set_state(!state)
 	set_anchored(state)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
 	return OP_OK
 

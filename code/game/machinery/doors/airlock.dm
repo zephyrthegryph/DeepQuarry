@@ -803,7 +803,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	var/obj/item/weldingtool/welder = held.get_welder()
 	if(welder)
 		if(welder.remove_fuel(0, user) && welder.isOn())
-			playsound(src, welder.usesound, 50, 1)
+			playsound(src, sounds_of(welder).use, 50, 1)
 			to_chat(user, span_notice("You finish melting the ice off \the [src]"))
 			set_frozen(FALSE)
 		return OP_OK

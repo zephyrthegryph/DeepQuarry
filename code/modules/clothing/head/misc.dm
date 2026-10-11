@@ -27,8 +27,9 @@
 	desc = "A nice hair pin."
 	slot_flags = SLOT_HEAD | SLOT_EARS
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
+
+CAPABILITIES(/obj/item/clothing/head/pin)
+	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/clothing/head/pin/pink
 	icon_state = "pinkpin"
@@ -178,8 +179,9 @@
 	icon_state = "cardborg_h"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	body_parts_covered = HEAD|FACE|EYES
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
+
+CAPABILITIES(/obj/item/clothing/head/cardborg)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
 /obj/item/clothing/head/rabbitears
 	name = "rabbit ears"
@@ -335,8 +337,9 @@
 	desc = "A jeweled headpiece originating in India."
 	icon_state = "maangtikka"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/head/maangtikka)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/head/jingasa
 	name = "jingasa"

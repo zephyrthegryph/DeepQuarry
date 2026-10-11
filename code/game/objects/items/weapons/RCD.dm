@@ -5,8 +5,6 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "rcd"
 	item_state = "rcd"
-	drop_sound = SFX_ITEMS_DROP_GUN
-	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	flags = NOBLUDGEON
 	force = 10
 	throwforce = 10
@@ -317,6 +315,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	owns_many(nameof(effects))
 	// An operation on the target: its beam shows while it runs. The RCD is claimed meanwhile (the concurrent kind is not).

@@ -33,8 +33,6 @@
 	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")
 	var/lightcolor = "#D3FDFD"
 	var/status = 0		//whether the thing is on or not
@@ -188,6 +186,7 @@ TRACKED(/obj/item/melee/shock_maul, status)
 TRACKED(/obj/item/melee/shock_maul, wielded)
 
 CAPABILITIES(/obj/item/melee/shock_maul)
+	configure(uses_power(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), when(PROC_REF(uncharged)), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(charge_started)), wait(PROC_REF(charge_duration)), then(PROC_REF(charged)))
 	op("off", in_hand(), label("Use"), when(PROC_REF(charged_up)), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(handy_user), silent = TRUE)), then(PROC_REF(disengaged)))

@@ -31,8 +31,6 @@
 	var/trash = null  // if set, can be crushed into a trash item when empty
 	max_storage_space = INVENTORY_BOX_SPACE
 	use_sound = SFX_ITEMS_STORAGE_BOX
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	resistance_flags = FLAMMABLE
 
 // BubbleWrap - A box can be folded up to make card
@@ -40,6 +38,7 @@
 TRACKED(/obj/item/storage/box, trash)
 
 CAPABILITIES(/obj/item/storage/box)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
 	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))
 	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up)))
@@ -199,56 +198,63 @@ CAPABILITIES(/obj/item/storage/box)
 	desc = span_bold("WARNING: These devices are extremely dangerous and can cause blindness or deafness in repeated use.")
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/flashbang = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/flashbangs)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/emps
 	name = "box of emp grenades"
 	desc = "A box containing 5 military grade EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/emps)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/empslite
 	name = "box of low yield emp grenades"
 	desc = "A box containing 5 low yield EMP grenades.<br> WARNING: Do not use near unshielded electronics or biomechanical augmentations, death or permanent paralysis may occur."
 	icon_state = "emp"
 	starts_with = list(/obj/item/grenade/empgrenade/low_yield = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/empslite)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/smokes
 	name = "box of smoke bombs"
 	desc = "A box containing 7 smoke bombs."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/smokebomb = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/smokes)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/anti_photons
 	name = "box of anti-photon grenades"
 	desc = "A box containing 7 experimental photon disruption grenades."
 	icon_state = "flashbang"
 	starts_with = list(/obj/item/grenade/anti_photon = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/anti_photons)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/frags
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 7 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 7)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/frags)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/frags_half_box
 	name = "box of fragmentation grenades (WARNING)"
 	desc = "A box containing 4 military grade fragmentation grenades.<br> WARNING: These devices are extremely dangerous and can cause limb loss or death in repeated use."
 	icon_state = "frag"
 	starts_with = list(/obj/item/grenade/explosive = 4)
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/frags_half_box)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/metalfoam
 	name = "box of metal foam grenades."
@@ -458,11 +464,10 @@ CAPABILITIES(/obj/item/storage/box/snappops)
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/flame/match = 10)
-	drop_sound = SFX_ITEMS_DROP_MATCHBOX
-	pickup_sound =  SFX_ITEMS_PICKUP_MATCHBOX
 
 
 CAPABILITIES(/obj/item/storage/box/matches)
+	configure(uses_power(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	configure(storage(accepts = list(/obj/item/flame/match)))
 	op("strike", item(/obj/item/flame/match), label("Strike"), then(PROC_REF(strike_match)))
 
@@ -679,8 +684,9 @@ CAPABILITIES(/obj/item/storage/box/brainzsnax)
 	icon_state = "secbox"
 	starts_with = list(/obj/item/ammo_magazine/sam48 = 3)
 	max_storage_space = ITEMSIZE_COST_NORMAL * 3
-	drop_sound = SFX_ITEMS_DROP_AMMOBOX
-	pickup_sound = SFX_ITEMS_PICKUP_AMMOBOX
+
+CAPABILITIES(/obj/item/storage/box/altevian_ammo)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AMMOBOX, pickup = SFX_ITEMS_PICKUP_AMMOBOX))
 
 /obj/item/storage/box/weapon_cells
 	name = "box of weapon cells"

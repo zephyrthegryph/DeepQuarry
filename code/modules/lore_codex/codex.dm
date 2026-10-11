@@ -58,7 +58,9 @@ CAPABILITIES(/obj/item/book/codex)
 	w_class = ITEMSIZE_SMALL
 	root_type = /datum/lore/codex/category/main_news
 	libcategory = "Reference"
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/book/codex/lore/news)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE))
 
 /* // REMOVAL
 // Combines SOP/Regs/Law

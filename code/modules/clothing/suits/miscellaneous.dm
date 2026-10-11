@@ -1042,7 +1042,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2
@@ -1054,6 +1053,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SHOES))
 	op("caution_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(caution_toggle_self)))
 	op("caution_toggle_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle"), then(PROC_REF(caution_toggle_alt)))
 

@@ -1084,7 +1084,6 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	eyeblur = 0
 	can_miss = FALSE //Let's not miss our tongue!
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
-	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	excavation_amount = 0
 	hitscan_light_intensity = 0
@@ -1102,6 +1101,9 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	muzzle_type = /obj/effect/projectile/muzzle/appendage
 	tracer_type = /obj/effect/projectile/tracer/appendage
 	impact_type = /obj/effect/projectile/impact/appendage
+
+CAPABILITIES(/obj/item/projectile/beam/appendage)
+	configure(uses_power(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /obj/item/projectile/beam/appendage/generate_hitscan_tracers()
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
@@ -1210,9 +1212,11 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"
-	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	zaptype = /obj/item/projectile/beam/appendage
+
+CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
+	configure(uses_power(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /mob/living/proc/target_lunge() //The leaper leap, but usable as an ability
 	set name = "Lunge At Prey"

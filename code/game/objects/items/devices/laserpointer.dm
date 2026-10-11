@@ -16,8 +16,6 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	EXPIRY_DECLARE(last_used_time)
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 /obj/item/laser_pointer/red
@@ -53,6 +51,7 @@ TYPE_TABLE(/obj/item/laser_pointer/ultimate, pointer_forced_diode, /obj/item/sto
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/laser_pointer)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
 	// The battery trickles back while recharging.
 	every(2 SECONDS, then(PROC_REF(laser_pointer_step)), when = nameof(recharging))

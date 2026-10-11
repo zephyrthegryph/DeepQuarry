@@ -10,11 +10,9 @@
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("flicked", "whipped", "swooshed")
 	force = 0.5
-	hitsound = SFX_WEAPONS_TOWELWHIP
-	drop_sound = SFX_ITEMS_DROP_CLOTH
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 CAPABILITIES(/obj/item/picnic_blankets_carried)
+	configure(uses_power(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	// the old object verb: spread it out where the carrier stands
 	op("fold_out", menu(), label("Fold out"), needs(carried(), req_bool(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(picnic_blankets_carried_fold_out_effect)))
 

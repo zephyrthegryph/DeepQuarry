@@ -3,8 +3,6 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 	throwforce = 0
 	force = 0
 	actions_types = list(/datum/action/item_action/command)
@@ -24,6 +22,7 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(bound_mob), /mob/living)
 	// the old attack_self: an ownerless crystal with a mob in it asks to be claimed first, then the crystal is used

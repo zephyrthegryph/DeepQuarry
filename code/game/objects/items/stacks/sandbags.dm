@@ -9,8 +9,6 @@
 	throwforce = 20.0
 	throw_speed = 5
 	throw_range = 3
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
 	max_amount = 30
 	attack_verb = list("hit", "bludgeoned", "pillowed")
@@ -33,6 +31,7 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	param(nameof(bag_material), pos = 2)
 
 // ALLOW(init/INSTANCE_STATE): sandbags take their recipes, slowdown and their bags' colour

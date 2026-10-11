@@ -127,7 +127,7 @@ MSG_DEF_SELF(wall/repaired, "You finish repairing the damage to %T%.")
 /turf/simulated/wall/proc/alt_started(datum/act/op/A)
 	step_began(A)
 	var/obj/item/held = A.held
-	var/sound = held?.usesound
+	var/sound = sounds_of(held).use
 	if(istype(held, /obj/item/melee/energy/blade))
 		play_sfx(src, SFX_SPARKS)
 		return

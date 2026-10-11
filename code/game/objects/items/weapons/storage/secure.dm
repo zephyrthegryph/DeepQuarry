@@ -99,7 +99,7 @@ CAPABILITIES(/obj/item/storage/secure)
 /// A screwdriver opens and closes the service panel of a locked one.
 /obj/item/storage/secure/proc/toggle_service_panel(datum/act/op/A)
 	set_open(!open)
-	playsound(src, A.held.usesound, 50, TRUE)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 	A.actor.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
 	return OP_OK
 

@@ -4,7 +4,6 @@
 	name = "generic ring"
 	desc = "Torus shaped finger decoration."
 	icon_state = "material"
-	drop_sound = SFX_ITEMS_DROP_RING
 	slot = ACCESSORY_SLOT_RING
 	slot_flags = SLOT_GLOVES
 	item_icons = list(
@@ -14,12 +13,13 @@
 	gender = PLURAL
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/hands/item.dmi'
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 	force = 7	//base punch strength is 5
 	punch_force = 2	//added to base punch strength when added as a glove accessory
 	siemens_coefficient = 1
 	slowdown = 0
+
+CAPABILITIES(/obj/item/clothing/accessory/ring)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /////////////////////////////////////////
 //Standard Rings
@@ -214,11 +214,15 @@ TYPE_TABLE(/obj/item/clothing/accessory/ring/material/void_opal, ring_forced_mat
 	desc = "A ring that has a tiny world inside its glassy gem. You can even see clouds moving."
 	icon = 'icons/inventory/hands/item_ch.dmi'
 	icon_state = "ringworld1"
-	drop_sound = SFX_ITEMS_DROP_RING
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld1)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING))
 
 /obj/item/clothing/accessory/ring/ringworld2
 	name = "world ring"
 	desc = "A ring that has a tiny landscape all around its exterior. You can even see clouds moving."
 	icon = 'icons/inventory/hands/item_ch.dmi'
 	icon_state = "ringworld2"
-	drop_sound = SFX_ITEMS_DROP_RING
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld2)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING))

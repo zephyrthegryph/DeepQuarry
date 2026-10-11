@@ -16,7 +16,7 @@ CAPABILITIES(/obj/structure/sign)
 	var/obj/item/tool = A.held
 	if(istype(src, /obj/structure/sign/scenery) || istype(src, /obj/structure/sign/double))
 		return OP_DECLINE
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	unfasten(user)
 	return OP_OK
 

@@ -22,7 +22,9 @@
 	throw_speed = 4
 	throw_range = 20
 	force = 0
-	drop_sound = SFX_ITEMS_DROP_GLOVES
+
+CAPABILITIES(/obj/item/toy)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES))
 
 /*
  * Balloons
@@ -32,7 +34,6 @@
 	desc = "A translucent balloon. There's nothing in it."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "waterballoon-e"
-	drop_sound = SFX_ITEMS_DROP_RUBBER
 
 /obj/item/toy/balloon/Initialize(mapload)
 	. = ..()
@@ -52,6 +53,7 @@
 	return
 
 CAPABILITIES(/obj/item/toy/balloon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
@@ -100,7 +102,9 @@ CAPABILITIES(/obj/item/toy/balloon)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "syndballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = SFX_ITEMS_DROP_RUBBER
+
+CAPABILITIES(/obj/item/toy/syndicateballoon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/nanotrasenballoon
 	name = "criminal balloon"
@@ -112,7 +116,9 @@ CAPABILITIES(/obj/item/toy/balloon)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "ntballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = SFX_ITEMS_DROP_RUBBER
+
+CAPABILITIES(/obj/item/toy/nanotrasenballoon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/colorballoon /// To color it, VV the 'color' var with a hex color code with the # included.
 	name = "balloon"
@@ -124,7 +130,9 @@ CAPABILITIES(/obj/item/toy/balloon)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "colorballoon"
 	w_class = ITEMSIZE_LARGE
-	drop_sound = SFX_ITEMS_DROP_RUBBER
+
+CAPABILITIES(/obj/item/toy/colorballoon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
 
 /*
  * Fake telebeacon
@@ -153,7 +161,6 @@ CAPABILITIES(/obj/item/toy/balloon)
 	desc = "A cheap, plastic replica of an energy sword. Realistic sounds! Ages 8 and up."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "esword"
-	drop_sound = SFX_ITEMS_DROP_GUN
 	var/lcolor
 	var/rainbow = FALSE
 	item_icons = list(
@@ -165,6 +172,7 @@ CAPABILITIES(/obj/item/toy/balloon)
 	attack_verb = list("attacked", "struck", "hit")
 
 CAPABILITIES(/obj/item/toy/sword)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GUN))
 	op("toggle", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 	// the old click_alt: recolour the blade after a yes
@@ -252,7 +260,9 @@ TRACKED(/obj/item/toy/sword, lcolor)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "snappop"
 	w_class = ITEMSIZE_TINY
-	drop_sound = null
+
+CAPABILITIES(/obj/item/toy/snappop)
+	configure(uses_power(drop = TRAIT_NONE))
 
 /obj/item/toy/snappop/throw_impact(atom/hit_atom)
 	..()
@@ -282,12 +292,12 @@ TRACKED(/obj/item/toy/sword, lcolor)
 	desc = "A genuine Admiral Krush Bosun's Whistle, for the aspiring ship's captain! Suitable for ages 8 and up, do not swallow."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "bosunwhistle"
-	drop_sound = SFX_ITEMS_DROP_CARD
 	var/cooldown = 0
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_HOLSTER
 
 CAPABILITIES(/obj/item/toy/bosunwhistle)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARD))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -310,13 +320,13 @@ CAPABILITIES(/obj/item/toy/bosunwhistle)
 	w_class = ITEMSIZE_TINY
 	var/cooldown = 0
 	var/toysay = "What the fuck did you do?"
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
 
 /obj/item/toy/figure/Initialize(mapload)
 	. = ..()
 	desc = "A \"Space Life\" brand [name]"
 
 CAPABILITIES(/obj/item/toy/figure)
+	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -838,7 +848,6 @@ CAPABILITIES(/obj/structure/plushie)
 	desc = "A small toy plushie. It's very cute."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "nymphplushie"
-	drop_sound = SFX_ITEMS_DROP_PLUSHIE
 	w_class = ITEMSIZE_TINY
 	EXPIRY_DECLARE(last_message)
 	var/pokephrase = "Uww!"
@@ -948,6 +957,7 @@ CAPABILITIES(/obj/structure/plushie)
 	return OP_OK
 
 CAPABILITIES(/obj/item/toy/plushie)
+	configure(uses_power(drop = SFX_ITEMS_DROP_PLUSHIE))
 	owns_one(nameof(stored_item), /obj/item)
 	op("hug", in_hand(), stance(I_HELP), label("Hug"), then(PROC_REF(interaction_hug)))
 	op("poke", in_hand(), stance(I_DISARM), label("Poke"), then(PROC_REF(interaction_poke)))
@@ -1450,7 +1460,9 @@ CAPABILITIES(/obj/item/toy/griffin)
 	icon_state = "inflatable"
 	icon = 'icons/inventory/belt/item.dmi'
 	slot_flags = SLOT_BELT
-	drop_sound = SFX_ITEMS_DROP_RUBBER
+
+CAPABILITIES(/obj/item/inflatable_duck)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/xmastree
 	name = "Miniature Christmas tree"
@@ -1460,7 +1472,9 @@ CAPABILITIES(/obj/item/toy/griffin)
 	w_class = ITEMSIZE_TINY
 	force = 1
 	throwforce = 1
-	drop_sound = SFX_ITEMS_DROP_BOX
+
+CAPABILITIES(/obj/item/toy/xmastree)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOX))
 
 //////////////////////////////////////////////////////
 //					Chess Pieces					//
@@ -1473,7 +1487,9 @@ CAPABILITIES(/obj/item/toy/griffin)
 	w_class = ITEMSIZE_SMALL
 	force = 1
 	throwforce = 1
-	drop_sound = SFX_ITEMS_DROP_GLASS
+
+CAPABILITIES(/obj/item/toy/chess)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS))
 
 /obj/item/toy/chess/pawn_white
 	name = "white pawn"
@@ -1633,7 +1649,9 @@ CAPABILITIES(/obj/structure/balloon)
 	name = "steel ring"
 	desc = "Torus shaped finger decoration. It has a small piece of metal on the palm-side."
 	icon_state = "seal-signet"
-	drop_sound = SFX_ITEMS_DROP_RING
+
+CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer/toy)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING))
 
 /obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 	if(proximity && istype(user, /mob/living/carbon/human))
@@ -1711,8 +1729,10 @@ CAPABILITIES(/obj/structure/balloon)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "kobold"
 	pokephrase = "Wehhh!"
-	drop_sound = SFX_VOICE_WEH
 	attack_verb = list("raided", "kobolded", "weh'd")
+
+CAPABILITIES(/obj/item/toy/plushie/lizardplushie/kobold)
+	configure(uses_power(drop = SFX_VOICE_WEH))
 
 /* // Disable, this is an upstream player reference.
 /obj/item/toy/plushie/lizardplushie/resh
@@ -2200,11 +2220,12 @@ CAPABILITIES(/obj/item/toy/AI)
 	name = "plastic handcuffs"
 	desc = "Use this to keep plastic prisoners in line."
 	MATERIAL_BULK(MAT_PLASTIC, 500) // Was list(PLASTIC = 500): a "PLASTIC" key, no such material.
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	breakouttime = 30
 	use_time = 60
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/handcuffs.dmi')
+
+CAPABILITIES(/obj/item/handcuffs/fake)
+	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/handcuffs/legcuffs/fake
 	name = "plastic legcuffs"
@@ -2600,12 +2621,14 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_ID | SLOT_EARS
 	body_parts_covered = 0
-	equip_sound = null
 
 	sprite_sheets = null
 
 	item_state = "golem"  //This is dumb and hacky but was here when I got here.
 	worn_state = "golem"  //It's basically just a coincidentally black iconstate in the file.
+
+CAPABILITIES(/obj/item/clothing/under/universalid)
+	configure(uses_power(equip = TRAIT_NONE))
 
 /*
  * Professor Who sonic driver
@@ -2616,9 +2639,11 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "sonic_driver"
 	item_state = "screwdriver_black"
-	usesound = SFX_ITEMS_SONIC_DRIVER
 	toolspeed = 1
 	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/screwdriver/sdriver)
+	configure(uses_power(use = SFX_ITEMS_SONIC_DRIVER))
 
 /*
  * Professor Who time capsule
@@ -2630,10 +2655,9 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	icon_state = "time_cap"
 	max_storage_space = ITEMSIZE_COST_TINY * 2
 	use_sound = SFX_MACHINES_CLICK
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
 CAPABILITIES(/obj/item/storage/box/timecap)
+	configure(uses_power(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	configure(storage(accepts = list(/obj/item/toy/figure), max_size = ITEMSIZE_TINY))
 
 /*
@@ -2790,10 +2814,9 @@ CAPABILITIES(/obj/item/toy/desk)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "partypopper"
 	w_class = ITEMSIZE_TINY
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 CAPABILITIES(/obj/item/toy/partypopper)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

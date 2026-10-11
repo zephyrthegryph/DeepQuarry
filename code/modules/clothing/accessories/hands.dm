@@ -14,8 +14,9 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
 		)
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
+
+CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
+	configure(uses_power(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 //bracelets
 

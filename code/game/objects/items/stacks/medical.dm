@@ -10,8 +10,6 @@
 	var/heal_brute = 0
 	var/heal_burn = 0
 	var/apply_sounds
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 	var/upgrade_to	// The type path this stack can be upgraded to.
 
@@ -100,6 +98,7 @@
 
 /// One wound is treated per lap of a repeating wait, in the order the limb listed them when the work began; the cursor says where the next lap looks.
 CAPABILITIES(/obj/item/stack/medical)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("treat_wounds", ai(), takes("patient", "limb", "wounds", "cursor"), needs(req(PROC_REF(wound_work_left), silent = TRUE)),
 		wait(PROC_REF(wound_lap_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(wound_more), after_step = PROC_REF(wound_lap_done)),
 		on_interrupt(PROC_REF(wound_interrupted)), then(PROC_REF(wound_finished)))
@@ -280,10 +279,11 @@ CAPABILITIES(/obj/item/stack/medical)
 	icon_state = "brutepack"
 	no_variants = FALSE
 	apply_sounds = SFX_EFFECTS_RIP_MIX
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 	upgrade_to = /obj/item/stack/medical/advanced/bruise_pack
+
+CAPABILITIES(/obj/item/stack/medical/bruise_pack)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 
 /obj/item/stack/medical/bruise_pack/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
@@ -315,8 +315,6 @@ CAPABILITIES(/obj/item/stack/medical)
 	heal_burn = 1
 	no_variants = FALSE
 	apply_sounds = SFX_EFFECTS_OINTMENT
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /obj/item/stack/medical/ointment/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
@@ -340,6 +338,7 @@ CAPABILITIES(/obj/item/stack/medical)
 			return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/stack/medical/ointment)
+	configure(uses_power(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	op("salve", ai(), takes("patient", "limb"), wait(1 SECOND, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(salve_failed)), then(PROC_REF(salve_done)))
 
 /obj/item/stack/medical/ointment/proc/salve_done(datum/act/op/A)
@@ -458,8 +457,6 @@ CAPABILITIES(/obj/item/stack/medical/advanced/ointment)
 	icon_state = "splint"
 	amount = 5
 	max_amount = 5
-	drop_sound = SFX_ITEMS_DROP_HAT
-	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
 // List of organs you can splint, natch.
 TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
@@ -491,6 +488,7 @@ TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, 
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/stack/medical/splint)
+	configure(uses_power(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 	op("splint", ai(), takes("patient", "limb"), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(splint_done)))
 
 /obj/item/stack/medical/splint/proc/splint_done(datum/act/op/A)

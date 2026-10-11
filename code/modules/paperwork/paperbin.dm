@@ -16,8 +16,6 @@
 	layer = OBJ_LAYER - 0.1
 	var/amount = 30					//How much paper is in the bin.
 	var/list/papers	//List of papers put in the bin for reference.
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
@@ -43,6 +41,7 @@
 	return
 
 CAPABILITIES(/obj/item/paper_bin)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper
 	op("take_paper", hand(), ungated(), needs(req_bool(PROC_REF(hand_usable), because = PROC_REF(hand_unusable_reason))),
 		asks(/datum/prompt/choice, fields = list("question" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k52", when = PROC_REF(no_custom_paper)),

@@ -17,10 +17,9 @@
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	attack_verb = list("robusted")
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
-	drop_sound = SFX_ITEMS_DROP_TOOLBOX
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
 CAPABILITIES(/obj/item/storage/toolbox)
+	configure(uses_power(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Emergency

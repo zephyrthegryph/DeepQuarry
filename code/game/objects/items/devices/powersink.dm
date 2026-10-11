@@ -22,8 +22,6 @@
 	var/PN = 0			// The power region we drain
 	var/obj/structure/cable/attached		// the attached cable
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /// 0 = off, 1 = clamped (off), 2 = operating
 /obj/item/powersink/var/mode = 0
@@ -48,19 +46,20 @@ TRACKED(/obj/item/powersink, mode)
 		set_anchored(TRUE)
 		set_mode(1)
 		act_message(user, src, others = span_notice("%U% attaches %T% to the cable!"))
-		playsound(src, tool.usesound, 50, 1)
+		playsound(src, sounds_of(tool).use, 50, 1)
 		return OP_OK
 	if(mode == 2)
 		set_anchored(FALSE)
 	set_mode(0)
 	act_message(user, src, others = span_notice("%U% detaches %T% from the cable!"))
 	set_light(0)
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	icon_state = "powersink0"
 	return OP_OK
 
 
 CAPABILITIES(/obj/item/powersink)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Drains the attached powernet while operating.
 	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))

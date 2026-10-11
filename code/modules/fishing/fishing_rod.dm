@@ -13,7 +13,6 @@
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 	attack_verb = list("whipped", "battered", "slapped", "fished", "hooked")
-	hitsound = SFX_WEAPONS_PUNCHMISS
 	applies_material_colour = TRUE
 	default_material = MAT_WOOD
 	can_dull = FALSE
@@ -57,6 +56,7 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	return rand(10 SECONDS, 20 SECONDS)
 
 CAPABILITIES(/obj/item/material/fishing_rod)
+	configure(uses_power(hit = SFX_WEAPONS_PUNCHMISS))
 	op("fishing_rod_string", stack(/obj/item/stack/cable_coil, 5), priority(OP_PRIORITY_DEFAULT), label("Use"), when(req_is(nameof(strung), FALSE)), wait(PROC_REF(string_time)), then(PROC_REF(string_done)))
 	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))

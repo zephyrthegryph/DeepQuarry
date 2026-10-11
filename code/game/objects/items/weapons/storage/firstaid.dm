@@ -15,8 +15,6 @@
 	throw_range = 8
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // 14
 	var/list/icon_variety
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 /// Rolled before init (rolls()): a kit with several looks picks one.
 /obj/item/storage/firstaid/proc/roll_icon_state(datum/roller/R)
@@ -101,8 +99,6 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 	desc = "It's an airtight container for storing medication."
 	icon_state = "pill_canister"
 	icon = 'icons/obj/chemical.dmi'
-	drop_sound = SFX_ITEMS_DROP_PILLBOTTLE
-	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	item_state_slots = list(slot_r_hand_str = "contsolid", slot_l_hand_str = "contsolid")
 	w_class = ITEMSIZE_SMALL
 	allow_quick_gather = 1
@@ -132,6 +128,7 @@ TRACKED(/obj/item/storage/pill_bottle, wrapper_color)
 		look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 
 CAPABILITIES(/obj/item/storage/pill_bottle)
+	configure(uses_power(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 	configure(storage(accepts = list(
 		/obj/item/reagent_containers/pill,
 		/obj/item/dice,

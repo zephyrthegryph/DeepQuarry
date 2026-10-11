@@ -20,8 +20,6 @@
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 400)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	// last scan results for TGUI. Replaces the legacy `temp`
 	// HTML blob with structured data.
 	var/list/last_beacons = null
@@ -31,6 +29,7 @@
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
 CAPABILITIES(/obj/item/locator)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
 	interface("Locator", title = "Persistent Signal Locator")
 	without("ui_open")

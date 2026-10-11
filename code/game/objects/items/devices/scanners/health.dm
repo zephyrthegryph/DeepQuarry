@@ -21,8 +21,6 @@
 	var/showadvscan = TRUE
 	var/guide = FALSE
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/healthanalyzer/examine(mob/user)
 	. = ..()
@@ -41,6 +39,7 @@ TRACKED(/obj/item/healthanalyzer, showadvscan)
 TRACKED(/obj/item/healthanalyzer, guide)
 
 CAPABILITIES(/obj/item/healthanalyzer)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),
 		needs(req_adjacent(), req_bool(PROC_REF(scanner_dexterity), because = PROC_REF(dexterity_refusal))), then(PROC_REF(patient_scanned)))

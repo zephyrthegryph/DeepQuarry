@@ -8,13 +8,12 @@
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 MSG_DEF_SELF(binoculars/distracted, "You are too distracted to do that.")
 
 CAPABILITIES(/obj/item/binoculars)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("zoom", in_hand(), label("Zoom"),
 		needs(req_bool(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed)))
 

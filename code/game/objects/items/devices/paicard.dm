@@ -15,8 +15,6 @@
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
 	var/screen_msg
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	// Parts and upgrades
 	var/panel_open = FALSE
@@ -52,6 +50,7 @@ TRACKED(/obj/item/paicard, emitter)
 TRACKED(/obj/item/paicard, speech_synthesizer)
 
 CAPABILITIES(/obj/item/paicard)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(paicard_after_init)))
 	ref_one(nameof(pai), /mob/living/silicon/pai)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -862,10 +861,9 @@ MSG_DEF_SELF(paicard/remove_first, span_warning("You would need to remove the in
 	desc = "It's broken scrap from a pAI card!"
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "broken"
-	pickup_sound = SFX_ITEMS_PICKUP_CARD
-	drop_sound = SFX_ITEMS_DROP_CARD
 
 CAPABILITIES(/obj/item/paiparts)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_CARD, drop = SFX_ITEMS_DROP_CARD))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
 /obj/item/paiparts/cell

@@ -156,7 +156,7 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return OP_OK
@@ -431,7 +431,7 @@ TRACKED(/obj/item/bee_pack, full)
 		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
 		return OP_OK
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return OP_OK

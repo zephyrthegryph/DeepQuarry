@@ -14,8 +14,6 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	var/sides = 2
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/fake_coin/gold
 	name = MAT_GOLD + " coin"
@@ -103,6 +101,7 @@
 	icon_state = "coin_verdantium"
 
 CAPABILITIES(/obj/item/fake_coin)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 

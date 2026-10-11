@@ -40,10 +40,11 @@
 	desc = "A collection of tiny colored bricks ready to be built into whatever you want."
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "smolematerial"
-	drop_sound = SFX_ITEMS_DROP_SMOLEMATERIAL
-	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	default_type = MAT_SMOLEBRICKS
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/stack/material/smolebricks)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SMOLEMATERIAL, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
 
 //smolebrick case to make for easy bricks.
 /obj/item/storage/smolebrickcase
@@ -56,8 +57,6 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
 	use_sound = SFX_ITEMS_STORAGE_SMOLECASE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	starts_with = list( /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks,
@@ -65,6 +64,7 @@
 	)
 
 CAPABILITIES(/obj/item/storage/smolebrickcase)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Track code
@@ -376,7 +376,9 @@ CAPABILITIES(/obj/structure/smoleruins)
 	bitesize = 1
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 2)
-	drop_sound = SFX_ITEMS_DROP_BASKETBALL
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/moon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgo3b
 	name = "Virgo 3B"
@@ -387,7 +389,9 @@ CAPABILITIES(/obj/structure/smoleruins)
 	trash = /obj/item/bikehorn/tinytether
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2, "tang" = 2)
-	drop_sound = SFX_ITEMS_DROP_BASKETBALL
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/phoron
 	name = "phoron giant"
@@ -398,7 +402,9 @@ CAPABILITIES(/obj/structure/smoleruins)
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("spicy" = 2)
-	drop_sound = SFX_ITEMS_DROP_BASKETBALL
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/phoron)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	name = "Virgo Prime"
@@ -409,7 +415,9 @@ CAPABILITIES(/obj/structure/smoleruins)
 	trash = /obj/item/trash/candychunk
 	nutriment_amt = 2
 	nutriment_desc = list("salty" = 2)
-	drop_sound = SFX_ITEMS_DROP_BASKETBALL
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BASKETBALL))
 
 /obj/item/storage/bagoplanets
 	name = "bag o' planets"
@@ -418,8 +426,6 @@ CAPABILITIES(/obj/structure/smoleruins)
 	icon_state = "sp_storage"
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // most code copied from toolbox
-	drop_sound = SFX_ITEMS_DROP_FOOD
-	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	starts_with = list(/obj/item/reagent_containers/food/snacks/snackplanet/phoron,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgo3b,/obj/item/reagent_containers/food/snacks/snackplanet/moon,
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
@@ -427,4 +433,5 @@ CAPABILITIES(/obj/structure/smoleruins)
 
 
 CAPABILITIES(/obj/item/storage/bagoplanets)
+	configure(uses_power(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 	configure(storage(max_size = ITEMSIZE_NORMAL))

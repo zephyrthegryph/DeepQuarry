@@ -16,8 +16,6 @@ LINEN BINS
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 /// Custom nouns to act as the subject of dreams.
@@ -39,6 +37,7 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	return OP_OK
 
 CAPABILITIES(/obj/item/bedsheet)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	op("use_item", item(/obj/item), when(req_bool(PROC_REF(held_is_sharp))), begins(MSG(bedsheet/cutting)), wait(5 SECONDS), then(PROC_REF(cut_up)))
 	op("lay_out", in_hand(), label("Lay out"), then(PROC_REF(bedsheet_self)))
 

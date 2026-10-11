@@ -40,7 +40,7 @@ CAPABILITIES(/obj/structure/window/maintenance_panel)
 
 /obj/structure/window/maintenance_panel/proc/weld_started(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 75, 1)
+	playsound(src, sounds_of(tool).use, 75, 1)
 
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(datum/act/op/A)
 	set_anchored(!anchored)

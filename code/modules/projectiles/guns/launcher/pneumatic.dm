@@ -199,19 +199,19 @@ TRACKED(/obj/item/cannonframe, buildstate)
 	if(buildstate == 1)
 		if(T.remove_fuel(0,user))
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
+			playsound(src, sounds_of(tool).use, 100, 1)
 			to_chat(user, span_notice("You weld the pipe into place."))
 			set_buildstate(buildstate + 1)
 	if(buildstate == 3)
 		if(T.remove_fuel(0,user))
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
+			playsound(src, sounds_of(tool).use, 100, 1)
 			to_chat(user, span_notice("You weld the metal chassis together."))
 			set_buildstate(buildstate + 1)
 	if(buildstate == 5)
 		if(T.remove_fuel(0,user))
 			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
+			playsound(src, sounds_of(tool).use, 100, 1)
 			to_chat(user, span_notice("You weld the valve into place."))
 			replace_with(src, /obj/item/gun/launcher/pneumatic)
 	return OP_OK

@@ -409,6 +409,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 //Secbot Construction
 
 CAPABILITIES(/obj/item/clothing/head/helmet)
+	configure(uses_power(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("helmet_secbot_signaler", item(/obj/item/assembly/signaler), label("Add signaler"), then(PROC_REF(helmet_secbot_signaler)))
 
 /// Old attackby: a secured signaler turns a plain helmet into a secbot assembly.

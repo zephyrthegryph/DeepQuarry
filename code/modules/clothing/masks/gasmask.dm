@@ -12,8 +12,10 @@
 	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
 	armor_spec = "bio=75"
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/mask/gas)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2O))
 

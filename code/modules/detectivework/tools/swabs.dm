@@ -5,8 +5,9 @@
 	var/gsr = 0
 	var/list/dna
 	var/used
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
+
+CAPABILITIES(/obj/item/forensics/swab)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/forensics/swab/proc/is_used()
 	return used

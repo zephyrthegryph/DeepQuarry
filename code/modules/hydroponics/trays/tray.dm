@@ -685,7 +685,7 @@ TRACKED(/obj/machinery/portable_atmospherics/hydroponics, labelled)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(A.actor, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 

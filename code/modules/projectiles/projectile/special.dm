@@ -14,12 +14,14 @@
 	combustion = FALSE
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/ion
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
-	hitsound = SFX_WEAPONS_IONRIFLE
 
 	var/sev1_range = 0
 	var/sev2_range = 1
 	var/sev3_range = 1
 	var/sev4_range = 1
+
+CAPABILITIES(/obj/item/projectile/ion)
+	configure(uses_power(hit = SFX_WEAPONS_IONRIFLE))
 
 /obj/item/projectile/ion/on_impact(atom/target)
 	empulse(target, sev1_range, sev2_range, sev3_range, sev4_range)

@@ -6,8 +6,6 @@
 	var/label = null
 	var/labels_left = 30
 	var/mode = 0	//off or on.
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/hand_labeler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -64,6 +62,7 @@
 	A.name = "[A.name] ([label])"
 
 CAPABILITIES(/obj/item/hand_labeler)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	op("labeler_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

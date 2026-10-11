@@ -17,10 +17,9 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	throwforce = 2
 	throw_speed = 4
 	throw_range = 20
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/taperecorder)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// A recorder hears what is said around it (the listening registry).
 	membership(joins = REGISTRY_LISTENING_OBJECTS)
 	// The tape fills one second at a time while recording.

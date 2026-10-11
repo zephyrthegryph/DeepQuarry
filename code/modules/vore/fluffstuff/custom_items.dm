@@ -176,7 +176,9 @@
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
-	hitsound = SFX_WEAPONS_BLADESLICE
+
+CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
@@ -490,7 +492,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = SFX_ITEMS_DROP_HELM
+
+CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
+	configure(uses_power(drop = SFX_ITEMS_DROP_HELM))
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
@@ -1443,9 +1447,10 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	desc = "This doesn't quite look like what it really is."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "claws"
-	drop_sound = null
-	pickup_sound = null
 	material_total = 0
+
+CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
+	configure(uses_power(drop = TRAIT_NONE, pickup = TRAIT_NONE))
 
 //Coolcrow420 - Jade Davis
 /obj/item/stamp/fluff/jade_horror

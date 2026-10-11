@@ -16,8 +16,6 @@
 	w_class = ITEMSIZE_SMALL
 	flags = NOCONDUCT
 	unacidable = TRUE //glass doesn't dissolve in acid
-	drop_sound = SFX_ITEMS_DROP_BOTTLE
-	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 	resistance_flags = ACID_PROOF
 
 	var/label_text = ""
@@ -62,6 +60,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
 	glass_handling()
 	glass_container()
 
@@ -178,9 +177,10 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	center_of_mass_y = 11
 	material_template = /datum/material_template/container
 	material_total = 500
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	var/rating = 1
+
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/reagent_containers/glass/beaker/get_rating()
 	return rating
@@ -281,8 +281,6 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	volume = 120
 	flags = NONE
 	unacidable = FALSE
-	drop_sound = SFX_ITEMS_DROP_HELM
-	pickup_sound = SFX_ITEMS_PICKUP_HELM
 
 /// The lid, while it is on.
 /obj/item/reagent_containers/glass/bucket/draw(datum/look/look)
@@ -291,6 +289,7 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket)
+	configure(uses_power(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added)))
 	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed)))
 	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"),
@@ -351,11 +350,10 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	volume = 120
 	flags = NONE
 	unacidable = FALSE
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))
 	extend("sensor", needs(req(PROC_REF(electronics_welcome))))
 
@@ -391,8 +389,9 @@ CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle)
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "pint_mug"
 	MATERIAL_BULK(MAT_WOOD, 50)
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
+
+CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/reagent_containers/glass/beaker/vial/sustenance
 	name = "vial (artificial sustenance)"
@@ -408,8 +407,9 @@ CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle)
 	w_class = ITEMSIZE_SMALL
 	flags = NONE
 	MATERIAL_BULK(MAT_STEEL, 50)
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_DRINKGLASS
+
+CAPABILITIES(/obj/item/reagent_containers/glass/kettle)
+	configure(uses_power(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
 
 
 

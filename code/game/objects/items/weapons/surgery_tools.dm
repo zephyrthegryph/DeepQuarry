@@ -18,8 +18,9 @@
 	desc = "This shouldn't be here, ahelp it."
 	icon = 'icons/obj/surgery.dmi'
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
-	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
+
+CAPABILITIES(/obj/item/surgical)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
 
 /obj/item/surgical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
@@ -33,7 +34,9 @@
 	name="bioregenerator"
 	desc="A special tool used in surgeries which can pull toxins from and restore oxygen to organic tissue as well as recreate missing biological structures to allow otherwise irreperable flesh to be mended."
 	icon_state="bioregen"
-	drop_sound = SFX_ITEMS_DROP_SCRAP
+
+CAPABILITIES(/obj/item/surgical/bioregen)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SCRAP))
 
 /*
  * Retractor
@@ -44,7 +47,9 @@
 	desc = "Retracts stuff."
 	icon_state = "retractor"
 	material_total = 10000 + 5000
-	drop_sound = SFX_ITEMS_DROP_SCRAP
+
+CAPABILITIES(/obj/item/surgical/retractor)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SCRAP))
 
 /*
  * Hemostat
@@ -55,8 +60,9 @@
 	icon_state = "hemostat"
 	material_total = 5000 + 2500
 	attack_verb = list("attacked", "pinched")
-	hitsound = SFX_ITEMS_WIRECUTTER
-	drop_sound = SFX_ITEMS_DROP_SCRAP
+
+CAPABILITIES(/obj/item/surgical/hemostat)
+	configure(uses_power(hit = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_SCRAP))
 
 /*
  * Cautery
@@ -67,7 +73,9 @@
 	icon_state = "cautery"
 	material_total = 5000 + 2500
 	attack_verb = list("burnt")
-	drop_sound = SFX_ITEMS_DROP_SCRAP
+
+CAPABILITIES(/obj/item/surgical/cautery)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SCRAP))
 
 /*
  * Surgical Drill
@@ -76,12 +84,13 @@
 	name = "surgical drill"
 	desc = "You can drill using this item. You dig?"
 	icon_state = "drill"
-	hitsound = SFX_WEAPONS_CIRCSAWHIT
 	material_total = 15000 + 10000
 	force = 15.0
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("drilled")
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+
+CAPABILITIES(/obj/item/surgical/surgicaldrill)
+	configure(uses_power(hit = SFX_WEAPONS_CIRCSAWHIT, drop = SFX_ITEMS_DROP_ACCESSORY))
 
 /*
  * Scalpel
@@ -101,9 +110,10 @@
 	throw_range = 5
 	material_total = 10000 + 5000
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = SFX_WEAPONS_BLADESLICE
-	drop_sound = SFX_ITEMS_DROP_KNIFE
 	var/clamp_chance = 0 // chance that the scalpel will perform cautery on its own
+
+CAPABILITIES(/obj/item/surgical/scalpel)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_KNIFE))
 
 /*
  * Researchable Scalpels
@@ -113,26 +123,32 @@
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks basic and could be improved."
 	icon_state = "scalpel_laser1"
 	injury_kind = INJURY_BURN
-	hitsound = SFX_WEAPONS_BLADE1
 	clamp_chance = 75
+
+CAPABILITIES(/obj/item/surgical/scalpel/laser1)
+	configure(uses_power(hit = SFX_WEAPONS_BLADE1))
 
 /obj/item/surgical/scalpel/laser2
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks somewhat advanced."
 	icon_state = "scalpel_laser2"
 	injury_kind = INJURY_BURN
-	hitsound = SFX_WEAPONS_BLADE1
 	force = 12.0
 	clamp_chance = 85
+
+CAPABILITIES(/obj/item/surgical/scalpel/laser2)
+	configure(uses_power(hit = SFX_WEAPONS_BLADE1))
 
 /obj/item/surgical/scalpel/laser3
 	name = "laser scalpel"
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks to be the pinnacle of precision energy cutlery!"
 	icon_state = "scalpel_laser3"
 	injury_kind = INJURY_BURN
-	hitsound = SFX_WEAPONS_BLADE1
 	force = 15.0
 	clamp_chance = 95
+
+CAPABILITIES(/obj/item/surgical/scalpel/laser3)
+	configure(uses_power(hit = SFX_WEAPONS_BLADE1))
 
 /obj/item/surgical/scalpel/manager
 	name = "incision management system"
@@ -156,8 +172,6 @@
 	name = "circular saw"
 	desc = "For heavy duty cutting."
 	icon_state = "saw"
-	hitsound = SFX_WEAPONS_CIRCSAWHIT
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
 	force = 15.0
 	w_class = ITEMSIZE_NORMAL
 	throwforce = 9.0
@@ -169,18 +183,23 @@
 	edge = TRUE
 	injury_kind = INJURY_CUT
 
+CAPABILITIES(/obj/item/surgical/circular_saw)
+	configure(uses_power(hit = SFX_WEAPONS_CIRCSAWHIT, drop = SFX_ITEMS_DROP_ACCESSORY))
+
 /obj/item/surgical/circular_saw/manager
 	name = "energetic bone diverter"
 	desc = "For heavy duty cutting (and sealing), with science!"
 	icon_state = "adv_saw"
 	item_state = "saw3"
-	hitsound = SFX_WEAPONS_EMITTER2
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	w_class = ITEMSIZE_NORMAL
 	material_total = 25000 + 20000
 	attack_verb = list("attacked", "slashed", "seared", "cut")
 	toolspeed = 0.75
+
+CAPABILITIES(/obj/item/surgical/circular_saw/manager)
+	configure(uses_power(hit = SFX_WEAPONS_EMITTER2))
 
 /*
  * Misc Tools
@@ -191,7 +210,9 @@
 	icon_state = "bone-gel"
 	force = 0
 	throwforce = 1.0
-	drop_sound = SFX_ITEMS_DROP_BOTTLE
+
+CAPABILITIES(/obj/item/surgical/bonegel)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOTTLE))
 
 /obj/item/surgical/FixOVein
 	name = "FixOVein"
@@ -199,7 +220,9 @@
 	icon_state = "fixovein"
 	force = 0
 	throwforce = 1.0
-	drop_sound = SFX_ITEMS_DROP_BOTTLE
+
+CAPABILITIES(/obj/item/surgical/FixOVein)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOTTLE))
 
 /obj/item/surgical/bonesetter
 	name = "bone setter"
@@ -210,7 +233,9 @@
 	throw_speed = 3
 	throw_range = 5
 	attack_verb = list("attacked", "hit", "bludgeoned")
-	drop_sound = SFX_ITEMS_DROP_SCRAP
+
+CAPABILITIES(/obj/item/surgical/bonesetter)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SCRAP))
 
 /obj/item/surgical/bone_clamp
 	name = "bone clamp"

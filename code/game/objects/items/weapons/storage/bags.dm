@@ -31,8 +31,9 @@
 	display_contents_with_number = 0 // UNStABLE AS FuCK, turn on when it stops crashing clients
 	use_to_pickup = TRUE
 	slot_flags = SLOT_BELT
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
+
+CAPABILITIES(/obj/item/storage/bag)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 
 // -----------------------------
 //          Trash bag
@@ -43,8 +44,6 @@
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "trashbag0"
 	item_state_slots = list(slot_r_hand_str = "trashbag", slot_l_hand_str = "trashbag")
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
-	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_SMALL * 21
@@ -52,6 +51,7 @@
 
 
 CAPABILITIES(/obj/item/storage/bag/trash)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 /obj/item/storage/bag/trash/draw(datum/look/look)
@@ -85,13 +85,12 @@ CAPABILITIES(/obj/item/storage/bag/trash/holding)
 	desc = "It's a very flimsy, very noisy alternative to a bag."
 	icon = 'icons/obj/trash.dmi'
 	icon_state = "plasticbag"
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
-	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 	w_class = ITEMSIZE_LARGE
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/storage/bag/plasticbag)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 // -----------------------------

@@ -22,7 +22,6 @@
 	throwforce = 5
 	throw_speed = 4
 	armor_penetration = 10
-	hitsound = SFX_WEAPONS_BLADESLICE
 	attack_verb = list("smashed", "crushed", "cleaved", "chopped", "pulped")
 	sharp = FALSE //crushing damage
 	edge = FALSE
@@ -63,6 +62,7 @@ TRACKED(/obj/item/kinetic_crusher, integ_light_on)
 
 
 CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 
@@ -207,7 +207,6 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 	// did someone say single target damage
 	name = "\improper proto-kinetic gear"
 	desc = "A pair of scaled-down proto-kinetic crusher destabilizer modules shoved into gauntlets and greaves, used by those who wish to spit in the eyes of God."
-	hitsound = SFX_WEAPONS_RESONATOR_BLAST
 	embed_chance = 0
 	icon_state = "crusher-hands"
 	item_state = "c-gauntlets"
@@ -224,6 +223,7 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 	slot_flags = null
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
+	configure(uses_power(hit = SFX_WEAPONS_RESONATOR_BLAST))
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(1 SECOND, then(PROC_REF(gauntlets_step)), when = nameof(gauntlets_worn))

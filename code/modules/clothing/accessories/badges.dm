@@ -82,8 +82,9 @@ CAPABILITIES(/obj/item/clothing/accessory/badge)
 	badge_string = "Corporate Reporter"
 	w_class = ITEMSIZE_TINY
 
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+CAPABILITIES(/obj/item/clothing/accessory/badge/press)
+	configure(uses_power(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+
 
 /obj/item/clothing/accessory/badge/press/independent
 	name = "press pass"

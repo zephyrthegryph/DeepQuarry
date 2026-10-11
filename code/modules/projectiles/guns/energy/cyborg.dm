@@ -152,7 +152,6 @@
 
 /obj/item/melee/robotic/jaws
 	icon = 'icons/mob/dogborg_vr.dmi'
-	hitsound = SFX_WEAPONS_BITE
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	pry = 1
@@ -160,6 +159,9 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
+
+CAPABILITIES(/obj/item/melee/robotic/jaws)
+	configure(uses_power(hit = SFX_WEAPONS_BITE))
 
 /obj/item/melee/robotic/jaws/big
 	name = "combat jaws"
@@ -212,7 +214,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				desc = "Now this is a knife!"
 				icon = 'icons/obj/tools_robot.dmi'
 				icon_state = "claymore_cyborg"
-				hitsound = SFX_WEAPONS_SLICE
+				set_hitsound(SFX_WEAPONS_SLICE)
 				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
 				force = 30
 				armor_penetration = 25
@@ -221,7 +223,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				name = "self defense knife"
 				icon = 'icons/obj/tools_robot.dmi'
 				icon_state = "knife_cyborg"
-				hitsound = SFX_WEAPONS_SLASH
+				set_hitsound(SFX_WEAPONS_SLASH)
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."
 				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
 				force = 15
@@ -237,11 +239,13 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	desc = "Shocking!"
 	force = 15
 	throwforce = 0
-	hitsound = SFX_WEAPONS_GENHIT1
 	attack_verb = list("hit")
 	w_class = ITEMSIZE_NORMAL
 	var/charge_cost = 15
 	var/dogborg = FALSE
+
+CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
+	configure(uses_power(hit = SFX_WEAPONS_GENHIT1))
 
 /obj/item/melee/robotic/borg_combat_shocker/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc
@@ -306,7 +310,6 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	throwforce = 0 //This shouldn't be thrown in the first place.
-	hitsound = SFX_WEAPONS_BLADE1
 	attack_verb = list("slashed", "stabbed", "jabbed", "mauled", "sliced")
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
@@ -314,6 +317,7 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	var/lcolor = "#38e541"
 
 CAPABILITIES(/obj/item/melee/robotic/blade)
+	configure(uses_power(hit = SFX_WEAPONS_BLADE1))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
 		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "confirm"),
@@ -440,8 +444,6 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 	edge = FALSE
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	attack_verb = list("beaten")
 	var/stunforce = 0
 	var/agonyforce = 60
@@ -470,6 +472,7 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 TRACKED(/obj/item/melee/robotic/baton, status)
 
 CAPABILITIES(/obj/item/melee/robotic/baton)
+	configure(uses_power(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
 	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
 	op("item_pass", item(/obj/item), when(req(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())

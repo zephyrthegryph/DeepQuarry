@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
-	hitsound = SFX_WEAPONS_PIERCE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -160,6 +159,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 CAPABILITIES(/obj/item/projectile)
+	configure(uses_power(hit = SFX_WEAPONS_PIERCE))
 	owns_one(nameof(trajectory), /datum/point/vector)
 	owns_many(nameof(beam_segments))
 
@@ -791,11 +791,11 @@ CAPABILITIES(/obj/item/projectile)
 
 	//hit messages
 	if(silenced)
-		playsound(target_mob, hitsound, 5, 1, -1)
+		playsound(target_mob, sounds_of(src).hit, 5, 1, -1)
 		to_chat(target_mob, span_critical("You've been hit in the [impacted_organ] by \the [src]!"))
 	else
 		var/volume = vol_by_damage()
-		playsound(target_mob, hitsound, volume, 1, -1)
+		playsound(target_mob, sounds_of(src).hit, volume, 1, -1)
 		// X has fired Y is now given by the guns so you cant tell who shot you if you could not see the shooter
 		act_message(target_mob, src, MSG_SELF(span_critical("You've been hit in the [impacted_organ] by %T%!")), \
 			MSG_OTHERS(span_danger("%U% was hit in the [impacted_organ] by %T%!")))

@@ -3,19 +3,21 @@
 	icon_state = "sheet-phoron"
 	default_type = MAT_PHORON
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	coin_type = /obj/item/coin/phoron
 	resistance_flags = FLAMMABLE
+
+CAPABILITIES(/obj/item/stack/material/phoron)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/diamond
 	name = MAT_DIAMOND
 	icon_state = "sheet-diamond"
 	default_type = MAT_DIAMOND
 	no_variants = FALSE // Variants added
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	coin_type = /obj/item/coin/diamond
+
+CAPABILITIES(/obj/item/stack/material/diamond)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/painite
 	name = MAT_PAINITE

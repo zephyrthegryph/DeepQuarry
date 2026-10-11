@@ -5,15 +5,19 @@
 	force = 3
 	can_hold_knife = 1
 	step_volume_mod = 1.2
-	drop_sound = SFX_ITEMS_DROP_BOOTS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS))
 
 /obj/item/clothing/shoes/boots/cowboy
 	name = "cowboy boots"
 	desc = "Lacking a durasteel horse to ride."
 	icon_state = "cowboy"
-	drop_sound = SFX_ITEMS_DROP_LEATHER
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/cowboy)
+	configure(uses_power(drop = SFX_ITEMS_DROP_LEATHER))
 
 /obj/item/clothing/shoes/boots/cowboy/classic
 	name = "classic cowboy boots"
@@ -50,8 +54,9 @@
 	icon_state = "jackboots"
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 	siemens_coefficient = 0.7
-	drop_sound = SFX_ITEMS_DROP_BOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/jackboots)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/jackboots/toeless
 	name = "toe-less jackboots"
@@ -106,8 +111,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/jackboots/toeless/thigh, fit_spec, nul
 	icon_state = "workboots"
 	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 	siemens_coefficient = 0.7
-	drop_sound = SFX_ITEMS_DROP_BOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_BOOTS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/workboots)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 /obj/item/clothing/shoes/boots/workboots/toeless
 	name = "toe-less workboots"

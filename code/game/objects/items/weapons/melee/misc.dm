@@ -7,8 +7,10 @@
 	throwforce = 7
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("flogged", "whipped", "lashed", "disciplined")
-	hitsound = SFX_WEAPONS_WHIP
 	reach = 2
+
+CAPABILITIES(/obj/item/melee/chainofcommand)
+	configure(uses_power(hit = SFX_WEAPONS_WHIP))
 
 /obj/item/melee/chainofcommand/curator_whip
 	name = "leather whip"
@@ -74,11 +76,11 @@ CAPABILITIES(/obj/item/melee/umbrella/random)
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = SFX_WEAPONS_BLADESLICE
 	can_speak = 1
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 CAPABILITIES(/obj/item/melee/cursedblade)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
 	owns_many(nameof(voice_mobs))
 
 
@@ -120,7 +122,9 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	attack_verb = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")
-	hitsound = SFX_WEAPONS_BLADESLICE
+
+CAPABILITIES(/obj/item/melee/rapier)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/melee/hammer
 	name = "claw hammer"

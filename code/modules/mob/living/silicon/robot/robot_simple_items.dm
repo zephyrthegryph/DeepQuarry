@@ -146,56 +146,68 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 /obj/item/tool/screwdriver/cyborg
 	name = "powered screwdriver"
 	desc = "An electrical screwdriver, designed to be both precise and quick."
-	usesound = SFX_ITEMS_DRILL_USE_2
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_screwdriver"
 	random_color = FALSE
 	toolspeed = 0.5
 
+CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
+	configure(uses_power(use = SFX_ITEMS_DRILL_USE_2))
+
 /obj/item/tool/crowbar/cyborg
 	name = "hydraulic crowbar"
 	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
-	usesound = SFX_ITEMS_JAWS_PRY
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
 	force = 10
 	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/tool/crowbar/cyborg)
+	configure(uses_power(use = SFX_ITEMS_JAWS_PRY))
 
 /obj/item/tool/crowbar/cyborg/jaws
 	name = "puppy jaws"
 	desc = "The jaws of a small dog. Still strong enough to pry things."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "smalljaws_textless"
-	hitsound = SFX_WEAPONS_BITE
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	force = 15
+
+CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
+	configure(uses_power(hit = SFX_WEAPONS_BITE))
 
 /obj/item/weldingtool/electric/mounted/cyborg
 	name = "integrated electric welding tool"
 	desc = "An advanced welder designed to be used in robotic systems."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "indwelder_cyborg"
-	usesound = SFX_ITEMS_WELDER2
 	toolspeed = 0.5
 	welding = FALSE
 	no_passive_burn = TRUE
+
+CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
+	configure(uses_power(use = SFX_ITEMS_WELDER2))
 
 /obj/item/tool/wirecutters/cyborg
 	name = "wirecutters"
 	desc = "This cuts wires. With science."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_cutters"
-	usesound = SFX_ITEMS_JAWS_CUT
 	random_color = FALSE
 	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
+	configure(uses_power(use = SFX_ITEMS_JAWS_CUT))
 
 /obj/item/tool/wrench/cyborg
 	name = "automatic wrench"
 	desc = "An advanced robotic wrench. Can be found in industrial synthetic shells."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_wrench"
-	usesound = SFX_ITEMS_DRILL_USE_2
 	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/tool/wrench/cyborg)
+	configure(uses_power(use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/multitool/cyborg
 	name = "multitool"
@@ -580,8 +592,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 
 	var/mob/living/silicon/robot/our_robot
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -590,6 +600,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(current_pocket))
 	ref_one(nameof(our_robot))
 	ref_one(nameof(held_item), /obj/item)

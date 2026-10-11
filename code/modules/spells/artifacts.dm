@@ -10,9 +10,9 @@
 	throwforce = 10
 	injury_kind = INJURY_BURN
 	force = 10
-	hitsound = SFX_ITEMS_WELDER2
 
 CAPABILITIES(/obj/item/scrying)
+	configure(uses_power(hit = SFX_ITEMS_WELDER2))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

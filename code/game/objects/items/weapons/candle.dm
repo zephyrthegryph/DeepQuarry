@@ -3,8 +3,6 @@
 	desc = "a red pillar candle. Its specially-formulated fuel-oxidizer wax mixture allows continued combustion in airless environments."
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	w_class = ITEMSIZE_TINY
 	light_color = "#E09D37"
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
@@ -29,6 +27,7 @@ TRACKED(/obj/item/flame/candle, wax)
 	return "[icon_type][appearance_wax_stage()][lit ? "_lit" : ""]"
 
 CAPABILITIES(/obj/item/flame/candle)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
 	op("light_from", item(/obj/item), passes(), when(req_bool(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))

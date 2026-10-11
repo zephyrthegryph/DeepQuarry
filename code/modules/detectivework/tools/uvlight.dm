@@ -15,13 +15,12 @@
 
 	var/range = 3
 	var/step_alpha = 50
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/uv_light/var/on = FALSE
 TRACKED(/obj/item/uv_light, on)
 
 CAPABILITIES(/obj/item/uv_light)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))
 

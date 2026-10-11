@@ -10,6 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(communicating))
 	every(2 SECONDS, then(PROC_REF(communicator_step)), when = PROC_REF(has_connections))
 	after_init(5 SECONDS, then(PROC_REF(register_to_holder)))

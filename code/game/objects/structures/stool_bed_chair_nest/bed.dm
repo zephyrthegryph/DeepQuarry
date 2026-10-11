@@ -187,7 +187,7 @@ CAPABILITIES(/obj/structure/bed)
 	return can_unpad
 
 /obj/structure/bed/proc/unpadded(datum/act/op/A)
-	playsound(src, A.held.usesound, 100, 1)
+	playsound(src, sounds_of(A.held).use, 100, 1)
 	remove_padding()
 	return OP_OK
 
@@ -195,7 +195,7 @@ CAPABILITIES(/obj/structure/bed)
 	return can_dismantle
 
 /obj/structure/bed/proc/taken_apart(datum/act/op/A)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	dismantle()
 	consume(src, A.actor)
 	return OP_OK
@@ -305,10 +305,9 @@ CAPABILITIES(/obj/structure/bed/roller)
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 CAPABILITIES(/obj/item/roller)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
 	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req_bool(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
 

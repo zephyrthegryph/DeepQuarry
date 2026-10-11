@@ -123,7 +123,7 @@ CAPABILITIES(/obj/machinery/space_heater)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the hatch on %T%.")), \
 		MSG_OTHERS(span_notice("%U% [panel_open ? "opens" : "closes"] the hatch on %T%.")))
 	if(!panel_open && user.check_current_machine(src))

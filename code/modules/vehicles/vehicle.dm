@@ -144,7 +144,7 @@ CAPABILITIES(/obj/vehicle)
 		return OP_OK
 	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/vehicle/proc/crowbar_used(datum/act/op/A)
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/vehicle)
 		return OP_OK
 	repair_damage(10)
 	user.setClickCooldown(user.get_attack_speed(tool))
-	playsound(src, welder.usesound, 50, TRUE)
+	playsound(src, sounds_of(welder).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_blue("You repair %T%!")), MSG_OTHERS(span_red("%U% repairs %T%!")))
 	return OP_OK
 

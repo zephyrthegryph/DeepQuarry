@@ -57,7 +57,7 @@ CAPABILITIES(/obj/structure/bookcase)
 /obj/structure/bookcase/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 100, 1)
+	playsound(src, sounds_of(tool).use, 100, 1)
 	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
 	set_anchored(!anchored)
 	return OP_OK
@@ -198,8 +198,6 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	var/occult_tier = 0 //If the book is an occult book or not and how strong it is. Used for attack_self
 	///Var for attack_self chain
 	var/special_handling = FALSE
-	drop_sound = SFX_ITEMS_DROP_BOOK
-	pickup_sound = SFX_ITEMS_PICKUP_BOOK
 	resistance_flags = FLAMMABLE
 
 /// Old attack_self: read the book. Occult and specially handled books leave it to their own self-use.
@@ -236,6 +234,7 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/book)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BOOK, pickup = SFX_ITEMS_PICKUP_BOOK))
 	interface("Book")
 	without("ui_open")
 	ui_shape(title = bool(), author = bool(), content = bool())

@@ -115,7 +115,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	if(suspension_field)
 		return OP_OK
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
 	if(anchored)
 		desc = "Its tracks are held firmly in place with securing bolts."

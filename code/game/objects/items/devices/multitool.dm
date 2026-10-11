@@ -15,8 +15,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	drop_sound = SFX_ITEMS_DROP_MULTITOOL
-	pickup_sound = SFX_ITEMS_PICKUP_MULTITOOL
 
 
 	var/mode_index = 1
@@ -35,6 +33,7 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 TRACKED(/obj/item/multitool, uplink)
 
 CAPABILITIES(/obj/item/multitool)
+	configure(uses_power(drop = SFX_ITEMS_DROP_MULTITOOL, pickup = SFX_ITEMS_PICKUP_MULTITOOL))
 	ref_one(nameof(selected_io), /datum/integrated_io)
 	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu
 	op("menu", in_hand(), when(cond_not(nameof(uplink))),

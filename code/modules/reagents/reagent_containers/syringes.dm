@@ -27,8 +27,6 @@
 	var/list/targets
 	/// Owned list of /datum/syringe_contamination: the contagion copies picked up from each target. Lazy.
 	var/list/viruses
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /// Set once it has been injected into someone: from then on it gets dirtier over time, until it is as dirty as it gets.
 /obj/item/reagent_containers/syringe/var/used = FALSE
@@ -51,6 +49,7 @@ TRACKED(/obj/item/reagent_containers/syringe, mode)
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
 CAPABILITIES(/obj/item/reagent_containers/syringe)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

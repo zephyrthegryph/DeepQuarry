@@ -6,11 +6,13 @@
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
-	hitsound = SFX_WEAPONS_ZAPBANG
 	hud_state = "plasma"
 	hud_state_empty = "battery_empty"
 
 	var/flash_strength = 10
+
+CAPABILITIES(/obj/item/projectile/energy)
+	configure(uses_power(hit = SFX_WEAPONS_ZAPBANG))
 
 //releases a burst of light on impact or after travelling a distance
 /obj/item/projectile/energy/flash
@@ -178,10 +180,12 @@
 	agony = 10
 	armor_penetration = 25	// It's acid
 	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
-	hitsound = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/energy/acid)
+	configure(uses_power(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin
 	name = "neurotoxic spit"
@@ -191,10 +195,12 @@
 	agony = 60 // lowered agony damage
 	armor_penetration = 25	// It's acid-based
 	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
-	hitsound = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
+	configure(uses_power(hit = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL))
 
 /obj/item/projectile/energy/neurotoxin/toxic //New alien mob projectile to match the player-variant's projectiles.
 	name = "neurotoxic spit"
@@ -355,8 +361,10 @@ CAPABILITIES(/obj/item/projectile/energy/anomaly)
 	muzzle_type = /obj/effect/projectile/muzzle/vepr
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
-	hitsound = SFX_WEAPONS_SEAR
 	hud_state = "laser_overcharge"
+
+CAPABILITIES(/obj/item/projectile/energy/plasma/vepr)
+	configure(uses_power(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/energy/phase
 	name = "phase wave"

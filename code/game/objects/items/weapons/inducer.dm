@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/inducer)
 /obj/item/inducer/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
 	return OP_OK

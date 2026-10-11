@@ -8,8 +8,6 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 200)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	flags = NOBLUDGEON
 
 /// Re-checked on the answer: the original device is held and victim remains adjacent and alive.
@@ -118,6 +116,7 @@
 	return OP_FAILED
 
 CAPABILITIES(/obj/item/bodysnatcher)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("activate", in_hand(), then(PROC_REF(activated)))
 	// The swap itself, started by swap_confirmed() once the user agreed; the victim is passed in.
 	op("swap", ai(), takes("victim"), wait(35 SECONDS), then(PROC_REF(attack_timed_done)))

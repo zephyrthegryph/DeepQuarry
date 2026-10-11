@@ -122,8 +122,6 @@
 	desc = "A bleached bone. It's very non-descript and its hard to tell what species or part of the body it came from."
 	icon = 'icons/obj/bones_vr.dmi'
 	icon_state = "generic-1"
-	drop_sound = SFX_ITEMS_DROP_WOODEN   //sounds kinda like a bone
-	pickup_sound = SFX_ITEMS_PICKUP_WOODWEAPON
 	force = 0
 	throwforce = 0
 	item_state = "bone"
@@ -135,8 +133,9 @@
 	name = "ruined component"
 	desc = "A ruined component. It seems to have come from some sort of robotic entity, but there's no telling what kind."
 	icon_state = "synth-1"
-	drop_sound = SFX_ITEMS_DROP_DEVICE   //not organic bones, so they get different sounds
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/digestion_remains/synth)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// Who digested whom (its constructor params, dropped once noted).
 /obj/item/digestion_remains/var/tmp/mob/living/pred_at_make
@@ -155,6 +154,7 @@
 		update_transform()
 
 CAPABILITIES(/obj/item/digestion_remains)
+	configure(uses_power(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODWEAPON))
 	op("remains_crumble_self", in_hand(), stance(I_HURT), label("Crumble"), then(PROC_REF(remains_crumble_self)))
 	param(nameof(pred_at_make), pos = 1, keep = FALSE)
 	param(nameof(prey_at_make), pos = 2, apply = PROC_REF(note_meal), keep = FALSE)

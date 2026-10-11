@@ -26,9 +26,9 @@
 	var/base_icon
 	var/base_name
 	var/unwielded_force_divisor = 0.25
-	hitsound = SFX_SWING_HIT
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/material/twohanded)
+	configure(uses_power(hit = SFX_SWING_HIT, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 TRACKED(/obj/item/material/twohanded, wielded)
 
@@ -100,8 +100,9 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	applies_material_colour = 0
 	can_cleave = TRUE
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
+
+CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(uses_power(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
@@ -157,14 +158,15 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	edge = FALSE
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	hitsound = SFX_WEAPONS_BLADESLICE
-	mob_throw_hit_sound =  SFX_WEAPONS_PIERCE
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 	default_material = MAT_GLASS
 	applies_material_colour = 0
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
 	reach = 2 // Spears are long.
 	attackspeed = 14
+
+CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(uses_power(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
 //This is mostly for centaurs.
 /obj/item/material/twohanded/spear/lance
@@ -213,7 +215,6 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	unwielded_force_divisor = 0.25
 	force = 25
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
-	hitsound = SFX_WEAPONS_HEAVYSMASH
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
 	slowdown = 1.5
@@ -228,6 +229,9 @@ TRACKED(/obj/item/material/twohanded, wielded)
 		slot_l_hand_str = 'icons/mob/items/lefthand_material_ch.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_material_ch.dmi',
 		)
+
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
+	configure(uses_power(hit = SFX_WEAPONS_HEAVYSMASH))
 
 /obj/item/material/twohanded/sledgehammer/update_held_icon()
 	var/mob/living/M = loc
@@ -267,11 +271,13 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	name = "Mjollnir"
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
-	hitsound = SFX_EFFECTS_LIGHTNINGBOLT
 	force = 50
 	throwforce = 15
 	force_wielded = 75
 	slowdown = 0
+
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
+	configure(uses_power(hit = SFX_EFFECTS_LIGHTNINGBOLT))
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	..()

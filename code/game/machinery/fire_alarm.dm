@@ -159,7 +159,7 @@ TRACKED(/obj/machinery/firealarm, seclevel)
 /obj/machinery/firealarm/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
 	return OP_OK
@@ -168,7 +168,7 @@ TRACKED(/obj/machinery/firealarm, seclevel)
 /obj/machinery/firealarm/proc/wires_cut_out(datum/act/op/A)
 	var/obj/item/tool = A.held
 	act_message(A.actor, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
 	return dismantle() ? OP_OK : OP_DECLINE
 

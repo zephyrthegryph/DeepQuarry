@@ -440,7 +440,7 @@ CAPABILITIES(/obj/effect/ant_structure)
 
 		if(WT.remove_fuel(0, user))
 			damage = 15
-			playsound(src, W.usesound, 100, 1)
+			playsound(src, sounds_of(W).use, 100, 1)
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return OP_PASS

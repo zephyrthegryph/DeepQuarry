@@ -14,11 +14,11 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 50
 	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked")
-	usesound = SFX_ITEMS_CROWBAR
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	toolspeed = 1
 	tool_qualities = list(TOOL_CROWBAR)
+
+CAPABILITIES(/obj/item/tool/crowbar)
+	configure(uses_power(use = SFX_ITEMS_CROWBAR, drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/tool/crowbar/red
 	icon = 'icons/obj/tools.dmi'
@@ -49,25 +49,31 @@
 	desc = "A hard-light crowbar. It appears to pry by itself, without any effort required."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon = 'icons/obj/abductor.dmi'
-	usesound = SFX_WEAPONS_SONIC_JACKHAMMER
 	icon_state = "crowbar"
 	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/tool/crowbar/alien)
+	configure(uses_power(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/hybrid
 	name = "strange crowbar"
 	desc = "A crowbar whose head seems to phase in and out of view."
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon_state = "hybcrowbar"
-	usesound = SFX_WEAPONS_SONIC_JACKHAMMER
 	toolspeed = 0.4
 	reach = 2
+
+CAPABILITIES(/obj/item/tool/crowbar/hybrid)
+	configure(uses_power(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/power
 	name = "power pryer"
 	desc = "You shouldn't see this."
-	usesound = SFX_ITEMS_JAWS_PRY
 	force = 15
 	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/tool/crowbar/power)
+	configure(uses_power(use = SFX_ITEMS_JAWS_PRY))
 
 /*
  * Prybar
@@ -86,7 +92,6 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 30
 	attack_verb = list("whapped", "smacked", "swatted", "thwacked", "hit")
-	usesound = SFX_ITEMS_CROWBAR
 	toolspeed = 1
 	var/random_color = TRUE
 
@@ -96,5 +101,6 @@
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/prybar)
+	configure(uses_power(use = SFX_ITEMS_CROWBAR))
 	rolls(nameof(icon_state), pick_one(list("prybar", "prybar_green", "prybar_aubergine", "prybar_blue")), when = nameof(random_color))
 

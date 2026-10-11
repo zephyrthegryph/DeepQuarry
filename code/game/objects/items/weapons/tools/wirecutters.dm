@@ -16,16 +16,15 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 80
 	attack_verb = list("pinched", "nipped")
-	hitsound = SFX_ITEMS_WIRECUTTER
-	usesound = SFX_ITEMS_WIRECUTTER
-	drop_sound = SFX_ITEMS_DROP_WIRECUTTER
-	pickup_sound = SFX_ITEMS_PICKUP_WIRECUTTER
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	toolspeed = 1
 	tool_qualities = list(TOOL_WIRECUTTER)
 	var/random_color = TRUE
+
+CAPABILITIES(/obj/item/tool/wirecutters)
+	configure(uses_power(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
 
 /obj/item/tool/wirecutters/Initialize(mapload)
 	. = ..()
@@ -87,13 +86,17 @@
 	random_color = FALSE
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("pinched", "nipped", "warped", "blasted")
-	usesound = SFX_EFFECTS_STEALTHOFF
 	toolspeed = 0.4
 	reach = 2
+
+CAPABILITIES(/obj/item/tool/wirecutters/hybrid)
+	configure(uses_power(use = SFX_EFFECTS_STEALTHOFF))
 
 /obj/item/tool/wirecutters/power
 	name = "power cutters"
 	desc = "You shouldn't see this."
-	usesound = SFX_ITEMS_JAWS_CUT
 	force = 15
 	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/tool/wirecutters/power)
+	configure(uses_power(use = SFX_ITEMS_JAWS_CUT))

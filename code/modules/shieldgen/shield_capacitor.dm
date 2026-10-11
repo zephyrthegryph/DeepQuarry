@@ -65,7 +65,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	set_anchored(!anchored)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %U%."))
 
 	if(anchored)

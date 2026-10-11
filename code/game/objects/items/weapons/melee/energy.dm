@@ -288,10 +288,11 @@ CAPABILITIES(/obj/item/melee/energy)
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	colorable = TRUE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 	projectile_parry_chance = 65
+
+CAPABILITIES(/obj/item/melee/energy/sword)
+	configure(uses_power(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/energy/sword/dropped(mob/user, equipping, slot)
 	..()

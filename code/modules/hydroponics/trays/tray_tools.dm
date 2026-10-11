@@ -22,6 +22,7 @@
 		P.die_off()
 
 CAPABILITIES(/obj/item/analyzer/plant_analyzer)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("print", ui_act(), then(PROC_REF(ui_act_print)))
 	op("close", ui_act(), then(PROC_REF(ui_act_close)))
 	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
@@ -43,8 +44,6 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	item_state = "analyzer"
 	var/datum/seed/last_seed
 	var/list/last_reagents
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	special_handling = TRUE
 
 

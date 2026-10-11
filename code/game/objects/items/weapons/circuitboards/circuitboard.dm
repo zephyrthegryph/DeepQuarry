@@ -14,11 +14,12 @@
 	var/board_type = new /datum/frame/frame_types/computer
 	var/list/req_components = null
 	var/contain_parts = 1
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
+
+CAPABILITIES(/obj/item/circuitboard)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// board_type is a /datum/frame/frame_types instance owned only by this
 /// board (or, for a few boards, a plain string) -- see the frame_type codec.

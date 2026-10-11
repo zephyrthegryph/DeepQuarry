@@ -110,7 +110,7 @@ MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 /obj/machinery/iv_drip/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
 	return OP_OK
 

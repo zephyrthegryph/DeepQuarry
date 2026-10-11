@@ -5,12 +5,14 @@
 	base_icon = "metalbat"
 	throwforce = 7
 	attack_verb = list("smashed", "beaten", "slammed", "smacked", "struck", "battered", "bonked")
-	hitsound = SFX_WEAPONS_GENHIT3
 	default_material = MAT_WOOD
 	force_divisor = 1.1           // 22 when wielded with weight 20 (steel)
 	unwielded_force_divisor = 0.7 // 15 when unwielded based on above.
 	dulled_divisor = 0.75		  // A "dull" bat is still gonna hurt
 	slot_flags = SLOT_BACK
+
+CAPABILITIES(/obj/item/material/twohanded/baseballbat)
+	configure(uses_power(hit = SFX_WEAPONS_GENHIT3))
 
 //Predefined materials go here.
 TYPE_TABLE(/obj/item/material/twohanded/baseballbat/metal, weapon_forced_material, MAT_STEEL)

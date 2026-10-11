@@ -8,8 +8,6 @@
 	throwforce = 2
 	throw_speed = 3
 	throw_range = 10
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound =  SFX_ITEMS_PICKUP_COMPONENT
 
 	var/tmp/obj/item/assembly_holder/holder
 	var/cooldown = FALSE //To prevent spam
@@ -78,6 +76,7 @@ TRACKED(/obj/item/assembly, secured)
 		return TRUE
 
 CAPABILITIES(/obj/item/assembly)
+	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	op("attach", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

@@ -41,8 +41,6 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 	var/last_update = 0
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 	item_flags = FLAMMABLE
 
 /obj/item/ore_bag/holding
@@ -63,6 +61,7 @@ TRACKED(/obj/item/ore_bag, current_capacity)
 TRACKED(/obj/item/ore_bag, max_storage_space)
 
 CAPABILITIES(/obj/item/ore_bag)
+	configure(uses_power(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more))), then(PROC_REF(interaction_item)))
 
 /// Requirement: a full bag takes nothing more.

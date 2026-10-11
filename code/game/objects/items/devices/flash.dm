@@ -42,11 +42,10 @@
 
 	var/cell_type = /obj/item/cell/device
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 CAPABILITIES(/obj/item/flash)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(power_supply), starts = nameof(cell_type))
 	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
@@ -67,7 +66,7 @@ CAPABILITIES(/obj/item/flash)
 	if(prob(30))
 		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
 		set_broken(FALSE)
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 
 /obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))

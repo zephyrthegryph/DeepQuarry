@@ -9,9 +9,9 @@
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("called", "rang")
-	hitsound = SFX_WEAPONS_RING
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/phone)
+	configure(uses_power(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/rsp
 	name = "\improper Rapid-Seed-Producer (RSP)"
@@ -24,8 +24,9 @@
 	var/stored_matter = 0
 	var/mode = 1
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/rsp)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/bikehorn
 	name = "bike horn"
@@ -77,8 +78,9 @@ CAPABILITIES(/obj/item/bikehorn)
 /obj/item/disk
 	name = "disk"
 	icon = 'icons/obj/discs_vr.dmi'
-	drop_sound = SFX_ITEMS_DROP_DISK
-	pickup_sound =  SFX_ITEMS_PICKUP_DISK
+
+CAPABILITIES(/obj/item/disk)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 
 /obj/item/disk/nuclear
 	name = "nuclear authentication disk"
@@ -115,8 +117,9 @@ CAPABILITIES(/obj/item/bikehorn)
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 100)
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/SWF_uplink)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/staff
 	name = "wizards staff"
@@ -164,8 +167,9 @@ CAPABILITIES(/obj/item/bikehorn)
 	item_state = "std_mod"
 	w_class = ITEMSIZE_SMALL
 	var/mtype = 1						// 1=electronic 2=hardware
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
+
+CAPABILITIES(/obj/item/module)
+	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 /obj/item/module/card_reader
 	name = "card reader module"
@@ -263,10 +267,9 @@ CAPABILITIES(/obj/item/camera_bug)
 	icon = 'icons/obj/stock_parts.dmi'
 	w_class = ITEMSIZE_SMALL
 	var/rating = 1
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 CAPABILITIES(/obj/item/stock_parts)
+	configure(uses_power(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	rolls(nameof(pixel_x), range_of(-5.0, 5))
 	rolls(nameof(pixel_y), range_of(-5.0, 5))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

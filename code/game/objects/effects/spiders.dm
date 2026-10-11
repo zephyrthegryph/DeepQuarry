@@ -27,7 +27,7 @@ CAPABILITIES(/obj/effect/spider)
 		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return OP_OK
 

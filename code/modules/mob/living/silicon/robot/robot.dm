@@ -774,7 +774,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(!cell)
 		set_wiresexposed(!wiresexposed)
 		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		return OP_OK
 	if(radio)
 		radio.item_used_on(tool, user)

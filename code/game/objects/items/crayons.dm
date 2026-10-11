@@ -134,6 +134,7 @@ CAPABILITIES(/obj/item/pen/crayon/rainbow)
 
 /// The drawing is a wait of the crayon's own (the surface, the picked drawing and the click come from the prompt chain that started it).
 CAPABILITIES(/obj/item/pen/crayon)
+	configure(uses_power(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	op("draw", ai(), takes("surface", "drawtype", "click_parameters"), wait(PROC_REF(draw_wait)), then(PROC_REF(draw_done)))
 
 /// How long the drawing takes: nothing for an instant crayon.

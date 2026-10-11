@@ -8,8 +8,6 @@
 	var/list/known_targets
 	var/static/list/supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 	var/datum/tgui_state/default/must_hack/hack_state
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/multitool/hacktool/override
 	hackspeed = 0.75
@@ -21,6 +19,7 @@
 	return 5 + R.number(1, 3)
 
 CAPABILITIES(/obj/item/multitool/hacktool)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(hack_state), starts = /datum/tgui_state/default/must_hack)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	// The hacks, started by attempt_hack() with the target and the rolled time; the tool is claimed (busy) until one ends.
@@ -33,7 +32,7 @@ CAPABILITIES(/obj/item/multitool/hacktool)
 /obj/item/multitool/hacktool/proc/screwdriver_used(datum/act/op/A)
 	var/obj/item/tool = A.held
 	in_hack_mode = !in_hack_mode
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
 /obj/item/multitool/hacktool/afterattack(atom/A, mob/user)

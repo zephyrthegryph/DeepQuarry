@@ -12,8 +12,6 @@
 	collection_mode = 1
 	display_contents_with_number = 1
 	max_storage_space = 100
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	var/panel_req = TRUE
 	var/pshoom_or_beepboopblorpzingshadashwoosh = SFX_ITEMS_RPED
 	var/reskin_ran = FALSE
@@ -22,6 +20,7 @@
 
 
 CAPABILITIES(/obj/item/storage/part_replacer)
+	configure(uses_power(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL))
 	op("reskin", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Reskin"), then(PROC_REF(interaction_reskin_alt)))
 

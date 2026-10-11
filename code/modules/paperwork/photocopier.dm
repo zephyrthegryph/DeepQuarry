@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 /obj/machinery/photocopier/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return OP_OK
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	p.pixel_x = rand(-10, 10)
 	p.pixel_y = rand(-10, 10)
 	p.img = temp_img
-	p.drop_sound = 'sound/items/drop/paper.ogg'
+	p.set_drop_sound('sound/items/drop/paper.ogg')
 	var/icon/small_img = icon(temp_img) // Icon() is needed or else temp_img will be rescaled too >.>
 	var/icon/ic = icon('icons/obj/items.dmi',"photo")
 	small_img.Scale(8, 8)
@@ -409,8 +409,9 @@ CAPABILITIES(/obj/machinery/photocopier)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "tonercartridge"
 	var/toner_amount = 30
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/toner)
+	configure(uses_power(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/machinery/photocopier/ownership()
 	. = ..()
