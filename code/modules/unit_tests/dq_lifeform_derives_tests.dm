@@ -58,3 +58,29 @@ CAPABILITIES(/obj/item/dq_derives_probe)
 	var/before = D.computes
 	D.set_volume(3)
 	TEST_ASSERT_EQUAL(D.computes, before, "an unchanged write recomputes nothing")
+
+/// derives() from a relation a constructor param fills: the param is written from /atom/New(), before the instance's lifeform plan has
+/// run, and the write must not recompute (it crashed with "bad index"); init computes it.
+/obj/item/dq_derives_param_probe
+	name = "derives param probe"
+	var/obj/item/dq_derives_probe/source = null
+	var/source_summary = null
+
+CAPABILITIES(/obj/item/dq_derives_param_probe)
+	ref_one(nameof(source), /obj/item/dq_derives_probe)
+	param(nameof(source), pos = 1)
+	derives(nameof(source_summary), PROC_REF(read_source), from = list(nameof(source)))
+
+/obj/item/dq_derives_param_probe/proc/read_source()
+	return source?.summary
+
+/datum/unit_test/dq_lifeform_derives_param
+
+/datum/unit_test/dq_lifeform_derives_param/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_derives_probe/S = allocate(/obj/item/dq_derives_probe, T)
+	var/obj/item/dq_derives_param_probe/P = allocate(/obj/item/dq_derives_param_probe, T, S)
+	TEST_ASSERT_EQUAL(P.source, S, "the positional param filled the relation")
+	TEST_ASSERT_EQUAL(P.source_summary, "1000", "derives() from a param-written relation computes at init")
+	rel_set(P, nameof(P.source), null)
+	TEST_ASSERT_EQUAL(P.source_summary, null, "and follows later writes")

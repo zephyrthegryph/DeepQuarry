@@ -29,13 +29,9 @@
 
 	faction = FACTION_PEASANT
 
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
-/mob/living/simple_mob/vore/peasant/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]asleep")
-		set_icon_dead("[icon_living]-dead")
+CAPABILITIES(/mob/living/simple_mob/vore/peasant)
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/peasant

@@ -241,6 +241,9 @@ CAPABILITIES(/mob)
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
 	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
+	// per-subtype constant tables: every instance of a type shares one list
+	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(shouldnt_see), TYPE_PROC_REF(/datum, per_type_own))
 	ref_one(nameof(control_object)) // the object an admin possesses
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.

@@ -1159,7 +1159,6 @@ SETTER(/mob/living, nutrition)
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	life_update_relevance()
 	// Brain creation is handled by the combat AI integration's
 	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
@@ -1173,17 +1172,25 @@ SETTER(/mob/living, nutrition)
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
-	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	// stunnedloop = new(list(src), FALSE)
-	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
-		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-			if(prob(30))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-			else if(prob(20))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-			else
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+/// Its burning loop, with one of the extinguish sounds at random (owns_one(starts =)).
+/mob/living/proc/start_fire_loop(current, mapload)
+	var/datum/looping_sound/mob/on_fire/loop = new /datum/looping_sound/mob/on_fire(src, FALSE)
+	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
+		if(prob(30))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
+		else if(prob(20))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
+		else
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+	return loop
+
+/// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
+/mob/living/proc/roll_numbered_name(datum/roller/R)
+	return "[name] ([R.number(1, 1000)])"
+
+/// rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name))): the real name follows the (rolled) name.
+/mob/living/proc/roll_real_name(datum/roller/R)
+	return name
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE

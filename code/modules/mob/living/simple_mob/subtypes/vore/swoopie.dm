@@ -45,11 +45,13 @@
 
 	var/obj/item/vac_attachment/swoopie/Vac
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Initialize(mapload)
-	. = ..()
+/// Its bellies are made at spawn, and its Vac-Beak empties into the one it has selected (setup()).
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/fit_vac()
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
+	if(istype(Vac))
+		rel_set(Vac, nameof(Vac.output_dest), vore_selected_of(src))
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
@@ -259,10 +261,10 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
-	setup(PROC_REF(hook_up_vac))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
 	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))
-	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie)
+	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie, starts_set = list("vac_power" = 3))
+	setup(PROC_REF(fit_vac))
 
 /// The disarm-stance input of swoopie_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand_disarm(datum/act/op/A)
@@ -323,6 +325,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
 	icon = 'icons/mob/vacpack_swoop.dmi'
 	item_state = null
 
+/// It names the swoopie it is built into (the swoopie's owns_one(starts =)).
+/obj/item/vac_attachment/swoopie/default_child_backref()
+	return nameof(vac_owner)
+
 /obj/item/vac_attachment/swoopie/dropped(mob/user, equipping, slot) //This should fix it sitting on the ground until the next life() tick
 	. = ..()
 	if(!vac_owner)
@@ -332,10 +338,3 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
 
-/// Setup: the vacuum feeds the belly the swoopie selected while its vore was loaded (Initialize()).
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/hook_up_vac()
-	if(!istype(Vac))
-		return
-	rel_set(Vac, nameof(Vac.output_dest), vore_selected_of(src))
-	Vac.vac_power = 3
-	rel_set(Vac, nameof(Vac.vac_owner), src)

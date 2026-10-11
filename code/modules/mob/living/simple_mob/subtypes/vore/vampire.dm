@@ -28,13 +28,9 @@
 
 	faction = FACTION_VAMPIRE
 
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
-/mob/living/simple_mob/vore/vampire/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]asleep")
-		set_icon_dead("[icon_living]-dead")
+CAPABILITIES(/mob/living/simple_mob/vore/vampire)
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/vampire
@@ -102,12 +98,9 @@
 	icon_living = "countessqueen"
 	icon_rest = "countessqueenasleep"
 	icon_dead = "countessqueen-dead"
+	size_multiplier = 2
 	harm_intent_damage = 10
 	melee_damage_lower = 5
 	melee_damage_upper = 9
 	endurance = 350
 	vore_pounce_chance = 75
-
-/mob/living/simple_mob/vore/vampire/queen/Initialize(mapload)
-	. = ..()
-	resize(2)

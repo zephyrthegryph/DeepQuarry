@@ -106,3 +106,5 @@
 #define NEAR_CARDINAL "cardinal"
 /// The eight turfs around.
 #define NEAR_AROUND "around"
+/// What the holder is inside (its loc).
+#define NEAR_LOC "loc"

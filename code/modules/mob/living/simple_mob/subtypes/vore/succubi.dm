@@ -46,13 +46,14 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 	faction = FACTION_SUCCUBUS
 
-/mob/living/simple_mob/vore/succubus/Initialize(mapload)
-	. = ..()
-	safeword = pick(GLOB.succubus_safewords)
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]asleep")
-		set_icon_dead("[icon_living]-dead")
+CAPABILITIES(/mob/living/simple_mob/vore/succubus)
+	rolls(nameof(safeword), PROC_REF(roll_safeword))
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
+
+/// Its safeword (rolls()).
+/mob/living/simple_mob/vore/succubus/proc/roll_safeword(datum/roller/R)
+	return R.choose(GLOB.succubus_safewords)
 
 // Activate Noms!
 /mob/living/simple_mob/vore/succubus

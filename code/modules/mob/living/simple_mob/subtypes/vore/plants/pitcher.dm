@@ -51,7 +51,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	var/pitcher_metabolism = 0.1 //How much nutriment does the pitcher lose every 2 seconds? 0.1 should be around 30 every 10 minutes.
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
-	var/list/pitcher_plant_lure_messages = null
 	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/pitcher_plant //Putting vore variables separately because apparently that's tradition.
@@ -146,10 +145,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		src.handle_hungry()
 	if (!src.anchored)
 		src.set_anchored(1) // If it's alive, it should root itself back down and once again be impossible to move.
-
-/mob/living/simple_mob/vore/pitcher_plant/Initialize(mapload)
-	. = ..()
-	pitcher_plant_lure_messages = GLOB.pitcher_plant_lure_messages
 
 
 /mob/living/simple_mob/vore/pitcher_plant/on_death(gibbed)
@@ -288,7 +283,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
-				to_chat(H, span_red("[pick(pitcher_plant_lure_messages)]"))
+				to_chat(H, span_red("[pick(GLOB.pitcher_plant_lure_messages)]"))
 
 		for(var/turf/simulated/TR in cardinal_turfs)
 			TR.wet_floor(1) //Same effect as water. Slip into plant, get ate.
@@ -314,12 +309,12 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 	var/datum/seed/seed = null
 	var/obj/item/seeds/pit = null
 	special_handling = TRUE
-
-
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
-	. = ..()
 	bitesize = 1
-	seed = pit.seed()
+
+
+/// It grows into what its seed packet holds (derives(), once the packet exists).
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/seed_of_pit(target)
+	return pit?.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(istype(O,/obj/machinery/microwave))
@@ -341,6 +336,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
 	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
 	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
+	derives(nameof(seed), PROC_REF(seed_of_pit))
 
 /// Old attack_self: plant the fruit.
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(datum/act/op/A)

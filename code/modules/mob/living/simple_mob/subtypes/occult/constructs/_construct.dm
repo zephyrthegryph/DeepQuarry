@@ -94,10 +94,14 @@
 /mob/living/simple_mob/construct/cultify()
 	return
 
+// Each construct is numbered.
+CAPABILITIES(/mob/living/simple_mob/construct)
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+
+// A construct learns its spells into its spell bar at init
 /mob/living/simple_mob/construct/Initialize(mapload)
 	. = ..()
-	name = text("[initial(name)] ([rand(1, 1000)])")
-	real_name = name
 	for(var/spell in construct_spells)
 		src.add_spell(new spell, "const_spell_ready")
 

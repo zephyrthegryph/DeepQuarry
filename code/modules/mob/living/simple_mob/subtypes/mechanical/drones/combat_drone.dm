@@ -61,19 +61,12 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
-	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/combat_drone/melee
 	icon_state = "droneM"
 	icon_dead = "droneM_dead"
-
-/mob/living/simple_mob/mechanical/combat_drone/Initialize(mapload)
-	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
-	ion_trail.set_up(src)
-	ion_trail.start()
-	return ..()
-
 
 /mob/living/simple_mob/mechanical/combat_drone
 	delete_on_death = TRUE
