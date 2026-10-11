@@ -1,0 +1,8 @@
+human|/obj/item/tool/wrench menu: Accessory attached hand
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: Collar tag item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench

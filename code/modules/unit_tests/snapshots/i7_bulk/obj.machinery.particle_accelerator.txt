@@ -1,94 +1,70 @@
-human|none menu: Climb
-human|none menu: Rotate Clockwise
-human|none menu: Rotate Counter Clockwise
-human|none menu: Turn Around
-human|none click: nothing
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Climb
-robot|none menu: Rotate Clockwise
-robot|none menu: Rotate Counter Clockwise
-robot|none menu: Turn Around
-robot|none menu: Use
-robot|none click: Click: Use
-ai|none menu: Use
-ai|none click: Click: Use
-ghost|none menu: Climb (refused: You can't climb right now.)
-ghost|none menu: Rotate Clockwise
-ghost|none menu: Rotate Counter Clockwise
-ghost|none menu: Turn Around
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Climb
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Rotate Clockwise
-human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Turn Around
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Climb
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Rotate Clockwise
-human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Turn Around
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Build bolted
-human|/obj/item/tool/wrench menu: Climb
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Rotate Clockwise
-human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Turn Around
-human|/obj/item/tool/wrench click: Click: Build bolted
-human|/obj/item/tool/wirecutters menu: Climb
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Rotate Clockwise
-human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Turn Around
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Climb
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Rotate Clockwise
-human|/obj/item/multitool menu: Rotate Counter Clockwise
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Turn Around
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Climb
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Rotate Clockwise
-human|/obj/item/weldingtool menu: Rotate Counter Clockwise
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Turn Around
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Climb
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Rotate Clockwise
-human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Turn Around
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Climb
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Rotate Clockwise
-human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Turn Around
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Climb
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Rotate Clockwise
-human|/obj/item/card/id menu: Rotate Counter Clockwise
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Turn Around
-human|/obj/item/card/id click: nothing
-human|/obj/item menu: Climb
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Rotate Clockwise
-human|/obj/item menu: Rotate Counter Clockwise
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Turn Around
-human|/obj/item click: nothing
+@obj.machinery human|none
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery robot|none
++1 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj human|/obj/item/tool/screwdriver
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/tool/crowbar
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Build bolted
++1 menu: Climb
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
++7 click: Click: Build bolted
+@obj human|/obj/item/tool/wirecutters
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/multitool
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/weldingtool
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/stack/cable_coil
++0 menu: Climb
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
+@obj human|/obj/item/stack/material/steel
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/card/id
++0 menu: Climb
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
+@obj human|/obj/item
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 keys: climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand
-

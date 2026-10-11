@@ -1,0 +1,32 @@
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/assembly/signaler menu: Accessory attached hand
+human|/obj/item/assembly/signaler menu: Alternate use
+human|/obj/item/assembly/signaler menu: Collar tag item
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Use
+human|/obj/item/assembly/signaler menu: Wire signaler
+human|/obj/item/assembly/signaler click: Click: Wire signaler
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material menu: Alternate use
+human|/obj/item/stack/material menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/stack/material menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Space suit patch item
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material menu: Voidsuit install item
+human|/obj/item/stack/material click: Click: Space suit patch item

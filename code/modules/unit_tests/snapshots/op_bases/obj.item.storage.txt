@@ -1,0 +1,5 @@
+ghost|none menu: Empty contents
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Switch gathering method (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing

@@ -68,4 +68,3 @@ human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Turf item
 keys: crawl_drag, dig_grave, graffiti, silicon_hand, turf_crawl, turf_item, turf_touch
-
