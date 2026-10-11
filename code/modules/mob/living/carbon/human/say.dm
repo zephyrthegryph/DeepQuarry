@@ -136,17 +136,20 @@
 			return formatted_name
 	return real_name
 
+/// A voice forced on the speaker (a symptom); unset for nearly everyone.
+sparse(/mob/living/carbon/human, special_voice, type = text)
+
 /mob/living/carbon/human/proc/SetSpecialVoice(new_voice)
 	if(new_voice)
-		special_voice = new_voice
+		sparse_set(src, special_voice, new_voice)
 	return
 
 /mob/living/carbon/human/proc/UnsetSpecialVoice()
-	special_voice = ""
+	sparse_set(src, special_voice, null)
 	return
 
 /mob/living/carbon/human/proc/GetSpecialVoice()
-	return special_voice
+	return sparse_get_or(src, special_voice, "")
 
 /mob/living/carbon/human/handle_speech_problems(list/message_data)
 	if(has_status(STAT_MUTED) || (sdisabilities & MUTE) || is_paralyzed())

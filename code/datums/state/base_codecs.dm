@@ -57,7 +57,7 @@
 		return
 	if(alt_appearances_owned || alt_appearances_viewing)
 		return "has alternate appearances, which cannot be serialized"
-	if(observer_event_listeners)
+	if(sparse_has(src, observer_listeners))
 		return "has observer-event listeners, which cannot be serialized"
 
 /atom/movable/state_refusal()

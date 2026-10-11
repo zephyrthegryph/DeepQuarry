@@ -210,6 +210,8 @@ CAPABILITIES(/datum/global_hud)
 	var/list/vis_enabled
 	/// Atom planes that are logically visible/interactable (actual plane numbers).
 	var/list/planes_visible
+	/// The darksight overlay (a client image) that eases the mob's eyes into the dark; made by /mob/living/Login().
+	var/image/dsoverlay
 	var/atom/movable/screen/blobpwrdisplay
 	var/atom/movable/screen/blobhealthdisplay
 	var/atom/movable/screen/r_hand_hud_object

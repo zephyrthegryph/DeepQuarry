@@ -81,8 +81,8 @@
 
 /// The person presses Resist.
 /proc/p2cl_resist(mob/living/user)
-	user.next_click = 0
-	COOLDOWN_RESET(user, resist_cooldown)
+	cooldown_set_end(user, next_click, 0)
+	cooldown_reset(user, resist_cooldown)
 	user.resist()
 
 /// The registered owner of a personal locker.
@@ -124,14 +124,14 @@
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
 	actor.set_use_stance(stance)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", params)
 	input_submit(E)
 	return E.result
 
 /// The actor drags `dragged` onto `over` (a mouse drag: the dragged thing is what the target works with).
 /proc/p2cl_drag(mob/living/actor, atom/movable/dragged, atom/over)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_drag(actor, dragged, over)
 
 /// The person drags a folded-away-able thing (a body bag, a roller bed) onto themselves, as a mouse drag does.
@@ -1611,7 +1611,7 @@
 	TEST_ASSERT(!p2cl_opened(G), "filled in")
 	hold(H, shovel)
 	H.set_use_stance(I_HURT)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, G, null, "mapwindow.map", "left=1"))
 	test_time(10 SECONDS)
 	TEST_ASSERT(QDELETED(G), "an empty grave smoothed over is gone")

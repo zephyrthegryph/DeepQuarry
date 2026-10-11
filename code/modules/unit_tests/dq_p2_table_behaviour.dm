@@ -60,14 +60,14 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", "left=1")
 	input_submit(E)
 	return E.result
 
 /// The actor drags `O` onto the table (a mouse drag: the dragged thing is what the table works with).
 /proc/p2_table_drag(mob/living/actor, obj/structure/table/T, atom/movable/O)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, T, O, GESTURE_DRAG)
 
 /// The actor picks the entry named `label` ("Flip table", "Put table back") from the table's context menu. TRUE when the menu offered it (it ran).
@@ -84,7 +84,7 @@
 
 /// The mob drags itself onto the table (the climb capability's drag).
 /proc/p2_table_climb(mob/living/climber, obj/structure/table/T)
-	climber.next_click = 0
+	cooldown_set_end(climber, next_click, 0)
 	test_drag(climber, climber, T)
 
 /// The number of overlay images the table draws now (its layers: frame, plating, reinforcement, carpet).

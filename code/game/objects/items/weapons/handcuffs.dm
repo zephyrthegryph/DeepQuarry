@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/handcuffs)
 
 /mob/living/carbon/human/RestrainedClickOn(atom/A, stance = I_HURT)
 	if (A != src) return ..()
-	if (!COOLDOWN_FINISHED(src, chew_cooldown)) return
+	if (!cooldown_ready(src, chew_cooldown)) return
 
 	var/mob/living/carbon/human/H = A
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/item/handcuffs)
 
 	H.injure(INJURY_CUT, 3, O, src)
 
-	COOLDOWN_START(src, chew_cooldown, 2.6 SECONDS)
+	cooldown_start(src, chew_cooldown, 2.6 SECONDS)
 
 /obj/item/handcuffs/fuzzy
 	name = "fuzzy cuffs"

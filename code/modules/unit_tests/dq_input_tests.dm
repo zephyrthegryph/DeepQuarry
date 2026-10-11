@@ -356,7 +356,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 /datum/unit_test/proc/dq_route(mob/user, obj/dq_input_probe/probe, params)
 	probe.last_handler = null
 	rel_clear(probe, nameof(probe.last_user))
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	GLOB.input_router.route_click(user, probe, params)
 	return probe.last_user == user ? probe.last_handler : null
 
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 
 	var/obj/item/dq_input_probe_item/item = allocate(/obj/item/dq_input_probe_item, T)
 	TEST_ASSERT(H.put_in_active_hand(item), "the human should hold the probe item")
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	GLOB.input_router.route_click(H, item, "left=1")
 	TEST_ASSERT_EQUAL(item.self_used_by, H, "clicking the held item is Self-use, which runs attack_self")
 

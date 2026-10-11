@@ -120,7 +120,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", "left=1")
 	input_submit(E)
 	return E.result
