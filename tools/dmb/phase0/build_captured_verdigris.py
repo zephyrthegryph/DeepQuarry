@@ -42,6 +42,18 @@ def finish_phase(phase):
     phase['actual_seconds'] = time.monotonic() - phase['started_monotonic']
 
 
+def validate_resume(receipt, expected):
+    if receipt.get('schema') != 'captured-verdigris-build-v1':
+        raise ValueError('unsupported previous build receipt')
+    if receipt.get('owned_job_cleanup', {}).get('reaped') is not True:
+        raise ValueError('previous owned build was not reaped')
+    if not (receipt.get('error') or receipt.get('timeout') or receipt.get('exit') not in (None, 0)):
+        raise ValueError('resume requires a failed or timed-out build')
+    for key, value in expected.items():
+        if receipt.get(key) != value:
+            raise ValueError('previous build authority mismatch: ' + key)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared-root', required=True, type=Path)
@@ -51,6 +63,8 @@ def main():
     parser.add_argument('--cargo-sha256', required=True)
     parser.add_argument('--cargo-home', type=Path, default=Path('E:/dq-cache/dmb-native-v2/cargo-home'))
     parser.add_argument('--rustup-home', type=Path, default=Path('E:/rustup'))
+    parser.add_argument('--resume-build-receipt', type=Path)
+    parser.add_argument('--resume-build-receipt-sha256')
     args = parser.parse_args()
     if os.name != 'nt':
         raise ValueError('Windows owned Job required')
@@ -58,7 +72,9 @@ def main():
     source = root / 'source'
     output = absolute_nonreparse(args.output)
     target = absolute_nonreparse(args.target_directory)
-    if output.exists() or target.exists() or not all(p.is_relative_to(Path('E:/dq-cache')) for p in (root, output, target)):
+    if bool(args.resume_build_receipt) != bool(args.resume_build_receipt_sha256):
+        raise ValueError('resume requires both receipt path and SHA256')
+    if output.exists() or (target.exists() and not args.resume_build_receipt) or not all(p.is_relative_to(Path('E:/dq-cache')) for p in (root, output, target)):
         raise ValueError('requires fresh independent E: output and target paths')
     if target.is_relative_to(source) or output.is_relative_to(source):
         raise ValueError('build output must stay outside captured source')
@@ -75,6 +91,27 @@ def main():
     rows = json.loads(Path(closure['path']).read_text(encoding='utf-8-sig'))
     if {row['path']: row['sha256'] for row in rows if row['tree'] == 'source'} != files:
         raise ValueError('captured roster and closure differ')
+    dependency_environment = {'CARGO_HOME': str(cargo_home), 'RUSTUP_HOME': str(rustup_home),
+                              'RUSTUP_AUTO_INSTALL': '0', 'CARGO_NET_OFFLINE': 'true'}
+    resume_pin = None
+    if args.resume_build_receipt:
+        previous_path = absolute_nonreparse(args.resume_build_receipt)
+        if not previous_path.is_relative_to(Path('E:/dq-cache')) or not target.is_dir():
+            raise ValueError('resume requires an existing owned target and receipt')
+        resume_pin = pin(previous_path)
+        if resume_pin['sha256'] != args.resume_build_receipt_sha256:
+            raise ValueError('previous receipt SHA256 mismatch')
+        previous = json.loads(previous_path.read_text(encoding='utf-8-sig'))
+        validate_resume(previous, {
+            'sourceRoot': str(source), 'cwd': str(source / 'verdigris'),
+            'snapshot': snapshot, 'closure': closure, 'cargo': pin(cargo),
+            'targetDirectory': str(target), 'dependencyEnvironment': dependency_environment,
+            'inputsBefore': files, 'abi': abi, 'workers': 1,
+            'bindings': pin(source / 'code/__defines/verdigris/_bindings.dm'),
+            'rustAbi': pin(source / 'verdigris/ffi/src/abi.rs'),
+            'job_memory_bytes': 4_000_000_000, 'child_watchdog_seconds': 300,
+            'command': [str(cargo), 'build', '--locked', '--offline', '-j1', '--release',
+                        '--target', 'i686-pc-windows-msvc', '--package', 'verdigris', '--lib']})
     phases = []
     output.mkdir()
     phase = begin_phase('source_admission', phases)
@@ -109,8 +146,9 @@ def main():
                'job_memory_bytes': 4_000_000_000}
     receipt['phases'] = phases
     receipt['aggregate_phase_maximum_seconds'] = 900
-    receipt['dependencyEnvironment'] = {'CARGO_HOME': str(cargo_home), 'RUSTUP_HOME': str(rustup_home),
-                                       'RUSTUP_AUTO_INSTALL': '0', 'CARGO_NET_OFFLINE': 'true'}
+    receipt['dependencyEnvironment'] = dependency_environment
+    receipt['previousBuildReceipt'] = resume_pin
+    receipt['targetReuse'] = 'authenticated-build-cache-only' if resume_pin else 'fresh'
     try:
         h._owned_job = job
         os.environ['CARGO_TARGET_DIR'] = str(target)
@@ -139,6 +177,8 @@ def main():
             raise ValueError('built library does not carry current generated ABI')
         if pin(cargo) != receipt['cargo'] or pin(root / 'source-snapshot.json') != snapshot or pin(root / 'input-closure.json') != closure:
             raise ValueError('captured build authority changed')
+        if resume_pin and pin(Path(resume_pin['path'])) != resume_pin:
+            raise ValueError('previous build receipt changed')
     except Exception as error:
         receipt['error'] = str(error)
         receipt['timeout'] = isinstance(error, TimeoutError)

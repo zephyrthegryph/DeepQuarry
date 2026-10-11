@@ -1,10 +1,22 @@
 """Source policy only; never invokes Rust or runtime children."""
 import unittest
 from unittest.mock import patch
-from build_captured_verdigris import validate_roster, begin_phase, finish_phase
+from build_captured_verdigris import validate_roster, begin_phase, finish_phase, validate_resume
 
 
 class SourceRoster(unittest.TestCase):
+    def test_resume_requires_failed_reaped_exact_authority(self):
+        expected = {'targetDirectory': 'E:/owned/target', 'inputsBefore': {'verdigris/Cargo.lock': 'exact'},
+                    'dependencyEnvironment': {'CARGO_HOME': 'E:/cargo'}, 'cargo': {'sha256': 'pin'}}
+        previous = {**expected, 'schema': 'captured-verdigris-build-v1',
+                    'owned_job_cleanup': {'reaped': True}, 'exit': None, 'timeout': True}
+        validate_resume(previous, expected)
+        for changed in ({'owned_job_cleanup': {'reaped': False}}, {'timeout': False, 'exit': 0},
+                        {'targetDirectory': 'E:/foreign/target'}, {'inputsBefore': {}},
+                        {'dependencyEnvironment': {'CARGO_HOME': 'E:/other'}}, {'cargo': {'sha256': 'other'}}):
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                validate_resume({**previous, **changed}, expected)
+
     def test_phase_deadlines_do_not_consume_next_phase_budget(self):
         phases = []
         with patch('build_captured_verdigris.time.monotonic', side_effect=[10, 290, 295, 500, 505, 700]):
