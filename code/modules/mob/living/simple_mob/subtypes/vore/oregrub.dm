@@ -138,7 +138,7 @@
 
 /mob/living/simple_mob/vore/oregrub/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Through either grave error, overwhelming willingness, or some other factor, you find yourself lodged halfway past the grub's mandibles. While it had initially hissed and chittered in glee at the prospect of a new meal, it is clearly more versed in crunching ores to feed off of; inch by inch, bit by bit, it undulates forth to slowly, noisily gulp you down its short esophagus... and right into its extra-cramped, surprisingly hot stomach. As the rest of you spills out into the plush-walled chamber, the grub's soft body bulges outwards here and there with your compressed figure. Before long, a thick slime oozes out from the surrounding stomach walls; only time will tell how effective it is on something fleshy like you, although given it's usual diet..."
 	B.vore_sound = "Tauric Swallow"
@@ -169,5 +169,5 @@
 
 /mob/living/simple_mob/vore/oregrub/lava/load_default_bellies() // Should inherit everything from parent, and then change our belly fullscreen color.
 	.=..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.belly_fullscreen_color = "#cf741e"

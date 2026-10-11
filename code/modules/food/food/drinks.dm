@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume && changed)

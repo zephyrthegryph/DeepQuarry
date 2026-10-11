@@ -34,11 +34,6 @@
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-/obj/machinery/atmospherics/binary/passive_gate/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
-
 // M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
 // every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port
 // fires once per port, after that port's region exists in Rust (map setup's
@@ -156,6 +151,7 @@
 // ---- the controls ----
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	pipe_device_window("PressureRegulator")
 	pipe_device_unwrench()
 	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))

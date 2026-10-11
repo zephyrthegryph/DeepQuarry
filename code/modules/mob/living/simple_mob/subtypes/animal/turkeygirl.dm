@@ -43,7 +43,7 @@
 
 /mob/living/simple_mob/vore/turkeygirl/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot churning stomach of a turkey girl! The doughy flesh presses inward to form to your figure, thick slime coating everything, and very shortly that includes you as well! There isn't any escaping that constant full body motion, as her body works to ball yours up into a tight little package. Gurgling and glubbing with every shifting movement, while her pulse throbs through the flesh all around you with every beat of her heart. All in all, one thing is for certain! You've become turkey stuffing! Oh no..."
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING

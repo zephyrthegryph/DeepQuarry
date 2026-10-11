@@ -29,22 +29,33 @@
 	var/perunit = SHEET_MATERIAL_AMOUNT
 	var/apply_colour
 
+/// A craftable tile of a material that does not exist is discarded (keeps_if()).
+/obj/item/stack/tile/proc/material_exists()
+	if(!craftable || get_material_by_name("[default_type]"))
+		return TRUE
+	stack_trace("Material of type: [default_type] does not exist.")
+	return FALSE
 
-/obj/item/stack/tile/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-	if(craftable)
-		material = get_material_by_name("[default_type]")
-		if(!material)
-			stack_trace("Material of type: [default_type] does not exist.")
-			return INITIALIZE_HINT_QDEL
-		if(material) //sanity check
-			recipes = material.get_recipes()
-			stacktype = material.stack_type
+/// A craftable tile is made of its material (derives(), at init), and takes its recipes and stack type.
+/obj/item/stack/tile/proc/tile_material()
+	return craftable ? get_material_by_name("[default_type]") : material
+
+/obj/item/stack/tile/proc/material_recipes()
+	var/datum/material/M = craftable ? material : null
+	return M ? M.get_recipes() : recipes
+
+/obj/item/stack/tile/proc/material_stacktype()
+	var/datum/material/M = craftable ? material : null
+	return M ? M.stack_type : stacktype
 
 CAPABILITIES(/obj/item/stack/tile)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	keeps_if(PROC_REF(material_exists))
+	derives(nameof(material), PROC_REF(tile_material))
+	derives(nameof(recipes), PROC_REF(material_recipes))
+	derives(nameof(stacktype), PROC_REF(material_stacktype))
 
 /obj/item/stack/tile/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -175,42 +175,6 @@
 // Surface-level teleporters (mine/wild) and the Sif planet datum removed with the
 // planetary z-levels in the station-only trim.
 
-/obj/effect/step_trigger/teleporter/bridge/east_to_west/Initialize(mapload)
-	teleport_x = src.x - 4
-	teleport_y = src.y
-	teleport_z = src.z
-	return ..()
-
-/obj/effect/step_trigger/teleporter/bridge/east_to_west/small/Initialize(mapload)
-	teleport_x = src.x - 3
-	teleport_y = src.y
-	teleport_z = src.z
-	return ..()
-
-/obj/effect/step_trigger/teleporter/bridge/west_to_east/Initialize(mapload)
-	teleport_x = src.x + 4
-	teleport_y = src.y
-	teleport_z = src.z
-	return ..()
-
-/obj/effect/step_trigger/teleporter/bridge/west_to_east/small/Initialize(mapload)
-	teleport_x = src.x + 3
-	teleport_y = src.y
-	teleport_z = src.z
-	return ..()
-
-/obj/effect/step_trigger/teleporter/bridge/north_to_south/Initialize(mapload)
-	teleport_x = src.x
-	teleport_y = src.y - 4
-	teleport_z = src.z
-	return ..()
-
-/obj/effect/step_trigger/teleporter/bridge/south_to_north/Initialize(mapload)
-	teleport_x = src.x
-	teleport_y = src.y + 4
-	teleport_z = src.z
-	return ..()
-
 /obj/effect/map_effect/portal/master/side_a/plains_to_caves
 	portal_id = "plains_caves-normal"
 

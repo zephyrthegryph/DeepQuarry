@@ -23,15 +23,15 @@
 	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
-	if(nest) //Ew.
-		if(istype(nest, /obj/structure/prop/nest))
-			var/obj/structure/prop/nest/N = nest
+	if(nest_of(src)) //Ew.
+		if(istype(nest_of(src), /obj/structure/prop/nest))
+			var/obj/structure/prop/nest/N = nest_of(src)
 			N.remove_creature(src)
 		// a blob spore leaves its factory's spores through the pair's teardown
-		if(istype(nest, /obj/structure/mob_spawner))
-			var/obj/structure/mob_spawner/S = nest
+		if(istype(nest_of(src), /obj/structure/mob_spawner))
+			var/obj/structure/mob_spawner/S = nest_of(src)
 			S.get_death_report(src)
-		nest = null
+		set_nest(src, null)
 	// BUCKLED(src) is already null here: the buckled_to relation
 	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
 	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the

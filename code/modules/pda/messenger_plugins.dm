@@ -80,8 +80,7 @@
 		var/lock_code = "[rand(100,999)] [pick("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliet","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu")]"
 		user.show_message(span_notice("Virus Sent!  The unlock code to the target is: [lock_code]"))
 		if(!item_hidden_uplink(P))
-			var/obj/item/uplink/hidden/uplink = new(P)
-			rel_set(P, nameof(P.hidden_uplink), uplink)
+			new /obj/item/uplink/hidden(P) // in the PDA's contents: item_hidden_uplink() finds it
 			P.lock_code = lock_code
 		// else
 			// P.hidden_uplink.hidden_crystals += P.hidden_uplink.uses //Temporarially hide the PDA's crystals, so you can't steal telecrystals.

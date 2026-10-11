@@ -163,13 +163,17 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	name = "crusty dried vomit"
 	desc = "You try not to look at the chunks, and fail."
 
-/obj/effect/decal/cleanable/vomit/old/Initialize(mapload)
-	. = ..()
-	icon_state += "-old"
-	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
+CAPABILITIES(/obj/effect/decal/cleanable/vomit/old)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
+
+/// Old vomit is crusty (rolls(), after the base's pick).
+/obj/effect/decal/cleanable/vomit/old/roll_icon_state(datum/roller/R)
+	return "[..()]-old"
+
+/// Old vomit often carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/vomit/old/proc/make_old_virus(current)
 	if(prob(65))
-		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		rel_add(src, nameof(viruses), new_disease)
+		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
 	return // Don't spread our viruses
@@ -178,13 +182,17 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	dryname = "nasty dried blood"
 	drydesc = "Why hasn't anyone cleaned this up yet?"
 
+CAPABILITIES(/obj/effect/decal/cleanable/blood/old)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
+
+/// Old blood often carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/blood/old/proc/make_old_virus(current)
+	if(prob(75))
+		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
+
 /obj/effect/decal/cleanable/blood/old/Initialize(mapload)
 	. = ..()
 	set_basecolor(get_random_colour(rand(0, 1)))
-	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
-	if(prob(75))
-		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		rel_add(src, nameof(viruses), new_disease)
 	dry()
 
 /obj/effect/decal/cleanable/blood/old/Crossed(mob/living/carbon/human/perp)

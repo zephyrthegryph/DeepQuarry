@@ -9,8 +9,8 @@
 	var/mob/living/simple_mob/control = allocate(/mob/living/simple_mob, test_floor())
 	animal.init_vore(TRUE)
 	control.init_vore(TRUE)
-	var/obj/belly/belly = animal.vore_selected
-	var/obj/belly/control_belly = control.vore_selected
+	var/obj/belly/belly = vore_selected_of(animal)
+	var/obj/belly/control_belly = vore_selected_of(control)
 	TEST_ASSERT(belly && belly.owner == animal, "Actual animal initialization supplies its selected owned belly")
 	TEST_ASSERT(control_belly && control_belly.owner == control && control_belly != belly, "Independent animal has a distinct actual belly")
 	own(belly)
@@ -52,5 +52,5 @@
 	test_answer(actor, "Cancel")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_HOLD, "Accepted Cancel button preserves mode")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Accepted Cancel button finishes the request")
-	TEST_ASSERT_EQUAL(control.vore_selected, control_belly, "Independent animal retains its original selected belly")
+	TEST_ASSERT_EQUAL(vore_selected_of(control), control_belly, "Independent animal retains its original selected belly")
 	TEST_ASSERT_EQUAL(control_belly.digest_mode, DM_HOLD, "Independent animal remains unchanged throughout both workflows")

@@ -27,8 +27,8 @@
 	var/max_speed = 1/(1 SECOND)        //"speed of light" for the ship, in turfs/decisecond.
 	var/min_speed = 1/(2 MINUTES)       // Below this, we round speed to 0 to avoid math errors.
 
-	var/position_x						// Pixel coordinates in the world
-	var/position_y						// Pixel coordinates in the world.
+	var/position_x = 0					// Pixel coordinates in the world
+	var/position_y = 0					// Pixel coordinates in the world.
 	// ALLOW(instance_list): d: replaced per instance at runtime (13 assignments)
 	var/list/speed = list(0,0)          //speed in x,y direction; replaced (never edited in place) through set_speed()
 	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
@@ -56,8 +56,6 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
 	SSshuttles.ships += src
-	position_x = 0
-	position_y = 0
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	SSflight?.register_vessel(src)

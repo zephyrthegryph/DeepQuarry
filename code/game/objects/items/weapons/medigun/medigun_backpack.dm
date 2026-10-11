@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/medigun_backpack)
 	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
 	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
 	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module, starts = nameof(smodule))
-	owns_one(nameof(bcell), starts = nameof(bcell))
+	owns_one(nameof(bcell), starts = nameof(bcell), starts_set = list("charge" = 0)) // starts empty
 	interface("Medigun")
 	without("ui_open")
 	op("celleject", ui_act("celleject"), then(PROC_REF(ui_act_celleject)))
@@ -304,8 +304,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.icon_state = "medblaster_cmo"
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
-	if(bcell) // declared default: starts empty
-		bcell.set_charge(0)
 
 
 /obj/item/medigun_backpack/proc/get_medigun()

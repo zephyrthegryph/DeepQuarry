@@ -19,10 +19,12 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	/// The setup questions set_vars() asks.
 	var/setup_flow = /datum/prompt/text/event_trigger_setup/name
 
-// ALLOW(init/INSTANCE_STATE): coordinates taken from where this instance is placed
-/obj/effect/landmark/event_trigger/Initialize(mapload)
-	. = ..()
-	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
+CAPABILITIES(/obj/effect/landmark/event_trigger)
+	derives(nameof(coordinates), PROC_REF(placed_at))
+
+/// Where it was placed (derives(), at init).
+/obj/effect/landmark/event_trigger/proc/placed_at()
+	return "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
 
 /// The original creator and scalar answers remain attached to each native question.
 /obj/effect/landmark/event_trigger/proc/set_vars(mob/M)

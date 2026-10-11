@@ -41,7 +41,7 @@
 
 /mob/living/simple_mob/animal/passive/fox/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. Cute on the outside, slimy on the inside!"
 
@@ -191,7 +191,7 @@
 
 /mob/living/simple_mob/animal/passive/fox/renault/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. They seem somehow more regal than perhaps other foxes!"
 

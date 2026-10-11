@@ -79,7 +79,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 
 /mob/living/simple_mob/vore/horse/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a final few gulps, the horse finishes swallowing you down into its hot, dark gut... and with a slosh, your weight makes the equine's belly hang down slightly like some sort of organic hammock. The thick, humid air is tinged with the smell of half-digested grass, and the surrounding flesh wastes no time in clenching and massaging down over its newfound fodder."
 
@@ -136,7 +136,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/horse)
 
 /mob/living/simple_mob/vore/horse/kelpie/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a final few gulps, the kelpie finishes swallowing you down into its hot, humid gut... and with a slosh, your weight makes the equine's belly hang down slightly like some sort of organic hammock. The thick, damp air is tinged with the smell of seaweed, and the surrounding flesh wastes no time in clenching and massaging down over its newfound fodder."
 	B.digest_brute = 3

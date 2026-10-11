@@ -43,6 +43,10 @@ TRACKED(/obj/structure/toilet, cistern)
 
 TRACKED(/obj/structure/toilet, refilling)
 
+/// The bluespace model describes itself (derives(), at init).
+/obj/structure/toilet/proc/model_desc()
+	return teleplumb_crystal ? "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean." : desc
+
 CAPABILITIES(/obj/structure/toilet)
 	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
@@ -68,18 +72,18 @@ CAPABILITIES(/obj/structure/toilet)
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt_harm)))
 	op("flush", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HELP, I_DISARM, I_GRAB), label("Flush"), when(req_actor_kind(/mob/living)),
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt)))
+	on_notice(/datum/notice/disposal_receive, then(PROC_REF(toilet_reflux)))
+	derives(nameof(desc), PROC_REF(model_desc))
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
 
 	if(teleplumb_crystal)
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
-		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
-	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(toilet_reflux)))
 	if(trunk)
 		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
@@ -1280,7 +1284,7 @@ CAPABILITIES(/obj/structure/toilet/item)
 		return
 	if(muffin_mode)
 		if(muffinmonster())
-			move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, thing)
+			move_into(vore_selected_of(muffinmonster()), BELLY_SLOT_INTERIOR, thing)
 		else
 			muffin_mode = FALSE
 
@@ -1320,7 +1324,7 @@ READS_AS(/obj/structure/biowaste_tank/proc/caught_count, BIOWASTE_CAUGHT_KEY)
 				for(var/atom/movable/C in contents)
 					if(C == muffinmonster())
 						continue
-					move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, C)
+					move_into(vore_selected_of(muffinmonster()), BELLY_SLOT_INTERIOR, C)
 			else
 				muffinmonster().name = "Activate Muffin Monster"
 				muffinmonster().release_vore_contents(include_absorbed = TRUE, silent = TRUE)
@@ -1358,7 +1362,7 @@ CAPABILITIES(/obj/structure/biowaste_tank)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "waste hopper"
 	B.desc = "With a resounding CRUNCH, your form has gotten snagged by the Muffin Monster's rotational interlocking cutters indiscriminately crunching away at anything unlucky enough to end up in its hopper, only for the insatiable machine to grind it all down into a slurry mulch fine enough to pass through the narrow sewage lines trouble-free..."
 	B.digest_brute = 20

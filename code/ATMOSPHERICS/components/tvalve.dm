@@ -184,6 +184,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 
 /// A digital three-way valve turns for someone its access lets in, while it has power.
 CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	silicon_hand()
 	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
 
@@ -197,11 +198,6 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 	frequency = new_frequency
 	if(frequency)
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
-
-/obj/machinery/atmospherics/tvalve/digital/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/atmospherics/tvalve/digital/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id))

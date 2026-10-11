@@ -28,7 +28,7 @@
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)
-	rel_set(new_mob, nameof(new_mob.vore_selected), src.vore_selected)
+	set_vore_selected(new_mob, vore_selected_of(src))
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
@@ -97,9 +97,9 @@
 	var/turf/get_dat_turf = get_turf(src)
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
-	if(!tf_form_mind)
-		rel_set(ourmob, nameof(ourmob.vore_selected), vore_selected)
-		rel_clear(src, nameof(vore_selected))
+	if(!tf_form_mind_of(src))
+		set_vore_selected(ourmob, vore_selected_of(src))
+		set_vore_selected(src, null)
 		ourmob.mob_belly_transfer(src)
 
 	seq_run_frame_now(ourmob, /datum/sequence/life)
@@ -110,11 +110,11 @@
 				continue
 			src.drop_from_inventory(W)
 
-	if(tf_form == ourmob)
-		if(tf_form_mind)
-			transfer_mind(tf_form_mind, src, "returned to shapeshift form [src]", tf_form_holds_key)
-			rel_clear(src, nameof(tf_form_mind))
-		rel_set(ourmob, nameof(ourmob.tf_form), src)
+	if(tf_form_of(src) == ourmob)
+		if(tf_form_mind_of(src))
+			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", tf_form_holds_key)
+			set_tf_form_mind(src, null)
+		set_tf_form(ourmob, src)
 		src.forceMove(ourmob)
 	else
 		replaced_by(src)
@@ -163,14 +163,14 @@
 		if(!ispath(new_form, /mob/living) && !ismob(new_form))
 			return
 		var/mob/living/new_mob
-		if(shapeshifting && src.tf_form)
-			new_mob = src.tf_form
+		if(shapeshifting && tf_form_of(src))
+			new_mob = tf_form_of(src)
 			grant(new_mob, granted_verb(/mob/living/proc/shapeshift_form), new_mob)
-			rel_set(new_mob, nameof(new_mob.tf_form), src)
+			set_tf_form(new_mob, src)
 			new_mob.forceMove(src.loc)
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
-				rel_set(new_mob, nameof(new_mob.tf_form_mind), new_mob.mind)
+				set_tf_form_mind(new_mob, new_mob.mind)
 				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
 		else
 			if(isliving(new_form))
@@ -190,7 +190,7 @@
 
 			// The player wears the new form: the mind moves, the character's
 			// identity is shared (not bound) so the form keeps its own body.
-			var/datum/mind/form_mind = new_mob.tf_form_mind
+			var/datum/mind/form_mind = tf_form_mind_of(new_mob)
 			move_player(src, new_mob, "transformed into [new_mob]", share = TRUE)
 			if(form_mind)
 				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", new_mob.tf_form_holds_key)
@@ -218,11 +218,11 @@
 	set name = "Shapeshift Form"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 	set desc = "Shape shift between set mob forms. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"
-	if(!istype(tf_form))
+	if(!istype(tf_form_of(src), /mob/living))
 		to_chat(src, span_notice("No shapeshift form set. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"))
 		return
 	else
-		transform_into_mob(tf_form, TRUE, TRUE, TRUE)
+		transform_into_mob(tf_form_of(src), TRUE, TRUE, TRUE)
 
 /mob/living/set_dir(new_dir)
 	. = ..()

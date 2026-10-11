@@ -897,6 +897,6 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 	for(var/obj/item/ammo_magazine/smart/M in contents)
 		COOLDOWN_START(M, gun_fired_cooldown, M.production_delay)
 
-/// The gun's light after a burst: `range` 0 is dark (what set_light(range) did).
+/// The gun's light after a burst: `range` 0 is dark (what set_glow(src, GLOW(range, null, null)) did).
 /obj/item/gun/proc/muzzle_glow(range)
 	set_glow(src, GLOW(range, null, null))

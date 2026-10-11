@@ -48,17 +48,17 @@
 
 
 CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack)
+	initial_contents(/obj/item/gun/projectile/cell_loaded/combat)
+	initial_contents(/obj/item/ammo_magazine/cell_mag/combat)
+	initial_contents(PROC_REF(combat_batteries))
 	configure(storage(accepts = list(
 		/obj/item/gun/projectile/cell_loaded/combat,
 		/obj/item/ammo_magazine/cell_mag/combat,
 		/obj/item/ammo_casing/microbattery/combat)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded/combat(src)
-	new /obj/item/ammo_magazine/cell_mag/combat(src)
-	for(var/path in subtypesof(/obj/item/ammo_casing/microbattery/combat))
-		new path(src)
+/// One of each combat microbattery.
+/obj/item/storage/secure/briefcase/nsfw_pack/proc/combat_batteries(datum/roller/R)
+	return subtypesof(/obj/item/ammo_casing/microbattery/combat)
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hos
 	starts_with = list(

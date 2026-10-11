@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/effect/anomaly/dimensional)
 	owns_one(nameof(theme), /datum/dimension_theme)
+	rolls(nameof(teleports_left), PROC_REF(roll_teleports))
 
 /obj/effect/anomaly/dimensional/Initialize(mapload)
 	. = ..()
@@ -29,8 +30,6 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
-
-	teleports_left = rand(minimum_teleports, maximum_teleports)
 
 /obj/effect/anomaly/dimensional/anomalyEffect(seconds_per_tick)
 	. = ..()
@@ -114,4 +113,6 @@ CAPABILITIES(/obj/effect/anomaly/dimensional)
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)
 
-
+/// Rolled before init (rolls()): how many times it teleports.
+/obj/effect/anomaly/dimensional/proc/roll_teleports(datum/roller/R)
+	return R.number(minimum_teleports, maximum_teleports)

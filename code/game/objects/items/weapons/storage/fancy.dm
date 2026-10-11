@@ -155,14 +155,15 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
 
-
-/obj/item/storage/fancy/crayons/Initialize(mapload)
-	. = ..()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/crayons/proc/one_of_each_colour(datum/roller/R)
+	. = list()
 	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/C = new(src)
+		var/obj/item/pen/crayon/C = new
 		C.variant = v
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
+		. += C
 
 /obj/item/storage/fancy/crayons/draw(datum/look/look)
 	. = ..()
@@ -181,6 +182,7 @@ READS_AS(/obj/item/storage/fancy/crayons/proc/crayon_colours, STORAGE_CONTENTS_K
 // The mime and rainbow crayons are too sad and too powerful for the box.
 CAPABILITIES(/obj/item/storage/fancy/crayons)
 	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -192,14 +194,15 @@ CAPABILITIES(/obj/item/storage/fancy/crayons)
 	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
 
-
-/obj/item/storage/fancy/markers/Initialize(mapload)
-	. = ..()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/markers/proc/one_of_each_colour(datum/roller/R)
+	. = list()
 	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/marker/M = new(src)
-		M.variant = v
-		M.apply_variant()
-		M.name = "[M.colourName] [initial(M.name)]"
+		var/obj/item/pen/crayon/marker/C = new
+		C.variant = v
+		C.apply_variant()
+		C.name = "[C.colourName] [initial(C.name)]"
+		. += C
 
 /obj/item/storage/fancy/markers/draw(datum/look/look)
 	. = ..()
@@ -217,6 +220,7 @@ READS_AS(/obj/item/storage/fancy/markers/proc/marker_colours, STORAGE_CONTENTS_K
 
 CAPABILITIES(/obj/item/storage/fancy/markers)
 	configure(storage(accepts = list(/obj/item/pen/crayon/marker)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /*
  * Cracker Pack

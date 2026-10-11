@@ -91,13 +91,12 @@
 
 CAPABILITIES(/obj/effect/dark/floor)
 	param(nameof(linked_node), pos = 2)
+	keeps_if(PROC_REF(off_space))
+	derives(nameof(check_glow), PROC_REF(off_space))
 
-// ALLOW(init/INSTANCE_STATE): floor growth glows only off space, and does not grow in space
-/obj/effect/dark/floor/Initialize(mapload)
-	check_glow = !isspace(loc)
-	. = ..()
-	if(isspace(loc))
-		return INITIALIZE_HINT_QDEL
+/// Floor growth does not grow in space (keeps_if()), and glows only off it (derives(), at init, before the base reads check_glow).
+/obj/effect/dark/floor/proc/off_space()
+	return !isspace(loc)
 
 /obj/structure/prop/dark_node
 	name = "crystal cluster"

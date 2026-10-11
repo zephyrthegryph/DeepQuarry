@@ -8,11 +8,15 @@
 
 /obj/item/pipe_painter/Initialize(mapload)
 	. = ..()
-	for(var/C in GLOB.pipe_colors)
-		LAZYADD(modes, "[C]")
 	set_mode(pick(modes))
 
 TRACKED(/obj/item/pipe_painter, mode)
+
+/// It paints every pipe colour (derives(), at init).
+/obj/item/pipe_painter/proc/all_colours()
+	. = list()
+	for(var/C in GLOB.pipe_colors)
+		. += "[C]"
 
 CAPABILITIES(/obj/item/pipe_painter)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
@@ -20,6 +24,7 @@ CAPABILITIES(/obj/item/pipe_painter)
 		asks(/datum/prompt/choice/pipe_painter_mode, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(mode_picked)))
 	op("paint", at_target(/obj/machinery/atmospherics/pipe), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint pipe"),
 		needs(req_adjacent(), req(PROC_REF(paintable_pipe))), then(PROC_REF(pipe_painted)))
+	derives(nameof(modes), PROC_REF(all_colours))
 
 /datum/prompt/choice/pipe_painter_mode
 	title = "Pipe painter"

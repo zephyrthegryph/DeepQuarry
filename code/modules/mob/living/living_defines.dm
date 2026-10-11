@@ -42,7 +42,6 @@
 
 	var/see_invisible_default = SEE_INVISIBLE_LIVING
 
-	var/nest				//Not specific, because a Nest may be the prop nest, or blob factory in this case.
 
 	var/list/hud_list		//Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 	var/has_huds = FALSE	//Whether or not we should bother initializing the above list
@@ -83,9 +82,6 @@
 	var/touch_reaction_flags
 
 
-	var/mob/living/tf_form // Shapeshifter shenanigans
-	/// The mind that occupied this shapeshift form before its owner took it.
-	var/datum/mind/tf_form_mind
 	/// Whether that mind's body held its key (a key move follows it).
 	var/tf_form_holds_key = FALSE
 
@@ -134,3 +130,24 @@ PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)
 /// Custom heat- and cold-discomfort messages (character preferences); unset for most mobs. Lists, read null-safe.
 sparse(/mob/living, custom_heat, type = list)
 sparse(/mob/living, custom_cold, type = list)
+// Shapeshift forms and nests are sparse links, not vars on /mob/living (code/combat_ai/integration/mob_living.dm declares them).
+/// The form a shapeshifter took (Shapeshifter shenanigans), or null.
+/proc/tf_form_of(mob/living/L) as /mob/living
+	return link_get(L, LK_TF_FORM)
+
+/proc/set_tf_form(mob/living/L, mob/living/form)
+	return link_set_one(L, LK_TF_FORM, form)
+
+/// The mind that occupied this shapeshift form before its owner took it, or null.
+/proc/tf_form_mind_of(mob/living/L) as /datum/mind
+	return link_get(L, LK_TF_FORM_MIND)
+
+/proc/set_tf_form_mind(mob/living/L, datum/mind/M)
+	return link_set_one(L, LK_TF_FORM_MIND, M)
+
+/// The nest a mob came from (the prop nest, a blob factory or a mob spawner; not specific), or null.
+/proc/nest_of(mob/living/L)
+	return link_get(L, LK_NEST)
+
+/proc/set_nest(mob/living/L, atom/nest)
+	return link_set_one(L, LK_NEST, nest)

@@ -11,7 +11,7 @@
 		return
 	if(living_prey.previewing_belly && living_prey.previewing_belly != src)
 		return
-	if(living_prey.previewing_belly == src && living_prey.vore_selected != src)
+	if(living_prey.previewing_belly == src && vore_selected_of(living_prey) != src)
 		rel_clear(living_prey, nameof(living_prey.previewing_belly))
 		living_prey.belly_overlay_tgui?.hide()
 		return

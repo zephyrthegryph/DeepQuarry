@@ -62,7 +62,7 @@
 	var/obj/mecha/combat/gorilla/G = allocate(/obj/mecha/combat/gorilla, dq_containment_floor())
 	TEST_ASSERT(istype(G.energy_relay, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay), "the gorilla's relay is its energy relay")
 
-/// Types whose Initialize() only called set_light() with constants declare the same light in their light_glow() trait.
+/// Types whose Initialize() only called set_glow(src, GLOW(null, null, null)) with constants declare the same light in their light_glow() trait.
 /datum/unit_test/dq_init_codemod/constant_lights
 
 /datum/unit_test/dq_init_codemod/constant_lights/Run()

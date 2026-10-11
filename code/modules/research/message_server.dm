@@ -75,7 +75,7 @@
 CAPABILITIES(/obj/machinery/message_server)
 	configure(uses_power(idle = 10, active = 100))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), STAT_OPERABLE), unpowered = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
 	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
@@ -85,16 +85,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
 	. = ..()
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
