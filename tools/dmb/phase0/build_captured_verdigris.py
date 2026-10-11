@@ -30,6 +30,18 @@ def validate_roster(files):
         raise ValueError('prepared source roster lacks pinned Rust toolchain/lock inputs')
 
 
+def begin_phase(name, phases):
+    started = time.monotonic()
+    phase = {'name': name, 'started_monotonic': started,
+             'deadline_monotonic': started + 300, 'maximum_seconds': 300}
+    phases.append(phase)
+    return phase
+
+
+def finish_phase(phase):
+    phase['actual_seconds'] = time.monotonic() - phase['started_monotonic']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared-root', required=True, type=Path)
@@ -63,9 +75,17 @@ def main():
     rows = json.loads(Path(closure['path']).read_text(encoding='utf-8-sig'))
     if {row['path']: row['sha256'] for row in rows if row['tree'] == 'source'} != files:
         raise ValueError('captured roster and closure differ')
-    deadline = time.monotonic() + 300
-    verify_source(source, files, deadline)
+    phases = []
     output.mkdir()
+    phase = begin_phase('source_admission', phases)
+    try:
+        verify_source(source, files, phase['deadline_monotonic'])
+        phase['verified'] = True
+    finally:
+        finish_phase(phase)
+        write(output / 'source-admission-phase.json', {
+            'phase': phase, 'snapshot': snapshot, 'closure': closure,
+            'aggregate_phase_maximum_seconds': 900})
     bench = Path(__file__).resolve().parent.parent / 'bench'
     sys.path.insert(0, str(bench))
     spec = importlib.util.spec_from_file_location('captured_build_iteration', bench / 'native-iteration.py')
@@ -87,6 +107,8 @@ def main():
                'rustAbi': pin(source / 'verdigris/ffi/src/abi.rs'),
                'inputClosureAuthenticated': False, 'child_watchdog_seconds': 300,
                'job_memory_bytes': 4_000_000_000}
+    receipt['phases'] = phases
+    receipt['aggregate_phase_maximum_seconds'] = 900
     receipt['dependencyEnvironment'] = {'CARGO_HOME': str(cargo_home), 'RUSTUP_HOME': str(rustup_home),
                                        'RUSTUP_AUTO_INSTALL': '0', 'CARGO_NET_OFFLINE': 'true'}
     try:
@@ -95,11 +117,22 @@ def main():
         os.environ['CARGO_BUILD_JOBS'] = '1'
         os.environ.update(receipt['dependencyEnvironment'])
         os.chdir(source / 'verdigris')
-        child = h.run_child(cargo, command[1:], output / 'cargo', deadline)
+        phase = begin_phase('owned_cargo', phases)
+        try:
+            child = h.run_child(cargo, command[1:], output / 'cargo', phase['deadline_monotonic'])
+        finally:
+            finish_phase(phase)
+            receipt['owned_job_cleanup'] = job.close()
+        if not receipt['owned_job_cleanup'].get('reaped'):
+            raise ValueError('Cargo job was not reaped before source verification')
         receipt['exit'] = child['exit']
         if child['exit'] != 0:
             raise ValueError('ordinary captured Cargo build failed')
-        verify_source(source, files, deadline)
+        phase = begin_phase('source_verification', phases)
+        try:
+            verify_source(source, files, phase['deadline_monotonic'])
+        finally:
+            finish_phase(phase)
         receipt['inputsAfter'] = files
         receipt['library'] = pin(target / 'i686-pc-windows-msvc/release/verdigris.dll')
         if abi.encode() not in Path(receipt['library']['path']).read_bytes():
@@ -117,7 +150,8 @@ def main():
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
-        receipt['owned_job_cleanup'] = job.close()
+        if 'owned_job_cleanup' not in receipt:
+            receipt['owned_job_cleanup'] = job.close()
         write(output / 'runtime-build-receipt.json', receipt)
         print(output / 'runtime-build-receipt.json')
     return 0 if receipt['exit'] == 0 and 'error' not in receipt and receipt['owned_job_cleanup'].get('reaped') else 1
