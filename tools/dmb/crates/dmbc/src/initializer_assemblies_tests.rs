@@ -254,6 +254,20 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
 #[test]
 fn admitted_plain_assembly_shares_actual_code_owner_and_rebinds_current_debug() {
     use std::path::Path;
+    struct CurrentHost<'a>(&'a dm_tree::SemanticTree);
+    impl Resolver for CurrentHost<'_> {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            match query {
+                // This core fixture supplies only the native list construction
+                // primitive; all declaration/storage answers come from the
+                // actual current source issuer, including its exact slot symbol.
+                ResolveQuery::RuntimeType(path) if path == SymbolId::of("/list") => {
+                    ResolvedMeaning::Symbol(path)
+                }
+                _ => Resolver::resolve(self.0, query),
+            }
+        }
+    }
     struct Source(&'static str);
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
@@ -284,7 +298,7 @@ fn admitted_plain_assembly_shares_actual_code_owner_and_rebinds_current_debug() 
         )
         .unwrap();
         let plan = declarations.plan();
-        let host = Host(11);
+        let host = CurrentHost(frontend.snapshot.tree.as_ref());
         let evaluator = crate::driver_facts::DriverEvaluator {
             pure_calls: None,
             resource_search_context: None,
