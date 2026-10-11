@@ -529,6 +529,22 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
     }
 }
 impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<'_> {
+    fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
+        // Bump this implementation domain whenever initializer evaluation
+        // semantics change, independently of process-local recording tokens.
+        let mut bytes = b"dmbc-driver-initializer-policy-v1\0".to_vec();
+        match self.pure_calls {
+            None => bytes.push(0),
+            Some(calls) => {
+                let pure = calls.immutable_policy_bytes()?;
+                bytes.push(1);
+                bytes.extend_from_slice(&(pure.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(pure);
+            }
+        }
+        Some(bytes.into())
+    }
+
     fn recording_policy_identity(&self) -> Option<u128> {
         let pure = match self.pure_calls {
             None => 0,

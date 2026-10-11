@@ -88,6 +88,15 @@ pub trait InitializerEvaluatorFactory: Sync {
     fn recording_policy_identity(&self) -> Option<u128> {
         None
     }
+    /// Exact source-neutral implementation/configuration evidence for portable
+    /// initializer transport. Equal bytes certify equal non-resolver semantics;
+    /// process-local identities and externally mutable policies must decline.
+    /// Engine payload, resource context and current semantic reads are admitted
+    /// separately by the existing transport/current resolver proof.
+    fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
+        None
+    }
+
     /// Return true only when every resolver-backed evaluation in the operation
     /// uses this supplied recorder. Compatibility factories decline reuse.
     fn with_recording_evaluator(
@@ -702,3 +711,7 @@ impl PartialEq for ClassificationOwner {
     }
 }
 impl Eq for ClassificationOwner {}
+
+#[cfg(test)]
+#[path = "initializer_policy/portable_policy_tests.rs"]
+mod portable_policy_tests;

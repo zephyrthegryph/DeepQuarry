@@ -11,6 +11,14 @@ pub(super) struct StartupParallelFactory<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl InitializerEvaluatorFactory for StartupParallelFactory<'_> {
+    fn immutable_initializer_policy_bytes(&self) -> Option<std::sync::Arc<[u8]>> {
+        let ordinary = self.ordinary.factory.immutable_initializer_policy_bytes()?;
+        let mut bytes = b"dmbc-startup-initializer-policy-v1\0".to_vec();
+        bytes.extend_from_slice(&(ordinary.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&ordinary);
+        Some(bytes.into())
+    }
+
     fn recording_policy_identity(&self) -> Option<u128> {
         self.ordinary
             .factory
@@ -67,3 +75,7 @@ impl InitializerEvaluatorFactory for StartupParallelFactory<'_> {
             });
     }
 }
+
+#[cfg(test)]
+#[path = "initializer_factory_policy_tests.rs"]
+mod policy_tests;
