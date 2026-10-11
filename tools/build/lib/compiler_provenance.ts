@@ -61,7 +61,7 @@ export function beginCompilerReceipt(directory: string, output: CompiledOutput) 
   }
   fs.mkdirSync(directory, { recursive: true });
   const file = path.resolve(directory, `compiler-${randomUUID()}.json`);
-  const receipt = { schema_version: 1, compilation,
+  const receipt = { schema_version: 1, compilation, output,
     actual_backend: output.kind === 'native_pair' ? 'native' : 'byond',
     pair: output.kind === 'native_pair' ? {
       pairId: output.pairId, dmbHash: output.dmbHash, rscHash: output.rscHash,

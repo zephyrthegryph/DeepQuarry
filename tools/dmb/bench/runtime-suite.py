@@ -203,6 +203,31 @@ def find_compile_receipt(log, checkout, args):
     return None
 
 
+def preserve_focused_output(args, checkout, receipt, job, env, remaining):
+    """Ordinary acquire/stable-copy through existing TS issuers, bounded by caller Job."""
+    if remaining <= 0: raise TimeoutError('Cohort expired before output preservation')
+    directory = args.output / 'preserved-output'
+    attempt = Path(receipt['compile_receipt'])
+    expected = hash_file(attempt)
+    helper = checkout / 'tools/dmb/bench/preserve_focused_output.ts'
+    command = [str(args.bash_exe), '-lc', 'exec bun run "$@"', 'focused-capture', str(helper), str(attempt), expected, str(directory)]
+    with (args.output / 'preservation.log').open('xb') as log:
+        child = subprocess.Popen(command, cwd=checkout, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                 creationflags=subprocess.CREATE_NO_WINDOW | 0x00000004)
+        try:
+            job.add(child); job.resume(child)
+            if child.wait(timeout=min(30, remaining)) != 0: raise ValueError('Focused output preservation failed')
+        finally:
+            if child.poll() is None: child.kill()
+            child.wait(timeout=5)
+    if hash_file(attempt) != expected: raise ValueError('Compiler attempt changed during preservation')
+    result = directory / 'preservation.json'
+    value = json.loads(result.read_text(encoding='utf8'))
+    if value.get('sharedInputClosure') is not False: raise ValueError('Invalid preservation closure scope')
+    receipt['preserved_output'] = value
+    receipt['preservation_receipt'] = pin(result, hash_file(result))
+
+
 def finalize_code(code, cleanup):
     return 70 if code == 0 and (not cleanup or not cleanup.get('reaped')) else code
 
@@ -312,6 +337,8 @@ def main(argv=None):
                 if not captured:
                     raise ValueError('successful build lacks actual compiler evidence')
                 receipt['compile_receipt'], receipt['actual_compilation'] = captured
+        if code == 0 and args.focus and not args.focused_compiled_output and not args.suite_compiled_output:
+            preserve_focused_output(args, checkout, receipt, job, env, args.seconds - (time.monotonic() - started))
         for value in receipt['pins'].values():
             pin(Path(value['path']), value['sha256'])
     except Exception as error:
