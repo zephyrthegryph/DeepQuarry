@@ -196,6 +196,8 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         }
     }
     let key = current_key.materialize(&prepared_tail);
+    #[cfg(test)]
+    rich_sidecars::diagnose_key(memo, &key, identity);
     let (value, changed_query) = {
         let _profile = dm_profile::item("lowering.resident_validate");
         memo.values.visit_receipted(&key, host, &mut |value| {
@@ -410,6 +412,15 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         let reads: Arc<[crate::lowering_memo::ResolverRead]> = recording.reads().into();
         let versions: Arc<[(dm_ir::ReadDomain, u128)]> = recording.domain_receipts().into();
         let relative_debug = capture.borrow().debug.clone();
+        #[cfg(test)]
+        if !unit.code.modified_instances.is_empty() || !unit.source_helpers.is_empty() {
+            eprintln!(
+                "rich population: key_len={} relative={relative_debug:?} origins={:?} rebound={:?}",
+                key.len(),
+                unit.debug_origins,
+                crate::lowering_memo::rebase_debug(frontend, body, &relative_debug)
+            );
+        }
         if relative_debug.len() == unit.debug_origins.entries.len()
             && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
                 == Some(&unit.debug_origins)

@@ -1,6 +1,34 @@
 //! Rebind rich compatibility sidecars through the existing current recipe issuer.
 use super::*;
 
+#[cfg(test)]
+pub(super) fn diagnose_key(
+    memo: &crate::lowering_memo::ProcedureMemo,
+    current: &[u8],
+    identity: dm_ir::ProcedureIdentity,
+) {
+    memo.values.visit_storage(|view| match view {
+        dm_session::ArtifactStorageView::Store { entries, .. } => {
+            eprintln!(
+                "rich lookup: resident entries={entries}, current key len={}",
+                current.len()
+            );
+        }
+        dm_session::ArtifactStorageView::Entry { key, value, .. }
+            if value.unit.identity.owner == identity.owner
+                && value.unit.identity.name == identity.name =>
+        {
+            let first_difference = key.iter().zip(current).position(|(a, b)| a != b);
+            eprintln!(
+                "rich lookup: stored key len={} exact={} first_difference={first_difference:?}",
+                key.len(),
+                key.as_ref() == current
+            );
+        }
+        _ => {}
+    });
+}
+
 pub(super) fn rebind<R: Resolver>(
     previous: &LoweredUnit,
     frontend: &ColdFrontend,

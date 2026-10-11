@@ -66,6 +66,8 @@ def execute_owned_build(command, cwd, env, log, seconds, memory_bytes,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--prepare-only", action="store_true",
+                        help="prepare the pinned source for focused builds; produces no compiler binary")
     parser.add_argument("--cache", default="E:/dq-cache/dmb-native-v2/frozen-build")
     parser.add_argument("--cargo-home", default="E:/dq-cache/dmb-native-v2/cargo-home")
     parser.add_argument("--seconds", type=int, default=300)
@@ -158,6 +160,14 @@ def main():
                     target.unlink()
                     removed += 1
         receipt_path = cache / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
+        if args.prepare_only:
+            receipt = dict(commit=commit, archive_sha256=hashlib.sha256(archive).hexdigest(),
+                           changed_files=changed, removed_files=removed, source=str(source),
+                           scope="immutable source preparation only; no compiler build or benchmark",
+                           compiler_built=False)
+            receipt_path.with_suffix(".json").write_text(json.dumps(receipt, indent=2))
+            print(json.dumps(receipt))
+            return 0
         env = dict(os.environ, CARGO_HOME=str(cargo_home),
                    CARGO_TARGET_DIR="E:/dq-cache/dmb-native-v2/cargo-target",
                    CARGO_PROFILE_RELEASE_LTO="false")

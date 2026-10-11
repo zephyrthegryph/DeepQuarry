@@ -136,6 +136,19 @@ fn resident_rich_sidecars_rebind_shifted_include_occurrence_and_match_fresh() {
         .source_helpers
         .iter()
         .any(|helper| !helper.code.modified_instances.is_empty()));
+    let mut initial_entries = 0;
+    memo.values.visit_storage(|view| {
+        if let dm_session::ArtifactStorageView::Store { entries, .. } = view {
+            initial_entries = entries;
+        }
+    });
+    assert!(
+        initial_entries > 0,
+        "first rich procedure was not populated; resident_dropped={}",
+        memo.counts
+            .resident_dropped
+            .load(std::sync::atomic::Ordering::Relaxed)
+    );
     let source = Source {
         prefix: true,
         changed: false,
