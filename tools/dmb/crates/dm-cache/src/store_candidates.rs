@@ -13,6 +13,14 @@ impl CacheSnapshot {
         key: RecordKey,
         validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<bool, String>,
     ) -> Option<RecordView<'a>> {
+        self.get_candidate_with(key, validate_and_accept, |_, view| view)
+    }
+    pub(crate) fn get_candidate_with<'a, T>(
+        &'a self,
+        key: RecordKey,
+        validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<bool, String>,
+        capture: impl Fn(&Arc<Segment>, RecordView<'a>) -> T,
+    ) -> Option<T> {
         loop {
             let superseded = self.current_superseded();
             let mut retry = false;
@@ -32,7 +40,7 @@ impl CacheSnapshot {
                             .lock()
                             .unwrap_or_else(|e| e.into_inner())
                             .insert(key);
-                        return Some(view);
+                        return Some(capture(segment, view));
                     }
                     Ok(_) => {}
                     Err(error) => {

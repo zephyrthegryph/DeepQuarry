@@ -360,3 +360,7 @@ pub(crate) fn encode(
     result.extend(body);
     Ok((id, result))
 }
+
+#[path = "mapped_payload.rs"]
+mod mapped_payload;
+pub use mapped_payload::MappedPayload;
