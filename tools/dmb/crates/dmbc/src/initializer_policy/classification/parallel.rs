@@ -234,11 +234,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 &mut ordinal,
             )
         };
-        result.map_err(|failure| ClassificationIssue {
-            kind: failure.kind,
-            source_ordinal: bucket.ordinals[ordinal],
-            reason: failure.reason,
-        })
+        result.map_err(|failure| failure.into_issues(bucket.ordinals[ordinal]))
     })
     .map_err(|error| {
         if let Some(reuse) = reuse {
@@ -259,13 +255,14 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             Err(error) => errors.push(error),
         }
     }
-    if let Some(error) = errors.into_iter().min_by_key(|error| error.source_ordinal) {
+    if let Some(issues) = errors
+        .into_iter()
+        .min_by_key(|issues| issues[0].source_ordinal)
+    {
         if let Some(reuse) = reuse {
             reuse.store.roster.clear_preparation();
         }
-        return Err(ClassificationError {
-            issues: vec![error],
-        });
+        return Err(ClassificationError { issues });
     }
     let mut source_ordinal = 0;
     let pending = ordered

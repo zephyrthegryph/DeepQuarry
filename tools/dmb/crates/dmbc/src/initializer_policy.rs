@@ -12,6 +12,9 @@ pub enum Evaluation {
     Runtime,
     /// Definitive invalid source certified by the current evaluator domain.
     SourceError(String),
+    /// A reference rejected by the shared nameof issuer. Recovery diagnostics
+    /// belong to the initializer assignment, not to an inferred source span.
+    InvalidNameof(String, dm_codegen_byond::NameofDiagnosticRecovery),
 }
 /// Request-local syntax prepared by the evaluator's existing admission path.
 /// It contains no cached resolution result or independent dependency domain.
@@ -531,12 +534,14 @@ pub enum ClassificationIssueKind {
 pub(crate) struct ClassificationFailure {
     kind: ClassificationIssueKind,
     reason: String,
+    invalid_nameof: Option<dm_codegen_byond::NameofDiagnosticRecovery>,
 }
 impl From<String> for ClassificationFailure {
     fn from(reason: String) -> Self {
         Self {
             kind: ClassificationIssueKind::Unsupported,
             reason,
+            invalid_nameof: None,
         }
     }
 }
@@ -562,9 +567,39 @@ impl Evaluation {
             Self::SourceError(reason) => Err(ClassificationFailure {
                 kind: ClassificationIssueKind::SourceError,
                 reason,
+                invalid_nameof: None,
+            }),
+            Self::InvalidNameof(reason, recovery) => Err(ClassificationFailure {
+                kind: ClassificationIssueKind::SourceError,
+                reason,
+                invalid_nameof: Some(recovery),
             }),
             other => Ok(other),
         }
+    }
+}
+impl ClassificationFailure {
+    fn into_issues(self, source_ordinal: usize) -> Vec<ClassificationIssue> {
+        let mut issues = vec![ClassificationIssue {
+            kind: self.kind,
+            source_ordinal,
+            reason: self.reason,
+        }];
+        if let Some(recovery) = self.invalid_nameof {
+            let reasons = [
+                (recovery == dm_codegen_byond::NameofDiagnosticRecovery::ReferenceRejected)
+                    .then_some("nameof: requires a var, proc reference, or type path"),
+                Some("=: missing expression"),
+            ];
+            for reason in reasons.into_iter().flatten() {
+                issues.push(ClassificationIssue {
+                    kind: ClassificationIssueKind::SourceError,
+                    source_ordinal,
+                    reason: reason.into(),
+                });
+            }
+        }
+        issues
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -655,11 +690,7 @@ pub fn classify_with_token_mode(
         debug_defined,
     )
     .map_err(|failure| ClassificationError {
-        issues: vec![ClassificationIssue {
-            kind: failure.kind,
-            source_ordinal,
-            reason: failure.reason,
-        }],
+        issues: failure.into_issues(source_ordinal),
     })
 }
 /// Compatibility caller retains string diagnostics; production uses ordinals.

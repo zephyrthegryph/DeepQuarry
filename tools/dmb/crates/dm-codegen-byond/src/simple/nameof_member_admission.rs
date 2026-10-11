@@ -5,10 +5,16 @@ impl Compiler<'_> {
         &self,
         object: &Expr,
         selector: &str,
+        operator: &str,
         statement: &str,
     ) -> Result<(), LowerError> {
         let Some(lookup) = self.lookup else {
             return Ok(());
+        };
+        let reference = match &object.kind {
+            ExprKind::TypePath(path) => format!("{path}{operator}{selector}"),
+            ExprKind::Ident(name) => format!("{name}{operator}{selector}"),
+            _ => selector.to_owned(),
         };
         let owner = match &object.kind {
             ExprKind::TypePath(path) => {
@@ -42,7 +48,7 @@ impl Compiler<'_> {
             // pinned untyped dot/colon reference controls have no variable namespace.
             return Err(LowerError {
                 kind: LowerErrorKind::SourceError,
-                ..error(statement, &format!("{selector}: undefined var"))
+                ..error(statement, &format!("{reference}: undefined var"))
             });
         };
         let owner = SymbolId::of(&owner);
@@ -51,7 +57,7 @@ impl Compiler<'_> {
         if !self.semantic(lookup.presence(query))? {
             return Err(LowerError {
                 kind: LowerErrorKind::SourceError,
-                ..error(statement, &format!("{selector}: undefined var"))
+                ..error(statement, &format!("{reference}: undefined var"))
             });
         }
         self.validate_variable_type(
@@ -129,6 +135,7 @@ mod tests {
                 LowerErrorKind::SourceError,
                 "{source}: {error:?}"
             );
+            assert_eq!(error.reason, format!("{source}: undefined var"));
             let opaque = observe_reference_source_features(
                 &expression,
                 &bindings,

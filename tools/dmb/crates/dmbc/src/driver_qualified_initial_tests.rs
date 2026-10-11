@@ -41,7 +41,10 @@ fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
         let (evaluation, _) = evaluator
             .evaluate_prepared_write(&write, &expression)
             .unwrap();
-        assert!(matches!(evaluation, Evaluation::SourceError(_)), "{source}");
+        assert!(
+            matches!(evaluation, Evaluation::InvalidNameof(_, _)),
+            "{source}"
+        );
         assert!(
             !recorder.reads().is_empty(),
             "{source} must retain admission reads"

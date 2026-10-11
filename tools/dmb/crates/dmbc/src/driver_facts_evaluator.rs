@@ -156,7 +156,7 @@ impl DriverEvaluator<'_> {
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
         source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
         lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
-        typed_failure: Option<&RefCell<Option<dm_codegen_byond::LowerError>>>,
+        typed_failure: Option<&RefCell<Option<folded_features::FoldedReferenceFailure>>>,
     ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
@@ -218,10 +218,13 @@ impl DriverEvaluator<'_> {
                 .map_err(|error| {
                     if error == dm_ir::ModifiedCaptureError::InvalidNameofReference {
                         if let Some(failure) = typed_failure {
-                            *failure.borrow_mut() = Some(dm_codegen_byond::LowerError {
-                                kind: dm_codegen_byond::LowerErrorKind::SourceError,
-                                reason: error.to_string(),
-                                ..Default::default()
+                            *failure.borrow_mut() = Some(folded_features::FoldedReferenceFailure {
+                                recovery: None,
+                                error: dm_codegen_byond::LowerError {
+                                    kind: dm_codegen_byond::LowerErrorKind::SourceError,
+                                    reason: error.to_string(),
+                                    ..Default::default()
+                                },
                             });
                         }
                     }
@@ -813,8 +816,13 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         // Only a typed source failure can become an authored diagnostic; opaque
         // proof/evaluator failures retain the existing unsupported error path.
         let evaluation = match typed_failure.into_inner() {
-            Some(error) if error.kind == dm_codegen_byond::LowerErrorKind::SourceError => {
-                Evaluation::SourceError(error.reason)
+            Some(failure)
+                if failure.error.kind == dm_codegen_byond::LowerErrorKind::SourceError =>
+            {
+                match failure.recovery {
+                    Some(recovery) => Evaluation::InvalidNameof(failure.error.reason, recovery),
+                    None => Evaluation::SourceError(failure.error.reason),
+                }
             }
             _ => result?.map_or(Evaluation::Runtime, Evaluation::Scalar),
         };

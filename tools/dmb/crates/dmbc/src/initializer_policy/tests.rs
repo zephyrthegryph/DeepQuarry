@@ -1,6 +1,46 @@
 use super::*;
 
 #[test]
+fn folded_nameof_recovery_preserves_order_and_assignment_ordinal() {
+    use dm_codegen_byond::NameofDiagnosticRecovery as Recovery;
+    let failure = Evaluation::InvalidNameof(
+        "/datum/probe::missing: undefined var".into(),
+        Recovery::ReferenceRejected,
+    )
+    .checked()
+    .err()
+    .unwrap();
+    let issues = failure.into_issues(37);
+    assert_eq!(
+        issues
+            .iter()
+            .map(|issue| issue.reason.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "/datum/probe::missing: undefined var",
+            "nameof: requires a var, proc reference, or type path",
+            "=: missing expression",
+        ]
+    );
+    assert!(issues
+        .iter()
+        .all(|issue| issue.source_ordinal == 37
+            && issue.kind == ClassificationIssueKind::SourceError));
+    let failure = Evaluation::InvalidNameof(
+        "nameof: requires a var, proc reference, or type path".into(),
+        Recovery::ReferenceRequired,
+    )
+    .checked()
+    .err()
+    .unwrap();
+    assert_eq!(failure.into_issues(9).len(), 2);
+    let failure = ClassificationFailure::from("opaque reference authority");
+    let issues = failure.into_issues(11);
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].kind, ClassificationIssueKind::Unsupported);
+}
+
+#[test]
 fn prepared_runtime_syntax_matches_compatibility_classification_and_diagnostics() {
     use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
     struct Empty;
@@ -182,7 +222,7 @@ fn mutable_instance_knowledge_retains_opaque_modifiers() {
     let name = symbols.intern("name").unwrap();
     let write = InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Instance {
+        target: InitializerTarget::Instance {
             declaring_owner: atom,
             receiver_owner: child,
             name,
@@ -216,7 +256,7 @@ impl CapturedInitializerEvaluator for Evaluator {
 fn write(owner: SymbolId, name: SymbolId, value: InitializerValue) -> InitializerWrite {
     InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Shared {
+        target: InitializerTarget::Shared {
             slot: SymbolId::of("slot"),
             owner,
             name,
@@ -239,7 +279,7 @@ fn indexed_receiver_groups_preserve_interleaved_owner_and_global_order() {
     let literal = InitializerValue::Expression(expression("list(2)", &mut symbols).unwrap());
     let instance = |owner, value| InitializerWrite {
         source_site: dm_ir::InitializerSite::Declaration,
-            target: InitializerTarget::Instance {
+        target: InitializerTarget::Instance {
             declaring_owner: owner,
             receiver_owner: owner,
             name,

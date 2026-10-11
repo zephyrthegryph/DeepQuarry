@@ -2,6 +2,28 @@
 #[path = "nameof_member_admission.rs"]
 mod members;
 use super::*;
+/// Recovery stage for a rejected reference, issued from the same language-role
+/// policy as admission. This does not classify opaque resolver failures.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NameofDiagnosticRecovery {
+    ReferenceRejected,
+    ReferenceRequired,
+}
+pub fn nameof_diagnostic_recovery(expression: &Expr) -> NameofDiagnosticRecovery {
+    match &expression.kind {
+        ExprKind::Group(inner) => nameof_diagnostic_recovery(inner),
+        ExprKind::TypePath(path)
+            if reflective_type_role(path) == ReflectiveTypeRole::BuiltinListValue =>
+        {
+            NameofDiagnosticRecovery::ReferenceRequired
+        }
+        ExprKind::Ident(_)
+        | ExprKind::TypePath(_)
+        | ExprKind::Member { .. }
+        | ExprKind::StaticMember { .. } => NameofDiagnosticRecovery::ReferenceRejected,
+        _ => NameofDiagnosticRecovery::ReferenceRequired,
+    }
+}
 impl Compiler<'_> {
     fn admit_nameof_lexical_type(
         &self,
@@ -111,10 +133,19 @@ impl Compiler<'_> {
                 }
             }
             ExprKind::Member {
-                object, selector, ..
+                object,
+                selector,
+                via_colon,
+            } => {
+                self.admit_nameof_member(
+                    object,
+                    selector,
+                    if *via_colon { ":" } else { "." },
+                    statement,
+                )?;
             }
-            | ExprKind::StaticMember { object, selector } => {
-                self.admit_nameof_member(object, selector, statement)?;
+            ExprKind::StaticMember { object, selector } => {
+                self.admit_nameof_member(object, selector, "::", statement)?;
             }
             _ => (),
         }
@@ -186,6 +217,27 @@ fn reflective_type_role(path: &str) -> ReflectiveTypeRole {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn nameof_recovery_category_uses_reference_role_not_error_text() {
+        for (source, expected) in [
+            ("missing", NameofDiagnosticRecovery::ReferenceRejected),
+            (
+                "/datum/missing",
+                NameofDiagnosticRecovery::ReferenceRejected,
+            ),
+            ("R.missing", NameofDiagnosticRecovery::ReferenceRejected),
+            ("/list", NameofDiagnosticRecovery::ReferenceRequired),
+            ("(/list)", NameofDiagnosticRecovery::ReferenceRequired),
+            ("1", NameofDiagnosticRecovery::ReferenceRequired),
+        ] {
+            let expression = dm_syntax::parse_expression(source).expr.unwrap();
+            assert_eq!(
+                nameof_diagnostic_recovery(&expression),
+                expected,
+                "{source}"
+            );
+        }
+    }
     struct Host {
         opaque: bool,
         queries: std::sync::Mutex<Vec<dm_ir::ResolveQuery>>,

@@ -913,6 +913,7 @@ struct Compiler<'a> {
 mod compiler_context;
 #[path = "simple/nameof_admission.rs"]
 mod nameof_admission;
+pub use nameof_admission::{nameof_diagnostic_recovery, NameofDiagnosticRecovery};
 #[path = "simple/source_features.rs"]
 mod source_features;
 pub use source_features::{
