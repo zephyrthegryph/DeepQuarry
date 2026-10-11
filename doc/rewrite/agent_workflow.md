@@ -106,6 +106,9 @@ merge-and-push chain once pushed past DreamChecker errors and broke master; don'
 `tools/hooks/pre-push` refuses any push to master that did not come from the script
 (`bash tools/hooks/install_pre_push.sh` installs it for every worktree).
 
+It also refuses a HEAD without a passing test stamp (section 14): run `dq_lane_ready.sh` on a lane, or `dq_merge_gates.sh` on a
+merge batch, before `dq_push_master.sh`.
+
 ## 6. Interaction snapshots are per-type files
 
 `doc/rewrite/snapshot_pins.md`. The i7 snapshots keep their rows in
@@ -292,6 +295,24 @@ once with the types it differs for. Details: `doc/rewrite/snapshot_pins.md` "Fac
 then runs `python3 tools/dq_pin_factor.py`, which factors them; commit the pin files and `op_bases/` together. A branch that blessed pins in
 the old format still passes (plain rows are read as before); run `python3 tools/dq_pin_factor.py` once to factor them before the lane-ready
 run. On a merge conflict in a pin file, take master's file (`git show origin/master:<path> > <path>`, never checkout) and re-bless the type; never hand-merge the `@`/`-`/`+` lines.
+
+## 14. The push gate needs a test stamp (October 2026, `tooling-fix`)
+
+`tools/dq_push_master.sh` and `tools/hooks/pre-push` refuse a push unless the pushed commit carries a passing test stamp, checked by
+`bash tools/dq_push_stamp.sh <commit>` (prints `STAMPED: ...` or `UNSTAMPED: ...`). A commit passes when:
+
+- it carries a lane-ready note (`refs/notes/lane-ready`, written by `dq_lane_ready.sh`) or a merge-gates note (`refs/notes/merge-gates`,
+  written by `dq_merge_gates.sh` when its test world ran) on exactly that commit, with `"ok":true`;
+- it is already in `origin/master`;
+- it is a merge and every parent passes: the push script's own merge of `origin/master` into a stamped lane, or a merge batch of
+  stamped lanes (`dq_merge_gates.sh` also stamps the batch's merge commit itself);
+- it has one parent that passes and changes only docs, changelogs, `*.md`, `tools/ci/known_failures.txt` or the look keys (what
+  `dq_lane_ready.sh` allows after a stamp, and the data-only commits the push script adds).
+
+A stamp is ok when nothing failed that `tools/ci/known_failures.txt` does not list: the gates now record `new_failed=` beside `failed=`, the
+lane-ready note carries both, and `dq_lane_check.sh` judges `new_failed`. `dq_merge_gates.sh --no-tests` writes no stamp. The hook runs the
+checker from the pushing worktree, so a worktree that predates it pushes as before; reinstall the hook after merging
+(`cp tools/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"`).
 
 ## 15. Ratchet lints on the typed tree (October 2026, `tooling-fix`)
 
