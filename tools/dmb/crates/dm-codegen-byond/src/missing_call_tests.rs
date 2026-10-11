@@ -286,3 +286,20 @@ fn catch_collision_uses_current_catch_and_previous_local_spans() {
     let previous = errors[0].related[0].span;
     assert!(source[previous.start..previous.end].starts_with("var/value"));
 }
+
+#[test]
+fn untyped_local_dot_rejects_even_known_member_name() {
+    let ast = dm_syntax::parse("/proc/probe()\n    var/value\n    return value.Copy()\n");
+    let mut symbols = SymbolTable::default();
+    symbols.intern("Copy").unwrap();
+    let errors = crate::compile_simple_proc_with_resolver(
+        &ast.items[0].children,
+        &ProcedureInputs::default(),
+        &symbols,
+        &MissingCallHost { opaque: true },
+    )
+    .err()
+    .expect("untyped local dot rejects");
+    assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
+    assert_eq!(errors[0].reason, "value.Copy: undefined proc");
+}

@@ -60,7 +60,7 @@ pub(crate) enum Boundary {
     },
 }
 impl Boundary {
-    pub(super) fn capture(boundary: Option<&BoundaryAbi>) -> Self {
+    pub(in crate::driver_facts) fn capture(boundary: Option<&BoundaryAbi>) -> Self {
         match boundary {
             None => Self::Absent,
             Some(BoundaryAbi::Fresh) => Self::Fresh,
@@ -97,7 +97,7 @@ impl PartialEq for Inputs {
     }
 }
 impl Eq for Inputs {}
-pub(super) struct Current<'a> {
+pub(in crate::driver_facts) struct Current<'a> {
     pub inputs: Arc<Inputs>,
     pub resolver: &'a dyn Resolver,
 }
@@ -144,7 +144,7 @@ pub(super) fn reads(
     }));
     out
 }
-pub(super) fn locator(identity: UnitIdentity) -> Arc<[u8]> {
+pub(in crate::driver_facts) fn locator(identity: UnitIdentity) -> Arc<[u8]> {
     let mut out = b"dm-process-abi-unit-v3\0".to_vec();
     out.extend_from_slice(&identity.owner.bits().to_le_bytes());
     out.extend_from_slice(&identity.name.bits().to_le_bytes());

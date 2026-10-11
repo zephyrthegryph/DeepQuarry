@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "receipt": "E:\\dq-cache\\dmb-local-receiver-diagnostics\\8f2e510df3a046fb90e51c66d92946a5\\receipt.json",
+  "receipt_sha256": "705b1f161849f412c185d2fd3159787de924bec08efe3aa9df8c31d09a78eaba",
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "source_sha256": {
+    "local_known_dot.dm": "cbd57d768fbc04f7a97ed7fd569265460612c830067271517117afc09424868d",
+    "local_known_dot.dme": "cc8a1ab0be8724ede22ae33f78e928fee8d1d0588ba0d0ae29c828eda50f21a4",
+    "local_missing_dot.dm": "14ead3a430b4b549c8e163c82d40c8e09b64f4a49f6ad8636f8bd0e884cd38b6",
+    "local_missing_dot.dme": "de7af540a94377385cd06cb52576efa5296eb4885556b136fc8e4076a1aa1db0",
+    "local_known_colon.dm": "2e2348f6efa1af52edb98d4ee3e2d2e062a9624f82b9cab64b783eb815e76b6d",
+    "local_known_colon.dme": "d2aaab6a082b15756d2f0a80e4cebcf53057d9520ea6a6e258417c5efa05212c",
+    "local_typed_list.dm": "bf06fa924ff350d363eb6b11a94ee94347e59085ec407e2003881b1ca9ce5898",
+    "local_typed_list.dme": "4e31daa4a6a6f1f4da3ae0f9eb64e0272e877142b7ff94d8c58a35334bd11fb5"
+  },
+  "byond": {
+    "local_known_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.9026763999718241,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "local_known_dot.dm",
+          "line": 3,
+          "severity": "error",
+          "message": "value.Copy: undefined proc"
+        }
+      ]
+    },
+    "local_missing_dot": {
+      "child": {
+        "exit": 4294967295,
+        "wall_s": 0.5058953000116162,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": [
+        {
+          "file": "local_missing_dot.dm",
+          "line": 3,
+          "severity": "error",
+          "message": "value.MissingReceiverMethod: undefined proc"
+        }
+      ]
+    },
+    "local_known_colon": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.451955700002145,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    },
+    "local_typed_list": {
+      "child": {
+        "exit": 0,
+        "wall_s": 0.5668449000222608,
+        "wall_scope": "client launch through reap; daemon work included for retained requests"
+      },
+      "diagnostics": []
+    }
+  }
+}

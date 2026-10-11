@@ -116,6 +116,22 @@ impl HeapCensus {
                 }
             }
         });
+        artifacts.visit_incidence_buffer(|address, len, capacity| {
+            self.buffer("prepared_abi.incidence_domains", address, len, capacity);
+        });
+        if let Some((leaves, variants, domains, subscriptions)) =
+            artifacts.visit_incidence_storage(|leaf| {
+                self.slice("prepared_abi.incidence_reads", leaf, true);
+            })
+        {
+            self.observe_items(
+                "prepared_abi.incidence_index",
+                leaves + variants + domains + subscriptions,
+            );
+            if leaves + variants + domains + subscriptions != 0 {
+                self.unknown("prepared_abi.incidence_index","private reverse-index BTree nodes and control blocks excluded; retained receipt leaves share existing ledger");
+            }
+        }
     }
     fn abi_unit_artifact(&mut self, unit: &Arc<crate::driver_facts::abi_artifacts::UnitArtifact>) {
         if self.arc_object("prepared_abi.unit_payload", unit) {

@@ -30,7 +30,7 @@ impl PartialEq for Inputs {
 impl Eq for Inputs {}
 pub(in crate::driver_facts) type Capture =
     Mutex<BTreeMap<UnitIdentity, (Arc<UnitArtifact>, Receipt<Query, Answer, Domain>)>>;
-pub(super) fn record(
+pub(in crate::driver_facts) fn record(
     capture: Option<&Capture>,
     identity: UnitIdentity,
     unit: &Arc<UnitArtifact>,

@@ -2,7 +2,7 @@
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
 // Native formal scope rules change both successful code and diagnostics.
-pub const PROCEDURE_VERSION: u32 = 18;
+pub const PROCEDURE_VERSION: u32 = 19;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};

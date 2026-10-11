@@ -29,7 +29,7 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
 }
 pub(in crate::driver_facts) type Admission<'a> =
     ReceiptAdmission<'a, Query, Answer, Domain, SemanticHost<'a>>;
-pub(super) fn changed(
+pub(in crate::driver_facts) fn changed(
     reads: &Reads,
     versions: &[(Domain, u128)],
     current: &Current<'_>,

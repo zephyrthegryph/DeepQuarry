@@ -65,13 +65,102 @@
           "exit": 0
         }
       ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-184312-4cb90d93-focused.json",
+      "binary_sha256": "32515366708b0f34a4b0c47f41dd5adf9797cfb2d8c9558c8f0148c919359380",
+      "filters": [
+        {
+          "filter": "lowering::tests::incomplete_expression::",
+          "selected": 7,
+          "exit": 0
+        },
+        {
+          "filter": "assets::tests::mixed_drive_prefix_skin_keeps_input_identity_and_rejects_external_alias",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "initializer_policy::classification::artifact::tests::preparation_tests::",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "driver_facts::abi_artifacts::production_tests::",
+          "selected": 7,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-184313-e14b6271-focused.json",
+      "binary_sha256": "433b2a4030de1abf6f1d2ec46137cb6e804c318a53590866ee952ad4ac7ea0b2",
+      "filters": [
+        {
+          "filter": "lower_resolver::missing_call_tests::",
+          "selected": 7,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-184525-6d3b36c5-focused.json",
+      "binary_sha256": "cfdcd97a824c505aa1ad5a36cee4fb5b2b2f0f21db6c8157b60780926ec3b696",
+      "filters": [
+        {
+          "filter": "resolver_member_names::tests::",
+          "selected": 2,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-184525-ba6c7528-focused.json",
+      "binary_sha256": "37301bd4c7f77c255f49cbe02c7792f51ff19d52525610d8f2e80d751d0f06e4",
+      "filters": [
+        {
+          "filter": "artifacts::incidence::tests::",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "artifacts::incidence_tests::",
+          "selected": 2,
+          "exit": 0
+        },
+        {
+          "filter": "observations::receipt_admission::request_certificate_tests::",
+          "selected": 3,
+          "exit": 0
+        },
+        {
+          "filter": "artifacts::tests::custom_receipt_validation_preserves_rejection_and_old_replay",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
+    },
+    {
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261010-183826-428379a2-focused.json",
+      "binary_sha256": "6a7108896dd6ee07e17e2abf3f778e7947699a9df6bee5fd65c9f9d91a69e668",
+      "filters": [
+        {
+          "filter": "regions::tests::equivalent_drive_prefixes_preserve_project_containment",
+          "selected": 1,
+          "exit": 0
+        },
+        {
+          "filter": "regions::tests::nested_parent_includes_keep_authored_semantic_paths_across_roots",
+          "selected": 1,
+          "exit": 0
+        }
+      ]
     }
   ],
   "remaining": [
-    "Safe-call and catch diagnostics corrections",
-    "Windows absolute-include runtime path integration",
-    "Current frozen native full game suite",
-    "Structural incremental scheduling and initializer migration",
+    "Current frozen executable paired compiler and runtime checks",
+    "Current full native game suite",
+    "Structural ABI scheduling and remaining broad passes",
     "Six worktrees and real history oracle"
   ],
   "performance": "No accepted benchmark in this receipt"

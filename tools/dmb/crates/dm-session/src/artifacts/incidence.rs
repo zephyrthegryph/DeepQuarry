@@ -32,6 +32,14 @@ impl<Q, A, D> Incidence<Q, A, D> {
             visit(&leaf.owner);
         }
     }
+    pub(super) fn domain_buffer(&self) -> (usize, usize, usize) {
+        let size = std::mem::size_of::<(D, BTreeSet<LeafId>)>();
+        (
+            self.domains.as_ptr() as usize,
+            self.domains.len() * size,
+            self.domains.capacity() * size,
+        )
+    }
     pub(super) fn counts(&self) -> (usize, usize, usize, usize) {
         (
             self.leaves.len(),

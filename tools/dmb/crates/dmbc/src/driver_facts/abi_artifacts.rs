@@ -24,12 +24,13 @@ pub(crate) enum Artifact {
     Batch(Arc<batch::Recipe>),
 }
 pub struct AbiArtifacts {
-    store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
+    pub(super) store: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Domain>,
     engine_owner: Option<Arc<crate::runner_host::EnginePayload>>,
     groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
-    reused: AtomicUsize,
+    pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
     batch_reused: AtomicUsize,
+    pub(super) scheduled_reused: AtomicUsize,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
@@ -40,6 +41,7 @@ impl Default for AbiArtifacts {
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
             batch_reused: AtomicUsize::new(0),
+            scheduled_reused: AtomicUsize::new(0),
         }
     }
 }
@@ -64,6 +66,18 @@ impl AbiArtifacts {
     }
     pub(crate) fn visit_group_storage(&self, visitor: impl FnMut(usize, usize, usize)) {
         self.groups.visit_storage(visitor);
+    }
+    pub(crate) fn visit_incidence_buffer(&self, visit: impl FnMut(usize, usize, usize)) {
+        self.store.visit_incidence_buffer(visit);
+    }
+    pub fn scheduled_reused(&self) -> usize {
+        self.scheduled_reused.load(Ordering::Relaxed)
+    }
+    pub(crate) fn visit_incidence_storage(
+        &self,
+        visit: impl FnMut(&Arc<[dm_session::Observation<Query, Answer, Domain>]>),
+    ) -> Option<(usize, usize, usize, usize)> {
+        self.store.visit_incidence_storage(visit)
     }
     pub fn batch_reused(&self) -> usize {
         self.batch_reused.load(Ordering::Relaxed)

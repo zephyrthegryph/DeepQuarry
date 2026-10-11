@@ -35,17 +35,23 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     where
         D: Clone,
     {
-        super::certified_domains(versions, |domain| {
-            let cell = self
-                .versions
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .entry(domain.clone())
-                .or_insert_with(|| Arc::new(OnceLock::new()))
-                .clone();
-            *cell.get_or_init(|| self.host.version(domain))
-        })
+        super::certified_domains(versions, |domain| self.current_version(domain))
     }
+    /// The same request-bound immutable issuer answer used by certificate admission.
+    pub fn current_version(&self, domain: &D) -> Option<u128>
+    where
+        D: Clone,
+    {
+        let cell = self
+            .versions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .entry(domain.clone())
+            .or_insert_with(|| Arc::new(OnceLock::new()))
+            .clone();
+        *cell.get_or_init(|| self.host.version(domain))
+    }
+
     /// The ordinary artifact admission rule with request-shared certificate
     /// checks. Every uncertified answer is replayed in canonical order, including
     /// observable hosts. Partial or certificate-only success never seeds the

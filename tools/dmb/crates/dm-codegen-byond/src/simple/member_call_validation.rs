@@ -27,9 +27,13 @@ impl Compiler<'_> {
         // existing contract. Explicit call(receiver,name) remains dynamic.
         if self.lookup.is_some() {
             if let ExprKind::Ident(name) = &object.kind {
-                if self.bindings.parameters.iter().any(|formal| formal == name)
-                    && !self.bindings.parameter_types.contains_key(name)
-                {
+                let untyped = if self.local_slots.contains_key(name) {
+                    self.local_types.get(name).is_none()
+                } else {
+                    self.bindings.parameters.iter().any(|formal| formal == name)
+                        && !self.bindings.parameter_types.contains_key(name)
+                };
+                if untyped {
                     return Err(self.undefined_member_call(object, selector, ".", statement));
                 }
             }

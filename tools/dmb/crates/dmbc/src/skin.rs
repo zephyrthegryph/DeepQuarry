@@ -34,13 +34,14 @@ pub fn plan(frontend: &ColdFrontend, skins: &[CapturedSkin]) -> Result<Plan, Str
         if xxhash_rust::xxh3::xxh3_128(skin.source.as_bytes()) != skin.source_identity {
             return Err("skin source identity differs from captured payload".into());
         }
-        let alias = skin
-            .path
-            .strip_prefix(&frontend.plan.project_dir)
-            .map_err(|_| "skin outside project requires explicit archive alias")?
-            .to_str()
-            .ok_or("skin archive alias is not UTF-8")?
-            .replace('\\', "/");
+        let alias = dm_preprocess::regions::relative_filesystem_path(
+            &skin.path,
+            &frontend.plan.project_dir,
+        )
+        .ok_or("skin outside project requires explicit archive alias")?
+        .to_str()
+        .ok_or("skin archive alias is not UTF-8")?
+        .replace('\\', "/");
         let dependencies = dm_resources::capture::discover_literals(&skin.source)
             .map_err(|error| error.to_string())?
             .into_iter()
@@ -105,6 +106,53 @@ pub fn attach(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(windows)]
+    #[test]
+    fn mixed_prefix_model_preserves_capture_authority_and_external_rejection() {
+        struct AbsoluteSkin(&'static str);
+        impl dm_preprocess::SourceProvider for AbsoluteSkin {
+            fn read(&self, path: &std::path::Path) -> Result<String, String> {
+                if path.extension().is_some_and(|ext| ext == "dme") {
+                    Ok(format!("#include \"{}\"\n", self.0))
+                } else {
+                    Ok("window \"main\"\n".into())
+                }
+            }
+        }
+        let build = |provider: &AbsoluteSkin| {
+            dm_tree::frontend::build(
+                std::path::Path::new(r"\\?\E:\game\project.dme"),
+                provider,
+                &Default::default(),
+                1,
+            )
+            .unwrap()
+        };
+        let provider = AbsoluteSkin("E:/game/interface/main.dmf");
+        let frontend = build(&provider);
+        let captured = dm_tree::non_text::capture(&frontend, &provider).unwrap();
+        let dm_tree::non_text::NonTextInput::Skin(skin) = &captured[0] else {
+            panic!("skin capture")
+        };
+        let model = plan(&frontend, std::slice::from_ref(skin)).unwrap();
+        assert_eq!(
+            model.model.selected().unwrap().archive_alias.as_ref(),
+            "interface/main.dmf"
+        );
+        assert_eq!(model.sources[0].path, skin.path);
+        let mut changed = skin.clone();
+        changed.source_identity ^= 1;
+        assert!(plan(&frontend, &[changed]).is_err());
+        let provider = AbsoluteSkin("E:/game-other/interface/main.dmf");
+        let frontend = build(&provider);
+        let captured = dm_tree::non_text::capture(&frontend, &provider).unwrap();
+        let dm_tree::non_text::NonTextInput::Skin(skin) = &captured[0] else {
+            panic!("skin capture")
+        };
+        assert!(plan(&frontend, std::slice::from_ref(skin))
+            .unwrap_err()
+            .contains("outside project"));
+    }
     struct Files;
     impl dm_preprocess::SourceProvider for Files {
         fn read(&self, path: &std::path::Path) -> Result<String, String> {

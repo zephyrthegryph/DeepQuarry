@@ -47,6 +47,7 @@ pub use evaluator::DriverEvaluator;
 use evaluator::LexicalAbiEvaluator;
 #[path = "driver_facts/abi_artifacts.rs"]
 pub(crate) mod abi_artifacts;
+mod abi_scheduler;
 pub use abi_artifacts::AbiArtifacts;
 
 /// Captured boundary facts are explicit; a missing entry never means Fresh.
@@ -501,6 +502,24 @@ fn prepare_source_abi_mode_on_executor(
     };
     let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
+    let mut scheduled = artifacts
+        .map(|store| {
+            abi_scheduler::admitted(
+                store,
+                frontend,
+                engine,
+                evaluator,
+                boundaries,
+                resource_search_context,
+                lexical_statics,
+                index,
+                shared_admission.as_ref(),
+                batch_inputs.as_deref(),
+                &artifact_keys,
+                batch_capture.as_ref(),
+            )
+        })
+        .unwrap_or_default();
     let mut layouts = HashMap::new();
     let mut remaining = vec![true; frontend.bodies.len()];
     let mut results: Vec<Option<crate::procedure_policy::PreparedUnit>> =
@@ -510,6 +529,16 @@ fn prepare_source_abi_mode_on_executor(
     // The build executor survives every dependency wave and every other stage.
     if !ready.is_empty() {
         while !ready.is_empty() {
+            let encounter = ready.clone();
+            let mut admitted_wave = Vec::new();
+            ready.retain(|ordinal| {
+                if let Some(unit) = scheduled.remove(ordinal) {
+                    admitted_wave.push((*ordinal, Ok(unit)));
+                    false
+                } else {
+                    true
+                }
+            });
             let inherited = DriverInheritedFacts {
                 frontend,
                 engine,
@@ -527,7 +556,7 @@ fn prepare_source_abi_mode_on_executor(
             };
             // Indexed collection preserves ready encounter order. install returns
             // only after the wave and all sibling jobs finish, including unwinding.
-            let wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 executor.install(|| {
                     ready
                         .par_chunks(ready.len().div_ceil(executor.workers()).max(1))
@@ -609,6 +638,13 @@ fn prepare_source_abi_mode_on_executor(
                 })
             }))
             .map_err(|_| AbiError::invariant("ABI preparation worker panicked"))?;
+            wave.extend(admitted_wave);
+            let positions: HashMap<_, _> = encounter
+                .iter()
+                .enumerate()
+                .map(|(position, ordinal)| (*ordinal, position))
+                .collect();
+            wave.sort_by_key(|(ordinal, _)| positions[ordinal]);
             ready.clear();
             for (ordinal, result) in wave {
                 remaining[ordinal] = false;

@@ -88,6 +88,41 @@ fn same(retained: &PreparedPinnedSourceAbi, fresh: &PreparedPinnedSourceAbi) {
     }
 }
 #[test]
+fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let first=frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine);
+    let before = prepared(&first, engine, Some(&store));
+    assert_eq!(store.scheduled_reused(), 0);
+    let changed=frontend("// current origin moved\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x+1\n",engine);
+    let retained = prepared(&changed, engine, Some(&store));
+    same(&retained, &prepared(&changed, engine, None));
+    assert_eq!(
+        store.batch_reused(),
+        0,
+        "structural metadata edit must decline whole batch"
+    );
+    assert_eq!(
+        store.scheduled_reused(),
+        1,
+        "only independent owner skips worker preparation"
+    );
+    let (_, old) = before.prepared.units().last().unwrap();
+    let (_, current) = retained.prepared.units().last().unwrap();
+    assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
+    for (_, unit) in retained.prepared.units().iter().take(3) {
+        assert_eq!(unit.abi.as_ref().unwrap().layout.invisibility, Some(9));
+    }
+    assert!(store.visit_incidence_storage(|_| {}).unwrap().0 > 0);
+}
+#[test]
 fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_signature() {
     let engine_owner = crate::runner_host::EnginePayload::capture(
         include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
