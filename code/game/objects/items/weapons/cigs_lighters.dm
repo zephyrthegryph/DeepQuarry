@@ -297,7 +297,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
 		smoke(5)
 		return ITEM_INTERACT_SUCCESS
-	if(istype(M) && M.on_fire)
+	if(istype(M) && stat_value(M, STAT_ON_FIRE))
 		user.do_attack_animation(M)
 		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."))
 		return ITEM_INTERACT_SUCCESS

@@ -261,7 +261,7 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
 	var/mob/living/M = user
-	if(istype(M) && M.nutrition <= 100)
+	if(istype(M) && nutrition_of(M) <= 100)
 		return "you are too hungry to exercise right now"
 	return TRUE
 

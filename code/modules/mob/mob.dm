@@ -1151,7 +1151,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		rel_add(src, nameof(exploit_addons), I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
 

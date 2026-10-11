@@ -148,7 +148,7 @@
 	H.set_nutrition(400)
 	hcic_generator_step(G)
 	TEST_ASSERT_EQUAL(G.reagents.total_volume, 2, "a step makes two units of egg while hosted")
-	TEST_ASSERT_EQUAL(H.nutrition, 399.5, "and costs half a unit of nutrition")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 399.5, "and costs half a unit of nutrition_of(src)")
 
 /datum/unit_test/dq_hc_items/c_reagent_implant_every_runs_while_hosted
 

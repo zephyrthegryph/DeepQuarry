@@ -157,7 +157,7 @@ CAPABILITIES(/obj/effect/mine)
 
 	if(istype(M, /mob/living/))
 		var/mob/living/mob = M
-		if(!(dq_get_hovering(mob) || mob.flying || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
+		if(!(dq_get_hovering(mob) || stat_value(mob, STAT_FLYING) || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
 			explode(M)
 
 /obj/effect/mine/proc/screwdriver_used(datum/act/op/A)
@@ -486,7 +486,7 @@ MSG_DEF(mine/priming, span_infoplain("You start priming %T%. Hold still!"), "%U%
 
 // This tells AI mobs to not be dumb and step on mines willingly.
 /obj/item/mine/is_safe_to_step(mob/living/L)
-	if(!(dq_get_hovering(L) || L.flying || L.is_incorporeal() || L.mob_size <= MOB_TINY))
+	if(!(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal() || L.mob_size <= MOB_TINY))
 		return FALSE
 	return ..()
 

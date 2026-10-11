@@ -343,9 +343,9 @@
 			regen_wounds = FALSE // Low pressure: the body holds wounds together rather than sealing them.
 
 	var/starve_mod = 1
-	if(H.nutrition <= 50)
+	if(nutrition_of(H) <= 50)
 		starve_mod = 0.5 // Severe starvation. Healing past this point hurts badly.
-	else if(H.nutrition <= 150)
+	else if(nutrition_of(H) <= 150)
 		starve_mod = 0.75
 	var/amount = S.heal_rate * starve_mod
 
@@ -377,7 +377,7 @@
 
 /// Over half the body soaked through.
 /proc/promethean_is_soaked(mob/living/carbon/human/H)
-	return H.fire_stacks < 0 && H.get_water_protection() <= 0.5
+	return fire_stacks_of(H) < 0 && H.get_water_protection() <= 0.5
 
 /// Water dissolves a promethean's gel. Grows while soaked, fades once dry, and
 /// stops regeneration while present.

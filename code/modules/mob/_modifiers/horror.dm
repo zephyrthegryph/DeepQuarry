@@ -68,7 +68,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 
 	//The dangerous health effects.
-	unfortunate_soul.set_nutrition(max(0, unfortunate_soul.nutrition - 5)) //Your nutrition is being sapped faster than usual.
+	unfortunate_soul.set_nutrition(max(0, nutrition_of(unfortunate_soul) - 5)) //Your nutrition_of(src) is being sapped faster than usual.
 	if(unfortunate_soul.life_tick % 100 == 0)// Once every 100 ticks, we mutate some organs.
 		choose_organs(unfortunate_soul)
 		become_drippy(unfortunate_soul)
@@ -83,7 +83,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		unfortunate_soul.endurance = max(10, unfortunate_soul.endurance - 1) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
 
 	//The mental effects.
-	unfortunate_soul.set_fear(min(100, unfortunate_soul.fear + 2)) //Fear is increased by 1, but never above 100. You're in a scary place.
+	unfortunate_soul.status_set(STAT_FEAR, min(100, unfortunate_soul.status_units(STAT_FEAR) + 2)) //Fear is increased by 1, but never above 100. You're in a scary place.
 	if(unfortunate_soul.life_tick % 20 == 0)
 		var/obj/item/organ/O = (length(unfortunate_soul.internal_organ_list()) ? pick(unfortunate_soul.internal_organ_list()) : null)
 		if(O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.

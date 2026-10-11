@@ -55,7 +55,7 @@ TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 		after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
-	if(nutrition >= evo_point && !src?.buckled_to() && vore_fullness == 0 && !victim)
+	if(nutrition_of(src) >= evo_point && !src?.buckled_to() && vore_fullness == 0 && !victim)
 		if(next == "/mob/living/simple_mob/metroid/juvenile/queen" && GLOB.queen_amount > 0)
 			to_chat(src, span_warning("There is already a queen."))
 			return
@@ -63,7 +63,7 @@ TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 		status_set(STAT_PARALYZED, 7998)
 		after(src, 5 SECONDS, PROC_REF(expand_troid))
 
-	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
+	if(nutrition_of(src) >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition_of(src) gets too high!
 		release_vore_contents()
 		rel_clear(src, nameof(prey_excludes))
 		stop_consumption()

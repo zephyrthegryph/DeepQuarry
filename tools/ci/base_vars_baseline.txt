@@ -179,7 +179,6 @@ base_var	code/game/objects/items.dm	var/climbing_delay = 1 //If rock_climbing, l
 base_var	code/game/objects/items.dm	var/digestable = TRUE
 base_var	code/game/objects/items.dm	var/item_tf_spawn_allowed = FALSE
 base_var	code/game/objects/items.dm	var/list/ckeys_allowed_itemspawn = null
-base_var	code/game/objects/items.dm	var/exploit_for //if this obj is an exploit for somebody, this points to them
 base_var	code/game/objects/items.dm	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 base_var	code/game/objects/items.dm	var/persist_storable = TRUE //If this is true, this item can be stored in the item bank.
 base_var	code/game/objects/items.dm	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
@@ -480,19 +479,15 @@ base_var	code/modules/mob/living/life/life_om.dm	var/tmp/life_z = 0
 base_var	code/modules/mob/living/life/living_systems.dm	var/tmp/list/global_hud_claims
 base_var	code/modules/mob/living/living.dm	/mob/living/var/datum/character_setup_button/character_setup_button
 base_var	code/modules/mob/living/living_defines.dm	var/hud_updateflag = 0
-base_var	code/modules/mob/living/living_defines.dm	var/nutrition = 400
 base_var	code/modules/mob/living/living_defines.dm	var/max_nutrition = MAX_NUTRITION
 base_var	code/modules/mob/living/living_defines.dm	var/now_pushing = null
 base_var	code/modules/mob/living/living_defines.dm	var/tod = null // Time of death
 base_var	code/modules/mob/living/living_defines.dm	var/tmp/revival_in_progress = FALSE
-base_var	code/modules/mob/living/living_defines.dm	var/fire_stacks
-base_var	code/modules/mob/living/living_defines.dm	var/fire_stack_decay_rate = -0.05
 base_var	code/modules/mob/living/living_defines.dm	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 base_var	code/modules/mob/living/living_defines.dm	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
 base_var	code/modules/mob/living/living_defines.dm	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
 base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list
-base_var	code/modules/mob/living/living_defines.dm	var/flying = 0 // Allows flight
 base_var	code/modules/mob/living/living_defines.dm	var/datum/inventory_panel/inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	var/touch_reaction_flags
 base_var	code/modules/mob/living/living_defines.dm	var/tf_form_holds_key = FALSE
@@ -502,7 +497,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/forced_psay = FALSE // If
 base_var	code/modules/mob/living/living_defines.dm	var/autowhisper = FALSE // Automatically whisper
 base_var	code/modules/mob/living/living_defines.dm	var/autowhisper_mode = null // Mode to use with autowhisper
 base_var	code/modules/mob/living/living_defines.dm	var/custom_link = null
-base_var	code/modules/mob/living/living_defines.dm	var/hunger_rate = DEFAULT_HUNGER_FACTOR
 base_var	code/modules/mob/living/living_defines.dm	var/private_notes = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_say = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_ask = null
@@ -543,7 +537,6 @@ base_var	code/modules/mob/mob_defines.dm	var/med_record = ""
 base_var	code/modules/mob/mob_defines.dm	var/sec_record = ""
 base_var	code/modules/mob/mob_defines.dm	var/gen_record = ""
 base_var	code/modules/mob/mob_defines.dm	var/exploit_record = ""
-base_var	code/modules/mob/mob_defines.dm	var/list/obj/item/exploit_addons //Assorted things that show up at the end of the exploit_record list
 base_var	code/modules/mob/mob_defines.dm	var/bhunger = 0 //Carbon
 base_var	code/modules/mob/mob_defines.dm	var/ajourn = 0
 base_var	code/modules/mob/mob_defines.dm	var/phoron = null

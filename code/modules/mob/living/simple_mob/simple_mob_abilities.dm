@@ -80,7 +80,7 @@
 				if(!throw_at(T, 10, pounce_speed, then = PROC_REF(pouncefinish), then_owner = src, then_with = list(foundpt, foundpm, T)))
 					if(status_flags & LEAPING)
 						set_status_flags(status_flags & ~LEAPING)
-						flying = 0
+						set_flying(src, 0)
 						dq_set_hovering(src, 0)
 						if(!foundpt)
 							pass_flags &= ~PASSTABLE
@@ -93,7 +93,7 @@
 			// some sanity incase the callback didn't fire for some reason
 			if(status_flags & LEAPING)
 				set_status_flags(status_flags & ~LEAPING)
-				flying = 0
+				set_flying(src, 0)
 				dq_set_hovering(src, 0)
 			set_pouncing(0)
 	else
@@ -103,7 +103,7 @@
 /mob/living/simple_mob/proc/pouncefinish(pt, pm, atom/T)
 	if(status_flags & LEAPING)
 		set_status_flags(status_flags & ~LEAPING)
-		flying = 0
+		set_flying(src, 0)
 		dq_set_hovering(src, 0)
 
 		if(!pt)
