@@ -284,7 +284,7 @@ def run_child(executable, arguments, directory, deadline, require_owned=False, c
 
 def compile_one(executable, project, manifest, workers, semantic, artifacts, logs,
                 mode, deadline, require_owned, endpoint, daemon, cache_directory):
-    if daemon.poll() is not None or not endpoint.probe(daemon):
+    if mode != "fresh" and (daemon is None or daemon.poll() is not None or not endpoint.probe(daemon)):
         raise RuntimeError("owned daemon missing before request")
     arguments = ["compile", str(project / manifest), "--workers", str(workers),
                  "--progress",
@@ -321,7 +321,7 @@ def compile_one(executable, project, manifest, workers, semantic, artifacts, log
                     "complete_evidence": result[name + "_evidence"],
                 }
             result[name] = value
-    if daemon.poll() is not None or not endpoint.probe(daemon):
+    if mode != "fresh" and (daemon is None or daemon.poll() is not None or not endpoint.probe(daemon)):
         raise RuntimeError("owned daemon changed during request; replacement left untouched")
     if result["exit"] != 0:
         raise RuntimeError(f"{mode} compiler failed: {result['exit']}")
@@ -521,6 +521,45 @@ def main():
         daemon_environment["DMB_DAEMON_MAX_WORKERS"] = str(args.total_workers)
         if soft_bytes is not None:
             daemon_environment["DMB_DAEMON_SOFT_PRIVATE_BYTES"] = str(soft_bytes)
+        # Produce all independent fresh oracles BEFORE a resident daemon exists.
+        # An idle daemon still owns its graph; running a fresh compiler alongside
+        # it competes for the same aggregate Job limit despite serialized requests.
+        steps = [("initial", None), ("unchanged", None)] + [(edit["kind"], edit) for edit in edits]
+        oracles = []
+        receipt["oracle_prepass"] = oracles
+        receipt["oracle_scheduling"] = "fresh prepass before daemon startup; same source paths and ordered revisions"
+        if _owned_memory is not None:
+            _owned_memory.start()
+        for oracle_ordinal, (oracle_kind, oracle_edit) in enumerate(steps):
+            oracle_row = {"ordinal": oracle_ordinal, "kind": oracle_kind, "sessions": []}
+            receipt["active_oracle_prepass"] = oracle_row
+            write_receipt(root, receipt)
+            for index, project in enumerate(projects):
+                if oracle_edit is not None and index in edit_sessions(oracle_edit, len(projects)):
+                    replace_edit(project, oracle_edit)
+                oracle_destination = root / "oracles" / str(oracle_ordinal) / f"session-{index}"
+                oracle_logs = root / str(oracle_ordinal) / f"session-{index}" / "fresh"
+                before = host_context.sample()
+                fresh = compile_one(executable, project, manifest, args.workers, semantic,
+                    oracle_destination, oracle_logs, "fresh", deadline, False, endpoint, None, cache_directory)
+                oracle_row["sessions"].append({"fresh": fresh, "destination": str(oracle_destination),
+                    "host_context_before_fresh": before, "host_context_after_fresh": host_context.sample()})
+                write_receipt(root, receipt)
+            oracles.append(oracle_row)
+        # Restore only the privately owned edit files from the immutable source.
+        # Atomic replacement never writes through an original hardlink.
+        for source, project in zip(sources, projects):
+            for relative in detached:
+                original, target = source / relative, safe_e(project / relative)
+                temporary = target.with_name(target.name + ".oracle-reset-" + uuid.uuid4().hex)
+                with original.open("rb") as incoming, temporary.open("xb") as outgoing:
+                    shutil.copyfileobj(incoming, outgoing)
+                os.replace(temporary, target)
+                if sha(target) != sha(original):
+                    raise RuntimeError("oracle prepass failed to restore exact source edit")
+        receipt["oracle_prepass"] = oracles
+        receipt.pop("active_oracle_prepass", None)
+        write_receipt(root, receipt)
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(executable), "--serve-daemon"], stdout=out, stderr=err, env=daemon_environment,
                                       creationflags=subprocess.CREATE_NO_WINDOW | 0x4)
@@ -529,7 +568,6 @@ def main():
         receipt["owned_daemon_pid"] = daemon.pid
         if _owned_memory is not None:
             _owned_memory.register(daemon)
-            _owned_memory.start()
         ready_deadline = min(deadline, time.monotonic() + 20)
         while not endpoint.probe(daemon):
             if _owned_memory is not None:
@@ -547,7 +585,6 @@ def main():
         edit_history = EditHistory(len(projects))
         receipt["preparation"]["status"] = "complete"
         write_receipt(root, receipt)
-        steps = [("initial", None), ("unchanged", None)] + [(edit["kind"], edit) for edit in edits]
         for ordinal, (kind, edit) in enumerate(steps):
             if daemon.poll() is not None or not endpoint.probe(daemon):
                 raise RuntimeError("owned daemon missing before request")
@@ -593,15 +630,12 @@ def main():
                     raise RuntimeError("; ".join(failures))
             row["retained_burst_wall_s"] = time.monotonic() - burst_started
             row["host_context_after_retained"] = host_context.sample()
-            # Fresh oracle processes never compete with retained measured work.
-            row["phase"] = "fresh_oracle"
+            # Compare against the exact same revision's precomputed fresh output.
+            row["phase"] = "fresh_oracle_comparison"
             for index, (project, session) in enumerate(zip(projects, row["sessions"])):
-                session["host_context_before_fresh"] = host_context.sample()
-                session["fresh"] = compile_one(executable, project, manifest, args.workers,
-                    semantic, destination(index, "fresh"), logs(index, "fresh"), "fresh",
-                    deadline, False, endpoint, daemon, cache_directory)
-                session["host_context_after_fresh"] = host_context.sample()
-                session["output_hashes"] = check_outputs(destination(index, "retained"), destination(index, "fresh"), manifest)
+                oracle = oracles[ordinal]["sessions"][index]
+                session.update({key: oracle[key] for key in ("fresh", "host_context_before_fresh", "host_context_after_fresh")})
+                session["output_hashes"] = check_outputs(destination(index, "retained"), Path(oracle["destination"]), manifest)
                 session["fresh_native_byte_oracle"] = True
                 source_context = {"snapshot_manifest_sha256": receipt["source_snapshot_sha256"],
                     "manifest_sha256": sha(project / manifest),
@@ -619,6 +653,7 @@ def main():
                 if "edit" in row["sessions"][0]:
                     row["edit"] = row["sessions"][0]["edit"]
             row["end_to_end_s"] = time.monotonic() - row_started
+            row["end_to_end_scope"] = "retained requests plus saved fresh-output comparison and structural inspection; fresh prepass excluded"
             row["fresh_native_byte_oracle"] = True
             row.pop("phase", None)
             receipt["rows"].append(row)
