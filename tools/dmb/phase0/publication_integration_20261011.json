@@ -530,5 +530,24 @@
     "files": 14,
     "logical_bytes": 560474342,
     "scope": "Exact old debug codegen objects from authenticated reaped timeout; binaries, receipts, rlibs and current release objects preserved"
+  },
+  "actual_cli_51a148": {
+    "binary_sha256": "6c52c4710ac5ca519d229741820f1537683c705f81a45b7b2cb090e13049d8d7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-120204-8b47a77f-job-cargo.json",
+    "remaining": [
+      "Actual paired diagnostic/feature gates",
+      "Completed cold/unchanged/body/new-var byte-oracle rows",
+      "Latest DM tests and matched BYOND runtime closure",
+      "Six registered worktree acceptance",
+      "Final release performance/CPU/memory/I/O gates"
+    ],
+    "archive_sha256": "fade99efa4e9bd01e78b0c3ec4fd32549546c8a9174469e7aa8d3c8330776bdd",
+    "cohort_status": "running; initializer classification and code generation succeeded, complete output not yet admitted",
+    "build_exit_code": 0,
+    "acceptance_profile": false,
+    "source_commit": "51a148bc3e8d3c2abe1fdff8d280b5f240f9c34d",
+    "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-51a148bc3e-dmbc.exe",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-120313-3e315ebc/receipt.json",
+    "cleanup_reaped": true
   }
 }
