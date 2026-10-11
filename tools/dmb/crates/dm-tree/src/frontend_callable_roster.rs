@@ -88,10 +88,10 @@ impl CallableRoster {
             abi,
         }))
     }
-    /// Rebind the existing graph/index recipe to a new lexical facade only.
-    /// These exact immutable owners cover every input used by issue(): current
-    /// dense layout, member metadata/edges, and relevant owner ancestry.
-    /// Structural changes always decline rather than reuse historical arena IDs.
+    /// Rebind the current facade using the existing immutable dense topology.
+    /// Changed chunks are checked exactly; body content and variable metadata do
+    /// not define a callable index. Procedure metadata refreshes the ABI owner.
+    /// Type/layout/ancestry and predecessor changes decline to ordinary issuance.
     pub(super) fn rebind_semantic_owner(&self, tree: &Arc<SemanticTree>) -> Option<Arc<Self>> {
         let old = &self.tree;
         if !Arc::ptr_eq(&old.types, &tree.types)
@@ -99,16 +99,46 @@ impl CallableRoster {
             || old.members.len() != tree.members.len()
             || !Arc::ptr_eq(old.members.chunk_offsets(), tree.members.chunk_offsets())
             || old.members.chunks().len() != tree.members.chunks().len()
-            || !old
-                .members
-                .chunks()
-                .iter()
-                .zip(tree.members.chunks())
-                .all(|(a, b)| Arc::ptr_eq(a, b))
         {
             return None;
         }
+        let mut changed = Vec::new();
+        for (chunk, (before, current)) in old
+            .members
+            .chunks()
+            .iter()
+            .zip(tree.members.chunks())
+            .enumerate()
+        {
+            if Arc::ptr_eq(before, current) {
+                continue;
+            }
+            if before.len() != current.len() {
+                return None;
+            }
+            for (within, (a, b)) in before.iter().zip(current.iter()).enumerate() {
+                if a.owner != b.owner
+                    || a.name != b.name
+                    || a.kind != b.kind
+                    || a.definition != b.definition
+                    || a.previous != b.previous
+                {
+                    return None;
+                }
+                if a.kind != MemberKind::Var && a.metadata.procedure != b.metadata.procedure {
+                    let index = tree.members.chunk_offsets()[chunk].checked_add(within)?;
+                    let member = MemberId(u32::try_from(index).ok()?);
+                    changed.push((
+                        *self.index.ordinals.get(&member)?,
+                        b.metadata.procedure.clone()?,
+                    ));
+                }
+            }
+        }
         let mut rebound = self.clone();
+        if !changed.is_empty() {
+            rebound.abi = Some(self.abi.as_ref()?.rebind_metadata(&changed)?);
+        }
         rebound.tree = tree.clone();
         Some(Arc::new(rebound))
     }

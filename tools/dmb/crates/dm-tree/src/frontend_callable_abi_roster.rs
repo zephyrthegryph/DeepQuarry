@@ -146,6 +146,32 @@ impl CallableAbiRoster {
             }),
         }))
     }
+    /// Caller proved identical dense callable topology and relevant ancestry.
+    /// Replace only actual current procedure metadata; old readers stay immutable.
+    pub(super) fn rebind_metadata(
+        &self,
+        changed: &[(usize, Arc<ProcedureMetadata>)],
+    ) -> Option<Arc<Self>> {
+        let mut entries = self.entries.clone();
+        let mut meanings = self.graph.entries.clone();
+        for (ordinal, metadata) in changed {
+            let entry = entries.get_mut(*ordinal)?;
+            let meaning = meanings.get_mut(*ordinal)?;
+            if entry.identity != meaning.identity {
+                return None;
+            }
+            entry.metadata = metadata.clone();
+            meaning.metadata = metadata.clone();
+        }
+        Some(Arc::new(Self {
+            entries,
+            types: self.types.clone(),
+            graph: Arc::new(CallableAbiGraph {
+                entries: meanings,
+                ancestry: self.graph.ancestry.clone(),
+            }),
+        }))
+    }
     pub fn graph(&self) -> &Arc<CallableAbiGraph> {
         &self.graph
     }

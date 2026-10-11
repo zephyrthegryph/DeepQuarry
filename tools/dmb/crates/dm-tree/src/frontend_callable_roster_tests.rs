@@ -131,7 +131,72 @@ fn lexical_facade_rebind_reuses_graph_but_rejects_foreign_dense_layout() {
         &mut state,
         "/datum/a/proc/p(x=3)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n",
     );
-    assert!(roster
-        .rebind_semantic_owner(&signature.snapshot.tree)
+    if let Some(rebound) = roster.rebind_semantic_owner(&signature.snapshot.tree) {
+        let fresh = CallableRoster::issue(&signature.snapshot.tree, &signature.bodies).unwrap();
+        assert!(Arc::ptr_eq(&roster.index, &rebound.index));
+        assert_eq!(rebound.abi(), fresh.abi());
+        assert_ne!(
+            roster.abi().unwrap().graph(),
+            rebound.abi().unwrap().graph()
+        );
+    }
+}
+
+#[test]
+fn current_chunk_rebind_shares_index_and_refreshes_exact_abi_metadata() {
+    let mut state = RetainedSemanticTree::default();
+    let current = build(
+        &mut state,
+        "/var/unrelated=1\n/datum/a/proc/p(x=1)\n    return x\n",
+    );
+    let roster = current.callable_roster().unwrap();
+    let mut facade = current.snapshot.tree.as_ref().clone();
+    let member = roster.members()[0];
+    // Body content is separately admitted by the current body/source producer.
+    facade.members[member.index()].content ^= 1;
+    let facade = Arc::new(facade);
+    let rebound = roster.rebind_semantic_owner(&facade).unwrap();
+    assert!(Arc::ptr_eq(&roster.index, &rebound.index));
+    assert!(Arc::ptr_eq(roster.abi().unwrap(), rebound.abi().unwrap()));
+    let issued = CallableRoster::issue(&facade, &current.bodies).unwrap();
+    assert_eq!(issued.abi(), rebound.abi());
+
+    let replacement = build(
+        &mut RetainedSemanticTree::default(),
+        "/var/unrelated=1\n/datum/a/proc/p(x=9)\n    return x\n",
+    );
+    let metadata = replacement
+        .callable_abi_roster()
+        .unwrap()
+        .unwrap()
+        .entries()[0]
+        .metadata
+        .clone();
+    let mut facade = facade.as_ref().clone();
+    Arc::make_mut(&mut facade.members[member.index()].metadata).procedure = Some(metadata);
+    let facade = Arc::new(facade);
+    let refreshed = rebound.rebind_semantic_owner(&facade).unwrap();
+    assert!(Arc::ptr_eq(&roster.index, &refreshed.index));
+    assert!(!Arc::ptr_eq(
+        roster.abi().unwrap().graph(),
+        refreshed.abi().unwrap().graph()
+    ));
+    let issued = CallableRoster::issue(&facade, &current.bodies).unwrap();
+    assert_eq!(issued.abi(), refreshed.abi());
+    assert!(refreshed.authenticates_tree(&facade));
+    assert_eq!(
+        roster.abi().unwrap().entries()[0].metadata,
+        current.callable_abi_roster().unwrap().unwrap().entries()[0].metadata
+    );
+
+    let mut changed = facade.as_ref().clone();
+    changed.members[member.index()].previous = Some(member);
+    assert!(refreshed
+        .rebind_semantic_owner(&Arc::new(changed))
+        .is_none());
+    let mut changed = facade.as_ref().clone();
+    changed.members[member.index()].definition = crate::DefinitionMode::Override;
+    assert!(refreshed
+        .rebind_semantic_owner(&Arc::new(changed))
         .is_none());
 }
