@@ -1841,6 +1841,7 @@
 
 
 /obj/item/book/manual/standard_operating_procedure
+	wiki_frame_page = "Standard_Operating_Procedure"
 	name = "Standard Operating Procedure"
 	desc = "A set of corporate guidelines for keeping space stations running smoothly."
 	icon_state = "sop"
@@ -1852,10 +1853,10 @@
 CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
 	derives(nameof(dat), PROC_REF(wiki_frame))
 
-wiki_frame_page = "Standard_Operating_Procedure"
 
 
 /obj/item/book/manual/command_guide
+	wiki_frame_page = "Chain_of_Command"
 	name = "The Chain of Command"
 	desc = "A set of corporate guidelines outlining the entire command structure of NanoTrasen from top to bottom."
 	icon_state = "commandGuide"
@@ -1867,7 +1868,6 @@ wiki_frame_page = "Standard_Operating_Procedure"
 CAPABILITIES(/obj/item/book/manual/command_guide)
 	derives(nameof(dat), PROC_REF(wiki_frame))
 
-wiki_frame_page = "Chain_of_Command"
 
 
 //accurate as of 2/17/21 Extra credit to document editting and proofreading editing to Luna
