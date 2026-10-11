@@ -2,6 +2,8 @@
 //! Exact keys and issuer-domain answers authorize reuse; hashes only select buckets.
 mod artifacts;
 mod reads;
+mod publication;
+pub use publication::{ArtifactAttempt, ArtifactGeneration, ArtifactPublication};
 pub use artifacts::{
     AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact, ObservedArtifactLease,
     ObservedArtifactStorageView, ObservedArtifactStore, DEFAULT_RESIDENT_BYTES,
