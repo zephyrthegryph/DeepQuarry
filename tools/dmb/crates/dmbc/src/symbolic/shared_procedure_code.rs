@@ -20,6 +20,10 @@ impl Default for SharedProcedureCode {
     }
 }
 impl SharedProcedureCode {
+    /// Optional physical-sharing index; surviving artifacts own their code.
+    pub(crate) fn release_for_pressure(&self) -> dm_session::PressurePrune {
+        self.0.prune_for_pressure(0, |_, _, _, _| None)
+    }
     pub(crate) fn lease(&self) -> Lease {
         self.0.lease()
     }

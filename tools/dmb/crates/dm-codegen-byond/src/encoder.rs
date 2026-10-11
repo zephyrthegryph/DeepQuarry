@@ -47,6 +47,10 @@ impl FrozenProc {
     pub fn labels(&self) -> &[Option<u32>] {
         &self.labels
     }
+    /// Actual owned backing, for logical retention accounting only.
+    pub fn label_storage_capacity(&self) -> usize {
+        self.labels.capacity()
+    }
 }
 #[path = "encoder_restored.rs"]
 mod restored;

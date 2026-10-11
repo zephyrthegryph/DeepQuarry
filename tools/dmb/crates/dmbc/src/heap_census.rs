@@ -859,7 +859,12 @@ impl HeapCensus {
             return;
         }
         self.symbolic_code(&code.shared_code());
-        self.slice("frozen_code", code.labels(), false);
+        self.exposed_buffer(
+            "frozen_code",
+            code.labels().as_ptr() as usize,
+            std::mem::size_of_val(code.labels()),
+            code.label_storage_capacity().saturating_mul(size_of::<Option<u32>>()),
+        );
     }
     pub fn frozen(&mut self, batch: &crate::symbolic::FrozenBatch) {
         batch.census_current_images(self);

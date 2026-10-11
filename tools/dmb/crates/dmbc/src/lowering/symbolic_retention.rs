@@ -97,53 +97,7 @@ impl SessionSymbolicMemo {
                 _ => {}
             });
         }
-        let count = self.visit_records(|record| {
-            if !census.arc_object("session_symbolic.records", record) {
-                return;
-            }
-            census.slice("session_symbolic.keys", &record.key, true);
-            if let Some(local) = &record.local {
-                local.census(census);
-            }
-            if let Some(recipe) = &record.recipe {
-                census.procedure_metadata("session_symbolic.key_metadata", &recipe.metadata);
-            }
-            census.retained_symbolic_ledger(&record.reads, &record.versions);
-            match &record.value {
-                super::RecordValue::Executable(artifact) => {
-                    crate::symbolic::ReusableProcedureArtifact::retained_census(
-                        artifact,
-                        &mut census,
-                    );
-                }
-                super::RecordValue::Selections { facts, abi } => {
-                    census.vec_payload("session_symbolic.selection_abi", abi);
-                    if census.arc_object("session_symbolic.selections", facts)
-                        && census
-                            .vec_payload("session_symbolic.selection_references", &facts.references)
-                    {
-                        for reference in &facts.references {
-                            census.vec_payload("session_symbolic.selection_paths", &reference.path);
-                        }
-                    }
-                }
-            }
-            census.vec_payload("session_symbolic.debug_offsets", &record.relative_debug);
-            census.slice(
-                "session_symbolic.required_types",
-                &record.required_types,
-                true,
-            );
-            if census.slice(
-                "session_symbolic.modified_recipes",
-                &record.modified_recipes,
-                true,
-            ) {
-                for recipe in record.modified_recipes.iter() {
-                    recipe.retained_census(&mut census);
-                }
-            }
-        });
+        let count = self.visit_records(|record| census_record(record, census));
         census.arc_object("session_symbolic.receipt_pool", &self.receipt_groups);
         self.receipt_groups
             .visit_storage(|pointer, payload, capacity| {
@@ -161,3 +115,50 @@ impl SessionSymbolicMemo {
 #[cfg(test)]
 #[path = "symbolic_retention_tests.rs"]
 mod tests;
+
+fn census_record(record: &std::sync::Arc<super::Record>, mut census: &mut HeapCensus) {
+    if !census.arc_object("session_symbolic.records", record) {
+        return;
+    }
+    census.slice("session_symbolic.keys", &record.key, true);
+    if let Some(local) = &record.local {
+        local.census(census);
+    }
+    if let Some(recipe) = &record.recipe {
+        census.procedure_metadata("session_symbolic.key_metadata", &recipe.metadata);
+    }
+    census.retained_symbolic_ledger(&record.reads, &record.versions);
+    match &record.value {
+        super::RecordValue::Executable(artifact) => {
+            crate::symbolic::ReusableProcedureArtifact::retained_census(artifact, &mut census);
+        }
+        super::RecordValue::Selections { facts, abi } => {
+            census.vec_payload("session_symbolic.selection_abi", abi);
+            if census.arc_object("session_symbolic.selections", facts)
+                && census.vec_payload("session_symbolic.selection_references", &facts.references)
+            {
+                for reference in &facts.references {
+                    census.vec_payload("session_symbolic.selection_paths", &reference.path);
+                }
+            }
+        }
+    }
+    census.vec_payload("session_symbolic.debug_offsets", &record.relative_debug);
+    census.slice(
+        "session_symbolic.required_types",
+        &record.required_types,
+        true,
+    );
+    if census.slice(
+        "session_symbolic.modified_recipes",
+        &record.modified_recipes,
+        true,
+    ) {
+        for recipe in record.modified_recipes.iter() {
+            recipe.retained_census(&mut census);
+        }
+    }
+}
+
+#[path = "symbolic_pressure.rs"]
+mod pressure;

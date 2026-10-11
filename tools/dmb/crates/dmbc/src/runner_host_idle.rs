@@ -16,7 +16,10 @@ impl BuildHost {
         self.release_idle_executor();
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
-        self.symbolic = None;
+        if let Some((_, owner)) = &self.symbolic {
+            let report = owner.compact_for_pressure(192 * 1024 * 1024);
+            eprintln!("dmbd compact symbolic procedures {report:?}");
+        }
         // Preserve only fully charged source-neutral initializer nodes. This is
         // a logical retention cap, not a claim about process private memory.
         if let Some((_, owner)) = &self.initializers {
