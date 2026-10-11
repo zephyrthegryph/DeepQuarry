@@ -363,9 +363,9 @@ TRACKED(/datum/reagents, master_id)
 			try
 				target.add_reagent(current.id, amount_to_transfer * multiplier, snapshot.value, safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis)
 			catch(var/exception/fault)
-				qdel(snapshot)
+				lifeform_end(snapshot, END_SCOPE)
 				throw fault
-			qdel(snapshot)
+			lifeform_end(snapshot, END_SCOPE)
 		if(!copy)
 			remove_reagent(current.id, amount_to_transfer, 1)
 
@@ -427,7 +427,7 @@ TRACKED(/datum/reagents, master_id)
 	var/result
 	try
 		F.add_reagent(rtype, amount, snapshot.value)
-		qdel(snapshot)
+		lifeform_end(snapshot, END_SCOPE)
 		remove_reagent(rtype, amount)
 		if(istype(target, /atom))
 			result = F.trans_to(target, amount)
@@ -435,10 +435,10 @@ TRACKED(/datum/reagents, master_id)
 			result = F.trans_to_holder(target, amount)
 	catch(var/exception/fault)
 		if(snapshot && !QDELETED(snapshot))
-			qdel(snapshot)
-		qdel(F)
+			lifeform_end(snapshot, END_SCOPE)
+		lifeform_end(F, END_SCOPE)
 		throw fault
-	qdel(F)
+	lifeform_end(F, END_SCOPE)
 	return result
 
 /datum/reagents/proc/trans_id_to(atom/target, id, amount = 1, force_open_container = FALSE)
@@ -456,15 +456,15 @@ TRACKED(/datum/reagents, master_id)
 	var/result
 	try
 		F.add_reagent(id, amount, snapshot.value)
-		qdel(snapshot)
+		lifeform_end(snapshot, END_SCOPE)
 		remove_reagent(id, amount)
 		result = F.trans_to(target, amount, force_open_container = force_open_container)
 	catch(var/exception/fault)
 		if(snapshot && !QDELETED(snapshot))
-			qdel(snapshot)
-		qdel(F)
+			lifeform_end(snapshot, END_SCOPE)
+		lifeform_end(F, END_SCOPE)
 		throw fault
-	qdel(F)
+	lifeform_end(F, END_SCOPE)
 	return result
 
 /datum/reagents/proc/touch(atom/target, amount, mob/user = null)

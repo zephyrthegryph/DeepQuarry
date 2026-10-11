@@ -170,13 +170,13 @@ TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 						preserve += child
 
 		catch(var/exception/fault)
-			qdel(staging)
+			lifeform_end(staging, END_SCOPE)
 			throw fault
 		data["viruses"] = preserve
 		rel_clear(src, nameof(codec_children))
 		for(var/datum/affliction/contagion/C as anything in rel_take_all(staging, nameof(staging.codec_children)))
 			rel_add(src, nameof(codec_children), C)
-		qdel(staging)
+		lifeform_end(staging, END_SCOPE)
 
 /datum/reagent/blood/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)	//They don't have blood, so it seems weird that they would instantly 'process' the chemical like another species does.

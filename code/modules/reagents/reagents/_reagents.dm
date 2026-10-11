@@ -11,7 +11,7 @@ CAPABILITIES(/datum/reagent_payload)
 	try
 		P.value = R.get_data(P)
 	catch(var/exception/fault)
-		qdel(P)
+		lifeform_end(P, END_SCOPE)
 		throw fault
 	return P
 

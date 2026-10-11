@@ -630,7 +630,7 @@ GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 		apply_vars(D, blob)
 		D.state_post_apply(blob, NONE)
 	catch(var/exception/fault)
-		qdel(D)
+		lifeform_end(D, END_SCOPE)
 		throw fault
 	return D
 

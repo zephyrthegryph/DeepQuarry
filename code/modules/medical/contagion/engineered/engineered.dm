@@ -496,15 +496,15 @@ CAPABILITIES(/datum/contagion_mix_workspace)
 		for(var/datum/affliction/contagion/engineered/A as anything in D_list)
 			rel_add(W, nameof(W.diseases), A.Copy())
 	catch(var/exception/fault)
-		qdel(W)
+		lifeform_end(W, END_SCOPE)
 		throw fault
 	if(!length(W.diseases))
-		qdel(W)
+		lifeform_end(W, END_SCOPE)
 		return null
 	if(length(W.diseases) <= 1)
 		var/datum/affliction/contagion/engineered/only = W.diseases[1]
 		var/datum/affliction/contagion/engineered/result = rel_take(W, nameof(W.diseases), only)
-		qdel(W)
+		lifeform_end(W, END_SCOPE)
 		return result
 	var/i = 0
 	while(i < 20 && length(W.diseases) > 1)
@@ -514,21 +514,21 @@ CAPABILITIES(/datum/contagion_mix_workspace)
 		var/datum/affliction/contagion/engineered/D2 = pick(W.diseases)
 		try
 			D2.Mix(consumed)
-		catch(var/exception/fault)
-			qdel(consumed)
-			qdel(W)
-			throw fault
-		qdel(consumed)
+		catch(var/exception/mix_fault)
+			lifeform_end(consumed, END_SCOPE)
+			lifeform_end(W, END_SCOPE)
+			throw mix_fault
+		lifeform_end(consumed, END_SCOPE)
 	var/datum/affliction/contagion/engineered/selected = pick(W.diseases)
 	var/datum/affliction/contagion/engineered/to_return = rel_take(W, nameof(W.diseases), selected)
 	try
 		to_return.disease_flags &= ~DORMANT
 		to_return.Refresh(new_name = TRUE)
-	catch(var/exception/fault)
-		qdel(to_return)
-		qdel(W)
-		throw fault
-	qdel(W)
+	catch(var/exception/refresh_fault)
+		lifeform_end(to_return, END_SCOPE)
+		lifeform_end(W, END_SCOPE)
+		throw refresh_fault
+	lifeform_end(W, END_SCOPE)
 	return to_return
 
 /proc/SetViruses(datum/reagent/R, list/incoming)
@@ -544,7 +544,7 @@ CAPABILITIES(/datum/contagion_mix_workspace)
 			rel_add(staging, nameof(staging.codec_children), child)
 			fresh += child
 	catch(var/exception/fault)
-		qdel(staging)
+		lifeform_end(staging, END_SCOPE)
 		throw fault
 	// The old data is a borrowed index, not an additional owner.
 	next["viruses"] = fresh
@@ -552,7 +552,7 @@ CAPABILITIES(/datum/contagion_mix_workspace)
 	rel_clear(R, nameof(R.codec_children))
 	for(var/datum/affliction/contagion/C as anything in rel_take_all(staging, nameof(staging.codec_children)))
 		rel_add(R, nameof(R.codec_children), C)
-	qdel(staging)
+	lifeform_end(staging, END_SCOPE)
 
 ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create an advanced virus and release it.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/mob/answerer = user.mob

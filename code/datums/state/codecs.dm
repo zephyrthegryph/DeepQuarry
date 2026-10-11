@@ -40,7 +40,8 @@
 				data[key] = fresh
 		else
 			if(islist(encoded) && length(prototype.reagent_data_codec()))
-				var/list/plain = encoded.Copy()
+				var/list/encoded_list = encoded
+				var/list/plain = encoded_list.Copy()
 				for(var/key in prototype.reagent_data_codec())
 					plain -= key
 				P.value = ctx.decode_value(plain)
@@ -63,7 +64,7 @@
 			else
 				P.value = ctx.decode_value(encoded)
 	catch(var/exception/fault)
-		qdel(P)
+		lifeform_end(P, END_SCOPE)
 		throw fault
 	return P
 
@@ -100,9 +101,9 @@
 		try
 			holder.add_reagent(entry[1], entry[2], snapshot.value, TRUE)
 		catch(var/exception/fault)
-			qdel(snapshot)
+			lifeform_end(snapshot, END_SCOPE)
 			throw fault
-		qdel(snapshot)
+		lifeform_end(snapshot, END_SCOPE)
 
 // ---------------------------------------------------------------------------
 // frame_type: /obj/item/circuitboard/board_type (roadmap C6, containment.md
