@@ -29,7 +29,9 @@ impl HeapCensus {
         let (regions, region_bytes, includes, include_bytes) = mapping.coordinate_storage();
         self.buffer(owner, regions, region_bytes, region_bytes);
         self.buffer(owner, includes, include_bytes, include_bytes);
-        mapping.origin_storage(|address, _, bytes| self.buffer(owner, address, bytes, bytes));
+        mapping.origin_storage(|address, _, bytes| {
+            self.buffer(owner, address, bytes, bytes);
+        });
         if let Some(locations) = mapping.locations_if_issued() {
             self.slice(owner, locations, true);
             for location in locations.iter().flatten() {
