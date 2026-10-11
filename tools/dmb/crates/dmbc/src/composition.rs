@@ -599,6 +599,7 @@ fn compose_records_access(
             false,
         ),
     };
+    let mut feature_images = final_instructions::Certificates::new();
     for (slot, metadata) in procedures.iter().zip(metadata) {
         let index = slot.table_index;
         reserve_procedure_sentinel(&mut dmb);
@@ -615,6 +616,10 @@ fn compose_records_access(
             .map_err(CompositionError::Link)?;
         let metadata = metadata?;
         let unit = &batch.units[unit_index];
+        feature_images.insert(
+            index,
+            (std::sync::Arc::clone(&linked_words), unit.bytecode_features()),
+        );
         frame_contribution::emit(
             &mut dmb,
             &mut string_index,
@@ -638,6 +643,10 @@ fn compose_records_access(
         let words = batch
             .helper_words(helper_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
+        feature_images.insert(
+            index,
+            (std::sync::Arc::clone(&words), batch.helpers[helper_index].bytecode_features()),
+        );
         emit_anonymous(
             &mut dmb,
             &mut string_index,
@@ -663,6 +672,10 @@ fn compose_records_access(
         let words = batch
             .initializer_words(unit_index, &mob_bindings)
             .map_err(CompositionError::Link)?;
+        feature_images.insert(
+            index,
+            (std::sync::Arc::clone(&words), batch.initializers[unit_index].bytecode_features()),
+        );
         emit_anonymous(
             &mut dmb,
             &mut string_index,
@@ -764,7 +777,6 @@ fn compose_records_access(
         }
     }
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
-    let feature_images = batch.certified_features();
     let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
     drop(feature_images);
     drop(final_validation);

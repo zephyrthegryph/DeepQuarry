@@ -22,6 +22,9 @@ pub struct FrozenUnit {
     features: BytecodeFeatures,
 }
 impl FrozenUnit {
+    pub(crate) fn bytecode_features(&self) -> BytecodeFeatures {
+        self.features
+    }
     pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
         &self.image_owner
     }
@@ -72,6 +75,9 @@ pub struct FrozenHelper {
     pub local_names: Arc<Vec<String>>,
 }
 impl FrozenHelper {
+    pub(crate) fn bytecode_features(&self) -> BytecodeFeatures {
+        self.features
+    }
     pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
         &self.image_owner
     }
@@ -190,6 +196,9 @@ pub struct FrozenInitializer {
     pub local_names: Vec<String>,
 }
 impl FrozenInitializer {
+    pub(crate) fn bytecode_features(&self) -> BytecodeFeatures {
+        self.features
+    }
     pub(crate) fn latest_image(&self) -> &Arc<latest_image::LatestImage> {
         &self.image_owner
     }
@@ -219,6 +228,7 @@ impl FrozenBatch {
     /// Borrow current certified words once. Callers must compare the actual
     /// composed words before using the associated features; public artifacts
     /// may have changed since freeze and then are deliberately omitted.
+    #[cfg(test)]
     pub(crate) fn feature_images(
         &self,
     ) -> std::collections::HashMap<u32, (&[u32], BytecodeFeatures)> {

@@ -1,6 +1,6 @@
 //! Single composition implementation with borrowed or consuming image access.
 use super::*;
-use crate::symbolic::{BytecodeFeatures, IntegrationError};
+use crate::symbolic::IntegrationError;
 use std::ops::Deref;
 
 pub(super) enum BatchAccess<'a> {
@@ -82,14 +82,6 @@ impl BatchAccess<'_> {
             mobs,
         )
         .map(|image| image.words)
-    }
-    pub(super) fn certified_features(&self) -> HashMap<u32, (&[u32], BytecodeFeatures)> {
-        match self {
-            Self::Borrowed(batch) => batch.feature_images(),
-            // Mutable stages may change code. The consuming path runs the shared
-            // complete borrowed instruction visitor on the actual final image.
-            Self::Owned(_) => HashMap::new(),
-        }
     }
 }
 pub(super) fn validate_projected(

@@ -2,11 +2,11 @@
 use super::*;
 use crate::symbolic::BytecodeFeatures;
 
-type Certificates<'a> = HashMap<u32, (&'a [u32], BytecodeFeatures)>;
+pub(super) type Certificates = HashMap<u32, (std::sync::Arc<Vec<u32>>, BytecodeFeatures)>;
 
 fn procedure(
     dmb: &Dmb,
-    certificates: &Certificates<'_>,
+    certificates: &Certificates,
     index: usize,
 ) -> Result<(bool, bool), CompositionError> {
     if dmb.is_reserved_proc_slot(index) {
@@ -15,8 +15,8 @@ fn procedure(
     let words = dmb
         .proc_code_words(index)
         .ok_or_else(|| unsupported("missing procedure code"))?;
-    if let Some(&(certified_words, features)) = certificates.get(&(index as u32)) {
-        if certified_words == words {
+    if let Some((certified_words, features)) = certificates.get(&(index as u32)) {
+        if certified_words.as_slice() == words {
             return Ok((features.external, features.debug));
         }
     }
@@ -38,7 +38,7 @@ fn procedure(
 
 pub(super) fn validate(
     dmb: &Dmb,
-    certificates: &Certificates<'_>,
+    certificates: &Certificates,
     executor: Option<&dm_exec::BuildExecutor>,
 ) -> Result<(bool, bool), CompositionError> {
     let Some(executor) = executor.filter(|executor| executor.workers() > 1 && dmb.procs.len() > 1)
@@ -94,6 +94,54 @@ fn weighted_ranges(dmb: &Dmb, workers: usize) -> Vec<std::ops::Range<usize>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn installed_word_certificate_rejects_post_mob_stage_mutation() {
+        let mut dmb = Dmb::from_bytes(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/native_template.bin"
+        )))
+        .unwrap();
+        let index = dmb
+            .procs
+            .iter()
+            .enumerate()
+            .find(|(index, _)| {
+                !dmb.is_reserved_proc_slot(*index) && dmb.proc_code_words(*index).is_some()
+            })
+            .unwrap()
+            .0;
+        let list = dmb.procs[index].code_locals_args[0] as usize;
+        // The certificate owns the actual installed post-link/post-Mob words.
+        let installed = std::sync::Arc::new(vec![byond_dmb::bytecode::opcode::END as u32]);
+        dmb.lists[list] = installed.as_ref().clone();
+        let mut certificates = Certificates::new();
+        certificates.insert(
+            index as u32,
+            (
+                std::sync::Arc::clone(&installed),
+                BytecodeFeatures {
+                    external: true,
+                    debug: true,
+                },
+            ),
+        );
+        assert_eq!(procedure(&dmb, &certificates, index).unwrap(), (true, true));
+        // An arbitrary output stage changes the image after the Mob patch.
+        // Even the same numeric slot must now use the independent decoder.
+        dmb.lists[list] = vec![u32::MAX];
+        assert!(procedure(&dmb, &certificates, index).is_err());
+        assert_eq!(
+            installed.as_slice(),
+            &[byond_dmb::bytecode::opcode::END as u32]
+        );
+        certificates.clear();
+        dmb.lists[list] = installed.as_ref().clone();
+        assert_eq!(
+            procedure(&dmb, &certificates, index).unwrap(),
+            (false, false)
+        );
+    }
+
     #[test]
     fn parallel_validation_preserves_first_procedure_error_and_valid_features() {
         let mut dmb = Dmb::from_bytes(include_bytes!(concat!(
