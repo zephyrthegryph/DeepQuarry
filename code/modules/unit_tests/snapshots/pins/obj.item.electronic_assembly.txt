@@ -65,5 +65,6 @@
 +4 menu: Use
 +5 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +1 menu: Rename Circuit (refused: You can't do that.)
 keys: assembly_item, assembly_rename, assembly_robot_use, assembly_self, collect_item, drag_buckle, export_circuit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, open_circuit, pick_up_item, remove_all_wires, remove_cell, remove_circuit, rename, toggle_digestable, update_component_position, use_crowbar, use_screwdriver, use_wrench, wire_internal

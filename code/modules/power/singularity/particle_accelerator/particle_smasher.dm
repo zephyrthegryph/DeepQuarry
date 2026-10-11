@@ -71,7 +71,7 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 /// Synthesiser stock can't fill the target.
 /obj/machinery/particle_smasher/proc/not_synthesized(datum/act/op/A)
 	var/obj/item/stack/material/held = A.held
-	return (!(istype(held) && held.uses_charge)) ? null : MSG(particle_smasher/synthesizer) // ALLOW(reads): the held sheet's source is read when it is used, never from a cached menu
+	return (!(istype(held) && held.uses_charge)) ? null : MSG(particle_smasher/synthesizer)
 
 /obj/machinery/particle_smasher/proc/interaction_fill_target(datum/act/op/A)
 	var/obj/item/stack/material/M = A.held

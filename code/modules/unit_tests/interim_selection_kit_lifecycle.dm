@@ -25,7 +25,7 @@
 	TEST_ASSERT(user.put_in_inactive_hand(kit), "the selection kit occupies the inactive hand")
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	TEST_ASSERT(kit.loc.release_refusal(kit, user), "the actual kit refuses consumption")
 	var/datum/prompt/choice/ask = open_request(kit, /datum/prompt/choice, TYPE_PROC_REF(/obj/item/selectable_item, item_selected), answerer = user, subject = kit, choices = TYPE_TABLE_GET(kit, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	TEST_ASSERT_NULL(test_prompt_answer(ask, "Health Analyzer"), "the actual typed choice answer reaches the callback")

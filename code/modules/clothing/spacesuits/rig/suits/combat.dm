@@ -13,7 +13,7 @@
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/combat
 
-TYPE_TABLE(/obj/item/rig/combat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
+
 
 /obj/item/rig/combat/equipped
 
@@ -48,24 +48,24 @@ TYPE_TABLE(/obj/item/rig/combat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_G
 	boot_type = /obj/item/clothing/shoes/magboots/rig/military
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/military
 
-TYPE_TABLE(/obj/item/rig/military, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))))
+
 
 /obj/item/clothing/head/helmet/space/rig/military
 	light_overlay = "helmet_light_dual_green"
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
+
 
 /obj/item/clothing/suit/space/rig/military
 
-TYPE_TABLE(/obj/item/clothing/suit/space/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
+
 
 /obj/item/clothing/shoes/magboots/rig/military
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
+
 
 /obj/item/clothing/gloves/gauntlets/rig/military
 
-TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/military, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN,SPECIES_PROMETHEAN))))
+
 
 /obj/item/rig/military/equipped
 	initial_modules = list(
@@ -83,3 +83,21 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/military, fit_spec, list(REQ_
 		/obj/item/rig_module/ai_container,
 		/obj/item/rig_module/electrowarfare_suite,
 		)
+
+CAPABILITIES(/obj/item/rig/combat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/rig/military)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/military)
+	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/military)
+	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/military)
+	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/military)
+	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)

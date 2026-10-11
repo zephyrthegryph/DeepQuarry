@@ -81,6 +81,8 @@
 GLOBAL_VAR_INIT(activation_serial, 0)
 
 /datum/rx_state
+	/// Live capability membership, selection and lazy instance-data availability.
+	var/capability_generation = 0
 	/// The activations this datum carries as a holder (type-level ones are made lazily).
 	var/list/activations
 	/// The activations this datum is the source of.
@@ -339,6 +341,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /// Recomputes which activations of capability `key` on holder run (section 11 "stacks ="). A type-level capability of the same key
 /// takes part as the first activation, made lazily only now that something else stacks with it.
 /proc/activation_restack(datum/holder, key)
+	var/datum/rx_state/state = rx_of(holder)
+	state.set_capability_generation(state.capability_generation + 1)
 	var/list/set_of = activations_of(holder, key)
 	if(!length(set_of))
 		return
@@ -370,6 +374,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		else
 			for(var/datum/activation/A as anything in set_of)
 				A.runs = TRUE
+	if(holder.rx?.hooks)
+		holder.rx.set_hooks_generation(holder.rx.hooks_generation + 1)
 
 /// The activations of `cap_id` (and selector) on holder whose behaviour runs, in attach order. One for UNIQUE and BEST.
 /proc/running_activations(datum/holder, cap_id, selector)
@@ -457,6 +463,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		var/data_type = A.def.cap_data_type()
 		if(data_type)
 			A.data = new data_type // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+			var/datum/rx_state/state = rx_of(A.holder)
+			state.set_capability_generation(state.capability_generation + 1)
 	return A.data
 
 /// The type of /datum/cap_data this capability's activations carry, or null.
@@ -580,3 +588,5 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		if(stacks[1] != STACKS_STACK)
 			stack_text = "  stacks [stacks[1]]: [A.runs ? "winning" : "shadowed"]"
 	return "[activation_def_text(A.def)]  source [source_text]  scope [scope_text][stack_text][A.dead ? "  (dead)" : ""][cap && A.applied ? "  contributes [length(A.applied)]" : ""]"
+
+TRACKED(/datum/rx_state, capability_generation)

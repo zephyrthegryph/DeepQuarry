@@ -67,7 +67,7 @@
 
 /// Sets how much the closet holds (a fixture tuning a type, not a player input).
 /proc/p2cl_set_capacity(obj/structure/closet/C, units)
-	C.storage_capacity = units
+	C.set_storage_capacity(units)
 
 /// The shown icon state of the closet (what a player sees: the lock and the weld).
 /proc/p2cl_icon(obj/structure/closet/C)

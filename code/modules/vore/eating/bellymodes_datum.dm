@@ -264,7 +264,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		for(var/atom/movable/C in egg_contents)
 			if(isitem(C) && egg_contents.len == 1) //Only egging one item
 				var/obj/item/I = C
-				B.ownegg().w_class = I.w_class
+				B.ownegg().set_w_class(I.w_class)
 				B.ownegg().max_storage_space = B.ownegg().w_class
 				B.slot_remove(I, B.ownegg())
 				if(B.egg_size)
@@ -279,12 +279,12 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 				return GLOB.digest_result_update
 			if(isitem(C))
 				var/obj/item/I = C
-				B.ownegg().w_class += I.w_class //Let's assume a regular outfit can reach total w_class of 16.
+				B.ownegg().set_w_class(B.ownegg().w_class + I.w_class) //Let's assume a regular outfit can reach total w_class of 16.
 				B.slot_remove(I, B.ownegg())
 			if(isliving(C))
 				var/mob/living/M = C
 				var/mob_holder_type = M.holder_type || /obj/item/holder
-				B.ownegg().w_class += M.size_multiplier * 4 //Egg size and weight scaled to match occupant.
+				B.ownegg().set_w_class(B.ownegg().w_class + M.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 				if(M.size_multiplier > scale_clamp)
 					scale_clamp = M.size_multiplier
 				var/obj/item/holder/H = new mob_holder_type(B.ownegg(), M)
@@ -292,7 +292,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 				egg_contents -= M
 		B.ownegg().calibrate_size()
 		B.ownegg().orient2hud()
-		B.ownegg().w_class = clamp(B.ownegg().w_class * 0.25, 1, 8) //A total w_class of 16 will result in a backpack sized egg.
+		B.ownegg().set_w_class(clamp(B.ownegg().w_class * 0.25, 1, 8)) //A total w_class of 16 will result in a backpack sized egg.
 		if(B.egg_size)
 			B.ownegg().icon_scale_x = B.egg_size
 			B.ownegg().icon_scale_y = B.egg_size

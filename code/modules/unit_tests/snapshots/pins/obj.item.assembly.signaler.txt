@@ -56,7 +56,7 @@
 +2 menu: Threaten to push the button! (refused: You can't do that.)
 +4 menu: Transfer
 +6 click: Click: Transfer
-@obj.item human|/obj/item
+@obj.item.assembly human|/obj/item
 -click: Click: Use
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 +3 menu: Transfer

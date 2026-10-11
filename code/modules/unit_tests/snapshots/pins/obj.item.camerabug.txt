@@ -65,10 +65,9 @@ human|/obj/item/bug_monitor menu: Pair
 human|/obj/item/bug_monitor menu: Reset camera bug (refused: You can't do that.)
 human|/obj/item/bug_monitor menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/bug_monitor click: Click: Pair
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Hit
-+2 menu: Reset camera bug (refused: You can't do that.)
-+4 click: Click: Hit
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Reset camera bug (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Hit
 keys: collect_item, crush, drag_buckle, gen_silicon_item_silicon_equip_module, hit, kit_customize, kit_customize_last, move_to_top, pair, pick_up_item, reset, secure, toggle_digestable

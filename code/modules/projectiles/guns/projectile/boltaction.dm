@@ -94,7 +94,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	if(sawn_off)
 		return
 	icon_state = "sawn_rifle"
-	w_class = ITEMSIZE_NORMAL
+	set_w_class(ITEMSIZE_NORMAL)
 	recoil = 2 // Owch
 	accuracy = -15 // You know damn well why.
 	item_state = "gun"

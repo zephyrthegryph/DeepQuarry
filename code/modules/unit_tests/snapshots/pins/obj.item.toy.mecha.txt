@@ -43,11 +43,13 @@ human|/obj/item/stack/material/steel click: Click: Pick up
 +1 menu: Pick up
 +4 click: Click: Pick up
 @obj.item.toy human|/obj/item/kit
--menu: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Pick up
 @obj.item.toy human|/obj/item/storage
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +2 menu: Pick up
 +4 click: Click: Pick up
 human|/obj/item/toy/mecha menu: Battle

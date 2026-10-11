@@ -40,7 +40,7 @@ human|none click: nothing
 -menu: Use
 +0 menu: Authorize (refused: needs a card)
 @obj human|/obj/item/gripper
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Use
 -click: Click: Use
 +0 menu: Authorize

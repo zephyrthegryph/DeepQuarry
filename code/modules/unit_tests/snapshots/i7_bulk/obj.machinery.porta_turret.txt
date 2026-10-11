@@ -52,7 +52,7 @@ human|none click: Click: Ui open
 +2 menu: Ui open
 +3 click: Click: Ui open
 @obj human|/obj/item/pda
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +2 menu: Ui open

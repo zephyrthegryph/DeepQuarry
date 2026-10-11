@@ -33,7 +33,7 @@
 	TEST_ASSERT(user.put_in_active_hand(bag), "the folded bag occupies a real hand slot")
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	TEST_ASSERT(bag.loc.release_refusal(bag, user), "the actual bag refuses release")
 	test_click(user, bag, bag, GESTURE_SELF)
 	test_time(5 SECONDS)

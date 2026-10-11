@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Retired boolean requirements and enforced null-or-reason callbacks in every source folder."

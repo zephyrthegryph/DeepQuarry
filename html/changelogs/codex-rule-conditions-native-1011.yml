@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Replace simulation-rule predicate compilation with native unit-aware conditions."

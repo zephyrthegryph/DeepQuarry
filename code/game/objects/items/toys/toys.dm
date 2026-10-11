@@ -183,11 +183,11 @@ CAPABILITIES(/obj/item/toy/sword)
 	if(active)
 		to_chat(user, span_notice("You extend the plastic blade with a quick flick of your wrist."))
 		play_sfx(src, SFX_WEAPONS_SABERON)
-		w_class = ITEMSIZE_LARGE
+		set_w_class(ITEMSIZE_LARGE)
 	else
 		to_chat(user, span_notice("You push the plastic blade back down into the handle."))
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 	add_fingerprint(user)
 	return OP_OK
 

@@ -1,6 +1,6 @@
 /datum/species/New()
 	if(!base_species)
-		base_species = name
+		set_base_species(name)
 	..()
 
 /datum/species/custom

@@ -1,0 +1,32 @@
+@obj.item.clothing human|none
+@obj.item.clothing robot|none
+@obj.item ai|none
+@obj.item ghost|none
+@obj.item.clothing human|/obj/item/tool/screwdriver
+@obj.item.clothing human|/obj/item/tool/crowbar
+@obj.item.clothing human|/obj/item/tool/wrench
+@obj.item.clothing human|/obj/item/tool/wirecutters
+@obj.item.clothing human|/obj/item/multitool
+@obj.item.clothing.suit human|/obj/item/weldingtool
+-menu: Suit pockets hand
+-menu: Suit pockets item
+-click: Click: Suit pockets hand
++4 menu: Use welder
++5 click: Click: Use welder
+@obj.item.clothing human|/obj/item/stack/cable_coil
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
+-menu: Suit pockets hand
+-menu: Suit pockets item
+-click: Click: Suit pockets hand
++2 menu: Space suit patch item
++5 click: Click: Space suit patch item
+@obj.item.clothing human|/obj/item/card/id
+@obj.item.clothing human|/obj/item/kit
+@obj.item.clothing human|/obj/item/storage
+@obj.item human|/obj/item
+@obj.item human|/obj/item/stack/material
+-menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+-menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+-menu: Toggle Helmet (refused: You can't do that.)
+-menu: Voidsuit install item
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, space_suit_patch_item, toggle_digestable, use_welder

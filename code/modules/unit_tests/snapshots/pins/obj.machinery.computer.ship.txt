@@ -19,5 +19,5 @@
 @obj.machinery.computer human|/obj/item/card/id
 @obj.machinery.computer human|/obj/item
 @obj human|/obj/item/gripper
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, ship_console_use, ship_ghost_view, ship_silicon_use, silicon_hand, sync, use_gripper, use_item

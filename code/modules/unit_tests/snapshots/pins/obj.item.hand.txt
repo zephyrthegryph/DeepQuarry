@@ -83,12 +83,11 @@
 +2 menu: Discard (refused: You can't do that.)
 +3 menu: Item
 +5 menu: Remove card
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Alt
-+1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
-+6 click: Click: Item
+human|/obj/item menu: Alt
+human|/obj/item menu: Discard (refused: You can't do that.)
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove card
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Item
 keys: alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, hand_verb_discard, hand_verb_remove_card, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable

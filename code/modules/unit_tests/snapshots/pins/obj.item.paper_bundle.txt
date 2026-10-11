@@ -73,6 +73,7 @@
 +5 menu: Use
 +6 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +0 menu: Loose bundle (refused: You can't do that.)
 +2 menu: Rename bundle (refused: You can't do that.)
 keys: bundle_item, bundle_loosen, bundle_rename, bundle_self, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, next_page, pick_up_item, prev_page, remove, toggle_digestable

@@ -63,6 +63,13 @@
 /// Fields set: holder, target, target_atom, actor, held, origin, provider, authority, rolled, source, activation, cap,
 /// args, request, answer, and the snapshot fields.
 /datum/act/op
+	/// Immutable synchronous admission inputs; effects do not retain query acts.
+	var/mob/wearer
+	var/mob/mover
+	var/datum/destination
+	var/slot_id
+	var/requirement_channel
+	var/list/query_options
 	parent_type = /datum/act/action
 	/// The op's key chain as logged ("cover.open", "construction.build:door_wired").
 	var/key

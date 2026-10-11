@@ -285,11 +285,15 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 	name = "declared slot"
 	capacity_model = SLOT_CAPACITY_COUNT
 	drop_policy = SLOT_DROP_SPILL
-	/// A slot() entry's accepts: the type a thing must be, or a list of them.
+	/// Immutable native acceptance plan, or transitional type-path/type-list declaration.
 	var/accepts_type
 
 /datum/relation_definition/slot/declared/refusal(atom/holder, atom/movable/thing, mob/actor)
-	. = declared_slot_type_refusal(accepts_type, thing)
+	if(istype(accepts_type, /datum/entry/part/acceptance_plan))
+		var/datum/entry/part/acceptance_plan/P = accepts_type
+		. = acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
+	else
+		. = declared_slot_type_refusal(accepts_type, thing)
 	if(.)
 		return .
 	return ..()
@@ -307,7 +311,24 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 
 
 /datum/relation_definition/slot/declared/set_declared_accepts(accepts)
-	accepts_type = accepts
+	var/list/parts = entry_flatten(list(accepts))
+	var/native = FALSE
+	for(var/part in parts)
+		if(istype(part, /datum/entry))
+			native = TRUE
+	if(!native)
+		accepts_type = accepts
+		return
+	for(var/part in parts)
+		if(!istype(part, /datum/entry/part/req))
+			CRASH("slot accepts cannot mix native requirements and type paths")
+	accepts_type = acceptance_compile(list(acceptance(slot_id, parts, mode = ACCEPTANCE_REPLACE)))
+
+/datum/relation_definition/slot/declared/admission_read_keys(atom/holder, atom/movable/thing, mob/actor)
+	. = ..()
+	if(istype(accepts_type, /datum/entry/part/acceptance_plan))
+		var/datum/entry/part/acceptance_plan/P = accepts_type
+		. += acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
 
 /proc/declared_slot_type_refusal(accepts_type, atom/movable/thing)
 	// A declared slot accepts either one type or a list of types.

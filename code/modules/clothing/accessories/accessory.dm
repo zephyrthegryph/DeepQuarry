@@ -1,3 +1,5 @@
+TRACKED(/obj/item/clothing/accessory, slot)
+
 /obj/item/clothing/accessory
 	name = "tie"
 	desc = "A neosilk clip-on tie."
@@ -438,7 +440,7 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	desc = "a neckscarf that is too small for a human's neck"
 	icon_state = "tesh_neckscarf"
 
-TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/accessory/halfcape
 	name = "half cape"
@@ -1334,7 +1336,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 
 //Medals
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/machete, hold_spec, list(HOLD_ONLY(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete))))
+
 
 /obj/item/clothing/accessory/medal/silver/unity
 	name = "medal of unity"
@@ -1639,3 +1641,11 @@ CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
 /// the radio_connection this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+TRACKED(/obj/item/clothing/accessory, glove_level)
+
+CAPABILITIES(/obj/item/clothing/accessory/scarf/teshari/neckscarf)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete)
+	acceptance("hold", req_acceptance_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

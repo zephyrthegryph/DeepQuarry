@@ -1539,7 +1539,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off()
 	sawn_off = TRUE
-	w_class = ITEMSIZE_NORMAL
+	set_w_class(ITEMSIZE_NORMAL)
 	set_force(5)
 	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))//you can't sling it on your back
 	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.

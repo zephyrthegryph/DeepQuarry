@@ -307,10 +307,6 @@
 /obj/item/paper/rogueminer state: paper_words
 /obj/item/paper/rogueminer dir: 2
 /obj/item/paper/rogueminer overlay: icons/obj/bureaucracy.dmi:paper_words:8:#000000
-/obj/item/paper/cap_fixture icon: icons/obj/bureaucracy.dmi
-/obj/item/paper/cap_fixture state: paper
-/obj/item/paper/cap_fixture dir: 2
-/obj/item/paper/cap_fixture overlay: icons/obj/bureaucracy.dmi:paper:8:#000000
 /obj/item/paper/khcrystal_manual icon: icons/obj/bureaucracy.dmi
 /obj/item/paper/khcrystal_manual state: paper_words
 /obj/item/paper/khcrystal_manual dir: 2

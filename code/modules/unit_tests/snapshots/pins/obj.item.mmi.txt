@@ -59,5 +59,6 @@
 +4 menu: Use
 +5 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +1 menu: Toggle Brain Radio (refused: You can't do that.)
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, mmi_self, mmi_verb_toggle_radio, move_to_top, pick_up_item, toggle_digestable

@@ -11,11 +11,11 @@ TRACKED(/obj/req_protocol_fixture, mode)
 TRACKED(/obj/req_protocol_fixture, commits)
 
 CAPABILITIES(/obj/req_protocol_fixture)
-	op("boolean_when", menu(), label("Boolean condition"), when(req_bool(PROC_REF(boolean_ready))), then(PROC_REF(commit)))
+	op("boolean_when", menu(), label("Boolean condition"), when(PROC_REF(boolean_ready)), then(PROC_REF(commit)))
 	op("protocol", menu(), label("Protocol"), needs(req(PROC_REF(check_ready))), then(PROC_REF(commit)))
 	op("override", menu(), label("Override"), needs(req(PROC_REF(check_ready), because = MSG(req_protocol/override))), then(PROC_REF(commit)))
 	op("silent", menu(), label("Silent"), needs(req(PROC_REF(check_ready), because = "")), then(PROC_REF(commit)))
-	op("boolean", menu(), label("Boolean"), needs(req_bool(PROC_REF(boolean_ready), because = MSG(req_protocol/blocked))), then(PROC_REF(commit)))
+	op("boolean", menu(), label("Boolean"), needs(req(PROC_REF(boolean_refusal))), then(PROC_REF(commit)))
 
 /obj/req_protocol_fixture/proc/check_ready(datum/act/op/A)
 	switch(mode)
@@ -35,6 +35,9 @@ CAPABILITIES(/obj/req_protocol_fixture)
 	if(mode == 6)
 		return TRUE
 	return !mode
+
+/obj/req_protocol_fixture/proc/boolean_refusal(datum/act/op/A)
+	return (mode == 0 || mode == 6) ? null : MSG(req_protocol/blocked)
 
 /obj/req_protocol_fixture/proc/check_other(datum/act/op/A)
 	return mode ? "Another reason." : null

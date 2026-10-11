@@ -28,7 +28,7 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood/anomaly)
 	slowdown = 1
 	// Pressure protection inherited from space suits
 
-TYPE_TABLE(/obj/item/clothing/suit/space/anomaly, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ALL_TANKS))))
+
 
 /obj/item/clothing/head/helmet/space/anomaly
 	name = "Excavation hood"
@@ -50,3 +50,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/anomaly/heat)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/anomaly/heat)
 	configure(item_protection(heat_parts = HEAD, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE+1000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 5* ONE_ATMOSPHERE))
+
+CAPABILITIES(/obj/item/clothing/suit/space/anomaly)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

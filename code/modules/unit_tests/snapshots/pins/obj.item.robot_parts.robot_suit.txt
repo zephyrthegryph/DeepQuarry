@@ -13,8 +13,8 @@
 @obj.item.robot_parts human|/obj/item/card/id
 @obj.item.robot_parts human|/obj/item/kit
 @obj.item.robot_parts human|/obj/item/storage
-@obj.item human|/obj/item/card/emag
-@obj.item human|/obj/item
+@obj.item.robot_parts human|/obj/item/card/emag
+@obj.item.robot_parts human|/obj/item
 @obj human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename

@@ -29,13 +29,13 @@
 	TEST_ASSERT(listener.ran_on_me, "on the listener (the context held it)")
 	TEST_ASSERT(listener.target_was_observed, "with A.target the observed entity")
 	// The gate says no: the action goes on and the act is a real one.
-	listener.blocking = FALSE
+	listener.set_blocking(FALSE)
 	strike = ACT_TRY(target, veto_strike, 10, 0)
 	TEST_ASSERT_NOTNULL(strike, "the gate did not hold: the action goes on")
 	TEST_ASSERT_EQUAL(listener.ran, 1, "and the handler did not run")
 	act_done(strike)
 	// unobserve ends the hook.
-	listener.blocking = TRUE
+	listener.set_blocking(TRUE)
 	TEST_ASSERT_EQUAL(unobserve(target, /datum/act/veto_strike, listener), 1, "unobserve ended one hook")
 	TEST_ASSERT_EQUAL(ACT_TRY(target, veto_strike, 10, 0), ACT_PASS, "nothing hooks the action again")
 	qdel(listener)

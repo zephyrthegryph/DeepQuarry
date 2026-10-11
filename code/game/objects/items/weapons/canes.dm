@@ -106,7 +106,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 			MSG_BLIND("You hear an ominous click."))
 		icon_state = "whitecane1out"
 		item_state_slots = list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane")
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		set_force(5)
 		set_attack_verb(list("smacked", "struck", "cracked", "beaten"))
 	else
@@ -115,7 +115,7 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 			MSG_BLIND("You hear a click."))
 		icon_state = "whitecane1in"
 		item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 		set_force(3)
 		set_attack_verb(list("hit", "poked", "prodded"))
 

@@ -6,4 +6,7 @@
 	item_state = "teshwrap"
 	shoes_under_pants = 1 //these are thin and wrapped around the leg, clothing would go over it
 
-TYPE_TABLE(/obj/item/clothing/shoes/footwraps/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
+
+CAPABILITIES(/obj/item/clothing/shoes/footwraps/teshari)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)

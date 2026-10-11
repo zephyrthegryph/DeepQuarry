@@ -1,0 +1,34 @@
+@obj.item.clothing human|none
++4 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing.head robot|none
++6 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing.head ai|none
+@obj.item ghost|none
++2 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/tool/screwdriver
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/tool/crowbar
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/tool/wrench
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/tool/wirecutters
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/multitool
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/weldingtool
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/stack/cable_coil
++4 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/stack/material/steel
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/card/id
++4 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/kit
++4 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/storage
++4 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj.item human|/obj/item
++3 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+@obj human|/obj/item/assembly/signaler
++5 menu: Toggle Mark 7 Suit HUD (refused: You can't do that.)
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, helmet_secbot_signaler, kit_customize, kit_customize_last, move_to_top, pick_up_item, responseteam_toggle_verb, robot_hat_pickup, toggle_digestable

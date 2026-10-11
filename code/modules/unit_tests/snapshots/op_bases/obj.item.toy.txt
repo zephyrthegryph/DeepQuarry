@@ -10,9 +10,10 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Item
 human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit menu: Use
 human|/obj/item/kit click: Click: Customise
 human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
@@ -31,10 +32,11 @@ human|/obj/item/stack/material/steel menu: Name Plushie (refused: You can't do t
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Item
 human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Name Plushie (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage click: Click: Use
+human|/obj/item/storage click: Click: Item
 human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Name Plushie (refused: You can't do that.)

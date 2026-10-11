@@ -55,12 +55,12 @@ CAPABILITIES(/obj/engine_layering_bay)
 	var/datum/act/op/A = allocate(/datum/act/op)
 	var/obj/item/cell/cell = allocate(/obj/item/cell)
 	A.held = cell
-	cell.w_class = ITEMSIZE_NORMAL
+	cell.set_w_class(ITEMSIZE_NORMAL)
 	TEST_ASSERT(fits.holds(A), "The exact declared size fits")
-	cell.w_class = ITEMSIZE_SMALL
+	cell.set_w_class(ITEMSIZE_SMALL)
 	TEST_ASSERT(!fits.holds(A), "A smaller actual item fails the minimum")
 	TEST_ASSERT_EQUAL(fits.refusal(A), /datum/msg/slot/too_small, "A smaller item gives the small-item reason")
-	cell.w_class = ITEMSIZE_HUGE
+	cell.set_w_class(ITEMSIZE_HUGE)
 	TEST_ASSERT(!fits.holds(A), "A larger actual item fails the maximum")
 	TEST_ASSERT_EQUAL(fits.refusal(A), /datum/msg/slot/too_large, "A larger item gives the large-item reason")
 

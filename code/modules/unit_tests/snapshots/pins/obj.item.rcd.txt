@@ -44,11 +44,13 @@
 -click: Click: Collect
 +1 menu: Load
 +4 click: Click: Load
-@obj.item human|/obj/item/card/emag
-+0 menu: Load
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Load
-+3 click: Click: Load
+human|/obj/item/card/emag menu: Load
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item menu: Load
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Load
 keys: build, build_concurrent, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, rcd_item, rcd_self, toggle_digestable

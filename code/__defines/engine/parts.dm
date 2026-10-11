@@ -100,3 +100,9 @@
 /// The keys a waiting op watches for its keeps: the entity moved, the hands of the actor changed (published by the movement and inventory paths).
 #define OP_KEEP_MOVED "keep:moved"
 #define OP_KEEP_HAND "keep:hand"
+
+// Native immutable acceptance channel forms; content declarations include these early.
+#define ENTRY_ACCEPTANCE "acceptance_channel"
+#define ACCEPTANCE_APPEND "append"
+#define ACCEPTANCE_REPLACE "replace"
+#define ACCEPTANCE_EMPTY "empty"

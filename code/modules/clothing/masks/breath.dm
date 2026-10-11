@@ -86,8 +86,7 @@ CAPABILITIES(/obj/item/clothing/mask/breath/anesthetic)
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/altevian_breath)
+	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))
 	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
-
-TYPE_TABLE(/obj/item/clothing/mask/altevian_breath, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))

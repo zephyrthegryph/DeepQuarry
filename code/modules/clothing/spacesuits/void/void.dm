@@ -14,6 +14,7 @@
 	light_overlay = "helmet_light"
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
 
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 /obj/item/clothing/suit/space/void
@@ -47,9 +48,11 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BO
 
 //Does it spawn with any Inbuilt devices?
 
+
 TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
+
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
 MSG_DEF_SELF(void/worn, "You cannot modify that while it is being worn.")
 MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted.")
@@ -91,21 +94,21 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 	if(boots)
 		if (H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES))
-			boots.canremove = FALSE
+			boots.set_canremove(FALSE)
 
 	if(hood)
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(M, "You are unable to deploy your suit's helmet as \the [H.get_equipped_item(SLOT_ID_HEAD)] is in the way.")
 		else if (H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
 			to_chat(M, "Your suit's helmet deploys with a hiss.")
-			hood.canremove = FALSE
+			hood.set_canremove(FALSE)
 
 	if(cooler)
 		if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) //Ditto
 			to_chat(M, "Alarmingly, the cooling unit installed into your suit fails to deploy.")
 		else if (H.equip_to_slot_if_possible(cooler, SLOT_ID_SUIT_STORAGE))
 			to_chat(M, "Your suit's cooling unit deploys.")
-			cooler.canremove = FALSE
+			cooler.set_canremove(FALSE)
 
 /obj/item/clothing/suit/space/void/dropped(mob/user, equipping, slot)
 	..()
@@ -113,7 +116,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	var/mob/living/carbon/human/H
 
 	if(hood)
-		hood.canremove = TRUE
+		hood.set_canremove(TRUE)
 		H = hood.loc
 		if(istype(H))
 			if(hood && H.get_equipped_item(SLOT_ID_HEAD) == hood)
@@ -121,7 +124,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 				hood.forceMove(src)
 
 	if(boots)
-		boots.canremove = TRUE
+		boots.set_canremove(TRUE)
 		H = boots.loc
 		if(istype(H))
 			if(boots && H.get_equipped_item(SLOT_ID_SHOES) == boots)
@@ -129,11 +132,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 				boots.forceMove(src)
 
 	if(tank)
-		tank.canremove = TRUE
+		tank.set_canremove(TRUE)
 		tank.forceMove(src)
 
 	if(cooler)
-		cooler.canremove = TRUE
+		cooler.set_canremove(TRUE)
 		cooler.forceMove(src)
 
 /obj/item/clothing/suit/space/void/proc/attach_helmet(obj/item/clothing/head/helmet/space/void/helm)
@@ -181,7 +184,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 	if(H.get_equipped_item(SLOT_ID_HEAD) == hood)
 		to_chat(H, span_notice("You retract your suit helmet."))
-		hood.canremove = TRUE
+		hood.set_canremove(TRUE)
 		H.drop_from_inventory(hood)
 		hood.forceMove(src)
 		play_sfx(src.loc, SFX_MACHINES_CLICK2)
@@ -190,7 +193,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.get_equipped_item(SLOT_ID_HEAD)]."))
 			return
 		if(H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
-			hood.canremove = FALSE
+			hood.set_canremove(FALSE)
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
 			play_sfx(src.loc, SFX_MACHINES_CLICK2)
 
@@ -241,7 +244,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 		rel_take(src, nameof(cooler))
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
 	play_sfx(src.loc, SFX_MACHINES_CLICK, 1.5)
-	removing.canremove = TRUE
+	removing.set_canremove(TRUE)
 	H.drop_from_inventory(removing)
 
 /// Old attackby: install a helmet, magboots, tank or cooler.
@@ -372,10 +375,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 1))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
+
 
 /// Screwdriver on a suit that is not worn: pick a component (the asks() step) and pop or detach it. The ledger read (is it on the actor?) is req_not_worn().
 MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
@@ -439,9 +443,9 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 	sprite_sheets_obj = null
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
 
 /obj/item/clothing/head/helmet/space/void

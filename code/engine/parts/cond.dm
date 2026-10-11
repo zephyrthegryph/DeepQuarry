@@ -4,8 +4,7 @@
 // A CONDITION is a boolean with no reason: nameof(v) (a truthy var), a stat or capability key id, cond_not()/cond_all()/cond_any(), a
 // PROC_REF(x) whose proc takes (datum/act/A) and returns TRUE or FALSE, or a library requirement read as a boolean. It is what when() takes.
 // A REQUIREMENT is a condition plus a reason: it is what needs() takes. req(PROC_REF(x)) calls a pure callback returning null to allow,
-// or text/a message to refuse. Library constructors carry defaults; because = overrides the returned/default reason. req_bool() is the
-// explicit transitional TRUE/FALSE callback form and must declare its refusal reason.
+// or text/a message to refuse. Library constructors carry defaults; because = overrides the returned/default reason.
 //
 // Requirements and conditions never write, publish or message (purity); test builds guard that around every evaluation (op_pure_begin).
 
@@ -55,8 +54,17 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
 /// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
+	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
-	. = op_cond_eval(A, cond)
+	try
+		if(GLOB.op_menu_read_frame)
+			var/list/pairs = list()
+			op_reads_of(A, cond, pairs)
+			op_menu_record_reads(pairs)
+		. = op_cond_eval(A, cond)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
 	op_pure_end()
 
 /proc/op_cond_eval(datum/act/op/A, cond)
@@ -78,6 +86,12 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 						return TRUE
 				return FALSE
 		return FALSE
+	if(istype(cond, /datum/simulation_condition))
+		return FALSE // Simulation trees are evaluated by their rule consumer, not opaque op conditions.
+	if(istype(cond, /datum/entry))
+		var/datum/entry/simulation_entry = cond
+		if(simulation_entry.kind == SIM_ENTRY_KIND)
+			return FALSE
 	if(istype(cond, /datum/entry/part/req) || istype(cond, /datum/requirement))
 		return op_req_holds(A, cond)
 	if(isnum(cond))
@@ -194,12 +208,6 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		because = /datum/msg/req_silent
 	return part_make(/datum/entry/part/req/generic, list("what" = what, "of" = of, "because" = because, "id" = id))
 
-/// Transitional boolean callbacks. Kept explicit so the analyzer can ratchet their retirement.
-/proc/req_bool(what, of = ON_HELD, because = null, id = null, silent = FALSE)
-	if(silent && isnull(because))
-		because = /datum/msg/req_silent
-	return part_make(/datum/entry/part/req/generic/boolean, list("what" = what, "of" = of, "because" = because, "id" = id))
-
 /datum/entry/part/req/generic
 	part_name = "req"
 
@@ -220,6 +228,8 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	. = list()
 	var/what = src.args["what"]
 	if(istext(what) && copytext(what, 1, 5) != "cap:")
+		if(istype(A, /datum/act/admission_query))
+			return op_query_read_pairs(A, what)
 		for(var/key in change_read_keys(A.holder, what))
 			. += list(list(A.holder, key))
 
@@ -230,15 +240,6 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(ispath(what) || islist(what))
 		return /datum/msg/req_wrong_item
 	return req_refusal_value(op_call(A, what), default_reason)
-
-/datum/entry/part/req/generic/boolean
-	part_name = "req_bool"
-
-/datum/entry/part/req/generic/boolean/holds(datum/act/op/A)
-	return !!op_call(A, src.args["what"])
-
-/datum/entry/part/req/generic/boolean/refusal(datum/act/op/A)
-	return isnull(src.args["because"]) ? default_reason : req_reason_value(A, src.args["because"], default_reason)
 
 /// A test of a key's value: a tracked var (nameof(v)), a stat id or a capability key id, read on the holder (of = ON_TARGET for the target).
 /datum/entry/part/req/is

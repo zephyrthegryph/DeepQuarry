@@ -34,10 +34,12 @@ human|/obj/item/stack/material/steel click: nothing
 -click: Click: Item
 +3 click: nothing
 @obj.item.toy human|/obj/item/kit
--menu: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 @obj.item.toy human|/obj/item/storage
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +3 click: Click: Collect
 human|/obj/item/toy/figure menu: Feed
 human|/obj/item/toy/figure menu: Move To Top

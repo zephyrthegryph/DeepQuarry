@@ -59,14 +59,16 @@
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
 				S.vars[V] |= var_changes[V]
 			else
-				S.vars[V] = var_changes[V] // ALLOW(api): trait var_changes tables
+				if(!S.set_acceptance_shape_field(V, var_changes[V]))
+					S.vars[V] = var_changes[V] // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
+					if(!S.set_acceptance_shape_field(trait, trait_prefs[trait]))
+						S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -115,14 +117,16 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 				if(!(initial(S.vars[V]) & var_changes[V]))
 					S.vars[V] &= ~var_changes[V]
 			else
-				S.vars[V] = initial(S.vars[V]) // ALLOW(api): trait var_changes tables
+				if(!S.set_acceptance_shape_field(V, initial(S.vars[V])))
+					S.vars[V] = initial(S.vars[V]) // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
+					if(!S.set_acceptance_shape_field(trait, initial(S.vars[trait])))
+						S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
 	if(mutation)

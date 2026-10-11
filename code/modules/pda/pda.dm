@@ -64,6 +64,7 @@
 
 CAPABILITIES(/obj/item/pda)
 	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
+	setup(PROC_REF(configure_wrist_slots))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
 	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
@@ -199,11 +200,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 			)
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-			set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
-			sprite_sheets = list(
-				SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-			)
 		if(7)
 			icon = 'icons/obj/pda_slider.dmi'
 			model_name = "Slider® Personal Data Assistant"
@@ -573,3 +569,12 @@ CAPABILITIES(/obj/item/storage/box/PDAs)
 /// The lastapp this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/lastapp() as /datum/data/pda/app
 	return lastapp
+
+/obj/item/pda/proc/configure_wrist_slots()
+	if(pdachoice != 6)
+		return
+	set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
+	set_sprite_sheets(list(
+		SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
+		SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
+	))

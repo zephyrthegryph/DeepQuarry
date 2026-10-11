@@ -44,9 +44,8 @@
 -click: Click: Collect
 +2 menu: Refill
 +4 click: Click: Refill
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+1 menu: Refill
-+3 click: Click: Refill
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Refill
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Refill
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_product, pick_up_item, refill, toggle_digestable
