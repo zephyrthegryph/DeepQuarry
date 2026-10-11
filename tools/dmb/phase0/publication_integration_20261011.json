@@ -1075,6 +1075,19 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "qualified_wave_e423_focused": {
+    "source_commit": "e423001c5838cb1e069d27de4fb50cff20b57189",
+    "source_archive_sha256": "5ce3da8dbd179653a7228f2573501b78c6d72a9ca131a064a1aa5c672d32834a",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-165857-0b221054-job-cargo.json",
+    "focused_receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170228-8331bd1a-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170229-293c3339-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170315-7ffba839-focused.json"
+    ],
+    "passed": 24,
+    "failed": 2,
+    "scope": "Five qualified admission checks including repeated shared-leaf observer delivery passed; inspector three passed; classification twelve passed but current-target and different-owner checks failed; modifier two and six-session panic/reset two passed. Binding failures remain open; no performance or whole-program parity claim. Empty mistyped filter receipt 170256 preserved and excluded."
+  },
   "incremental_runtime_e64": {
     "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-e64/ea1f27da245d481480b1d21b45d6dc12/receipt.json",
     "complete": true,
