@@ -27,6 +27,7 @@ fn key(destination: &str) -> RequestKey {
         destination: destination.into(),
         output_store: None,
         replay: None,
+        record_inputs: None,
     }
 }
 #[test]

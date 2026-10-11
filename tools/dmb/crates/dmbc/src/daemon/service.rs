@@ -54,6 +54,7 @@ struct RequestKey {
     destination: PathBuf,
     output_store: Option<PathBuf>,
     replay: Option<PathBuf>,
+    record_inputs: Option<PathBuf>,
 }
 impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
@@ -72,6 +73,7 @@ impl RequestKey {
             ),
             output_store: request.output_store.clone(),
             replay: request.replay_inputs.clone(),
+            record_inputs: request.record_inputs.clone(),
         }
     }
 }
@@ -686,6 +688,7 @@ mod tests {
             destination: PathBuf::from("E:/fixture/project.dme"),
             output_store: None,
             replay: None,
+            record_inputs: None,
         };
         let first = control::Cancellation::default();
         let old = LatestRequest::register(&slot, key.clone(), first.clone());
@@ -723,8 +726,10 @@ mod tests {
         changed.no_cache = true;
         changed.exact_inputs = true;
         changed.trace_path = Some("trace.json".into());
-        changed.record_inputs = Some("records".into());
         assert_eq!(key, RequestKey::of(&changed, manifest));
+        changed.record_inputs = Some("E:/fixture/records".into());
+        assert_ne!(key, RequestKey::of(&changed, manifest));
+        changed.record_inputs = None;
         changed.artifact_directory = Some("E:/fixture/other".into());
         assert_ne!(key, RequestKey::of(&changed, manifest));
         changed.artifact_directory = None;
@@ -742,6 +747,34 @@ mod tests {
         let mut executable = *request;
         executable.command = crate::request::BuildCommand::AnalyzeBodies;
         assert_ne!(key, RequestKey::of(&executable, manifest));
+    }
+    #[test]
+    fn captured_input_destinations_preserve_independent_requests() {
+        let shared = shared();
+        let manifest = PathBuf::from("E:/fixture/project.dme");
+        let slot = shared.slot(manifest.clone(), &BTreeMap::new(), None);
+        let args = vec!["compile".into(), manifest.to_string_lossy().into_owned()];
+        let crate::request::Command::Build(mut request) = crate::cli::parse(&args).unwrap() else {
+            panic!("build expected")
+        };
+        request.record_inputs = Some("E:/fixture/capture-a".into());
+        let first = control::Cancellation::default();
+        let old =
+            LatestRequest::register(&slot, RequestKey::of(&request, &manifest), first.clone());
+        request.record_inputs = Some("E:/fixture/capture-b".into());
+        let second = control::Cancellation::default();
+        let independent =
+            LatestRequest::register(&slot, RequestKey::of(&request, &manifest), second.clone());
+        assert!(!first.is_cancelled());
+        let replacement = LatestRequest::register(
+            &slot,
+            RequestKey::of(&request, &manifest),
+            control::Cancellation::default(),
+        );
+        assert!(second.is_cancelled());
+        assert!(!first.is_cancelled());
+        drop((old, independent, replacement));
+        assert!(slot.newest.lock().unwrap().is_empty());
     }
     #[test]
     fn define_sets_retain_independent_hosts_and_cancelled_waiter_exits_immediately() {
