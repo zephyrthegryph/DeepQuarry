@@ -19,6 +19,8 @@ pub(super) struct Incidence<Q, A, D> {
     certificates: Vec<(D, u128, BTreeSet<u64>)>,
     uncovered: Vec<(D, BTreeSet<u64>)>,
     conflicting: BTreeSet<u64>,
+    #[cfg(test)]
+    pub(super) removal_visits: usize,
 }
 impl<Q, A, D> Default for Incidence<Q, A, D> {
     fn default() -> Self {
@@ -29,6 +31,8 @@ impl<Q, A, D> Default for Incidence<Q, A, D> {
             certificates: Vec::new(),
             uncovered: Vec::new(),
             conflicting: BTreeSet::new(),
+            #[cfg(test)]
+            removal_visits: 0,
         }
     }
 }
@@ -74,18 +78,29 @@ impl<Q, A, D> Incidence<Q, A, D> {
         )
     }
     pub(super) fn remove(&mut self, variant: u64) {
+        // Fresh physical variants have no subscriptions to remove. Insertion
+        // calls this common replacement path, so reject absent variants before
+        // walking the complete certificate/domain subscription roster.
+        let Some((_, ids)) = self.variants.remove(&variant) else {
+            return;
+        };
         self.conflicting.remove(&variant);
         self.uncovered.retain_mut(|(_, members)| {
+            #[cfg(test)]
+            {
+                self.removal_visits += 1;
+            }
             members.remove(&variant);
             !members.is_empty()
         });
         self.certificates.retain_mut(|(_, _, members)| {
+            #[cfg(test)]
+            {
+                self.removal_visits += 1;
+            }
             members.remove(&variant);
             !members.is_empty()
         });
-        let Some((_, ids)) = self.variants.remove(&variant) else {
-            return;
-        };
         for id in ids {
             let leaf = self.leaves.get_mut(&id).expect("indexed receipt leaf");
             leaf.subscribers.remove(&variant);

@@ -148,3 +148,43 @@ fn direct_candidate_routing_still_checks_full_key_inside_collision_bucket() {
         "misrouted hash is not authority"
     );
 }
+
+#[test]
+fn fresh_incidence_variants_skip_removal_walk_and_replacement_keeps_exact_edges() {
+    let store = Store::current_revision();
+    store.enable_incidence();
+    for key in 0u8..80 {
+        store.insert_with_receipt(
+            Arc::from([key]),
+            reads(key),
+            Arc::from([(key, 7)]),
+            1,
+            || key,
+        );
+    }
+    {
+        let state = store.state.lock().unwrap();
+        assert_eq!(
+            state.incidence.as_ref().unwrap().removal_visits,
+            0,
+            "new variants must not scan prior certificate subscriptions"
+        );
+    }
+    store.insert_with_receipt(Arc::from([3]), reads(99), Arc::from([(99, 8)]), 1, || 81);
+    assert!(affected(&store, 3).is_empty());
+    assert_eq!(affected(&store, 99), vec![81]);
+    assert_eq!(affected(&store, 4), vec![4]);
+    assert!(
+        store
+            .state
+            .lock()
+            .unwrap()
+            .incidence
+            .as_ref()
+            .unwrap()
+            .removal_visits
+            > 0
+    );
+    store.retain_current_keys(std::iter::empty());
+    assert_eq!(store.visit_incidence_storage(|_| {}), Some((0, 0, 0, 0)));
+}
