@@ -454,6 +454,7 @@ pub(crate) fn decode_failure<R: Resolver>(
             .collect()
     })
 }
+#[cfg(test)]
 pub(crate) fn encode_executable(
     key: &[u8],
     reads: &[ResolverRead],
@@ -743,8 +744,10 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
     }
     Ok(Candidates(values))
 }
+#[cfg(test)]
 #[path = "lowering_memo_wire_anonymous.rs"]
 mod anonymous;
+#[cfg(test)]
 pub(crate) use anonymous::AnonymousLookup;
 impl Candidates<'_> {
     pub(crate) fn procedure<R: Resolver>(

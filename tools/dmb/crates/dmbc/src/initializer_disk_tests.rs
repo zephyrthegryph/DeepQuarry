@@ -148,7 +148,6 @@ fn one_shot_shared_initializer_disk_rebinds_and_recomputes_only_changed_write() 
             .load(Ordering::Relaxed),
         1
     );
-    assert_eq!(reader.anonymous_initializer_verification_counts(), (0, 0));
     let shifted = format!("\n\n{source}");
     let (_, shifted_reader) = request(&root.0);
     equal(&run(&shifted, Some(&shifted_reader)), &run(&shifted, None));

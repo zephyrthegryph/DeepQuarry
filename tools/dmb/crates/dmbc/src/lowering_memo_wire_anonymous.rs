@@ -1,10 +1,9 @@
-//! Existing anonymous typed-candidate loop; optional original receipt for verification.
+//! Test-only identity-less transport adapter for canonical receipt fixtures.
 use super::*;
 #[derive(Default)]
 pub(crate) struct AnonymousLookup {
     pub code: Option<ResolverProc>,
     pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
-    pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
 }
 impl Candidates<'_> {
     #[cfg(test)]
@@ -13,15 +12,6 @@ impl Candidates<'_> {
         key: &[u8],
         host: &R,
         debug_count: usize,
-    ) -> AnonymousLookup {
-        self.anonymous_verified(key, host, debug_count, false)
-    }
-    pub(crate) fn anonymous_verified<R: Resolver>(
-        self,
-        key: &[u8],
-        host: &R,
-        debug_count: usize,
-        verify: bool,
     ) -> AnonymousLookup {
         // Preserve the existing failure-first semantics across variants. Typed
         // payload admission happens once before either outcome is inspected.
@@ -33,15 +23,7 @@ impl Candidates<'_> {
                         && value.key.as_ref() == key
                         && read_mismatch(&value.reads, &value.versions, host).is_none()
                     {
-                        let verification_reads = verify.then(|| {
-                            value
-                                .reads
-                                .iter()
-                                .map(|read| (read.query(), read.answer().to_vec()))
-                                .collect()
-                        });
                         return AnonymousLookup {
-                            verification_reads,
                             errors: Some(
                                 value.errors.into_iter().map(ErrorWire::rehydrate).collect(),
                             ),
@@ -62,16 +44,8 @@ impl Candidates<'_> {
             {
                 continue;
             }
-            let verification_reads = verify.then(|| {
-                value
-                    .reads
-                    .iter()
-                    .map(|read| (read.query(), read.answer().to_vec()))
-                    .collect()
-            });
             if let Some(code) = value.body.rehydrate(host, debug_count) {
                 return AnonymousLookup {
-                    verification_reads,
                     code: Some(code),
                     errors: None,
                 };

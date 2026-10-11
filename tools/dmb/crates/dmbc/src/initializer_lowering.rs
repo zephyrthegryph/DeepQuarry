@@ -394,16 +394,27 @@ fn lower_plan<R: Resolver>(
     let disk_context = parallel
         .map(|(context, _)| context)
         .or_else(|| evaluator.parallel_evaluator());
-    if let Some(memo) = memo {
-        if let Some(store) = &memo.initializer_fragments {
-            store.configure_disk(disk_context);
-        }
-        if let Some(store) = &memo.initializer_assemblies {
-            store.configure_disk(disk_context);
-        }
+    // Explicit standalone ProcedureMemo callers use the same producer/admission
+    // core. Their API carries no authenticated engine payload for portable
+    // transport, so missing stores get request-local owners without disk.
+    let local_fragments = memo
+        .filter(|memo| memo.initializer_fragments.is_none())
+        .map(|_| InitializerFragments::default());
+    let local_assemblies = memo
+        .filter(|memo| memo.initializer_assemblies.is_none())
+        .map(|_| InitializerAssemblies::default());
+    let fragment_store = memo
+        .and_then(|memo| memo.initializer_fragments.as_deref())
+        .or(local_fragments.as_ref());
+    let assembly_store = memo
+        .and_then(|memo| memo.initializer_assemblies.as_deref())
+        .or(local_assemblies.as_ref());
+    if let Some(store) = fragment_store {
+        store.configure_disk(disk_context);
     }
-    let fragment_store = memo.and_then(|memo| memo.initializer_fragments.as_deref());
-    let assembly_store = memo.and_then(|memo| memo.initializer_assemblies.as_deref());
+    if let Some(store) = assembly_store {
+        store.configure_disk(disk_context);
+    }
     let fragment_keys =
         if let Some(memo) = memo.filter(|_| fragment_store.is_some() || assembly_store.is_some()) {
             let keys = fragments::current_keys(&classified, memo.policy, resource_search_context)?;
@@ -829,20 +840,6 @@ fn lower_group<R: Resolver>(
                 }
             }
         }
-    } else if let Some(memo) = memo {
-        anonymous::lower(
-            memo,
-            classified,
-            group,
-            host,
-            resource_search_context,
-            &debug.origins,
-            &write_ordinals,
-            &assignment_views,
-            value_continuations.clone(),
-            context,
-            &map_error,
-        )?
     } else {
         // Cold oracle path performs no cache key, serialization, extra
         // ancestry reads or recording allocation.
@@ -884,8 +881,9 @@ fn lower_group<R: Resolver>(
     })
 }
 
-#[path = "initializer_anonymous.rs"]
-mod anonymous;
+#[cfg(test)]
+#[path = "initializer_shared_facade_tests.rs"]
+mod shared_facade_tests;
 
 #[path = "initializer_recipe_handoff.rs"]
 mod recipe_handoff;
