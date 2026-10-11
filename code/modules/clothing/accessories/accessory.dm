@@ -1128,6 +1128,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace)
 	op("bluespace_collar_wire_signaler", item(/obj/item/assembly/signaler), label("Wire signaler"), then(PROC_REF(bluespace_collar_wire_signaler)))
 	op("size", ui_act("size", arg("size", num())), then(PROC_REF(ui_act_size)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attackby: wire a signaler in, making a modified collar.
 /obj/item/clothing/accessory/collar/shock/bluespace/proc/bluespace_collar_wire_signaler(datum/act/op/A)
@@ -1141,11 +1142,12 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace)
 	consume(src, user)
 	return OP_PASS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
+/obj/item/clothing/accessory/collar/shock/bluespace/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You crack the bluespace crystal [src]."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // modified bluespace collar where the size is controlled by the signaller.
 
@@ -1167,14 +1169,15 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 	to_chat(user, span_notice("There is already a signaler wired to the [src]."))
 	return OP_PASS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_act(mob/user, obj/item/tool)
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/collar_name = "[src]"
 	var/turf/product_turf = get_turf(src)
 	if(!consume(src, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You crack the bluespace crystal [collar_name], the attached signaler disconnects."))
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(product_turf)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/ui_data(datum/act/eval/A)
 	var/list/data = ..()

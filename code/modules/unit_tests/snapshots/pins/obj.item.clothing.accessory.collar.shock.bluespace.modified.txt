@@ -38,7 +38,8 @@ human|/obj/item/tool/wrench menu: Collar tag item
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Accessory attached hand
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Accessory attached hand
 human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Collar tag item
@@ -115,5 +116,5 @@ human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do
 human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler menu: Wire signaler
 human|/obj/item/assembly/signaler click: Click: Wire signaler
-keys: accessory_attached_hand, bluespace_collar_wire_signaler, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, code, collar_tag_item, collar_tag_self, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, modified_collar_signaler, move_to_top, pick_up_item, power, size, tag, toggle_digestable
+keys: accessory_attached_hand, bluespace_collar_wire_signaler, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, code, collar_tag_item, collar_tag_self, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, modified_collar_signaler, move_to_top, pick_up_item, power, size, tag, toggle_digestable, use_wrench
 

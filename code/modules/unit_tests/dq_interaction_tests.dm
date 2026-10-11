@@ -120,20 +120,20 @@
 		H.set_use_stance(stance)
 		H.put_in_active_hand(crowbar)
 		R.opened = FALSE
-		TEST_ASSERT(R.crowbar_act(H, crowbar) & ITEM_INTERACT_SUCCESS, "stance [stance]: the crowbar works the chassis")
+		TEST_ASSERT(R.interaction_tool_act(H, crowbar, TOOL_CROWBAR) & ITEM_INTERACT_SUCCESS, "stance [stance]: the crowbar works the chassis")
 		TEST_ASSERT(R.opened, "stance [stance]: the crowbar opens the cover")
 		H.drop_from_inventory(crowbar)
 		H.put_in_active_hand(welder)
 		R.injure(INJURY_BLUNT, 20)
 		var/before = R.injury_load(INJURY_CATEGORY_PHYSICAL)
 		TEST_ASSERT(before > 0, "stance [stance]: the robot is dented")
-		TEST_ASSERT(R.welder_act(H, welder) & ITEM_INTERACT_SUCCESS, "stance [stance]: the welder works the chassis")
+		TEST_ASSERT(R.interaction_tool_act(H, welder, TOOL_WELDER) & ITEM_INTERACT_SUCCESS, "stance [stance]: the welder works the chassis")
 		TEST_ASSERT(R.injury_load(INJURY_CATEGORY_PHYSICAL) < before, "stance [stance]: the weld repairs dents")
 		H.drop_from_inventory(welder)
 	R.opened = FALSE
 	H.set_use_stance(I_HURT)
 	H.put_in_active_hand(crowbar)
-	TEST_ASSERT(!(R.crowbar_act(H, crowbar) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)), "combat mode: no op answers the crowbar, so it goes on to strike")
+	TEST_ASSERT(!(R.interaction_tool_act(H, crowbar, TOOL_CROWBAR) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)), "combat mode: no op answers the crowbar, so it goes on to strike")
 	TEST_ASSERT(!R.opened, "combat mode: the cover stays shut")
 	H.set_use_stance(I_HELP)
 

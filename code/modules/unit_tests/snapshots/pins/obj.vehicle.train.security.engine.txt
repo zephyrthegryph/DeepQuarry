@@ -26,8 +26,9 @@ human|/obj/item/tool/screwdriver menu: Start engine
 human|/obj/item/tool/screwdriver menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Unlatch
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver menu: Vehicle item
-human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Insert key
 human|/obj/item/tool/crowbar menu: Interaction train hand
@@ -38,8 +39,9 @@ human|/obj/item/tool/crowbar menu: Start engine
 human|/obj/item/tool/crowbar menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Unlatch
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar menu: Vehicle item
-human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Insert key
 human|/obj/item/tool/wrench menu: Interaction train hand
@@ -86,8 +88,9 @@ human|/obj/item/weldingtool menu: Start engine
 human|/obj/item/weldingtool menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Unlatch
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool menu: Vehicle item
-human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Insert key
 human|/obj/item/stack/cable_coil menu: Interaction train hand
@@ -151,5 +154,5 @@ human|/obj/item/card/emag menu: Unlatch
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Vehicle item
 human|/obj/item/card/emag click: Click: Use
-keys: drag_buckle, emag.subvert, emag.use, melee_hit, security_engine_key, security_engine_remove_key, security_engine_start_engine, security_engine_stop_engine, train_drag, train_hand, train_unlatch, vehicle_item
+keys: drag_buckle, emag.subvert, emag.use, melee_hit, security_engine_key, security_engine_remove_key, security_engine_start_engine, security_engine_stop_engine, train_drag, train_hand, train_unlatch, use_crowbar, use_screwdriver, use_welder, vehicle_item
 

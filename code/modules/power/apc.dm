@@ -766,7 +766,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		"failTime" = CEILING(failure_left() / (1 SECOND), 1),
 		"gridCheck" = grid_check,
 		"coverLocked" = coverlocked,
-		"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),
+		"siliconUser" = user && (((A.authority & AUTH_REMOTE_ACCESS) && user.remote_link_allows(src)) || (isobserver(user) && is_admin(user))),
 		"emergencyLights" = !emergency_lights,
 		"powerChannels" = channels,
 		"isOperating" = operating,

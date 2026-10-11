@@ -760,7 +760,7 @@
 	C.state = 3
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, H)
 	H.put_in_active_hand(S)
-	C.screwdriver_act(H, S)
+	C.interaction_tool_act(H, S, TOOL_SCREWDRIVER)
 	TEST_ASSERT(asked(H), "the screwdriver asks for the networks")
 	hci_answer(H, "Security,Secret")
 	settle()

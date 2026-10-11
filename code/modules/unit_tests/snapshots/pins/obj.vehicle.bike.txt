@@ -20,8 +20,9 @@ human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/screwdriver menu: Toggle Engine
 human|/obj/item/tool/screwdriver menu: Toggle Kickstand
 human|/obj/item/tool/screwdriver menu: Toggle kickstand
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver menu: Vehicle item
-human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Interaction bike hand
 human|/obj/item/tool/crowbar menu: Load
@@ -30,8 +31,9 @@ human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that
 human|/obj/item/tool/crowbar menu: Toggle Engine
 human|/obj/item/tool/crowbar menu: Toggle Kickstand
 human|/obj/item/tool/crowbar menu: Toggle kickstand
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar menu: Vehicle item
-human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Interaction bike hand
 human|/obj/item/tool/wrench menu: Load
@@ -70,8 +72,9 @@ human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.
 human|/obj/item/weldingtool menu: Toggle Engine
 human|/obj/item/weldingtool menu: Toggle Kickstand
 human|/obj/item/weldingtool menu: Toggle kickstand
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool menu: Vehicle item
-human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Interaction bike hand
 human|/obj/item/stack/cable_coil menu: Load
@@ -125,5 +128,5 @@ human|/obj/item/card/emag menu: Toggle kickstand
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Vehicle item
 human|/obj/item/card/emag click: Click: Use
-keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, vehicle_item, vehicle_paint
+keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, use_crowbar, use_screwdriver, use_welder, vehicle_item, vehicle_paint
 

@@ -182,11 +182,12 @@ TRACKED(/obj/structure/fuel_port, loaded)
 			set_loaded(contents_count(src) > 0)
 	return OP_PASS
 
-/obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
+/obj/structure/fuel_port/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open up" : "tightly shut"] \the [src] door."))
 	play_sfx(src, opened ? SFX_EFFECTS_LOCKER_OPEN : SFX_EFFECTS_LOCKER_CLOSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Walls hide stuff inside them, but we want to be visible.
 /obj/structure/fuel_port/hide()
@@ -201,3 +202,4 @@ CAPABILITIES(/obj/structure/fuel_port)
 	links(/obj/structure/fuel_port::parent_shuttle, /datum/shuttle/autodock/overmap::fuel_ports, b_many = TRUE)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))

@@ -59,6 +59,7 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 CAPABILITIES(/obj/item/material/fishing_rod)
 	op("fishing_rod_string", stack(/obj/item/stack/cable_coil, 5), priority(OP_PRIORITY_DEFAULT), label("Use"), when(req_is(nameof(strung), FALSE)), wait(PROC_REF(string_time)), then(PROC_REF(string_done)))
 	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// Old attackby: swap the rod's bait; anything else falls through as its ..() did.
 /obj/item/material/fishing_rod/proc/fishing_rod_item(datum/act/op/A)
@@ -73,12 +74,13 @@ CAPABILITIES(/obj/item/material/fishing_rod)
 		update_bait()
 	return OP_DECLINE
 
-/obj/item/material/fishing_rod/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/material/fishing_rod/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!strung)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_strung(FALSE)
 	to_chat(user, span_notice("You cut \the [src]'s string!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/material/fishing_rod/draw(datum/look/look)
 	..()

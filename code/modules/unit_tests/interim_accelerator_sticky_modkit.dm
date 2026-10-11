@@ -27,7 +27,7 @@
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed insertion clears the original source hand")
 	TEST_ASSERT_EQUAL(accelerator.get_remaining_mod_capacity(), capacity_before - modkit.cost, "allowed insertion spends exactly the original modkit's actual capacity cost")
 	TEST_ASSERT(user.put_in_active_hand(crowbar), "the actor holds the real modification-removal tool")
-	accelerator.crowbar_act(user, crowbar)
+	accelerator.interaction_tool_act(user, crowbar, TOOL_CROWBAR)
 	TEST_ASSERT_EQUAL(length(accelerator.get_modkits()), 0, "the actual crowbar action removes the original modkit relation")
 	TEST_ASSERT_EQUAL(accelerator.get_remaining_mod_capacity(), capacity_before, "actual removal refunds the full original capacity cost")
 	TEST_ASSERT_EQUAL(modkit.loc, T, "actual removal returns the original modkit to the floor")

@@ -7,27 +7,30 @@
 
 	var/construction_stage = 1
 
-/obj/item/coilgun_assembly/welder_act(mob/user, obj/item/tool)
+/obj/item/coilgun_assembly/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(construction_stage != 4)
-		return NONE
+		return OP_DECLINE
 	var/obj/item/weldingtool/welder = tool.get_welder()
 
 	if(!welder.isOn())
 		to_chat(user, span_warning("Turn it on first!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	if(!welder.remove_fuel(0,user))
 		to_chat(user, span_warning("You need more fuel!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " welds the barrel of %T% into place."))
 	play_sfx(src, SFX_ITEMS_WELDER2, 2)
 	increment_construction_stage()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/coilgun_assembly/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/coilgun_assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(construction_stage < 9)
-		return NONE
+		return OP_DECLINE
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " secures %T% and finishes it off."))
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	var/obj/item/gun/magnetic/coilgun = new(loc)
@@ -39,10 +42,12 @@
 	if(put_in_hands)
 		user.put_in_hands(coilgun)
 	replace_with(src, coilgun)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/item/coilgun_assembly)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby.
 /obj/item/coilgun_assembly/proc/interaction_item(datum/act/op/A)

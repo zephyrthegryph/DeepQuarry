@@ -33,6 +33,8 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
 	without("ui_open")
 	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 // ALLOW(init/INSTANCE_STATE): gathers the papers the map placed on its tile
 /obj/structure/filingcabinet/Initialize(mapload)
@@ -55,15 +57,19 @@ CAPABILITIES(/obj/structure/filingcabinet)
 		to_chat(user, span_notice("You can't put [P] in [src]!"))
 	return OP_PASS
 
-/obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
+/obj/structure/filingcabinet/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
+/obj/structure/filingcabinet/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)

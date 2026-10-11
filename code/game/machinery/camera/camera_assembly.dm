@@ -28,6 +28,10 @@ CAPABILITIES(/obj/item/camera_assembly)
 	owns_many(nameof(upgrades))
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 
 /// Old attackby.
@@ -55,21 +59,23 @@ CAPABILITIES(/obj/item/camera_assembly)
 	// Taking out upgrades
 	return OP_DECLINE
 
-/obj/item/camera_assembly/wrench_act(mob/user, obj/item/tool)
+/obj/item/camera_assembly/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(state == 0 && isturf(loc))
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You wrench the assembly into place."))
 		set_anchored(TRUE)
 		set_state(1)
 		auto_turn()
-		return TRUE
+		return OP_OK
 	if(state == 1)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
 		set_anchored(FALSE)
 		set_state(0)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/camera_assembly/proc/weld_available(datum/act/op/A)
 	return state == 1 || state == 2
@@ -99,32 +105,42 @@ CAPABILITIES(/obj/item/camera_assembly)
 	set_anchored(TRUE)
 	return OP_OK
 
-/obj/item/camera_assembly/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/camera_assembly/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(state != 3)
-		return FALSE
+		return OP_DECLINE
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You cut the wires from the circuits."))
 	set_state(2)
-	return TRUE
+	return OP_OK
 
-/obj/item/camera_assembly/crowbar_act(mob/user, obj/item/tool)
+/obj/item/camera_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!LAZYLEN(upgrades))
-		return FALSE
+		return OP_DECLINE
 	var/obj/upgrade = locate_in_list(upgrades, /obj)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
 		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
-	return TRUE
+	return OP_OK
 
-/obj/item/camera_assembly/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/camera_assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(state != 3)
-		return FALSE
+		return OP_DECLINE
 	playsound(src, tool.usesound, 50, TRUE)
+	ask_camera_networks(user)
+	return OP_OK
+
+/// The wired assembly's first configuration question (its networks); the answer asks for the name.
+/obj/item/camera_assembly/proc/ask_camera_networks(mob/user)
 	open_request(src, /datum/prompt/text, PROC_REF(camera_networks_entered), answerer = user, title = "Set Network", question = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
 
 /obj/item/camera_assembly/proc/camera_networks_entered(datum/act/request/A)
 	if(!A.answer)

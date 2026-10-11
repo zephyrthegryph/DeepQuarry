@@ -19,6 +19,7 @@ CAPABILITIES(/obj/structure/ladder_assembly)
 	op("weld_unanchored", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(is_unanchored)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(bolts_needed)))
 	op("weld_down", tool(TOOL_WELDER), priority(OP_PRIORITY_NORMAL), label("Weld to the floor"), when(PROC_REF(is_wrenched)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_down_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_down_done)))
 	op("weld_up", tool(TOOL_WELDER), priority(OP_PRIORITY_PART), label("Cut free from the floor"), when(PROC_REF(is_welded)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_up_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_up_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed on a shuttle."))
 
@@ -63,10 +64,11 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 		created_name = t
 	return OP_PASS
 
-/obj/structure/ladder_assembly/wrench_act(mob/user, obj/item/W)
+/obj/structure/ladder_assembly/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	switch(state)
 		if(LADDER_CONSTRUCTION_UNANCHORED)
 			set_state(LADDER_CONSTRUCTION_WRENCHED)
@@ -84,7 +86,7 @@ MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed
 			set_anchored(FALSE)
 		if(LADDER_CONSTRUCTION_WELDED)
 			to_chat(user, span_warning("\The [src] needs to be unwelded."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Try to construct this into a real stairway.
 // It must have a matching ladder assembly above and/or below, and both must be welded in place

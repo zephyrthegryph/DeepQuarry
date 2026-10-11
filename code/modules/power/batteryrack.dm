@@ -344,9 +344,14 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 		var/obj/item/cell/newcell = new cell_type(src.loc)
 		insert_cell(newcell)
 
-/obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
+CAPABILITIES(/obj/item/module/power_control)
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+
+/obj/item/module/power_control/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	use_tool(user, I, src, delay = 5 SECONDS, start_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)
 	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
