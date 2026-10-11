@@ -190,7 +190,7 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
 pub fn discover(decls: &Decls) -> Vec<HandlerRef> {
     let mut out = Vec::new();
     for m in &decls.markers {
-        if !matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" | crate::sem::decls::ENTRY_PROC) {
+        if !matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" | crate::sem::decls::ENTRY_PROC | crate::sem::decls::RUNTIME_OBSERVE) {
             continue;
         }
         marker_handlers(m, &mut out);
@@ -422,12 +422,30 @@ mod context_tests {
         let file = SourceFile::from_text("code/content/probe.dm", source);
         let tree = Tree::from_files(vec![file]);
         let decls = Decls::get(&tree);
-        let mut found = Vec::new();
-        for marker in &decls.markers {
-            marker_handlers(marker, &mut found);
-        }
+        let found = discover(&decls);
         assert!(!found.is_empty(), "the fixture must discover its declarations");
         found
+    }
+
+    #[test]
+    fn runtime_observe_typed_requirements_are_read_roots() {
+        let found = handlers("/datum/test/proc/register()\n\tvar/H = observe(box, /datum/act/insert, P, needs(req(TYPE_PROC_REF(/datum/probe, admission))))\n");
+        assert_eq!(found.len(), 1);
+        let handler = &found[0];
+        assert_eq!(handler.owner, "/datum/probe");
+        assert_eq!(handler.proc, "admission");
+        assert_eq!(handler.ctx, Ctx::Op);
+        assert_eq!(handler.role, Role::Requirement);
+        assert!(handler.role.reads_covered());
+        assert_eq!(handler.line, 2);
+    }
+
+    #[test]
+    fn runtime_observe_ignores_strings_comments_and_member_calls() {
+        let file = SourceFile::from_text("code/content/probe.dm",
+            "/proc/observe(a, b, c, d)\n\treturn\n/proc/test()\n\tvar/text = \"observe(a, b, c, needs(req(TYPE_PROC_REF(/datum/probe, string_fake))))\"\n\t// observe(a, b, c, needs(req(TYPE_PROC_REF(/datum/probe, comment_fake))))\n\tx.observe(a, b, c, needs(req(TYPE_PROC_REF(/datum/probe, member_fake))))\n");
+        let tree = Tree::from_files(vec![file]);
+        assert!(discover(&Decls::get(&tree)).is_empty());
     }
 
     #[test]
