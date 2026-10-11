@@ -87,8 +87,6 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-
-CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	swarming()
 
 // A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet

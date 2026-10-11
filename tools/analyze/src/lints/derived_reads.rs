@@ -514,7 +514,7 @@ fn parse_file(f: &SourceFile) -> Parts {
                 relations.entry(owner.clone()).or_default().insert(m.s(1).to_string());
             }
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
             tracked.entry(m.s(1).to_string()).or_default().insert(m.s(2).to_string());
         }
         if let Some(m) = pat_match!(

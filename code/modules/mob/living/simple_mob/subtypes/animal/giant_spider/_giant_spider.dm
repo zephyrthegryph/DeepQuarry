@@ -125,11 +125,9 @@
 
 	no_pull_when_living = TRUE
 
+
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
-
-
-CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
 	swarming()
 
 /mob/living/simple_mob/animal/giant_spider/CanPass(atom/movable/mover, turf/target)

@@ -65,9 +65,6 @@
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
 
-CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
-
 /mob/living/simple_mob/vore/squirrel/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -155,6 +152,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
 	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))
 	after_init(0, then(PROC_REF(season_coat)))

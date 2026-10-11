@@ -18,9 +18,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/solarmoth)
 
 /mob/living/simple_mob/construct
 
-CAPABILITIES(/mob/living/simple_mob/construct)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
-
 /mob/living/simple_mob/mechanical/mecha
 
 /mob/living/simple_mob/mechanical/hivebot/tank

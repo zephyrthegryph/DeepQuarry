@@ -544,7 +544,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 });
             }
         }
-        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
             fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
         }
         if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {

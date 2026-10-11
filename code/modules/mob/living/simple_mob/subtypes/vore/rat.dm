@@ -260,11 +260,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 /mob/living/simple_mob/vore/aggressive/rat/pet
 	name = "Giant Rat Siblings"
 
-CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
-
 // Which of the pet rats it is: Ratthew and ";help maint" as often as each other, Brick rarely.
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 	rolls(nameof(sibling), pick_one(list("Ratthew" = 50, ";help maint" = 50, "Brick" = 1)))
 	rolls(nameof(name), PROC_REF(sibling_trait), from = list(nameof(sibling)))
 	rolls(nameof(desc), PROC_REF(sibling_trait), from = list(nameof(sibling)))
