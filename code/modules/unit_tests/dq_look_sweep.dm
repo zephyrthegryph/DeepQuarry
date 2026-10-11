@@ -139,6 +139,57 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		out.Swap(1 + (state % i), i)
 	return out
 
+
+/// Constructors may change round counters and lazily populate clothing caches.
+/// Snapshot each real prior value and give list caches a private copy, so both
+/// null caches and already-populated cache identities survive fixture teardown.
+/datum/unit_test/proc/dq_look_scope_globals()
+	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
+	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
+	var/static/list/cache_keys = list(nameof(GLOB.chamelion_jumpsuit_choices), nameof(GLOB.chamelion_head_choices), nameof(GLOB.chamelion_suit_choices), nameof(GLOB.chamelion_shoe_choices), nameof(GLOB.chamelion_back_choices), nameof(GLOB.chamelion_glove_choices), nameof(GLOB.chamelion_mask_choices), nameof(GLOB.chamelion_belt_choices), nameof(GLOB.chamelion_accessory_choices))
+	for(var/key in cache_keys)
+		var/list/prior = GLOB.vars[key]
+		set_global(key, islist(prior) ? prior.Copy() : prior)
+	// These are owned catalogue templates, not allocate() children. Their real
+	// teardown removes the every(host) watches; borrowed catalogue entries survive.
+	scope_contagion_archive()
+
+/datum/unit_test/dq_look_scope_probe
+	abstract_type = /datum/unit_test/dq_look_scope_probe
+
+/datum/unit_test/dq_look_sweep_scope_restores_globals/Run()
+	var/list/existing = list("Existing choice" = /obj/item/clothing/under)
+	set_global(nameof(GLOB.chamelion_jumpsuit_choices), existing)
+	set_global(nameof(GLOB.chamelion_head_choices), null)
+	var/narsie_before = GLOB.narsie_cometh
+	var/queens_before = GLOB.queen_amount
+	var/list/archive_before = GLOB.archive_diseases
+	var/datum/unit_test/dq_look_scope_probe/probe = allocate(/datum/unit_test/dq_look_scope_probe)
+	var/datum/unit_test_block/block = probe.test_block
+	defer_cleanup(src, PROC_REF(release_look_scope_probe), probe, block)
+	probe.dq_look_scope_globals()
+	TEST_ASSERT(GLOB.chamelion_jumpsuit_choices != existing, "Existing choice cache is isolated before an in-place probe write")
+	GLOB.chamelion_jumpsuit_choices["Added choice"] = /obj/item/clothing/head
+	GLOB.chamelion_head_choices = list("Generated choice" = /obj/item/clothing/head)
+	GLOB.narsie_cometh = !narsie_before
+	GLOB.queen_amount = queens_before + 1
+	TEST_ASSERT_EQUAL(length(existing), 1, "The borrowed cache contents never receive the scoped addition")
+	TEST_ASSERT(GLOB.archive_diseases != archive_before, "Archive scope uses a private catalogue while borrowing existing templates")
+	lifeform_end(probe, END_SCOPE)
+	TEST_ASSERT_EQUAL(GLOB.chamelion_jumpsuit_choices, existing, "Real fixture teardown restores the exact existing cache identity")
+	TEST_ASSERT_EQUAL(length(existing), 1, "Restored cache retains its original contents")
+	TEST_ASSERT_NULL(GLOB.chamelion_head_choices, "Real teardown restores an originally null lazy cache")
+	TEST_ASSERT_EQUAL(GLOB.narsie_cometh, narsie_before, "Real teardown restores the apocalypse counter")
+	TEST_ASSERT_EQUAL(GLOB.queen_amount, queens_before, "Real teardown restores the queen count")
+	TEST_ASSERT_EQUAL(GLOB.archive_diseases, archive_before, "Real teardown restores the borrowed archive identity")
+
+/datum/unit_test/dq_look_sweep_scope_restores_globals/proc/release_look_scope_probe(datum/unit_test/probe, datum/unit_test_block/block)
+	if(!QDELETED(probe))
+		lifeform_end(probe, END_SCOPE)
+	var/reason = release_unit_test_block(block, probe)
+	if(reason)
+		Fail(reason)
+
 // ---- the sweep ----
 
 /// The sweep's partial flag: this world probes only some of the types (a shard, or the incremental list).
@@ -150,6 +201,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * beside the other asks for both, so each type is made once). A later call for a result the first one skipped probes only that.
  */
 /datum/unit_test/proc/dq_look_sweep(datum/unit_test/owner, want_tree, want_state)
+	owner.dq_look_scope_globals() // constructors and state probes may populate shared caches or archive owned disease templates
 	var/list/universe = dq_look_universe(want_tree, want_state)
 	var/list/plan = dq_look_read_plan()
 	var/list/only = dq_look_param_lines("look-types")

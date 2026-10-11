@@ -4789,3 +4789,14 @@ These pin refreshes record master changes; the test-setter and teardown hygiene 
 * `/obj/item/pipe` and `/obj/structure/smoletrack`: master `81e61e24e9` (2026-10-10 23:39 -05:00) moved `make_rotatable()` from initialization into declared `rotatable()`. Their keys and actor/item menus now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around. The pipe's existing Rotate op remains.
 * `/obj/machinery/pipedispenser`, `/obj/machinery/pipedispenser/disposal` and `/obj/machinery/pipelayer`: the same `81e61e24e9` change exposes the held pipe's three rotation options when a pipe is offered. These rows come from the pipe capability, not new dispenser operations.
 * `/obj/item/holder`, `/obj/item/holder/micro` and `/obj/item/holder/mouse`: their already-recorded constructor refusal, "Holder was not passed a mob", is unchanged. Master `dc349171a8` (2026-10-11 02:47 -05:00) moved `slot_flags` to `item_worn`, shifting the holder stack location from line 33 to 32. Master `d863720479` (2026-10-10 23:55 -05:00) added parameter-write isolation, shifting the parameter stack location from line 239 to 251. Only these locations are refreshed; this does not claim successful construction or accept a new runtime.
+
+
+### Look sweep fixture ownership (Codex, 2026-10-11)
+
+The appearance sweep now scopes the actual round counters, chameleon choice lists
+and contagion archive before constructing types. Existing cache identities and
+borrowed disease templates are restored; newly archived templates are ended
+through normal lifecycle cleanup, releasing their host watches. This changes
+fixture teardown, not appearance or production initialization. The new scope
+regression asserts identity and contents after actual nested-fixture teardown.
+No appearance differences or captured runtimes are blessed by this repair.
