@@ -5,6 +5,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 CAPABILITY_TYPE(wrapped_species_form, CAP_WRAPPED_SPECIES_FORM, /datum/capability/lib/wrapped_species_form, key = NONE)
 /datum/capability/lib/wrapped_species_form
+	holder_hooks = HOLDER_HOOK_INIT
 /datum/capability/lib/wrapped_species_form/cap_data_type()
 	return /datum/cap_data/wrapped_species_form
 /datum/capability/lib/wrapped_species_form/on_holder_init(datum/act/eval/A)

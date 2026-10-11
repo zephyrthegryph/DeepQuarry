@@ -22,7 +22,7 @@
 /obj/item/dq_acceptance_size_cache_probe
 
 CAPABILITIES(/obj/item/dq_acceptance_size_cache_probe)
-	op("size_admission", menu(button = "Size admission"), needs(req_at_least(nameof(w_class), ITEMSIZE_NORMAL)), then(PROC_REF(admitted)))
+	op("size_admission", menu(button = "Size admission"), needs(req_at_least(nameof(w_class), ITEMSIZE_NORMAL, because = "too small")), then(PROC_REF(admitted)))
 
 /obj/item/dq_acceptance_size_cache_probe/proc/admitted(datum/act/op/A)
 	return OP_OK

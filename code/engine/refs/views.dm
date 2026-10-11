@@ -185,10 +185,15 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!own_type_ok(source, var_name, entry, target))
 		return null
 	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
+	// A plain replacement publishes its completed value, not a temporary empty view.
+	// Paired links and unlink callbacks keep their existing notification contract.
+	var/defer_source = entry[OWNE_ARG] == RELS_PLAIN && !entry[OWNE_ON_UNLINK]
 	if(old)
-		_rel_detach(source, var_name, old, entry)
+		_rel_detach(source, var_name, old, entry, notify_source = !defer_source)
 	if(target)
 		_rel_attach(source, var_name, target, entry)
+	else if(old && defer_source)
+		own_field_changed(source, var_name)
 	return target
 
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
@@ -315,15 +320,17 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		_rel_watch(source, target)
 
 /// Unlinks source.var_name -> target, and the partner side when it names source.
-/proc/_rel_detach(datum/source, var_name, datum/target, list/entry)
+/proc/_rel_detach(datum/source, var_name, datum/target, list/entry, notify_source = TRUE)
 	var/value = source.vars[var_name]
 	if(islist(value))
 		var/list/L = value
 		L -= target
-		own_field_changed(source, var_name)
+		if(notify_source)
+			own_field_changed(source, var_name)
 	else if(value == target)
 		source.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
-		own_field_changed(source, var_name)
+		if(notify_source)
+			own_field_changed(source, var_name)
 	_rel_unindex(target, source, var_name)
 	if(entry?[OWNE_WATCH])
 		_rel_unwatch(target, source)

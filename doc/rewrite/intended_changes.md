@@ -4565,3 +4565,9 @@ spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move int
 * **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
   adjustment for a client-less mob (it adjusted an image nobody saw).
 * **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.
+
+### Acceptance foundation repairs (codex/acceptance-context-native-1011)
+
+The 140 added acceptance pins record existing equipment, clothing and storage behavior before table conversion. Expansion against 8495891878 found no changed existing rows; 173 existing files changed only through inherited-row factoring. No acceptance-table conversion or pin re-bless is included.
+
+The human wrapped_species_form capability now declares its existing initialization hook, so its borrowed holder is set and its tracked bodytype setter updates the compatibility map. Plain references without unlink callbacks publish the final replacement instead of an intermediate null, preventing a valid waiting operation from being cancelled during rel_set. Paired links and callback notification behavior are unchanged. Generated list-hop dependency names escape literal brackets so the runtime can watch actual membership. These are functional repairs; they do not authorize changed click/menu pin rows.
