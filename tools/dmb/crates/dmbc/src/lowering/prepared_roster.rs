@@ -100,6 +100,12 @@ impl<'frontend> PreparedBodyRoster<'frontend> {
     pub(crate) fn ordered(&self) -> impl ExactSizeIterator<Item = &PreparedBody<'frontend>> {
         self.order.iter().map(|index| &self.rows[*index])
     }
+    /// Borrow only an actual current occurrence, never a copied public descriptor.
+    pub(crate) fn current(&self, body: &BodyOccurrence) -> Option<&PreparedBody<'frontend>> {
+        let ordinal = self.frontend.callable_roster().ok()?.ordinal(body.member)?;
+        let row = self.rows.get(ordinal)?;
+        std::ptr::eq(row.body(), body).then_some(row)
+    }
     /// Explicit selections retain the original exact current-input check. Full
     /// production scheduling borrows these already issued rows directly.
     pub(super) fn selected(&self, body: &BodyOccurrence) -> Option<&PreparedBody<'frontend>> {

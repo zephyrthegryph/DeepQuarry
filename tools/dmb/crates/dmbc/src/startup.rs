@@ -121,7 +121,7 @@ fn capture_impl_with_bodies(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     prefilter: bool,
 ) -> Result<StartupFacts, String> {
-    capture_impl_with_bodies_and_artifacts(frontend, executor, bodies, prefilter, None)
+    capture_impl_with_bodies_and_artifacts(frontend, executor, bodies, prefilter, None, None)
 }
 fn capture_impl_with_bodies_and_artifacts(
     frontend: &ColdFrontend,
@@ -129,7 +129,9 @@ fn capture_impl_with_bodies_and_artifacts(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     prefilter: bool,
     artifacts: Option<&StartupArtifacts>,
+    prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
 ) -> Result<StartupFacts, String> {
+    let prepared = prepared.filter(|roster| roster.authenticates(frontend));
     let units = match artifacts {
         Some(artifacts) => artifacts.unit_members(frontend)?,
         None => std::sync::Arc::new(
@@ -141,9 +143,20 @@ fn capture_impl_with_bodies_and_artifacts(
     if let Some(artifacts) = artifacts {
         for body in frontend.bodies.iter() {
             let key = (|| {
-                let input = frontend
-                    .body_input(body)
-                    .map_err(|e| format!("startup body: {e:?}"))?;
+                let shared = prepared.and_then(|roster| roster.current(body));
+                let owned = if shared.is_none() {
+                    Some(
+                        frontend
+                            .body_input(body)
+                            .map_err(|e| format!("startup body: {e:?}"))?,
+                    )
+                } else {
+                    None
+                };
+                let input = shared
+                    .map(|row| row.input())
+                    .or(owned.as_ref())
+                    .expect("current or ordinary input");
                 let source = input.source();
                 if !prefilter || input.may_contain_stored_declarations() {
                     let identity = roster
@@ -169,9 +182,20 @@ fn capture_impl_with_bodies_and_artifacts(
         let identity = roster
             .identity_for_member(body.member)
             .ok_or("startup procedure identity missing")?;
-        let input = frontend
-            .body_input(body)
-            .map_err(|e| format!("startup body: {e:?}"))?;
+        let shared = prepared.and_then(|roster| roster.current(body));
+        let owned = if shared.is_none() {
+            Some(
+                frontend
+                    .body_input(body)
+                    .map_err(|e| format!("startup body: {e:?}"))?,
+            )
+        } else {
+            None
+        };
+        let input = shared
+            .map(|row| row.input())
+            .or(owned.as_ref())
+            .expect("current or ordinary input");
         let candidate_key = keys
             .get(&body.member)
             .map(|result| result.as_ref().map(Option::as_deref).map_err(Clone::clone))
@@ -328,6 +352,38 @@ pub fn capture_with_executor_and_bodies<'a>(
         facts: capture_facts_with_executor_and_bodies(frontend, spellings, executor, bodies)?,
     })
 }
+/// Production capture borrows the same current body admissions as lowering.
+pub(crate) fn capture_with_prepared_bodies<'a>(
+    frontend: &'a ColdFrontend,
+    revision: Option<&'a dm_tree::frontend::FrontendRevision>,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+    prepared: &crate::lowering::PreparedBodyRoster<'_>,
+) -> Result<CapturedStartup<'a>, String> {
+    if revision.is_some_and(|revision| !std::ptr::eq::<ColdFrontend>(revision, frontend)) {
+        return Err("startup revision belongs to another current frontend".into());
+    }
+    let mut facts = capture_facts_with_executor_and_bodies_and_artifacts(
+        frontend,
+        spellings,
+        executor,
+        bodies,
+        artifacts,
+        Some(prepared),
+    )?;
+    if let Some(revision) = revision {
+        std::sync::Arc::get_mut(&mut facts)
+            .expect("new startup facts are exclusively owned")
+            .issuance = Some(revision.issuance());
+    }
+    Ok(CapturedStartup {
+        frontend,
+        revision,
+        facts,
+    })
+}
 pub fn capture_revision_facts_with_executor_and_bodies(
     revision: &dm_tree::frontend::FrontendRevision,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
@@ -346,7 +402,7 @@ pub fn capture_revision_facts_with_executor_and_bodies_and_artifacts(
     artifacts: Option<&StartupArtifacts>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
     let mut facts = capture_facts_with_executor_and_bodies_and_artifacts(
-        revision, spellings, executor, bodies, artifacts,
+        revision, spellings, executor, bodies, artifacts, None,
     )?;
     std::sync::Arc::get_mut(&mut facts)
         .expect("new startup facts are exclusively owned")
@@ -398,7 +454,7 @@ fn capture_facts_with_executor_and_bodies(
     bodies: &dm_tree::frontend::BodyArena<'_>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
     capture_facts_with_executor_and_bodies_and_artifacts(
-        frontend, spellings, executor, bodies, None,
+        frontend, spellings, executor, bodies, None, None,
     )
 }
 fn capture_facts_with_executor_and_bodies_and_artifacts(
@@ -407,9 +463,11 @@ fn capture_facts_with_executor_and_bodies_and_artifacts(
     executor: &dm_exec::BuildExecutor,
     bodies: &dm_tree::frontend::BodyArena<'_>,
     artifacts: Option<&StartupArtifacts>,
+    prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
-    let mut startup =
-        capture_impl_with_bodies_and_artifacts(frontend, executor, bodies, true, artifacts)?;
+    let mut startup = capture_impl_with_bodies_and_artifacts(
+        frontend, executor, bodies, true, artifacts, prepared,
+    )?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
         let text =
@@ -797,3 +855,7 @@ mod evaluator_forwarding_tests;
 #[cfg(test)]
 #[path = "startup_static_certificate_tests.rs"]
 mod static_certificate_tests;
+
+#[cfg(test)]
+#[path = "startup_prepared_roster_tests.rs"]
+mod prepared_roster_tests;

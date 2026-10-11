@@ -318,28 +318,21 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
 ) -> Result<PreparedCold, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
+    let roster =
+        crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
     let bodies = dm_tree::frontend::BodyArena::new_typed(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    let startup = match revision {
-        Some(revision) => {
-            crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
-                revision,
-                &links.inventory.spellings,
-                executor,
-                &bodies,
-                memo.and_then(|memo| memo.startup.as_deref()),
-            )
-            .and_then(|facts| facts.view_revision(revision))
-        }
-        None => crate::startup::capture_with_executor_and_bodies(
-            frontend,
-            &links.inventory.spellings,
-            executor,
-            &bodies,
-        ),
-    }
+    let startup = crate::startup::capture_with_prepared_bodies(
+        frontend,
+        revision,
+        &links.inventory.spellings,
+        executor,
+        &bodies,
+        memo.and_then(|memo| memo.startup.as_deref()),
+        &roster,
+    )
     .map_err(ColdError::Initializer)?;
     measurement.complete();
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
@@ -383,6 +376,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         executor,
         bodies,
         Some(&prepared.prepared),
+        Some(&roster),
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -463,6 +457,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         executor,
         bodies,
         None,
+        None,
     )?
     .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
 }
@@ -483,6 +478,7 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     executor: &dm_exec::BuildExecutor,
     bodies: dm_tree::frontend::BodyArena<'_>,
     prepared_abi: Option<&crate::driver_facts::PreparedSourceAbi>,
+    prepared_roster: Option<&crate::lowering::PreparedBodyRoster<'_>>,
 ) -> Result<PreparedCold, ColdError> {
     startup
         .validate_for(frontend)
@@ -649,8 +645,14 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let mut inventory = links.inventory;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
-    let roster =
-        crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
+    let owned_roster = if prepared_roster.is_none() {
+        Some(crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?)
+    } else {
+        None
+    };
+    let roster = prepared_roster
+        .or(owned_roster.as_ref())
+        .expect("current prepared body roster");
     let mut source_bindings: std::collections::BTreeSet<_> = frontend
         .snapshot
         .tree
