@@ -18,6 +18,22 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(module.relative_path("icons/gen/item.dmi"), Path("icons/gen/item.dmi"))
         for value in ("../code.dm", "/code.dm", "E:/code.dm", "a\\b", "a//b", ".git/config", "a/target/file", "probe.dmb", "a/../b"):
             with self.assertRaises(ValueError): module.relative_path(value)
+    def test_explicit_untracked_seed_mode_never_uses_historical_tracked_rows(self):
+        rows = [{"path": "tools/compiler.rs", "sha256": "old"},
+                {"path": "icons/gen/item.dmi", "sha256": "asset"}]
+        tracked = {"tools/compiler.rs": ("100644", "blob", "current")}
+        self.assertEqual(module.selected_seed_rows(rows, tracked, False), rows)
+        selected = module.selected_seed_rows(rows, tracked, True)
+        self.assertEqual(selected, [rows[1]])
+        self.assertIs(selected[0], rows[1])
+        self.assertEqual(rows[0]["sha256"], "old")
+
+    def test_disk_floor_and_projected_root_bytes(self):
+        module.admit_disk_space(module.FREE_FLOOR + 7_000_000_000, 7_000_000_000)
+        for free, projected in ((14_959_337_472, 0), (module.FREE_FLOOR, 1),
+                                (module.FREE_FLOOR + 7_000_000_000 - 1, 7_000_000_000)):
+            with self.assertRaises(ValueError): module.admit_disk_space(free, projected)
+
     @unittest.skipUnless(os.name == "nt", "Windows path authority")
     def test_normalized_containment_rejects_traversal_and_parent_itself(self):
         self.assertEqual(module.normalized_path("E:/dq-cache/../outside"), Path("E:/outside"))

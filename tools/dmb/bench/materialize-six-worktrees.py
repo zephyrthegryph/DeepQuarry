@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -17,6 +18,7 @@ from worktree_authority import authenticate
 EXCLUDED = {".git", ".dmbc", "target", "node_modules"}
 MAX_FILES = 40_000
 MAX_BYTES = 4 * 1024 ** 3
+FREE_FLOOR = 16 * 1024 ** 3
 _deadline = None
 
 
@@ -71,6 +73,15 @@ def seed_action(tracked, exists, matches):
     if tracked:
         raise ValueError("tracked input missing from newly created worktree")
     return "seed"
+
+
+def admit_disk_space(free_bytes, projected_bytes):
+    if free_bytes < FREE_FLOOR + projected_bytes:
+        raise ValueError("insufficient E: headroom for projected roots plus 16 GiB reserve")
+
+
+def selected_seed_rows(entries, tracked, untracked_only):
+    return [row for row in entries if not untracked_only or row["path"] not in tracked]
 
 
 def sha(path):
@@ -147,6 +158,8 @@ def main():
     for name in ("repository", "payload", "snapshot", "closure", "pin", "output"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--overall-seconds", type=int, default=300, choices=range(1, 301), metavar="1..300")
+    parser.add_argument("--seed-untracked-only", action="store_true",
+                        help="authenticate all historical seed bytes but use only paths absent from current commit")
     parser.add_argument("--revision", required=True, help="explicit full committed Git SHA")
     parser.add_argument("--root", action="append", required=True)
     args = parser.parse_args()
@@ -175,31 +188,47 @@ def main():
     if git(repository, ["rev-parse", "--show-object-format"]).decode().strip() != "sha1":
         raise ValueError("non-SHA1 Git object format is unsupported by this bounded seed check")
     tracked = {}
-    for raw in git(repository, ["ls-tree", "-r", "-z", args.revision]).split(b"\0"):
+    tracked_bytes = 0
+    for raw in git(repository, ["ls-tree", "-r", "--long", "-z", args.revision]).split(b"\0"):
         if not raw: continue
         descriptor, name = raw.decode("utf-8").split("\t", 1)
-        mode, kind, object_id = descriptor.split()
+        mode, kind, object_id, size = descriptor.split()
+        if kind != "blob" or not size.isdecimal():
+            raise ValueError("submodule/nonblob worktree sizing unsupported")
+        tracked_bytes += int(size)
         tracked[name] = (mode, kind, object_id)
+    used_entries = selected_seed_rows(entries, tracked, args.seed_untracked_only)
+    ignored_tracked = [row["path"] for row in entries if args.seed_untracked_only and row["path"] in tracked]
     # Reject before creating any root. Raw object bytes are deliberate authority:
     # payloads requiring historical smudge/filter reconstruction decline safely.
-    for row in entries:
+    for row in used_entries:
         if row["path"] in tracked:
             mode, kind, expected = tracked[row["path"]]
             if mode not in ("100644", "100755") or kind != "blob":
                 raise ValueError("tracked symlink/submodule seed is unsupported")
             if git_blob_sha1(existing_e(payload / relative_path(row["path"]))) != expected:
                 raise ValueError("tracked seed differs from committed bytes; no roots created")
+    projected_per_root = tracked_bytes + sum(row["bytes"] for row in used_entries if row["path"] not in tracked)
+    disk_parent = output.parent
+    while not disk_parent.exists(): disk_parent = disk_parent.parent
+    admit_disk_space(shutil.disk_usage(disk_parent).free, 6 * projected_per_root)
     output.mkdir(parents=True, exist_ok=False)
-    receipt = {"status": "preparing", "revision": args.revision, "roots": [],
+    receipt = {"status": "preparing", "revision": args.revision, "roots": [], "projected_bytes_per_root": projected_per_root,
+               "projected_six_root_bytes": 6 * projected_per_root, "free_floor_bytes": FREE_FLOOR,
+               "seed_untracked_only": args.seed_untracked_only,
+               "historical_tracked_rows_ignored": ignored_tracked,
+               "historical_tracked_rows_ignored_count": len(ignored_tracked),
                "seed_closure_sha256": sha(closure_file), "overall_seconds": args.overall_seconds, "current_byond_pin": "not issued",
                "scope": "current registered source closure; historical seed pin does not authenticate current compilation"}
     deadline = _deadline
     try:
-        for root in roots:
+        for ordinal, root in enumerate(roots):
+            admit_disk_space(shutil.disk_usage(disk_parent).free, (6 - ordinal) * projected_per_root)
             if time.monotonic() > deadline: raise TimeoutError("overall preparation deadline")
             git(repository, ["worktree", "add", "--detach", str(root), args.revision])
             receipt["roots"].append(str(root))
-            for row in entries:
+            admit_disk_space(shutil.disk_usage(disk_parent).free, sum(row["bytes"] for row in used_entries if row["path"] not in tracked))
+            for row in used_entries:
                 target = existing_e(root / relative_path(row["path"]))
                 action = seed_action(row["path"] in tracked, target.exists(), target.is_file() and sha(target) == row["sha256"])
                 if action == "seed":
