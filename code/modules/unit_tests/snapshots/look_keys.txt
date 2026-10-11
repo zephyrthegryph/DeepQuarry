@@ -5413,7 +5413,7 @@
 /obj/item/clothing/gloves/fluff/morsleeves	b00b6b93a8edd9ab	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/fluff/siren	7ba63605effb10eb	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/forensic	414e26c47fd8b5f3	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
-/obj/item/clothing/gloves/fyellow	08ba63a7ed21832e	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
+/obj/item/clothing/gloves/fyellow	117ad71d306d4d2d	*
 /obj/item/clothing/gloves/gauntlets	64f28a865bdf94c2	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/gauntlets/lightrig	c084755db2af6673	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
 /obj/item/clothing/gloves/gauntlets/rig	e6a4d6db95b819cb	IC,accessories,carried_afflictions,default_material,economic_adoption,gloves,gurgled,gurgled_color,identity,mind_host,polychromic,possessed_voice,ring,special_attack,special_attack_type
