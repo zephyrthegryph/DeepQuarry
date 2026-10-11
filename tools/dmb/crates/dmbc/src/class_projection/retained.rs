@@ -208,6 +208,7 @@ impl ClassProjections {
                 };
                 let hit = self.values.lookup(&key, tree).filter(|value| {
                     value.inputs.len() == inputs.len()
+                        && value.values.len() == value.inputs.len()
                         && inputs
                             .iter()
                             .zip(&value.inputs)

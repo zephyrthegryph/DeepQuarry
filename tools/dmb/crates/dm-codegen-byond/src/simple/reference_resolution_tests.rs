@@ -21,11 +21,12 @@ fn authoritative_unknown_name_is_source_error_and_opaque_host_is_unsupported() {
         &symbols,
         &Answers(true),
     )
-    .err().expect("unknown name must fail compilation");
+    .err()
+    .expect("unknown name must fail compilation");
     assert!(errors
         .iter()
         .any(|error| error.kind == LowerErrorKind::SourceError
-            && error.reason == "undefined var: missing"));
+            && error.reason == "returnmissing.value: undefined var"));
     let error = errors
         .iter()
         .find(|error| error.kind == LowerErrorKind::SourceError)
@@ -41,7 +42,8 @@ fn authoritative_unknown_name_is_source_error_and_opaque_host_is_unsupported() {
         &symbols,
         &Answers(false),
     )
-    .err().expect("opaque host must decline compilation");
+    .err()
+    .expect("opaque host must decline compilation");
     assert!(opaque
         .iter()
         .all(|error| error.kind == LowerErrorKind::UnsupportedModel));

@@ -73,7 +73,12 @@ impl Compiler<'_> {
                             primary_anchor: None,
                             related: Vec::new(),
                             kind: LowerErrorKind::SourceError,
-                            ..error(statement, &format!("undefined var: {name}"))
+                            ..error(
+                                statement,
+                                &crate::lower_diagnostics::undefined_variable_message(
+                                    statement, name,
+                                ),
+                            )
                         }
                     } else {
                         error(statement, &format!("unresolved variable name: {name}"))
