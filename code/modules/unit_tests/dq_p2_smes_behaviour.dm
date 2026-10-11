@@ -745,7 +745,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, p2_side_spot())
 	bat.force = 15
-	bat.w_class = ITEMSIZE_NORMAL
+	bat.set_w_class(ITEMSIZE_NORMAL)
 	open_panel(H, S)
 	var/whole = p2_smes_integrity(S)
 	touch(H, S, bat)

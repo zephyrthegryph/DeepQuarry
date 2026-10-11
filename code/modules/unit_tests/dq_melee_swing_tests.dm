@@ -23,9 +23,9 @@
 
 /datum/unit_test/dq_melee_swing_getters_scale/Run()
 	var/obj/item/small = allocate(/obj/item)
-	small.w_class = ITEMSIZE_SMALL
+	small.set_w_class(ITEMSIZE_SMALL)
 	var/obj/item/huge = allocate(/obj/item)
-	huge.w_class = ITEMSIZE_HUGE
+	huge.set_w_class(ITEMSIZE_HUGE)
 
 	TEST_ASSERT(!small.melee_is_sweep(), "a small weapon should not sweep")
 	TEST_ASSERT(huge.melee_is_sweep(), "a huge weapon should sweep")
@@ -49,9 +49,9 @@
 
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/obj/item/single = allocate(/obj/item)
-	single.w_class = ITEMSIZE_SMALL
+	single.set_w_class(ITEMSIZE_SMALL)
 	var/obj/item/sweeper = allocate(/obj/item)
-	sweeper.w_class = ITEMSIZE_HUGE
+	sweeper.set_w_class(ITEMSIZE_HUGE)
 
 	var/list/turf/single_tiles = attacker.get_swing_tiles(north, single)
 	TEST_ASSERT_EQUAL(length(single_tiles), 1, "a single-tile weapon should target exactly one tile")
@@ -79,7 +79,7 @@
 	victim.set_anchored(TRUE)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 8
-	weapon.w_class = ITEMSIZE_SMALL
+	weapon.set_w_class(ITEMSIZE_SMALL)
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), weapon, "weapon should be in the attacker's active hand")
@@ -134,7 +134,7 @@
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 8
-	weapon.w_class = ITEMSIZE_HUGE // long windup for timing headroom
+	weapon.set_w_class(ITEMSIZE_HUGE) // long windup for timing headroom
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
 
@@ -163,7 +163,7 @@
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 5
-	weapon.w_class = ITEMSIZE_NORMAL
+	weapon.set_w_class(ITEMSIZE_NORMAL)
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
 
