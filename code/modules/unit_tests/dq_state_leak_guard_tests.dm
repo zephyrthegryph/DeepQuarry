@@ -45,3 +45,35 @@
 	TEST_ASSERT_EQUAL(GLOB.dview_mob, cached, "Actual view call retains production singleton identity")
 	TEST_ASSERT_NULL(cached.loc, "Actual view call restores parked location after reading the floor")
 	TEST_ASSERT(!QDELETED(cached), "Fixture never deletes the shared visibility cache")
+
+// An instance-only probe uses the real unit-test New and on_destroy lifecycle.
+/datum/unit_test/dq_state_leak_guard/prompt_probe
+	abstract_type = /datum/unit_test/dq_state_leak_guard/prompt_probe
+
+/datum/unit_test/dq_state_leak_guard/prompt_list_isolation/Run()
+	var/datum/prompt/text/existing = allocate(/datum/prompt/text)
+	var/datum/prompt/text/appended = allocate(/datum/prompt/text)
+	var/list/prior = list(existing)
+	set_global(nameof(GLOB.test_prompts), prior)
+	var/datum/unit_test/dq_state_leak_guard/prompt_probe/probe = allocate(/datum/unit_test/dq_state_leak_guard/prompt_probe)
+	var/datum/unit_test_block/block = probe.test_block
+	defer_cleanup(src, PROC_REF(release_prompt_probe), probe, block)
+	TEST_ASSERT(GLOB.test_prompts != prior, "Real fixture constructor isolates the nonnull prompt list")
+	TEST_ASSERT_EQUAL(GLOB.test_prompts[1], existing, "Isolation preserves the actual prior prompt identity")
+	// This is the same in-place append performed by request_open's recording path.
+	GLOB.test_prompts += appended
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "The live fixture scratch list receives the actual prompt")
+	TEST_ASSERT_EQUAL(GLOB.test_prompts[2], appended, "The appended prompt is retained in the private recording list")
+	TEST_ASSERT_EQUAL(length(prior), 1, "Appending never mutates the saved original recording list")
+	TEST_ASSERT_EQUAL(prior[1], existing, "The saved original retains its sole actual prompt")
+	qdel(probe)
+	TEST_ASSERT_EQUAL(GLOB.test_prompts, prior, "Normal fixture teardown restores the original list identity")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "Normal teardown restores the original prompt contents")
+	TEST_ASSERT_EQUAL(GLOB.test_prompts[1], existing, "Normal teardown preserves the original prompt identity")
+
+/datum/unit_test/dq_state_leak_guard/prompt_list_isolation/proc/release_prompt_probe(datum/unit_test/probe, datum/unit_test_block/block)
+	if(!QDELETED(probe))
+		qdel(probe)
+	var/reason = release_unit_test_block(block, probe)
+	if(reason)
+		Fail(reason)
