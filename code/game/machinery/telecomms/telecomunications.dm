@@ -61,7 +61,7 @@ STAT(/obj/machinery/telecomms, running, ALL)
 CAPABILITIES(/obj/machinery/telecomms)
 	after_init(0, then(PROC_REF(autolink)))
 	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = PROC_REF(make_soundloop))
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	contributes(STAT_RUNNING, nameof(toggled))
 	contributes(STAT_RUNNING, STAT_OPERABLE)
 	on_change(STAT_RUNNING, ANY, then(PROC_REF(running_changed)))
@@ -185,20 +185,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	if(running)
 		soundloop?.start()
 
-/// Its hum: one machine in four-ish hums another of three midloops.
-/obj/machinery/telecomms/proc/make_soundloop(datum/act/A)
-	var/datum/looping_sound/tcomms/S = new(list(src), FALSE)
-	if(prob(60))
-		if(prob(40))
-			S.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			S.mid_length = 40
-		else if(prob(20))
-			S.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			S.mid_length = 10
-		else
-			S.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			S.mid_length = 30
-	return S
 
 
 // Used in auto linking

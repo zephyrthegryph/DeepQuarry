@@ -104,7 +104,7 @@ TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
 				if(!can_food_vore(M, F))
 					F.forceMove(get_turf(src))
 				else
-					M.vore_selected.nom_atom(F)
+					vore_selected_of(M).nom_atom(F)
 		if(M == user)
 			if(!M.can_eat(loaded))
 				return ITEM_INTERACT_FAILURE

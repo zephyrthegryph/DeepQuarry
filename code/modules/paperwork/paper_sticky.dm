@@ -122,10 +122,6 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 	color = COLOR_YELLOW
 	slot_flags = 0
 
-/obj/item/paper/sticky/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-
 /obj/item/paper/sticky/proc/reset_persistence_tracking(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	SSpersistence.forget_value(src, /datum/persistent/paper/sticky)
@@ -139,6 +135,7 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 
 // Copied from duct tape.
 CAPABILITIES(/obj/item/paper/sticky)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
 	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(reset_persistence_tracking)))
 	extend("pick_up_item", then(PROC_REF(sticky_picked_up)))
 
