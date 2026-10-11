@@ -355,7 +355,7 @@ TRACKED(/obj/structure/bed/chair, occupied)
 	color = null
 	var/padding_color = "#CC0000"
 
-/obj/structure/bed/chair/sofa/bench/Initialize(mapload, new_material, new_padding_material)
+/obj/structure/bed/chair/sofa/bench/Initialize(mapload)
 	. = ..()
 	// If we're north-facing, metal goes above mob, padding overlay goes below mob.
 	if((dir & NORTH) && !corner_piece)

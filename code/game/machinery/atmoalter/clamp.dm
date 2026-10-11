@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/clamp)
 	// the clamp is dragged onto the one who takes it off
 	op("remove", at_target(/mob/living), gesture(GESTURE_DRAG), label("Remove"), wait(3 SECONDS),
 		needs(req_bool(PROC_REF(dragged_by_self), because = MSG(op/not_available)), req_bool(PROC_REF(released), because = MSG(clamp/active))), says(MSG(clamp/removed)), then(PROC_REF(removed)))
-	param(nameof(target), pos = 1)
+	param(nameof(target), pos = 1, overrides = TRUE)
 
 /obj/machinery/clamp/proc/attached(datum/act/op/A)
 	return !!target_ref()

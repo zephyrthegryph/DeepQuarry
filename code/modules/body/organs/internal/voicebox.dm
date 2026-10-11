@@ -12,7 +12,7 @@
 	will_assist_languages = list(LANGUAGE_GALCOM)
 	var/mute = FALSE
 
-/obj/item/organ/internal/voicebox/Initialize(mapload, internal)
+/obj/item/organ/internal/voicebox/Initialize(mapload)
 	. = ..()
 	amend_assist_langs()
 

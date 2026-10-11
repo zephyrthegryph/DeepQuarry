@@ -36,6 +36,10 @@ static META: Meta = Meta {
         RuleMeta { name: "make_missing_required", hint: "pass every required param: make(/T, at = loc, name = value)" },
         RuleMeta { name: "make_parts_without_built_from", hint: "declare built_from(nameof(var)) on the made type, or drop parts =" },
         RuleMeta { name: "per_type_write", hint: "a per_type() table is read-only and shared by every instance of the type: build it in its build proc, copy it to change it" },
+        RuleMeta { name: "ctor_dead_arg", hint: "no param(nameof(v), pos = N) of the type takes the argument and no New()/Initialize() reads it: drop it (python3 tools/dx/codemods/ctor_args.py --apply), or declare the param it was meant for" },
+        RuleMeta { name: "ctor_forward_only", hint: "the override only hands these parameters to ..(), which passes the caller's arguments by itself: drop them (python3 tools/dx/codemods/ctor_args.py --apply)" },
+        RuleMeta { name: "param_pos_override", hint: "an ancestor already maps this constructor position: say param(..., pos = N, overrides = TRUE) when the subtype means to take it over" },
+        RuleMeta { name: "param_overrides_nothing", hint: "overrides = TRUE but no ancestor declares a param at this position: drop overrides =" },
     ],
     allow: &[],
     lists: &[],
@@ -129,6 +133,8 @@ struct Declared {
     built_from: BTreeSet<String>,
     /// type -> (var, build proc)
     per_type: HashMap<String, Vec<(String, String)>>,
+    /// type -> constructor position -> (var, overrides = TRUE, file, line of the CAPABILITIES block)
+    positions: HashMap<String, BTreeMap<usize, (String, bool, String, u32)>>,
 }
 
 impl Declared {
@@ -143,6 +149,11 @@ impl Declared {
                         "param" => {
                             let Some(var) = args.first().and_then(|x| nameof_inner(x)) else { continue };
                             d.params.entry(ty.clone()).or_default().insert(var.clone());
+                            let named = |key: &str| args.iter().find_map(|x| x.replace(' ', "").strip_prefix(&format!("{key}=")).map(|v| v.to_string()));
+                            if let Some(pos) = named("pos").and_then(|v| v.parse::<usize>().ok()) {
+                                let overrides = named("overrides").is_some_and(|v| v == "TRUE" || v == "1");
+                                d.positions.entry(ty.clone()).or_default().insert(pos, (var.clone(), overrides, m.rel.clone(), m.line));
+                            }
                             if args.iter().any(|x| x.replace(' ', "") == "required=TRUE") {
                                 d.required.entry(ty.clone()).or_default().insert(var);
                             }
@@ -239,6 +250,7 @@ impl Lint for Lifeforms {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let decls = Decls::get(cx.tree);
         let d = Declared::build(&decls);
+        self.constructor_positions(cx, &d, out);
         let make = crate::pat!(r"\bmake\(\s*(/[\w/]+)");
         for f in cx.all_files() {
             if f.rel.starts_with("code/engine/") || cx.exempt(&f.rel) {
@@ -311,6 +323,69 @@ impl Lint for Lifeforms {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+impl Lifeforms {
+    /// `param_pos_override` / `param_overrides_nothing` from the declarations, then `ctor_dead_arg` / `ctor_forward_only` on the typed tree
+    /// (`sem::ctor_args`).
+    fn constructor_positions(&self, cx: &Cx, d: &Declared, out: &mut Sink) {
+        let skip = |rel: &str| rel.starts_with("code/engine/") || cx.exempt(rel);
+        let mut types: Vec<&String> = d.positions.keys().collect();
+        types.sort();
+        for ty in types {
+            for (pos, (var, overrides, rel, line)) in &d.positions[ty] {
+                if skip(rel) {
+                    continue;
+                }
+                let lineage = Declared::lineage(ty);
+                let inherited = lineage.iter().skip(1).find(|t| d.positions.get(*t).is_some_and(|m| m.contains_key(pos)));
+                match (inherited, overrides) {
+                    (Some(from), false) => out.site_in_msg(
+                        "param_pos_override",
+                        rel,
+                        *line as usize,
+                        format!("{ty}: param(nameof({var}), pos = {pos}) takes over the position {from} maps; add overrides = TRUE"),
+                    ),
+                    (None, true) => out.site_in_msg("param_overrides_nothing", rel, *line as usize, format!("{ty}: param(nameof({var}), pos = {pos}, overrides = TRUE) overrides no ancestor's position")),
+                    _ => {}
+                }
+            }
+        }
+        let files = cx.all_files();
+        let key = crate::incr::ctx_key(&files.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
+        let positions: crate::sem::ctor_args::ParamPositions = d.positions.iter().map(|(t, m)| (t.clone(), m.keys().copied().collect())).collect();
+        type Found = Vec<(String, u32, String)>;
+        let found: Option<(Found, Found)> = crate::incr::cached("lifeforms-ctor-args", key, || {
+            cx.sem().map(|sem| {
+                let dead = crate::sem::ctor_args::dead_args(&sem, &positions)
+                    .into_iter()
+                    .map(|a| {
+                        let list = a.dead.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(",");
+                        (a.rel, a.line, format!("new {}(loc, ...) passes {} argument(s) after the location; position(s) {} reach no param(pos =) and no New()/Initialize() [ctor-dead {} {} {}]", a.ty, a.passed, list, a.ty, a.passed, list))
+                    })
+                    .collect();
+                let fwd = crate::sem::ctor_args::forward_only(&sem)
+                    .into_iter()
+                    .map(|o| {
+                        let list = o.params.join(",");
+                        (o.rel, o.line, format!("{}/{}(): {} only reach ..() [ctor-forward {}]", o.owner, o.name, list, list))
+                    })
+                    .collect();
+                (dead, fwd)
+            })
+        });
+        let Some((dead, fwd)) = found else { return };
+        for (rel, line, msg) in dead {
+            if !skip(&rel) {
+                out.site_in_msg("ctor_dead_arg", &rel, line as usize, msg);
+            }
+        }
+        for (rel, line, msg) in fwd {
+            if !skip(&rel) {
+                out.site_in_msg("ctor_forward_only", &rel, line as usize, msg);
             }
         }
     }

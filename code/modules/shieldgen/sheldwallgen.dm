@@ -259,7 +259,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 
 CAPABILITIES(/obj/machinery/shieldwall)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	param(nameof(gen_primary), pos = 1)
+	param(nameof(gen_primary), pos = 1, overrides = TRUE)
 	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shieldwall_blast_drain))))

@@ -29,7 +29,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 	op("direction", ui_act("direction"), then(PROC_REF(ui_act_direction)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
-	param(nameof(skip_cell), pos = 1)
+	param(nameof(skip_cell), pos = 1, overrides = TRUE)
 
 /// Made without its cell (its constructor param).
 /obj/machinery/portable_atmospherics/powered/pump/var/skip_cell = FALSE

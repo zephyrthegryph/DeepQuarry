@@ -17,7 +17,7 @@
 	///Do we spawn misleading decoys?
 	var/spawn_decoys = TRUE
 
-/obj/effect/anomaly/hallucination/Initialize(mapload, new_lifespan)
+/obj/effect/anomaly/hallucination/Initialize(mapload)
 	. = ..()
 	apply_wibbly_filters(src)
 	generate_decoys()

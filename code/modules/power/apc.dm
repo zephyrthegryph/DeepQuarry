@@ -230,7 +230,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
 	section(cover_rules, "The latch on the APC's cover")
 	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))
-	param(nameof(build_dir), pos = 1)
+	param(nameof(build_dir), pos = 1, overrides = TRUE)
 	param(nameof(building), pos = 2)
 
 /// The angled APC's sprite sits closer to the wall.

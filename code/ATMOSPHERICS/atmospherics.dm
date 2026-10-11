@@ -103,7 +103,7 @@ TRACKED(/obj/machinery/atmospherics, pipe_color)
 /obj/machinery/atmospherics/pipe/supports_engineered_material()
 	return TRUE
 
-/obj/machinery/atmospherics/pipe/Initialize(mapload, newdir)
+/obj/machinery/atmospherics/pipe/Initialize(mapload)
 	if(power_rating > 0)
 		ensure_pump_materials()
 	return ..()

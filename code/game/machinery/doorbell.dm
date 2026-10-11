@@ -91,7 +91,7 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	op("doorbell_press", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Press"), then(PROC_REF(interaction_press_impl)))
 	op("doorbell_rename", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), needs(req(/obj/item, because = MSG(doorbell/needs_item)), req_adjacent(), req_capable()),
 		asks(/datum/prompt/text/doorbell_label, fields = list("question" = computed(PROC_REF(rename_question)), "title" = computed(PROC_REF(rename_title)), "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), when = PROC_REF(rename_possible)), then(PROC_REF(rename_fingerprint)), then(PROC_REF(doorbell_named)))
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 	param(nameof(building), pos = 2)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(wrench_used)), wait(1.5 SECONDS), then(PROC_REF(wrench_act_timed_done)))
