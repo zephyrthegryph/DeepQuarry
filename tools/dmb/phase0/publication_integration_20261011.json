@@ -180,5 +180,29 @@
       "No acceptance of later bulk coordinator, physical containment or local-input issuer changes from these receipts.",
       "Not a compiler timing or full runtime parity gate."
     ]
+  },
+  "focused_validation_bc33": {
+    "source_commit": "bc33eb0ff6664d33f6b227729f285e08e136db21",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083526-7747049f-job-cargo.json",
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083917-15d1d5b0-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-083952-1acff8c9-focused.json"
+    ],
+    "passed": 39,
+    "failed": 1,
+    "failure": {
+      "name": "six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes",
+      "cause": "Fixture retained a sealed request publication token across an independent fresh oracle request",
+      "fix_commit": "ba899ef086",
+      "rerun": "pending"
+    },
+    "scope": "focused shared publication, physical resource journal, per-unit ABI and initializer transport; not runtime or performance acceptance"
+  },
+  "cli_build_bc33": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-084048-90e92caa-job-cargo.json",
+    "status": "watchdog timeout after 300 seconds; owned job reaped",
+    "compiler_errors_reported": false,
+    "retry": "running from completed artifacts",
+    "scope": "Rust prototype tooling build; not DM compilation timing"
   }
 }
