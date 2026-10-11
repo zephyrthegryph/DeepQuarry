@@ -329,8 +329,10 @@ def rewrite_reads(code, masked):
     for m in pat.finditer(masked):
         start, end = m.span()
         before = masked[start - 1] if start else ""
-        if before == "." or before.isalnum() or before == "_" or before == "/":
-            continue
+        if before == "." or before.isalnum() or before == "_" or before == "/" or before == '"':
+            continue  # a member of something else, a path, or a string inside an embedded [expression]
+        if re.match(r"\s*=(?!=)", masked[end:]):
+            continue  # a named argument (f(x = ...)); a statement write was handled before
         ref, name = m.groups()
         if masked[end:].lstrip().startswith("("):
             continue  # a proc of that name
