@@ -29,6 +29,12 @@ class VerifiedAnchor(unittest.TestCase):
         raise AssertionError(args)
     def persist(self):self.result_path.write_text(json.dumps(self.result))
     def test_actual_pass(self):self.assertTrue(NS["official"](self.candidate))
+    def test_malformed_results_do_not_pass(self):
+        for result in (None, [], {}, {"tests": []}, {"tests": {p: None for p in NS["PINS"]}}):
+            self.assertFalse(NS["passing"](result))
+    def test_boolean_status_is_not_a_pass(self):
+        self.result["tests"][NS["PINS"][0]]["status"]=False
+        self.assertFalse(NS["passing"](self.result))
     def test_missing_pin(self):
         del self.result["tests"][NS["PINS"][0]];self.persist();self.assertFalse(NS["official"](self.candidate))
     def test_skipped_pin(self):

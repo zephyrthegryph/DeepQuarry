@@ -11,13 +11,16 @@ INPUTS=("code/modules/unit_tests/dq_look_sweep.dm", "code/modules/unit_tests/dq_
 def fingerprints(commit):
     return {path: git("rev-parse", commit+":"+path) for path in INPUTS}
 def result_commit_matches(commit, result):
+    if not isinstance(result, dict): return False
     short=result.get("commit", "")
     return bool(re.fullmatch(r"[0-9a-f]{10,40}", short)) and commit.startswith(short)
 
 def git(*args):
     return subprocess.check_output(["git",*args],stderr=subprocess.DEVNULL).decode().strip()
 def passing(result):
-    return all(result.get("tests",{}).get(p,{}).get("status") == 0 and result["tests"][p].get("runtimes",0)==0 for p in PINS)
+    if not isinstance(result, dict) or not isinstance(result.get("tests"), dict): return False
+    rows = [result["tests"].get(p) for p in PINS]
+    return all(isinstance(row, dict) and type(row.get("status")) is int and row["status"] == 0 and row.get("runtimes", 0) == 0 for row in rows)
 def digest(data): return hashlib.sha256(data).hexdigest()
 def official(candidate):
     # A candidate's tested commit may be the parent of the snapshot-only stamped commit.
@@ -39,7 +42,7 @@ def official(candidate):
                 if not passing(results) or digest(pathlib.Path(note["tests_json"]).read_bytes()) != candidate.get("results_sha256"): continue
                 if not result_commit_matches(candidate["commit"],results): continue
                 return True
-            except (subprocess.CalledProcessError,ValueError,KeyError,OSError,IndexError): continue
+            except (subprocess.CalledProcessError,ValueError,KeyError,OSError,IndexError,TypeError,AttributeError): continue
     return False
 if sys.argv[1]=="record":
     plan=pathlib.Path(sys.argv[2]).read_bytes()
@@ -68,7 +71,7 @@ elif sys.argv[1]=="export":
         if candidate.get("version")!=VERSION or candidate.get("inputs")!=fingerprints(commit): raise ValueError()
         if digest(plan)!=candidate.get("plan_sha256") or digest(result_path.read_bytes())!=candidate.get("results_sha256"): raise ValueError()
         print(json.dumps(candidate))
-    except (OSError,ValueError,subprocess.CalledProcessError,KeyError): print("null")
+    except (OSError,ValueError,subprocess.CalledProcessError,KeyError,TypeError,AttributeError): print("null")
 elif sys.argv[1]=="select":
     destination=pathlib.Path(sys.argv[2]); destination.unlink(missing_ok=True)
     records={}
@@ -77,7 +80,7 @@ elif sys.argv[1]=="select":
             record=json.loads(path.read_text()); plan=path.with_suffix(".tsv").read_bytes()
             if record.get("both_pins_passed") is True and digest(plan)==record.get("plan_sha256"):
                 records[record["commit"]]=(record,plan)
-        except (OSError,ValueError,KeyError): pass
+        except (OSError,ValueError,KeyError,TypeError,AttributeError): pass
     # Nearest reachable actual verified run; no record means full concrete-plan probing.
     for commit in git("rev-list","HEAD").splitlines():
         if commit in records and official(records[commit][0]):
