@@ -1,2 +1,6 @@
 # Tests that fail on master itself (tools/dq_known_failures.sh). Columns, TAB separated: test spec, reason, master sha last seen failing.
 # A spec is a /datum/unit_test/ name without the prefix, or parent/* for every child. Edit with --adopt/--refresh, not by hand.
+
+dq_interaction_domain_snapshot/i7_structures_bulk	master 0d4fbbccd8 (rf-toolact 99c9adec33 tool _act procs as ops) changed AIcore/camera_assembly tool rows without re-blessing these pins	886b068ea8
+dq_machinery_last_conversion_pin	master 0d4fbbccd8 (rf-toolact 99c9adec33 tool _act procs as ops) changed AIcore/camera_assembly tool rows without re-blessing these pins	886b068ea8
+dq_machinery_timed_conversion_pin	master 0d4fbbccd8 (rf-toolact 99c9adec33 tool _act procs as ops) changed AIcore/camera_assembly tool rows without re-blessing these pins	886b068ea8
