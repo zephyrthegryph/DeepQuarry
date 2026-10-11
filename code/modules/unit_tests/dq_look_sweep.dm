@@ -148,7 +148,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
 	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
 	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
-	var/static/list/cache_keys = list(nameof(GLOB.chamelion_jumpsuit_choices), nameof(GLOB.chamelion_head_choices), nameof(GLOB.chamelion_suit_choices), nameof(GLOB.chamelion_shoe_choices), nameof(GLOB.chamelion_back_choices), nameof(GLOB.chamelion_glove_choices), nameof(GLOB.chamelion_mask_choices), nameof(GLOB.chamelion_belt_choices), nameof(GLOB.chamelion_accessory_choices))
+	var/static/list/cache_keys = list(nameof(GLOB.status_policies), nameof(GLOB.chamelion_jumpsuit_choices), nameof(GLOB.chamelion_head_choices), nameof(GLOB.chamelion_suit_choices), nameof(GLOB.chamelion_shoe_choices), nameof(GLOB.chamelion_back_choices), nameof(GLOB.chamelion_glove_choices), nameof(GLOB.chamelion_mask_choices), nameof(GLOB.chamelion_belt_choices), nameof(GLOB.chamelion_accessory_choices))
 	for(var/key in cache_keys)
 		var/list/prior = GLOB.vars[key]
 		set_global(key, islist(prior) ? prior.Copy() : prior)
@@ -163,6 +163,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/existing = list("Existing choice" = /obj/item/clothing/under)
 	set_global(nameof(GLOB.chamelion_jumpsuit_choices), existing)
 	set_global(nameof(GLOB.chamelion_head_choices), null)
+	set_global(nameof(GLOB.status_policies), null)
 	var/narsie_before = GLOB.narsie_cometh
 	var/queens_before = GLOB.queen_amount
 	var/seed_before = GLOB.round_seed
@@ -172,6 +173,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/datum/unit_test_block/block = probe.test_block
 	defer_cleanup(src, PROC_REF(release_look_scope_probe), probe, block)
 	probe.dq_look_scope_globals()
+	var/list/populated_status = status_policies()
+	TEST_ASSERT(length(populated_status), "Real lazy status policy lookup populates the scoped initially null cache")
 	TEST_ASSERT(GLOB.chamelion_jumpsuit_choices != existing, "Existing choice cache is isolated before an in-place probe write")
 	GLOB.chamelion_jumpsuit_choices["Added choice"] = /obj/item/clothing/head
 	GLOB.chamelion_head_choices = list("Generated choice" = /obj/item/clothing/head)
@@ -190,6 +193,22 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "Real teardown restores the exact native round seed")
 	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "Real teardown restores the exact native roll serial")
 	TEST_ASSERT_EQUAL(GLOB.archive_diseases, archive_before, "Real teardown restores the borrowed archive identity")
+	TEST_ASSERT_NULL(GLOB.status_policies, "Real sweep teardown restores the originally null status cache")
+	// A pre-existing policy table is borrowed: scoped list edits must not touch it.
+	set_global(nameof(GLOB.status_policies), populated_status)
+	var/status_key = populated_status[1]
+	var/status_policy_before = populated_status[status_key]
+	var/status_count_before = length(populated_status)
+	var/datum/unit_test/dq_look_scope_probe/second = allocate(/datum/unit_test/dq_look_scope_probe)
+	defer_cleanup(src, PROC_REF(release_look_scope_probe), second, second.test_block)
+	second.dq_look_scope_globals()
+	TEST_ASSERT(GLOB.status_policies != populated_status, "Real scope isolates an already populated status table")
+	GLOB.status_policies.Remove(status_key)
+	TEST_ASSERT_EQUAL(length(populated_status), status_count_before, "Borrowed policy table retains its entry during scoped cache mutation")
+	lifeform_end(second, END_SCOPE)
+	TEST_ASSERT_EQUAL(GLOB.status_policies, populated_status, "Real teardown restores exact prior status cache identity")
+	TEST_ASSERT_EQUAL(GLOB.status_policies[status_key], status_policy_before, "Restored table preserves the actual prior policy datum")
+
 
 /datum/unit_test/dq_look_sweep_scope_restores_globals/proc/release_look_scope_probe(datum/unit_test/probe, datum/unit_test_block/block)
 	if(!QDELETED(probe))
