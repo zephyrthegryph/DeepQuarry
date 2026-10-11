@@ -3410,8 +3410,8 @@ init_lines	code/modules/food/food.dm	src.pixel_x = rand(-6.0, 6) //Randomizes po
 init_lines	code/modules/food/food.dm	src.pixel_y = rand(-6.0, 6)
 init_lines	code/modules/food/food/drinks/bottle.dm	if(isGlass)
 init_lines	code/modules/food/food/drinks/bottle.dm	unacidable = TRUE
-init_lines	code/modules/food/food/drinks/bottle.dm	drop_sound = SFX_ITEMS_DROP_BOTTLE
-init_lines	code/modules/food/food/drinks/bottle.dm	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
+init_lines	code/modules/food/food/drinks/bottle.dm	set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
+init_lines	code/modules/food/food/drinks/bottle.dm	set_pickup_sound(SFX_ITEMS_PICKUP_BOTTLE)
 init_lines	code/modules/food/food/snacks.dm	reagents.remove_reagent(REAGENT_ID_PACID,6)
 init_lines	code/modules/food/food/snacks.dm	if(exceptional)
 init_lines	code/modules/food/food/snacks.dm	name = "exceptional plump pie"
@@ -3706,8 +3706,8 @@ init_lines	code/modules/hydroponics/grown.dm	if(!istype(S))
 init_lines	code/modules/hydroponics/grown.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/modules/hydroponics/grown.dm	name = "[S.seed_name] slice"
 init_lines	code/modules/hydroponics/grown.dm	desc = "A slice of \a [S.seed_name]. Tasty, probably."
-init_lines	code/modules/hydroponics/grown.dm	drop_sound = SFX_ITEMS_DROP_HERB
-init_lines	code/modules/hydroponics/grown.dm	pickup_sound = SFX_ITEMS_PICKUP_HERB
+init_lines	code/modules/hydroponics/grown.dm	set_drop_sound(SFX_ITEMS_DROP_HERB)
+init_lines	code/modules/hydroponics/grown.dm	set_pickup_sound(SFX_ITEMS_PICKUP_HERB)
 init_lines	code/modules/hydroponics/grown.dm	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 init_lines	code/modules/hydroponics/grown.dm	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
 init_lines	code/modules/hydroponics/grown.dm	if(!flesh_colour) flesh_colour = rind_colour
