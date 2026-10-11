@@ -83,7 +83,7 @@
 	capture_gravity_before = unit_test_gravity_snapshot()
 	var/list/actors = list(
 		"human" = allocate(/mob/living/carbon/human, T),
-		"robot" = allocate(/mob/living/silicon/robot, T),
+		"robot" = dq_pin_robot(T),
 		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 		"ghost" = allocate(/mob/observer/dead, T),
 	)
@@ -266,7 +266,7 @@
 	var/obj/item/pen/sentinel = allocate(/obj/item/pen, T)
 	var/obj/item/tool/wrench/held = allocate(/obj/item/tool/wrench, H)
 	TEST_ASSERT(H.put_in_active_hand(held), "the baseline tool is actually held")
-	var/list/actors = list("human" = H, "robot" = allocate(/mob/living/silicon/robot, T), "ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE), "ghost" = allocate(/mob/observer/dead, T))
+	var/list/actors = list("human" = H, "robot" = dq_pin_robot(T), "ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE), "ghost" = allocate(/mob/observer/dead, T))
 	var/list/baseline_atoms = dq_pin_fixture_atoms()
 	var/list/baseline_allocated = allocated.Copy()
 	var/area/room = get_area(T)
@@ -369,3 +369,11 @@ CAPABILITIES(/obj/dq_pin_rejected_constructor)
 		TEST_ASSERT_NULL(locate(/obj/item/dq_pin_wrong_part) in T, "cleanup removes the rejected child")
 		var/list/after_atoms = dq_pin_fixture_atoms()
 		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")
+
+/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from rand(1, 999) at init, and that name reaches refusal
+/// text, so the rows would follow how much of the RNG earlier tests drew.
+/datum/unit_test/proc/dq_pin_robot(turf/T)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	R.ident = 1
+	R.updatename(R.modtype)
+	return R
