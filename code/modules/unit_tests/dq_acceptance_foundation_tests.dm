@@ -318,9 +318,11 @@ TRACKED(/obj/dq_acceptance_metadata_cleanup, probe)
 /obj/dq_acceptance_metadata_cleanup/needs_fault
 CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/needs_fault)
 	op("cleanup", ui_act("cleanup"), needs(part_make(/datum/entry/part/req/dq_metadata_cleanup)), wait(10 SECONDS), then(PROC_REF(done)))
+	op("metadata_probe", menu(button = "Metadata probe"), needs(part_make(/datum/entry/part/req/dq_metadata_cleanup)), then(PROC_REF(done)))
 /obj/dq_acceptance_metadata_cleanup/when_fault
 CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	op("cleanup", ui_act("cleanup"), when(part_make(/datum/entry/part/req/dq_metadata_cleanup)), then(PROC_REF(done)))
+	op("metadata_probe", menu(button = "Metadata probe"), when(part_make(/datum/entry/part/req/dq_metadata_cleanup)), then(PROC_REF(done)))
 /obj/dq_acceptance_metadata_cleanup/proc/done(datum/act/op/A)
 	return OP_OK
 /datum/entry/part/req/dq_metadata_cleanup/check(datum/act/op/A)
@@ -373,8 +375,13 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	// Both requirement and selector fault paths must release pooled candidate acts.
 	for(var/path in list(/obj/dq_acceptance_metadata_cleanup/needs_fault, /obj/dq_acceptance_metadata_cleanup/when_fault))
 		var/obj/dq_acceptance_metadata_cleanup/target = allocate(path)
-		// Warm pools without caching a faulting row.
-		op_menu(M, target, null)
+		// Warm a real menu binding, not the UI-only wait operation.
+		var/list/warmed_rows = op_menu(M, target, null)
+		var/found_probe = FALSE
+		for(var/list/row as anything in warmed_rows)
+			if(row["key"] == "metadata_probe")
+				found_probe = TRUE
+		TEST_ASSERT(found_probe, "Metadata fixture exposes the actual menu candidate before fault injection")
 		target.set_fault_metadata(TRUE)
 		var/datum/object_pool/pool = GLOB.object_pools[/datum/act/op]
 		var/out_before = pool.out

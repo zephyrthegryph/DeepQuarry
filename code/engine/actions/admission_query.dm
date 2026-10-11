@@ -65,7 +65,7 @@ ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requi
 		var/list/owners = D && !QDELETED(D) ? list(D) : list()
 		for(var/h = 4; h <= length(read); h++)
 			var/hop = GLOB.generated_read_names[read[h]]
-			if(copytext(hop, length(hop) - 1) == "[]")
+			if(copytext(hop, length(hop) - 1) == "\[\]")
 				hop = copytext(hop, 1, length(hop) - 1)
 			var/list/next = list()
 			for(var/datum/owner as anything in owners)
