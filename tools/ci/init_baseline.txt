@@ -1060,7 +1060,6 @@ init_lines	code/game/objects/effects/anomalies/anomalies_bioscrambler.dm	rel_set
 init_lines	code/game/objects/effects/anomalies/anomalies_dimensional.dm	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
 init_lines	code/game/objects/effects/anomalies/anomalies_dimensional.dm	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 init_lines	code/game/objects/effects/anomalies/anomalies_dimensional.dm	animate(transform = matrix(), time = 3, loop = -1)
-init_lines	code/game/objects/effects/anomalies/anomalies_dimensional.dm	teleports_left = rand(minimum_teleports, maximum_teleports)
 init_lines	code/game/objects/effects/anomalies/anomalies_dust.dm	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 init_lines	code/game/objects/effects/anomalies/anomalies_dust.dm	animate(transform = matrix(), time = 3, loop = -1)
 init_lines	code/game/objects/effects/anomalies/anomalies_flux.dm	apply_wibbly_filters(src)
@@ -1306,15 +1305,6 @@ init_lines	code/game/objects/items/stacks/stack.dm	else
 init_lines	code/game/objects/items/stacks/stack.dm	starting_amount = 1
 init_lines	code/game/objects/items/stacks/stack.dm	set_amount(starting_amount, TRUE)
 init_lines	code/game/objects/items/stacks/stack.dm	make_sellable(/datum/sellable/material_stack)
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	randpixel_xy()
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	if(craftable)
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	material = get_material_by_name("[default_type]")
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	if(!material)
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	stack_trace("Material of type: [default_type] does not exist.")
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	if(material) //sanity check
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	recipes = material.get_recipes()
-init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	stacktype = material.stack_type
 init_lines	code/game/objects/items/trash.dm	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 init_lines	code/game/objects/items/trash.dm	SSpersistence.track_value(src, /datum/persistent/filth/trash)
 init_lines	code/game/objects/items/trash_material.dm	for(var/list/L in matter_chances)
@@ -1341,11 +1331,9 @@ init_lines	code/game/objects/items/weapons/grenades/confetti.dm	confetti_spread.
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/stepdist = rand(1,4)//How far to step
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/temploc = src.loc//Saves the current location to know where to step away from
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	walk_away(src,temploc,stepdist)//I must go, my people need me
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	after(src, rand(1.5 SECONDS, 6 SECONDS), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/stepdist = rand(1,3)
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/temploc = src.loc
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	walk_away(src,temploc,stepdist)
-init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	after(src, rand(1.5 SECONDS, 6 SECONDS), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	activate()
 init_lines	code/game/objects/items/weapons/grenades/smokebomb.dm	smoke.attach(src)
 init_lines	code/game/objects/items/weapons/grenades/smokebomb.dm	activate()
@@ -1360,13 +1348,11 @@ init_lines	code/game/objects/items/weapons/inducer.dm	if(!istype(hume))
 init_lines	code/game/objects/items/weapons/inducer.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/inducer.dm	set_charge(hume.nutrition)
 init_lines	code/game/objects/items/weapons/inducer.dm	set_maxcharge(initial(hume.nutrition))
-init_lines	code/game/objects/items/weapons/inducer.dm	expire(20 SECONDS)
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	if(!material)
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by its look
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	set_max_butts(round(material.hardness/5)) //This is arbitrary but whatever.
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	color = null
-init_lines	code/game/objects/items/weapons/material/ashtray.dm	randpixel_xy()
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	sync_butts()
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	if(default_material) // May still be null if a material was not specified as a default.
@@ -1393,8 +1379,6 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.b
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.icon_state = "medblaster_cmo"
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.base_icon_state = "medblaster_cmo"
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.wielded_item_state = ""
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	if(bcell) // declared default: starts empty
-init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	bcell.set_charge(0)
 init_lines	code/game/objects/items/weapons/melee/energy.dm	set_light(lrange, lpower, lcolor)
 init_lines	code/game/objects/items/weapons/melee/shock_maul.dm	update_held_icon()
 init_lines	code/game/objects/items/weapons/picnic_blankets.dm	unfold()
@@ -1466,7 +1450,6 @@ init_lines	code/game/objects/structures/catwalk.dm	update_connections()
 init_lines	code/game/objects/structures/cliff.dm	register_dangerous_to_step()
 init_lines	code/game/objects/structures/cliff.dm	if(!mapload)
 init_lines	code/game/objects/structures/cliff.dm	turf_edges_refresh(get_turf(src)) // the tiles around it stop spilling their edges onto it (a map load computes them once at its end)
-init_lines	code/game/objects/structures/crates_lockers/__closets.dm	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref())
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	name = "Owned by [owner_ref().name]"
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref().current)
@@ -1624,9 +1607,6 @@ init_lines	code/game/objects/structures/lattice.dm	var/obj/structure/lattice/L
 init_lines	code/game/objects/structures/lattice.dm	if(locate(/obj/structure/lattice, get_step(src, dir)))
 init_lines	code/game/objects/structures/lattice.dm	L = locate(/obj/structure/lattice, get_step(src, dir))
 init_lines	code/game/objects/structures/lattice.dm	L.updateOverlays()
-init_lines	code/game/objects/structures/low_wall.dm	var/obj/item/stack/material/glass/G = glasstype
-init_lines	code/game/objects/structures/low_wall.dm	var/datum/material/M = get_material_by_name(initial(G.default_type))
-init_lines	code/game/objects/structures/low_wall.dm	color = M.icon_colour
 init_lines	code/game/objects/structures/mirror.dm	if(building)
 init_lines	code/game/objects/structures/mirror.dm	set_glass(0)
 init_lines	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
@@ -1662,7 +1642,6 @@ init_lines	code/game/objects/structures/props/transmitter.dm	set_interaction_mes
 init_lines	code/game/objects/structures/railing.dm	if (constructed) // player-constructed railings
 init_lines	code/game/objects/structures/railing.dm	set_anchored(FALSE)
 init_lines	code/game/objects/structures/railing.dm	make_rotatable()
-init_lines	code/game/objects/structures/reflectors.dm	allowed_projectile_typecache = typecacheof(allowed_projectile_typecache)
 init_lines	code/game/objects/structures/reflectors.dm	if(deflector_icon_state)
 init_lines	code/game/objects/structures/reflectors.dm	deflector_overlay = image(icon, deflector_icon_state)
 init_lines	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
@@ -1670,9 +1649,6 @@ init_lines	code/game/objects/structures/reflectors.dm	if(rotation_angle == -1)
 init_lines	code/game/objects/structures/reflectors.dm	setAngle(dir2angle(dir))
 init_lines	code/game/objects/structures/reflectors.dm	else
 init_lines	code/game/objects/structures/reflectors.dm	setAngle(rotation_angle)
-init_lines	code/game/objects/structures/reflectors.dm	if(admin)
-init_lines	code/game/objects/structures/reflectors.dm	can_rotate = FALSE
-init_lines	code/game/objects/structures/reflectors.dm	resistance_flags |= BOMB_PROOF
 init_lines	code/game/objects/structures/reflectors.dm	heat_set(src.air_contents, 2.72)
 init_lines	code/game/objects/structures/safe.dm	var/turf/T = loc
 init_lines	code/game/objects/structures/safe.dm	if(istype(T) && !T.is_plating())
@@ -1681,19 +1657,14 @@ init_lines	code/game/objects/structures/salvageable.dm	new /obj/structure/table/
 init_lines	code/game/objects/structures/stasis_cage.dm	var/mob/living/simple_mob/A = locate_within(loc, /mob/living/simple_mob)
 init_lines	code/game/objects/structures/stasis_cage.dm	if(A)
 init_lines	code/game/objects/structures/stasis_cage.dm	contain(A)
-init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if((dir & NORTH) && !corner_piece)
-init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	plane = MOB_PLANE
-init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	layer = ABOVE_MOB_LAYER
 init_lines	code/game/objects/structures/transit_tubes.dm	follow_tube()
 init_lines	code/game/objects/structures/transit_tubes.dm	if(tube_dirs == null)
 init_lines	code/game/objects/structures/transit_tubes.dm	init_dirs()
 init_lines	code/game/objects/structures/trash_pile.dm	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
 init_lines	code/game/objects/structures/watercloset.dm	if(teleplumb_crystal)
 init_lines	code/game/objects/structures/watercloset.dm	rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
-init_lines	code/game/objects/structures/watercloset.dm	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 init_lines	code/game/objects/structures/watercloset.dm	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 init_lines	code/game/objects/structures/watercloset.dm	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
-init_lines	code/game/objects/structures/watercloset.dm	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(toilet_reflux)))
 init_lines	code/game/objects/structures/watercloset.dm	if(trunk)
 init_lines	code/game/objects/structures/watercloset.dm	PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 init_lines	code/game/objects/structures/watercloset.dm	rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher))
