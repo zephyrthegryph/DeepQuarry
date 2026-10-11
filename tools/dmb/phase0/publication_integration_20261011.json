@@ -1085,7 +1085,10 @@
   },
   "captured_runtime_library_focused": {
     "tests_passed": 6,
-    "files": ["tools/build/lib/captured_runtime_library.test.ts", "tools/build/lib/focused_compiled_run.test.ts"],
+    "files": [
+      "tools/build/lib/captured_runtime_library.test.ts",
+      "tools/build/lib/focused_compiled_run.test.ts"
+    ],
     "scope": "Focused Bun contract fixtures passed, including source/build/pair-independent ABI evidence and retained output checks. Actual coherent snapshot library build and DeepQuarry runtime comparison pending."
   },
   "qualified_wave_e423_focused": {
@@ -1144,5 +1147,20 @@
     "receipt": "E:/dq-cache/dmb-six-git-contract/1877e5198711454b8199cdbe5afe4697/receipt.json",
     "passed": false,
     "scope": "Twelve fresh oracles completed; concurrent client Job resume hit ctypes ThreadEntry identity race. Six owned worktrees removed and children reaped. Same shared helper fix pending."
+  },
+  "fresh_owner_source_fixes": {
+    "initializer_commit": "097857ae0b1ebde4e2a10e9c10323baae4f21424",
+    "startup_commit": "6b1b352420",
+    "shared_insertion_codegen_commit": "10d402a958cd09ab09389f04a6e7c51f974fb8cf",
+    "failed_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-171254-b3588f63-job-cargo.json",
+    "scope": "Fresh insertion avoids deduplicating a rejected local input against its old receipt owner. Source fixes pending focused execution; prior bounded build failed rustc allocation and was fully reaped, not a source diagnostic. Borrowed producer bridge reduces closure-specialized heavy insertion bodies; memory benefit unmeasured."
+  },
+  "captured_runtime_python_focused": {
+    "passed": 3,
+    "modules": [
+      "test_snapshot_runtime_library",
+      "test_build_captured_verdigris"
+    ],
+    "scope": "Pure focused source-policy checks passed from phase0 directory. Actual captured Rust library and full DeepQuarry runtime comparison remain pending."
   }
 }
