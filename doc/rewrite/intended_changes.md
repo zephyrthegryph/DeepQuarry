@@ -4599,3 +4599,18 @@ spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move int
 * **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
   adjustment for a client-less mob (it adjusted an image nobody saw).
 * **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.
+
+### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
+
+- **Tool `_act` procs are ops.** Each `<quality>_act()` override is an `op("use_<quality>", tool(TOOL_X), ...)`; the pins' click rows now name
+  the tool op (`Click: Use screwdriver`, `Remove the DNA lock`, `Lock the assembly`) where they used to show the op the old hook pre-empted.
+  Hooks that blocked a click with a message are requirements: the refusal text is the engine's (`refused: ...` in the menu).
+- **A gun's screwdriver** answers its DNA lock op ahead of the gun's other ops, as the hook did; removing the lock is a 2.5 s timed op.
+- **The nuke's anchor removal** is five timed `stages()` steps that a welder, crowbar or wrench click reaches (the tool ops sat below the window
+  op, so a click opened the panel instead).
+- **The AI core frame's** stage checks compare exactly (`req_stage()`): `req_is(state, 1)` matched any nonzero stage, so the frame offered its
+  unanchor at every stage.
+- **Timed tool work** (`use_tool()`, now deleted) is the op's `wait()`: the progress, the interruption and the start messages are the op's.
+  A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
+- **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
+  tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
