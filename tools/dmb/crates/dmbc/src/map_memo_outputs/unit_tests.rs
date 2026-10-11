@@ -50,7 +50,7 @@ fn one_changed_map_unit_keeps_other_program_with_current_origins_and_fresh_order
         )
         .unwrap();
         let (_, fresh) = prepare(
-            &MapMemo::new(1, 0),
+            &MapMemo::request(1),
             &frontend,
             &captured.maps,
             &projection,

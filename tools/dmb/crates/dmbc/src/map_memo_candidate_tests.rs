@@ -51,7 +51,7 @@ fn context_rejection_continues_map_candidates_and_does_not_record_unadmitted_use
     }
     for expected in [payload(0), payload(1)] {
         let snapshot = Arc::new(cache.snapshot().unwrap());
-        let memo = MapMemo::with_disk(1, 0, Arc::clone(&snapshot));
+        let memo = MapMemo::request_with_disk(1, Arc::clone(&snapshot));
         let (accepted, size) = memo
             .disk(key, false, |bytes| {
                 Ok((bytes == expected.as_slice()).then(|| bytes.to_vec()))
@@ -66,7 +66,7 @@ fn context_rejection_continues_map_candidates_and_does_not_record_unadmitted_use
         assert!(snapshot.rejected().is_empty());
     }
     let snapshot = Arc::new(cache.snapshot().unwrap());
-    let memo = MapMemo::with_disk(1, 0, Arc::clone(&snapshot));
+    let memo = MapMemo::request_with_disk(1, Arc::clone(&snapshot));
     assert!(memo.disk::<()>(key, false, |_| Ok(None)).is_none());
     assert!(snapshot.record_used_keys().is_empty());
     assert!(snapshot.rejected().is_empty());
@@ -75,7 +75,7 @@ fn context_rejection_continues_map_candidates_and_does_not_record_unadmitted_use
 fn pending_map_collision_publishes_previous_context_without_overwrite() {
     let root = Temp::new();
     let cache = dm_cache::Cache::open(&root.0, dm_cache::Limits::default()).unwrap();
-    let memo = MapMemo::with_disk(1, 0, cache.snapshot().unwrap());
+    let memo = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
     let key = b"same-map-locator";
     for context in 0..6u8 {
         memo.queue(key, false, payload(context));
@@ -114,7 +114,7 @@ fn corrupt_later_map_variant_rejects_whole_record_before_semantic_admission() {
                 .into(),
         }])
         .unwrap();
-    let memo = MapMemo::with_disk(1, 0, cache.snapshot().unwrap());
+    let memo = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
     let calls = AtomicU64::new(0);
     assert!(memo
         .disk::<()>(key, false, |_| {
@@ -149,7 +149,7 @@ fn legacy_raw_map_version_is_a_clean_miss_for_variant_consumer() {
             payload: payload(0).into(),
         }])
         .unwrap();
-    let memo = MapMemo::with_disk(1, 0, cache.snapshot().unwrap());
+    let memo = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
     assert!(memo
         .disk::<()>(key, false, |_| panic!("old schema must not be admitted"))
         .is_none());
@@ -241,7 +241,7 @@ fn typed_parse_admission_skips_stale_newest_and_rebinds_exact_older_source() {
     .unwrap();
     publish_bucket(&cache, key, false, &[older, stale]);
     let snapshot = Arc::new(cache.snapshot().unwrap());
-    let memo = MapMemo::with_disk(1, 0, Arc::clone(&snapshot));
+    let memo = MapMemo::request_with_disk(1, Arc::clone(&snapshot));
     let attempts = AtomicU64::new(0);
     let (accepted, _) = memo
         .disk(key, false, |bytes| {
@@ -266,7 +266,7 @@ fn typed_geometry_admission_replays_stale_reads_then_accepts_exact_older_answers
     let (_, _, stale) = geometry_fixture(key, true);
     publish_bucket(&cache, key, true, &[older, stale]);
     let snapshot = Arc::new(cache.snapshot().unwrap());
-    let memo = MapMemo::with_disk(1, 0, Arc::clone(&snapshot));
+    let memo = MapMemo::request_with_disk(1, Arc::clone(&snapshot));
     let host = GeometryHost {
         mob: false,
         calls: AtomicU64::new(0),
@@ -329,7 +329,7 @@ fn malformed_older_typed_candidate_rejects_parse_and_geometry_buckets_before_adm
         // still invalidate the entire bucket before any semantic query runs.
         publish_bucket(&cache, key, geometry, &[b"malformed".to_vec(), healthy]);
         let snapshot = Arc::new(cache.snapshot().unwrap());
-        let memo = MapMemo::with_disk(1, 0, Arc::clone(&snapshot));
+        let memo = MapMemo::request_with_disk(1, Arc::clone(&snapshot));
         let host = GeometryHost {
             mob: false,
             calls: AtomicU64::new(0),

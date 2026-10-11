@@ -24,7 +24,6 @@ mod output_tests;
 #[path = "map_memo_retained_tests.rs"]
 mod retained_tests;
 
-const MAX_ENTRIES: usize = 1024;
 #[derive(Default)]
 pub struct Counts {
     pub parse_hits: AtomicU64,
@@ -35,38 +34,18 @@ pub struct Counts {
     pub outputs_prepared: AtomicU64,
     pub parsed: AtomicU64,
     pub projected: AtomicU64,
-    pub skipped_budget: AtomicU64,
     pub disk_admitted: AtomicU64,
     pub skipped_disk_budget: AtomicU64,
     pub staged_records: AtomicU64,
     pub staging_failed: AtomicU64,
-}
-struct ParseEntry {
-    key: Arc<[u8]>,
-    plan: MapPlan,
-    charge: usize,
-}
-struct GeometryEntry {
-    key: Arc<[u8]>,
-    reads: Arc<[ResolverRead]>,
-    value: Projection,
-    charge: usize,
-}
-#[derive(Default)]
-struct Resident {
-    parse: Vec<ParseEntry>,
-    geometry: Vec<GeometryEntry>,
-    pending: dm_cache::PendingRecords,
-    charged: usize,
 }
 pub struct MapMemo {
     retained: Option<Arc<RetainedMaps>>,
     pending_maps: Option<dm_session::ArtifactAttempt<retained::MapLeases>>,
     current: Mutex<retained::CurrentRoster>,
     pub policy: u128,
-    budget: usize,
     disk: Option<Arc<crate::runner_disk::LazyDisk>>,
-    resident: Mutex<Resident>,
+    pending_records: Mutex<dm_cache::PendingRecords>,
     read_only_disk: bool,
     publisher: Option<Arc<CachePublisher>>,
     staging_errors: Mutex<Vec<String>>,
@@ -90,43 +69,36 @@ impl MapMemo {
             _ => Err("unsupported map memo version".into()),
         }
     }
-    pub fn new(policy: u128, byte_budget: usize) -> Self {
+    fn empty(policy: u128) -> Self {
         Self {
             retained: None,
             pending_maps: None,
             current: Mutex::new(retained::CurrentRoster::default()),
             policy,
-            budget: byte_budget,
             disk: None,
-            resident: Mutex::new(Resident::default()),
+            pending_records: Mutex::new(dm_cache::PendingRecords::default()),
             read_only_disk: false,
             publisher: None,
             staging_errors: Mutex::new(Vec::new()),
             counts: Counts::default(),
         }
     }
-    pub fn with_disk(
-        policy: u128,
-        byte_budget: usize,
-        disk: impl Into<Arc<dm_cache::CacheSnapshot>>,
-    ) -> Self {
-        let mut memo = Self::new(policy, byte_budget);
-        memo.disk = Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
-            disk.into(),
-        )));
-        memo
+    #[cfg(test)]
+    fn request(policy: u128) -> Self {
+        Self::with_resident(policy, Arc::new(RetainedMaps::current_revision()), None)
     }
-    pub fn with_lazy_disk(
-        policy: u128,
-        byte_budget: usize,
-        disk: Arc<crate::runner_disk::LazyDisk>,
-    ) -> Self {
-        let mut memo = Self::new(policy, byte_budget);
-        memo.disk = Some(disk);
-        memo
+    #[cfg(test)]
+    fn request_with_disk(policy: u128, disk: impl Into<Arc<dm_cache::CacheSnapshot>>) -> Self {
+        Self::with_resident(
+            policy,
+            Arc::new(RetainedMaps::current_revision()),
+            Some(Arc::new(crate::runner_disk::LazyDisk::from_snapshot(
+                disk.into(),
+            ))),
+        )
     }
     /// One map record per bounded callback; the host may batch these records in
-    /// its request batch spool. Staging never holds the resident mutex.
+    /// its request batch spool. Staging never holds the pending-record mutex.
     /// Hydrate existing records without encoding/populating this disk store.
     pub fn with_read_only_disk(mut self) -> Self {
         self.read_only_disk = true;
@@ -182,35 +154,6 @@ impl MapMemo {
         )?;
         issued.into_inner().map(|value| (value, view.payload.len()))
     }
-    /// Charge an intentionally conservative multiple of serialized bytes for
-    /// typed Arc/vector backing. Disk staging drains bounded queues into the request batch.
-    /// Evict existing resident entries to make room; oversized entries remain disk-only.
-    fn reserve(&self, state: &mut Resident, payload: usize, key: usize) -> bool {
-        let Some(cost) = payload
-            .checked_mul(16)
-            .and_then(|cost| cost.checked_add(key))
-        else {
-            return false;
-        };
-        // Oversized values are staged without retaining another typed copy.
-        if cost > self.budget {
-            return false;
-        }
-        while state.parse.len() + state.geometry.len() >= MAX_ENTRIES
-            || cost > self.budget.saturating_sub(state.charged)
-        {
-            let removed = if !state.parse.is_empty() {
-                state.parse.remove(0).charge
-            } else if !state.geometry.is_empty() {
-                state.geometry.remove(0).charge
-            } else {
-                break;
-            };
-            state.charged -= removed;
-        }
-        state.charged += cost;
-        true
-    }
     fn queue(&self, key: &[u8], geometry: bool, bytes: Vec<u8>) {
         if self.read_only_disk {
             return;
@@ -248,10 +191,9 @@ impl MapMemo {
         }
         if let Some(disk) = &self.disk {
             let ready = self
-                .resident
+                .pending_records
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
-                .pending
                 .push(
                     dm_cache::Record {
                         key: Self::record_key(key, geometry),
@@ -291,67 +233,22 @@ impl MapMemo {
             self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(plan);
         }
-        let hit = {
-            let state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            state
-                .parse
-                .iter()
-                .rev()
-                .find(|entry| {
-                    entry.key.as_ref() == key && entry.plan.captured.source == captured.source
-                })
-                .map(|entry| entry.plan.clone())
-        };
-        if let Some(mut plan) = hit {
-            plan.captured = captured;
-            self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
-            return Ok(plan);
-        }
-        if let Some((plan, payload_len)) = self.disk(&key, false, |bytes| {
+        if let Some((plan, _)) = self.disk(&key, false, |bytes| {
             wire::admit_parse(bytes, &key, captured.clone())
         }) {
             self.admit_retained_parse(retained_key, &plan);
-            let mut state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            if self.reserve(&mut state, payload_len, key.len()) {
-                state.parse.push(ParseEntry {
-                    charge: payload_len * 16 + key.len(),
-                    key: key.into(),
-                    plan: plan.clone(),
-                });
-            }
             self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(plan);
         }
         self.counts.parsed.fetch_add(1, Ordering::Relaxed);
         let plan = dm_tree::maps::plan(captured)?;
         self.admit_retained_parse(retained_key, &plan);
-        if self.retained.is_some()
-            && (self.read_only_disk || self.disk.is_none())
-            && self.publisher.is_none()
-        {
+        if (self.read_only_disk || self.disk.is_none()) && self.publisher.is_none() {
             return Ok(plan);
         }
         if let Some(bytes) = wire::encode_parse(&key, &plan) {
-            let mut state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            if self.reserve(&mut state, bytes.len(), key.len()) {
-                state.parse.push(ParseEntry {
-                    charge: bytes.len() * 16 + key.len(),
-                    key: key.clone().into(),
-                    plan: plan.clone(),
-                });
-            }
-            drop(state);
             self.queue(&key, false, bytes);
-        } else if self.disk.is_some() || self.publisher.is_some() {
+        } else {
             self.record_error(
                 "map syntax record cannot be represented by the cache wire format".into(),
             );
@@ -369,50 +266,16 @@ impl MapMemo {
             self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value);
         }
-        let persist = self.disk.is_some() || self.publisher.is_some() || self.retained.is_none();
+        let persist = self.disk.is_some() || self.publisher.is_some();
         let key = if persist {
             geometry_key(self.policy, maps, defaults)
         } else {
             Vec::new()
         };
-        // Host queries and answer validation happen outside the memo lock.
-        let candidates = {
-            let state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            state
-                .geometry
-                .iter()
-                .rev()
-                .filter(|entry| entry.key.as_ref() == key)
-                .map(|entry| (entry.reads.clone(), entry.value.clone()))
-                .collect::<Vec<_>>()
-        };
-        for (reads, value) in candidates {
-            if reads.iter().all(|read| {
-                host.resolve(read.query).canonical_bytes() == read.answer.canonical_bytes()
-            }) {
-                self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
-                return Ok(value);
-            }
-        }
-        if let Some(((value, reads), payload_len)) = self.disk(&key, true, |bytes| {
+        if let Some(((value, reads), _)) = self.disk(&key, true, |bytes| {
             wire::admit_geometry(bytes, &key, maps, defaults, host)
         }) {
             self.admit_retained_geometry(locator, maps, &value, reads.clone(), Vec::new());
-            let mut state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            if self.reserve(&mut state, payload_len, key.len()) {
-                state.geometry.push(GeometryEntry {
-                    charge: payload_len * 16 + key.len(),
-                    key: key.into(),
-                    reads: reads.into(),
-                    value: value.clone(),
-                });
-            }
             self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value);
         }
@@ -435,19 +298,6 @@ impl MapMemo {
             return Ok(value);
         }
         if let Some(bytes) = wire::encode_geometry(&key, &value, &reads) {
-            let mut state = self
-                .resident
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            if self.reserve(&mut state, bytes.len(), key.len()) {
-                state.geometry.push(GeometryEntry {
-                    charge: bytes.len() * 16 + key.len(),
-                    key: key.clone().into(),
-                    reads: reads.into(),
-                    value: value.clone(),
-                });
-            }
-            drop(state);
             self.queue(&key, true, bytes);
         } else if self.disk.is_some() || self.publisher.is_some() {
             self.record_error(
@@ -459,11 +309,10 @@ impl MapMemo {
     /// Standalone bounded fallback records. A configured publisher drains records
     /// immediately, so this returns only records retained without a publisher.
     pub fn take_pending(&self) -> Vec<dm_cache::Record> {
-        let mut state = self
-            .resident
+        self.pending_records
             .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        state.pending.take()
+            .unwrap_or_else(|error| error.into_inner())
+            .take()
     }
 }
 fn frame(key: &mut Vec<u8>, bytes: &[u8]) {
@@ -552,32 +401,14 @@ mod tests {
         }
     }
     #[test]
-    fn map_resident_budget_evicts_before_retaining_new_results() {
-        let memo = MapMemo::new(1, 64);
-        let mut resident = Resident::default();
-        assert!(memo.reserve(&mut resident, 3, 1));
-        resident.parse.push(ParseEntry {
-            key: Arc::from(b"old".as_slice()),
-            plan: dm_tree::maps::plan(input(1)).unwrap(),
-            charge: 49,
-        });
-        assert!(memo.reserve(&mut resident, 3, 1));
-        assert!(resident.parse.is_empty());
-        assert_eq!(resident.charged, 49);
-        assert!(!memo.reserve(&mut resident, 5, 1));
-        assert_eq!(resident.charged, 49);
-        assert_eq!(memo.counts.skipped_budget.load(Ordering::Relaxed), 0);
-    }
-
-    #[test]
-    fn map_streaming_publisher_preserves_records_beyond_budget_without_resident_lock() {
+    fn map_streaming_publisher_preserves_records_without_pending_record_lock() {
         let weak = Arc::new(Mutex::new(std::sync::Weak::<MapMemo>::new()));
         let published = Arc::new(Mutex::new(Vec::new()));
         let target = weak.clone();
         let records = published.clone();
-        let memo = Arc::new(MapMemo::new(1, 0).with_publisher(Arc::new(move |batch| {
+        let memo = Arc::new(MapMemo::request(1).with_publisher(Arc::new(move |batch| {
             // A reentrant lock-taking operation proves the callback is outside
-            // the resident mutex, independently of publication success.
+            // the pending-record mutex, independently of publication success.
             assert!(target
                 .lock()
                 .unwrap()
@@ -599,9 +430,11 @@ mod tests {
     }
     #[test]
     fn map_streaming_publication_failure_is_bounded_and_does_not_change_results() {
-        let memo = MapMemo::new(1, 0).with_publisher(Arc::new(|_| Err("disk unavailable".into())));
+        let memo = MapMemo::request(1).with_publisher(Arc::new(|_| Err("disk unavailable".into())));
         for occurrence in 0..12 {
-            memo.parse(input(occurrence)).unwrap();
+            let mut current = input(occurrence);
+            current.source = format!("// revision {occurrence}\n{}", current.source).into();
+            memo.parse(current).unwrap();
         }
         assert_eq!(memo.counts.staging_failed.load(Ordering::Relaxed), 12);
         assert_eq!(memo.staging_errors().len(), 8);
@@ -609,7 +442,7 @@ mod tests {
     }
     #[test]
     fn map_hits_rebind_occurrences_and_validate_every_geometry_read() {
-        let memo = MapMemo::new(1, 16 * 1024 * 1024);
+        let memo = MapMemo::request(1);
         let first = memo.parse(input(1)).unwrap();
         let second = memo.parse(input(7)).unwrap();
         assert_eq!(second.captured.include_occurrence, 7);
@@ -647,8 +480,8 @@ mod tests {
         assert_eq!(memo.counts.parsed.load(Ordering::Relaxed), 2);
     }
     #[test]
-    fn bounded_map_memo_falls_back_without_changing_geometry() {
-        let memo = MapMemo::new(1, 0);
+    fn no_disk_map_request_uses_shared_typed_hits_without_spooling() {
+        let memo = MapMemo::request(1);
         let first = memo.parse(input(1)).unwrap();
         memo.parse(input(2)).unwrap();
         let first = memo
@@ -663,8 +496,9 @@ mod tests {
             .project(&[parsed], defaults(), &Host { mob: false })
             .unwrap();
         assert_eq!(first.grid.as_ref(), second.grid.as_ref());
-        assert_eq!(memo.counts.parse_hits.load(Ordering::Relaxed), 0);
-        assert_eq!(memo.counts.geometry_hits.load(Ordering::Relaxed), 0);
+        assert_eq!(memo.counts.parse_hits.load(Ordering::Relaxed), 2);
+        assert_eq!(memo.counts.geometry_hits.load(Ordering::Relaxed), 1);
+        assert!(memo.take_pending().is_empty());
     }
     struct Temporary(PathBuf);
     #[test]
@@ -722,7 +556,7 @@ mod tests {
             std::env::temp_dir().join(format!("dmbc-map-memo-{}-{unique}", std::process::id())),
         );
         let cache = dm_cache::Cache::open(&directory.0, dm_cache::Limits::default()).unwrap();
-        let memo = MapMemo::with_disk(1, 16 * 1024 * 1024, cache.snapshot().unwrap());
+        let memo = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
         let first = memo.parse(input(1)).unwrap();
         let projection = memo
             .project(
@@ -735,7 +569,7 @@ mod tests {
         assert_eq!(pending.len(), 2);
         cache.publish(&pending).unwrap();
         drop(memo);
-        let loaded = MapMemo::with_disk(1, 16 * 1024 * 1024, cache.snapshot().unwrap());
+        let loaded = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
         let second = loaded.parse(input(9)).unwrap();
         assert_eq!(second.captured.include_occurrence, 9);
         assert_eq!(first.model, second.model);
@@ -753,7 +587,7 @@ mod tests {
         drop(loaded);
     }
     #[test]
-    fn map_disk_admission_survives_resident_budget_denial() {
+    fn map_disk_transport_hydrates_shared_artifacts_with_bounded_pending_records() {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
@@ -763,37 +597,20 @@ mod tests {
             std::process::id()
         )));
         let cache = dm_cache::Cache::open(&directory.0, dm_cache::Limits::default()).unwrap();
-        let plan = dm_tree::maps::plan(input(1)).unwrap();
-        let parse_bytes = wire::encode_parse(&parse_key(1, &plan.captured), &plan).unwrap();
         let host = Host { mob: false };
-        let recording = RecordingResolver::new(&host);
-        let projection = crate::map_projection::project(
-            std::slice::from_ref(&plan),
-            defaults(),
-            &crate::map_projection::ResolverClassifier(&recording),
-        )
-        .unwrap();
-        let geometry_bytes = wire::encode_geometry(
-            &geometry_key(1, std::slice::from_ref(&plan), defaults()),
-            &projection,
-            &recording.reads(),
-        )
-        .unwrap();
-        let budget = parse_bytes.len() + geometry_bytes.len() + 64;
-        let memo = MapMemo::with_disk(1, budget, cache.snapshot().unwrap());
+        let memo = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
         let first = memo.parse(input(1)).unwrap();
         memo.project(std::slice::from_ref(&first), defaults(), &host)
             .unwrap();
         {
-            let resident = memo.resident.lock().unwrap();
-            assert!(resident.parse.is_empty() && resident.geometry.is_empty());
-            assert!(resident.pending.bytes() <= 8 * 1024 * 1024);
+            assert!(memo.pending_records.lock().unwrap().bytes() <= 8 * 1024 * 1024);
+            assert_eq!(memo.retained.as_ref().unwrap().test_entries(), 2);
         }
         let pending = memo.take_pending();
         assert_eq!(pending.len(), 2);
         cache.publish(&pending).unwrap();
         drop(memo);
-        let loaded = MapMemo::with_disk(1, budget, cache.snapshot().unwrap());
+        let loaded = MapMemo::request_with_disk(1, cache.snapshot().unwrap());
         let second = loaded.parse(input(4)).unwrap();
         assert_eq!(second.captured.include_occurrence, 4);
         loaded

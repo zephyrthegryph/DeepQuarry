@@ -110,7 +110,7 @@ impl MapMemo {
         disk: Option<Arc<crate::runner_disk::LazyDisk>>,
         publishable: bool,
     ) -> Self {
-        let mut memo = Self::new(policy, 0);
+        let mut memo = Self::empty(policy);
         let leases = MapLeases {
             sources: Mutex::new(Vec::new()),
             parse: resident.parse.lease(),

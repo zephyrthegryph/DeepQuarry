@@ -163,10 +163,6 @@ fn one_shot_map_facade_uses_shared_admission_without_legacy_resident_or_spool() 
         assert_eq!(actual.origin, expected.origin);
     }
     assert_ne!(old.instances[2].kind, changed.instances[2].kind);
-    let resident = memo.resident.lock().unwrap();
-    assert!(resident.parse.is_empty());
-    assert!(resident.geometry.is_empty());
-    drop(resident);
     assert!(
         memo.take_pending().is_empty(),
         "no disk/publisher must not create records"

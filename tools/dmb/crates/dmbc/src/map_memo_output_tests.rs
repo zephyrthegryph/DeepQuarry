@@ -143,7 +143,7 @@ fn retained_map_outputs_share_code_match_fresh_and_invalidate_storage_reads() {
     ));
     assert!(Arc::ptr_eq(&code[0].debug_origins, &hit[0].debug_origins));
     let (_, fresh) = prepare(
-        &MapMemo::new(1, 0),
+        &MapMemo::request(1),
         &frontend,
         &captured.maps,
         &projection,
@@ -264,7 +264,7 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
             u64::from(index == 1 || index == 2)
         );
         let (_, fresh) = prepare(
-            &MapMemo::new(1, 0),
+            &MapMemo::request(1),
             &frontend,
             &captured.maps,
             &projection,
