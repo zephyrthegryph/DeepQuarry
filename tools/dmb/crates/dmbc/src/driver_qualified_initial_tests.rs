@@ -1,6 +1,62 @@
 use super::*;
 use std::path::Path;
 
+#[test]
+fn folded_nameof_preserves_typed_source_errors_and_opaque_proofs() {
+    struct Opaque;
+    impl Resolver for Opaque {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            ResolvedMeaning::Unsupported(query)
+        }
+    }
+    let frontend = frontend("/datum/receiver\n    var/known = 1\n");
+    for source in [
+        "nameof(/datum/actually_absent)",
+        "nameof(/datum/receiver/proc/actually_absent)",
+        "nameof(/datum/receiver::missing)",
+        "0 && nameof(/datum/actually_absent)",
+    ] {
+        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let expression = expression(source, &mut symbols);
+        let write = dm_ir::InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::Shared {
+                slot: SymbolId::of("probe"),
+                owner: SymbolId::of("/"),
+                name: SymbolId::of("probe"),
+            },
+            lexical_owner: SymbolId::of("/"),
+            lexical_procedure: None,
+            value: dm_ir::InitializerValue::Expression(expression.clone()),
+            declared_array: None,
+            declaration_flags: Some(0),
+        };
+        let recorder = dm_session::RecordingResolver::new(frontend.snapshot.tree.as_ref());
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &recorder,
+            symbols: &symbols,
+        };
+        let (evaluation, _) = evaluator
+            .evaluate_prepared_write(&write, &expression)
+            .unwrap();
+        assert!(matches!(evaluation, Evaluation::SourceError(_)), "{source}");
+        assert!(
+            !recorder.reads().is_empty(),
+            "{source} must retain admission reads"
+        );
+        let opaque = DriverEvaluator {
+            resolver: &Opaque,
+            ..evaluator
+        };
+        assert!(
+            opaque.evaluate_prepared_write(&write, &expression).is_err(),
+            "{source}"
+        );
+    }
+}
+
 struct Source<'a>(&'a str);
 impl dm_preprocess::SourceProvider for Source<'_> {
     fn read(&self, _: &Path) -> Result<String, String> {

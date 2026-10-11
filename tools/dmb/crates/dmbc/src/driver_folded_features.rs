@@ -7,6 +7,7 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
         expression: &dm_syntax::Expr,
+        typed_failure: Option<&RefCell<Option<dm_codegen_byond::LowerError>>>,
     ) -> Result<dm_codegen_byond::SourceFeatures, String> {
         let mut bindings = dm_codegen_byond::LowerBindings {
             procedure_identity: procedure,
@@ -107,6 +108,15 @@ impl DriverEvaluator<'_> {
             self.resolver,
             &locals,
         )
-        .map_err(|error| format!("folded reference feature proof: {error:?}"))
+        .map_err(|error| {
+            let message = format!("folded reference feature proof: {error:?}");
+            if let Some(failure) = typed_failure {
+                let mut failure = failure.borrow_mut();
+                if failure.is_none() {
+                    *failure = Some(error);
+                }
+            }
+            message
+        })
     }
 }

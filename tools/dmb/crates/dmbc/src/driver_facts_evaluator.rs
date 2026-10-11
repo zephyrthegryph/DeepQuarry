@@ -146,7 +146,7 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
-        self.scalar_ast_in_with_features(owner, ast, procedure, active, None, None)
+        self.scalar_ast_in_with_features(owner, ast, procedure, active, None, None, None)
     }
     fn scalar_ast_in_with_features(
         &self,
@@ -156,6 +156,7 @@ impl DriverEvaluator<'_> {
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
         source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
         lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
+        typed_failure: Option<&RefCell<Option<dm_codegen_byond::LowerError>>>,
     ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
@@ -169,8 +170,13 @@ impl DriverEvaluator<'_> {
             let feature_failure = RefCell::new(None);
             let observe_nameof = |expression: &dm_syntax::Expr| {
                 if let Some(features) = source_features {
-                    match self.nameof_source_features(owner, procedure, lexical_static, expression)
-                    {
+                    match self.nameof_source_features(
+                        owner,
+                        procedure,
+                        lexical_static,
+                        expression,
+                        typed_failure,
+                    ) {
                         Ok(current) => features.borrow_mut().union(current),
                         Err(error) => *feature_failure.borrow_mut() = Some(error),
                     }
@@ -216,7 +222,13 @@ impl DriverEvaluator<'_> {
         let failure = RefCell::new(None);
         let observe_nameof = |expr: &dm_syntax::Expr| {
             if let Some(features) = source_features {
-                match self.nameof_source_features(owner, procedure, lexical_static, expr) {
+                match self.nameof_source_features(
+                    owner,
+                    procedure,
+                    lexical_static,
+                    expr,
+                    typed_failure,
+                ) {
                     Ok(observed) => features.borrow_mut().union(observed),
                     Err(error) => *failure.borrow_mut() = Some(error),
                 }
@@ -768,19 +780,28 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
             return Ok((Evaluation::SourceError(reason), Some(prepared)));
         }
         let source_features = RefCell::new(dm_codegen_byond::SourceFeatures::default());
-        let evaluation = self
-            .scalar_ast_in_with_features(
-                write.lexical_owner,
-                ast,
-                write.lexical_procedure,
-                &RefCell::new(std::collections::HashSet::new()),
-                Some(&source_features),
-                match write.target {
-                    dm_ir::InitializerTarget::ProcedureStatic(identity) => Some(identity),
-                    _ => None,
-                },
-            )?
-            .map_or(Evaluation::Runtime, Evaluation::Scalar);
+        let typed_failure = RefCell::new(None);
+        let result = self.scalar_ast_in_with_features(
+            write.lexical_owner,
+            ast,
+            write.lexical_procedure,
+            &RefCell::new(std::collections::HashSet::new()),
+            Some(&source_features),
+            match write.target {
+                dm_ir::InitializerTarget::ProcedureStatic(identity) => Some(identity),
+                _ => None,
+            },
+            Some(&typed_failure),
+        );
+        // The same observer records every resolver edge before classification.
+        // Only a typed source failure can become an authored diagnostic; opaque
+        // proof/evaluator failures retain the existing unsupported error path.
+        let evaluation = match typed_failure.into_inner() {
+            Some(error) if error.kind == dm_codegen_byond::LowerErrorKind::SourceError => {
+                Evaluation::SourceError(error.reason)
+            }
+            _ => result?.map_or(Evaluation::Runtime, Evaluation::Scalar),
+        };
         prepared.set_source_features(source_features.into_inner());
         Ok((evaluation, Some(prepared)))
     }
