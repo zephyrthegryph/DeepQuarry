@@ -28,21 +28,24 @@ TRACKED(/mob/living/simple_mob/fleshtaker, mimic_icon)
 	if(flesh_mimic && mimic_icon)
 		look.set_icon(mimic_icon)
 
-/mob/living/simple_mob/fleshtaker/Initialize(mapload)
-	. = ..()
-	base_values["name"] = name
-	base_values["desc"] = desc
-	base_values["icon_living"] = icon_living
-	base_values["icon_dead"] = icon_dead
-	base_values["pixel_x"] = pixel_x
-	base_values["pixel_y"] = pixel_y //record our default y pixel offset for later reversion
-	base_values["melee_damage_lower"] = melee_damage_lower
-	base_values["melee_damage_upper"] = melee_damage_upper
-	base_values["endurance"] = endurance
-	base_values["armor"] = get_armor()
+// What it looks and fights like before it copies anything, to revert to (derives(), once at init).
+CAPABILITIES(/mob/living/simple_mob/fleshtaker)
+	derives(nameof(base_values), PROC_REF(own_base_values))
 
+/mob/living/simple_mob/fleshtaker/proc/own_base_values(target)
+	return list(
+		"name" = name,
+		"desc" = desc,
+		"icon_living" = icon_living,
+		"icon_dead" = icon_dead,
+		"pixel_x" = pixel_x,
+		"pixel_y" = pixel_y,
+		"melee_damage_lower" = melee_damage_lower,
+		"melee_damage_upper" = melee_damage_upper,
+		"endurance" = endurance,
+		"armor" = get_armor(),
+	)
 
-	//copy stats from our engulfed target
 /mob/living/simple_mob/fleshtaker/proc/flesh_mimic(mob/living/simple_mob/target)
 	set_flesh_mimic(TRUE)
 	name = target.name

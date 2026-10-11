@@ -37,15 +37,10 @@
 	pixel_y = 0
 	faction = FACTION_WOLFTAUR
 
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to, and its size
-/mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]_rest")
-		set_icon_dead("[icon_living]-dead")
-	var/oursize = rand(100, 140) / 100
-	resize(oursize)
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur)
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*_rest", dead = "*-dead", only_if = nameof(random_skin))
+	rolls(nameof(size_multiplier), range_of(0.9, 2, 0.01)) // the larger roll of the two old overrides (syndimobs.dm ran last)
 
 // Activate Noms!
 /mob/living/simple_mob/vore/wolftaur

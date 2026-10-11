@@ -25,14 +25,14 @@ CAPABILITIES(/obj/item/mmi)
 	ref_one(nameof(mecha)) // the mech we are installed in
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
+	owns_one(nameof(mind_host), /datum/mind_host, starts = when(cond_not(nameof(hosts_no_mind)), /datum/mind_host)) // it holds a mind
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("mmi_self", in_hand(), label("Upend"), then(PROC_REF(mmi_self)))
 	op("mmi_verb_toggle_radio", menu(), label("Toggle Brain Radio"), needs(carried()), then(PROC_REF(mmi_verb_toggle_radio)))
 
-/obj/item/mmi/Initialize(mapload)
-	. = ..()
-	make_mind_host()
+/// An inert MMI hosts no mind (no mind host is made for it).
+/obj/item/mmi/var/hosts_no_mind = FALSE
 
 /// The occupant view mob (the hosted mind lives there), if any.
 /obj/item/mmi/proc/get_occupant()
@@ -384,9 +384,8 @@ CAPABILITIES(/obj/item/mmi/digital)
 // This type hosts no mind.
 /obj/item/mmi/inert
 
-/obj/item/mmi/inert/Initialize(mapload)
-	. = ..()
-	rel_clear(src, nameof(mind_host))
+/obj/item/mmi/inert
+	hosts_no_mind = TRUE
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.
