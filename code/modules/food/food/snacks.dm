@@ -1457,6 +1457,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	rolls(nameof(name), pick_one(list("exceptional plump pie")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump pie!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
 	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 2)))
@@ -1467,13 +1469,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
 
 /obj/item/reagent_containers/food/snacks/plump_pie/proc/exceptional_contents()
 	return exceptional ? list(REAGENT_ID_NUTRIMENT = 8, REAGENT_ID_TRICORDRAZINE = 5) : null
-
-// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
-/obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
-	. = ..()
-	if(exceptional)
-		name = "exceptional plump pie"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump pie!"
 
 /obj/item/reagent_containers/food/snacks/xemeatpie
 	name = "Xeno-pie"
@@ -2338,6 +2333,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	rolls(nameof(name), pick_one(list("exceptional plump helmet biscuit")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
 	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 1)))
@@ -2348,13 +2345,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
 
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/proc/exceptional_contents()
 	return exceptional ? list(REAGENT_ID_NUTRIMENT = 3) : null
-
-// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
-/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
-	. = ..()
-	if(exceptional)
-		name = "exceptional plump helmet biscuit"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!"
 
 /obj/item/reagent_containers/food/snacks/chawanmushi
 	name = "chawanmushi"
@@ -8221,15 +8211,26 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 										"trans" = 3,
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
+	/// The bowl colour it rolled (when randomize_bowl_color): its package states and trash follow it.
+	var/bowl_color
 
-// ALLOW(init/INSTANCE_STATE): rolls its bowl colour when its type says to
-/obj/item/reagent_containers/food/snacks/ratpackramen/Initialize(mapload)
-	. = ..()
-	if(randomize_bowl_color)
-		var/bowl_color = pickweight(bowl_color_options)
-		package_open_state = "altevian_pack_ramen_[bowl_color]-open"
-		package_opening_state = "altevian_pack_ramen_[bowl_color]-opening"
-		trash = text2path("/obj/item/trash/ratpackramen/[bowl_color]")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratpackramen)
+	rolls(nameof(bowl_color), PROC_REF(roll_bowl_color), when = nameof(randomize_bowl_color))
+	rolls(nameof(package_open_state), PROC_REF(bowl_open_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(package_opening_state), PROC_REF(bowl_opening_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(trash), PROC_REF(bowl_trash), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/roll_bowl_color(datum/roller/R)
+	return R.weighted(bowl_color_options)
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_open_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-open"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_opening_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-opening"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_trash(datum/roller/R)
+	return text2path("/obj/item/trash/ratpackramen/[bowl_color]")
 
 /obj/item/reagent_containers/food/snacks/ratpacktaco
 	name = "Triple Taco Tuck"

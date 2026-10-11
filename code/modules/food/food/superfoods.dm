@@ -441,7 +441,10 @@ CAPABILITIES(/obj/structure/thecake)
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/chaoscakeslice)
 	rolls(nameof(slice_kind), range_of(1, 6))
 	rolls(nameof(icon_state), PROC_REF(roll_slice_icon), from = list(nameof(slice_kind)))
-	configure(reagents(contents_from = PROC_REF(slice_contents)))
+	rolls(nameof(name), PROC_REF(roll_slice_name), from = list(nameof(slice_kind)))
+	rolls(nameof(desc), PROC_REF(roll_slice_desc), from = list(nameof(slice_kind)))
+	rolls(nameof(bitesize), PROC_REF(roll_slice_bitesize), from = list(nameof(slice_kind)))
+	configure(reagents(contents_from = PROC_REF(slice_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(slice_taste))))
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chaos_slice_recipes, list(
 	list(REAGENT_ID_NEUROTOXIC_PROTEIN = 2, REAGENT_ID_SHOCKCHEM = 2, REAGENT_ID_AMATOXIN = 2, REAGENT_ID_CARPOTOXIN = 2, REAGENT_ID_SPIDERTOXIN = 2),
@@ -459,40 +462,31 @@ TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chao
 /obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_icon(datum/roller/R)
 	return "chaoscake_slice-[slice_kind]"
 
-// ALLOW(init/INSTANCE_STATE): names and sizes the slice it rolled
-/obj/item/reagent_containers/food/snacks/chaoscakeslice/Initialize(mapload)
-	. = ..()
-	switch(slice_kind)
-		if(1)
-			name = "Slice Of Evil" //Pretty damn poisonous, takes a lot of work to make safe for consumption, useful for medical.
-			desc = "An odd slice, despite the grease and cherries oozing off the top, it smells delicious."
-			nutriment_desc = list("The desire to consume" = 10) // You won't even taste the poison.
-			bitesize = 7
-		if(2)
-			name = "Slice Of Evil" //A bad trip
-			desc = "A mysterious slice, coated in purple frosting that smells like grapes."
-			nutriment_desc = list("The desire to show off an party" = 10)
-			bitesize = 30 //even a single bite won't make you escape fate.
-		if(3)
-			name = "Slice Of Evil" //acidic
-			desc = "A menacing slice, smelling clearly of copper, blood clots float on top."
-			nutriment_desc = list("Infernal Rage" = 10)
-			bitesize = 30
-		if(4)
-			name = "Slice Of Good" //anti-tox
-			desc = "A colourful slice, smelling of pear and coated in delicious cream."
-			nutriment_desc = list("Hapiness" = 10)
-			bitesize = 3
-		if(5)
-			name = "Slice Of Good" //anti-oxy
-			desc = "A light slice, it's pretty to look at and smells of vanilla."
-			nutriment_desc = list("Freedom" = 10)
-			bitesize = 3
-		if(6)
-			name = "Slice Of Good" //anti-burn/brute
-			desc = "A hearty slice, it smells of chocolate and strawberries."
-			nutriment_desc = list("Love" = 10)
-			bitesize = 4
+/// Per slice: name, description, taste and bite size.
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chaos_slice_facts, list(
+	list("Slice Of Evil", "An odd slice, despite the grease and cherries oozing off the top, it smells delicious.", list("The desire to consume" = 10), 7), // Pretty damn poisonous, takes a lot of work to make safe for consumption, useful for medical. You won't even taste the poison.
+	list("Slice Of Evil", "A mysterious slice, coated in purple frosting that smells like grapes.", list("The desire to show off an party" = 10), 30), // A bad trip; even a single bite won't make you escape fate.
+	list("Slice Of Evil", "A menacing slice, smelling clearly of copper, blood clots float on top.", list("Infernal Rage" = 10), 30), // acidic
+	list("Slice Of Good", "A colourful slice, smelling of pear and coated in delicious cream.", list("Hapiness" = 10), 3), // anti-tox
+	list("Slice Of Good", "A light slice, it's pretty to look at and smells of vanilla.", list("Freedom" = 10), 3), // anti-oxy
+	list("Slice Of Good", "A hearty slice, it smells of chocolate and strawberries.", list("Love" = 10), 4))) // anti-burn/brute
+
+/// One fact of the slice it rolled (chaos_slice_facts: 1 name, 2 description, 3 taste, 4 bite size).
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_fact(index)
+	var/list/facts = TYPE_TABLE_GET(src, chaos_slice_facts)
+	return (slice_kind >= 1 && slice_kind <= length(facts)) ? facts[slice_kind][index] : null
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_name(datum/roller/R)
+	return slice_fact(1)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_desc(datum/roller/R)
+	return slice_fact(2)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_taste()
+	return slice_fact(3)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_bitesize(datum/roller/R)
+	return slice_fact(4)
 
 CAPABILITIES(/obj/structure/chaoscake)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

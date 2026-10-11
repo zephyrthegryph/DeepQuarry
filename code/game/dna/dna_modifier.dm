@@ -77,11 +77,6 @@ CAPABILITIES(/datum/dna2/record)
 	var/scan_level
 	var/precision_coeff
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and sizes itself from them
-/obj/machinery/dna_scannernew/Initialize(mapload)
-	. = ..()
-	RefreshParts()
-
 /// Sealed occupant slot (C8a, containment.md §10). Full blast share: the
 /// scanner declares blast_contents(), so its occupant takes the whole blast.
 ///

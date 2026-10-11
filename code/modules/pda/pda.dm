@@ -513,21 +513,11 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
-// ALLOW(init/INSTANCE_STATE): rolls the department cartridge this box carries
-/obj/item/storage/box/PDAs/Initialize(mapload)
-	. = ..()
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/cartridge/head(src)
-
-	var/newcart = pick(	/obj/item/cartridge/engineering,
-						/obj/item/cartridge/security,
-						/obj/item/cartridge/medical,
-						/obj/item/cartridge/signal/science,
-						/obj/item/cartridge/quartermaster)
-	new newcart(src)
+CAPABILITIES(/obj/item/storage/box/PDAs)
+	// two Initialize() overrides ran here (pda.dm and pda_subtypes.dm, the second calling the first): two of each
+	initial_contents(/obj/item/pda, count = 8)
+	initial_contents(/obj/item/cartridge/head, count = 2)
+	initial_contents(pick_one(list(/obj/item/cartridge/engineering, /obj/item/cartridge/security, /obj/item/cartridge/medical, /obj/item/cartridge/signal/science, /obj/item/cartridge/quartermaster)), count = 2)
 
 // === merged from pda_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/pda

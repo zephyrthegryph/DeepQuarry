@@ -5776,6 +5776,7 @@
 #include "code\domains\atmos\gas.dm"
 #include "code\domains\atmos\area_air_device.dm"
 #include "code\domains\atmos\gas_level.dm"
+#include "code\domains\atmos\gas_port.dm"
 #include "code\domains\atmos\gas_watch.dm"
 #include "code\domains\heat\heat_net.dm"
 #include "code\domains\heat\heat_entries.dm"

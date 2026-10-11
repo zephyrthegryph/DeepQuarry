@@ -141,6 +141,9 @@
 	name = "banana peel of testing"
 	desc = "spams world log with debugging information"
 
+CAPABILITIES(/obj/item/bananapeel/test)
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(shmove)))
+
 /obj/item/bananapeel/test/proc/shmove(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
@@ -152,4 +155,3 @@
 /obj/item/bananapeel/test/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(shmove)))
